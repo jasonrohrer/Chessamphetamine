@@ -1,0 +1,39 @@
+# automatically detect text vs binary files
+* text=auto
+
+
+# Keep this simple to solve the current problem.
+# In the Windows build process, we convert .txt files to DOS line endings
+# those are the only files that are converted.  For this to work, the .txt
+# files MUST have Unix line endings in the working directory.
+
+*.txt    text eol=lf
+
+
+# QCad DXF files are being saved with CRLF
+# leave them alone.
+
+*.dxf    binary
+
+
+
+# some windows-specific files
+
+icon.rc                         binary
+makeWindowsExtractor_template   binary
+*.exe                           binary
+*.dll                           binary
+
+
+
+# image and sound files (probably handled via text=auto, just being safe)
+
+*.jpg   binary
+*.png   binary
+*.tga   binary
+*.aiff  binary
+
+
+
+# Note that source files and .ini files, etc. will be auto-converted to CRLF
+# line endings on Windows, but that doesn't seem to cause a problem, currently. 

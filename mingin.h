@@ -196,8 +196,8 @@ void mingin_registerStickAxis( int inStickAxisHandle,
 */
 #ifdef __linux__
 
-#define WIN_W 200
-#define WIN_H 200
+#define WIN_W 700
+#define WIN_H 700
 
 #define LINUX_TARGET_FPS 60
 

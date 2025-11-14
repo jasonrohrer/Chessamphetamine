@@ -1,0 +1,1 @@
+tcc -g -o Chessamphetamine *.c -lX11

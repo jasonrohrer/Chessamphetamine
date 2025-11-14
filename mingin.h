@@ -2,13 +2,13 @@
 /*
   Include wherever like so:
 
-  #include "mingine.h"
+  #include "mingin.h"
 
   Include exactly once, in one .c file, like so, to compile in the
   implementation:
 
-  #define MINGINE_IMPLEMENTATION
-  #include "mingine.h"
+  #define MINGIN_IMPLEMENTATION
+  #include "mingin.h"
 
 */
 
@@ -16,7 +16,7 @@
 
 /*
 
-  mingine provides a simple wrapper for the platform-specific infrastructure
+  mingin provides a simple wrapper for the platform-specific infrastructure
   necessary to make a single-player computer game.
 
   In order to achieve maximum portability across past and future platforms
@@ -86,7 +86,7 @@
   RGBRGBRGB... in row-major order, starting from the top left corner
   of the screen and going left-to-right and top-to-bottom.
 */
-void mingine_gameGetScreenPixels( int inWide, int inHigh,
+void mingin_gameGetScreenPixels( int inWide, int inHigh,
                                   unsigned char *inRGBBuffer );
 
 /*
@@ -95,7 +95,7 @@ void mingine_gameGetScreenPixels( int inWide, int inHigh,
 
   inSampleBuffer will have inNumSamples * inNumChannels * 2 bytes
 */
-void mingine_gameGetAudioSamples( int inNumSamples,
+void mingin_gameGetAudioSamples( int inNumSamples,
                                   int inNumChannels,
                                   int inSamplesPerSecond,
                                   unsigned char *inSampleBuffer );
@@ -109,10 +109,10 @@ void mingine_gameGetAudioSamples( int inNumSamples,
   The game must not depend on being asked for screens of pixels
   or buffers of audio to advance things.
 
-  The rate at which mingine_gameStep is called can be found by calling
-  mingine_stepsPerSecond()
+  The rate at which mingin_gameStep is called can be found by calling
+  mingin_stepsPerSecond()
 */
-void mingine_gameStep( void );
+void mingin_gameStep( void );
 
 
 
@@ -126,13 +126,13 @@ void mingine_gameStep( void );
   What's the step rate, in steps per second, that the platform
   is running the game at?
 */
-int mingine_stepsPerSecond( void );
+int mingin_stepsPerSecond( void );
 
 
 /*
   Registers a set of button types that should get mapped to one button
   handle that the game can check for press/release status with
-  mingine_isButtonDown().
+  mingin_isButtonDown().
 
   The idea here is that the game can define action constants as-needed, like
   JUMP, and then map them to expected inputs on various platforms,
@@ -145,24 +145,24 @@ int mingine_stepsPerSecond( void );
   to the same action constant.  For example, if FIRE can be triggered
   by both { MGN_BUTTON_MOUSE_LEFT, MGN_KEY_X, MGN_MAP_END }
 */
-void mingine_registerButtonMapping( int inButtonHandle,
+void mingin_registerButtonMapping( int inButtonHandle,
                                     const int inMapping[] );
 
 /*
   Check whether a previously-mapped button handle is currently held down.
   Returns 1 if pressed, 0 if not pressed.
 */
-char mingine_isButtonDown( int inButtonHandle );
+char mingin_isButtonDown( int inButtonHandle );
 
 
 /*
   Gets the current pointer location, if any.
-  Point location is in screen space returned by mingine_getScreenSize(),
+  Point location is in screen space returned by mingin_getScreenSize(),
   with 0,0 at the top left corner of the screen.
 
   Returns 1 if pointer location is available, or 0 if not.
 */
-char mingine_getPointerLocation( int *inX, int *inY );
+char mingin_getPointerLocation( int *inX, int *inY );
 
 
 /*
@@ -171,7 +171,7 @@ char mingine_getPointerLocation( int *inX, int *inY );
   it might define AIM_UP and then map it to
   { MGN_LEFT_STICK_Y, MGN_MIDDLE_STICK_Y, MGN_MAP_END }
 */
-void mingine_registerStickAxis( int inStickAxisHandle,
+void mingin_registerStickAxis( int inStickAxisHandle,
                                 const int inMapping[] );
 
 
@@ -184,7 +184,7 @@ void mingine_registerStickAxis( int inStickAxisHandle,
 
 
 
-#ifdef MINGINE_IMPLEMENTATION
+#ifdef MINGIN_IMPLEMENTATION
 
 
 
@@ -315,5 +315,5 @@ int main( void ) {
 
 
 
-/* end #ifdef MINGINE_IMPLEMENTATION */
+/* end #ifdef MINGIN_IMPLEMENTATION */
 #endif

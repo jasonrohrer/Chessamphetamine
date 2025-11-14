@@ -1,6 +1,6 @@
 
-#define MINGINE_IMPLEMENTATION
+#define MINGIN_IMPLEMENTATION
 
-#include "mingine.h"
+#include "mingin.h"
 
 

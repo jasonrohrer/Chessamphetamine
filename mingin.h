@@ -199,6 +199,7 @@ void mingin_registerStickAxis( int inStickAxisHandle,
 #define WIN_W 200
 #define WIN_H 200
 
+#define LINUX_TARGET_FPS 60
 
 /* needed for nanosleep in time.h */
 
@@ -213,12 +214,33 @@ static unsigned char screenBuffer[ WIN_W * WIN_H * 4 ];
 
 static void frameSleep( void );
 
-static void frameSleep( void ) {
-    struct timespec req;
-    req.tv_sec = 0; 
-    req.tv_nsec = 16666666;
+static struct timespec lastFrameTime = { 0, 0 };
 
-    nanosleep( &req, NULL );
+    
+static void frameSleep( void ) {
+    struct timespec curTime;
+    
+    struct timespec sleepTime;
+    time_t deltaSec;
+    time_t deltaNanoSec;
+    time_t targetFrameNanoSec = 1000000000 / LINUX_TARGET_FPS;
+    
+    clock_gettime( CLOCK_MONOTONIC_RAW, &curTime );
+
+    deltaSec = curTime.tv_sec - lastFrameTime.tv_sec;
+    deltaNanoSec = curTime.tv_nsec - lastFrameTime.tv_nsec;
+    
+    if( deltaSec > 0 || deltaNanoSec >= targetFrameNanoSec ) {
+        clock_gettime( CLOCK_MONOTONIC_RAW, &lastFrameTime );
+        return;
+        }
+    
+    
+    sleepTime.tv_sec = 0; 
+    sleepTime.tv_nsec = targetFrameNanoSec - deltaNanoSec;
+
+    nanosleep( &sleepTime, NULL );
+    clock_gettime( CLOCK_MONOTONIC_RAW, &lastFrameTime );
     }
 
 
@@ -297,9 +319,8 @@ int main( void ) {
         else {
             nextColorVal = 255;
             }
-            
+        
         XPutImage( xDisplay, xWindow, xGc, xImage, 0, 0, 0, 0, WIN_W, WIN_H );
-        /* 60 fps */
         frameSleep();
         }
 

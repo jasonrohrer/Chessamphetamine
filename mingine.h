@@ -39,20 +39,32 @@
     the required infrastructure.
     
 
-  Such games need four things to function, which they can't do on their own
+  Such games need seven things to function, which they can't do on their own
   without the help of the underlying platform:
 
-  1.  A way to draw to a rectangular window or screen.
-  
-  2.  A way to play a stream of audio to some kind of audio output.
+  1.  A way to have regular time steps pass so that game logic can update.
 
-  3.  A way to receive input from the user (mouse, keyboard, controller, etc.).
+  2.  A way to receive input from the user (mouse, keyboard, controller, etc.).
   
-  4.  A way to read and write data that persists between runs of the game.
+  3.  A way to draw to a rectangular window or screen.
+  
+  4.  A way to play a stream of audio to some kind of audio output.
   
   5.  A way to read bulk data resources, like graphics and sounds, that
       aren't practical to compile into the program code itself.  For example,
       a game might stream music audio data that is too big to fit in RAM.
+      
+  6.  A way to read and write data that persists between runs of the game.
+
+  7.  A way to log messages for the purposes of troubleshooting.
+
+
+  
+  Note that a given platform might not provide all of these thing for real,
+  yet the game can still function on that plaform (for example, a platform
+  without speakers can run a silent version of the game).
+
+  As long as regular time steps pass, the game can still function.
 */
 
 
@@ -74,8 +86,8 @@
   RGBRGBRGB... in row-major order, starting from the top left corner
   of the screen and going left-to-right and top-to-bottom.
 */
-void mingin_gameGetScreenPixels( int inWide, int inHigh,
-                                 unsigned char *inRGBBuffer );
+void mingine_gameGetScreenPixels( int inWide, int inHigh,
+                                  unsigned char *inRGBBuffer );
 
 /*
   Get the next buffer full of audio samples.
@@ -83,10 +95,91 @@ void mingin_gameGetScreenPixels( int inWide, int inHigh,
 
   inSampleBuffer will have inNumSamples * inNumChannels * 2 bytes
 */
-void mingin_gameGetAudioSamples( int inNumSamples,
-                                 int inNumChannels,
-                                 int inSamplesPerSecond,
-                                 unsigned char *inSampleBuffer );
+void mingine_gameGetAudioSamples( int inNumSamples,
+                                  int inNumChannels,
+                                  int inSamplesPerSecond,
+                                  unsigned char *inSampleBuffer );
+
+/*
+  Steps to the next frame of the game.
+  
+  Note that this is the ONLY function of a game that a platform must
+  actually call, so all game logic must be executed by this function.
+  
+  The game must not depend on being asked for screens of pixels
+  or buffers of audio to advance things.
+
+  The rate at which mingine_gameStep is called can be found by calling
+  mingine_stepsPerSecond()
+*/
+void mingine_gameStep( void );
+
+
+
+
+/*
+  Game can call these functions
+
+*/
+
+/*
+  What's the step rate, in steps per second, that the platform
+  is running the game at?
+*/
+int mingine_stepsPerSecond( void );
+
+
+/*
+  Registers a set of button types that should get mapped to one button
+  handle that the game can check for press/release status with
+  mingine_isButtonDown().
+
+  The idea here is that the game can define action constants as-needed, like
+  JUMP, and then map them to expected inputs on various platforms,
+  like { MGN_KEY_SPACE, MGN_BUTTON_SQUARE, MGN_BUTTON_A, MGN_MAP_END }.
+
+  So this would set up the int constant JUMP on keyboards and two different
+  types of controllers.
+
+  The game can also use this to map mutiple controls on the same platform
+  to the same action constant.  For example, if FIRE can be triggered
+  by both { MGN_BUTTON_MOUSE_LEFT, MGN_KEY_X, MGN_MAP_END }
+*/
+void mingine_registerButtonMapping( int inButtonHandle,
+                                    const int inMapping[] );
+
+/*
+  Check whether a previously-mapped button handle is currently held down.
+  Returns 1 if pressed, 0 if not pressed.
+*/
+char mingine_isButtonDown( int inButtonHandle );
+
+
+/*
+  Gets the current pointer location, if any.
+  Point location is in screen space returned by mingine_getScreenSize(),
+  with 0,0 at the top left corner of the screen.
+
+  Returns 1 if pointer location is available, or 0 if not.
+*/
+char mingine_getPointerLocation( int *inX, int *inY );
+
+
+/*
+  Similar to registering a button mapping, game can define constants as-needed
+  to refer to the stick axes that it is interested in.  For example,
+  it might define AIM_UP and then map it to
+  { MGN_LEFT_STICK_Y, MGN_MIDDLE_STICK_Y, MGN_MAP_END }
+*/
+void mingine_registerStickAxis( int inStickAxisHandle,
+                                const int inMapping[] );
+
+
+
+/*
+  Platforms must implement these functions, which the game can call
+*/
+
 
 
 
@@ -96,12 +189,121 @@ void mingin_gameGetAudioSamples( int inNumSamples,
 
 
 
+
+/*
+  Linux platform with X11 windows
+  Supports only 24-bit color
+*/
 #ifdef __linux__
+
+#define WIN_W 200
+#define WIN_H 200
+
+
+/* needed for nanosleep in time.h */
+
+#define _POSIX_C_SOURCE 199309L 
+
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <time.h>
+
+static unsigned char screenBuffer[ WIN_W * WIN_H * 4 ];
+
+
+static void frameSleep( void );
+
+static void frameSleep( void ) {
+    struct timespec req;
+    req.tv_sec = 0; 
+    req.tv_nsec = 16666666;
+
+    nanosleep( &req, NULL );
+    }
+
 
 
 int main( void );
 
 int main( void ) {
+    Display *xDisplay = NULL;
+    Window xWindow = 0;
+    int xScreen = 0;
+    XImage *xImage = NULL;
+    unsigned int xDepth = 0;
+    long unsigned int xBlackColor;
+    long unsigned int xWhiteColor;
+    GC xGc;
+    unsigned char nextColorVal = 255;
+        
+    xDisplay = XOpenDisplay( NULL );
+
+    xScreen = DefaultScreen( xDisplay );
+
+    xBlackColor = BlackPixel( xDisplay, xScreen );
+    xWhiteColor = WhitePixel( xDisplay, xScreen );
+    
+    xDepth = (unsigned int)DefaultDepth( xDisplay, xScreen );
+
+    xWindow = XCreateSimpleWindow(
+        xDisplay, DefaultRootWindow(xDisplay),
+        0, 0, WIN_W, WIN_H, 0, xBlackColor, xBlackColor );
+
+    XSelectInput( xDisplay, xWindow,
+                  StructureNotifyMask | KeyPressMask | KeyReleaseMask);
+
+    XMapWindow( xDisplay, xWindow );
+
+    xGc = XCreateGC( xDisplay, xWindow, 0, NULL );
+    
+    XSetForeground( xDisplay, xGc, xWhiteColor );
+
+    /* wait for MapNotify */
+    while( 1 ) {
+        XEvent e;
+        XNextEvent( xDisplay, &e);
+        if( e.type == MapNotify ) {
+            break;
+            }
+        }
+    
+    xImage = XCreateImage( xDisplay,
+                           DefaultVisual( xDisplay, xScreen ),
+                           xDepth, ZPixmap, 0,
+                           (char *)screenBuffer, WIN_W, WIN_H,
+                           32, 0 );
+
+    while( 1 ) {
+        int numPixels = WIN_W * WIN_H;
+        int i;
+        
+        /* pump all events */
+        while( XPending( xDisplay) > 0 ) {
+            XEvent e;
+            XNextEvent( xDisplay, &e );
+            }
+
+        
+        for( i=0; i<numPixels; i++ ) {
+            int p = i * 4;
+            screenBuffer[ p ] = nextColorVal;
+            screenBuffer[ p + 1 ] = nextColorVal;
+            screenBuffer[ p + 2 ] = nextColorVal;
+            screenBuffer[ p + 3 ] = 255;
+            }
+        if( nextColorVal == 255 ) {
+            nextColorVal = 0;
+            }
+        else {
+            nextColorVal = 255;
+            }
+            
+        XPutImage( xDisplay, xWindow, xGc, xImage, 0, 0, 0, 0, WIN_W, WIN_H );
+        /* 60 fps */
+        frameSleep();
+        }
+
+    XDestroyImage( xImage );
     
     return 1;
     }

@@ -134,16 +134,155 @@ void minginGame_step( void );
 int mingin_getStepsPerSecond( void );
 
 
+/*
+  Get the size of the screen.
+*/
 void mingin_getScreenSize( int *outW, int *outH );
 
 
 #define MGN_MAP_END 0
 
+/*
+  Note that not all keys are pressable, even on platforms with keyboards
+  that show those symbols.
+  
+  For example, on US keyboards, it's impossible to hit the % key, since
+  that's just the 5 key while SHIFT is held down.
+  
+  Platforms are generally expected to deal with raw button presses and
+  will not automatically map multi-key combos like SHIFT-5
+*/
 typedef enum MinginButton {
     MGN_DUMMY_FIRST_BUTTON = MGN_MAP_END,
-    MGN_KEY_Q,
-    MGN_KEY_SPACE,
+    MGN_KEY_BACKSPACE,
+    MGN_KEY_TAB,
+    MGN_KEY_RETURN,
     MGN_KEY_ESCAPE,
+    MGN_KEY_DELETE,
+    MGN_KEY_HOME,
+    MGN_KEY_LEFT,
+    MGN_KEY_UP,
+    MGN_KEY_RIGHT,
+    MGN_KEY_DOWN,
+    MGN_KEY_PAGE_UP,
+    MGN_KEY_PAGE_DOWN,
+    MGN_KEY_END,
+    MGN_KEY_NUM_LOCK,
+    MGN_KEY_F1,
+    MGN_KEY_F2,
+    MGN_KEY_F3,
+    MGN_KEY_F4,
+    MGN_KEY_F5,
+    MGN_KEY_F6,
+    MGN_KEY_F7,
+    MGN_KEY_F8,
+    MGN_KEY_F9,
+    MGN_KEY_F10,
+    MGN_KEY_F11,
+    MGN_KEY_F12,
+    MGN_KEY_F13,
+    MGN_KEY_F14,
+    MGN_KEY_F15,
+    MGN_KEY_F16,
+    MGN_KEY_F17,
+    MGN_KEY_F18,
+    MGN_KEY_F19,
+    MGN_KEY_F20,
+    MGN_KEY_F21,
+    MGN_KEY_F22,
+    MGN_KEY_F23,
+    MGN_KEY_F24,
+    MGN_KEY_F25,
+    MGN_KEY_F26,
+    MGN_KEY_F27,
+    MGN_KEY_F28,
+    MGN_KEY_F29,
+    MGN_KEY_F30,
+    MGN_KEY_F31,
+    MGN_KEY_F32,
+    MGN_KEY_F33,
+    MGN_KEY_F34,
+    MGN_KEY_F35,
+    MGN_KEY_SHIFT_L,
+    MGN_KEY_SHIFT_R,
+    MGN_KEY_CONTROL_L,
+    MGN_KEY_CONTROL_R,
+    MGN_KEY_CAPS_LOCK,
+    MGN_KEY_META_L,
+    MGN_KEY_META_R,
+    MGN_KEY_ALT_L,
+    MGN_KEY_ALT_R,
+    MGN_KEY_SUPER_L,
+    MGN_KEY_SUPER_R,
+    MGN_KEY_SPACE,
+    MGN_KEY_EXCLAMATION,
+    MGN_KEY_DOUBLE_QUOTE,
+    MGN_KEY_NUMBER_SIGN,
+    MGN_KEY_DOLLAR,
+    MGN_KEY_PERCENT,
+    MGN_KEY_AMPERSAND,
+    MGN_KEY_APOSTROPHE,
+    MGN_KEY_PAREN_L,
+    MGN_KEY_PAREN_R,
+    MGN_KEY_ASTERISK,
+    MGN_KEY_PLUS,
+    MGN_KEY_COMMA,
+    MGN_KEY_MINUS,
+    MGN_KEY_PERIOD,
+    MGN_KEY_SLASH,
+    MGN_KEY_0,
+    MGN_KEY_1,
+    MGN_KEY_2,
+    MGN_KEY_3,
+    MGN_KEY_4,
+    MGN_KEY_5,
+    MGN_KEY_6,
+    MGN_KEY_7,
+    MGN_KEY_8,
+    MGN_KEY_9,
+    MGN_KEY_COLON,
+    MGN_KEY_SEMICOLON,
+    MGN_KEY_LESS,
+    MGN_KEY_EQUAL,
+    MGN_KEY_GREATER,
+    MGN_KEY_QUESTION,
+    MGN_KEY_AT_SIGN,
+    MGN_KEY_BRACKET_L,
+    MGN_KEY_BACKSLASH,
+    MGN_KEY_BRACKET_R,
+    MGN_KEY_CIRCUMFLEX,
+    MGN_KEY_UNDERSCORE,
+    MGN_KEY_BACK_TICK,
+    MGN_KEY_A,
+    MGN_KEY_B,
+    MGN_KEY_C,
+    MGN_KEY_D,
+    MGN_KEY_E,
+    MGN_KEY_F,
+    MGN_KEY_G,
+    MGN_KEY_H,
+    MGN_KEY_I,
+    MGN_KEY_J,
+    MGN_KEY_K,
+    MGN_KEY_L,
+    MGN_KEY_M,
+    MGN_KEY_N,
+    MGN_KEY_O,
+    MGN_KEY_P,
+    MGN_KEY_Q,
+    MGN_KEY_R,
+    MGN_KEY_S,
+    MGN_KEY_T,
+    MGN_KEY_U,
+    MGN_KEY_V,
+    MGN_KEY_W,
+    MGN_KEY_X,
+    MGN_KEY_Y,
+    MGN_KEY_Z,
+    MGN_KEY_BRACE_L,
+    MGN_KEY_VERTICAL_BAR,
+    MGN_KEY_BRACE_R,
+    MGN_KEY_TILDE,
     MGN_DUMMY_LAST_BUTTON
     } MinginButton;
 
@@ -483,6 +622,9 @@ static void frameSleep( void ) {
     }
 
 
+static void setupX11KeyMap( void );
+
+
 
 int main( void );
 
@@ -503,12 +645,9 @@ int main( void ) {
         buttonDown[b] = 0;
         buttonToXKeyMap[b] = 0;
         }
-    /* fixme
-       map all keys */
-    buttonToXKeyMap[ MGN_KEY_Q ] = XK_q;
-    buttonToXKeyMap[ MGN_KEY_ESCAPE ] = XK_Escape;
-    buttonToXKeyMap[ MGN_KEY_SPACE ] = XK_space;
 
+    setupX11KeyMap();
+    
     
     
     xDisplay = XOpenDisplay( NULL );
@@ -591,7 +730,8 @@ int main( void ) {
             screenBuffer[ p + 2 ] = gameScreenBuffer[ gp + 2 ];
             screenBuffer[ p + 3 ] = 255;
             }
-        
+
+        /* fixme:  consider X Double Buffer Extension to avoid tearing here */
         XPutImage( xDisplay, xWindow, xGc, xImage, 0, 0, 0, 0, WIN_W, WIN_H );
         frameSleep();
         }
@@ -611,6 +751,143 @@ int main( void ) {
     
     return 1;
     }
+
+
+
+static void setupX11KeyMap( void ) {
+    buttonToXKeyMap[ MGN_KEY_BACKSPACE ] = XK_BackSpace;
+    buttonToXKeyMap[ MGN_KEY_TAB ] = XK_Tab;
+    buttonToXKeyMap[ MGN_KEY_RETURN ] = XK_Return;
+    buttonToXKeyMap[ MGN_KEY_ESCAPE ] = XK_Escape;
+    buttonToXKeyMap[ MGN_KEY_DELETE ] = XK_Delete;
+    buttonToXKeyMap[ MGN_KEY_HOME ] = XK_Home;
+    buttonToXKeyMap[ MGN_KEY_LEFT ] = XK_Left;
+    buttonToXKeyMap[ MGN_KEY_UP ] = XK_Up;
+    buttonToXKeyMap[ MGN_KEY_RIGHT ] = XK_Right;
+    buttonToXKeyMap[ MGN_KEY_DOWN ] = XK_Down;
+    buttonToXKeyMap[ MGN_KEY_PAGE_UP ] = XK_Page_Up;
+    buttonToXKeyMap[ MGN_KEY_PAGE_DOWN ] = XK_Page_Down;
+    buttonToXKeyMap[ MGN_KEY_END ] = XK_End;
+    buttonToXKeyMap[ MGN_KEY_NUM_LOCK ] = XK_Num_Lock;
+    buttonToXKeyMap[ MGN_KEY_F1 ] = XK_F1;
+    buttonToXKeyMap[ MGN_KEY_F2 ] = XK_F2;
+    buttonToXKeyMap[ MGN_KEY_F3 ] = XK_F3;
+    buttonToXKeyMap[ MGN_KEY_F4 ] = XK_F4;
+    buttonToXKeyMap[ MGN_KEY_F5 ] = XK_F5;
+    buttonToXKeyMap[ MGN_KEY_F6 ] = XK_F6;
+    buttonToXKeyMap[ MGN_KEY_F7 ] = XK_F7;
+    buttonToXKeyMap[ MGN_KEY_F8 ] = XK_F8;
+    buttonToXKeyMap[ MGN_KEY_F9 ] = XK_F9;
+    buttonToXKeyMap[ MGN_KEY_F10 ] = XK_F10;
+    buttonToXKeyMap[ MGN_KEY_F11 ] = XK_F11;
+    buttonToXKeyMap[ MGN_KEY_F12 ] = XK_F12;
+    buttonToXKeyMap[ MGN_KEY_F13 ] = XK_F13;
+    buttonToXKeyMap[ MGN_KEY_F14 ] = XK_F14;
+    buttonToXKeyMap[ MGN_KEY_F15 ] = XK_F15;
+    buttonToXKeyMap[ MGN_KEY_F16 ] = XK_F16;
+    buttonToXKeyMap[ MGN_KEY_F17 ] = XK_F17;
+    buttonToXKeyMap[ MGN_KEY_F18 ] = XK_F18;
+    buttonToXKeyMap[ MGN_KEY_F19 ] = XK_F19;
+    buttonToXKeyMap[ MGN_KEY_F20 ] = XK_F20;
+    buttonToXKeyMap[ MGN_KEY_F21 ] = XK_F21;
+    buttonToXKeyMap[ MGN_KEY_F22 ] = XK_F22;
+    buttonToXKeyMap[ MGN_KEY_F23 ] = XK_F23;
+    buttonToXKeyMap[ MGN_KEY_F24 ] = XK_F24;
+    buttonToXKeyMap[ MGN_KEY_F25 ] = XK_F25;
+    buttonToXKeyMap[ MGN_KEY_F26 ] = XK_F26;
+    buttonToXKeyMap[ MGN_KEY_F27 ] = XK_F27;
+    buttonToXKeyMap[ MGN_KEY_F28 ] = XK_F28;
+    buttonToXKeyMap[ MGN_KEY_F29 ] = XK_F29;
+    buttonToXKeyMap[ MGN_KEY_F30 ] = XK_F30;
+    buttonToXKeyMap[ MGN_KEY_F31 ] = XK_F31;
+    buttonToXKeyMap[ MGN_KEY_F32 ] = XK_F32;
+    buttonToXKeyMap[ MGN_KEY_F33 ] = XK_F33;
+    buttonToXKeyMap[ MGN_KEY_F34 ] = XK_F34;
+    buttonToXKeyMap[ MGN_KEY_F35 ] = XK_F35;
+    buttonToXKeyMap[ MGN_KEY_SHIFT_L ] = XK_Shift_L;
+    buttonToXKeyMap[ MGN_KEY_SHIFT_R ] = XK_Shift_R;
+    buttonToXKeyMap[ MGN_KEY_CONTROL_L ] = XK_Control_L;
+    buttonToXKeyMap[ MGN_KEY_CONTROL_R ] = XK_Control_R;
+    buttonToXKeyMap[ MGN_KEY_CAPS_LOCK ] = XK_Caps_Lock;
+    buttonToXKeyMap[ MGN_KEY_META_L ] = XK_Meta_L;
+    buttonToXKeyMap[ MGN_KEY_META_R ] = XK_Meta_R;
+    buttonToXKeyMap[ MGN_KEY_ALT_L ] = XK_Alt_L;
+    buttonToXKeyMap[ MGN_KEY_ALT_R ] = XK_Alt_R;
+    buttonToXKeyMap[ MGN_KEY_SUPER_L ] = XK_Super_L;
+    buttonToXKeyMap[ MGN_KEY_SUPER_R ] = XK_Super_R;
+    buttonToXKeyMap[ MGN_KEY_SPACE ] = XK_space;
+    buttonToXKeyMap[ MGN_KEY_EXCLAMATION ] = XK_exclam;
+    buttonToXKeyMap[ MGN_KEY_DOUBLE_QUOTE ] = XK_quotedbl;
+    buttonToXKeyMap[ MGN_KEY_NUMBER_SIGN ] = XK_numbersign;
+    buttonToXKeyMap[ MGN_KEY_DOLLAR ] = XK_dollar;
+    buttonToXKeyMap[ MGN_KEY_PERCENT ] = XK_percent;
+    buttonToXKeyMap[ MGN_KEY_AMPERSAND ] = XK_ampersand;
+    buttonToXKeyMap[ MGN_KEY_APOSTROPHE ] = XK_apostrophe;
+    buttonToXKeyMap[ MGN_KEY_PAREN_L ] = XK_parenleft;
+    buttonToXKeyMap[ MGN_KEY_PAREN_R ] = XK_parenright;
+    buttonToXKeyMap[ MGN_KEY_ASTERISK ] = XK_asterisk;
+    buttonToXKeyMap[ MGN_KEY_PLUS ] = XK_plus;
+    buttonToXKeyMap[ MGN_KEY_COMMA ] = XK_comma;
+    buttonToXKeyMap[ MGN_KEY_MINUS ] = XK_minus;
+    buttonToXKeyMap[ MGN_KEY_PERIOD ] = XK_period;
+    buttonToXKeyMap[ MGN_KEY_SLASH ] = XK_slash;
+    buttonToXKeyMap[ MGN_KEY_0 ] = XK_0;
+    buttonToXKeyMap[ MGN_KEY_1 ] = XK_1;
+    buttonToXKeyMap[ MGN_KEY_2 ] = XK_2;
+    buttonToXKeyMap[ MGN_KEY_3 ] = XK_3;
+    buttonToXKeyMap[ MGN_KEY_4 ] = XK_4;
+    buttonToXKeyMap[ MGN_KEY_5 ] = XK_5;
+    buttonToXKeyMap[ MGN_KEY_6 ] = XK_6;
+    buttonToXKeyMap[ MGN_KEY_7 ] = XK_7;
+    buttonToXKeyMap[ MGN_KEY_8 ] = XK_8;
+    buttonToXKeyMap[ MGN_KEY_9 ] = XK_9;
+    buttonToXKeyMap[ MGN_KEY_COLON ] = XK_colon;
+    buttonToXKeyMap[ MGN_KEY_SEMICOLON ] = XK_semicolon;
+    buttonToXKeyMap[ MGN_KEY_LESS ] = XK_less;
+    buttonToXKeyMap[ MGN_KEY_EQUAL ] = XK_equal;
+    buttonToXKeyMap[ MGN_KEY_GREATER ] = XK_greater;
+    buttonToXKeyMap[ MGN_KEY_QUESTION ] = XK_question;
+    buttonToXKeyMap[ MGN_KEY_AT_SIGN ] = XK_at;
+    buttonToXKeyMap[ MGN_KEY_BRACKET_L ] = XK_bracketleft;
+    buttonToXKeyMap[ MGN_KEY_BACKSLASH ] = XK_backslash;
+    buttonToXKeyMap[ MGN_KEY_BRACKET_R ] = XK_bracketright;
+    buttonToXKeyMap[ MGN_KEY_CIRCUMFLEX ] = XK_asciicircum;
+    buttonToXKeyMap[ MGN_KEY_UNDERSCORE ] = XK_underscore;
+    buttonToXKeyMap[ MGN_KEY_BACK_TICK ] = XK_grave;
+    buttonToXKeyMap[ MGN_KEY_A ] = XK_a;
+    buttonToXKeyMap[ MGN_KEY_B ] = XK_b;
+    buttonToXKeyMap[ MGN_KEY_C ] = XK_c;
+    buttonToXKeyMap[ MGN_KEY_D ] = XK_d;
+    buttonToXKeyMap[ MGN_KEY_E ] = XK_e;
+    buttonToXKeyMap[ MGN_KEY_F ] = XK_f;
+    buttonToXKeyMap[ MGN_KEY_G ] = XK_g;
+    buttonToXKeyMap[ MGN_KEY_H ] = XK_h;
+    buttonToXKeyMap[ MGN_KEY_I ] = XK_i;
+    buttonToXKeyMap[ MGN_KEY_J ] = XK_j;
+    buttonToXKeyMap[ MGN_KEY_K ] = XK_k;
+    buttonToXKeyMap[ MGN_KEY_L ] = XK_l;
+    buttonToXKeyMap[ MGN_KEY_M ] = XK_m;
+    buttonToXKeyMap[ MGN_KEY_N ] = XK_n;
+    buttonToXKeyMap[ MGN_KEY_O ] = XK_o;
+    buttonToXKeyMap[ MGN_KEY_P ] = XK_p;
+    buttonToXKeyMap[ MGN_KEY_Q ] = XK_q;
+    buttonToXKeyMap[ MGN_KEY_R ] = XK_r;
+    buttonToXKeyMap[ MGN_KEY_S ] = XK_s;
+    buttonToXKeyMap[ MGN_KEY_T ] = XK_t;
+    buttonToXKeyMap[ MGN_KEY_U ] = XK_u;
+    buttonToXKeyMap[ MGN_KEY_V ] = XK_v;
+    buttonToXKeyMap[ MGN_KEY_W ] = XK_w;
+    buttonToXKeyMap[ MGN_KEY_X ] = XK_x;
+    buttonToXKeyMap[ MGN_KEY_Y ] = XK_y;
+    buttonToXKeyMap[ MGN_KEY_Z ] = XK_z;
+    buttonToXKeyMap[ MGN_KEY_BRACE_L ] = XK_braceleft;
+    buttonToXKeyMap[ MGN_KEY_VERTICAL_BAR ] = XK_bar;
+    buttonToXKeyMap[ MGN_KEY_BRACE_R ] = XK_braceright;
+    buttonToXKeyMap[ MGN_KEY_TILDE ] = XK_asciitilde;
+    }
+
+
+
 
 
 /* end #ifdef __linux__ */

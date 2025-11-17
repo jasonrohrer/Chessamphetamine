@@ -107,7 +107,7 @@ void minginGame_step( void ) {
     }
 
 
-static MinginButton quitMapping[] = { MGN_KEY_Q, MGN_KEY_ESCAPE, MGN_MAP_END };
+static MinginButton quitMapping[] = { MGN_KEY_CIRCUMFLEX, MGN_KEY_ESCAPE, MGN_MAP_END };
 static MinginButton jumpMapping[] = { MGN_KEY_SPACE, MGN_MAP_END };
 
 static void gameInit( void ) {

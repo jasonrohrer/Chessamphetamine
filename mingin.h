@@ -495,10 +495,10 @@ char mingin_isButtonDown( int inButtonHandle ) {
 */
 #ifdef __linux__
 
-#define WIN_W 700
-#define WIN_H 100
+#define WIN_W 1100
+#define WIN_H 700
 
-#define LINUX_TARGET_FPS 30
+#define LINUX_TARGET_FPS 60
 
 /* needed for nanosleep in time.h */
 #define _POSIX_C_SOURCE 199309L 
@@ -506,7 +506,7 @@ char mingin_isButtonDown( int inButtonHandle ) {
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <X11/extensions/Xdbe.h>
+#include <GL/glx.h>
 
 #include <unistd.h>
 
@@ -639,9 +639,10 @@ int main( void ) {
     long unsigned int xWhiteColor;
     GC xGc;
     int b;
-    int dbeMajor, dbeMinor;
-    XdbeBackBuffer xBackBuffer;
-    XdbeSwapInfo xSwapInfo;
+
+    int glxAttributes[] = { GLX_RGBA, GLX_DOUBLEBUFFER, None };
+    XVisualInfo *xVisual;
+    GLXContext glxContext;
     
     minginInternal_init();
 
@@ -658,9 +659,11 @@ int main( void ) {
 
     xScreen = DefaultScreen( xDisplay );
 
-
-    if( !XdbeQueryExtension( xDisplay, &dbeMajor, &dbeMinor ) ) {
-        mingin_log( "X11 Double Buffer Extension not supported\n" );
+    
+    xVisual = glXChooseVisual( xDisplay, xScreen, glxAttributes );
+    
+    if( !xVisual ) {
+        mingin_log( "No Visual found for GLX\n" );
         XCloseDisplay( xDisplay );
         return 1;
         }
@@ -682,8 +685,15 @@ int main( void ) {
 
     xGc = XCreateGC( xDisplay, xWindow, 0, NULL );
 
-    xBackBuffer = XdbeAllocateBackBufferName( xDisplay, xWindow,
-                                              XdbeUndefined );
+    glxContext = glXCreateContext( xDisplay, xVisual, NULL, GL_TRUE );
+    if( !glxContext ) {
+        mingin_log( "Failed to create GLX context\n" );
+        XDestroyWindow( xDisplay, xWindow );
+        XFree( xVisual );
+        XCloseDisplay( xDisplay );
+        return 1;
+        }
+    
 
     XSetForeground( xDisplay, xGc, xWhiteColor );
 
@@ -702,9 +712,9 @@ int main( void ) {
                            (char *)screenBuffer, WIN_W, WIN_H,
                            32, 0 );
 
+    glXMakeCurrent( xDisplay, xWindow, glxContext );
+    
     while( ! shouldQuit ) {
-        int numPixels = WIN_W * WIN_H;
-        int i;
         
         /* pump all events */
         while( XPending( xDisplay ) > 0 ) {
@@ -735,28 +745,14 @@ int main( void ) {
         minginGame_step();
         
         minginGame_getScreenPixels( WIN_W, WIN_H, gameScreenBuffer );
-        
-        for( i=0; i<numPixels; i++ ) {
-            int p = i * 4;
-            int gp = i * 3;
-            
-            screenBuffer[ p ] = gameScreenBuffer[ gp ];
-            screenBuffer[ p + 1 ] = gameScreenBuffer[ gp + 1 ];
-            screenBuffer[ p + 2 ] = gameScreenBuffer[ gp + 2 ];
-            screenBuffer[ p + 3 ] = 255;
-            }
 
-        /* fixme:  consider X Double Buffer Extension to avoid tearing here */
-        XPutImage( xDisplay, xBackBuffer,
-                   xGc, xImage, 0, 0, 0, 0, WIN_W, WIN_H );
+        glDrawPixels( WIN_W, WIN_H,
+                      GL_RGB, GL_UNSIGNED_BYTE, gameScreenBuffer );
+
+        glXSwapBuffers( xDisplay, xWindow ); 
 
         
-        xSwapInfo.swap_window = xWindow;
-        xSwapInfo.swap_action = XdbeBackground;
-            
-        XdbeSwapBuffers( xDisplay, &xSwapInfo, 1 );
-
-        if( 1 )
+        if( 0 )
         frameSleep();
         }
 

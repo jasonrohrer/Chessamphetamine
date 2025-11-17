@@ -15,7 +15,7 @@ enum UserAction {
 static int boxPosX = -1;
 static int boxPosY = -1;
 static int boxW = 10;
-static int boxH = 50;
+static int boxH = 600;
 static int boxVPerSecond = 120;
 static int boxDir = 1;
 
@@ -116,4 +116,6 @@ static void gameInit( void ) {
     mingin_getScreenSize( &w, &h );
     boxPosX = w / 2;
     boxPosY = h / 2;
+
+    boxH = ( h * 3 ) / 4;
     }

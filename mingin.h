@@ -498,7 +498,7 @@ char mingin_isButtonDown( int inButtonHandle ) {
 #define WIN_W 700
 #define WIN_H 700
 
-#define LINUX_TARGET_FPS 60
+#define LINUX_TARGET_FPS 30
 
 /* needed for nanosleep in time.h */
 

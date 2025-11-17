@@ -496,17 +496,18 @@ char mingin_isButtonDown( int inButtonHandle ) {
 #ifdef __linux__
 
 #define WIN_W 700
-#define WIN_H 700
+#define WIN_H 100
 
 #define LINUX_TARGET_FPS 30
 
 /* needed for nanosleep in time.h */
-
 #define _POSIX_C_SOURCE 199309L 
+#include <time.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <time.h>
+#include <X11/extensions/Xdbe.h>
+
 #include <unistd.h>
 
 /* x11 buffer is RGBA */
@@ -638,6 +639,9 @@ int main( void ) {
     long unsigned int xWhiteColor;
     GC xGc;
     int b;
+    int dbeMajor, dbeMinor;
+    XdbeBackBuffer xBackBuffer;
+    XdbeSwapInfo xSwapInfo;
     
     minginInternal_init();
 
@@ -654,6 +658,14 @@ int main( void ) {
 
     xScreen = DefaultScreen( xDisplay );
 
+
+    if( !XdbeQueryExtension( xDisplay, &dbeMajor, &dbeMinor ) ) {
+        mingin_log( "X11 Double Buffer Extension not supported\n" );
+        XCloseDisplay( xDisplay );
+        return 1;
+        }
+
+    
     xBlackColor = BlackPixel( xDisplay, xScreen );
     xWhiteColor = WhitePixel( xDisplay, xScreen );
     
@@ -669,7 +681,10 @@ int main( void ) {
     XMapWindow( xDisplay, xWindow );
 
     xGc = XCreateGC( xDisplay, xWindow, 0, NULL );
-    
+
+    xBackBuffer = XdbeAllocateBackBufferName( xDisplay, xWindow,
+                                              XdbeUndefined );
+
     XSetForeground( xDisplay, xGc, xWhiteColor );
 
     /* wait for MapNotify */
@@ -732,7 +747,16 @@ int main( void ) {
             }
 
         /* fixme:  consider X Double Buffer Extension to avoid tearing here */
-        XPutImage( xDisplay, xWindow, xGc, xImage, 0, 0, 0, 0, WIN_W, WIN_H );
+        XPutImage( xDisplay, xBackBuffer,
+                   xGc, xImage, 0, 0, 0, 0, WIN_W, WIN_H );
+
+        
+        xSwapInfo.swap_window = xWindow;
+        xSwapInfo.swap_action = XdbeBackground;
+            
+        XdbeSwapBuffers( xDisplay, &xSwapInfo, 1 );
+
+        if( 1 )
         frameSleep();
         }
 

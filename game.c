@@ -15,7 +15,7 @@ enum UserAction {
 static int boxPosX = -1;
 static int boxPosY = -1;
 static int boxW = 10;
-static int boxH = 10;
+static int boxH = 50;
 static int boxVPerSecond = 120;
 static int boxDir = 1;
 

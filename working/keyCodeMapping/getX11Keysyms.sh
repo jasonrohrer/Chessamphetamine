@@ -1,0 +1,1 @@
+grep "^#define" /usr/include/X11/keysymdef.h | sed "s/ *0x.*//" | sed "s/#define //" 

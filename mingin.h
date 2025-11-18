@@ -353,6 +353,26 @@ void mingin_registerStickAxis( int inStickAxisHandle,
                                const int inMapping[] );
 
 
+
+/*
+  Toggle between fullscreen and windowed mode on platforms that support
+  this.
+
+  Note that some platforms might recall the last setting on future startups.
+
+  Returns 1 if toggling supported, 0 if toggling not supported.
+*/
+char mingin_toggleFullscreen( char inFullscreen );
+
+
+
+/*
+  Returns 1 if fullscreen, 0 if windowed.
+*/
+char mingin_isFullscreen( void );
+
+
+
 /*
   Writes a string to the log.
 */
@@ -395,6 +415,10 @@ char minginPlatform_isButtonDown( MinginButton inButton );
 
 void minginPlatform_log( const char *inString );
 
+char minginPlatform_toggleFullscreen( char inFullscreen );
+
+char minginPlatform_isFullscreen( void );
+
 
 
 
@@ -416,6 +440,17 @@ void mingin_log( const char *inString ) {
 void mingin_quit( void ) {
     minginPlatform_quit();
     }
+
+
+char mingin_toggleFullscreen( char inFullscreen ) {
+    return minginPlatform_toggleFullscreen( inFullscreen );
+    }
+
+
+char mingin_isFullscreen( void ) {
+    return minginPlatform_isFullscreen();
+    }
+
 
 
 #define MINGIN_NUM_BUTTON_MAPPINGS 256
@@ -495,8 +530,8 @@ char mingin_isButtonDown( int inButtonHandle ) {
 */
 #ifdef __linux__
 
-#define WIN_W 1100
-#define WIN_H 700
+#define MAX_WIN_W 4096
+#define MAX_WIN_H 2160
 
 #define LINUX_TARGET_FPS 60
 
@@ -506,23 +541,41 @@ char mingin_isButtonDown( int inButtonHandle ) {
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/Xatom.h>
+
 #include <GL/glx.h>
 
 #include <unistd.h>
 
-/* x11 buffer is RGBA */
-static unsigned char screenBuffer[ WIN_W * WIN_H * 4 ];
 
 /* game's expected buffer is RGB */
-static unsigned char gameScreenBuffer[ WIN_W * WIN_H * 3 ];
+static unsigned char gameScreenBuffer[ MAX_WIN_W * MAX_WIN_H * 3 ];
 
 static char shouldQuit = 0;
 
+static int windowW = 0;
+static int windowH = 0;
+
+
+
+static void getMonitorSize( Display *inXDisplay,
+                            int *outW, int *outH );
+
+
+static void getMonitorSize( Display *inXDisplay,
+                            int *outW, int *outH ) {
+    Window win = DefaultRootWindow( inXDisplay );
+    XWindowAttributes getWinAttr;
+    XGetWindowAttributes( inXDisplay, win, &getWinAttr );
+
+    *outW = getWinAttr.width;
+    *outH = getWinAttr.height;
+    }
 
 
 void minginPlatform_getScreenSize( int *outW, int *outH ) {
-    *outW = WIN_W;
-    *outH = WIN_H;
+    *outW = windowW;
+    *outH = windowH;
     }
 
 
@@ -534,6 +587,19 @@ int minginPlatform_getStepsPerSecond( void ) {
 void minginPlatform_quit( void ) {
     shouldQuit = 1;
     }
+
+static char xFullscreen = 0;
+
+char minginPlatform_toggleFullscreen( char inFullscreen ) {
+    xFullscreen = inFullscreen;
+    return 1;
+    }
+
+char minginPlatform_isFullscreen( void ) {
+    return xFullscreen;
+    }
+
+    
 
 
 /* status tracking pressed/released state */
@@ -572,12 +638,12 @@ static MinginButton mapXKeyToButton( KeySym inXKey ) {
     
 
 
-static unsigned int stringLength( const char *inString );
+static int stringLength( const char *inString );
 
     
 
-static unsigned int stringLength( const char *inString ) {
-    unsigned int i = 0;
+static int stringLength( const char *inString ) {
+    int i = 0;
     while( inString[i] != '\0' ) {
         i++;
         }
@@ -586,7 +652,7 @@ static unsigned int stringLength( const char *inString ) {
         
 
 void minginPlatform_log( const char *inString ) {
-    write( STDOUT_FILENO, inString, stringLength( inString ) );
+    write( STDOUT_FILENO, inString, (unsigned int)stringLength( inString ) );
     }
 
     
@@ -625,6 +691,26 @@ static void frameSleep( void ) {
 
 static void setupX11KeyMap( void );
 
+static void xSetFullscreen( Display *inXDisplay, Window inXWindow,
+                            char inToggle );
+
+
+static void xSetFullscreen( Display *inXDisplay, Window inXWindow,
+                            char inToggle ) {
+    XEvent ev;
+    Atom atom;
+
+    ev.type = ClientMessage;
+    ev.xclient.window = inXWindow;
+    ev.xclient.message_type = XInternAtom( inXDisplay, "_NET_WM_STATE", False );
+    ev.xclient.format = 32;
+    ev.xclient.data.l[0] = inToggle;
+    atom = XInternAtom( inXDisplay, "_NET_WM_STATE_FULLSCREEN", False );
+    ev.xclient.data.l[1] = (long int)atom;
+    ev.xclient.data.l[2] = (long int)atom;
+    XSendEvent( inXDisplay,
+                DefaultRootWindow( inXDisplay ), False, ClientMessage, &ev );
+    }
 
 
 int main( void );
@@ -633,8 +719,6 @@ int main( void ) {
     Display *xDisplay = NULL;
     Window xWindow = 0;
     int xScreen = 0;
-    XImage *xImage = NULL;
-    unsigned int xDepth = 0;
     long unsigned int xBlackColor;
     long unsigned int xWhiteColor;
     GC xGc;
@@ -643,6 +727,13 @@ int main( void ) {
     int glxAttributes[] = { GLX_RGBA, GLX_DOUBLEBUFFER, None };
     XVisualInfo *xVisual;
     GLXContext glxContext;
+
+    char currentlyFullscreen = 0;
+    
+    /*
+    Atom xWMState;
+    Atom xWMFullscreen;
+    */
     
     minginInternal_init();
 
@@ -657,6 +748,8 @@ int main( void ) {
     
     xDisplay = XOpenDisplay( NULL );
 
+    getMonitorSize( xDisplay, &windowW, &windowH );
+    
     xScreen = DefaultScreen( xDisplay );
 
     
@@ -672,11 +765,11 @@ int main( void ) {
     xBlackColor = BlackPixel( xDisplay, xScreen );
     xWhiteColor = WhitePixel( xDisplay, xScreen );
     
-    xDepth = (unsigned int)DefaultDepth( xDisplay, xScreen );
 
     xWindow = XCreateSimpleWindow(
         xDisplay, DefaultRootWindow(xDisplay),
-        0, 0, WIN_W, WIN_H, 0, xBlackColor, xBlackColor );
+        0, 0, (unsigned int)windowW, (unsigned int)windowH, 0,
+        xBlackColor, xBlackColor );
 
     XSelectInput( xDisplay, xWindow,
                   StructureNotifyMask | KeyPressMask | KeyReleaseMask );
@@ -705,14 +798,20 @@ int main( void ) {
             break;
             }
         }
-    
-    xImage = XCreateImage( xDisplay,
-                           DefaultVisual( xDisplay, xScreen ),
-                           xDepth, ZPixmap, 0,
-                           (char *)screenBuffer, WIN_W, WIN_H,
-                           32, 0 );
 
     glXMakeCurrent( xDisplay, xWindow, glxContext );
+
+    /*
+    xWMState = XInternAtom( xDisplay, "_NET_WM_STATE", 1 );
+    xWMFullscreen = XInternAtom( xDisplay,
+                                 "_NET_WM_STATE_FULLSCREEN", 1 );
+    
+
+    XChangeProperty( xDisplay, xWindow, xWMState, XA_ATOM, 32,
+                     PropModeReplace, (unsigned char *)&xWMFullscreen, 1 );
+    */
+
+    xSetFullscreen( xDisplay, xWindow, currentlyFullscreen );
     
     while( ! shouldQuit ) {
         
@@ -744,23 +843,22 @@ int main( void ) {
 
         minginGame_step();
         
-        minginGame_getScreenPixels( WIN_W, WIN_H, gameScreenBuffer );
+        minginGame_getScreenPixels( windowW, windowH, gameScreenBuffer );
 
-        glDrawPixels( WIN_W, WIN_H,
+        glDrawPixels( (GLsizei)windowW, (GLsizei)windowH,
                       GL_RGB, GL_UNSIGNED_BYTE, gameScreenBuffer );
 
         glXSwapBuffers( xDisplay, xWindow ); 
 
+        if( currentlyFullscreen != xFullscreen ) {
+            xSetFullscreen( xDisplay, xWindow, xFullscreen );
+            currentlyFullscreen = xFullscreen;
+            }
+        
         
         if( 0 )
         frameSleep();
         }
-
-    /* data is static
-       don't let xlib try destroying it */
-    xImage->data = NULL;
-    
-    XDestroyImage( xImage );
 
     XFreeGC( xDisplay, xGc );
 

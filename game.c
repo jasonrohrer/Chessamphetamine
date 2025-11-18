@@ -7,7 +7,8 @@
 
 enum UserAction {
     QUIT,
-    JUMP
+    JUMP,
+    FULLSCREEN_TOGGLE
     };
 
 
@@ -20,6 +21,8 @@ static int boxVPerSecond = 120;
 static int boxDir = 1;
 
 static char initDone = 0;
+
+static char fullscreenTogglePressed = 0;
 
 
 void minginGame_getScreenPixels( int inWide, int inHigh,
@@ -80,6 +83,17 @@ void minginGame_step( void ) {
         boxPosY -= 1;
         }
     
+    if( mingin_isButtonDown( FULLSCREEN_TOGGLE ) ) {
+
+        if( ! fullscreenTogglePressed ) {
+            fullscreenTogglePressed = 1;
+
+            mingin_toggleFullscreen( ! mingin_isFullscreen() );
+            }
+        }
+    else {
+        fullscreenTogglePressed = 0;
+        }
     
     
     mingin_getScreenSize( &w, &h );
@@ -105,12 +119,14 @@ void minginGame_step( void ) {
 
 static MinginButton quitMapping[] = { MGN_KEY_Q, MGN_KEY_ESCAPE, MGN_MAP_END };
 static MinginButton jumpMapping[] = { MGN_KEY_SPACE, MGN_MAP_END };
+static MinginButton fullscreenMapping[] = { MGN_KEY_F, MGN_MAP_END };
 
 static void gameInit( void ) {
     int w, h;
     
     mingin_registerButtonMapping( QUIT, quitMapping );
     mingin_registerButtonMapping( JUMP, jumpMapping );
+    mingin_registerButtonMapping( FULLSCREEN_TOGGLE, fullscreenMapping );
 
     /* init position in screen center */
     mingin_getScreenSize( &w, &h );

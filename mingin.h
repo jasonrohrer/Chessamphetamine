@@ -560,7 +560,6 @@ char mingin_isButtonDown( int inButtonHandle ) {
 
 #include <unistd.h>
 
-#include <stdio.h>
 
 
 /* game's expected buffer is RGB */
@@ -666,38 +665,59 @@ void minginPlatform_log( const char *inString ) {
     write( STDOUT_FILENO, inString, (unsigned int)stringLength( inString ) );
     }
 
-    
+/*
+  Returns a static buffer that must be used before next call to intToString.
+*/
+static const char *intToString( int inInt );
 
-static void frameSleep( void );
 
-static struct timespec lastFrameTime = { 0, 0 };
+static char intToStringBuffer[20];
 
-    
-static void frameSleep( void ) {
-    struct timespec curTime;
-    
-    struct timespec sleepTime;
-    time_t deltaSec;
-    time_t deltaNanoSec;
-    time_t targetFrameNanoSec = 1000000000 / LINUX_TARGET_FPS;
-    
-    clock_gettime( CLOCK_MONOTONIC_RAW, &curTime );
 
-    deltaSec = curTime.tv_sec - lastFrameTime.tv_sec;
-    deltaNanoSec = curTime.tv_nsec - lastFrameTime.tv_nsec;
+static const char *intToString( int inInt ) {
+    unsigned int c = 0;
+    /* start with billions */
+    int divisor = 1000000000;
+    const char *formatError = "[int_format_error]";
     
-    if( deltaSec > 0 || deltaNanoSec >= targetFrameNanoSec ) {
-        clock_gettime( CLOCK_MONOTONIC_RAW, &lastFrameTime );
-        return;
+    /* skip 0 digits until our first non-zero digit */
+    int qLowerLimit = 1;
+    
+    if( inInt == 0 ) {
+        return "0";
+        }
+    if( inInt < 0 ) {
+        intToStringBuffer[c] = '-';
+        c++;
+        inInt *= -1;
+        }
+    while( divisor >= 1 ) {
+        int q = inInt / divisor;
+        if( q >= qLowerLimit ) {
+            if( q > 9 ) {
+                return formatError;
+                }
+            if( c >= sizeof( intToStringBuffer ) - 1 ) {
+                /* out of room? */
+                return formatError;
+                }
+            
+            intToStringBuffer[c] = (char)( '0' + q );
+            c++;
+            /* we've seen at least one non-zero digit,
+               so start allowing zeros now */
+            qLowerLimit = 0;
+            }
+        inInt -= q * divisor;
+        divisor /= 10;
         }
     
+    /* terminate */
+    intToStringBuffer[c] = '\0';
     
-    sleepTime.tv_sec = 0; 
-    sleepTime.tv_nsec = targetFrameNanoSec - deltaNanoSec;
-
-    nanosleep( &sleepTime, NULL );
-    clock_gettime( CLOCK_MONOTONIC_RAW, &lastFrameTime );
+    return intToStringBuffer;  
     }
+
 
 
 static void setupX11KeyMap( void );
@@ -787,7 +807,11 @@ static void reconfigureWindowSize( Display *inXDisplay ) {
     if( windowH > MAX_WIN_H ) {
         windowH = MAX_WIN_H;
         }
-    printf( "Window = %d,%d\n", windowW, windowH );
+    mingin_log( "Window = " );
+    mingin_log( intToString( windowW ) );
+    mingin_log( "," );
+    mingin_log( intToString( windowH ) );
+    mingin_log( "\n" );
     }
 
 
@@ -909,6 +933,9 @@ int main( void ) {
     xFullscreen = currentlyFullscreen;
     
 
+    mingin_log( "Linux mingin platform starting up\n" );
+
+    
     
     minginInternal_init();
 
@@ -977,8 +1004,11 @@ int main( void ) {
                 oldH != windowH ) {
                 /* need to destroy and re-make window */
 
-                printf( "Calling resize window with %d,%d\n",
-                        windowW, windowH );
+                mingin_log( "Calling resize window with " );
+                mingin_log( intToString( windowW ) );
+                mingin_log( "," );
+                mingin_log( intToString( windowH ) );
+                mingin_log( "\n" );
 
                 closeXWindow( &xSetup );
 
@@ -998,14 +1028,7 @@ int main( void ) {
             
             currentlyFullscreen = xFullscreen;
 
-
-            
-            
             }
-        
-        
-        if( 0 )
-        frameSleep();
         }
 
     

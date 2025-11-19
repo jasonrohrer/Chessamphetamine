@@ -796,17 +796,114 @@ static void reconfigureWindowSize( Display *inXDisplay ) {
 
 int main( void );
 
-int main( void ) {
-    Display *xDisplay = NULL;
-    Window xWindow = 0;
-    int xScreen = 0;
+
+typedef struct XWindowSetup {
+        Display *xDisplay;
+        Window xWindow;
+        int xScreen;
+        XVisualInfo *xVisual;
+        GLXContext glxContext;
+    } XWindowSetup;
+        
+
+/* returns 1 on success, 0 on failure */
+static char openXWindow( XWindowSetup *inSetup );
+static void closeXWindow( XWindowSetup *inSetup );
+
+
+
+static char openXWindow( XWindowSetup *inSetup ) {
     long unsigned int xBlackColor;
+    int glxAttributes[] = { GLX_RGBA, GLX_DOUBLEBUFFER, None };
+
+    XWindowSetup *s = inSetup;
+    
+    s->xDisplay = XOpenDisplay( NULL );
+
+    reconfigureWindowSize( s->xDisplay );
+
+    
+    s->xScreen = DefaultScreen( s->xDisplay );
+
+    
+    s->xVisual = glXChooseVisual( s->xDisplay, s->xScreen,
+                                  glxAttributes );
+
+    if( ! s->xVisual ) {
+        mingin_log( "No Visual found for GLX\n" );
+        XCloseDisplay( s->xDisplay );
+        return 0;
+        }
+
+    xBlackColor = BlackPixel( s->xDisplay, s->xScreen );
+    
+
+    s->xWindow = XCreateSimpleWindow(
+        s->xDisplay, DefaultRootWindow( s->xDisplay ),
+        0, 0, (unsigned int)windowW, (unsigned int)windowH, 0,
+        xBlackColor, xBlackColor );
+
+    
+    XSelectInput( s->xDisplay, s->xWindow,
+                  StructureNotifyMask | KeyPressMask | KeyReleaseMask );
+
+    XMapWindow( s->xDisplay, s->xWindow );
+
+
+
+    s->glxContext = glXCreateContext( s->xDisplay, s->xVisual, NULL, GL_TRUE );
+    
+    if( ! s->glxContext ) {
+        mingin_log( "Failed to create GLX context\n" );
+        XDestroyWindow( s->xDisplay, s->xWindow );
+        XFree( s->xVisual );
+        XCloseDisplay( s->xDisplay );
+        return 0;
+        }
+
+
+    /* wait for MapNotify */
+    while( 1 ) {
+        XEvent e;
+        XNextEvent( s->xDisplay, &e);
+        if( e.type == MapNotify ) {
+            break;
+            }
+        }
+
+    
+    xSetFullscreen( s->xDisplay, s->xWindow, xFullscreen );
+
+    
+    glXMakeCurrent( s->xDisplay, s->xWindow, s->glxContext );
+
+    return 1;
+    }
+
+
+
+static void closeXWindow( XWindowSetup *inSetup ) {
+    XWindowSetup *s = inSetup;
+    
+    glXMakeCurrent( s->xDisplay, None, NULL );
+
+    glXDestroyContext( s->xDisplay, s->glxContext );
+
+    
+    XDestroyWindow( s->xDisplay, s->xWindow );
+
+    XCloseDisplay( s->xDisplay );
+    }
+
+
+
+        
+int main( void ) {
+
+    XWindowSetup xSetup;
+    
 
     int b;
-
-    int glxAttributes[] = { GLX_RGBA, GLX_DOUBLEBUFFER, None };
-    XVisualInfo *xVisual;
-    GLXContext glxContext;
 
     char currentlyFullscreen = 0;
     xFullscreen = currentlyFullscreen;
@@ -822,74 +919,20 @@ int main( void ) {
 
     setupX11KeyMap();
     
-    
-    
-    xDisplay = XOpenDisplay( NULL );
 
-    reconfigureWindowSize( xDisplay );
-
-    
-    xScreen = DefaultScreen( xDisplay );
-
-    
-    xVisual = glXChooseVisual( xDisplay, xScreen, glxAttributes );
-    
-    if( !xVisual ) {
-        mingin_log( "No Visual found for GLX\n" );
-        XCloseDisplay( xDisplay );
+    if( ! openXWindow( &xSetup ) ) {
+        mingin_log( "Opening X Window failed\n" );
         return 1;
         }
 
-    
-    xBlackColor = BlackPixel( xDisplay, xScreen );
-    
-
-    xWindow = XCreateSimpleWindow(
-        xDisplay, DefaultRootWindow(xDisplay),
-        0, 0, (unsigned int)windowW, (unsigned int)windowH, 0,
-        xBlackColor, xBlackColor );
-
-    XSelectInput( xDisplay, xWindow,
-                  StructureNotifyMask | KeyPressMask | KeyReleaseMask );
-
-    XMapWindow( xDisplay, xWindow );
-
-
-
-    glxContext = glXCreateContext( xDisplay, xVisual, NULL, GL_TRUE );
-    if( !glxContext ) {
-        mingin_log( "Failed to create GLX context\n" );
-        XDestroyWindow( xDisplay, xWindow );
-        XFree( xVisual );
-        XCloseDisplay( xDisplay );
-        return 1;
-        }
-    
-
-
-
-    /* wait for MapNotify */
-    while( 1 ) {
-        XEvent e;
-        XNextEvent( xDisplay, &e);
-        if( e.type == MapNotify ) {
-            break;
-            }
-        }
-
-    
-    xSetFullscreen( xDisplay, xWindow, xFullscreen );
-
-    
-    glXMakeCurrent( xDisplay, xWindow, glxContext );
 
     
     while( ! shouldQuit ) {
         
         /* pump all events */
-        while( XPending( xDisplay ) > 0 ) {
+        while( XPending( xSetup.xDisplay ) > 0 ) {
             XEvent e;
-            XNextEvent( xDisplay, &e );
+            XNextEvent( xSetup.xDisplay, &e );
 
             if( e.type == KeyPress ) {
                 
@@ -897,7 +940,7 @@ int main( void ) {
                 
                 MinginButton button = mapXKeyToButton( ks );
                 
-                if( b > MGN_DUMMY_FIRST_BUTTON ) {
+                if( button > MGN_DUMMY_FIRST_BUTTON ) {
                     buttonDown[ button ] = 1;
                     }
                 }
@@ -906,7 +949,7 @@ int main( void ) {
                 
                 MinginButton button = mapXKeyToButton( ks );
                 
-                if( b > MGN_DUMMY_FIRST_BUTTON ) {
+                if( button > MGN_DUMMY_FIRST_BUTTON ) {
                     buttonDown[ button ] = 0;
                     }
                 }
@@ -922,13 +965,13 @@ int main( void ) {
         glDrawPixels( (GLsizei)windowW, (GLsizei)windowH,
                       GL_RGB, GL_UNSIGNED_BYTE, gameScreenBuffer );
 
-        glXSwapBuffers( xDisplay, xWindow ); 
+        glXSwapBuffers( xSetup.xDisplay, xSetup.xWindow ); 
 
         if( currentlyFullscreen != xFullscreen ) {
             int oldW = windowW;
             int oldH = windowH;
 
-            reconfigureWindowSize( xDisplay );
+            reconfigureWindowSize( xSetup.xDisplay );
 
             if( oldW != windowW ||
                 oldH != windowH ) {
@@ -936,48 +979,20 @@ int main( void ) {
 
                 printf( "Calling resize window with %d,%d\n",
                         windowW, windowH );
-                
-                glXMakeCurrent( xDisplay, None, NULL );
-                glXDestroyContext( xDisplay, glxContext );
 
-                XDestroyWindow( xDisplay, xWindow );
+                closeXWindow( &xSetup );
 
-                xWindow = XCreateSimpleWindow(
-                    xDisplay, DefaultRootWindow(xDisplay),
-                    0, 0, (unsigned int)windowW, (unsigned int)windowH, 0,
-                    xBlackColor, xBlackColor );
-
-                XSelectInput( xDisplay, xWindow,
-                              StructureNotifyMask |
-                              KeyPressMask | KeyReleaseMask );
-
-                XMapWindow( xDisplay, xWindow );
-
-
-
-                glxContext = glXCreateContext( xDisplay,
-                                               xVisual, NULL, GL_TRUE );
-
-                /* wait for MapNotify */
-                while( 1 ) {
-                    XEvent e;
-                    XNextEvent( xDisplay, &e);
-                    if( e.type == MapNotify ) {
-                        break;
-                        }
+                if( ! openXWindow( &xSetup ) ) {
+                    mingin_log( "Failed to re-open X Window after toggling "
+                                "fullscreen mode\n" );
+                    return 1;
                     }
-
-    
-                xSetFullscreen( xDisplay, xWindow, xFullscreen );
-
-    
-                glXMakeCurrent( xDisplay, xWindow, glxContext );
-
-
                 }
-            
-            xSetFullscreen( xDisplay, xWindow, xFullscreen );
-            
+            else {
+                /* same window size after fullscreen toggle,
+                   no need to remake it */
+                xSetFullscreen( xSetup.xDisplay, xSetup.xWindow, xFullscreen );
+                }
 
 
             
@@ -994,14 +1009,7 @@ int main( void ) {
         }
 
     
-    glXMakeCurrent( xDisplay, None, NULL );
-
-    glXDestroyContext( xDisplay, glxContext );
-
-    
-    XDestroyWindow( xDisplay, xWindow );
-
-    XCloseDisplay( xDisplay );
+    closeXWindow( &xSetup );
     
     
     return 1;

@@ -70,7 +70,7 @@
 
 
 /*
-  First, the game itself must implement these THREE functions.
+  First, the game itself must implement these FOUR functions.
   These are called by the plaform, and the platform is in charge
   of doing any necessary color or sample format conversions with the
   data provided by the game.
@@ -81,10 +81,30 @@
 
 
 /*
+  Gets this minimum screen size that would allow the game graphics
+  to be legible.  For a pixel art game, this would be the minimum pixel
+  resolution with no upscaling.
+
+  Note that this minium screen size is not guaranteed by a given platform,
+  and getScreenPixels may be called with smaller sizes.  However,
+  the game doesn't need to produce legible output in those cases (it could
+  downscale in a crude way, perhaps).
+
+  On platforms that operate with a flexible window size, windows with
+  interger multiples of this miniumum viable size might be used.
+*/
+void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh );
+
+
+/*
   Get the next screen full of pixels
   Each R, G, and B color component is 8 bytes, interleaved in
   RGBRGBRGB... in row-major order, starting from the top left corner
   of the screen and going left-to-right and top-to-bottom.
+
+  Note that inWide and inHigh may change from call to call and aren't
+  necessarily fixed across the entire run of a game (for example,
+  the game may be switched between windowed and fullscreen mode mid-run).
 */
 void minginGame_getScreenPixels( int inWide, int inHigh,
                                  unsigned char *inRGBBuffer );
@@ -133,11 +153,6 @@ void minginGame_step( void );
 */
 int mingin_getStepsPerSecond( void );
 
-
-/*
-  Get the size of the screen.
-*/
-void mingin_getScreenSize( int *outW, int *outH );
 
 
 #define MGN_MAP_END 0
@@ -422,9 +437,7 @@ char minginPlatform_isFullscreen( void );
 
 
 
-void mingin_getScreenSize( int *outW, int *outH ) {
-    minginPlatform_getScreenSize( outW, outH );
-    }
+
 
 
 int mingin_getStepsPerSecond( void ) {
@@ -547,6 +560,8 @@ char mingin_isButtonDown( int inButtonHandle ) {
 
 #include <unistd.h>
 
+#include <stdio.h>
+
 
 /* game's expected buffer is RGB */
 static unsigned char gameScreenBuffer[ MAX_WIN_W * MAX_WIN_H * 3 ];
@@ -573,10 +588,6 @@ static void getMonitorSize( Display *inXDisplay,
     }
 
 
-void minginPlatform_getScreenSize( int *outW, int *outH ) {
-    *outW = windowW;
-    *outH = windowH;
-    }
 
 
 int minginPlatform_getStepsPerSecond( void ) {
@@ -713,6 +724,76 @@ static void xSetFullscreen( Display *inXDisplay, Window inXWindow,
     }
 
 
+
+
+/*
+  reconfigures based on xFullscreen and game's minimum viable screen size
+*/
+static void reconfigureWindowSize( Display *inXDisplay );
+
+    
+
+static void reconfigureWindowSize( Display *inXDisplay ) {
+    if( xFullscreen ) {
+        getMonitorSize( inXDisplay, &windowW, &windowH );
+        }
+    else {
+        int monW, monH;
+        int gameW, gameH;
+        int smallestMult;
+        
+        getMonitorSize( inXDisplay, &monW, &monH );
+        minginGame_getMinimumViableScreenSize( &gameW, &gameH );
+
+        if( monW < gameW || monH < gameH ) {
+            /*
+            physical monitor too small for game
+            have window fill monitor
+            */
+            windowW = monW;
+            windowH = monH;
+            }
+        else {
+            /* monitor big enough for game */
+            int wMult = monW / gameW;
+            int hMult = monH / gameH;
+
+            smallestMult = wMult;
+            if( hMult < smallestMult ) {
+                smallestMult = hMult;
+                }
+            
+            windowW = smallestMult * gameW;
+            windowH = smallestMult * gameH;
+
+            while( smallestMult > 1 &&
+                ( windowW > ( 9 * monW ) / 10 ||
+                  windowH > ( 9 * monH ) / 10 ) ) {
+
+                /* window filling more than 90% of monitor, too big */
+                smallestMult --;
+                
+                windowW = smallestMult * gameW;
+                windowH = smallestMult * gameH;
+                }
+            }
+        }
+    
+    /* make sure we're never bigger than our statically allocated
+       framebuffer */
+    if( windowW > MAX_WIN_W ) {
+        windowW = MAX_WIN_W;
+        }
+    if( windowH > MAX_WIN_H ) {
+        windowH = MAX_WIN_H;
+        }
+    printf( "Window = %d,%d\n", windowW, windowH );
+    }
+
+
+
+
+
 int main( void );
 
 int main( void ) {
@@ -720,8 +801,7 @@ int main( void ) {
     Window xWindow = 0;
     int xScreen = 0;
     long unsigned int xBlackColor;
-    long unsigned int xWhiteColor;
-    GC xGc;
+
     int b;
 
     int glxAttributes[] = { GLX_RGBA, GLX_DOUBLEBUFFER, None };
@@ -729,11 +809,9 @@ int main( void ) {
     GLXContext glxContext;
 
     char currentlyFullscreen = 0;
+    xFullscreen = currentlyFullscreen;
     
-    /*
-    Atom xWMState;
-    Atom xWMFullscreen;
-    */
+
     
     minginInternal_init();
 
@@ -748,7 +826,8 @@ int main( void ) {
     
     xDisplay = XOpenDisplay( NULL );
 
-    getMonitorSize( xDisplay, &windowW, &windowH );
+    reconfigureWindowSize( xDisplay );
+
     
     xScreen = DefaultScreen( xDisplay );
 
@@ -763,7 +842,6 @@ int main( void ) {
 
     
     xBlackColor = BlackPixel( xDisplay, xScreen );
-    xWhiteColor = WhitePixel( xDisplay, xScreen );
     
 
     xWindow = XCreateSimpleWindow(
@@ -776,7 +854,7 @@ int main( void ) {
 
     XMapWindow( xDisplay, xWindow );
 
-    xGc = XCreateGC( xDisplay, xWindow, 0, NULL );
+
 
     glxContext = glXCreateContext( xDisplay, xVisual, NULL, GL_TRUE );
     if( !glxContext ) {
@@ -788,7 +866,7 @@ int main( void ) {
         }
     
 
-    XSetForeground( xDisplay, xGc, xWhiteColor );
+
 
     /* wait for MapNotify */
     while( 1 ) {
@@ -799,19 +877,12 @@ int main( void ) {
             }
         }
 
+    
+    xSetFullscreen( xDisplay, xWindow, xFullscreen );
+
+    
     glXMakeCurrent( xDisplay, xWindow, glxContext );
 
-    /*
-    xWMState = XInternAtom( xDisplay, "_NET_WM_STATE", 1 );
-    xWMFullscreen = XInternAtom( xDisplay,
-                                 "_NET_WM_STATE_FULLSCREEN", 1 );
-    
-
-    XChangeProperty( xDisplay, xWindow, xWMState, XA_ATOM, 32,
-                     PropModeReplace, (unsigned char *)&xWMFullscreen, 1 );
-    */
-
-    xSetFullscreen( xDisplay, xWindow, currentlyFullscreen );
     
     while( ! shouldQuit ) {
         
@@ -845,14 +916,76 @@ int main( void ) {
         
         minginGame_getScreenPixels( windowW, windowH, gameScreenBuffer );
 
+        glRasterPos2f( -1, 1 );
+        glPixelZoom( 1, -1 );
+ 
         glDrawPixels( (GLsizei)windowW, (GLsizei)windowH,
                       GL_RGB, GL_UNSIGNED_BYTE, gameScreenBuffer );
 
         glXSwapBuffers( xDisplay, xWindow ); 
 
         if( currentlyFullscreen != xFullscreen ) {
+            int oldW = windowW;
+            int oldH = windowH;
+
+            reconfigureWindowSize( xDisplay );
+
+            if( oldW != windowW ||
+                oldH != windowH ) {
+                /* need to destroy and re-make window */
+
+                printf( "Calling resize window with %d,%d\n",
+                        windowW, windowH );
+                
+                glXMakeCurrent( xDisplay, None, NULL );
+                glXDestroyContext( xDisplay, glxContext );
+
+                XDestroyWindow( xDisplay, xWindow );
+
+                xWindow = XCreateSimpleWindow(
+                    xDisplay, DefaultRootWindow(xDisplay),
+                    0, 0, (unsigned int)windowW, (unsigned int)windowH, 0,
+                    xBlackColor, xBlackColor );
+
+                XSelectInput( xDisplay, xWindow,
+                              StructureNotifyMask |
+                              KeyPressMask | KeyReleaseMask );
+
+                XMapWindow( xDisplay, xWindow );
+
+
+
+                glxContext = glXCreateContext( xDisplay,
+                                               xVisual, NULL, GL_TRUE );
+
+                /* wait for MapNotify */
+                while( 1 ) {
+                    XEvent e;
+                    XNextEvent( xDisplay, &e);
+                    if( e.type == MapNotify ) {
+                        break;
+                        }
+                    }
+
+    
+                xSetFullscreen( xDisplay, xWindow, xFullscreen );
+
+    
+                glXMakeCurrent( xDisplay, xWindow, glxContext );
+
+
+                }
+            
             xSetFullscreen( xDisplay, xWindow, xFullscreen );
+            
+
+
+            
             currentlyFullscreen = xFullscreen;
+
+
+            
+            
             }
         
         
@@ -860,8 +993,12 @@ int main( void ) {
         frameSleep();
         }
 
-    XFreeGC( xDisplay, xGc );
+    
+    glXMakeCurrent( xDisplay, None, NULL );
 
+    glXDestroyContext( xDisplay, glxContext );
+
+    
     XDestroyWindow( xDisplay, xWindow );
 
     XCloseDisplay( xDisplay );

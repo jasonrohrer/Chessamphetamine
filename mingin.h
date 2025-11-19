@@ -16,7 +16,7 @@
 
 /*
 
-  mingin provides a simple wrapper for the platform-specific infrastructure
+  Mingin provides a simple wrapper for the platform-specific infrastructure
   necessary to make a single-player computer game.
 
   In order to achieve maximum portability across past and future platforms
@@ -24,12 +24,19 @@
   themselves and what they provide.  For example:
 
   --This code makes no includes that are assumed to be available on every
-    plaform.  Any includes present are strictly platform-specific and surrounded
-    by #ifdef's that will remove them from compilation on other platforms
+    plaform.  Any includes present are strictly platform-specific for
+    accessing operating system resources and are surrounded
+    by #ifdef's that will remove them from compilation on other platforms.
+    None of the C Standard Library includes are used, not even the freestanding
+    include subset.
 
   --This code makes no assumptions about any particular metaphors or program
     structures, and works just fine on platforms without "filesystems" or
     "heap allocation" or "threads"
+
+  --This code makes no assumptions about availability of specialized hardware
+    across platforms, so it works just fine on platforms without floating
+    point math or 3D graphics cards.
 
   --This code makes no assumptions about entry points (like main) that must
     be present on every platform.  Platform-specific entry points are possible.
@@ -37,10 +44,15 @@
   --The code makes no assumptions about what hardware is present, and can
     be used to run games on platforms that can only provide a subset of
     the required infrastructure.
+
+  Doom is widely celebrated for its portability.  Doom will compile and run
+  on your toaster.  Mingin aims to be just as portable, if not more portable
+  than Doom.
     
 
-  Such games need seven things to function, which they can't do on their own
-  without the help of the underlying platform:
+  Single-player computer games need seven things to function, which they
+  can't do on their own without the help of the underlying platform, in
+  order of importance:
 
   1.  A way to have regular time steps pass so that game logic can update.
 
@@ -62,9 +74,15 @@
   
   Note that a given platform might not provide all of these thing for real,
   yet the game can still function on that plaform (for example, a platform
-  without speakers can run a silent version of the game).
+  without speakers can run a silent version of the game, or a platform
+  with no persistent data store can still run a memoryless version of the
+  game that starts fresh each time it is launched, or a platform with
+  no bulk data device at all might compile needed bulk data resources directly
+  into the program code for access by the game---remember Resource Forks on
+  ancient versions of MacOS?).
 
-  As long as regular time steps pass, the game can still function.
+  As long as regular time steps pass, the game can still function in some
+  capacity.
 */
 
 
@@ -76,7 +94,8 @@
   data provided by the game.
 
   For example, this interface is in 24-bit color, so a platform that
-  only supports 8-bit color must do the color conversion.
+  only supports 8-bit color must do the color conversion.  The game code
+  itself can assume 24-bit color on every platform.
 */
 
 
@@ -88,7 +107,7 @@
   Note that this minium screen size is not guaranteed by a given platform,
   and getScreenPixels may be called with smaller sizes.  However,
   the game doesn't need to produce legible output in those cases (it could
-  downscale in a crude way, perhaps).
+  downscale in a crude way, or crop its display, perhaps).
 
   On platforms that operate with a flexible window size, windows with
   interger multiples of this miniumum viable size might be used.
@@ -104,7 +123,8 @@ void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh );
 
   Note that inWide and inHigh may change from call to call and aren't
   necessarily fixed across the entire run of a game (for example,
-  the game may be switched between windowed and fullscreen mode mid-run).
+  the game may be switched between windowed and fullscreen mode mid-run,
+  and the platform may want to use a different window size after the switch).
 */
 void minginGame_getScreenPixels( int inWide, int inHigh,
                                  unsigned char *inRGBBuffer );
@@ -137,19 +157,32 @@ void minginGame_getAudioSamples( int inNumSamples,
 void minginGame_step( void );
 
 
+/*
+  That's it for what a game must implement to run on Mingin.
+
+  Note that there is no "init" function that the platform will call.
+
+  A game that needs special init code can do that the first time its
+  minginGame_step is called.
+*/
+
 
 
 
 
 
 /*
-  Game can call these functions
+  Game can call these functions, which are provided by mingin.
 
+  All of these functions are available on all platforms, though some of them
+  might not do anything.
 */
 
 /*
   What's the step rate, in steps per second, that the platform
   is running the game at?
+
+  Every platform will return a positive value here, even if it's not accurate.
 */
 int mingin_getStepsPerSecond( void );
 
@@ -158,6 +191,18 @@ int mingin_getStepsPerSecond( void );
 #define MGN_MAP_END 0
 
 /*
+  This enum lists all the buttons and keys that can possibly be checked
+  on some potential platforms.
+
+  For a game to function on as many platforms as possible in an intelligent way,
+  the game should cast a wide net for each call to mingin_registerButtonMapping
+  below.  Platforms will auto-map their actual controls to the symbols
+  in this enum, but they won't cross-map.  For example, a platform with a weird
+  "star button" might map that to MGN_BUTTON_SQUARE,
+  but a Playstation won't auto map MGN_BUTTON_SQUARE to MGN_BUTTON_A.
+  If a game wants a particular control to be triggered by both "square" on PS
+  and "A" on XBox, it needs to say so.
+  
   Note that not all keys are pressable, even on platforms with keyboards
   that show those symbols.
   
@@ -165,10 +210,10 @@ int mingin_getStepsPerSecond( void );
   that's just the 5 key while SHIFT is held down.
   
   Platforms are generally expected to deal with raw button presses and
-  will not automatically map multi-key combos like SHIFT-5
+  will not automatically map multi-key combos like SHIFT-5 to %
 */
 typedef enum MinginButton {
-    MGN_DUMMY_FIRST_BUTTON = MGN_MAP_END,
+    MGN_BUTTON_NONE = MGN_MAP_END,
     MGN_KEY_BACKSPACE,
     MGN_KEY_TAB,
     MGN_KEY_RETURN,
@@ -349,6 +394,24 @@ char mingin_isButtonDown( int inButtonHandle );
 
 
 /*
+  Gets the last button pressed before this function was called, and clears
+  the memory of the last button pressed.
+
+  This is useful for games that have control settings panels and want to let
+  the user "live poke" a key or button to change an assigned button.
+
+  In that case, this function would normally be called once to clear the memory
+  (which will include whatever button was pressed last, like the mouse
+  button for clicking the setting),
+  and then repeatedly every minginGame_step until a value is returned.
+
+  Returns MGN_BUTTON_NONE if no button has been pressed since the last time
+  the memory was cleared.
+*/
+MinginButton mingin_getLastButtonPressed( void );
+
+
+/*
   Gets the current on-screen pointer location, if any.
   Point location is in screen space returned by mingin_getScreenSize(),
   with 0,0 at the top left corner of the screen.
@@ -434,6 +497,7 @@ char minginPlatform_toggleFullscreen( char inFullscreen );
 
 char minginPlatform_isFullscreen( void );
 
+MinginButton minginPlatform_getLastButtonPressed( void );
 
 
 
@@ -494,7 +558,7 @@ char mingin_registerButtonMapping( int inButtonHandle,
            &&
            inMapping[ i ] != MGN_MAP_END ) {
 
-        if( inMapping[i] <= MGN_DUMMY_FIRST_BUTTON ||
+        if( inMapping[i] <= MGN_BUTTON_NONE ||
             inMapping[i] >= MGN_DUMMY_LAST_BUTTON ) {
             /* out of enum range
                end the mapping now */
@@ -533,6 +597,10 @@ char mingin_isButtonDown( int inButtonHandle ) {
     return 0;
     }
 
+
+MinginButton mingin_getLastButtonPressed( void ) {
+    return minginPlatform_getLastButtonPressed();
+    }
 
 
 
@@ -611,6 +679,8 @@ char minginPlatform_isFullscreen( void ) {
 
     
 
+/* memory for getLastButtonPressed call */
+static MinginButton lastButtonPressed = MGN_BUTTON_NONE;
 
 /* status tracking pressed/released state */
 static char buttonDown[ MGN_NUM_BUTTONS ];
@@ -622,7 +692,7 @@ static KeySym buttonToXKeyMap[ MGN_NUM_BUTTONS ];
    still need to handle controller input on Linux */
 
 char minginPlatform_isButtonDown( MinginButton inButton ) {
-    if( inButton <= MGN_DUMMY_FIRST_BUTTON ||
+    if( inButton <= MGN_BUTTON_NONE ||
         inButton >= MGN_DUMMY_LAST_BUTTON ) {
         return 0;
         }
@@ -642,9 +712,15 @@ static MinginButton mapXKeyToButton( KeySym inXKey ) {
             return i;
             }
         }
-    return MGN_DUMMY_FIRST_BUTTON;
+    return MGN_BUTTON_NONE;
     }
 
+
+MinginButton minginPlatform_getLastButtonPressed( void ) {
+    MinginButton last = lastButtonPressed;
+    lastButtonPressed = MGN_BUTTON_NONE;
+    return last;
+    }
     
 
 
@@ -967,8 +1043,10 @@ int main( void ) {
                 
                 MinginButton button = mapXKeyToButton( ks );
                 
-                if( button > MGN_DUMMY_FIRST_BUTTON ) {
+                if( button > MGN_BUTTON_NONE ) {
                     buttonDown[ button ] = 1;
+                    /* a new press to remember */
+                    lastButtonPressed = button;
                     }
                 }
             else if( e.type == KeyRelease ) {
@@ -976,7 +1054,7 @@ int main( void ) {
                 
                 MinginButton button = mapXKeyToButton( ks );
                 
-                if( button > MGN_DUMMY_FIRST_BUTTON ) {
+                if( button > MGN_BUTTON_NONE ) {
                     buttonDown[ button ] = 0;
                     }
                 }

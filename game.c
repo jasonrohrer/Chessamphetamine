@@ -8,7 +8,8 @@
 enum UserAction {
     QUIT,
     JUMP,
-    FULLSCREEN_TOGGLE
+    FULLSCREEN_TOGGLE,
+    REMAP
     };
 
 
@@ -160,6 +161,9 @@ void minginGame_getScreenPixels( int inWide, int inHigh,
 static void gameInit( void );
 
 
+static char remappingJump = 0;
+
+
 void minginGame_step( void ) {
     int r;
     int boxVPerStep;
@@ -169,6 +173,19 @@ void minginGame_step( void ) {
         initDone = 1;
         }
 
+    if( remappingJump ) {
+        MinginButton last = mingin_getLastButtonPressed();
+
+        if( last != MGN_BUTTON_NONE ) {
+            MinginButton newJumpMapping[2] = { MGN_MAP_END, MGN_MAP_END };
+            newJumpMapping[0] = last;
+
+            /* overwrite mapping for jump */
+            mingin_registerButtonMapping( JUMP, newJumpMapping );
+            remappingJump = 0;
+            }
+        }
+    
     if( mingin_isButtonDown( QUIT ) ) {
         mingin_log( "Got quit key\n" );
         
@@ -190,6 +207,12 @@ void minginGame_step( void ) {
         }
     else {
         fullscreenTogglePressed = 0;
+        }
+
+    if( ! remappingJump && mingin_isButtonDown( REMAP ) ) {
+        /* clear last button memory */
+        mingin_getLastButtonPressed();
+        remappingJump = 1;
         }
     
     
@@ -217,12 +240,15 @@ static MinginButton quitMapping[] = { MGN_KEY_Q, MGN_KEY_ESCAPE, MGN_MAP_END };
 static MinginButton jumpMapping[] = { MGN_KEY_SPACE, MGN_MAP_END };
 static MinginButton fullscreenMapping[] = { MGN_KEY_F, MGN_MAP_END };
 
+static MinginButton remapMapping[] = { MGN_KEY_P, MGN_MAP_END };
+
 static void gameInit( void ) {
     
     mingin_registerButtonMapping( QUIT, quitMapping );
     mingin_registerButtonMapping( JUMP, jumpMapping );
     mingin_registerButtonMapping( FULLSCREEN_TOGGLE, fullscreenMapping );
-
+    mingin_registerButtonMapping( REMAP, remapMapping );
+    
     /* init position in image center */
     boxPosX = GAME_NATIVE_W / 2;
     boxPosY = GAME_NATIVE_H / 2;

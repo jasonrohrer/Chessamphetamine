@@ -1312,6 +1312,8 @@ static char openXWindow( XWindowSetup *inSetup ) {
 
 static void closeXWindow( XWindowSetup *inSetup ) {
     XWindowSetup *s = inSetup;
+
+    XFree( s->xVisual );
     
     glXMakeCurrent( s->xDisplay, None, NULL );
 

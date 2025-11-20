@@ -5,27 +5,38 @@
   This work is not copyrighted.  I place it into the public domain.
 
   
-  ===================================
-  Table of Contents    [jumpContents]
-  ===================================
+  ===================================================
+  Table of Contents                    [jumpContents]
+  ===================================================
 
   Jump to a section by searching for the key string.
 
-  -- How to compile               [jumpCompile]
+  -- How to compile                    [jumpCompile]
 
-  -- Why Mingin?                  [jumpWhy]
+  -- Why Mingin?                       [jumpWhy]
 
-  -- How to make a Mingin Game    [jumpGame]
+  -- How to make a Mingin game         [jumpGame]
 
-  -- What Mingin Provides         [jumpMingin]
+  -- What Mingin provides              [jumpMingin]
 
+  -- How to make a Mingin platform     [jumpPlatform]
+
+  -- Mingin internal code              [jumpInternal]
+
+  -- Mingin platform implementations   [jumpSystems]
+
+     -- Linux implementation           [jumpLinux]
+
+     -- Windows implementation         [jumpWindows]
+
+     -- Dummy example implementation   [jumpExample]
 */
 
 
 /*
-  ===============================
-  How to compile    [jumpCompile]
-  ===============================
+  ==================================================
+  How to compile                       [jumpCompile]
+  ==================================================
   
   Include in your C code wherever like so:
 
@@ -42,9 +53,9 @@
 
 
 /*
-  ========================
-  Why Mingin?    [jumpWhy]
-  ========================
+  ==============================================
+  Why Mingin?                          [jumpWhy]
+  ==============================================
 
   Doom is widely celebrated for its portability.  Doom will compile and run
   on your toaster.  Mingin aims to make games just as portable, if not more
@@ -123,13 +134,13 @@
 
 
 /*
-  =======================================
-  How to make a Mingin Game    [jumpGame]
-  =======================================
+  ===============================================
+  How to make a Mingin game            [jumpGame]
+  ===============================================
   
   The game itself must implement these FOUR functions.
   
-  Each function is tagged with   [jumpRequired]
+  Each function is tagged with   [jumpGameRequired]
   
   These are called by the plaform, and the platform is in charge
   of doing any necessary color or sample format conversions with the
@@ -182,7 +193,7 @@
   
   Will be called at least once, and before any other minginGame_ calls.
   
-  [jumpRequired]
+  [jumpGameRequired]
 */
 void minginGame_step( char inFinalStep );
 
@@ -211,7 +222,7 @@ void minginGame_step( char inFinalStep );
 
   If called, it will be called after at least one call to minginGame_step().
   
-  [jumpRequired]
+  [jumpGameRequired]
 */
 void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh );
 
@@ -234,7 +245,7 @@ void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh );
 
   If called, it will be called after at least one call to minginGame_step().
 
-  [jumpRequired]
+  [jumpGameRequired]
 */
 void minginGame_getScreenPixels( int inWide, int inHigh,
                                  unsigned char *inRGBBuffer );
@@ -256,7 +267,7 @@ void minginGame_getScreenPixels( int inWide, int inHigh,
 
   If called, it will be called after at least one call to minginGame_step().
   
-  [jumpRequired]
+  [jumpGameRequired]
 */
 void minginGame_getAudioSamples( int inNumSamples,
                                  int inNumChannels,
@@ -269,7 +280,7 @@ void minginGame_getAudioSamples( int inNumSamples,
   This is the end of the requirements for what a game must implement
   to run on Mingin.
 
-  [jumpRequired]
+  [jumpGameRequired]
 */
 
 
@@ -278,13 +289,13 @@ void minginGame_getAudioSamples( int inNumSamples,
 
 
 /*
-  ====================================
-  What Mingin Provides    [jumpMingin]
-  ====================================
+  =================================================
+  What Mingin provides                 [jumpMingin]
+  =================================================
   
   Game can call these functions, which are provided by Mingin.
 
-  Each function is tagged with   [jumpProvided]
+  Each function is tagged with   [jumpMinginProvides]
 
   All of these functions are available on all platforms, though some of them
   might not do anything on certain platforms.  For maximum portability,
@@ -301,7 +312,7 @@ void minginGame_getAudioSamples( int inNumSamples,
   This value may change over time as the platform adjusts the game step time
   for any variety of reasons.
 
-  [jumpProvided]
+  [jumpMinginProvides]
 */
 int mingin_getStepsPerSecond( void );
 
@@ -312,7 +323,7 @@ int mingin_getStepsPerSecond( void );
   Used to end button mapping arrays in calls to mingin_registerButtonMapping
   (see below)
 
-  [jumpProvided]
+  [jumpMinginProvides]
 */  
 #define MGN_MAP_END 0
 
@@ -340,7 +351,7 @@ int mingin_getStepsPerSecond( void );
   Platforms are generally expected to deal with raw button presses and
   will not automatically map multi-key combos like SHIFT-5 to %
 
-  [jumpProvided]
+  [jumpMinginProvides]
 */
 typedef enum MinginButton {
     MGN_BUTTON_NONE = MGN_MAP_END,
@@ -511,7 +522,7 @@ typedef enum MinginButton {
   Returns 1 on success, or 0 on failure (if inButtonHandle is out of
   the supported range)
 
-  [jumpProvided]
+  [jumpMinginProvides]
 */
 char mingin_registerButtonMapping( int inButtonHandle,
                                    const MinginButton inMapping[] );
@@ -522,7 +533,7 @@ char mingin_registerButtonMapping( int inButtonHandle,
   Check whether a previously-mapped button handle is currently held down.
   Returns 1 if pressed, 0 if not pressed.
 
-  [jumpProvided]
+  [jumpMinginProvides]
 */
 char mingin_isButtonDown( int inButtonHandle );
 
@@ -543,7 +554,7 @@ char mingin_isButtonDown( int inButtonHandle );
   Returns MGN_BUTTON_NONE if no button has been pressed since the last time
   the memory was cleared.
 
-  [jumpProvided]
+  [jumpMinginProvides]
 */
 MinginButton mingin_getLastButtonPressed( void );
 
@@ -556,7 +567,7 @@ MinginButton mingin_getLastButtonPressed( void );
 
   Returns 1 if pointer location is available, or 0 if not.
 
-  [jumpProvided]
+  [jumpMinginProvides]
 */
 char mingin_getPointerLocation( int *inX, int *inY );
 
@@ -568,7 +579,7 @@ char mingin_getPointerLocation( int *inX, int *inY );
   it might define AIM_UP and then map it to
   { MGN_LEFT_STICK_Y, MGN_MIDDLE_STICK_Y, MGN_MAP_END }
 
-  [jumpProvided]
+  [jumpMinginProvides]
 */
 void mingin_registerStickAxis( int inStickAxisHandle,
                                const int inMapping[] );
@@ -588,7 +599,7 @@ void mingin_registerStickAxis( int inStickAxisHandle,
 
       mingin_toggleFullscreen( mingin_isFullscreen() )
 
-  [jumpProvided]
+  [jumpMinginProvides]
 */
 char mingin_toggleFullscreen( char inFullscreen );
 
@@ -597,7 +608,7 @@ char mingin_toggleFullscreen( char inFullscreen );
 /*
   Returns 1 if fullscreen, 0 if windowed.
 
-  [jumpProvided]
+  [jumpMinginProvides]
 */
 char mingin_isFullscreen( void );
 
@@ -606,7 +617,7 @@ char mingin_isFullscreen( void );
 /*
   Writes a string to the log.
 
-  [jumpProvided]
+  [jumpMinginProvides]
 */
 void mingin_log( const char *inString );
 
@@ -618,9 +629,17 @@ void mingin_log( const char *inString );
   Guarantees that no additional calls to minginGame_step or other minginGame_
   functions will be made.
 
-  [jumpProvided]
+  [jumpMinginProvides]
 */
 void mingin_quit( void );
+
+
+
+/*
+  This is the end of Mingin functions that a game can call.
+
+  [jumpMinginProvides]
+*/
 
 
 
@@ -633,33 +652,157 @@ void mingin_quit( void );
 
 
 /*
+  ===================================================
+  How to make a Mingin platform        [jumpPlatform]
+  ===================================================
+
+  Porting Mingin to a new platform involves three aspects:
+
+  1.  Providing a program entry point (main or whatever the platform needs).
+      All platform-specific initialization can be done in this entry point,
+      and the platform can also potentially use this to "run the show" in terms
+      of calling the game's minginGame_step( 0  ) function in a loop
+      along with the other various minginGame_ functions, etc., though some
+      platforms may trigger minginGame_step on some kind of system interrupt
+      callback or some other mechanism.
+
+      
+  2.  Initializing mingin itself at startup with a call to ONE function.
+  
+      This is tagged below with    [jumpPlatformCalls]
+
+      
+  3.  Implementing SEVEN required platform infrastructure functions,
+      which Mingin will call internally.
+      
+      These are tagged below with    [jumpPlatformRequired]
+
+
+   Design Note:
+
+   We don't ask for a callback from the platform when any button is pressed or
+   released, to support platforms that don't have button events.  Instead,
+   we specifically poll for the DOWN state of a given button of interest.
+   
+   This works on platforms that DO have button events (since they can
+   track press/release events internally and report the DOWN state when polled),
+   but it also works on platforms that only support button state polling.
+
+   This also places the platform in charge of remembering the last button
+   for calls to minginPlatform_getLastButtonPressed(), if the plaform supports
+   that, since Mingin is not going to poll for every possible button's DOWN
+   state to track this itself.
+   
+*/
+
+
+/*
   Platform must call this function once at startup.
+
+  [jumpPlatformCalls]
 */
 void minginInternal_init( void );
 
 
-/*
-  Platforms must implement these functions, which mingin will call internally.
-*/
 
+/*
+  How many times per second is the platform calling minginGame_step( 0 ) ?
+
+  Must return a positive value, which may not be accurate on some platforms.
+  
+  [jumpPlatformRequired]
+*/
 int minginPlatform_getStepsPerSecond( void );
 
-void minginPlatform_getScreenSize( int *outW, int *outH );
 
+
+/*
+  Tells the platform that it's time to quit.
+
+  After this call, the platform should not call minginGame_step or any
+  other minginGame_ functions again.
+  
+  [jumpPlatformRequired]
+*/
 void minginPlatform_quit( void );
 
+
+
+/*
+  Is a given button currently held down on the platform?
+  
+  [jumpPlatformRequired]
+*/
 char minginPlatform_isButtonDown( MinginButton inButton );
 
+
+
+/*
+  Log a \0-terminated character string to the platform's logging mechanism.
+  
+  [jumpPlatformRequired]
+*/
 void minginPlatform_log( const char *inString );
 
+
+
+/*
+  Ask the platform to toggle between fullscreen and windowed mode.
+
+  Only needs to function on platforms where it makes sense.
+
+  Returns 1 on platforms where toggling is supported, or 0 on platforms
+  where it is not supported.
+  
+  [jumpPlatformRequired]
+*/
 char minginPlatform_toggleFullscreen( char inFullscreen );
 
+
+
+/*
+  Asks the platform if it's currently in fullscreen mode.
+  
+  Only needs to function on platforms where it makes sense.
+    
+  [jumpPlatformRequired]
+*/
 char minginPlatform_isFullscreen( void );
 
+
+
+/*
+  Get the last button pressed on the platform, and clear the memory
+  of the last button pressed.
+
+  Returns MGN_BUTTON_NONE if no button has been pressed since the last time
+  the memory was cleared.
+  
+  [jumpPlatformRequired]
+*/
 MinginButton minginPlatform_getLastButtonPressed( void );
 
 
+/*
+  This is the end of the requirements for what a platform must implement
+  to run Mingin.
 
+  [jumpPlatformRequired]
+*/
+
+
+
+
+
+
+/*
+  ===================================================
+  Mingin internal code                 [jumpInternal]
+  ===================================================
+
+  The following code is Minin's internal platform-independent implementation.
+
+*/
 
 
 
@@ -765,10 +908,41 @@ MinginButton mingin_getLastButtonPressed( void ) {
 
 
 /*
+  This is the end of Mingin's internal code.
+
+  [jumpInternal]
+*/
+
+
+
+
+/*
+  ===============================================
+  Mingin platform implementations   [jumpSystems]
+  ===============================================
+
+  The following #ifdefs selectively compile platform-specific implmentation
+  code.
+
+*/
+
+
+
+
+#ifdef __linux__
+
+
+/*
+  ================================================
+  Linux implementation                 [jumpLinux]
+  ================================================
+  
   Linux platform with X11 windows
   Supports only 24-bit color
 */
-#ifdef __linux__
+
+
+
 
 #define MAX_WIN_W 4096
 #define MAX_WIN_H 2160
@@ -1049,11 +1223,6 @@ static void reconfigureWindowSize( Display *inXDisplay ) {
     mingin_log( "\n" );
     }
 
-
-
-
-
-int main( void );
 
 
 typedef struct XWindowSetup {
@@ -1421,6 +1590,129 @@ static void setupX11KeyMap( void ) {
 
 
 /* end #ifdef __linux__ */
+#elif defined(WIN32)
+
+/*
+  ==================================================
+  Windows implementation               [jumpWindows]
+  ==================================================
+*/
+
+/* empty for now */
+
+
+
+#else
+
+/*
+  ==================================================
+  Dummy example implementation         [jumpExample]
+  ==================================================
+
+  If we fall through the above platform-detecting #ifdefs and match
+  nothing, this platform-independent implementation will compile instead.
+
+  This code only works on platforms that support int main( void ) as an
+  entrypoint.
+
+  You can use this as a skeleton when making a Mingin implementation for
+  a new platform.
+*/
+
+#define DUMMY_SCREEN_W 640
+#define DUMMY_SCREEN_H 480
+
+static unsigned char dummyScreenBuffer[ DUMMY_SCREEN_W * DUMMY_SCREEN_H * 3 ];
+
+static int gotQuit = 0;
+
+
+
+int main( void ) {
+
+    minginInternal_init();
+    
+    while( ! gotQuit ) {
+        
+        /* don't ask about the minimum screen size */
+        
+        minginGame_step( 0 );
+        
+        /* ask for screen pixels and do nothing with them */
+        minginGame_getScreenPixels( DUMMY_SCREEN_W, DUMMY_SCREEN_H,
+                                    dummyScreenBuffer );
+
+        /* don't even bother asking for game audio samples */
+        }
+
+    /* game asked to quit ! */
+    return 0;
+    }
+
+
+
+int minginPlatform_getStepsPerSecond( void ) {
+    /* dummy value */
+    return 1;
+    }
+
+
+
+
+
+void minginPlatform_quit( void ) {
+    gotQuit = 1;
+    }
+
+
+
+
+char minginPlatform_isButtonDown( MinginButton inButton ) {
+    /* suppress warning */
+    if( inButton == MGN_BUTTON_NONE ) {
+        }
+    return 0;
+    }
+
+
+
+
+void minginPlatform_log( const char *inString ) {
+    /* suppress compiler warning */
+    if( inString[0] == '\0' ) {
+        }
+    return;
+    }
+
+
+
+
+char minginPlatform_toggleFullscreen( char inFullscreen ) {
+    /* suppress warning */
+    if( inFullscreen ) {
+        }
+    return 0;
+    }
+
+
+
+char minginPlatform_isFullscreen( void ) {
+    return 0;
+    }
+
+
+
+
+MinginButton minginPlatform_getLastButtonPressed( void ) {
+    return MGN_BUTTON_NONE;
+    }
+
+
+
+
+
+
+/* end of platform-specific #ifdef  */
 #endif
 
 

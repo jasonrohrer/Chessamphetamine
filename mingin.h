@@ -1,6 +1,33 @@
+/*
+  Mingin: a minimal single-header pure C89 game engine
+          by Jason Rohrer
+          
+  This work is not copyrighted.  I place it into the public domain.
+
+  
+  ===================================
+  Table of Contents    [jumpContents]
+  ===================================
+
+  Jump to a section by searching for the key string.
+
+  -- How to compile               [jumpCompile]
+
+  -- Why Mingin?                  [jumpWhy]
+
+  -- How to make a Mingin Game    [jumpGame]
+
+  -- What Mingin Provides         [jumpMingin]
+
+*/
+
 
 /*
-  Include wherever like so:
+  ===============================
+  How to compile    [jumpCompile]
+  ===============================
+  
+  Include in your C code wherever like so:
 
   #include "mingin.h"
 
@@ -15,20 +42,29 @@
 
 
 /*
+  ========================
+  Why Mingin?    [jumpWhy]
+  ========================
 
-  Mingin provides a simple wrapper for the platform-specific infrastructure
-  necessary to make a single-player computer game.
+  Doom is widely celebrated for its portability.  Doom will compile and run
+  on your toaster.  Mingin aims to make games just as portable, if not more
+  portable, than Doom.
+  
+  Mingin is a single C89 include file that provides the platform-specific
+  infrastructure necessary to make a single-player video game.
 
   In order to achieve maximum portability across past and future platforms
   that support compiling C89 code, we make no assumptions about the plaforms
-  themselves and what they provide.  For example:
+  themselves and what they provide, beyond providing a C89 compiler.
+
+  For example:
 
   --This code makes no includes that are assumed to be available on every
     plaform.  Any includes present are strictly platform-specific for
     accessing operating system resources and are surrounded
     by #ifdef's that will remove them from compilation on other platforms.
-    None of the C Standard Library includes are used, not even the freestanding
-    include subset.
+    None of the C Standard Library includes are used, not even the
+    "freestanding" subset.
 
   --This code makes no assumptions about any particular metaphors or program
     structures, and works just fine on platforms without "filesystems" or
@@ -36,18 +72,16 @@
 
   --This code makes no assumptions about availability of specialized hardware
     across platforms, so it works just fine on platforms without floating
-    point math or 3D graphics cards.
+    point math or clocks or persistent storage or 3D graphics cards.
 
   --This code makes no assumptions about entry points (like main) that must
     be present on every platform.  Platform-specific entry points are possible.
 
-  --The code makes no assumptions about what hardware is present, and can
-    be used to run games on platforms that can only provide a subset of
+  --The code makes no assumptions about what platform features are present and
+    can be used to run games on platforms that can only provide a subset of
     the required infrastructure.
 
-  Doom is widely celebrated for its portability.  Doom will compile and run
-  on your toaster.  Mingin aims to be just as portable, if not more portable
-  than Doom.
+
     
 
   Single-player computer games need seven things to function, which they
@@ -87,8 +121,16 @@
 
 
 
+
 /*
-  First, the game itself must implement these FOUR functions.
+  =======================================
+  How to make a Mingin Game    [jumpGame]
+  =======================================
+  
+  The game itself must implement these FOUR functions.
+  
+  Each function is tagged with   [jumpRequired]
+  
   These are called by the plaform, and the platform is in charge
   of doing any necessary color or sample format conversions with the
   data provided by the game.
@@ -96,50 +138,17 @@
   For example, this interface is in 24-bit color, so a platform that
   only supports 8-bit color must do the color conversion.  The game code
   itself can assume 24-bit color on every platform.
+
+  Only minginGame_init and minginGame_step are guaranteed to be called.
+
+  minginGame_step is guaranteed to be called at least once, before
+  any other minginGame_ functions are called.
+  
+  The order and frequency of these function calls are not guaranteed.
+  minginGame_getScreenPixels may be called before minginGame_step, or multiple
+  times between each step, etc.
 */
 
-
-/*
-  Gets this minimum screen size that would allow the game graphics
-  to be legible.  For a pixel art game, this would be the minimum pixel
-  resolution with no upscaling.
-
-  Note that this minium screen size is not guaranteed by a given platform,
-  and getScreenPixels may be called with smaller sizes.  However,
-  the game doesn't need to produce legible output in those cases (it could
-  downscale in a crude way, or crop its display, perhaps).
-
-  On platforms that operate with a flexible window size, windows with
-  interger multiples of this miniumum viable size might be used.
-*/
-void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh );
-
-
-/*
-  Get the next screen full of pixels
-  Each R, G, and B color component is 8 bytes, interleaved in
-  RGBRGBRGB... in row-major order, starting from the top left corner
-  of the screen and going left-to-right and top-to-bottom.
-
-  Note that inWide and inHigh may change from call to call and aren't
-  necessarily fixed across the entire run of a game (for example,
-  the game may be switched between windowed and fullscreen mode mid-run,
-  and the platform may want to use a different window size after the switch).
-*/
-void minginGame_getScreenPixels( int inWide, int inHigh,
-                                 unsigned char *inRGBBuffer );
-
-
-/*
-  Get the next buffer full of audio samples.
-  Samples are in Signed 16-bit little-endian, with channels interleaved
-
-  inSampleBuffer will have inNumSamples * inNumChannels * 2 bytes
-*/
-void minginGame_getAudioSamples( int inNumSamples,
-                                 int inNumChannels,
-                                 int inSamplesPerSecond,
-                                 unsigned char *inSampleBuffer );
 
 
 /*
@@ -152,18 +161,115 @@ void minginGame_getAudioSamples( int inNumSamples,
   or buffers of audio to advance things.
 
   The rate at which mingin_gameStep is called can be found by calling
-  mingin_getStepsPerSecond()
-*/
-void minginGame_step( void );
 
-
-/*
-  That's it for what a game must implement to run on Mingin.
+      mingin_getStepsPerSecond()
 
   Note that there is no "init" function that the platform will call.
 
   A game that needs special init code can do that the first time its
-  minginGame_step is called.
+  minginGame_step is called (and minginGame_step will be called at least
+  once before the other minginGame_ functions are called).
+
+  On platforms that can force the game to quit against its will,
+  inFinalStep will be set to 1 on the final step call.
+
+  Otherwise, a game is expected to do its own shutdown steps before calling
+  mingin_quit().  minginGame_step will never be called after mingin_quit()
+  has been called.
+  
+  This is the ONLY minginGame_function where you can call
+  mingin-provided "mingin_" functions.
+  
+  Will be called at least once, and before any other minginGame_ calls.
+  
+  [jumpRequired]
+*/
+void minginGame_step( char inFinalStep );
+
+
+
+/*
+  Gets this minimum screen size that would allow the game graphics
+  to be legible.  For a pixel art game, this would be the minimum pixel
+  resolution with no upscaling.  For a smoothly-scalable game, this
+  might be the minimum resolution at which text/icons are legible.
+
+  Platforms can assume that this value does not change over time, so this
+  function should return the same static value every time it is called.
+
+  Note that this minium screen size is not guaranteed by a given platform,
+  and getScreenPixels may be called with smaller sizes.  However,
+  the game doesn't need to produce legible output in those cases (it could
+  downscale in a crude way, or crop its display, perhaps).
+
+  On platforms that operate with a flexible window size, windows with
+  interger multiples of this miniumum viable size might be used.
+
+  Do not call mingin-provided "mingin_" functions from this function.
+
+  Will not necessarily be called.
+
+  If called, it will be called after at least one call to minginGame_step().
+  
+  [jumpRequired]
+*/
+void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh );
+
+
+
+/*
+  Get the next screen full of pixels
+  Each R, G, and B color component is 8 bytes, interleaved in
+  RGBRGBRGB... in row-major order, starting from the top left corner
+  of the screen and going left-to-right and top-to-bottom.
+
+  Note that inWide and inHigh may change from call to call and aren't
+  necessarily fixed across the entire run of a game (for example,
+  the game may be switched between windowed and fullscreen mode mid-run,
+  and the platform may want to use a different window size after the switch).
+
+  Do not call mingin-provided "mingin_" functions from this function.
+
+  Will not necessarily be called.
+
+  If called, it will be called after at least one call to minginGame_step().
+
+  [jumpRequired]
+*/
+void minginGame_getScreenPixels( int inWide, int inHigh,
+                                 unsigned char *inRGBBuffer );
+
+
+
+/*
+  Get the next buffer full of audio samples.
+  Samples are in Signed 16-bit little-endian, with channels interleaved
+
+  inSampleBuffer will have inNumSamples * inNumChannels * 2 bytes
+
+  inNumSamples, inNumChannels, and inSamplesPerSecond may all change from
+  call to call and aren't necessarily fixed across the entire run of the game.
+
+  Do not call mingin-provided "mingin_" functions from this function.
+
+  Will not necessarily be called.
+
+  If called, it will be called after at least one call to minginGame_step().
+  
+  [jumpRequired]
+*/
+void minginGame_getAudioSamples( int inNumSamples,
+                                 int inNumChannels,
+                                 int inSamplesPerSecond,
+                                 unsigned char *inSampleBuffer );
+
+
+
+/*
+  This is the end of the requirements for what a game must implement
+  to run on Mingin.
+
+  [jumpRequired]
 */
 
 
@@ -172,23 +278,45 @@ void minginGame_step( void );
 
 
 /*
-  Game can call these functions, which are provided by mingin.
+  ====================================
+  What Mingin Provides    [jumpMingin]
+  ====================================
+  
+  Game can call these functions, which are provided by Mingin.
+
+  Each function is tagged with   [jumpProvided]
 
   All of these functions are available on all platforms, though some of them
-  might not do anything.
+  might not do anything on certain platforms.  For maximum portability,
+  the game should march regardless of what these functions do.
 */
+
 
 /*
   What's the step rate, in steps per second, that the platform
   is running the game at?
 
   Every platform will return a positive value here, even if it's not accurate.
+
+  This value may change over time as the platform adjusts the game step time
+  for any variety of reasons.
+
+  [jumpProvided]
 */
 int mingin_getStepsPerSecond( void );
 
 
 
+
+/*
+  Used to end button mapping arrays in calls to mingin_registerButtonMapping
+  (see below)
+
+  [jumpProvided]
+*/  
 #define MGN_MAP_END 0
+
+
 
 /*
   This enum lists all the buttons and keys that can possibly be checked
@@ -211,6 +339,8 @@ int mingin_getStepsPerSecond( void );
   
   Platforms are generally expected to deal with raw button presses and
   will not automatically map multi-key combos like SHIFT-5 to %
+
+  [jumpProvided]
 */
 typedef enum MinginButton {
     MGN_BUTTON_NONE = MGN_MAP_END,
@@ -380,6 +510,8 @@ typedef enum MinginButton {
   
   Returns 1 on success, or 0 on failure (if inButtonHandle is out of
   the supported range)
+
+  [jumpProvided]
 */
 char mingin_registerButtonMapping( int inButtonHandle,
                                    const MinginButton inMapping[] );
@@ -389,8 +521,11 @@ char mingin_registerButtonMapping( int inButtonHandle,
 /*
   Check whether a previously-mapped button handle is currently held down.
   Returns 1 if pressed, 0 if not pressed.
+
+  [jumpProvided]
 */
 char mingin_isButtonDown( int inButtonHandle );
+
 
 
 /*
@@ -407,8 +542,11 @@ char mingin_isButtonDown( int inButtonHandle );
 
   Returns MGN_BUTTON_NONE if no button has been pressed since the last time
   the memory was cleared.
+
+  [jumpProvided]
 */
 MinginButton mingin_getLastButtonPressed( void );
+
 
 
 /*
@@ -417,8 +555,11 @@ MinginButton mingin_getLastButtonPressed( void );
   with 0,0 at the top left corner of the screen.
 
   Returns 1 if pointer location is available, or 0 if not.
+
+  [jumpProvided]
 */
 char mingin_getPointerLocation( int *inX, int *inY );
+
 
 
 /*
@@ -426,6 +567,8 @@ char mingin_getPointerLocation( int *inX, int *inY );
   to refer to the stick axes that it is interested in.  For example,
   it might define AIM_UP and then map it to
   { MGN_LEFT_STICK_Y, MGN_MIDDLE_STICK_Y, MGN_MAP_END }
+
+  [jumpProvided]
 */
 void mingin_registerStickAxis( int inStickAxisHandle,
                                const int inMapping[] );
@@ -439,6 +582,13 @@ void mingin_registerStickAxis( int inStickAxisHandle,
   Note that some platforms might recall the last setting on future startups.
 
   Returns 1 if toggling supported, 0 if toggling not supported.
+
+  Note that you can check if toggling is supported before toggling
+  by calling:
+
+      mingin_toggleFullscreen( mingin_isFullscreen() )
+
+  [jumpProvided]
 */
 char mingin_toggleFullscreen( char inFullscreen );
 
@@ -446,6 +596,8 @@ char mingin_toggleFullscreen( char inFullscreen );
 
 /*
   Returns 1 if fullscreen, 0 if windowed.
+
+  [jumpProvided]
 */
 char mingin_isFullscreen( void );
 
@@ -453,12 +605,20 @@ char mingin_isFullscreen( void );
 
 /*
   Writes a string to the log.
+
+  [jumpProvided]
 */
 void mingin_log( const char *inString );
 
 
+
 /*
-  Exits the game program
+  Exits the game program.
+
+  Guarantees that no additional calls to minginGame_step or other minginGame_
+  functions will be made.
+
+  [jumpProvided]
 */
 void mingin_quit( void );
 
@@ -483,7 +643,6 @@ void minginInternal_init( void );
 */
 
 int minginPlatform_getStepsPerSecond( void );
-
 
 void minginPlatform_getScreenSize( int *outW, int *outH );
 
@@ -1060,7 +1219,14 @@ int main( void ) {
                 }
             }
 
-        minginGame_step();
+        minginGame_step( 0 );
+        
+        if( shouldQuit ) {
+            /* mingin_quit called in the most recent step,
+               so we can't call any minginGame_ functions again */
+            break;
+            }
+        
         
         minginGame_getScreenPixels( windowW, windowH, gameScreenBuffer );
 

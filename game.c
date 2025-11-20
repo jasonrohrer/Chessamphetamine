@@ -164,9 +164,15 @@ static void gameInit( void );
 static char remappingJump = 0;
 
 
-void minginGame_step( void ) {
+void minginGame_step( char inFinalStep ) {
     int r;
     int boxVPerStep;
+
+
+    if( inFinalStep ) {
+        /* no clean-up needed so far */
+        return;
+        }
     
     if( ! initDone ) {
         gameInit();

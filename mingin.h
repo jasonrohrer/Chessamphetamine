@@ -60,8 +60,8 @@
   ==============================================
   
   Mingin is a single C89 include file that provides the platform-specific
-  infrastructure necessary to make a single-player video game, aimed at
-  outliving any specific OS, SDK, hardware system, etc.  A Mingin game
+  infrastructure necessary to make a single-player video game.  Mingin aims to
+  outlive any specific OS, SDK, library, or hardware system.  A Mingin game
   should be compilable and runnable forever, since it should be easy to get
   Mingin running on any platform.
   
@@ -90,14 +90,14 @@
 
   --This code makes no assumptions about availability of specialized hardware
     across platforms, so it works just fine on platforms without floating
-    point math or clocks or persistent storage or 3D graphics cards.
+    point units or clocks or persistent storage or 3D graphics cards.
 
   --This code makes no assumptions about entry points (like main) that must
     be present on every platform.  Platform-specific entry points are possible.
 
   --The code makes no assumptions about what platform features are present,
     and Mingin can be used to run games on platforms that can only provide a
-    subset of the required infrastructure.
+    subset of the suggested infrastructure.
 
 
     
@@ -108,7 +108,8 @@
 
   1.  A way to have regular time steps pass so that game logic can update.
 
-  2.  A way to receive input from the user (mouse, keyboard, controller, etc.).
+  2.  A way to receive input from the user (mouse, keyboard, controller,
+      buttons, joystick, knob, tilt-sensor, treadmill, etc.).
   
   3.  A way to draw pixels to a rectangular window or screen.
   
@@ -125,7 +126,7 @@
 
 
   
-  Note that a given platform might not provide all of these thing for real,
+  Note that a given platform might not provide all of these things for real,
   yet the game can still function on that platform.
 
   For example, a platform without speakers can run a silent version of the game,
@@ -336,9 +337,10 @@ void minginGame_getAudioSamples( int inNumSamples,
   its minginGame_step function.
 
   ****
-  Platforms are permitted to ignore these function calls, and return unexpected
-  (though safe) results, if these calls are made from outside the
-  minginGame_step function.
+  If you call these functions from outside of your minginGame_step function,
+  platforms are permitted to ignore the function calls, and return unexpected
+  (though safe) results.  Platforms are also permitted to write error messages
+  to the log in this case.
   ****
 
   Each function is tagged with   [jumpMinginProvides]

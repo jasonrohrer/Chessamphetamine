@@ -1,7 +1,7 @@
 
-#define MINGIN_IMPLEMENTATION
+#define MAXIGIN_IMPLEMENTATION
 
-#include "mingin.h"
+#include "maxigin.h"
 
 
 

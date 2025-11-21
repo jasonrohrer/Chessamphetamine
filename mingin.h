@@ -1,5 +1,5 @@
 /*
-  Mingin: a minimal single-header pure C89 game engine
+  Mingin: a minimal single-header pure C89 video game engine
           by Jason Rohrer
           
   This work is not copyrighted.  I place it into the public domain.
@@ -9,7 +9,8 @@
   Table of Contents                    [jumpContents]
   ===================================================
 
-  Jump to a section by searching for the key string.
+  Jump to a section by searching for the [keyString]
+  
 
   -- How to compile                    [jumpCompile]
 
@@ -88,43 +89,45 @@
   --This code makes no assumptions about entry points (like main) that must
     be present on every platform.  Platform-specific entry points are possible.
 
-  --The code makes no assumptions about what platform features are present and
-    can be used to run games on platforms that can only provide a subset of
-    the required infrastructure.
+  --The code makes no assumptions about what platform features are present, and
+    and Mingin can be used to run games on platforms that can only provide a
+    subset of the required infrastructure.
 
 
     
 
-  Single-player computer games need seven things to function, which they
-  can't do on their own without the help of the underlying platform, in
-  order of importance:
+  Single-player video games need seven things to function, which they
+  can't do on their own in pure C code without the help of the underlying
+  platform, in order of importance:
 
   1.  A way to have regular time steps pass so that game logic can update.
 
   2.  A way to receive input from the user (mouse, keyboard, controller, etc.).
   
-  3.  A way to draw to a rectangular window or screen.
+  3.  A way to draw pixels to a rectangular window or screen.
   
-  4.  A way to play a stream of audio to some kind of audio output.
+  4.  A way to play a stream of audio samples to some kind of audio output.
   
   5.  A way to read bulk data resources, like graphics and sounds, that
       aren't practical to compile into the program code itself.  For example,
       a game might stream music audio data that is too big to fit in RAM.
       
-  6.  A way to read and write data that persists between runs of the game.
+  6.  A way to read and write data that persists between runs of the game,
+      for saved games, settings, caches, and so on.
 
   7.  A way to log messages for the purposes of troubleshooting.
 
 
   
   Note that a given platform might not provide all of these thing for real,
-  yet the game can still function on that plaform (for example, a platform
-  without speakers can run a silent version of the game, or a platform
-  with no persistent data store can still run a memoryless version of the
-  game that starts fresh each time it is launched, or a platform with
-  no bulk data device at all might compile needed bulk data resources directly
-  into the program code for access by the game---remember Resource Forks on
-  ancient versions of MacOS?).
+  yet the game can still function on that plaform.
+
+  For example, a platform without speakers can run a silent version of the game,
+  or a platform with no persistent data store can still run a memoryless
+  version of the game that starts fresh each time it is launched, or a platform
+  with no bulk data device at all might compile needed bulk data resources
+  directly into the program code for access by the game---remember Resource
+  Forks on ancient versions of MacOS?.
 
   As long as regular time steps pass, the game can still function in some
   capacity.
@@ -138,7 +141,7 @@
   How to make a Mingin game            [jumpGame]
   ===============================================
   
-  The game itself must implement these FOUR functions.
+  The game itself must implement these * FOUR * functions.
   
   Each function is tagged with   [jumpGameRequired]
   
@@ -150,20 +153,22 @@
   only supports 8-bit color must do the color conversion.  The game code
   itself can assume 24-bit color on every platform.
 
-  Only minginGame_init and minginGame_step are guaranteed to be called.
+  Only minginGame_step is guaranteed to be called.
 
   minginGame_step is guaranteed to be called at least once, before
   any other minginGame_ functions are called.
   
   The order and frequency of these function calls are not guaranteed.
-  minginGame_getScreenPixels may be called before minginGame_step, or multiple
-  times between each step, etc.
+  minginGame_getScreenPixels after multiple calls to minginGame_step, or
+  multiple times between each call to minginGame_step, etc.
+
+  The only guarantee is that these functions will never be called concurrently.
 */
 
 
 
 /*
-  Steps to the next frame of the game.
+  Steps to the next time frame of the game.
   
   Note that this is the ONLY function of a game that a platform must
   actually call, so all game logic must be executed by this function.
@@ -184,12 +189,14 @@
   On platforms that can force the game to quit against its will,
   inFinalStep will be set to 1 on the final step call.
 
-  Otherwise, a game is expected to do its own shutdown steps before calling
+  Otherwise, a game is expected to do its own shutdown steps *before* calling
   mingin_quit().  minginGame_step will never be called after mingin_quit()
   has been called.
-  
+
+  ****
   This is the ONLY minginGame_function where you can call
   mingin-provided "mingin_" functions.
+  ****
   
   Will be called at least once, and before any other minginGame_ calls.
   
@@ -216,8 +223,10 @@ void minginGame_step( char inFinalStep );
   On platforms that operate with a flexible window size, windows with
   interger multiples of this miniumum viable size might be used.
 
+  ****
   Do not call mingin-provided "mingin_" functions from this function.
-
+  ****
+  
   Will not necessarily be called.
 
   If called, it will be called after at least one call to minginGame_step().
@@ -239,8 +248,10 @@ void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh );
   the game may be switched between windowed and fullscreen mode mid-run,
   and the platform may want to use a different window size after the switch).
 
+  ****
   Do not call mingin-provided "mingin_" functions from this function.
-
+  ****
+  
   Will not necessarily be called.
 
   If called, it will be called after at least one call to minginGame_step().
@@ -261,8 +272,10 @@ void minginGame_getScreenPixels( int inWide, int inHigh,
   inNumSamples, inNumChannels, and inSamplesPerSecond may all change from
   call to call and aren't necessarily fixed across the entire run of the game.
 
+  ****
   Do not call mingin-provided "mingin_" functions from this function.
-
+  ****
+  
   Will not necessarily be called.
 
   If called, it will be called after at least one call to minginGame_step().
@@ -293,14 +306,16 @@ void minginGame_getAudioSamples( int inNumSamples,
   What Mingin provides                 [jumpMingin]
   =================================================
   
-  Game can call these functions, which are provided by Mingin.
+  Mingin provides these functions, which the game can call from inside
+  its minginGame_step function.
 
   Each function is tagged with   [jumpMinginProvides]
 
   All of these functions are available on all platforms, though some of them
-  might not do anything on certain platforms.  For maximum portability,
-  the game should march regardless of what these functions do.
+  might not do anything real on certain platforms.  For maximum portability,
+  the game should boldly march on regardless of what these functions do.
 */
+
 
 
 /*
@@ -320,8 +335,9 @@ int mingin_getStepsPerSecond( void );
 
 
 /*
-  Used to end button mapping arrays in calls to mingin_registerButtonMapping
-  (see below)
+  Used to end button mapping arrays in calls to:
+     mingin_registerButtonMapping
+       (see below)
 
   [jumpMinginProvides]
 */  
@@ -333,14 +349,25 @@ int mingin_getStepsPerSecond( void );
   This enum lists all the buttons and keys that can possibly be checked
   on some potential platforms.
 
+  These values are used in calls:
+     mingin_registerButtonMapping
+       and
+     mingin_getLastButtonPressed
+       (see below)
+
   For a game to function on as many platforms as possible in an intelligent way,
   the game should cast a wide net for each call to mingin_registerButtonMapping
   below.  Platforms will auto-map their actual controls to the symbols
-  in this enum, but they won't cross-map.  For example, a platform with a weird
-  "star button" might map that to MGN_BUTTON_SQUARE,
-  but a Playstation won't auto map MGN_BUTTON_SQUARE to MGN_BUTTON_A.
-  If a game wants a particular control to be triggered by both "square" on PS
-  and "A" on XBox, it needs to say so.
+  in this enum, but they won't automatically cross-map.
+
+  For example, a platform with a weird "star button" might map that to
+  MGN_BUTTON_SQUARE, but a Playstation won't auto map MGN_BUTTON_SQUARE to
+  MGN_BUTTON_A.  If a game wants a particular control to be triggered by *both*
+  "square" on Playstation and "A" on XBox, it needs to say so.
+
+  Games can map MGN_ANY_KEY_OR_BUTTON if they are interested in asking about
+  any button at all, like for one-button games, or for advancing through
+  opening title screens.
   
   Note that not all keys are pressable, even on platforms with keyboards
   that show those symbols.
@@ -348,13 +375,14 @@ int mingin_getStepsPerSecond( void );
   For example, on US keyboards, it's impossible to hit the % key, since
   that's just the 5 key while SHIFT is held down.
   
-  Platforms are generally expected to deal with raw button presses and
+  Platforms are generally expected to report only raw button presses and
   will not automatically map multi-key combos like SHIFT-5 to %
 
   [jumpMinginProvides]
 */
 typedef enum MinginButton {
     MGN_BUTTON_NONE = MGN_MAP_END,
+    MGN_ANY_KEY_OR_BUTTON,   /* maps to any and every key or button pressed */
     MGN_KEY_BACKSPACE,
     MGN_KEY_TAB,
     MGN_KEY_RETURN,
@@ -484,6 +512,9 @@ typedef enum MinginButton {
     MGN_KEY_VERTICAL_BAR,
     MGN_KEY_BRACE_R,
     MGN_KEY_TILDE,
+    MGN_BUTTON_SQUARE,
+    MGN_BUTTON_A,
+    MGN_BUTTON_MOUSE_LEFT,
     MGN_DUMMY_LAST_BUTTON
     } MinginButton;
 
@@ -508,15 +539,39 @@ typedef enum MinginButton {
   by both left mouse button and the X keyboard key with
   { MGN_BUTTON_MOUSE_LEFT, MGN_KEY_X, MGN_MAP_END }
 
+  The above examples could be accomplished with the following code:
+
+      const int JUMP = 1;
+      const int FIRE = 2;
+  
+      const MinginButton jumpMapping[] = { MGN_KEY_SPACE, MGN_BUTTON_SQUARE,
+                                           MGN_BUTTON_A, MGN_MAP_END };
+                                
+      const MinginButton fireMapping[] = { MGN_BUTTON_MOUSE_LEFT,
+                                           MGN_KEY_X, MGN_MAP_END };
+                            
+      mingin_registerButtonMapping( JUMP, jumpMapping );
+      mingin_registerButtonMapping( FIRE, fireMapping );
+
+  In for more complex control schemes, an enum can be used, like so:
+  
+      enum UserAction {
+          QUIT,
+          JUMP,
+          FIRE,
+          ROLL,
+          BOMB,
+          FULLSCREEN_TOGGLE };
+  
   inButtonHandle can be in the range 0..255, which means 256 distinct
   user actions can be mapped to buttons.
 
   However, these can be remapped as many times as needed, allowing for
   modal changes to controls, giving way more than 256 user actions if needed.
 
-  inMapping can contain at most 16 elements, including the final MGN_MAP_END
+  inMapping can contain at most 32 elements, including the final MGN_MAP_END
 
-  If there are more than 15 non-END elements in a mapping, the extra ones
+  If there are more than 31 non-END elements in a mapping, the extra ones
   will be ignored.
   
   Returns 1 on success, or 0 on failure (if inButtonHandle is out of
@@ -532,6 +587,16 @@ char mingin_registerButtonMapping( int inButtonHandle,
 /*
   Check whether a previously-mapped button handle is currently held down.
   Returns 1 if pressed, 0 if not pressed.
+
+  Continuing the above examples with JUMP and FIRE, we might check these
+  in our minginGame_step() function with the following code:
+
+      if( mingin_isButtonDown( JUMP ) ) {
+          ... do jump logic ...
+          }
+      else if( mingin_isButtonDown( FIRE ) ) {
+          ... do fire logic ...
+          }
 
   [jumpMinginProvides]
 */
@@ -562,14 +627,42 @@ MinginButton mingin_getLastButtonPressed( void );
 
 /*
   Gets the current on-screen pointer location, if any.
-  Point location is in screen space returned by mingin_getScreenSize(),
-  with 0,0 at the top left corner of the screen.
+  
+  Pointer location spans the game screen, with (0,0) at the top left corner
+  of the screen, and (outMaxX,outMaxY) at the bottom right corner of the screen.
 
   Returns 1 if pointer location is available, or 0 if not.
 
   [jumpMinginProvides]
 */
-char mingin_getPointerLocation( int *inX, int *inY );
+char mingin_getPointerLocation( int *outX, int *outY,
+                                int *outMaxX, int *outMaxY );
+
+
+
+/*
+  This enum lists all the joystick axes that can possibly be checked
+  on some potential platforms.
+
+  These values are used in call:
+     mingin_registerStickAxis
+       (see below)
+
+  [jumpMinginProvides]
+*/
+typedef enum MinginStick {
+    MGN_STICK_NONE = MGN_MAP_END,
+    MGN_LEFT_STICK_X,
+    MGN_LEFT_STICK_Y,
+    MGN_MIDDLE_STICK_X,
+    MGN_MIDDLE_STICK_Y,
+    MGN_RIGHT_STICK_X,
+    MGN_RIGHT_STICK_Y,
+    MGN_THROTTLE_STICK,
+    MGN_DUMMY_LAST_STICK
+    } MinginStick;
+
+#define MGN_NUM_STICKS  MGN_DUMMY_LAST_STICK
 
 
 
@@ -582,7 +675,22 @@ char mingin_getPointerLocation( int *inX, int *inY );
   [jumpMinginProvides]
 */
 void mingin_registerStickAxis( int inStickAxisHandle,
-                               const int inMapping[] );
+                               const MinginStick inMapping[] );
+
+
+
+/*
+  Checks the position of a previously-mapped joystick axis handle.
+
+  The returned value in outPosition will be in the range
+      [outLowerLimit, outUpperLimit]
+
+  Returns 1 if joystick is available, or 0 if not.
+*/
+char mingin_getStickPosition( int inStickAxisHandle,
+                              int *outPosition,
+                              int *outLowerLimit,
+                              int *outUpperLimit );
 
 
 
@@ -729,7 +837,11 @@ void minginPlatform_quit( void );
 
 
 /*
-  Is a given button currently held down on the platform?
+  Returns 1 if a given button currently held down on the platform, 0 if not.
+
+  If inButton is MGN_ANY_KEY_OR_BUTTON, then this function should return 1
+  if any button on the platform is currently held down, and 0 if no buttons
+  are held down.
   
   [jumpPlatformRequired]
 */
@@ -833,7 +945,7 @@ char mingin_isFullscreen( void ) {
 
 
 #define MINGIN_NUM_BUTTON_MAPPINGS 256
-#define MINGIN_MAX_BUTTON_MAPPING_ELEMENTS 16
+#define MINGIN_MAX_BUTTON_MAPPING_ELEMENTS 32
 
 static MinginButton minginButtonMappings[ MINGIN_NUM_BUTTON_MAPPINGS ]
                                         [ MINGIN_MAX_BUTTON_MAPPING_ELEMENTS ];
@@ -1032,6 +1144,16 @@ char minginPlatform_isButtonDown( MinginButton inButton ) {
     
     if( buttonDown[ inButton ] ) {
         return 1;
+        }
+
+    if( inButton == MGN_ANY_KEY_OR_BUTTON ) {
+        /* loop through entire list and see if anything is currently down */
+        int i;
+        for( i=0; i<MGN_NUM_BUTTONS; i++ ) {
+            if( buttonDown[i] ) {
+                return 1;
+                }
+            }
         }
     
     return 0;

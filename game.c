@@ -112,7 +112,6 @@ void minginGame_getScreenPixels( int inWide, int inHigh,
            let it just get cut off for now */
         scaleFactor = 1;
         }
-    scaleFactor = 1;
     
     scaledGameW = scaleFactor * GAME_NATIVE_W;
     scaledGameH = scaleFactor * GAME_NATIVE_H;
@@ -137,24 +136,26 @@ void minginGame_getScreenPixels( int inWide, int inHigh,
             }
         }
 
-    /* as sanity check, just blit our image into the corner with offset */
-    for( y = offsetY; y < offsetY + GAME_NATIVE_H; y++ ) {
+    /* naive nearest neighbor scaling */
+    for( y = offsetY; y < offsetY + scaledGameH; y++ ) {
         int rowStartDest = y * inWide * 3;
-        int ySrc = y - offsetY;
-        int rowStartSrc = ySrc * GAME_NATIVE_W * 3;
-        for( x = offsetX; x < offsetX + GAME_NATIVE_W; x++ ) {
+        int ySrcScaled = y - offsetY;
+        int ySrcOrig = ySrcScaled /  scaleFactor;
+        
+        int rowStartSrcOrig = ySrcOrig * GAME_NATIVE_W * 3;
+        
+        for( x = offsetX; x < offsetX + scaledGameW; x++ ) {
+            int xSrcScaled = x - offsetX;
+            int xSrcOrig = xSrcScaled /  scaleFactor;
+        
             int pixDest = rowStartDest + x * 3;
-            int xSrc = x - offsetX;
-            int pixSrc = rowStartSrc + xSrc * 3;
+            int pixSrcOrig = rowStartSrcOrig + xSrcOrig * 3;
 
-            inRGBBuffer[ pixDest ] = gameImageBuffer[ pixSrc ];
-            inRGBBuffer[ pixDest + 1 ] = gameImageBuffer[ pixSrc + 1 ];
-            inRGBBuffer[ pixDest + 2 ] = gameImageBuffer[ pixSrc + 2 ];
+            inRGBBuffer[ pixDest ] = gameImageBuffer[ pixSrcOrig ];
+            inRGBBuffer[ pixDest + 1 ] = gameImageBuffer[ pixSrcOrig + 1 ];
+            inRGBBuffer[ pixDest + 2 ] = gameImageBuffer[ pixSrcOrig + 2 ];
             }
         }
-
-    /* fixme:  actually need to do nearest-neighbor scaling! */
-    
     }
 
 

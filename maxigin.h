@@ -1,3 +1,5 @@
+#include "mingin.h"
+
 /*
   Maxigin: a maximally portable 100% pure C89 platform-independent
            single-player video game engine with only one dependency (mingin.h)
@@ -40,10 +42,12 @@
 
   Include exactly once, in one .c file, like so, to compile in the
   implementation:
-
-  #define MAXIGIN_IMPLEMENTATION
-  #include "maxigin.h"
-
+  
+      #define MINGIN_IMPLEMENTATION
+  
+      #define MAXIGIN_IMPLEMENTATION
+  
+      #include "maxigin.h"
 
   Maxigin implements the four functions needed by a Mingin game
   (see mingin.h), so your game shouldn't implement these directly.
@@ -58,24 +62,35 @@
 
 
 
+#ifndef MAXIGIN_H_INCLUDED
+#define MAXIGIN_H_INCLUDED
+
+
+
 /*
   ===================================================
   Static settings                      [jumpSettings]
   ===================================================
 
   The following compile-time settings can be changed for each game that
-  is build against Maxigin.
+  is built against Maxigin.
+
+  If these are defined in your C file before #define MAXIGIN_IMPLEMENTATION
+  your settings will be used instead
   
 */
-
 
 
 /*
   The game image's native width and height.  This is the ideal size for
   the game's pixel content.
 */
-#define MAXIGIN_GAME_NATIVE_W  640
-#define MAXIGIN_GAME_NATIVE_H  480
+#ifndef MAXIGIN_GAME_NATIVE_W
+    #define MAXIGIN_GAME_NATIVE_W  640
+#endif
+#ifndef MAXIGIN_GAME_NATIVE_H
+    #define MAXIGIN_GAME_NATIVE_H  480
+#endif
 
 
 
@@ -274,7 +289,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer );
 
 
 
-#ifdef MAXIGIN_IMPLEMENTATION
+
+
+
 
 /*
   ===================================================
@@ -286,11 +303,239 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer );
 */
 
 
-#define MINGIN_IMPLEMENTATION
 
-#include "mingin.h"
+/*
+  Maxigin listens to certain buttons for its own functionality that's not
+  game-specific (like accessing a settings screen, toggling fullscreen, etc.)
+
+  If a game registers button handles directly with mingin_registerButtonMapping,
+  those registrations may clobber Maxigin's registrations.
+
+  We redefine mingin_registerButtonMapping below, so that c files that
+  include maxigin.h call the maxigin version of this function instead.
+
+  See mingin_registerButtonMapping in mingin.h for full documentation.
+*/
+char maxiginInternal_registerButtonMapping( int inButtonHandle,
+                                            const MinginButton inMapping[] );
+
+
+
+/*
+  Check whether a previously-mapped button handle is currently held down.
+  Returns 1 if pressed, 0 if not pressed.
+
+  Note that Maxigin might block reporting of certain buttons being down
+  depending on its own internal functionality.
+
+  We redefine mingin_isButtonDown below, so that c files that
+  include maxigin.h call the maxigin version of this function instead.
+*/
+char maxiginInternal_isButtonDown( int inButtonHandle );
 
 
 
 
+
+#ifdef MAXIGIN_IMPLEMENTATION
+
+
+
+
+
+enum MaxiginUserAction {
+    QUIT,
+    FULLSCREEN_TOGGLE,
+    LAST_MAXIGIN_USER_ACTION
+    };
+
+
+
+
+static char initDone = 0;
+
+static char fullscreenTogglePressed = 0;
+
+
+
+/* RGB pixels of game's native image size */
+static unsigned char gameImageBuffer[ MAXIGIN_GAME_NATIVE_W *
+                                      MAXIGIN_GAME_NATIVE_H * 3 ];
+
+
+
+void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh ) {
+    *outWide = MAXIGIN_GAME_NATIVE_W;
+    *outHigh = MAXIGIN_GAME_NATIVE_H;
+    }
+
+
+
+void minginGame_getScreenPixels( int inWide, int inHigh,
+                                 unsigned char *inRGBBuffer ) {
+    int numPixels = inWide * inHigh;
+    int numPixelBytes = numPixels * 3;
+    int p;
+    int x, y;
+    
+    int scaleFactor;
+    int scaleW, scaleH;
+    int scaledGameW, scaledGameH;
+    int offsetX, offsetY;
+
+    maxiginGame_getNativePixels( gameImageBuffer );
+
+    scaleW = inWide /  MAXIGIN_GAME_NATIVE_W;
+
+    scaleH = inHigh / MAXIGIN_GAME_NATIVE_H;
+
+    scaleFactor = scaleW;
+
+    if( scaleH < scaleFactor ) {
+        scaleFactor = scaleH;
+        }
+
+    if( scaleFactor < 1 ) {
+        /* screen isn't big enough for our native size?
+           let it just get cut off for now */
+        scaleFactor = 1;
+        }
+    
+    scaledGameW = scaleFactor * MAXIGIN_GAME_NATIVE_W;
+    scaledGameH = scaleFactor * MAXIGIN_GAME_NATIVE_H;
+
+
+    /* pick offsets to center in screen, if possible */
+    offsetX = 0;
+    offsetY = 0;
+
+    if( scaledGameW < inWide ) {
+        offsetX = ( inWide - scaledGameW ) / 2;
+        }
+    if( scaledGameH < inHigh ) {
+        offsetY = ( inHigh - scaledGameH ) / 2;
+        }
+    
+
+    if( offsetX > 0 || offsetY > 0 ) {
+        /* black background beyond edges of our centered image */
+        for( p = 0; p<numPixelBytes; p++ ) {
+            inRGBBuffer[p] = 0;
+            }
+        }
+
+    /* naive nearest neighbor scaling */
+    for( y = offsetY; y < offsetY + scaledGameH; y++ ) {
+        int rowStartDest = y * inWide * 3;
+        int ySrcScaled = y - offsetY;
+        int ySrcOrig = ySrcScaled /  scaleFactor;
+        
+        int rowStartSrcOrig = ySrcOrig * MAXIGIN_GAME_NATIVE_W * 3;
+        
+        for( x = offsetX; x < offsetX + scaledGameW; x++ ) {
+            int xSrcScaled = x - offsetX;
+            int xSrcOrig = xSrcScaled /  scaleFactor;
+        
+            int pixDest = rowStartDest + x * 3;
+            int pixSrcOrig = rowStartSrcOrig + xSrcOrig * 3;
+
+            inRGBBuffer[ pixDest ] = gameImageBuffer[ pixSrcOrig ];
+            inRGBBuffer[ pixDest + 1 ] = gameImageBuffer[ pixSrcOrig + 1 ];
+            inRGBBuffer[ pixDest + 2 ] = gameImageBuffer[ pixSrcOrig + 2 ];
+            }
+        }
+    }
+
+
+static void gameInit( void );
+
+
+void minginGame_step( char inFinalStep ) {
+
+    if( inFinalStep ) {
+        /* no clean-up needed so far */
+        return;
+        }
+    
+    if( ! initDone ) {
+        gameInit();
+        initDone = 1;
+        }
+    
+    if( mingin_isButtonDown( QUIT ) ) {
+        mingin_log( "Got quit key\n" );
+        
+        mingin_quit();
+        return;
+        }
+    
+    if( mingin_isButtonDown( FULLSCREEN_TOGGLE ) ) {
+
+        if( ! fullscreenTogglePressed ) {
+            fullscreenTogglePressed = 1;
+
+            mingin_toggleFullscreen( ! mingin_isFullscreen() );
+            }
+        }
+    else {
+        fullscreenTogglePressed = 0;
+        }
+
+    maxiginGame_step();
+    }
+
+
+
+static MinginButton quitMapping[] = { MGN_KEY_Q, MGN_KEY_ESCAPE, MGN_MAP_END };
+static MinginButton fullscreenMapping[] = { MGN_KEY_F, MGN_MAP_END };
+
+static void gameInit( void ) {
+    
+    mingin_registerButtonMapping( QUIT, quitMapping );
+    mingin_registerButtonMapping( FULLSCREEN_TOGGLE, fullscreenMapping );
+    
+    maxiginGame_init();
+    }
+
+
+
+
+char maxiginInternal_registerButtonMapping( int inButtonHandle,
+                                            const MinginButton inMapping[] ) {
+
+    /* push it up so it doesn't interfere with our mappings */
+    inButtonHandle += LAST_MAXIGIN_USER_ACTION;
+
+    return mingin_registerButtonMapping( inButtonHandle, inMapping );
+    }
+
+
+
+char maxiginInternal_isButtonDown( int inButtonHandle ) {
+    
+    /* push it up so it doesn't interfere with our mappings */
+    inButtonHandle += LAST_MAXIGIN_USER_ACTION;
+
+    return mingin_isButtonDown( inButtonHandle );
+    }
+
+
+
+
+/* end #ifdef MAXIGIN_IMPLEMENTATION */
+#endif
+
+
+
+/*
+  Make sure our versions of these functions get called,
+  so that our internal button mappings aren't clobbered.
+*/
+#define mingin_registerButtonMapping  maxiginInternal_registerButtonMapping
+#define mingin_isButtonDown           maxiginInternal_isButtonDown
+
+
+
+
+/* end of #ifndef MAXIGIN_H_INCLUDED */
 #endif

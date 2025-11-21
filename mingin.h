@@ -34,6 +34,7 @@
 */
 
 
+
 /*
   ==================================================
   How to compile                       [jumpCompile]
@@ -185,6 +186,11 @@
   The only guarantee is that these functions will never be called concurrently.
 */
 
+
+
+
+#ifndef MINGIN_H_INCLUDED
+#define MINGIN_H_INCLUDED
 
 
 /*
@@ -1885,4 +1891,9 @@ MinginButton minginPlatform_getLastButtonPressed( void ) {
 
 
 /* end #ifdef MINGIN_IMPLEMENTATION */
+#endif
+
+
+
+/* end of #ifndef MINGIN_H_INCLUDED */
 #endif

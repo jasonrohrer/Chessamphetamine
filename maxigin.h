@@ -1,7 +1,7 @@
 #include "mingin.h"
 
 /*
-  Maxigin: a maximally portable 100% pure C89 platform-independent
+  Maxigin: a maximally portable, 100% pure C89, platform-independent,
            single-player video game engine with only one dependency (mingin.h)
            
            by Jason Rohrer
@@ -17,7 +17,7 @@
 
   -- How to compile                    [jumpCompile]
 
-  -- Static setting                    [jumpSettings] 
+  -- Static settings                   [jumpSettings] 
 
   -- Why Maxigin?                      [jumpWhy]
 
@@ -52,11 +52,8 @@
   Maxigin implements the four functions needed by a Mingin game
   (see mingin.h), so your game shouldn't implement these directly.
 
-  You can still include maxigin.h in your code and use the provided functions
+  You can still include mingin.h in your code and use the provided functions
   directly (see [jumpMingin] in mingin.h for a list of functions).
-
-  Maxigin also handles the #define MINGIN_IMPLEMENTATION needed to compile
-  the mingin.h implementation code.
 
 */
 
@@ -108,10 +105,9 @@
   I'm making multiple games on top of mingin, and this header file collects
   all of that common code.
 
-  This code isn't just baked into mingin.h, though, because I don't want
+  Why not just make all this part of mingin.h?  Because I don't want
   to force you to use it.  If you want to use mingin.h for cross-platform
   portability only, and do things your own way, you're free to do that.
-  
 
   My goal is to make this code ridiculously portable:  100% C89, with absolutely
   no includes or dependences beyond mingin.h
@@ -124,22 +120,26 @@
 
   --Since there are no includes, Maxigin obeys the following constraints:
 
-    --None of the C Standard Library functions are used, not even the
+    --None of the C Standard Library functions or macros are used, not even the
       "freestanding" subset.  Maxigin never calls malloc, free, fopen, printf,
-      assert, etc.  If you want to use these in your game, you're free to do so,
-      but Mingin doesn't force your game to depend on these.
+      assert, etc., and it doesn't expect uint64 to exist.
+      If you want to use these in your game, you're free to do so,
+      but Maxigin doesn't force your game to depend on these.
 
     --No dynamic memory allocation.
 
-    --No filesystem access (mingin functions are used for bulk data access,
-      loggin, persistent data storage, and so on).
+    --No explicit filesystem access (mingin functions are used for bulk data
+      access, logging, persistent data storage, and so on).
 
-  --No floating point types or math.
+  --No floating point types or math operations.
+
+  --No assumptions about the size of int or long or short.
 
   --No platform-dependent code surrounded by #ifdefs.  The same code compiles
     and runs on every platform.
 
-  --No program entry point (beyond whatever entry point is provided by mingin.h)
+  --No program entry point (beyond whatever entry point is provided by
+    the platform-specific code in mingin.h)
     
 */
 
@@ -148,7 +148,7 @@
 
 /*
   ===============================================
-  How to make a Maxigin game            [jumpGame]
+  How to make a Maxigin game           [jumpGame]
   ===============================================
   
   The game itself must implement these three functions:
@@ -192,7 +192,12 @@
   This is the only maxiginGame_ function where maxigin_init functions can
   be called.
   ****
-
+  
+  ****
+  All general-purpose maxigin_ functions provided by mingin.h CAN be called
+  from this function.
+  ****
+  
   ****
   All mingin_ functions provided by mingin.h CAN be called from this function.
   ****
@@ -217,10 +222,18 @@ void maxiginGame_init( void );
       mingin_getStepsPerSecond()
 
   ****
-  This is the ONLY maxiginGame_function where you can call
-  mingin-provided "mingin_" functions.
+  Do not call maxigin-provided "maxigin_init" functions from this function.
   ****
   
+  ****
+  All general-purpose maxigin_ functions provided by mingin.h CAN be called
+  from this function.
+  ****
+  
+  ****
+  All mingin_ functions provided by mingin.h CAN be called from this function.
+  ****
+
   Will be called at least once, after maxiginGame_init and before any
   calls to maxiginGame_getNativePixels.
   
@@ -239,13 +252,13 @@ void maxiginGame_step( void );
       MAXIGIN_GAME_NATIVE_H * MAXIGIN_GAME_NATIVE_W
       
   total pixels.
-
-  ****
-  Do not call mingin-provided "mingin_" functions from this function.
-  ****
   
   ****
   Do not call maxigin-provided "maxigin_" functions from this function.
+  ****
+  
+  ****
+  Do not call mingin-provided "mingin_" functions from this function.
   ****
   
   Will not necessarily be called.
@@ -279,7 +292,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer );
 
   ****
   Calling these functions from the wrong function might result in unexpected
-  (though safe) behavior, and will result in an error message will be written
+  (though safe) behavior, and will result in an error message being written
   to the log.
   ****
 */

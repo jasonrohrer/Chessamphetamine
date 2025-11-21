@@ -1,5 +1,5 @@
 /*
-  Mingin: a minimal single-header pure C89 video game engine
+  Mingin: a minimal single-header pure C89 single-player video game engine
           by Jason Rohrer
           
   This work is not copyrighted.  I place it into the public domain.
@@ -9,7 +9,7 @@
   Table of Contents                    [jumpContents]
   ===================================================
 
-  Jump to a section by searching for the [keyString]
+  Jump to a section by searching for the corresponding [keyString]
   
 
   -- How to compile                    [jumpCompile]
@@ -57,26 +57,31 @@
   ==============================================
   Why Mingin?                          [jumpWhy]
   ==============================================
-
+  
+  Mingin is a single C89 include file that provides the platform-specific
+  infrastructure necessary to make a single-player video game, aimed at
+  outliving any specific OS, SDK, hardware system, etc.  A Mingin game
+  should be compilable and runnable forever, since it should be easy to get
+  Mingin running on any platform.
+  
   Doom is widely celebrated for its portability.  Doom will compile and run
   on your toaster.  Mingin aims to make games just as portable, if not more
   portable, than Doom.
-  
-  Mingin is a single C89 include file that provides the platform-specific
-  infrastructure necessary to make a single-player video game.
 
   In order to achieve maximum portability across past and future platforms
-  that support compiling C89 code, we make no assumptions about the plaforms
-  themselves and what they provide, beyond providing a C89 compiler.
+  that support compiling C89 code, we make no assumptions about the platforms
+  themselves and what features they have, beyond providing a C89 compiler.
 
   For example:
 
   --This code makes no includes that are assumed to be available on every
-    plaform.  Any includes present are strictly platform-specific for
+    platform.  Any includes present are strictly platform-specific for
     accessing operating system resources and are surrounded
     by #ifdef's that will remove them from compilation on other platforms.
     None of the C Standard Library includes are used, not even the
-    "freestanding" subset.
+    "freestanding" subset.  Mingin never calls malloc, free, fopen, printf,
+    assert, etc.  If you want to use these in your game, you're free to do so,
+    but Mingin doesn't force your game to depend on these.
 
   --This code makes no assumptions about any particular metaphors or program
     structures, and works just fine on platforms without "filesystems" or
@@ -89,7 +94,7 @@
   --This code makes no assumptions about entry points (like main) that must
     be present on every platform.  Platform-specific entry points are possible.
 
-  --The code makes no assumptions about what platform features are present, and
+  --The code makes no assumptions about what platform features are present,
     and Mingin can be used to run games on platforms that can only provide a
     subset of the required infrastructure.
 
@@ -120,14 +125,14 @@
 
   
   Note that a given platform might not provide all of these thing for real,
-  yet the game can still function on that plaform.
+  yet the game can still function on that platform.
 
   For example, a platform without speakers can run a silent version of the game,
   or a platform with no persistent data store can still run a memoryless
   version of the game that starts fresh each time it is launched, or a platform
   with no bulk data device at all might compile needed bulk data resources
   directly into the program code for access by the game---remember Resource
-  Forks on ancient versions of MacOS?.
+  Forks on ancient versions of Mac OS?
 
   As long as regular time steps pass, the game can still function in some
   capacity.
@@ -141,11 +146,23 @@
   How to make a Mingin game            [jumpGame]
   ===============================================
   
-  The game itself must implement these * FOUR * functions.
+  The game itself must implement these four functions:
   
-  Each function is tagged with   [jumpGameRequired]
+      void minginGame_step( char inFinalStep );
+      
+      void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh );
+      
+      void minginGame_getScreenPixels( int inWide, int inHigh,
+                                       unsigned char *inRGBBuffer );
+                                       
+      void minginGame_getAudioSamples( int inNumSamples,
+                                       int inNumChannels,
+                                       int inSamplesPerSecond,
+                                       unsigned char *inSampleBuffer );
   
-  These are called by the plaform, and the platform is in charge
+  Each function is tagged below with   [jumpGameRequired]
+  
+  These are called by the engine, and the engine is in charge
   of doing any necessary color or sample format conversions with the
   data provided by the game.
 
@@ -155,12 +172,15 @@
 
   Only minginGame_step is guaranteed to be called.
 
+  The other three minginGame_ functions might not be called on every platform
+  (for example, a headless test mode, or a platform without speakers).
+  
   minginGame_step is guaranteed to be called at least once, before
   any other minginGame_ functions are called.
   
   The order and frequency of these function calls are not guaranteed.
-  minginGame_getScreenPixels after multiple calls to minginGame_step, or
-  multiple times between each call to minginGame_step, etc.
+  minginGame_getScreenPixels might be called after multiple calls to
+  minginGame_step, or multiple times between each call to minginGame_step, etc.
 
   The only guarantee is that these functions will never be called concurrently.
 */
@@ -308,6 +328,12 @@ void minginGame_getAudioSamples( int inNumSamples,
   
   Mingin provides these functions, which the game can call from inside
   its minginGame_step function.
+
+  ****
+  Platforms are permitted to ignore these function calls, and return unexpected
+  (though safe) results, if these calls are made from outside the
+  minginGame_step function.
+  ****
 
   Each function is tagged with   [jumpMinginProvides]
 
@@ -797,7 +823,7 @@ void mingin_quit( void );
    but it also works on platforms that only support button state polling.
 
    This also places the platform in charge of remembering the last button
-   for calls to minginPlatform_getLastButtonPressed(), if the plaform supports
+   for calls to minginPlatform_getLastButtonPressed(), if the platform supports
    that, since Mingin is not going to poll for every possible button's DOWN
    state to track this itself.
    
@@ -1083,6 +1109,7 @@ static char shouldQuit = 0;
 static int windowW = 0;
 static int windowH = 0;
 
+static char areWeInStepFunction = 0;
 
 
 static void getMonitorSize( Display *inXDisplay,
@@ -1108,12 +1135,22 @@ int minginPlatform_getStepsPerSecond( void ) {
 
 
 void minginPlatform_quit( void ) {
+    if( ! areWeInStepFunction ) {
+        mingin_log( "Error:  calling minginPlatform_quit from "
+                    "outside minginGame_step function\n" );
+        return;
+        }
     shouldQuit = 1;
     }
 
 static char xFullscreen = 0;
 
 char minginPlatform_toggleFullscreen( char inFullscreen ) {
+    if( ! areWeInStepFunction ) {
+        mingin_log( "Error:  calling minginPlatform_toggleFullscreen from "
+                    "outside minginGame_step function\n" );
+        return 1;
+        }
     xFullscreen = inFullscreen;
     return 1;
     }
@@ -1512,7 +1549,12 @@ int main( void ) {
                 }
             }
 
+        areWeInStepFunction = 1;
+
         minginGame_step( 0 );
+
+        areWeInStepFunction = 0;
+        
         
         if( shouldQuit ) {
             /* mingin_quit called in the most recent step,

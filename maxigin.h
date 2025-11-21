@@ -298,6 +298,61 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer );
 */
 
 
+/*
+  Registers an area of static memory to be managed by Maxigin's hot-reloading
+  system.
+
+      inPointer       the start of the static memory area.
+  
+      inNumBytes      the length of the memory are.
+
+      inDescription   a unique descriptor string
+  
+  [jumpMaxiginInit]
+*/
+void maxigin_initRegisterStaticMemory( void *inPointer, int inNumBytes,
+                                       const char *inDescription );
+
+
+
+/*
+  During init, after registering all static memory of interest with
+  maxigin_initRegisterStaticMemory, call this to potentially restore
+  the contents of those memory locations from the last run.
+
+  If the registered descriptions and sizes have changed since last run
+  (due to a code change), this call has no effect.
+
+  [jumpMaxiginInit]
+*/
+void maxigin_restoreStaticMemoryFromLastRun( void );
+
+
+
+/*
+  CONSIDER:
+
+  Can we actually RECORD the state of this static memory to persistent storage
+  after every step (storing a no-op if it hasn't changed, or maybe only storing
+  a sparse map of which bytes have changed....)  and then use that to do
+  full game playback, including smooth rewinding and time jumping forward
+  and back?
+
+  The old game engine recorded input events, the system, clock, etc, and then
+  let the game code replay itself, which is useful for catching bugs, but also
+  fragile, and doesn't allow time-jumping, which made it too much of a pain
+  to use (if someone submitted a long game with a bug a the end, I didn't
+  have time to watch the whole thing).
+
+  What if this system allows fast forward and rewind, and then pause...
+
+  And then you can see a bug happen (or it will just end, if there was a crash).
+
+  Then you can rewind to the frame before the bug, and then "unleash" it
+  to run on the real game code again, but stop playing back, and then
+  try to trigger the bug yourself.  I.e., you get to the point right before
+  the bug, and then you take the reigns by clicking and pressing buttons.
+*/
 
 
 
@@ -353,6 +408,9 @@ char maxiginInternal_isButtonDown( int inButtonHandle );
 #ifdef MAXIGIN_IMPLEMENTATION
 
 
+static char areWeInMaxiginGameInitFunction = 0;
+
+static char areWeInMaxiginGameStepFunction = 0;
 
 
 
@@ -494,7 +552,11 @@ void minginGame_step( char inFinalStep ) {
         fullscreenTogglePressed = 0;
         }
 
+    areWeInMaxiginGameStepFunction = 1;
+    
     maxiginGame_step();
+    
+    areWeInMaxiginGameStepFunction = 0;
     }
 
 
@@ -506,8 +568,12 @@ static void gameInit( void ) {
     
     mingin_registerButtonMapping( QUIT, quitMapping );
     mingin_registerButtonMapping( FULLSCREEN_TOGGLE, fullscreenMapping );
+
+    areWeInMaxiginGameInitFunction = 1;
     
     maxiginGame_init();
+
+    areWeInMaxiginGameInitFunction = 0;
     }
 
 

@@ -778,6 +778,89 @@ void mingin_quit( void );
 
 
 /*
+  Opens a named persistent data store for writing.
+
+  Returns store handle on success, -1 on failure.
+  
+  [jumpMinginProvides]
+*/
+int mingin_startWritePersistData( const char *inStoreName );
+
+
+
+/*
+  Opens a named persistent data store for reading.
+
+  *outTotalBytes set to the number of bytes in the data store.
+  
+  Returns store handle on success, -1 on failure.
+  
+  [jumpMinginProvides]
+*/
+int mingin_startReadPersistData( const char *inStoreName,
+                                 int *outTotalBytes );
+
+
+
+/*
+  Writes more data to an open persistent data store.
+
+  Returns 1 on success, 0 on failure.
+  
+  [jumpMinginProvides]
+*/
+char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
+                              unsigned char *inByteBuffer );
+
+
+
+/*
+  Reads more data from an open persistent data store.
+
+  Returns number of bytes read on success, -1 on failure.
+  
+  [jumpMinginProvides]
+*/
+int mingin_readPersistData( int inStoreReadHandle, int inNumBytesToRead,
+                            unsigned char *inByteBuffer );
+
+
+
+/*
+  Seeks to a byte position in a persistent data store.
+
+  Position is relative to 0 at start of store.
+
+  Returns 1 on success, 0 on failure.
+  
+  [jumpMinginProvides]
+*/
+char mingin_seekPersistData( int inStoreReadHandle, int inAbsoluteBytePosition );
+
+
+
+/*
+  Ends writing persistent data store.
+  
+  [jumpMinginProvides]
+*/
+void mingin_endWritePersistData( int inStoreWriteHandle );
+
+
+
+/*
+  Ends reading persistent data store.
+  
+  [jumpMinginProvides]
+*/
+void mingin_endReadPersistData( int inStoreReadHandle );
+
+                      
+
+
+
+
+/*
   This is the end of Mingin functions that a game can call.
 
   [jumpMinginProvides]

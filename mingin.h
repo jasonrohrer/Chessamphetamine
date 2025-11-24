@@ -921,35 +921,13 @@ void mingin_endReadPersistData( int inStoreReadHandle );
 */
 
 
+
 /*
   Platform must call this function once at startup.
 
   [jumpPlatformCalls]
 */
 void minginInternal_init( void );
-
-
-
-/*
-  How many times per second is the platform calling minginGame_step( 0 ) ?
-
-  Must return a positive value, which may not be accurate on some platforms.
-  
-  [jumpPlatformRequired]
-*/
-int minginPlatform_getStepsPerSecond( void );
-
-
-
-/*
-  Tells the platform that it's time to quit.
-
-  After this call, the platform should not call minginGame_step or any
-  other minginGame_ functions again.
-  
-  [jumpPlatformRequired]
-*/
-void minginPlatform_quit( void );
 
 
 
@@ -967,49 +945,20 @@ char minginPlatform_isButtonDown( MinginButton inButton );
 
 
 /*
-  Log a \0-terminated character string to the platform's logging mechanism.
-  
-  [jumpPlatformRequired]
-*/
-void minginPlatform_log( const char *inString );
+  NOTE:
 
+  Platform must implement all mingin_ functions above, except for these,
+  which Mingin implements internally:
 
+    mingin_registerButtonMapping
+    
+    mingin_isButtonDown
 
-/*
-  Ask the platform to toggle between fullscreen and windowed mode.
-
-  Only needs to function on platforms where it makes sense.
-
-  Returns 1 on platforms where toggling is supported, or 0 on platforms
-  where it is not supported.
-  
-  [jumpPlatformRequired]
-*/
-char minginPlatform_toggleFullscreen( char inFullscreen );
-
-
-
-/*
-  Asks the platform if it's currently in fullscreen mode.
-  
-  Only needs to function on platforms where it makes sense.
     
   [jumpPlatformRequired]
 */
-char minginPlatform_isFullscreen( void );
 
 
-
-/*
-  Get the last button pressed on the platform, and clear the memory
-  of the last button pressed.
-
-  Returns MGN_BUTTON_NONE if no button has been pressed since the last time
-  the memory was cleared.
-  
-  [jumpPlatformRequired]
-*/
-MinginButton minginPlatform_getLastButtonPressed( void );
 
 
 /*
@@ -1035,29 +984,8 @@ MinginButton minginPlatform_getLastButtonPressed( void );
 
 
 
-int mingin_getStepsPerSecond( void ) {
-    return minginPlatform_getStepsPerSecond();
-    }
 
 
-void mingin_log( const char *inString ) {
-    minginPlatform_log( inString );
-    }
-
-
-void mingin_quit( void ) {
-    minginPlatform_quit();
-    }
-
-
-char mingin_toggleFullscreen( char inFullscreen ) {
-    return minginPlatform_toggleFullscreen( inFullscreen );
-    }
-
-
-char mingin_isFullscreen( void ) {
-    return minginPlatform_isFullscreen();
-    }
 
 
 
@@ -1127,12 +1055,6 @@ char mingin_isButtonDown( int inButtonHandle ) {
        are considered pressed by the platform */
     return 0;
     }
-
-
-MinginButton mingin_getLastButtonPressed( void ) {
-    return minginPlatform_getLastButtonPressed();
-    }
-
 
 
 
@@ -1220,14 +1142,14 @@ static void getMonitorSize( Display *inXDisplay,
 
 
 
-int minginPlatform_getStepsPerSecond( void ) {
+int mingin_getStepsPerSecond( void ) {
     return LINUX_TARGET_FPS;
     }
 
 
-void minginPlatform_quit( void ) {
+void mingin_quit( void ) {
     if( ! areWeInStepFunction ) {
-        mingin_log( "Error:  calling minginPlatform_quit from "
+        mingin_log( "Error:  calling mingin_quit from "
                     "outside minginGame_step function\n" );
         return;
         }
@@ -1236,9 +1158,9 @@ void minginPlatform_quit( void ) {
 
 static char xFullscreen = 0;
 
-char minginPlatform_toggleFullscreen( char inFullscreen ) {
+char mingin_toggleFullscreen( char inFullscreen ) {
     if( ! areWeInStepFunction ) {
-        mingin_log( "Error:  calling minginPlatform_toggleFullscreen from "
+        mingin_log( "Error:  calling mingin_toggleFullscreen from "
                     "outside minginGame_step function\n" );
         return 1;
         }
@@ -1246,7 +1168,7 @@ char minginPlatform_toggleFullscreen( char inFullscreen ) {
     return 1;
     }
 
-char minginPlatform_isFullscreen( void ) {
+char mingin_isFullscreen( void ) {
     return xFullscreen;
     }
 
@@ -1299,7 +1221,7 @@ static MinginButton mapXKeyToButton( KeySym inXKey ) {
     }
 
 
-MinginButton minginPlatform_getLastButtonPressed( void ) {
+MinginButton mingin_getLastButtonPressed( void ) {
     MinginButton last = lastButtonPressed;
     lastButtonPressed = MGN_BUTTON_NONE;
     return last;
@@ -1320,7 +1242,7 @@ static int stringLength( const char *inString ) {
     }
         
 
-void minginPlatform_log( const char *inString ) {
+void mingin_log( const char *inString ) {
     write( STDOUT_FILENO, inString, (unsigned int)stringLength( inString ) );
     }
 
@@ -1908,7 +1830,7 @@ int main( void ) {
 
 
 
-int minginPlatform_getStepsPerSecond( void ) {
+int mingin_getStepsPerSecond( void ) {
     /* dummy value */
     return 1;
     }
@@ -1917,7 +1839,7 @@ int minginPlatform_getStepsPerSecond( void ) {
 
 
 
-void minginPlatform_quit( void ) {
+void mingin_quit( void ) {
     gotQuit = 1;
     }
 
@@ -1934,7 +1856,7 @@ char minginPlatform_isButtonDown( MinginButton inButton ) {
 
 
 
-void minginPlatform_log( const char *inString ) {
+void mingin_log( const char *inString ) {
     /* suppress compiler warning */
     if( inString[0] == '\0' ) {
         }
@@ -1944,7 +1866,7 @@ void minginPlatform_log( const char *inString ) {
 
 
 
-char minginPlatform_toggleFullscreen( char inFullscreen ) {
+char mingin_toggleFullscreen( char inFullscreen ) {
     /* suppress warning */
     if( inFullscreen ) {
         }
@@ -1953,14 +1875,14 @@ char minginPlatform_toggleFullscreen( char inFullscreen ) {
 
 
 
-char minginPlatform_isFullscreen( void ) {
+char mingin_isFullscreen( void ) {
     return 0;
     }
 
 
 
 
-MinginButton minginPlatform_getLastButtonPressed( void ) {
+MinginButton mingin_getLastButtonPressed( void ) {
     return MGN_BUTTON_NONE;
     }
 

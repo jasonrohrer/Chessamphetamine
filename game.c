@@ -124,6 +124,11 @@ static MinginButton jumpMapping[] = { MGN_KEY_SPACE, MGN_MAP_END };
 
 static MinginButton remapMapping[] = { MGN_KEY_P, MGN_MAP_END };
 
+
+#define REGISTER_INT_MEM( x )  \
+    maxigin_initRegisterStaticMemory( &x, sizeof(x), #x )
+
+
 void maxiginGame_init( void ) {
     
     mingin_registerButtonMapping( JUMP, jumpMapping );
@@ -134,4 +139,14 @@ void maxiginGame_init( void ) {
     boxPosY = MAXIGIN_GAME_NATIVE_H / 2;
 
     boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 4;
+
+
+    REGISTER_INT_MEM( boxPosX );
+    REGISTER_INT_MEM( boxPosY );
+    REGISTER_INT_MEM( boxW );
+    REGISTER_INT_MEM( boxH );
+    REGISTER_INT_MEM( boxVPerSecond );
+    REGISTER_INT_MEM( boxDir );
+
+    maxigin_initRestoreStaticMemoryFromLastRun();
     }

@@ -298,6 +298,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer );
 */
 
 
+
+
 /*
   Registers an area of static memory to be managed by Maxigin's hot-reloading
   system.
@@ -325,7 +327,10 @@ void maxigin_initRegisterStaticMemory( void *inPointer, int inNumBytes,
 
   [jumpMaxiginInit]
 */
-void maxigin_restoreStaticMemoryFromLastRun( void );
+void maxigin_initRestoreStaticMemoryFromLastRun( void );
+
+
+
 
 
 
@@ -357,6 +362,47 @@ void maxigin_restoreStaticMemoryFromLastRun( void );
 
 
 
+/*
+  Converts an int into a \0-terminated string.
+  
+  Returns a static buffer that must be used before next call to intToString.
+*/
+const char *maxigin_intToString( int inInt );
+
+
+
+/*
+  Converts a \0-terminated string to an int.
+*/
+int maxigin_stringToInt( const char *inString );
+
+
+
+
+/*
+  Logs a labeled int value to the game engine log.
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_logInt( const char *inLabel, int inVal );
+
+
+
+/*
+  Gets the length of a string.
+
+  [jumpMaxiginGeneral]
+*/
+int maxigin_stringLength( const char *inString );
+
+
+
+/*
+  Returns 1 if two strings are equal, 0 if not.
+
+  [jumpMaxiginGeneral]
+*/
+char maxigin_equal( const char *inStringA, const char *inStringB );
 
 
 
@@ -520,6 +566,8 @@ void minginGame_getScreenPixels( int inWide, int inHigh,
 
 static void gameInit( void );
 
+static void saveGame( void );
+
 
 void minginGame_step( char inFinalStep ) {
 
@@ -535,6 +583,8 @@ void minginGame_step( char inFinalStep ) {
     
     if( mingin_isButtonDown( QUIT ) ) {
         mingin_log( "Got quit key\n" );
+
+        saveGame();
         
         mingin_quit();
         return;
@@ -596,6 +646,348 @@ char maxiginInternal_isButtonDown( int inButtonHandle ) {
     inButtonHandle += LAST_MAXIGIN_USER_ACTION;
 
     return mingin_isButtonDown( inButtonHandle );
+    }
+
+
+
+
+typedef struct MaxiginMemRec {
+        void *pointer;
+        int numBytes;
+        const char *description;
+    } MaxiginMemRec;
+
+
+#define MAXIGIN_MAX_MEM_RECORDS 1024
+
+static MaxiginMemRec memRecords[ MAXIGIN_MAX_MEM_RECORDS ];
+
+static int numMemRecords = 0;
+
+
+void maxigin_initRegisterStaticMemory( void *inPointer, int inNumBytes,
+                                       const char *inDescription ) {
+    if( numMemRecords >= MAXIGIN_MAX_MEM_RECORDS ) {
+        maxigin_logInt( "Game tried to register more than max memory records: ",
+                        MAXIGIN_MAX_MEM_RECORDS );
+        return;
+        }
+    memRecords[ numMemRecords ].pointer = inPointer;
+    memRecords[ numMemRecords ].numBytes = inNumBytes;
+    memRecords[ numMemRecords ].description = inDescription;
+
+    numMemRecords++;
+    }
+
+
+static const char *saveGameFileName = "save.bin";
+
+
+#define MAXIGIN_MAX_FINGERPRINT_LENGTH  256
+static char fingerprintBuffer[ MAXIGIN_MAX_FINGERPRINT_LENGTH ];
+
+static char *getMemRecordsFingerprint( int *outTotalMemBytes ) {
+    int i, c;
+    int totalNumBytes = 0;
+    
+    for( c=0; c<MAXIGIN_MAX_FINGERPRINT_LENGTH; c++ ) {
+        fingerprintBuffer[c] = '\0';
+        }
+    for( i=0; i<numMemRecords; i++ ) {
+        totalNumBytes += memRecords[i].numBytes;
+
+        c=0;
+        while( memRecords[ i ].description[c] != '\0' &&
+               c < MAXIGIN_MAX_FINGERPRINT_LENGTH - 1 ) {
+            fingerprintBuffer[c] =
+                memRecords[ i ].description[c] ^ fingerprintBuffer[c];
+            }
+        }
+    *outTotalMemBytes = totalNumBytes;
+
+    return fingerprintBuffer;
+    }
+
+
+
+#define MAXIGIN_FILE_BUFFER_SIZE 1024
+static unsigned char maxiginFileBuffer[ MAXIGIN_FILE_BUFFER_SIZE ];
+
+
+/*
+  Reads a \0-terminated string from data store.
+
+  inMaxBytes is the length of the buffer, including the \0 byte for termination.
+
+  Returns 1 on success, 0 on failure.
+*/
+static char readStringFromPersistData( int inStoreReadHandle,
+                                       int inMaxBytes,
+                                       char *inBuffer ) {
+    int i = 0;
+
+    int readNum = mingin_readPersistData( inStoreReadHandle,
+                                          1,
+                                          (unsigned char *)&( inBuffer[i] ) );
+    while( readNum == 1 &&
+           i < inMaxBytes - 1 &&
+           inBuffer[i] != '\0' ) {
+        i++;
+        readNum = mingin_readPersistData( inStoreReadHandle,
+                                          1,
+                                          (unsigned char *)&( inBuffer[i] ) );
+        }
+    if( inBuffer[i] != '\0' && readNum == 1 ) {
+        /* didn't find termination in file
+           because string was too long for buffer */
+        mingin_log( "Error:  Buffer overflow when trying to read string from "
+                    "persistent data store.\n" );
+        return 0;
+        }
+    else if( inBuffer[i] != '\0' && readNum == 0 ) {
+        mingin_log( "Error:  Reached end of store when trying to read string "
+                    "from persistent data store.\n" );
+        return 0;
+        }
+
+    return 1;
+    }
+
+
+static void saveGame( void ) {
+    char *fingerprint;
+    int numTotalBytes;
+    const char *intString;
+    int i;
+    
+    int outHandle = mingin_startWritePersistData( saveGameFileName );
+
+    if( outHandle == -1 ) {
+        mingin_log( "Failed to open saved game for writing: " );
+        mingin_log( saveGameFileName );
+        mingin_log( "\n" );
+        
+        return;
+        }
+
+    fingerprint = getMemRecordsFingerprint( &numTotalBytes );
+
+    /* fixme:  make function to write int to data store as string */
+    intString = maxigin_intToString( numTotalBytes );
+    
+    
+    mingin_writePersistData( outHandle,
+                             maxigin_stringLength( intString ) + 1,
+                             (unsigned char*)intString );
+
+    
+    intString = maxigin_intToString( numMemRecords );
+    
+    mingin_writePersistData( outHandle,
+                             maxigin_stringLength( intString ) + 1,
+                             (unsigned char*)intString );
+    
+    mingin_writePersistData( outHandle,
+                             maxigin_stringLength( fingerprint ) + 1,
+                             (unsigned char*)fingerprint );
+
+    for( i=0; i<numMemRecords; i++ ) {
+        const char *des = memRecords[i].description;
+        
+        intString = maxigin_intToString( memRecords[i].numBytes );
+    
+        mingin_writePersistData( outHandle,
+                             maxigin_stringLength( des ) + 1,
+                             (unsigned char*)des );
+        
+        mingin_writePersistData( outHandle,
+                             maxigin_stringLength( intString ) + 1,
+                             (unsigned char*)intString );
+
+        /* write numBytes from memory location into storage */
+        mingin_writePersistData( outHandle,
+                                 memRecords[i].numBytes,
+                                 (unsigned char*)memRecords[i].pointer );
+        }
+
+    mingin_endWritePersistData( outHandle );
+    }
+
+
+
+void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
+    char *fingerprint;
+    int numTotalBytes;
+    char success;
+    const char *intString;
+    /*
+    int i;*/
+    int storeSize;
+    
+    int readHandle = mingin_startReadPersistData( saveGameFileName,
+                                                  &storeSize );
+
+    if( readHandle == -1 ) {
+        mingin_log( "Failed to open saved game for reading: " );
+        mingin_log( saveGameFileName );
+        mingin_log( "\n" );
+        
+        return;
+        }
+
+    fingerprint = getMemRecordsFingerprint( &numTotalBytes );
+
+    /* fixme:  make function to read int from file as string and convert
+       to int */
+    success = readStringFromPersistData( readHandle,
+                                         MAXIGIN_FILE_BUFFER_SIZE,
+                                         (char*)maxiginFileBuffer );
+
+    if( ! success ) {
+        mingin_endReadPersistData( readHandle );
+        mingin_log( "Failed to read total num bytes from save file.\n" );
+        return;
+        }
+
+    intString = maxigin_intToString( numTotalBytes );
+
+    if( ! maxigin_equal( intString, (char*)maxiginFileBuffer ) ) {
+        mingin_endReadPersistData( readHandle );
+        mingin_log( "Save file does not match current total memory bytes, "
+                    "ignoring.\n" );
+        return;
+        }
+
+    success = readStringFromPersistData( readHandle,
+                                         MAXIGIN_FILE_BUFFER_SIZE,
+                                         (char*)maxiginFileBuffer );
+    if( ! success ) {
+        mingin_endReadPersistData( readHandle );
+        mingin_log( "Failed to read fingerprint from save file.\n" );
+        return;
+        }
+
+    if( ! maxigin_equal( fingerprint, (char*)maxiginFileBuffer ) ) {
+        mingin_endReadPersistData( readHandle );
+        mingin_log( "Save file does not match current memory fingerprint, "
+                    "ignoring.\n" );
+        return;
+        }
+    
+    }
+
+
+
+
+#define MAXIGIN_LOG_INT_MAX_LENGTH  256
+
+static char logIntBuffer[ MAXIGIN_LOG_INT_MAX_LENGTH ];
+
+void maxigin_logInt( const char *inLabel, int inVal ) {
+    const char *valString = maxigin_intToString( inVal );
+    int i = 0;
+
+    while( i < MAXIGIN_LOG_INT_MAX_LENGTH - 2 &&
+           inLabel[i] != '\0' ) {
+        logIntBuffer[i] = inLabel[i];
+        i++;
+        }
+    while( i < MAXIGIN_LOG_INT_MAX_LENGTH - 2 &&
+           valString[i] != '\0' ) {
+        logIntBuffer[i] = valString[i];
+        i++;
+        }
+    logIntBuffer[i] = '\n';
+    logIntBuffer[i+1] = '\0';
+
+    mingin_log( logIntBuffer );
+    }
+
+
+
+int maxigin_stringLength( const char *inString ) {
+    int len = 0;
+    while( inString[len] != '\0' ) {
+        len++;
+        }
+    return len;
+    }
+
+
+
+char maxigin_equal( const char *inStringA, const char *inStringB ) {
+    int i = 0;
+    while( inStringA[i] == inStringB[i] &&
+           inStringA[i] != '\0' ) {
+        i++;
+        }
+
+    if( inStringA[i] == inStringB[i] ) {
+        /* both terminated */
+        return 1;
+        }
+    return 0;
+    }
+
+
+
+
+
+
+static char intToStringBuffer[20];
+
+
+const char *maxigin_intToString( int inInt ) {
+    unsigned int c = 0;
+    /* start with billions */
+    int divisor = 1000000000;
+    const char *formatError = "[int_format_error]";
+    
+    /* skip 0 digits until our first non-zero digit */
+    int qLowerLimit = 1;
+    
+    if( inInt == 0 ) {
+        return "0";
+        }
+    if( inInt < 0 ) {
+        intToStringBuffer[c] = '-';
+        c++;
+        inInt *= -1;
+        }
+    while( divisor >= 1 ) {
+        int q = inInt / divisor;
+        if( q >= qLowerLimit ) {
+            if( q > 9 ) {
+                return formatError;
+                }
+            if( c >= sizeof( intToStringBuffer ) - 1 ) {
+                /* out of room? */
+                return formatError;
+                }
+            
+            intToStringBuffer[c] = (char)( '0' + q );
+            c++;
+            /* we've seen at least one non-zero digit,
+               so start allowing zeros now */
+            qLowerLimit = 0;
+            }
+        inInt -= q * divisor;
+        divisor /= 10;
+        }
+    
+    /* terminate */
+    intToStringBuffer[c] = '\0';
+    
+    return intToStringBuffer;  
+    }
+
+
+int maxigin_stringToInt( const char *inString ) {
+    /* fixme:  implement */
+    if( inString[0] == '\0' ) {
+        return 0;
+        }
+    return 0;
     }
 
 

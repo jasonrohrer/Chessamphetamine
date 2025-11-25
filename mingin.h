@@ -810,7 +810,7 @@ int mingin_startReadPersistData( const char *inStoreName,
   [jumpMinginProvides]
 */
 char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
-                              unsigned char *inByteBuffer );
+                              const unsigned char *inByteBuffer );
 
 
 
@@ -835,7 +835,8 @@ int mingin_readPersistData( int inStoreReadHandle, int inNumBytesToRead,
   
   [jumpMinginProvides]
 */
-char mingin_seekPersistData( int inStoreReadHandle, int inAbsoluteBytePosition );
+char mingin_seekPersistData( int inStoreReadHandle,
+                             int inAbsoluteBytePosition );
 
 
 
@@ -855,8 +856,52 @@ void mingin_endWritePersistData( int inStoreWriteHandle );
 */
 void mingin_endReadPersistData( int inStoreReadHandle );
 
-                      
 
+
+/*
+  Opens a named bulk data resource for reading.
+
+  *outTotalBytes set to the number of bytes in the data resoure.
+  
+  Returns resource handle on success, -1 on failure.
+  
+  [jumpMinginProvides]
+*/
+int mingin_startReadBulkData( const char *inBulkName,
+                              int *outTotalBytes );
+
+
+/*
+  Reads more data from an open bulk data resource.
+
+  Returns number of bytes read on success, -1 on failure.
+  
+  [jumpMinginProvides]
+*/
+int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
+                         unsigned char *inByteBuffer );
+
+
+
+/*
+  Seeks to a byte position in a bulk data resource.
+
+  Position is relative to 0 at start of resource.
+
+  Returns 1 on success, 0 on failure.
+  
+  [jumpMinginProvides]
+*/
+char mingin_seekBulkData( int inBulkDataHandle,
+                          int inAbsoluteBytePosition );
+
+
+/*
+  Ends reading bulk data resource.
+  
+  [jumpMinginProvides]
+*/
+void mingin_endReadBulkData( int inBulkDataHandle );
 
 
 
@@ -1768,6 +1813,125 @@ static void setupX11KeyMap( void ) {
 
 
 
+
+
+int mingin_startWritePersistData( const char *inStoreName ) {
+    /* suppress  warning */
+    if( inStoreName[0] == '\0' ) {
+        }
+    return -1;
+    }
+
+
+
+int mingin_startReadPersistData( const char *inStoreName,
+                                 int *outTotalBytes ) {
+    /* suppress  warning */
+    if( inStoreName[0] == '\0' ) {
+        }
+    *outTotalBytes = 0;
+    
+    return -1;
+    }
+
+
+
+char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
+                              const unsigned char *inByteBuffer ) {
+    /* suppress warning */
+    if( inStoreWriteHandle > 0 || inNumBytesToWrite > 0 ||
+        inByteBuffer != 0 ) {
+        }
+    return 0;
+    }
+
+
+
+int mingin_readPersistData( int inStoreReadHandle, int inNumBytesToRead,
+                            unsigned char *inByteBuffer ) {
+    /* suppress warning */
+    if( inStoreReadHandle > 0 || inNumBytesToRead > 0 ||
+        inByteBuffer != 0 ) {
+        }
+    return -1;
+    }
+
+
+
+char mingin_seekPersistData( int inStoreReadHandle,
+                             int inAbsoluteBytePosition ) {
+    /* suppress warning */
+    if( inStoreReadHandle > 0 || inAbsoluteBytePosition > 0 ) {
+        }
+    return 0;
+    }
+
+
+
+void mingin_endWritePersistData( int inStoreWriteHandle ) {
+    /* suppress warning */
+    if( inStoreWriteHandle > 0 ) {
+        }
+    }
+
+
+
+void mingin_endReadPersistData( int inStoreReadHandle ) {
+    /* suppress warning */
+    if( inStoreReadHandle > 0 ) {
+        }
+    }
+
+
+
+int mingin_startReadBulkData( const char *inBulkName,
+                              int *outTotalBytes ) {
+    /* suppress warning */
+    if( inBulkName[0] != '\0' ) {
+        }
+    *outTotalBytes = 0;
+    return -1;
+    }
+
+
+
+int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
+                         unsigned char *inByteBuffer ) {
+    /* suppress warning */
+    if( inBulkDataHandle > 0 || inNumBytesToRead > 0 ||
+        inByteBuffer != 0 ) {
+        }
+    return -1;
+    }
+
+
+
+
+char mingin_seekBulkData( int inBulkDataHandle,
+                          int inAbsoluteBytePosition ) {
+    /* suppress warning */
+    if( inBulkDataHandle > 0 || inAbsoluteBytePosition > 0 ) {
+        }
+    return 0;
+    }
+
+
+
+void mingin_endReadBulkData( int inBulkDataHandle ) {
+    /* suppress warning */
+    if( inBulkDataHandle > 0 ) {
+        }
+    }
+
+
+
+
+
+
+
+
+
+
 /* end #ifdef __linux__ */
 #elif defined(WIN32)
 
@@ -1881,9 +2045,118 @@ char mingin_isFullscreen( void ) {
 
 
 
-
 MinginButton mingin_getLastButtonPressed( void ) {
     return MGN_BUTTON_NONE;
+    }
+
+
+
+int mingin_startWritePersistData( const char *inStoreName ) {
+    /* suppress  warning */
+    if( inStoreName[0] == '\0' ) {
+        }
+    return -1;
+    }
+
+
+
+int mingin_startReadPersistData( const char *inStoreName,
+                                 int *outTotalBytes ) {
+    /* suppress  warning */
+    if( inStoreName[0] == '\0' ) {
+        }
+    *outTotalBytes = 0;
+    
+    return -1;
+    }
+
+
+
+char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
+                              const unsigned char *inByteBuffer ) {
+    /* suppress warning */
+    if( inStoreWriteHandle > 0 || inNumBytesToWrite > 0 ||
+        inByteBuffer != 0 ) {
+        }
+    return 0;
+    }
+
+
+
+int mingin_readPersistData( int inStoreReadHandle, int inNumBytesToRead,
+                            unsigned char *inByteBuffer ) {
+    /* suppress warning */
+    if( inStoreReadHandle > 0 || inNumBytesToRead > 0 ||
+        inByteBuffer != 0 ) {
+        }
+    return -1;
+    }
+
+
+
+char mingin_seekPersistData( int inStoreReadHandle,
+                             int inAbsoluteBytePosition ) {
+    /* suppress warning */
+    if( inStoreReadHandle > 0 || inAbsoluteBytePosition > 0 ) {
+        }
+    return 0;
+    }
+
+
+
+void mingin_endWritePersistData( int inStoreWriteHandle ) {
+    /* suppress warning */
+    if( inStoreWriteHandle > 0 ) {
+        }
+    }
+
+
+
+void mingin_endReadPersistData( int inStoreReadHandle ) {
+    /* suppress warning */
+    if( inStoreReadHandle > 0 ) {
+        }
+    }
+
+
+
+int mingin_startReadBulkData( const char *inBulkName,
+                              int *outTotalBytes ) {
+    /* suppress warning */
+    if( inBulkName[0] != '\0' ) {
+        }
+    *outTotalBytes = 0;
+    return -1;
+    }
+
+
+
+int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
+                         unsigned char *inByteBuffer ) {
+    /* suppress warning */
+    if( inBulkDataHandle > 0 || inNumBytesToRead > 0 ||
+        inByteBuffer != 0 ) {
+        }
+    return -1;
+    }
+
+
+
+
+char mingin_seekBulkData( int inBulkDataHandle,
+                          int inAbsoluteBytePosition ) {
+    /* suppress warning */
+    if( inBulkDataHandle > 0 || inAbsoluteBytePosition > 0 ) {
+        }
+    return 0;
+    }
+
+
+
+void mingin_endReadBulkData( int inBulkDataHandle ) {
+    /* suppress warning */
+    if( inBulkDataHandle > 0 ) {
+        }
     }
 
 

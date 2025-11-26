@@ -75,8 +75,8 @@ static const unsigned char flexHashTableNew[256] = {
 
 
 typedef struct FlexHashState {
-        unsigned int i;
-        unsigned int n;
+        unsigned char i;
+        unsigned char n;
         unsigned char *hashBuffer;
         unsigned int hashLength;
     } FlexHashState;
@@ -85,7 +85,8 @@ typedef struct FlexHashState {
 static void maxigin_flexHashInit( FlexHashState *inState,
                                   unsigned char *inHashBuffer,
                                   int inHashLength ) {
-    unsigned int j, i, n;
+    unsigned int j;
+    unsigned char i, n;
     unsigned int hashLength = (unsigned)inHashLength;
     unsigned int jBits;
     
@@ -119,10 +120,16 @@ static void maxigin_flexHashInit( FlexHashState *inState,
         n = n ^ flexHashTable[i] ^ jBits;
         
         inHashBuffer[j] = n;
-        
+
+        /* don't assume char is not larger than 8 bits
+           so we can't count on wrap-around behavior above 255 */
         i = ( i + 1 ) & 0xFF;
         }
 
+    /* push n forward one more time, so n is not equal to the first
+       byte in our buffer in the inHashLength=1 case */
+    n = n ^ flexHashTable[i];
+        
     /* fixme:  is there some kind of rotation thing we can do here
        to extend the length of the period */
     
@@ -132,13 +139,14 @@ static void maxigin_flexHashInit( FlexHashState *inState,
     inState->hashLength = hashLength;
     }
 
-
+#include <stdio.h>
 
 static void maxigin_flexHashAdd( FlexHashState *inState,
                                  const unsigned char *inBytes,
                                  int inNumBytes ) {
     
-    unsigned int j, i, n;
+    unsigned int j;
+    unsigned char i, n;
     unsigned int b;
     unsigned int numBytes = (unsigned)inNumBytes;
     unsigned int hashLength = inState->hashLength;
@@ -173,8 +181,13 @@ static void maxigin_flexHashAdd( FlexHashState *inState,
 
             
             if( 1 ) {
-                n = flexHashTable[ hashBuffer[j] ^ n ];
+                
+                n = flexHashTable[ hashBuffer[j] ^ n ^ i ];
+                
                 hashBuffer[j] = n;
+                
+                i = ( i + 1 )  & 0xFF;
+                //i = ( i + 1 )  % 251;
                 }
             else if( 1 ) {
             
@@ -194,6 +207,12 @@ static void maxigin_flexHashAdd( FlexHashState *inState,
                 }
                 
             }
+
+        /* push n forward one more time, so it's not equal to the last
+           byte in our hash buffer (which is also the first/only byte, in the
+           case of 1-byte hashes) */
+        n = flexHashTable[ n ];
+        
         
         /* now use n to rotate buffer bytes and xor them with
            bytes from rotation location */
@@ -385,13 +404,13 @@ int main( int inNumArgs, const char **inArgs ) {
         
     FlexHashState s;
 
-    #define hashSize 20
+    #define hashSize 3
 
     unsigned char hashBuffer[ hashSize ];
     
     maxigin_flexHashInit( &s, hashBuffer, hashSize );
 
-    #define blockSize 20
+    #define blockSize 1
     unsigned char block[ blockSize];
     int i;
     for( i=0; i<blockSize; i++ ) {

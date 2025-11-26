@@ -157,8 +157,13 @@ static void maxigin_flexHashAdd( FlexHashState *inState,
         /* jump i forward by this byte value */
         /* i = ( i + byte ) & 0xFF; */
         /* mix i with this byte */
-        i = i ^ byte;
-        
+        if( 0 ) {
+            i = i ^ byte;
+            }
+        else {
+            /* new, keep only n state */
+            n = n ^ byte;
+            }
         
         for( j=0; j < hashLength; j++ ) {
             /* now walk i forward incrementally from that point,
@@ -166,12 +171,19 @@ static void maxigin_flexHashAdd( FlexHashState *inState,
                buffer value */
 
 
+            
             if( 1 ) {
+                n = flexHashTable[ hashBuffer[j] ^ n ];
+                hashBuffer[j] = n;
+                }
+            else if( 1 ) {
+            
                 n = n ^ flexHashTable[i];
             
                 hashBuffer[j] = hashBuffer[j] ^ n;
                 
                 i = ( i + 1 )  & 0xFF;
+                
                 }
             else {
                 n = ( n + flexHashTable[i] ) & 0xFF;
@@ -180,6 +192,7 @@ static void maxigin_flexHashAdd( FlexHashState *inState,
             
                 i = ( i + 1 )  & 0xFF;
                 }
+                
             }
         
         /* now use n to rotate buffer bytes and xor them with
@@ -190,7 +203,7 @@ static void maxigin_flexHashAdd( FlexHashState *inState,
         
         rotAmount = n % hashLength;
         
-        if( rotAmount > 0 ) {
+        if( 0 && rotAmount > 0 ) {
             unsigned char firstSpot = hashBuffer[0];
             
             for( j=0; j < hashLength; j++ ) {
@@ -569,6 +582,23 @@ int main( int inNumArgs, const char **inArgs ) {
     fclose( f );
         }
 
+
+    if( 0 ) {
+        /* test raw speed */
+        int i;
+        FlexHashState s;
+        unsigned char data[20];
+        int numRounds = 1000000;
+        
+        maxigin_flexHashInit( &s, hashBuffer, HASH_LEN );
+
+        
+        for( i=0; i<numRounds; i++ ) {
+            maxigin_flexHashAdd( &s, data, sizeof( data ) );
+            }
+
+        printf( "Hashed %d bytes\n", sizeof( data ) * numRounds );
+        }
     
     return 0;
     }

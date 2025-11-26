@@ -303,11 +303,11 @@ int main( int inNumArgs, const char **inArgs ) {
         }
 
     
-    if( 0 ) {
+    if( 1 ) {
         
     FlexHashState s;
 
-    #define hashSize 20
+    #define hashSize 10
 
     unsigned char hashBuffer[ hashSize ];
     
@@ -384,7 +384,7 @@ int main( int inNumArgs, const char **inArgs ) {
 
 
     
-    if( 1 ) {
+    if( 0 ) {
         int i, j, b, h;
 
         unsigned char hashResults[65536][ HASH_LEN ];

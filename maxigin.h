@@ -366,6 +366,8 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void );
   Converts an int into a \0-terminated string.
   
   Returns a static buffer that must be used before next call to intToString.
+
+  [jumpMaxiginGeneral]
 */
 const char *maxigin_intToString( int inInt );
 
@@ -373,6 +375,8 @@ const char *maxigin_intToString( int inInt );
 
 /*
   Converts a \0-terminated string to an int.
+
+  [jumpMaxiginGeneral]
 */
 int maxigin_stringToInt( const char *inString );
 
@@ -403,6 +407,36 @@ int maxigin_stringLength( const char *inString );
   [jumpMaxiginGeneral]
 */
 char maxigin_equal( const char *inStringA, const char *inStringB );
+
+
+
+/*
+  Generates a ASCII hex-encoding of a string, in uppercase hex.
+
+  inHexBuffer must have room for at least 2 * inNumBytes + 1 characters.
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
+                        char *inHexBuffer );
+
+
+/*
+  Computes the flexHash of a buffer of bytes.
+
+  A flexHash produces a variable-length hash matching the length requested
+  by the caller, and fills the caller's provided hash buffer with that hash.
+
+  Longer hash results are slower.
+
+  Implementation makes no assumptions about type lengths beyond those
+  established by C89 (that chars are at least 8 bits and unsigned chars can
+  contain values of at least 255).
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_flexHash( const unsigned char *inBytes, int inNumBytes,
+                       unsigned char *inHashBuffer, int inHashLength );
 
 
 
@@ -614,6 +648,17 @@ void minginGame_step( char inFinalStep ) {
 static MinginButton quitMapping[] = { MGN_KEY_Q, MGN_KEY_ESCAPE, MGN_MAP_END };
 static MinginButton fullscreenMapping[] = { MGN_KEY_F, MGN_MAP_END };
 
+
+
+
+#define hashTestSize  3200
+unsigned char hashInputBuffer[ hashTestSize ];
+unsigned char hashBuffer[hashTestSize];
+char hexBuffer[ hashTestSize * 2 + 1 ];
+
+
+#include <stdio.h>
+
 static void gameInit( void ) {
     
     mingin_registerButtonMapping( QUIT, quitMapping );
@@ -624,6 +669,103 @@ static void gameInit( void ) {
     maxiginGame_init();
 
     areWeInMaxiginGameInitFunction = 0;
+
+
+    /* fixme:  test hash */
+    if( 1 ) {
+        int longestFound = 0;
+        int foundA;
+        int hexLen = sizeof( hexBuffer ) - 1;
+        int a, b, o;
+        
+        maxigin_flexHash( 0, 0, hashBuffer, hashTestSize );
+        
+        maxigin_hexEncode( hashBuffer, hashTestSize, hexBuffer );
+
+        for( a=0; a<hexLen; a++ ) {
+            for( b=a+1; b<hexLen; b++ ) {
+                if( hexBuffer[a] == hexBuffer[b] ) {
+                    o = 1;
+                    while( hexBuffer[a+o] == hexBuffer[b+o] ) {
+                        o++;
+
+                        if( hexBuffer[b+o] == '\0' ) {
+                            break;
+                            }  
+                        }
+                    if( o > longestFound ) {
+                        longestFound = o;
+                        foundA = a;
+                        }
+                    }
+                }
+            }
+        
+        if( longestFound > 0 ) {
+            char old = hexBuffer[foundA + longestFound];
+            hexBuffer[foundA + longestFound] = '\0';
+            
+            maxigin_logInt( "Found longest repeat string: ", longestFound );
+            mingin_log( &( hexBuffer[foundA] ) );
+            mingin_log( "\n" );
+            hexBuffer[foundA + longestFound] = old;
+            }
+
+        if( 1 ) {
+            FILE *f = fopen( "out.txt", "w" );
+            fprintf( f, "%s", hexBuffer );
+            fclose( f );
+            }
+        
+
+        if( 1 ) {
+            int hSize = 1;
+
+            for( hSize = 1; hSize < 4; hSize ++ ) {
+                
+                int c;
+
+                for( c = 'a'; c< 'z'; c++ ) {
+                    char letter[2];
+                    letter[0] = (char)( c );
+                    letter[1] = '\0';
+            
+                    maxigin_flexHash( (unsigned char *)letter, 1,
+                                      hashBuffer, hSize );
+        
+                    maxigin_hexEncode( hashBuffer, hSize, hexBuffer );
+
+                    mingin_log( "Hash of " );
+                    mingin_log( letter );
+                    mingin_log( " = " );
+                    mingin_log( hexBuffer );
+                    mingin_log( "\n" );
+                    }
+                }
+            }
+
+        if( 1 ) {
+            int hSize = 1;
+
+            for( hSize = 1; hSize < 40; hSize ++ ) {
+
+                int h;
+                for( h=0; h<hSize; h++ ) {
+                    hashInputBuffer[h] = 0;
+                    }
+            
+                maxigin_flexHash( hashInputBuffer, hSize,
+                                  hashBuffer, 10 );
+        
+                maxigin_hexEncode( hashBuffer, 10, hexBuffer );
+
+                maxigin_logInt( "Hash of zeros: ", hSize );
+
+                mingin_log( hexBuffer );
+                mingin_log( "\n" );
+                }
+            }
+        }
     }
 
 
@@ -667,6 +809,13 @@ static int numMemRecords = 0;
 
 void maxigin_initRegisterStaticMemory( void *inPointer, int inNumBytes,
                                        const char *inDescription ) {
+    
+    if( ! areWeInMaxiginGameInitFunction ) {
+        mingin_log( "Game tried to call maxigin_initRegisterStaticMemory "
+                    "from outside of maxiginGame_init\n" );
+        return;
+        }
+    
     if( numMemRecords >= MAXIGIN_MAX_MEM_RECORDS ) {
         maxigin_logInt( "Game tried to register more than max memory records: ",
                         MAXIGIN_MAX_MEM_RECORDS );
@@ -823,9 +972,17 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
     /*
     int i;*/
     int storeSize;
+    int readHandle;
+
+    if( ! areWeInMaxiginGameInitFunction ) {
+        mingin_log( "Game tried to call "
+                    "maxigin_initRestoreStaticMemoryFromLastRun "
+                    "from outside of maxiginGame_init\n" );
+        return;
+        }
     
-    int readHandle = mingin_startReadPersistData( saveGameFileName,
-                                                  &storeSize );
+    readHandle = mingin_startReadPersistData( saveGameFileName,
+                                              &storeSize );
 
     if( readHandle == -1 ) {
         mingin_log( "Failed to open saved game for reading: " );
@@ -886,16 +1043,18 @@ static char logIntBuffer[ MAXIGIN_LOG_INT_MAX_LENGTH ];
 void maxigin_logInt( const char *inLabel, int inVal ) {
     const char *valString = maxigin_intToString( inVal );
     int i = 0;
-
+    int j = 0;
+    
     while( i < MAXIGIN_LOG_INT_MAX_LENGTH - 2 &&
            inLabel[i] != '\0' ) {
         logIntBuffer[i] = inLabel[i];
         i++;
         }
     while( i < MAXIGIN_LOG_INT_MAX_LENGTH - 2 &&
-           valString[i] != '\0' ) {
-        logIntBuffer[i] = valString[i];
+           valString[j] != '\0' ) {
+        logIntBuffer[i] = valString[j];
         i++;
+        j++;
         }
     logIntBuffer[i] = '\n';
     logIntBuffer[i+1] = '\0';
@@ -982,6 +1141,7 @@ const char *maxigin_intToString( int inInt ) {
     }
 
 
+
 int maxigin_stringToInt( const char *inString ) {
     /* fixme:  implement */
     if( inString[0] == '\0' ) {
@@ -989,6 +1149,140 @@ int maxigin_stringToInt( const char *inString ) {
         }
     return 0;
     }
+
+
+
+static const unsigned char flexHashTable[256] = {
+    108,   35,   77,  207,    9,  111,  203,  175,
+     70,  142,  194,  252,  115,  141,   32,  182,
+    174,   15,  129,   33,   16,   43,  160,  144,
+    149,   30,  197,  185,   54,  246,   75,  169,
+    103,   66,   57,  240,   23,   68,  244,  232,
+     81,   91,  147,  150,  223,   85,  124,  187,
+    167,  110,  222,   80,   20,   95,  131,   74,
+    242,   65,   49,   11,  139,   64,  181,    2,
+    138,  176,   73,  239,  208,   39,  155,  163,
+    168,  233,   50,  107,  173,  134,  180,  196,
+      0,   69,  121,   82,  132,   17,   42,  212,
+    143,   51,  192,  119,   21,   13,  137,  172,
+    186,   60,  211,   47,  237,   46,   25,  254,
+     53,  195,  198,    3,  250,   71,  227,  213,
+    102,   78,  220,  146,  243,   37,  166,    4,
+    190,   97,  178,  251,   45,  100,  159,  165,
+    219,   34,  116,   22,  202,  179,  157,   38,
+    230,  214,  118,  171,  151,  101,  199,   14,
+    158,   98,  156,  117,   96,  231,  148,   92,
+     12,  130,  161,  206,  218,  113,  193,  245,
+     59,   24,    6,  112,  205,   55,  153,  247,
+     88,  128,   36,  229,  170,  120,  210,  145,
+    209,   26,    8,  200,  221,  177,   67,   89,
+    215,  188,  235,  152,  133,  154,  136,  104,
+     31,  204,   99,  241,   63,  164,   62,  109,
+      1,  248,  191,  106,  140,   84,  226,  189,
+    225,   40,  184,  114,   61,  122,  126,  217,
+    183,  224,   93,  162,   87,   58,   83,  255,
+     10,  105,   76,   28,  201,    7,   56,   52,
+    123,  236,   72,  249,  216,  253,   19,   41,
+     44,   48,  135,   27,   79,   29,   94,  238,
+      5,   18,  228,  127,  125,   86,  234,   90
+    };
+
+
+
+void maxigin_flexHash( const unsigned char *inBytes, int inNumBytes,
+                       unsigned char *inHashBuffer, int inHashLength ) {
+    unsigned int j, i, n;
+    unsigned int b;
+    unsigned int numBytes = (unsigned)inNumBytes;
+    unsigned int hashLength = (unsigned)inHashLength;
+    unsigned int jBits, bBits;
+    
+    /* initialized output with the hash of a 0-byte string */
+    i = 0;
+    n = 0;
+    
+    for( j=0; j < hashLength; j++ ) {
+        /* walk through table values in order (by incrementing i)
+           and use those values to jump n forward in table, and take
+           the byte found at position n as our next hash byte */
+
+        /* also add in mix of bits from j to our n jump,
+           so that as hash gets longer and
+           longer, the init pattern has a much longer repeat cycle length
+           (the current tested repeat cycle length is 65536) */
+        jBits = j;
+        while( jBits > 255 ) {
+            jBits = ( jBits >> 8 ) ^ ( jBits & 0xFF );
+            }
+        
+        /* cheap mod 256 */
+        n = ( n + flexHashTable[i] + jBits ) & 0xFF;
+        
+        inHashBuffer[j] = flexHashTable[ n ];
+        
+        i = ( i + 1 ) & 0xFF;
+        }
+
+    
+    /* now mix in each byte of our input */
+    for( b=0; b< numBytes; b++ ) {
+        unsigned char byte = inBytes[b];
+
+        /* jump i forward by this byte value */
+        
+        i = ( i + byte ) & 0xFF;
+
+        
+        for( j=0; j < hashLength; j++ ) {
+            /* now walk i forward incrementally from that point,
+               and use value at i spot in table to jump n around in our table */
+
+            n = ( n + flexHashTable[i] ) & 0xFF;
+            
+            inHashBuffer[j] = inHashBuffer[j] ^ flexHashTable[ n ];
+            
+            i = ( i + 1 )  & 0xFF;
+            }
+        }
+    }
+
+
+
+/* for 4-bit nibbles */
+static char nibbleToHex( unsigned char inNibble ) {
+    if( inNibble < 10 ) {
+        return (char)( '0' + inNibble );
+        }
+    else {
+        return (char)( 'A' + ( inNibble - 10 ) );
+        }
+    }
+
+
+
+void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
+                        char *inHexBuffer ) {
+    int stringPos = 0;
+    int i;
+    
+    for( i=0; i < inNumBytes; i++ ) {
+        unsigned char b = inBytes[i];
+        unsigned char upper = ( b >> 4 );
+        unsigned char lower = b & 0x0F;
+
+        inHexBuffer[ stringPos ] = nibbleToHex( upper );
+
+        stringPos++;
+        
+        inHexBuffer[ stringPos ] = nibbleToHex( lower );
+        
+        stringPos++;
+        }
+    
+    inHexBuffer[stringPos] = '\0';
+    }
+
+
 
 
 

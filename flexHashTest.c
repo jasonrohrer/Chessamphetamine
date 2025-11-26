@@ -386,9 +386,11 @@ int main( int inNumArgs, const char **inArgs ) {
     
     if( 1 ) {
         int i, j, b, h;
-        
 
-        for( h=1; h<= HASH_LEN; h++ ) {
+        unsigned char hashResults[65536][ HASH_LEN ];
+        unsigned char xorResult[ HASH_LEN ];
+        
+        for( h=2; h<= HASH_LEN; h++ ) {
             
             int hashBytes = h;
             int hotCount;
@@ -400,34 +402,29 @@ int main( int inNumArgs, const char **inArgs ) {
                 c1[1] = (unsigned char)( i & 0xFF );
         
                 maxigin_flexHash( c1, 2,
-                                  hashBuffer, hashBytes );
-
-                /*
-                printf( "Hash of %d = ", i );
-                for( b=0; b< hashBytes; b++ ) {
-                    printf( "%02X", hashBuffer[ b ] );
-                    }
-                printf( "\n" );
-                */
+                                  hashResults[i], hashBytes );
+                }
             
-                for( j=0; j<256; j++ ) {
+            for( i=0; i<65536; i++ ) {
+                for( j=0; j<65536; j++ ) {
+                    char anyDiffer = 0;
+                    
                     if( i == j ) {
                         continue;
                         }
-                    unsigned char c2[2];
-
-                    c2[0] = (unsigned char)( ( j >> 8 ) & 0xFF );
-                    c2[1] = (unsigned char)( j & 0xFF );
-                
-                    maxigin_flexHash( c2, 2,
-                                      hashBufferB, hashBytes );
-                    /* xor hashes */
-                    for( b=0; b< hashBytes; b++ ) {
-                        hashBufferB[b] = hashBuffer[b] ^ hashBufferB[b];
+                    
+                    if( hashResults[i][0] != hashResults[j][0] ) {
+                        /* first byte differs */
+                        continue;
                         }
-                
-                    hotCount = hotBitCount( hashBufferB, hashBytes );
-                    if( hotCount == 0 ) {
+                    
+                    for( b=1; b< hashBytes; b++ ) {
+                        if( hashResults[i][b] != hashResults[j][b] ) {
+                            anyDiffer = 1;
+                            break;
+                            }
+                        }
+                    if( ! anyDiffer ) {
                         colCount++;
                         }
                     }

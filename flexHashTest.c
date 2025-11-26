@@ -404,7 +404,7 @@ int main( int inNumArgs, const char **inArgs ) {
         
     FlexHashState s;
 
-    #define hashSize 3
+    #define hashSize 20
 
     unsigned char hashBuffer[ hashSize ];
     

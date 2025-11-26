@@ -303,7 +303,7 @@ int main( int inNumArgs, const char **inArgs ) {
         }
 
     
-    if( 1 ) {
+    if( 0 ) {
         
     FlexHashState s;
 
@@ -328,6 +328,61 @@ int main( int inNumArgs, const char **inArgs ) {
         }
         }
 
+
+    if( 1 ) {
+        int i, j, b, h;
+        
+
+        for( h=1; h< HASH_LEN; h++ ) {
+            
+            int hashBytes = h;
+            int hotCount;
+            int colCount = 0;
+        
+            for( i=0; i<256; i++ ) {
+                unsigned char c1[1];
+                c1[0] = (unsigned char)i;
+        
+                maxigin_flexHash( c1, 1,
+                                  hashBuffer, hashBytes );
+
+                /*
+                printf( "Hash of %d = ", i );
+                for( b=0; b< hashBytes; b++ ) {
+                    printf( "%02X", hashBuffer[ b ] );
+                    }
+                printf( "\n" );
+                */
+            
+                for( j=0; j<256; j++ ) {
+                    if( i == j ) {
+                        continue;
+                        }
+                    unsigned char c2[1];
+                
+                    c2[0] = (unsigned char)j;
+                
+                    maxigin_flexHash( c2, 1,
+                                      hashBufferB, hashBytes );
+                    /* xor hashes */
+                    for( b=0; b< hashBytes; b++ ) {
+                        hashBufferB[b] = hashBuffer[b] ^ hashBufferB[b];
+                        }
+                
+                    hotCount = hotBitCount( hashBufferB, hashBytes );
+                    if( hotCount == 0 ) {
+                        colCount++;
+                        }
+                    }
+                }
+
+            printf( "1 into %d hash bytes:  %d collisions\n", hashBytes, colCount );
+
+            }
+        }
+    
+
+    
     
     if( 0 ) {
         

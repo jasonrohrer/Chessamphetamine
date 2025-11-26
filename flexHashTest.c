@@ -1,5 +1,5 @@
 
-static const unsigned char flexHashTableOld[256] = {
+static const unsigned char flexHashTable[256] = {
     108,   35,   77,  207,    9,  111,  203,  175,
      70,  142,  194,  252,  115,  141,   32,  182,
     174,   15,  129,   33,   16,   43,  160,  144,
@@ -34,42 +34,6 @@ static const unsigned char flexHashTableOld[256] = {
       5,   18,  228,  127,  125,   86,  234,   90
     };
 
-static const unsigned char flexHashTableNew[256] = {
-    53,     235,    249,    248,    85,      84,     236,    228, 
-    254,    174,    249,    33,     133,     42,     103,    105, 
-    74,     31,     20,     201,    221,     72,     121,    105, 
-    220,    233,    138,    201,    93,      208,    103,    207, 
-    224,    50,     109,    251,    76,      93,     60,     25,  
-    178,    193,    216,    126,    205,     15,     165,    142, 
-    119,    99,     109,    217,    52,      71,     131,    170, 
-    4,      44,     218,    90,     68,      141,    87,     117, 
-    198,    248,    160,    28,     130,     78,     236,    166, 
-    4,      60,     153,    177,    153,     109,    82,     156, 
-    136,    131,    61,     156,    117,     43,     151,    65,  
-    38,     152,    70,     140,    33,      70,     142,    12,  
-    175,    82,     248,    29,     53,      30,     67,     157, 
-    27,     234,    128,    185,    10,      42,     146,    40,  
-    36,     92,     110,    116,    155,     148,    73,     55,  
-    110,    123,    17,     244,    244,     47,     184,    250, 
-    244,    93,     79,     132,    98,      240,    238,    172, 
-    151,    62,     252,    120,    31,      188,    32,     226, 
-    54,     157,    102,    248,    31,      86,     221,    56,  
-    242,    210,    84,     202,    242,     182,    196,    220, 
-    58,     114,    26,     99,     133,     92,     10,     84,  
-    62,     53,     58,     248,    235,     135,    76,     143, 
-    143,    45,     240,    62,     28,      170,    148,    248, 
-    101,    119,    253,    44,     137,     23,     189,    38,  
-    240,    176,    104,    88,     222,     149,    127,    41,  
-    213,    49,     135,    103,    173,     151,    170,    171, 
-    184,    248,    161,    143,    180,     157,    123,    192, 
-    76,     238,    195,    67,     100,     5,      4,      78,  
-    10,     56,     15,     94,     166,     22,     126,    178, 
-    27,     80,     87,     106,    103,     206,    156,    216, 
-    151,    18,     61,     3,      128,     236,    183,    13,  
-    59,     119,    20,     248,    104,     152,    105,    208
-    };
-
-#define flexHashTable flexHashTableOld
 
 
 
@@ -133,7 +97,7 @@ static void maxigin_flexHashInit( FlexHashState *inState,
     /* fixme:  is there some kind of rotation thing we can do here
        to extend the length of the period */
     
-    inState->i = i;
+    inState->i = 0;
     inState->n = n;
     inState->hashBuffer = inHashBuffer;
     inState->hashLength = hashLength;
@@ -159,84 +123,23 @@ static void maxigin_flexHashAdd( FlexHashState *inState,
     
     /* mix in each byte of our input */
     for( b=0; b< numBytes; b++ ) {
-        unsigned char byte = inBytes[b];
-        int rotAmount;
-        
-        /* jump i forward by this byte value */
-        /* i = ( i + byte ) & 0xFF; */
-        /* mix i with this byte */
-        if( 0 ) {
-            i = i ^ byte;
-            }
-        else {
-            /* new, keep only n state */
-            n = n ^ byte;
-            }
+        /* mix byte and byte count into our n state */
+        n = n ^ inBytes[b] ^ i;
         
         for( j=0; j < hashLength; j++ ) {
-            /* now walk i forward incrementally from that point,
-               and use value at i spot in table mix with n and our previous
-               buffer value */
 
-
-            
-            if( 1 ) {
+            n = flexHashTable[ hashBuffer[j] ^ n ];
                 
-                n = flexHashTable[ hashBuffer[j] ^ n ^ i ];
-                
-                hashBuffer[j] = n;
-                
-                i = ( i + 1 )  & 0xFF;
-                //i = ( i + 1 )  % 251;
-                }
-            else if( 1 ) {
-            
-                n = n ^ flexHashTable[i];
-            
-                hashBuffer[j] = hashBuffer[j] ^ n;
-                
-                i = ( i + 1 )  & 0xFF;
-                
-                }
-            else {
-                n = ( n + flexHashTable[i] ) & 0xFF;
-            
-                hashBuffer[j] = hashBuffer[j] ^ flexHashTable[ n ];
-            
-                i = ( i + 1 )  & 0xFF;
-                }
-                
+            hashBuffer[j] = n;   
             }
 
+        /* i keeps track of how many bytes we've processed, mod 256 */
+        i = ( i + 1 )  & 0xFF;
+            
         /* push n forward one more time, so it's not equal to the last
            byte in our hash buffer (which is also the first/only byte, in the
            case of 1-byte hashes) */
         n = flexHashTable[ n ];
-        
-        
-        /* now use n to rotate buffer bytes and xor them with
-           bytes from rotation location */
-
-        /* this helps to pass a bunch of diehard tests
-           while still being 10x faster than sha1sum */
-        
-        rotAmount = n % hashLength;
-        
-        if( 0 && rotAmount > 0 ) {
-            unsigned char firstSpot = hashBuffer[0];
-            
-            for( j=0; j < hashLength; j++ ) {
-                int takeSpot = ( j + rotAmount ) % hashLength;
-
-                if( takeSpot != 0 ) {
-                    
-                    hashBuffer[j] ^= hashBuffer[ takeSpot ];
-                    }
-                else {
-                    hashBuffer[j] ^= firstSpot;
-                    }
-                }
-            }     
         }
     
     inState->i = i;

@@ -429,9 +429,30 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
 
   Longer hash results are slower.
 
-  Implementation makes no assumptions about type lengths beyond those
-  established by C89 (that chars are at least 8 bits and unsigned chars can
-  contain values of at least 255).
+  Implementation makes use of only unsigned character buffers for internal
+  state, so it doesn't depend on int or long endian representations,
+  and makes no assumptions about unsigned char beyond those
+  established by C89 (that unsigned chars are at least 8 bits
+  and unsigned chars can contain values of at least 255).
+
+  Has several nice properties:
+
+  1. Around 10x faster than SHA1 on my test hardware.
+  
+  2. For larger hashes (like 20 bytes and above), a hash of a series of 0 byte
+     inputs produces a series of hash values that, when strung together, can
+     pass most tests in the Dieharder RNG test suite.
+     
+  3. For hashes equal in length to the small input sizes, each unique input
+     hashes to a unique hash value, with no collisions.  This has been tested
+     exhaustively for all possible 1-byte inputs into 1-byte hashes, and
+     all possible 2-byte inputs into 2-byte hashes.
+     
+  4. For hashes that are longer than a small input size, each unique input
+     hashes to a unique hash value, with no collisions.  This has been tested
+     exhaustively for all 1-byte inputs hashed into 2-, 3-, ..., 31-, and
+     32-byte hashes, and all 2-byte inputs hashed into 3-, 4-, ..., 19-, and
+     20-byte hashes.
 
   [jumpMaxiginGeneral]
 */

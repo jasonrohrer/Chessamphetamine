@@ -352,7 +352,7 @@ int main( int inNumArgs, const char **inArgs ) {
 
 
     
-    if( 1 ) {
+    if( 0 ) {
         int longestFound = 0;
         int foundA;
         int hexLen = sizeof( hexBuffer ) - 1;
@@ -401,12 +401,32 @@ int main( int inNumArgs, const char **inArgs ) {
         }
 
     
+    if( 0 ) {
+        int i;
+
+        for( i=1; i < 80; i++ ) {
+            
+            maxigin_flexHash( 0, 0, hashTestBuffer, i );
+            maxigin_hexEncode( hashTestBuffer, i, hexBuffer );
+            printf( "%s\n", hexBuffer );
+            }
+        }
+
     
     if( 0 ) {
+        maxigin_flexHash( 0, 0, hashTestBuffer, hashTestSize );
+        fwrite( hashTestBuffer, 1, hashTestSize, stdout );
+        }
+
+
+
+
+    
+    if( 1 ) {
         
     FlexHashState s;
 
-    #define hashSize 12
+    #define hashSize 20
 
     unsigned char hashBuffer[ hashSize ];
     

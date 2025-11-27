@@ -52,69 +52,87 @@ static void maxigin_flexHashInit( FlexHashState *inState,
                                   unsigned char *inHashBuffer,
                                   int inHashLength ) {
     unsigned int j;
-    unsigned char i, n, k, index;
+    unsigned char i, n, k, m, index;
+
+    int run;
     
     unsigned int hashLength = (unsigned)inHashLength;
     unsigned int jBits;
     
-    /* initialize output with the hash of a 0-byte string */
     i = 0;
-    k = 0;
-    n = 0;
-
-    int lastIncKJ = 0;
+    k = 119;
+    n = 207;
+    m = 17;
     
+
+    /* zero our hash to start */
     for( j=0; j < hashLength; j++ ) {
-        /* walk through table values in order (by incrementing i)
-           and use those values to mix with our running n to get
-           our next buffer value */
-
-        /* also add in mix of bits from j,
-           so that as hash buffer gets longer and
-           longer, the init pattern has a much longer repeat cycle length
-           (the current tested repeat cycle length is 65536)
-           The pattern of jBits is more complex than a counter from 0..255
-           that simply wraps around.  */
-        
-        jBits = j;
-        while( jBits > 255 ) {
-            jBits = ( jBits >> 8 ) ^ ( jBits & 0xFF );
-            }
-
-        /* we increment i by 1 below, which walks through every value in the
-           table in order.  But we also phase shift this walk according to k,
-           and whenever k increments, this phase shift changes dramatically,
-           due to the flexHashTable[ k ] lookup.
-           
-           The result is that we periodically jump to a different spot in
-           the table and start incrementally walking from there,
-           which makes our cycle period extremely long. */
-        
-
-        /* don't assume char is not larger than 8 bits
-           so we can't count on wrap-around behavior above 255 */
-        index = ( i + flexHashTable[ k ] ) & 0xFF;
-
-        
-        n = n ^ flexHashTable[ index ] ^ jBits;
-        
-        inHashBuffer[j] = n;
-
-        
-        i = ( i + 1 ) & 0xFF;
-
-        
-        /* k increments much more slowly, roughly 1/128 as often as i
-           but because we use n to decide when k increments, this happens
-           on a very chaotic schedule that doesn't seem to have a pattern */
-        if( n == 13 || n == 101 ) {
-            //printf( "inc k when j jumped by %d\n", j - lastIncKJ );
-            //lastIncKJ = j;
-            
-            k = ( k + 1 ) & 0xFF;
-            }
-            
+        inHashBuffer[j] = 0;
         }
+
+    /* run twice, and xor results together */
+    for( run=0; run<2; run++ ) {
+        
+        /* offset each run by 1, in case anything about the cycling
+           of our variables lines up perfectly with hashLength.
+           This also means that we only do one run if hashLength = 1 */
+        
+        for( j=run; j < hashLength; j++ ) {
+            /* walk through table values in order (by incrementing i)
+               and use those values to mix with our running n, plus our
+               current buffer value (0 at first, or what we computed last run
+               later to get our next buffer value */
+
+            /* also add in mix of bits from j, which makes our basic
+               repeat cycle much longer.
+               The pattern of jBits is more complex than a counter from 0..255
+               that simply wraps around.  */
+        
+            jBits = j;
+            while( jBits > 255 ) {
+                jBits = ( jBits >> 8 ) ^ ( jBits & 0xFF );
+                }
+            
+            /* we increment i by 1 below, which walks through every value in the
+               table in order.  But we also phase shift this walk according to k
+               and m, and whenever k or m increments, this phase shift changes
+               dramatically, due to the flexHashTable lookups.
+           
+               The result is that we periodically jump to a different spot in
+               the table and start incrementally walking from there,
+               which makes our cycle period extremely long. */
+        
+
+            /* don't assume char is not larger than 8 bits
+               so we can't count on wrap-around behavior above 255 */
+            index = ( i + flexHashTable[ k ] + flexHashTable[m] ) & 0xFF;
+
+        
+            n = n ^ flexHashTable[ index ] ^ jBits ^ inHashBuffer[j];
+        
+            inHashBuffer[j] = n;
+        
+        
+            i = ( i + 1 ) & 0xFF;
+
+        
+            /* k increments much more slowly, roughly 1/64 as often as i
+               but because we use n to decide when k increments, this happens
+               on a very chaotic schedule that doesn't seem to have a pattern */
+            if( n == 13 || n == 101 || n == 173  || n == 207 ) {
+                //printf( "inc k when j jumped by %d\n", j - lastIncKJ );
+                //lastIncKJ = j;
+            
+                k = ( k + 1 ) & 0xFF;
+                }
+
+            /* m increments roughly 1/256 as often as i */
+            if( n == 67 ) {
+                m = ( m + 1 ) & 0xFF;
+                }
+            }
+        }
+    
 
     /* push n forward one more time, so n is not equal to the first
        byte in our buffer in the inHashLength=1 case */
@@ -279,6 +297,7 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
 
 
 
+#include <stdlib.h>
     
 #define hashTestSize  107300000
 unsigned char hashInputBuffer[ hashTestSize ];
@@ -343,34 +362,38 @@ int main( int inNumArgs, const char **inArgs ) {
         
         maxigin_hexEncode( hashTestBuffer, hashTestSize, hexBuffer );
 
-        #define patSize  12
+        #define patSize  8
         
         unsigned char pattern[ patSize + 1 ];
 
         /* jump into middle and grab a pattern */
         int pos = 1 * ( hexLen / 4 );
 
-        for( a=pos; a<pos + patSize; a++ ) {
-            pattern[a-pos] = hexBuffer[a];
-            }
-        pattern[patSize] = '\0';
-
-        int startPos = pos + patSize + 1;
+        for( int i=0; i<40; i++ ) {
+            
+            pos +=  (int)( ((double)rand() * 2000)  / (double)RAND_MAX );
         
-        for( a=startPos; a<hexLen - patSize; a++ ) {
+            for( a=pos; a<pos + patSize; a++ ) {
+                pattern[a-pos] = hexBuffer[a];
+                }
+            pattern[patSize] = '\0';
 
-            if( hexBuffer[a] == pattern[0] ) {
-                o = 1;
-                while( o < patSize && hexBuffer[a+o] == pattern[o] ) {
-                    o++;
-                    }
-                if( o == patSize ) {
-                    printf( "Found repeat of %s at pos %d\n", pattern, a );
-                    break;
+            int startPos = pos + patSize + 1;
+        
+            for( a=startPos; a<hexLen - patSize; a++ ) {
+
+                if( hexBuffer[a] == pattern[0] ) {
+                    o = 1;
+                    while( o < patSize && hexBuffer[a+o] == pattern[o] ) {
+                        o++;
+                        }
+                    if( o == patSize ) {
+                        printf( "Found repeat of %s at pos %d\n", pattern, a );
+                        break;
+                        }
                     }
                 }
             }
-
         FILE *f = fopen( "testResults.txt", "w" );
         fprintf( f, "%s", hexBuffer );
         fclose( f );

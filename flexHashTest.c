@@ -280,14 +280,14 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
 
 
     
-#define hashTestSize  73000
+#define hashTestSize  107300000
 unsigned char hashInputBuffer[ hashTestSize ];
 unsigned char hashTestBuffer[hashTestSize];
 char hexBuffer[ hashTestSize * 2 + 1 ];
 
 int main( int inNumArgs, const char **inArgs ) {
 
-    if( 1 ) {
+    if( 0 ) {
         int longestFound = 0;
         int foundA;
         int hexLen = sizeof( hexBuffer ) - 1;
@@ -331,6 +331,53 @@ int main( int inNumArgs, const char **inArgs ) {
 
         }
 
+
+    
+    if( 1 ) {
+        int longestFound = 0;
+        int foundA;
+        int hexLen = sizeof( hexBuffer ) - 1;
+        int a, b, o;
+        
+        maxigin_flexHash( 0, 0, hashTestBuffer, hashTestSize );
+        
+        maxigin_hexEncode( hashTestBuffer, hashTestSize, hexBuffer );
+
+        #define patSize  12
+        
+        unsigned char pattern[ patSize + 1 ];
+
+        /* jump into middle and grab a pattern */
+        int pos = 1 * ( hexLen / 4 );
+
+        for( a=pos; a<pos + patSize; a++ ) {
+            pattern[a-pos] = hexBuffer[a];
+            }
+        pattern[patSize] = '\0';
+
+        int startPos = pos + patSize + 1;
+        
+        for( a=startPos; a<hexLen - patSize; a++ ) {
+
+            if( hexBuffer[a] == pattern[0] ) {
+                o = 1;
+                while( o < patSize && hexBuffer[a+o] == pattern[o] ) {
+                    o++;
+                    }
+                if( o == patSize ) {
+                    printf( "Found repeat of %s at pos %d\n", pattern, a );
+                    break;
+                    }
+                }
+            }
+
+        FILE *f = fopen( "testResults.txt", "w" );
+        fprintf( f, "%s", hexBuffer );
+        fclose( f );
+
+        }
+
+    
     
     if( 0 ) {
         

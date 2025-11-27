@@ -46,17 +46,23 @@ typedef struct FlexHashState {
     } FlexHashState;
 
 
+#include <stdio.h>
+
 static void maxigin_flexHashInit( FlexHashState *inState,
                                   unsigned char *inHashBuffer,
                                   int inHashLength ) {
     unsigned int j;
-    unsigned char i, n;
+    unsigned char i, n, k, index;
+    
     unsigned int hashLength = (unsigned)inHashLength;
     unsigned int jBits;
     
     /* initialize output with the hash of a 0-byte string */
     i = 0;
+    k = 0;
     n = 0;
+
+    int lastIncKJ = 0;
     
     for( j=0; j < hashLength; j++ ) {
         /* walk through table values in order (by incrementing i)
@@ -66,28 +72,48 @@ static void maxigin_flexHashInit( FlexHashState *inState,
         /* also add in mix of bits from j,
            so that as hash buffer gets longer and
            longer, the init pattern has a much longer repeat cycle length
-           (the current tested repeat cycle length is 65536) */
+           (the current tested repeat cycle length is 65536)
+           The pattern of jBits is more complex than a counter from 0..255
+           that simply wraps around.  */
         
         jBits = j;
         while( jBits > 255 ) {
             jBits = ( jBits >> 8 ) ^ ( jBits & 0xFF );
             }
 
-        /*
-        n = ( n + flexHashTable[i] + jBits ) & 0xFF;
+        /* we increment i by 1 below, which walks through every value in the
+           table in order.  But we also phase shift this walk according to k,
+           and whenever k increments, this phase shift changes dramatically,
+           due to the flexHashTable[ k ] lookup.
+           
+           The result is that we periodically jump to a different spot in
+           the table and start incrementally walking from there,
+           which makes our cycle period extremely long. */
         
-        inHashBuffer[j] = flexHashTable[ n ];
-        
-        i = ( i + 1 ) & 0xFF;
-        */
-        
-        n = n ^ flexHashTable[i] ^ jBits;
-        
-        inHashBuffer[j] = n;
 
         /* don't assume char is not larger than 8 bits
            so we can't count on wrap-around behavior above 255 */
+        index = ( i + flexHashTable[ k ] ) & 0xFF;
+
+        
+        n = n ^ flexHashTable[ index ] ^ jBits;
+        
+        inHashBuffer[j] = n;
+
+        
         i = ( i + 1 ) & 0xFF;
+
+        
+        /* k increments much more slowly, roughly 1/128 as often as i
+           but because we use n to decide when k increments, this happens
+           on a very chaotic schedule that doesn't seem to have a pattern */
+        if( n == 13 || n == 101 ) {
+            //printf( "inc k when j jumped by %d\n", j - lastIncKJ );
+            //lastIncKJ = j;
+            
+            k = ( k + 1 ) & 0xFF;
+            }
+            
         }
 
     /* push n forward one more time, so n is not equal to the first
@@ -254,14 +280,14 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
 
 
     
-#define hashTestSize  33000
+#define hashTestSize  73000
 unsigned char hashInputBuffer[ hashTestSize ];
 unsigned char hashTestBuffer[hashTestSize];
 char hexBuffer[ hashTestSize * 2 + 1 ];
 
 int main( int inNumArgs, const char **inArgs ) {
 
-    if( 0 ) {
+    if( 1 ) {
         int longestFound = 0;
         int foundA;
         int hexLen = sizeof( hexBuffer ) - 1;
@@ -294,16 +320,19 @@ int main( int inNumArgs, const char **inArgs ) {
             char old = hexBuffer[foundA + longestFound];
             hexBuffer[foundA + longestFound] = '\0';
             
-            printf( "Found longest repeat string: %d", longestFound );
+            printf( "Found longest repeat string: %d,  ", longestFound );
             printf(  "%s\n", &( hexBuffer[foundA] ) );
             hexBuffer[foundA + longestFound] = old;
             }
 
+        FILE *f = fopen( "testResults.txt", "w" );
+        fprintf( f, "%s", hexBuffer );
+        fclose( f );
 
         }
 
     
-    if( 1 ) {
+    if( 0 ) {
         
     FlexHashState s;
 

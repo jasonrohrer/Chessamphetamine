@@ -51,6 +51,20 @@ typedef struct FlexHashState {
 static void maxigin_flexHashInit( FlexHashState *inState,
                                   unsigned char *inHashBuffer,
                                   int inHashLength ) {
+
+    /*
+      The following code inits the hash buffer with the following properties:
+
+      1. Each freshly inited has buffer of a different length contains
+         different values.
+
+      2. Every freshly inited has buffer starts with the byte 0x77
+
+      3. For very long hash buffers, the repeat cycle length of data in the
+         fresly inited buffer is very very long.  This has been tested up
+         to buffers with 100,000,000 bytes with no cycling.
+    */
+    
     unsigned int j;
     unsigned char i, n, k, m, index;
 
@@ -63,14 +77,14 @@ static void maxigin_flexHashInit( FlexHashState *inState,
     k = 199;
     n = 17;
     m = 107;
-
     
-    /* zero our hash to start */
+    /* zero our buffer to start */
     for( j=0; j < hashLength; j++ ) {
         inHashBuffer[j] = 0;
         }
 
-    /* run twice, and xor results together */
+    /* run twice, and xor second run into bytes from first
+       we xor into our all-0 buffer in the first run */
     for( run=0; run<2; run++ ) {
         
         /* offset each run by 1, in case anything about the cycling
@@ -105,6 +119,9 @@ static void maxigin_flexHashInit( FlexHashState *inState,
 
             /* don't assume char is not larger than 8 bits
                so we can't count on wrap-around behavior above 255 */
+
+            /* fixme:  can save jumps in a variable to avoid lookups...
+               speedup? */
             index = ( i + flexHashTable[ k ] + flexHashTable[m] ) & 0xFF;
 
         
@@ -137,9 +154,6 @@ static void maxigin_flexHashInit( FlexHashState *inState,
     /* push n forward one more time, so n is not equal to the first
        byte in our buffer in the inHashLength=1 case */
     n = n ^ flexHashTable[i];
-        
-    /* fixme:  is there some kind of rotation thing we can do here
-       to extend the length of the period */
     
     inState->i = 0;
     inState->n = n;

@@ -442,6 +442,24 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
   2. For larger hashes (like 10 bytes and above), a hash of a series of single
      0 byte inputs produces a series of hash values that, when strung together,
      can pass 58/62 tests in the Dieharder RNG test suite.
+
+  3. Excellent avalanche behavior:  Testing random 1000-byte inputs hashed into
+     20-byte hashes, over 10 trials, doing a single bit flip of one of the 8000
+     input bytes and the rehashing, the average percentage of bits flipped
+     was between 45 and 55%, and the worst-case range for a single trial was
+     between 30 and 70%.  Each of the 8000 bit positions was tested separately
+     over 10 trials, demonstrating no sensitive bits positions.  Similar
+     sets of 10 trials with flips of every individual bit position were run
+     with 1-byte, 2-byte, ..., 9-byte, and 10-byte randomized inputs, with the
+     same bounds observed.
+
+     For randomized 8-byte imputs with every bit position flip tested over
+     100,000 trials (6.4 million bit flips), the most extreme percentage of bits
+     in the 20-byte hash that flipped in response to one bit flip were 71.9% and
+     29.4%.
+
+     Testing a 1-byte input hashed into a 2000-byte output hash over 10,000
+     trials, the same bounds were observed.
      
   3. For hashes equal in length to a small input sizes, each unique input
      hashes to a unique hash value, with no collisions.  This has been tested

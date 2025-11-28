@@ -415,7 +415,7 @@ int main( int inNumArgs, const char **inArgs ) {
         }
 
     
-    if( 1 ) {
+    if( 0 ) {
         int i;
 
         for( i=1; i < 80; i++ ) {
@@ -779,6 +779,104 @@ int main( int inNumArgs, const char **inArgs ) {
 
         printf( "Hashed %d bytes\n", sizeof( data ) * numRounds );
         }
+
+
+    if( 1 ) {
+        /* avalanche test */
+        int i,b;
+        #define testSize 1
+
+        int p;
+        
+        #define hashBuffLen 2000
+        #define numBits ( testSize * 8 )
+        
+        unsigned char hashBuffA[ hashBuffLen ];
+        unsigned char hashBuffB[ hashBuffLen ];
+
+        char hexBuff[ hashBuffLen * 2 + 1 ];
+        
+        int numTrials = 10000;
+
+        int hotCountTotals[ numBits ];
+
+        for( p=0; p< numBits; p++ ) {
+            hotCountTotals[p] = 0;
+            }
+        
+        for( i=0; i<numTrials; i++ ) {
+
+            for( b=0; b<testSize; b++ ) {
+                hashTestBuffer[b] =
+                    (unsigned char)( (double)( rand() * 255.0 ) /
+                                     (double)RAND_MAX );
+                }
+            
+            maxigin_flexHash( hashTestBuffer, testSize, hashBuffA, hashBuffLen );
+
+            maxigin_hexEncode( hashBuffA, hashBuffLen, hexBuff );
+            //printf( "Before flip hash %s\n", hexBuff );
+            
+            for( p=0; p< numBits; p++ ) {
+                /* change one bit */
+                flipBit( hashTestBuffer, testSize, p, hashTestBuffer );
+
+                maxigin_flexHash( hashTestBuffer, testSize,
+                                  hashBuffB, hashBuffLen );
+                maxigin_hexEncode( hashBuffB, hashBuffLen, hexBuff );
+                //printf( "  after flip hash %s\n", hexBuff );
+            
+                /* xor hashes */
+                for( b=0; b< hashBuffLen; b++ ) {
+                    hashBuffB[b] = hashBuffA[b] ^ hashBuffB[b];
+                    }
+
+                maxigin_hexEncode( hashBuffB, hashBuffLen, hexBuff );
+                //printf( "   after xor hash %s\n", hexBuff );
+
+                int count = hotBitCount( hashBuffB, hashBuffLen );
+
+                //printf( "   flip count = %d\n", count );
+                
+                hotCountTotals[p] += count;
+
+                float percentFlipped =
+                    100 * count /
+                    (float)( hashBuffLen * 8 );
+
+                if( percentFlipped > 70 ||
+                    percentFlipped < 30 ) {
+                    printf( "Percent flipped = %f\n", percentFlipped );
+                    }
+
+                
+                /* flip back */
+                flipBit( hashTestBuffer, testSize, p, hashTestBuffer );
+                }
+            //printf( "\n\n" );
+            
+            }
+
+        printf( "For %d trials of %d-length random input strings hashed "
+                "into %d bytes, with one bit flipped, average bits "
+                "changed for each bit:\n\n", numTrials, testSize, hashBuffLen );
+
+        for( p=0; p< numBits; p++ ) {
+            float percentFlipped =
+                100 * ( hotCountTotals[p] / numTrials ) /
+                (float)( hashBuffLen * 8 );
+
+            if( percentFlipped > 55 ||
+                percentFlipped < 45 ) {
+                printf( "%d: %d (%0.1f%%)\n",
+                        p, hotCountTotals[p] / numTrials,
+                        percentFlipped );
+                }
+            }
+            
+        }
+    
+    
     
     return 0;
     }

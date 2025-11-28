@@ -439,11 +439,11 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
 
   1. Around 10x faster than SHA1 on my test hardware.
   
-  2. For larger hashes (like 20 bytes and above), a hash of a series of 0 byte
-     inputs produces a series of hash values that, when strung together, can
-     pass most tests in the Dieharder RNG test suite.
+  2. For larger hashes (like 10 bytes and above), a hash of a series of single
+     0 byte inputs produces a series of hash values that, when strung together,
+     can pass 58/62 tests in the Dieharder RNG test suite.
      
-  3. For hashes equal in length to the small input sizes, each unique input
+  3. For hashes equal in length to a small input sizes, each unique input
      hashes to a unique hash value, with no collisions.  This has been tested
      exhaustively for all possible 1-byte inputs into 1-byte hashes, and
      all possible 2-byte inputs into 2-byte hashes.

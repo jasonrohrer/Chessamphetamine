@@ -60,11 +60,11 @@ static void maxigin_flexHashInit( FlexHashState *inState,
     unsigned int jBits;
     
     i = 0;
-    k = 119;
-    n = 207;
-    m = 17;
-    
+    k = 199;
+    n = 17;
+    m = 107;
 
+    
     /* zero our hash to start */
     for( j=0; j < hashLength; j++ ) {
         inHashBuffer[j] = 0;
@@ -401,7 +401,7 @@ int main( int inNumArgs, const char **inArgs ) {
         }
 
     
-    if( 0 ) {
+    if( 1 ) {
         int i;
 
         for( i=1; i < 80; i++ ) {
@@ -419,10 +419,26 @@ int main( int inNumArgs, const char **inArgs ) {
         }
 
 
+    if( 0 ) {
+        FlexHashState s;
+
+        #define hashSize 20
+
+        unsigned char hashBuffer[ hashSize ];
+
+        for( int i=0; i<10000000; i++ ) {
+            
+    
+            maxigin_flexHashInit( &s, hashBuffer, hashSize );
+            }
+        
+
+        }
+    
 
 
     
-    if( 1 ) {
+    if( 0 ) {
         
     FlexHashState s;
 

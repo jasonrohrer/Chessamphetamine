@@ -909,7 +909,7 @@ int main( int inNumArgs, const char **inArgs ) {
     */
         
 
-    if( 1 ) {
+    if( 0 ) {
         /* test on file input */
 
         
@@ -1068,14 +1068,14 @@ int main( int inNumArgs, const char **inArgs ) {
         }
 
 
-    if( 0 ) {
+    if( 1 ) {
         /* raw speed test, with no waiting for file data */
 
 #define speedBuffSize 1000000
 
         unsigned char speedBuffer[ speedBuffSize ];
 
-        int numRounds = 10;
+        int numRounds = 100;
         
         int b;
         int i;
@@ -1095,7 +1095,7 @@ int main( int inNumArgs, const char **inArgs ) {
                                  (double)RAND_MAX );
             }
 
-        if( 0 ) {
+        if( 1 ) {
             /* test flexHash */
             
             maxigin_flexHashInit( &s, hashBuff, speedHashLen );

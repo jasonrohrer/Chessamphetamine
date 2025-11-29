@@ -42,7 +42,7 @@ typedef struct FlexHashState {
         int j;
         unsigned char n;
         unsigned char *hashBuffer;
-        unsigned int hashLength;
+        int hashLength;
         unsigned char lastInputByte;
     } FlexHashState;
 
@@ -69,10 +69,11 @@ static void maxigin_flexHashInit( FlexHashState *inState,
     unsigned int j;
     unsigned char i, n, k, m, index;
 
-    int run;
+    unsigned int run;
     
-    unsigned int hashLength = (unsigned)inHashLength;
+    int hashLength = inHashLength;
     unsigned int jBits;
+    unsigned char jBitsChar;
     
     i = 0;
     k = 199;
@@ -107,6 +108,7 @@ static void maxigin_flexHashInit( FlexHashState *inState,
             while( jBits > 255 ) {
                 jBits = ( jBits >> 8 ) ^ ( jBits & 0xFF );
                 }
+            jBitsChar = (unsigned char)jBits;
             
             /* we increment i by 1 below, which walks through every value in the
                table in order.  But we also phase shift this walk according to k
@@ -123,10 +125,13 @@ static void maxigin_flexHashInit( FlexHashState *inState,
 
             /* fixme:  can save jumps in a variable to avoid lookups...
                speedup? */
-            index = ( i + flexHashTable[ k ] + flexHashTable[m] ) & 0xFF;
+            index = (unsigned char)( ( i +
+                                       flexHashTable[ k ] +
+                                       flexHashTable[m] )
+                                     & 0xFF );
 
         
-            n = n ^ flexHashTable[ index ] ^ jBits ^ inHashBuffer[j];
+            n = n ^ flexHashTable[ index ] ^ jBitsChar ^ inHashBuffer[j];
         
             inHashBuffer[j] = n;
         
@@ -169,23 +174,84 @@ static void maxigin_flexHashAdd( FlexHashState *inState,
                                  const unsigned char *inBytes,
                                  int inNumBytes ) {
     
-    unsigned int j;
+    int j;
     unsigned char n;
-    unsigned int b;
-    unsigned int numBytes = (unsigned)inNumBytes;
-    unsigned int hashLength = inState->hashLength;
+    int b;
+    int numBytes = inNumBytes;
+    int hashLength = inState->hashLength;
     unsigned char *hashBuffer = inState->hashBuffer;
     
     n = inState->n;
     j = inState->j;
     
     /* mix in each byte of our hash buffer */
-    for( b=0; b< numBytes; b++ ) {
-        /* this mixing opration is a multi-byte extension of Pearson Hashing,
-           with the added twist that n holds the last hash buffer value
-           that we touched.  This means that even with input that is all
-           zero bytes, we still get complex mixing, as each byte in our buffer
-           mixes with the previous byte in the buffer */
+
+
+    /*
+      This mixing opration is a multi-byte extension of Pearson Hashing,
+      with the added twist that n holds the last hash buffer value
+      that we touched.  This means that even with input that is all
+      zero bytes, we still get complex mixing, as each byte in our buffer
+      mixes with the previous byte in the buffer
+
+      The basic form of the mixing operation for a sequence of bytes looks
+      like this:
+
+           while( b < numBytes ) {
+               n = flexHashTable[ hashBuffer[j] ^ inBytes[b] ^ n ];
+               hashBuffer[j] = n;
+        
+               j++;
+        
+               if( j >= hashLength ) {
+                   j = 0;
+                   }
+               b++;
+               }
+
+       We unroll this below to improve performance, but the actual algorithm
+       is the above loop.
+    */
+
+    /*
+      These limits tell us we're in the middle of our input buffer and
+      hash buffer, which allows us to use the unrolled version.
+      Note that if our hashLength is < 4, or our input data buffer is shorter
+      than 4, we don't use these unrolled versions at all.
+    */
+    int bLimit = numBytes - 4;
+    int jLimit = hashLength - 4;
+
+    b = 0;
+
+    while( b < bLimit ) {
+        
+        if( j < jLimit ) {
+            /* safe to unroll 4x */
+            
+            n = flexHashTable[ hashBuffer[j] ^ inBytes[b] ^ n ];
+            hashBuffer[j] = n;
+            j++;
+            b++;
+            
+            n = flexHashTable[ hashBuffer[j] ^ inBytes[b] ^ n ];
+            hashBuffer[j] = n;
+            j++;
+            b++;
+            
+            n = flexHashTable[ hashBuffer[j] ^ inBytes[b] ^ n ];
+            hashBuffer[j] = n;
+            j++;
+            b++;
+            
+            n = flexHashTable[ hashBuffer[j] ^ inBytes[b] ^ n ];
+            hashBuffer[j] = n;
+            j++;
+            b++;
+            } 
+        
+
+        /* back to regular loop for final j values */
         
         n = flexHashTable[ hashBuffer[j] ^ inBytes[b] ^ n ];
         hashBuffer[j] = n;
@@ -195,7 +261,24 @@ static void maxigin_flexHashAdd( FlexHashState *inState,
         if( j >= hashLength ) {
             j = 0;
             }
+        b++;
         }
+
+
+    /* and our most basic loop for final b values, toward end of buffer */
+    while( b < numBytes ) {
+        n = flexHashTable[ hashBuffer[j] ^ inBytes[b] ^ n ];
+        hashBuffer[j] = n;
+        
+        j++;
+        
+        if( j >= hashLength ) {
+            j = 0;
+            }
+        b++;
+        }
+    
+        
 
     inState->j = j;
     inState->n = n;
@@ -209,7 +292,7 @@ static void maxigin_flexHashAdd( FlexHashState *inState,
 static void maxigin_flexHashFinish( FlexHashState *inState ) {
     unsigned int j, run;
     unsigned char n;
-    unsigned int hashLength = inState->hashLength;
+    int hashLength = inState->hashLength;
     unsigned char *hashBuffer = inState->hashBuffer;
     unsigned char lastByte = inState->lastInputByte;
     
@@ -581,10 +664,9 @@ int main( int inNumArgs, const char **inArgs ) {
 
     
     if( 0 ) {
-        int longestFound = 0;
-        int foundA;
+        
         int hexLen = sizeof( hexBuffer ) - 1;
-        int a, b, o;
+        int a, o;
         
         maxigin_flexHash( 0, 0, hashTestBuffer, hashTestSize );
         
@@ -592,7 +674,7 @@ int main( int inNumArgs, const char **inArgs ) {
 
         #define patSize  8
         
-        unsigned char pattern[ patSize + 1 ];
+        char pattern[ patSize + 1 ];
 
         /* jump into middle and grab a pattern */
         int pos = 1 * ( hexLen / 4 );
@@ -666,7 +748,7 @@ int main( int inNumArgs, const char **inArgs ) {
 
 
     
-    if( 1 ) {
+    if( 0 ) {
 
         /* write hash of 0 out to stdout repeatedly
            for input to dieharder */
@@ -755,12 +837,10 @@ int main( int inNumArgs, const char **inArgs ) {
         int i, j, b, h;
 
         unsigned char hashResults[65536][ HASH_LEN ];
-        unsigned char xorResult[ HASH_LEN ];
-        
+                
         for( h=2; h<= HASH_LEN; h++ ) {
             
             int hashBytes = h;
-            int hotCount;
             int colCount = 0;
         
             for( i=0; i<65536; i++ ) {
@@ -806,12 +886,9 @@ int main( int inNumArgs, const char **inArgs ) {
     
     
     if( 0 ) {
-        
-    int numRead;
-    FILE *f;
-    FlexHashState s;
+
+
     int i, j, k, b;
-    int colCount = 0;
 
     for( i=0; i<65536; i++ ) {
         hitCounts[i] = 0;
@@ -947,10 +1024,10 @@ int main( int inNumArgs, const char **inArgs ) {
 
         
         FILE *f;
-        int numRead;
+        unsigned long numRead;
         int i;
         FlexHashState s;
-        unsigned int numBytes = 0;
+        unsigned long numBytes = 0;
         
     
         if( inNumArgs != 2 ) {
@@ -970,11 +1047,11 @@ int main( int inNumArgs, const char **inArgs ) {
         while( numRead > 0 ) {
             numBytes += numRead;
             
-            maxigin_flexHashAdd( &s, buffer, numRead );
+            maxigin_flexHashAdd( &s, buffer, (int)numRead );
             numRead = fread( buffer, 1, BUFF_LEN, f );
             }
 
-        printf( "Hash of %d bytes: ", numBytes );
+        printf( "Hash of %lu bytes: ", numBytes );
     
         for( i=0; i<HASH_LEN; i++ ) {
         
@@ -992,7 +1069,7 @@ int main( int inNumArgs, const char **inArgs ) {
         int i;
         FlexHashState s;
         unsigned char data[20];
-        int numRounds = 1000000;
+        unsigned int numRounds = 1000000;
         
         maxigin_flexHashInit( &s, hashBuffer, HASH_LEN );
 
@@ -1001,7 +1078,7 @@ int main( int inNumArgs, const char **inArgs ) {
             maxigin_flexHashAdd( &s, data, sizeof( data ) );
             }
 
-        printf( "Hashed %d bytes\n", sizeof( data ) * numRounds );
+        printf( "Hashed %lu bytes\n", sizeof( data ) * numRounds );
         }
 
 
@@ -1065,7 +1142,7 @@ int main( int inNumArgs, const char **inArgs ) {
                 hotCountTotals[p] += count;
 
                 float percentFlipped =
-                    100 * count /
+                    (float)( 100 * count ) /
                     (float)( hashBuffLen * 8 );
 
                 if( percentFlipped > 70 ||
@@ -1087,7 +1164,7 @@ int main( int inNumArgs, const char **inArgs ) {
 
         for( p=0; p< numBits; p++ ) {
             float percentFlipped =
-                100 * ( hotCountTotals[p] / numTrials ) /
+                (float)( 100 * ( hotCountTotals[p] / numTrials ) ) /
                 (float)( hashBuffLen * 8 );
 
             if( percentFlipped > 56 ||
@@ -1101,7 +1178,7 @@ int main( int inNumArgs, const char **inArgs ) {
         }
 
 
-    if( 0 ) {
+    if( 1 ) {
         /* raw speed test, with no waiting for file data */
 
 #define speedBuffSize 5000000
@@ -1113,7 +1190,7 @@ int main( int inNumArgs, const char **inArgs ) {
         int b;
         int i;
 
-        #define speedHashLen 20
+        #define speedHashLen 157
         
         unsigned char hashBuff[ speedHashLen ];
 

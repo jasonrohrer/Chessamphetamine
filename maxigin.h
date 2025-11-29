@@ -442,7 +442,7 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
   
   2. For larger hashes (like 10 bytes and above), a hash of a series of single
      0 byte inputs produces a series of hash values that, when strung together,
-     can pass 58/62 tests in the Dieharder RNG test suite.
+     can pass 61/62 tests in the Dieharder RNG test suite.
 
   3. Excellent avalanche behavior:  Testing random 1000-byte inputs hashed into
      20-byte hashes, over 10 trials, doing a single bit flip of one of the 8000

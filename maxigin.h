@@ -427,7 +427,8 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
   A flexHash produces a variable-length hash matching the length requested
   by the caller, and fills the caller's provided hash buffer with that hash.
 
-  Longer hash results are slower.
+  Longer hash results have a slightly larger fixed cost, but that extra
+  cost does not scale with the length of the input.
 
   Implementation makes use of only unsigned character buffers for internal
   state, so it doesn't depend on int or long endian representations,
@@ -460,17 +461,6 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
 
      Testing a 1-byte input hashed into a 2000-byte output hash over 10,000
      trials, the same bounds were observed.
-     
-  3. For hashes equal in length to a small input sizes, each unique input
-     hashes to a unique hash value, with no collisions.  This has been tested
-     exhaustively for all possible 1-byte inputs into 1-byte hashes, and
-     all possible 2-byte inputs into 2-byte hashes.
-     
-  4. For hashes that are longer than a small input size, each unique input
-     hashes to a unique hash value, with no collisions.  This has been tested
-     exhaustively for all 1-byte inputs hashed into 2-, 3-, ..., 31-, and
-     32-byte hashes, and all 2-byte inputs hashed into 3-, 4-, ..., 19-, and
-     20-byte hashes.
 
   [jumpMaxiginGeneral]
 */

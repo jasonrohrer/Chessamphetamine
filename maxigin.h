@@ -825,29 +825,35 @@ void maxigin_initRegisterStaticMemory( void *inPointer, int inNumBytes,
 static const char *saveGameFileName = "save.bin";
 
 
-#define MAXIGIN_MAX_FINGERPRINT_LENGTH  256
-static char fingerprintBuffer[ MAXIGIN_MAX_FINGERPRINT_LENGTH ];
+#define MAXIGIN_FINGERPRINT_LENGTH  10
+static unsigned char fingerprintBuffer[ MAXIGIN_FINGERPRINT_LENGTH ];
+
+#define MAXIGIN_FINGERPRINT_HEX_LENGTH \
+    ( MAXIGIN_FINGERPRINT_LENGTH * 2 + 1 )
+
+static char fingerprintHexBuffer[ MAXIGIN_FINGERPRINT_HEX_LENGTH ];
+
 
 static char *getMemRecordsFingerprint( int *outTotalMemBytes ) {
-    int i, c;
+    FlexHashState s;
+    int i;
     int totalNumBytes = 0;
     
-    for( c=0; c<MAXIGIN_MAX_FINGERPRINT_LENGTH; c++ ) {
-        fingerprintBuffer[c] = '\0';
-        }
+    maxigin_flexHashInit( &s, fingerprintBuffer,
+                          MAXIGIN_FINGERPRINT_LENGTH );
+    
     for( i=0; i<numMemRecords; i++ ) {
         totalNumBytes += memRecords[i].numBytes;
-
-        c=0;
-        while( memRecords[ i ].description[c] != '\0' &&
-               c < MAXIGIN_MAX_FINGERPRINT_LENGTH - 1 ) {
-            fingerprintBuffer[c] =
-                memRecords[ i ].description[c] ^ fingerprintBuffer[c];
-            }
+        maxigin_flexHashAdd( &s,
+                             (unsigned char *)( memRecords[i].description ),
+                             maxigin_stringLength( memRecords[i].description ) );
         }
     *outTotalMemBytes = totalNumBytes;
 
-    return fingerprintBuffer;
+    maxigin_hexEncode( fingerprintBuffer, MAXIGIN_FINGERPRINT_LENGTH,
+                       fingerprintHexBuffer );
+    
+    return fingerprintHexBuffer;
     }
 
 

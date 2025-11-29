@@ -40,7 +40,6 @@ static const unsigned char flexHashTable[256] = {
 
 typedef struct FlexHashState {
         int j;
-        unsigned char i;
         unsigned char n;
         unsigned char *hashBuffer;
         unsigned int hashLength;
@@ -158,7 +157,6 @@ static void maxigin_flexHashInit( FlexHashState *inState,
     n = n ^ flexHashTable[i];
 
     inState->j = 0;
-    inState->i = 0;
     inState->n = n;
     inState->hashBuffer = inHashBuffer;
     inState->hashLength = hashLength;
@@ -217,9 +215,15 @@ static void maxigin_flexHashFinish( FlexHashState *inState ) {
     
     n = inState->n;
     
-    /* mix last input byte in 4 more times */
+    /*
+      mix last input byte in 4 more times
+
+      We do this with lastByte to improve behavior dramatically in
+      few-byte-input cases (if we only have 1 input byte, for example,
+      we want it to touch every byte in our hash directly)
+     */
+    
     for( run=0; run<4; run++ ) {
-        //n = n ^ lastByte;
         for( j=0; j<hashLength; j++ ) {
             n = flexHashTable[ hashBuffer[j] ^ lastByte ^ n ];
             hashBuffer[j] = n;

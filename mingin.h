@@ -1811,44 +1811,138 @@ static void setupX11KeyMap( void ) {
 
 
 
+#define MINGIN_LINUX_MAX_PATH_LEN 255
+static char minginLinuxPathBuffer[ MINGIN_LINUX_MAX_PATH_LEN + 1 ];
 
+static char *linuxGetFilePath( const char *inFolderName,
+                               const char *inFileName ) {
+    int i = 0;
+    int j = 0;
+    while( i < MINGIN_LINUX_MAX_PATH_LEN &&
+           inFolderName[i] != '\0' ) {
+        minginLinuxPathBuffer[i] = inFolderName[i];
+        i++;
+        }
+    /* now separator */
+    if( i < MINGIN_LINUX_MAX_PATH_LEN ) {
+        minginLinuxPathBuffer[i] = '/';
+        i++;
+        }
+    while( i < MINGIN_LINUX_MAX_PATH_LEN &&
+           inFileName[j] != '\0' ) {
+        minginLinuxPathBuffer[i] = inFileName[j];
+        i++;
+        j++;
+        }
+    return minginLinuxPathBuffer;
+    }
+
+
+#include <fcntl.h>
+#include <sys/stat.h>
+
+static int linuxFileOpenRead( const char *inFolderName,
+                              const char *inFileName,
+                              int *outTotalBytes ) {
+    struct stat statStruct;
+    int fd;
+    
+    char *path = linuxGetFilePath( inFolderName, inFileName );
+
+    *outTotalBytes = 0;
+    
+    if( stat( path, &statStruct ) == 0 ) {
+        *outTotalBytes = (int)( statStruct.st_size );
+        }
+    else {
+        /* stat failed, file does not exist */
+        return -1;
+        }
+    
+    fd = open( path, O_RDONLY );
+
+    return fd;
+    }
+
+
+static int linuxFileOpenWrite( const char *inFolderName,
+                               const char *inFileName ) {
+    /* make sure folder exists */
+    struct stat statStruct;
+    char folderExists = 0;
+    
+    /* Check if the path exists and retrieve its stat */
+    if( stat( inFolderName, &statStruct ) == 0 ) {
+        /* use macro to check if it's a dir */
+        folderExists = S_ISDIR( statStruct.st_mode );
+        }
+    if( ! folderExists ) {
+        if( mkdir( inFolderName, 0755 ) == 0 ) {
+            folderExists = 1;
+            }
+        }
+    if( folderExists ) {
+        char *path = linuxGetFilePath( inFolderName, inFileName );
+
+        int fd = open( path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU );
+
+        return fd;
+        }
+    else {
+        return -1;
+        }
+    }
+
+
+
+static char linuxFileWrite( int inFD, int inNumBytesToWrite,
+                            const unsigned char *inByteBuffer ) {
+    
+    size_t numToWrite = (size_t)inNumBytesToWrite;
+    size_t numWritten = 0;
+    
+    while( numToWrite > 0 ) {
+        
+        ssize_t numWrittenThisTime =
+            write( inFD, &inByteBuffer[numWritten], numToWrite );
+
+        if( numWrittenThisTime == -1 ) {
+            return 0;
+            }
+        numToWrite -= (size_t)numWrittenThisTime;
+        numWrittenThisTime += numWrittenThisTime;
+        }
+
+    return 1;
+    }
 
 
 
 int mingin_startWritePersistData( const char *inStoreName ) {
-    /* suppress  warning */
-    if( inStoreName[0] == '\0' ) {
-        }
-    return -1;
+    return linuxFileOpenWrite( "settings", inStoreName );
     }
 
 
 
 int mingin_startReadPersistData( const char *inStoreName,
                                  int *outTotalBytes ) {
-    /* suppress  warning */
-    if( inStoreName[0] == '\0' ) {
-        }
-    *outTotalBytes = 0;
-    
-    return -1;
+    return linuxFileOpenRead( "settings", inStoreName, outTotalBytes );
     }
 
 
 
 char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
                               const unsigned char *inByteBuffer ) {
-    /* suppress warning */
-    if( inStoreWriteHandle > 0 || inNumBytesToWrite > 0 ||
-        inByteBuffer != 0 ) {
-        }
-    return 0;
+    return linuxFileWrite( inStoreWriteHandle, inNumBytesToWrite,
+                           inByteBuffer );
     }
 
 
 
 int mingin_readPersistData( int inStoreReadHandle, int inNumBytesToRead,
                             unsigned char *inByteBuffer ) {
+    /* FIXME:  read implementation next */
+    
     /* suppress warning */
     if( inStoreReadHandle > 0 || inNumBytesToRead > 0 ||
         inByteBuffer != 0 ) {

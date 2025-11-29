@@ -437,7 +437,7 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
 
   Has several nice properties:
 
-  1. Around 10x faster than SHA1 on my test hardware.
+  1. Around 20% faster at producing a 20-byte hash than SHA1 on my test hardware.
   
   2. For larger hashes (like 10 bytes and above), a hash of a series of single
      0 byte inputs produces a series of hash values that, when strung together,
@@ -446,7 +446,7 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
   3. Excellent avalanche behavior:  Testing random 1000-byte inputs hashed into
      20-byte hashes, over 10 trials, doing a single bit flip of one of the 8000
      input bytes and the rehashing, the average percentage of bits flipped
-     was between 45 and 55%, and the worst-case range for a single trial was
+     was between 44 and 56%, and the worst-case range for a single trial was
      between 30 and 70%.  Each of the 8000 bit positions was tested separately
      over 10 trials, demonstrating no sensitive bits positions.  Similar
      sets of 10 trials with flips of every individual bit position were run
@@ -455,8 +455,8 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
 
      For randomized 8-byte imputs with every bit position flip tested over
      100,000 trials (6.4 million bit flips), the most extreme percentage of bits
-     in the 20-byte hash that flipped in response to one bit flip were 71.9% and
-     29.4%.
+     in the 20-byte hash that flipped in response to one bit flip were 70.6% and
+     28.8%.
 
      Testing a 1-byte input hashed into a 2000-byte output hash over 10,000
      trials, the same bounds were observed.

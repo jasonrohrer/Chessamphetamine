@@ -376,6 +376,11 @@ const char *maxigin_intToString( int inInt );
 /*
   Converts a \0-terminated string to an int.
 
+  Extra characters beyond the last digit charager are ignored.
+
+  Empty string, or string starting with no digit or - characters results
+  in a 0 return value.
+
   [jumpMaxiginGeneral]
 */
 int maxigin_stringToInt( const char *inString );
@@ -902,6 +907,33 @@ static char readStringFromPersistData( int inStoreReadHandle,
     }
 
 
+
+#define MAXIGIN_MAX_INT_STRING_LEN 16
+static char intReadingBuffer[ MAXIGIN_MAX_INT_STRING_LEN ];
+/*
+  Reads a \0-terminated string representation of an int from data store.
+
+  Returns 1 on success, 0 on failure.
+*/
+static char readIntFromPersistData( int inStoreReadHandle,
+                                       int *outInt ) {
+    char success;
+    
+    success = readStringFromPersistData( inStoreReadHandle,
+                                         MAXIGIN_MAX_INT_STRING_LEN,
+                                         intReadingBuffer );
+    if( ! success ) {
+        return 0;
+        }
+    
+    *outInt = maxigin_stringToInt( intReadingBuffer );
+
+    return 1;
+    }
+
+
+
+
 static void saveGame( void ) {
     char *fingerprint;
     int numTotalBytes;
@@ -966,10 +998,9 @@ static void saveGame( void ) {
 void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
     char *fingerprint;
     int numTotalBytes;
+    int readNumTotalBytes;
     char success;
-    const char *intString;
-    /*
-    int i;*/
+
     int storeSize;
     int readHandle;
 
@@ -995,9 +1026,7 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 
     /* fixme:  make function to read int from file as string and convert
        to int */
-    success = readStringFromPersistData( readHandle,
-                                         MAXIGIN_FILE_BUFFER_SIZE,
-                                         (char*)maxiginFileBuffer );
+    success = readIntFromPersistData( readHandle, &readNumTotalBytes );
 
     if( ! success ) {
         mingin_endReadPersistData( readHandle );
@@ -1005,9 +1034,7 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
         return;
         }
 
-    intString = maxigin_intToString( numTotalBytes );
-
-    if( ! maxigin_equal( intString, (char*)maxiginFileBuffer ) ) {
+    if( readNumTotalBytes != numTotalBytes ) {
         mingin_endReadPersistData( readHandle );
         mingin_log( "Save file does not match current total memory bytes, "
                     "ignoring.\n" );
@@ -1143,10 +1170,26 @@ const char *maxigin_intToString( int inInt ) {
 
 int maxigin_stringToInt( const char *inString ) {
     /* fixme:  implement */
-    if( inString[0] == '\0' ) {
+    int sign = 1;
+    int i = 0;
+    int val = 0;
+    
+    if( inString[i] == '-' ) {
+        sign = -1;
+        i++;
+        }
+    
+    if( inString[i] < '0' || inString[i] > '9' ) {
+        /* starts with non-digit */
         return 0;
         }
-    return 0;
+    
+    while( inString[i] >= '0' && inString[i] <= '9' ) {
+        val = val * 10 + ( inString[i] - '0' );
+        i++;
+        }
+    
+    return val * sign;
     }
 
 

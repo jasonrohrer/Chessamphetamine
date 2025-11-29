@@ -172,31 +172,23 @@ static void maxigin_flexHashAdd( FlexHashState *inState,
                                  int inNumBytes ) {
     
     unsigned int j;
-    unsigned char i, n;
+    unsigned char n;
     unsigned int b;
     unsigned int numBytes = (unsigned)inNumBytes;
     unsigned int hashLength = inState->hashLength;
     unsigned char *hashBuffer = inState->hashBuffer;
-
     
-    i = inState->i;
     n = inState->n;
     j = inState->j;
     
-    /* mix in each byte of our input */
+    /* mix in each byte of our hash buffer */
     for( b=0; b< numBytes; b++ ) {
-        /* mix byte and byte count into our n state */
-        /*
-        n = n ^ inBytes[b] ^ i;
-
-        n = flexHashTable[ hashBuffer[j] ^ n ];
-                
-        //hashBuffer[j] = n;
+        /* this mixing opration is a multi-byte extension of Pearson Hashing,
+           with the added twist that n holds the last hash buffer value
+           that we touched.  This means that even with input that is all
+           zero bytes, we still get complex mixing, as each byte in our buffer
+           mixes with the previous byte in the buffer */
         
-
-        
-        */
-
         n = flexHashTable[ hashBuffer[j] ^ inBytes[b] ^ n ];
         hashBuffer[j] = n;
         
@@ -205,19 +197,9 @@ static void maxigin_flexHashAdd( FlexHashState *inState,
         if( j >= hashLength ) {
             j = 0;
             }
-        
-        
-        /* i keeps track of how many bytes we've processed, mod 256 */
-        //i = ( i + 1 )  & 0xFF;
-            
-        /* push n forward one more time, so it's not equal to the last
-           byte in our hash buffer (which is also the first/only byte, in the
-           case of 1-byte hashes) */
-        //n = flexHashTable[ n ];
         }
 
     inState->j = j;
-    inState->i = i;
     inState->n = n;
 
     if( inNumBytes > 0 ) {

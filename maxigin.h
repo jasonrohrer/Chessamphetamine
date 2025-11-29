@@ -1144,6 +1144,7 @@ int maxigin_stringToInt( const char *inString ) {
     }
 
 
+
 static const unsigned char flexHashTable[256] = {
     108,   35,   77,  207,    9,  111,  203,  175,
      70,  142,  194,  252,  115,  141,   32,  182,
@@ -1178,6 +1179,7 @@ static const unsigned char flexHashTable[256] = {
      44,   48,  135,   27,   79,   29,   94,  238,
       5,   18,  228,  127,  125,   86,  234,   90
     };
+
 
 
 void maxigin_flexHashInit( FlexHashState *inState,
@@ -1416,6 +1418,7 @@ void maxigin_flexHashAdd( FlexHashState *inState,
         inState->lastInputByte = inBytes[ inNumBytes - 1 ];
         }
     }
+
 
 
 void maxigin_flexHashFinish( FlexHashState *inState ) {

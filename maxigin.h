@@ -1043,6 +1043,9 @@ static void saveGame( void ) {
         goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
         }
 
+    /* first write all the descriptions and sizes
+       on loading, we can bail out if these don't match, before
+       overwriting anything */
     for( i=0; i<numMemRecords; i++ ) {
         const char *des = memRecords[i].description;
 
@@ -1059,8 +1062,11 @@ static void saveGame( void ) {
         if( ! success ) {
             goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
             }
+        }
 
-
+    /* now write the actual memory regions */
+    for( i=0; i<numMemRecords; i++ ) {
+        
         /* write numBytes from memory location into storage */
         success = mingin_writePersistData(
             outHandle,
@@ -1073,6 +1079,8 @@ static void saveGame( void ) {
         }
 
     mingin_endWritePersistData( outHandle );
+
+    mingin_log( "Saved game.\n" );
     }
 
 
@@ -1170,13 +1178,14 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
         }
 
     /* now read the memory records from the saved file */
+
+    /* first read the descriptions and sizes to make sure they all match */
     for( i=0; i<numMemRecords; i++ ) {
         const char *liveDes = memRecords[i].description;
         const char *readDes =
             readShortStringFromPersistData( readHandle );
         
         int readNumBytes;
-        int numRead;
         
         if( readDes == 0 ) {
             maxigin_logInt( "Failed to read saved description for record # = ",
@@ -1219,9 +1228,16 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
             return;
             }
 
+        }
 
+    
+    /* Now it's safe to reach the memory regions into memory
+       since everything above matches */
+    
+    for( i=0; i<numMemRecords; i++ ) {
+        
         /* read numBytes from memory location into storage */
-        numRead = mingin_readPersistData(
+        int numRead = mingin_readPersistData(
             readHandle,
             memRecords[i].numBytes,
             (unsigned char*)memRecords[i].pointer );
@@ -1236,7 +1252,8 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
         }
 
     mingin_endReadPersistData( readHandle );
-    
+
+    mingin_log( "Restored live memory from saved game.\n" );
     }
 
 

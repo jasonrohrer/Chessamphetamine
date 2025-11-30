@@ -872,6 +872,15 @@ void mingin_endReadPersistData( int inStoreReadHandle );
 
 
 /*
+  Deletes a persistent data store by name, if it exists.
+
+  [jumpMinginProvides]
+*/
+void mingin_deletePersistData( const char *inStoreName );
+
+
+
+/*
   Opens a named bulk data resource for reading.
 
   *outTotalBytes set to the number of bytes in the data resoure.
@@ -2029,6 +2038,15 @@ void mingin_endReadPersistData( int inStoreReadHandle ) {
     }
 
 
+void mingin_deletePersistData( const char *inStoreName ) {
+    
+    char *path = linuxGetFilePath( "settings", inStoreName );
+    
+    unlink( path );
+    }
+
+
+
 
 int mingin_startReadBulkData( const char *inBulkName,
                               int *outTotalBytes ) {
@@ -2243,6 +2261,15 @@ char mingin_seekPersistData( int inStoreReadHandle,
     }
 
 
+int mingin_getPersistDataPosition( int inStoreReadHandle ) {
+    /* suppress warning */
+    if( inStoreReadHandle > 0 ) {
+        }
+    return 0;
+    }
+
+
+
 
 void mingin_endWritePersistData( int inStoreWriteHandle ) {
     /* suppress warning */
@@ -2292,6 +2319,13 @@ char mingin_seekBulkData( int inBulkDataHandle,
     }
 
 
+int mingin_getBulkDataPosition( int inBulkDataHandle ) {
+    /* suppress warning */
+    if( inBulkDataHandle > 0 ) {
+        }
+    return 0;
+    }
+
 
 void mingin_endReadBulkData( int inBulkDataHandle ) {
     /* suppress warning */
@@ -2299,6 +2333,12 @@ void mingin_endReadBulkData( int inBulkDataHandle ) {
         }
     }
 
+
+void mingin_deletePersistData( const char *inStoreName ) {
+    /* suppress warning */
+    if( inBulkName[0] != '\0' ) {
+        }
+    }
 
 
 

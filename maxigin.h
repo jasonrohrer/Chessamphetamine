@@ -357,6 +357,25 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void );
   to run on the real game code again, but stop playing back, and then
   try to trigger the bug yourself.  I.e., you get to the point right before
   the bug, and then you take the reigns by clicking and pressing buttons.
+
+  Also possible to save space by not saving entire memory each step, but just
+  a diff from a keyframe.
+  
+  A few things to consider:
+
+  1. This will require two extra static buffers that are at least as big as all
+     of the registered memory regions, so that we can compute a diff at
+     each timestep (and keep track of the diff-summed state currently in our
+     file).  Probably give user a #define that lets them set this size, or
+     turn this off on platforms where we don't want 3x memory usage.
+     
+  2. Diff steps will vary in size, which means we can't just seek to a known
+     location in the file for accurate time-jumping.  However, we could
+     potentially write a separate index file in parallel that records
+     file pos offsets of keyframes every 5 seconds or whatever, and then,
+     when the recording is done we can append this index to our recording,
+     with a pointer at the end of the file that points back into the file
+     at the location where this index starts.
 */
 
 

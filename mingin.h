@@ -827,7 +827,7 @@ int mingin_readPersistData( int inStoreReadHandle, int inNumBytesToRead,
 
 
 /*
-  Seeks to a byte position in a persistent data store.
+  Seeks to a byte position in a persistent data store that is being read.
 
   Position is relative to 0 at start of store.
 
@@ -1898,21 +1898,42 @@ static int linuxFileOpenWrite( const char *inFolderName,
 static char linuxFileWrite( int inFD, int inNumBytesToWrite,
                             const unsigned char *inByteBuffer ) {
     
-    size_t numToWrite = (size_t)inNumBytesToWrite;
+    size_t numLeftToWrite = (size_t)inNumBytesToWrite;
     size_t numWritten = 0;
     
-    while( numToWrite > 0 ) {
+    while( numLeftToWrite > 0 ) {
         
         ssize_t numWrittenThisTime =
-            write( inFD, &inByteBuffer[numWritten], numToWrite );
+            write( inFD, &inByteBuffer[numWritten], numLeftToWrite );
 
         if( numWrittenThisTime == -1 ) {
             return 0;
             }
-        numToWrite -= (size_t)numWrittenThisTime;
-        numWrittenThisTime += numWrittenThisTime;
+        numLeftToWrite -= (size_t)numWrittenThisTime;
+        numWritten += (size_t)numWrittenThisTime;
         }
 
+    return 1;
+    }
+
+
+static int linuxFileRead( int inFD, int inNumBytesToRead,
+                          unsigned char *inByteBuffer ) {
+ 
+    ssize_t numReadThisTime =
+        read( inFD, inByteBuffer, (size_t)inNumBytesToRead );
+
+
+    return (int)numReadThisTime;
+    }
+
+
+
+static char linuxFileSeek( int inFD, int inAbsoluteBytePosition ) {
+    off_t offset = lseek( inFD, inAbsoluteBytePosition, SEEK_SET );
+    if( offset == (off_t)-1 ) {
+        return 0;
+        }
     return 1;
     }
 
@@ -1941,61 +1962,42 @@ char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
 
 int mingin_readPersistData( int inStoreReadHandle, int inNumBytesToRead,
                             unsigned char *inByteBuffer ) {
-    /* FIXME:  read implementation next */
-    
-    /* suppress warning */
-    if( inStoreReadHandle > 0 || inNumBytesToRead > 0 ||
-        inByteBuffer != 0 ) {
-        }
-    return -1;
+
+    return linuxFileRead( inStoreReadHandle, inNumBytesToRead, inByteBuffer );
     }
 
 
 
 char mingin_seekPersistData( int inStoreReadHandle,
                              int inAbsoluteBytePosition ) {
-    /* suppress warning */
-    if( inStoreReadHandle > 0 || inAbsoluteBytePosition > 0 ) {
-        }
-    return 0;
+    return linuxFileSeek( inStoreReadHandle, inAbsoluteBytePosition );
     }
 
 
 
 void mingin_endWritePersistData( int inStoreWriteHandle ) {
-    /* suppress warning */
-    if( inStoreWriteHandle > 0 ) {
-        }
+    close( inStoreWriteHandle );
     }
 
 
 
 void mingin_endReadPersistData( int inStoreReadHandle ) {
-    /* suppress warning */
-    if( inStoreReadHandle > 0 ) {
-        }
+    close( inStoreReadHandle );
     }
 
 
 
 int mingin_startReadBulkData( const char *inBulkName,
                               int *outTotalBytes ) {
-    /* suppress warning */
-    if( inBulkName[0] != '\0' ) {
-        }
-    *outTotalBytes = 0;
-    return -1;
+    return linuxFileOpenRead( "data", inBulkName, outTotalBytes );
     }
 
 
 
 int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
                          unsigned char *inByteBuffer ) {
-    /* suppress warning */
-    if( inBulkDataHandle > 0 || inNumBytesToRead > 0 ||
-        inByteBuffer != 0 ) {
-        }
-    return -1;
+    
+    return linuxFileRead( inBulkDataHandle, inNumBytesToRead, inByteBuffer );
     }
 
 
@@ -2003,18 +2005,13 @@ int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
 
 char mingin_seekBulkData( int inBulkDataHandle,
                           int inAbsoluteBytePosition ) {
-    /* suppress warning */
-    if( inBulkDataHandle > 0 || inAbsoluteBytePosition > 0 ) {
-        }
-    return 0;
+    return linuxFileSeek( inBulkDataHandle, inAbsoluteBytePosition );
     }
 
 
 
 void mingin_endReadBulkData( int inBulkDataHandle ) {
-    /* suppress warning */
-    if( inBulkDataHandle > 0 ) {
-        }
+    close( inBulkDataHandle );
     }
 
 

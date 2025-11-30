@@ -389,11 +389,20 @@ int maxigin_stringToInt( const char *inString );
 
 
 /*
-  Logs a labeled int value to the game engine log.
+  Logs a labeled int value to the game engine log with a newline.
 
   [jumpMaxiginGeneral]
 */
 void maxigin_logInt( const char *inLabel, int inVal );
+
+
+
+/*
+  Logs a labeled string value to the game engine log with a newline.
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_logString( const char *inLabel, const char *inVal );
 
 
 
@@ -916,7 +925,7 @@ static char intReadingBuffer[ MAXIGIN_MAX_INT_STRING_LEN ];
   Returns 1 on success, 0 on failure.
 */
 static char readIntFromPersistData( int inStoreReadHandle,
-                                       int *outInt ) {
+                                    int *outInt ) {
     char success;
     
     success = readStringFromPersistData( inStoreReadHandle,
@@ -932,62 +941,95 @@ static char readIntFromPersistData( int inStoreReadHandle,
     }
 
 
+/*
+  Writes a \0-terminated string representation of an int to data store.
+
+  Returns 1 on success, 0 on failure.
+*/
+static char writeIntToPerisistentData( int inStoreWriteHandle,
+                                       int inInt ) {
+    const char *intString = maxigin_intToString( inInt );
+    
+    
+    return mingin_writePersistData( inStoreWriteHandle,
+                                    maxigin_stringLength( intString ) + 1,
+                                    (unsigned char*)intString );
+    }
+
+
+    
 
 
 static void saveGame( void ) {
     char *fingerprint;
     int numTotalBytes;
-    const char *intString;
+    char success;
     int i;
     
     int outHandle = mingin_startWritePersistData( saveGameFileName );
 
     if( outHandle == -1 ) {
-        mingin_log( "Failed to open saved game for writing: " );
-        mingin_log( saveGameFileName );
-        mingin_log( "\n" );
-        
+        maxigin_logString( "Failed to open saved game for writing: ",
+                           saveGameFileName );
         return;
         }
 
     fingerprint = getMemRecordsFingerprint( &numTotalBytes );
 
-    /* fixme:  make function to write int to data store as string */
-    intString = maxigin_intToString( numTotalBytes );
-    
-    
-    mingin_writePersistData( outHandle,
-                             maxigin_stringLength( intString ) + 1,
-                             (unsigned char*)intString );
+
+    success = writeIntToPerisistentData( outHandle, numTotalBytes );
+
+    if( ! success ) {
+        MAXIGIN_SAVED_GAME_WRITE_FAILURE:
+        mingin_endWritePersistData( outHandle );
+        maxigin_logString( "Failed to write to saved game file: ",
+                           saveGameFileName );
+        return;
+        }
+
+
+    success = writeIntToPerisistentData( outHandle, numMemRecords );
+
+    if( ! success ) {
+        goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
+        }
 
     
-    intString = maxigin_intToString( numMemRecords );
-    
-    mingin_writePersistData( outHandle,
-                             maxigin_stringLength( intString ) + 1,
-                             (unsigned char*)intString );
-    
-    mingin_writePersistData( outHandle,
-                             maxigin_stringLength( fingerprint ) + 1,
-                             (unsigned char*)fingerprint );
+    success = mingin_writePersistData( outHandle,
+                                       maxigin_stringLength( fingerprint ) + 1,
+                                       (unsigned char*)fingerprint );
+
+    if( ! success ) {
+        goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
+        }
 
     for( i=0; i<numMemRecords; i++ ) {
         const char *des = memRecords[i].description;
-        
-        intString = maxigin_intToString( memRecords[i].numBytes );
+
     
-        mingin_writePersistData( outHandle,
-                             maxigin_stringLength( des ) + 1,
-                             (unsigned char*)des );
+        success = mingin_writePersistData( outHandle,
+                                           maxigin_stringLength( des ) + 1,
+                                           (unsigned char*)des );
+        if( ! success ) {
+            goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
+            }
         
-        mingin_writePersistData( outHandle,
-                             maxigin_stringLength( intString ) + 1,
-                             (unsigned char*)intString );
+        success = writeIntToPerisistentData( outHandle,
+                                             memRecords[i].numBytes );
+        if( ! success ) {
+            goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
+            }
+
 
         /* write numBytes from memory location into storage */
-        mingin_writePersistData( outHandle,
-                                 memRecords[i].numBytes,
-                                 (unsigned char*)memRecords[i].pointer );
+        success = mingin_writePersistData(
+            outHandle,
+            memRecords[i].numBytes,
+            (unsigned char*)memRecords[i].pointer );
+        
+        if( ! success ) {
+            goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
+            }
         }
 
     mingin_endWritePersistData( outHandle );
@@ -1024,8 +1066,7 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 
     fingerprint = getMemRecordsFingerprint( &numTotalBytes );
 
-    /* fixme:  make function to read int from file as string and convert
-       to int */
+ 
     success = readIntFromPersistData( readHandle, &readNumTotalBytes );
 
     if( ! success ) {
@@ -1062,32 +1103,39 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 
 
 
-#define MAXIGIN_LOG_INT_MAX_LENGTH  256
+#define MAXIGIN_LABELED_LOG_MAX_LENGTH  256
 
-static char logIntBuffer[ MAXIGIN_LOG_INT_MAX_LENGTH ];
+static char labeledLogBuffer[ MAXIGIN_LABELED_LOG_MAX_LENGTH ];
 
-void maxigin_logInt( const char *inLabel, int inVal ) {
-    const char *valString = maxigin_intToString( inVal );
+
+void maxigin_logString( const char *inLabel, const char *inVal ) {
     int i = 0;
     int j = 0;
     
-    while( i < MAXIGIN_LOG_INT_MAX_LENGTH - 2 &&
+    while( i < MAXIGIN_LABELED_LOG_MAX_LENGTH - 2 &&
            inLabel[i] != '\0' ) {
-        logIntBuffer[i] = inLabel[i];
+        labeledLogBuffer[i] = inLabel[i];
         i++;
         }
-    while( i < MAXIGIN_LOG_INT_MAX_LENGTH - 2 &&
-           valString[j] != '\0' ) {
-        logIntBuffer[i] = valString[j];
+    while( i < MAXIGIN_LABELED_LOG_MAX_LENGTH - 2 &&
+           inVal[j] != '\0' ) {
+        labeledLogBuffer[i] = inVal[j];
         i++;
         j++;
         }
-    logIntBuffer[i] = '\n';
-    logIntBuffer[i+1] = '\0';
+    labeledLogBuffer[i] = '\n';
+    labeledLogBuffer[i+1] = '\0';
 
-    mingin_log( logIntBuffer );
+    mingin_log( labeledLogBuffer );
     }
 
+
+
+void maxigin_logInt( const char *inLabel, int inVal ) {
+    const char *valString = maxigin_intToString( inVal );
+
+    maxigin_logString( inLabel, valString );
+    }
 
 
 int maxigin_stringLength( const char *inString ) {
@@ -1169,7 +1217,6 @@ const char *maxigin_intToString( int inInt ) {
 
 
 int maxigin_stringToInt( const char *inString ) {
-    /* fixme:  implement */
     int sign = 1;
     int i = 0;
     int val = 0;
@@ -1305,8 +1352,6 @@ void maxigin_flexHashInit( FlexHashState *inState,
             /* don't assume char is not larger than 8 bits
                so we can't count on wrap-around behavior above 255 */
 
-            /* fixme:  can save jumps in a variable to avoid lookups...
-               speedup? */
             index = (unsigned char)( ( i +
                                        flexHashTable[ k ] +
                                        flexHashTable[m] )

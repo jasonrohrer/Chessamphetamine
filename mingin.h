@@ -841,6 +841,19 @@ char mingin_seekPersistData( int inStoreReadHandle,
 
 
 /*
+  Gets the current byte position in a data store that is being read.
+
+  Position is relative to 0 at start of store.
+
+  Returns -1 on failure.
+  
+  [jumpMinginProvides]
+*/
+int mingin_getPersistDataPosition( int inStoreReadHandle );
+
+
+
+/*
   Ends writing persistent data store.
   
   [jumpMinginProvides]
@@ -894,6 +907,21 @@ int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
 */
 char mingin_seekBulkData( int inBulkDataHandle,
                           int inAbsoluteBytePosition );
+
+
+
+/*
+  Gets the current byte position in a bulk data resource.
+
+  Position is relative to 0 at start of resource.
+
+  Returns -1 on failure.
+  
+  [jumpMinginProvides]
+*/
+int mingin_getBulkDataPosition( int inStoreReadHandle );
+
+
 
 
 /*
@@ -1939,6 +1967,15 @@ static char linuxFileSeek( int inFD, int inAbsoluteBytePosition ) {
 
 
 
+static int linuxFileGetPos( int inFD ) {
+    off_t offset = lseek( inFD, 0, SEEK_CUR );
+    if( offset == (off_t)-1 ) {
+        return -1;
+        }
+    return (int)offset;
+    }
+
+
 int mingin_startWritePersistData( const char *inStoreName ) {
     return linuxFileOpenWrite( "settings", inStoreName );
     }
@@ -1975,6 +2012,12 @@ char mingin_seekPersistData( int inStoreReadHandle,
 
 
 
+int mingin_getPersistDataPosition( int inStoreReadHandle ) {
+    return linuxFileGetPos( inStoreReadHandle );
+    }
+
+
+
 void mingin_endWritePersistData( int inStoreWriteHandle ) {
     close( inStoreWriteHandle );
     }
@@ -2006,6 +2049,12 @@ int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
 char mingin_seekBulkData( int inBulkDataHandle,
                           int inAbsoluteBytePosition ) {
     return linuxFileSeek( inBulkDataHandle, inAbsoluteBytePosition );
+    }
+
+
+
+int mingin_getBulkDataPosition( int inBulkDataHandle ) {
+    return linuxFileGetPos( inBulkDataHandle );
     }
 
 

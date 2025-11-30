@@ -420,7 +420,7 @@ int maxigin_stringLength( const char *inString );
 
   [jumpMaxiginGeneral]
 */
-char maxigin_equal( const char *inStringA, const char *inStringB );
+char maxigin_stringsEqual( const char *inStringA, const char *inStringB );
 
 
 
@@ -917,8 +917,32 @@ static char readStringFromPersistData( int inStoreReadHandle,
 
 
 
-#define MAXIGIN_MAX_INT_STRING_LEN 16
-static char intReadingBuffer[ MAXIGIN_MAX_INT_STRING_LEN ];
+
+#define MAXIGIN_READ_SHORT_STRING_LEN 64
+static char shortStringReadBuffer[ MAXIGIN_READ_SHORT_STRING_LEN ];
+
+/*
+  Reads a \0-terminated short string (< 63 chars long) into a static buffer.
+
+   Returns 0 on failure.
+*/
+static const char *readShortStringFromPersistData( int inStoreReadHandle ) {
+    
+    char success = readStringFromPersistData( inStoreReadHandle,
+                                              MAXIGIN_READ_SHORT_STRING_LEN,
+                                              shortStringReadBuffer );
+    if( success ) {
+        return shortStringReadBuffer;
+        }
+    else {
+        return 0;
+        } 
+    }
+
+
+
+
+
 /*
   Reads a \0-terminated string representation of an int from data store.
 
@@ -926,16 +950,13 @@ static char intReadingBuffer[ MAXIGIN_MAX_INT_STRING_LEN ];
 */
 static char readIntFromPersistData( int inStoreReadHandle,
                                     int *outInt ) {
-    char success;
-    
-    success = readStringFromPersistData( inStoreReadHandle,
-                                         MAXIGIN_MAX_INT_STRING_LEN,
-                                         intReadingBuffer );
-    if( ! success ) {
+    const char *read = readShortStringFromPersistData( inStoreReadHandle );
+
+    if( read == 0 ) {
         return 0;
         }
     
-    *outInt = maxigin_stringToInt( intReadingBuffer );
+    *outInt = maxigin_stringToInt( read );
 
     return 1;
     }
@@ -1037,15 +1058,19 @@ static void saveGame( void ) {
 
 
 
+
 void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
     char *fingerprint;
     int numTotalBytes;
     int readNumTotalBytes;
+    int readNumMemRecords;
     char success;
-
+    int i;
+    
     int storeSize;
     int readHandle;
-
+    const char *readFingerprint;
+    
     if( ! areWeInMaxiginGameInitFunction ) {
         mingin_log( "Game tried to call "
                     "maxigin_initRestoreStaticMemoryFromLastRun "
@@ -1065,7 +1090,7 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
         }
 
     fingerprint = getMemRecordsFingerprint( &numTotalBytes );
-
+    
  
     success = readIntFromPersistData( readHandle, &readNumTotalBytes );
 
@@ -1079,24 +1104,119 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
         mingin_endReadPersistData( readHandle );
         mingin_log( "Save file does not match current total memory bytes, "
                     "ignoring.\n" );
+        maxigin_logInt( "Save file has numTotalBytes = ", readNumTotalBytes );
+        maxigin_logInt( "Current live numTotalBytes = ", numTotalBytes );
+        
         return;
         }
 
-    success = readStringFromPersistData( readHandle,
-                                         MAXIGIN_FILE_BUFFER_SIZE,
-                                         (char*)maxiginFileBuffer );
+    success = readIntFromPersistData( readHandle, &readNumMemRecords );
+
     if( ! success ) {
+        mingin_endReadPersistData( readHandle );
+        mingin_log( "Failed to read num memory records from save file.\n" );
+        return;
+        }
+    
+    if( readNumMemRecords != numMemRecords ) {
+        mingin_endReadPersistData( readHandle );
+        mingin_log( "Save file does not match current numMemRecords, "
+                    "ignoring.\n" );
+        maxigin_logInt( "Save file has numMemRecords = ", readNumMemRecords );
+        maxigin_logInt( "Current live numMemRecords = ", numMemRecords );
+        
+        return;
+        }
+    
+
+
+    readFingerprint = readShortStringFromPersistData( readHandle );
+    
+    if( readFingerprint == 0 ) {
         mingin_endReadPersistData( readHandle );
         mingin_log( "Failed to read fingerprint from save file.\n" );
         return;
         }
-
-    if( ! maxigin_equal( fingerprint, (char*)maxiginFileBuffer ) ) {
+    
+    
+    if( ! maxigin_stringsEqual( fingerprint, readFingerprint ) ) {
         mingin_endReadPersistData( readHandle );
         mingin_log( "Save file does not match current memory fingerprint, "
                     "ignoring.\n" );
+        maxigin_logString( "Save file has fingerprint = ",
+                           (char*)maxiginFileBuffer );
+        maxigin_logString( "Current live has fingerprint = ", fingerprint );
+        
         return;
         }
+
+    /* now read the memory records from the saved file */
+    for( i=0; i<numMemRecords; i++ ) {
+        const char *liveDes = memRecords[i].description;
+        const char *readDes =
+            readShortStringFromPersistData( readHandle );
+        
+        int readNumBytes;
+        int numRead;
+        
+        if( readDes == 0 ) {
+            maxigin_logInt( "Failed to read saved description for record # = ",
+                            i );
+            mingin_endReadPersistData( readHandle );
+            return;
+            }
+        
+        if( ! maxigin_stringsEqual( liveDes, readDes ) ) {
+            maxigin_logInt(
+                "Save file has wrong description for record # = ", i );
+            
+            maxigin_logString( "Save file has description = ", readDes );
+
+            maxigin_logString( "Live description = ", liveDes );
+        
+            mingin_endReadPersistData( readHandle );
+            return;
+            }
+        
+        
+        success = readIntFromPersistData( readHandle, &readNumBytes );
+        
+        if( ! success ) {
+            maxigin_logInt( "Failed to read saved numBytes for record # = ",
+                            i );
+            mingin_endReadPersistData( readHandle );
+            return;
+            }
+
+        if( readNumBytes != memRecords[i].numBytes ) {
+            maxigin_logInt(
+                "Save file has wrong numBytes for record # = ", i );
+            
+            maxigin_logInt( "Save file has numBytes = ", readNumBytes );
+
+            maxigin_logInt( "Live numBytes = ", memRecords[i].numBytes );
+
+            mingin_endReadPersistData( readHandle );
+            return;
+            }
+
+
+        /* read numBytes from memory location into storage */
+        numRead = mingin_readPersistData(
+            readHandle,
+            memRecords[i].numBytes,
+            (unsigned char*)memRecords[i].pointer );
+        
+        if( numRead !=  memRecords[i].numBytes ) {
+            maxigin_logInt(
+                "Failed to read memory data from save file for record # = ", i );
+
+            mingin_endReadPersistData( readHandle );
+            return;
+            }
+        }
+
+    mingin_endReadPersistData( readHandle );
     
     }
 
@@ -1148,7 +1268,7 @@ int maxigin_stringLength( const char *inString ) {
 
 
 
-char maxigin_equal( const char *inStringA, const char *inStringB ) {
+char maxigin_stringsEqual( const char *inStringA, const char *inStringB ) {
     int i = 0;
     while( inStringA[i] == inStringB[i] &&
            inStringA[i] != '\0' ) {

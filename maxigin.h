@@ -1373,6 +1373,7 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 
 #if( MAXIGIN_ENABLE_RECORDING == 0 )
     /* recording is off, shrink our recording buffer down to nothing */
+    #undef MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES
     #define MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES 1
 #endif
 

@@ -73,20 +73,67 @@
   is built against Maxigin.
 
   If these are defined in your C file before #define MAXIGIN_IMPLEMENTATION
-  your settings will be used instead
+  your settings will be used instead.
+
+  Each setting is tagged below with   [jumpSettings]
   
 */
+
 
 
 /*
   The game image's native width and height.  This is the ideal size for
   the game's pixel content.
+
+  [jumpSettings]
 */
 #ifndef MAXIGIN_GAME_NATIVE_W
     #define MAXIGIN_GAME_NATIVE_W  640
 #endif
 #ifndef MAXIGIN_GAME_NATIVE_H
     #define MAXIGIN_GAME_NATIVE_H  480
+#endif
+
+
+
+/*
+  Enable the game recording and playback infrastructure, which requires a
+  bigger static memory footprint.
+
+  To disable recording, do this:
+
+      #define MAXIGIN_ENABLE_RECORDING 0
+
+  [jumpSettings]
+*/
+#ifndef MAXIGIN_ENABLE_RECORDING
+    #define MAXIGIN_ENABLE_RECORDING 1
+#endif
+
+
+/*
+  If recording is enabled, what is the maximum total size of the size of the
+  static memory that the game will register with:
+  
+      maxigin_initRegisterStaticMemory
+
+  Maxigin will actually use 2x this amount of static memory internally as
+  part of its incremental diff recording process.
+
+  This static memory is ONLY compiled into the program if
+  MAXIGIN_ENABLE_RECORDING is set to 1 (which is the default).
+
+  If the game registers MORE than this amount, recording will still work,
+  but incremental diff recording will be disabled.
+
+  To set the max static size to 256, do this:
+  
+      #define MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES  256
+      
+  [jumpSettings]
+*/
+#ifndef MAXIGIN_MAX_RECORDING_STATIC_MEMORY_MAX_BYTES
+    #define MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES  4096
 #endif
 
 
@@ -397,7 +444,7 @@ const char *maxigin_intToString( int inInt );
 
   Extra characters beyond the last digit charager are ignored.
 
-  Empty string, or string starting with no digit or - characters results
+  Empty string, or string starting with no digit or no - character results
   in a 0 return value.
 
   [jumpMaxiginGeneral]
@@ -724,6 +771,12 @@ void minginGame_getScreenPixels( int inWide, int inHigh,
     }
 
 
+static void initRecording( void );
+
+static void stepRecording( void );
+
+static void finalizeRecording( void );
+
 static void gameInit( void );
 
 static void saveGame( void );
@@ -745,6 +798,8 @@ void minginGame_step( char inFinalStep ) {
         mingin_log( "Got quit key\n" );
 
         saveGame();
+
+        finalizeRecording();
         
         mingin_quit();
         return;
@@ -767,6 +822,8 @@ void minginGame_step( char inFinalStep ) {
     maxiginGame_step();
     
     areWeInMaxiginGameStepFunction = 0;
+
+    stepRecording();
     }
 
 
@@ -792,6 +849,8 @@ static void gameInit( void ) {
     maxiginGame_init();
 
     areWeInMaxiginGameInitFunction = 0;
+
+    initRecording();
     }
 
 
@@ -832,6 +891,8 @@ static MaxiginMemRec memRecords[ MAXIGIN_MAX_MEM_RECORDS ];
 
 static int numMemRecords = 0;
 
+static int totalMemoryRecordsBytes = 0;
+
 
 void maxigin_initRegisterStaticMemory( void *inPointer, int inNumBytes,
                                        const char *inDescription ) {
@@ -852,10 +913,16 @@ void maxigin_initRegisterStaticMemory( void *inPointer, int inNumBytes,
     memRecords[ numMemRecords ].description = inDescription;
 
     numMemRecords++;
+    totalMemoryRecordsBytes += inNumBytes;
     }
 
 
-static const char *saveGameFileName = "save.bin";
+
+
+
+
+
+static const char *saveGameFileName = "maxgin_save.bin";
 
 
 #define MAXIGIN_FINGERPRINT_LENGTH  10
@@ -986,16 +1053,64 @@ static char readIntFromPersistData( int inStoreReadHandle,
 
   Returns 1 on success, 0 on failure.
 */
-static char writeIntToPerisistentData( int inStoreWriteHandle,
-                                       int inInt ) {
-    const char *intString = maxigin_intToString( inInt );
-    
+static char writeStringToPeristentData( int inStoreWriteHandle,
+                                        const char *inString ) {
     
     return mingin_writePersistData( inStoreWriteHandle,
-                                    maxigin_stringLength( intString ) + 1,
-                                    (unsigned char*)intString );
+                                    maxigin_stringLength( inString ) + 1,
+                                    (unsigned char*)inString );
     }
 
+
+/*
+  Writes a \0-terminated string representation of an int to data store.
+
+  Returns 1 on success, 0 on failure.
+*/
+static char writeIntToPerisistentData( int inStoreWriteHandle,
+                                       int inInt ) {
+    return writeStringToPeristentData( inStoreWriteHandle,
+                                       maxigin_intToString( inInt ) );
+    }
+
+
+
+#define MAXIGIN_PADDED_INT_LENGTH 12
+
+static unsigned char intPadding[ MAXIGIN_PADDED_INT_LENGTH ];
+
+/*
+  Writes a \0-terminated string representation of an int to data store,
+  and pads it with \0 characters afterwards to fill paddedIntLength total.
+
+  Returns 1 on success, 0 on failure.
+*/
+static char writePaddedIntToPerisistentData( int inStoreWriteHandle,
+                                       int inInt ) {
+    const char *intString = maxigin_intToString( inInt );
+    char success;
+    int b=0;
+    int len;
+    
+    success = mingin_writePersistData( inStoreWriteHandle,
+                                       maxigin_stringLength( intString ),
+                                       (unsigned char*)intString );
+
+    if( ! success ) {
+        return 0;
+        }
+    
+    /* pad with \0     */
+    len = maxigin_stringLength( intString );
+    while( len < MAXIGIN_PADDED_INT_LENGTH ) {
+        intPadding[b] = '\0';
+        len++;
+        b++;
+        }
+
+    /* write padding out */
+    return mingin_writePersistData( inStoreWriteHandle, b, intPadding);
+    }
 
     
 
@@ -1035,10 +1150,8 @@ static void saveGame( void ) {
         }
 
     
-    success = mingin_writePersistData( outHandle,
-                                       maxigin_stringLength( fingerprint ) + 1,
-                                       (unsigned char*)fingerprint );
-
+    success = writeStringToPeristentData( outHandle, fingerprint );
+    
     if( ! success ) {
         goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
         }
@@ -1048,11 +1161,9 @@ static void saveGame( void ) {
        overwriting anything */
     for( i=0; i<numMemRecords; i++ ) {
         const char *des = memRecords[i].description;
-
     
-        success = mingin_writePersistData( outHandle,
-                                           maxigin_stringLength( des ) + 1,
-                                           (unsigned char*)des );
+        success = writeStringToPeristentData( outHandle, des );
+
         if( ! success ) {
             goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
             }
@@ -1255,6 +1366,238 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 
     mingin_log( "Restored live memory from saved game.\n" );
     }
+
+
+
+
+
+#if( MAXIGIN_ENABLE_RECORDING == 0 )
+    /* recording is off, shrink our recording buffer down to nothing */
+    #define MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES 1
+#endif
+
+/*
+  buffer for our last state represented in the recording file
+  and our current state, used for computing the next diff.
+*/
+static unsigned char recordingBuffers[2][
+    MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES ];
+
+static int latestRecordingIndex = -1;
+
+
+static const char *recordingFileName = "maxigin_recording.bin";
+static const char *recordingIndexFileName = "maxigin_recordingIndex.bin";
+
+static int recordingFileHandle = -1;
+static int recordingIndexFileHandle = -1;
+
+static char diffRecordingEnabled = 1;
+
+static char recordingRunning = 0;
+
+static int numDiffsSinceLastFullSnapshot = 0;
+
+static int diffsBetweenSnapshots = 60;
+
+
+static void copyMemoryIntoRecordingBuffer( int inIndex ) {
+    int b = 0;
+    int r = 0;
+    unsigned char *buffer = recordingBuffers[ inIndex ];
+    
+    if( ! diffRecordingEnabled ) {
+        return;
+        }
+
+    for( r=0; r<numMemRecords; r++ ) {
+
+        int rb = 0;
+        int recSize = memRecords[r].numBytes;
+        unsigned char *recPointer = (unsigned char*)( memRecords[r].pointer );
+        
+        while( rb < recSize ) {
+            buffer[b] = recPointer[ rb ];
+            b++;
+            rb++;
+            }
+        }
+    
+    latestRecordingIndex = inIndex; 
+    }
+
+
+
+static void recordFullMemorySnapshot( void ) {
+    int r;
+    int startPos = mingin_getPersistDataPosition( recordingFileHandle );
+    char success;
+    
+    /* write the starting pos of this full snapshot into our index file
+       use a padded int so that we can jump by 12 bytes to go "frame by frame"
+       through the index.
+    */
+    success =
+        writePaddedIntToPerisistentData( recordingIndexFileHandle, startPos );
+
+    if( ! success ) {
+        maxigin_logString(
+            "Failed to write data block to recording index file: ",
+            recordingIndexFileName );
+        recordingRunning = 0;
+        return;
+        }
+    
+
+    /* write our full snapshot header */
+    writeStringToPeristentData( recordingFileHandle, "F" );
+    
+    
+    for( r=0; r<numMemRecords; r++ ) {
+        int recSize = memRecords[r].numBytes;
+        unsigned char *recPointer = (unsigned char*)( memRecords[r].pointer );
+
+        success =
+            mingin_writePersistData( recordingFileHandle, recSize, recPointer );
+
+        if( ! success ) {
+            maxigin_logString( "Failed to write data block to recording file: ",
+                               recordingFileName );
+            recordingRunning = 0;
+            return;
+            }
+        }
+    }
+
+    
+    
+static void recordMemoryDiff( void ) {
+    int prevIndex = latestRecordingIndex;
+    int newIndex = 0;
+    int b;
+    
+    if( ! diffRecordingEnabled ) {
+        return;
+        }
+
+    if( prevIndex == 0 ) {
+        newIndex = 1;
+        }
+    
+    copyMemoryIntoRecordingBuffer( newIndex );
+
+    /* header for a diff */
+    writeStringToPeristentData( recordingFileHandle, "D" );
+    
+    for( b=0; b<MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES; b++ ) {
+        if( recordingBuffers[prevIndex][b] !=
+            recordingBuffers[newIndex][b] ) {
+            /* a byte has changed */
+
+            /* write its position */
+            writeIntToPerisistentData( recordingFileHandle, b );
+
+            /* write its value */
+            mingin_writePersistData( recordingFileHandle, 1,
+                                     &( recordingBuffers[newIndex][b] ) );
+            }
+        }
+
+    /* write -1 to end of diff, so that we know it's over
+       (each line in the diff starts with a valid non-negative position
+       in our memory snapshot */
+    
+    writeIntToPerisistentData( recordingFileHandle, -1 );
+    
+            
+    }
+
+
+
+    
+
+
+static void initRecording( void ) {
+    int b, i;
+    
+    if( ! MAXIGIN_ENABLE_RECORDING ) {
+        return;
+        }
+    if( MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES < totalMemoryRecordsBytes ) {
+        diffRecordingEnabled = 0;
+        }
+
+    recordingFileHandle = mingin_startWritePersistData( recordingFileName );
+
+    if( recordingFileHandle != -1 ) {
+        recordingIndexFileHandle =
+            mingin_startWritePersistData( recordingIndexFileName );
+        }
+
+    if( recordingFileHandle != -1 && recordingIndexFileHandle != -1 ) {
+        recordingRunning = 1;
+        }
+    else {
+        mingin_log( "Failed to open recording data stores for writing\n" );
+        recordingRunning = 0;
+        return;
+        }
+    
+    /* zero out both buffers */
+    for( i=0; i<2; i++ ) {
+        for( b=0; b<MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES; b++ ) {
+            recordingBuffers[i][b] = 0;
+            }
+        }
+    
+    recordFullMemorySnapshot();
+    
+    copyMemoryIntoRecordingBuffer( 0 );
+
+    numDiffsSinceLastFullSnapshot = 0;
+    }
+
+
+
+static void stepRecording( void ) {
+    if( ! MAXIGIN_ENABLE_RECORDING || ! recordingRunning ) {
+        return;
+        }
+
+    
+    if( numDiffsSinceLastFullSnapshot < diffsBetweenSnapshots ) {
+        recordMemoryDiff();
+        numDiffsSinceLastFullSnapshot ++;
+        }
+    else {
+        recordFullMemorySnapshot();
+        numDiffsSinceLastFullSnapshot = 0;
+        }
+    }
+
+
+
+static void finalizeRecording( void ) {
+    if( ! MAXIGIN_ENABLE_RECORDING ) {
+        return;
+        }
+
+    if( recordingRunning ) {
+        /* fixme:
+           copy index to end of file, with look-back pointer,
+           and delete index */
+        }
+
+    if( recordingFileHandle != -1 ) {
+        mingin_endWritePersistData( recordingFileHandle );
+        recordingFileHandle = -1;
+        }
+    if( recordingIndexFileHandle != -1 ) {
+        mingin_endWritePersistData( recordingIndexFileHandle );
+        recordingIndexFileHandle = -1;
+        }
+    }
+
 
 
 

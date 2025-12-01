@@ -1871,6 +1871,12 @@ static char *linuxGetFilePath( const char *inFolderName,
         i++;
         j++;
         }
+
+    /* now terminate */
+    if( i < MINGIN_LINUX_MAX_PATH_LEN ) {
+        minginLinuxPathBuffer[i] = '\0';
+        }
+    
     return minginLinuxPathBuffer;
     }
 

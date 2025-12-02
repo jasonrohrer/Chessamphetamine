@@ -670,6 +670,13 @@ static char areWeInMaxiginGameStepFunction = 0;
 enum MaxiginUserAction {
     QUIT,
     FULLSCREEN_TOGGLE,
+    PLAYBACK_START_STOP,
+    PLAYBACK_FASTER,
+    PLAYBACK_SLOWER,
+    PLAYBACK_PAUSE,
+    PLAYBACK_NORMAL,
+    PLAYBACK_JUMP_HALF_AHEAD,
+    PLAYBACK_JUMP_HALF_BACK,
     LAST_MAXIGIN_USER_ACTION
     };
 
@@ -831,19 +838,29 @@ void minginGame_step( char inFinalStep ) {
 static MinginButton quitMapping[] = { MGN_KEY_Q, MGN_KEY_ESCAPE, MGN_MAP_END };
 static MinginButton fullscreenMapping[] = { MGN_KEY_F, MGN_MAP_END };
 
+static MinginButton playbackMappings[7][2] =
+    { { MGN_KEY_BACKSLASH, MGN_MAP_END },
+      { MGN_KEY_EQUAL, MGN_MAP_END },
+      { MGN_KEY_MINUS, MGN_MAP_END },
+      { MGN_KEY_0, MGN_MAP_END },
+      { MGN_KEY_9, MGN_MAP_END },
+      { MGN_KEY_BRACKET_L, MGN_MAP_END },
+      { MGN_KEY_BRACKET_R, MGN_MAP_END } };
 
 
-
-
-
-
-#include <stdio.h>
 
 static void gameInit( void ) {
+    int p;
     
     mingin_registerButtonMapping( QUIT, quitMapping );
     mingin_registerButtonMapping( FULLSCREEN_TOGGLE, fullscreenMapping );
 
+    for( p = PLAYBACK_START_STOP; p <= PLAYBACK_JUMP_HALF_BACK; p++ ) {
+        
+        mingin_registerButtonMapping(
+            p, playbackMappings[ p - PLAYBACK_START_STOP ] );
+        }  
+    
     areWeInMaxiginGameInitFunction = 1;
     
     maxiginGame_init();
@@ -1112,45 +1129,36 @@ static char writePaddedIntToPerisistentData( int inStoreWriteHandle,
     return mingin_writePersistData( inStoreWriteHandle, b, intPadding);
     }
 
-    
 
 
-static void saveGame( void ) {
+/* returns 1 on success, 0 on failure */
+static char saveGameToDataStore( int inStoreWriteHandle ) {
     char *fingerprint;
     int numTotalBytes;
     char success;
     int i;
-    
-    int outHandle = mingin_startWritePersistData( saveGameFileName );
-
-    if( outHandle == -1 ) {
-        maxigin_logString( "Failed to open saved game for writing: ",
-                           saveGameFileName );
-        return;
-        }
 
     fingerprint = getMemRecordsFingerprint( &numTotalBytes );
 
 
-    success = writeIntToPerisistentData( outHandle, numTotalBytes );
+    success = writeIntToPerisistentData( inStoreWriteHandle, numTotalBytes );
 
     if( ! success ) {
         MAXIGIN_SAVED_GAME_WRITE_FAILURE:
-        mingin_endWritePersistData( outHandle );
         maxigin_logString( "Failed to write to saved game file: ",
                            saveGameFileName );
-        return;
+        return 0;
         }
 
 
-    success = writeIntToPerisistentData( outHandle, numMemRecords );
+    success = writeIntToPerisistentData( inStoreWriteHandle, numMemRecords );
 
     if( ! success ) {
         goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
         }
 
     
-    success = writeStringToPeristentData( outHandle, fingerprint );
+    success = writeStringToPeristentData( inStoreWriteHandle, fingerprint );
     
     if( ! success ) {
         goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
@@ -1162,13 +1170,13 @@ static void saveGame( void ) {
     for( i=0; i<numMemRecords; i++ ) {
         const char *des = memRecords[i].description;
     
-        success = writeStringToPeristentData( outHandle, des );
+        success = writeStringToPeristentData( inStoreWriteHandle, des );
 
         if( ! success ) {
             goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
             }
         
-        success = writeIntToPerisistentData( outHandle,
+        success = writeIntToPerisistentData( inStoreWriteHandle,
                                              memRecords[i].numBytes );
         if( ! success ) {
             goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
@@ -1180,7 +1188,7 @@ static void saveGame( void ) {
         
         /* write numBytes from memory location into storage */
         success = mingin_writePersistData(
-            outHandle,
+            inStoreWriteHandle,
             memRecords[i].numBytes,
             (unsigned char*)memRecords[i].pointer );
         
@@ -1189,6 +1197,22 @@ static void saveGame( void ) {
             }
         }
 
+    return 1;
+    }
+
+
+
+static void saveGame( void ) {
+    int outHandle = mingin_startWritePersistData( saveGameFileName );
+
+    if( outHandle == -1 ) {
+        maxigin_logString( "Failed to open saved game for writing: ",
+                           saveGameFileName );
+        return;
+        }
+
+    saveGameToDataStore( outHandle );
+    
     mingin_endWritePersistData( outHandle );
 
     mingin_log( "Saved game.\n" );
@@ -1196,96 +1220,70 @@ static void saveGame( void ) {
 
 
 
-
-void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
-    char *fingerprint;
+/* returns 1 on success, 0 on failure */
+static char restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
+        char *fingerprint;
     int numTotalBytes;
     int readNumTotalBytes;
     int readNumMemRecords;
     char success;
     int i;
-    
-    int storeSize;
-    int readHandle;
+
     const char *readFingerprint;
     
-    if( ! areWeInMaxiginGameInitFunction ) {
-        mingin_log( "Game tried to call "
-                    "maxigin_initRestoreStaticMemoryFromLastRun "
-                    "from outside of maxiginGame_init\n" );
-        return;
-        }
-    
-    readHandle = mingin_startReadPersistData( saveGameFileName,
-                                              &storeSize );
-
-    if( readHandle == -1 ) {
-        mingin_log( "Failed to open saved game for reading: " );
-        mingin_log( saveGameFileName );
-        mingin_log( "\n" );
-        
-        return;
-        }
-
     fingerprint = getMemRecordsFingerprint( &numTotalBytes );
     
  
-    success = readIntFromPersistData( readHandle, &readNumTotalBytes );
+    success = readIntFromPersistData( inStoreReadHandle, &readNumTotalBytes );
 
     if( ! success ) {
-        mingin_endReadPersistData( readHandle );
         mingin_log( "Failed to read total num bytes from save file.\n" );
-        return;
+        return 0;
         }
 
     if( readNumTotalBytes != numTotalBytes ) {
-        mingin_endReadPersistData( readHandle );
         mingin_log( "Save file does not match current total memory bytes, "
                     "ignoring.\n" );
         maxigin_logInt( "Save file has numTotalBytes = ", readNumTotalBytes );
         maxigin_logInt( "Current live numTotalBytes = ", numTotalBytes );
         
-        return;
+        return 0;
         }
 
-    success = readIntFromPersistData( readHandle, &readNumMemRecords );
+    success = readIntFromPersistData( inStoreReadHandle, &readNumMemRecords );
 
     if( ! success ) {
-        mingin_endReadPersistData( readHandle );
         mingin_log( "Failed to read num memory records from save file.\n" );
-        return;
+        return 0;
         }
     
     if( readNumMemRecords != numMemRecords ) {
-        mingin_endReadPersistData( readHandle );
         mingin_log( "Save file does not match current numMemRecords, "
                     "ignoring.\n" );
         maxigin_logInt( "Save file has numMemRecords = ", readNumMemRecords );
         maxigin_logInt( "Current live numMemRecords = ", numMemRecords );
         
-        return;
+        return 0;
         }
     
 
 
-    readFingerprint = readShortStringFromPersistData( readHandle );
+    readFingerprint = readShortStringFromPersistData( inStoreReadHandle );
     
     if( readFingerprint == 0 ) {
-        mingin_endReadPersistData( readHandle );
         mingin_log( "Failed to read fingerprint from save file.\n" );
-        return;
+        return 0;
         }
     
     
     if( ! maxigin_stringsEqual( fingerprint, readFingerprint ) ) {
-        mingin_endReadPersistData( readHandle );
         mingin_log( "Save file does not match current memory fingerprint, "
                     "ignoring.\n" );
         maxigin_logString( "Save file has fingerprint = ",
                            (char*)maxiginFileBuffer );
         maxigin_logString( "Current live has fingerprint = ", fingerprint );
         
-        return;
+        return 0;
         }
 
     /* now read the memory records from the saved file */
@@ -1294,15 +1292,14 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
     for( i=0; i<numMemRecords; i++ ) {
         const char *liveDes = memRecords[i].description;
         const char *readDes =
-            readShortStringFromPersistData( readHandle );
+            readShortStringFromPersistData( inStoreReadHandle );
         
         int readNumBytes;
         
         if( readDes == 0 ) {
             maxigin_logInt( "Failed to read saved description for record # = ",
                             i );
-            mingin_endReadPersistData( readHandle );
-            return;
+            return 0;
             }
         
         if( ! maxigin_stringsEqual( liveDes, readDes ) ) {
@@ -1313,18 +1310,16 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 
             maxigin_logString( "Live description = ", liveDes );
         
-            mingin_endReadPersistData( readHandle );
-            return;
+            return 0;
             }
         
         
-        success = readIntFromPersistData( readHandle, &readNumBytes );
+        success = readIntFromPersistData( inStoreReadHandle, &readNumBytes );
         
         if( ! success ) {
             maxigin_logInt( "Failed to read saved numBytes for record # = ",
                             i );
-            mingin_endReadPersistData( readHandle );
-            return;
+            return 0;
             }
 
         if( readNumBytes != memRecords[i].numBytes ) {
@@ -1335,8 +1330,7 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 
             maxigin_logInt( "Live numBytes = ", memRecords[i].numBytes );
 
-            mingin_endReadPersistData( readHandle );
-            return;
+            return 0;
             }
 
         }
@@ -1349,7 +1343,7 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
         
         /* read numBytes from memory location into storage */
         int numRead = mingin_readPersistData(
-            readHandle,
+            inStoreReadHandle,
             memRecords[i].numBytes,
             (unsigned char*)memRecords[i].pointer );
         
@@ -1357,14 +1351,46 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
             maxigin_logInt(
                 "Failed to read memory data from save file for record # = ", i );
 
-            mingin_endReadPersistData( readHandle );
-            return;
+            return 0;
             }
         }
 
+    return 1;
+    }
+
+
+
+
+void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
+    char success;
+
+    int storeSize;
+    int readHandle;
+    
+    if( ! areWeInMaxiginGameInitFunction ) {
+        mingin_log( "Game tried to call "
+                    "maxigin_initRestoreStaticMemoryFromLastRun "
+                    "from outside of maxiginGame_init\n" );
+        return;
+        }
+    
+    readHandle = mingin_startReadPersistData( saveGameFileName,
+                                              &storeSize );
+
+    if( readHandle == -1 ) {
+        maxigin_logString( "Failed to open saved game for reading: ",
+                           saveGameFileName );
+        return;
+        }
+
+    success = restoreStaticMemoryFromDataStore( readHandle );
+
     mingin_endReadPersistData( readHandle );
 
-    mingin_log( "Restored live memory from saved game.\n" );
+    
+    if( success ) {
+        mingin_log( "Restored live memory from saved game file.\n" );
+        }
     }
 
 
@@ -1520,6 +1546,7 @@ static void recordMemoryDiff( void ) {
 
 static void initRecording( void ) {
     int b, i;
+    int success;
     
     if( ! MAXIGIN_ENABLE_RECORDING ) {
         return;
@@ -1528,6 +1555,8 @@ static void initRecording( void ) {
         diffRecordingEnabled = 0;
         }
 
+    maxigin_logString( "Starting recording into file: ", recordingFileName );
+    
     recordingFileHandle = mingin_startWritePersistData( recordingFileName );
 
     if( recordingFileHandle != -1 ) {
@@ -1540,6 +1569,28 @@ static void initRecording( void ) {
         }
     else {
         mingin_log( "Failed to open recording data stores for writing\n" );
+
+        if( recordingFileHandle != -1 ) {
+            mingin_endWritePersistData( recordingFileHandle );
+            }
+        if( recordingIndexFileHandle != -1 ) {
+            mingin_endWritePersistData( recordingIndexFileHandle );
+            }
+        
+        recordingRunning = 0;
+        return;
+        }
+
+    /* start by writing a normal saved game to the start of the recording file
+       which is our current state that should be restored before playback */
+    success = saveGameToDataStore( recordingFileHandle );
+
+    if( !success ) {
+        mingin_endWritePersistData( recordingFileHandle );
+        mingin_endWritePersistData( recordingIndexFileHandle );
+
+        mingin_log( "Failed to write save game header to recording file.\n" );
+        
         recordingRunning = 0;
         return;
         }

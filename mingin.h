@@ -821,8 +821,6 @@ char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
   
   Returns a non-negative number < inNumBytesToRead ONLY if we've reached the
   end of the data store.
-
-  fixme  ^^
   
   [jumpMinginProvides]
 */
@@ -898,6 +896,7 @@ int mingin_startReadBulkData( const char *inBulkName,
                               int *outTotalBytes );
 
 
+
 /*
   Reads more data from an open bulk data resource.
 
@@ -905,8 +904,6 @@ int mingin_startReadBulkData( const char *inBulkName,
 
   Returns a non-negative number < inNumBytesToRead ONLY if we've reached the
   end of the data store.
-
-  fixme  ^^
   
   [jumpMinginProvides]
 */
@@ -1951,10 +1948,10 @@ static int linuxFileOpenWrite( const char *inFolderName,
 static char linuxFileWrite( int inFD, int inNumBytesToWrite,
                             const unsigned char *inByteBuffer ) {
     
-    size_t numLeftToWrite = (size_t)inNumBytesToWrite;
-    size_t numWritten = 0;
+    int numWritten = 0;
     
-    while( numLeftToWrite > 0 ) {
+    while( numWritten < inNumBytesToWrite ) {
+        size_t numLeftToWrite = (size_t)( inNumBytesToWrite - numWritten );
         
         ssize_t numWrittenThisTime =
             write( inFD, &inByteBuffer[numWritten], numLeftToWrite );
@@ -1962,22 +1959,37 @@ static char linuxFileWrite( int inFD, int inNumBytesToWrite,
         if( numWrittenThisTime == -1 ) {
             return 0;
             }
-        numLeftToWrite -= (size_t)numWrittenThisTime;
-        numWritten += (size_t)numWrittenThisTime;
+        
+        numWritten += (int)numWrittenThisTime;
         }
 
     return 1;
     }
 
 
+
 static int linuxFileRead( int inFD, int inNumBytesToRead,
                           unsigned char *inByteBuffer ) {
- 
-    ssize_t numReadThisTime =
-        read( inFD, inByteBuffer, (size_t)inNumBytesToRead );
+    int numRead = 0;
+    
+    while( numRead < inNumBytesToRead ) {
+        size_t numLeftToRead = (size_t)( inNumBytesToRead - numRead );
+        
+        ssize_t numReadThisTime =
+            read( inFD, &inByteBuffer[numRead], numLeftToRead );
 
+        if( numReadThisTime == 0 ) {
+            /* truly reached end of file */
+            return numRead;
+            }
+        else if( numReadThisTime == -1 ) {
+            /* error on read */
+            return 0;
+            }
+        numRead += (int)numReadThisTime;
+        }
 
-    return (int)numReadThisTime;
+    return numRead;
     }
 
 

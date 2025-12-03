@@ -792,6 +792,12 @@ static void stepRecording( void );
 
 static void finalizeRecording( void );
 
+/* returns 1 if playback started, 0 if not */
+static char initPlayback( void );
+
+/* returns 1 of playback happening, 0 if not */
+static char playbackStep( void );
+
 static void gameInit( void );
 
 static void saveGame( void );
@@ -799,18 +805,27 @@ static void saveGame( void );
 
 void minginGame_step( char inFinalStep ) {
 
-    if( inFinalStep ) {
-        /* no clean-up needed so far */
-        return;
-        }
-    
     if( ! initDone ) {
+        if( inFinalStep ) {
+            /* ended before we even got to init, do nothing */
+            return;
+            }
+        
         gameInit();
         initDone = 1;
         }
     
-    if( mingin_isButtonDown( QUIT ) ) {
-        mingin_log( "Got quit key\n" );
+
+    /* handle both case where platform forced us to end and
+       where user decided to quit */
+    if( inFinalStep || mingin_isButtonDown( QUIT ) ) {
+
+        if( inFinalStep ) {
+            mingin_log( "Forced to quit by platform\n" );
+            }
+        else {
+            mingin_log( "Got quit key\n" );
+            }
 
         saveGame();
 
@@ -832,13 +847,16 @@ void minginGame_step( char inFinalStep ) {
         fullscreenTogglePressed = 0;
         }
 
-    areWeInMaxiginGameStepFunction = 1;
+    if( ! playbackStep() ) {
+        
+        areWeInMaxiginGameStepFunction = 1;
     
-    maxiginGame_step();
+        maxiginGame_step();
     
-    areWeInMaxiginGameStepFunction = 0;
+        areWeInMaxiginGameStepFunction = 0;
 
-    stepRecording();
+        stepRecording();
+        }
     }
 
 
@@ -875,7 +893,9 @@ static void gameInit( void ) {
 
     areWeInMaxiginGameInitFunction = 0;
 
-    initRecording();
+    if( ! initPlayback() ) {
+        initRecording();
+        }
     }
 
 
@@ -1016,6 +1036,11 @@ static char readStringFromPersistData( int inStoreReadHandle,
         }
     else if( inBuffer[i] != '\0' && readNum == 0 ) {
         mingin_log( "Error:  Reached end of store when trying to read string "
+                    "from persistent data store.\n" );
+        return 0;
+        }
+    else if( inBuffer[i] != '\0' && readNum == -1 ) {
+        mingin_log( "Error:  Got read failure when trying to read string "
                     "from persistent data store.\n" );
         return 0;
         }
@@ -1227,7 +1252,7 @@ static void saveGame( void ) {
 
 /* returns 1 on success, 0 on failure */
 static char restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
-        char *fingerprint;
+    char *fingerprint;
     int numTotalBytes;
     int readNumTotalBytes;
     int readNumMemRecords;
@@ -1402,6 +1427,8 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 
 
 
+
+
 #if( MAXIGIN_ENABLE_RECORDING == 0 )
     /* recording is off, shrink our recording buffer down to nothing */
     #undef MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES
@@ -1503,6 +1530,44 @@ static void recordFullMemorySnapshot( void ) {
         }
     }
 
+
+
+/*
+  Restores a full memory snapshot from current position in a data store.
+
+  Returns 1 on success, 0 on failure.
+*/
+static char restoreFromFullMemorySnapshot( int inStoreReadHandle ) {
+    int r;
+    
+    const char *header = readShortStringFromPersistData( inStoreReadHandle );
+
+    if( header == 0 ||
+        header[0] != 'F' ||
+        header[1] != '\0' ) {
+        /* bad header */
+        return 0;
+        }
+
+    for( r=0; r<numMemRecords; r++ ) {
+        int recSize = memRecords[r].numBytes;
+        unsigned char *recPointer = (unsigned char*)( memRecords[r].pointer );
+
+        int numRead =
+            mingin_readPersistData( inStoreReadHandle,
+                                    recSize, recPointer );
+
+        if( numRead != recSize ) {
+            /* failed to read block */
+            return 0;
+            }
+        }
+
+    /* read all blocks */
+    return 1;
+    }
+
+
     
     
 static void recordMemoryDiff( void ) {
@@ -1568,6 +1633,8 @@ static void closeRecordingDataStores( void ) {
 static void initRecording( void ) {
     int b, i;
     int success;
+    
+    recordingRunning = 0;
     
     if( ! MAXIGIN_ENABLE_RECORDING ) {
         return;
@@ -1676,7 +1743,7 @@ static char copyIntoDataStore( int inStoreReadHandle,
         numRead = mingin_readPersistData( inStoreReadHandle, numThisTime,
                                           dataCopyBuffer );
 
-        if( numRead == -1 || numRead == 0 ) {
+        if( numRead == -1 || numRead < numThisTime ) {
             /* error in read, or reached end of data before we got
                inNumBytesToCopy */
             return 0;
@@ -1739,9 +1806,10 @@ static void finalizeRecording( void ) {
         mingin_deletePersistData( recordingIndexDataStoreName );
         
 
-        /* now append length of index */
-        success = writeIntToPerisistentData( recordingDataStoreHandle,
-                                             indexLength );
+        /* now append length of index
+           padded so we know how far to jump back to read it during playback */
+        success = writePaddedIntToPerisistentData( recordingDataStoreHandle,
+                                                   indexLength );
 
         if( ! success ) {
             mingin_log( "Failed write length of index into end "
@@ -1757,6 +1825,156 @@ static void finalizeRecording( void ) {
 
     closeRecordingDataStores();
     }
+
+
+
+
+
+
+
+static const char *playbackDataStoreName = "maxigin_playback.bin";
+static int playbackDataStoreHandle = -1;
+
+static int playbackDataLength;
+
+static char playbackRunning = 0;
+
+
+/* returns 1 on success, 0 on failure */
+static char seekAndReadInt( int inStoreReadHandle, int inPos, int *outInt ) {
+    
+    char success = mingin_seekPersistData( inStoreReadHandle, inPos );
+    
+    if( ! success ) {
+        return 0;
+        }
+
+    return readIntFromPersistData( inStoreReadHandle, outInt );
+    }
+    
+
+
+static char initPlayback( void ) {
+    char success;
+    int indexLengthDataPos;
+    int indexLength;
+    int indexStartDataPos;
+
+    int firstFullSnapshotDataPos;
+
+    playbackRunning = 0;
+    
+    /* user copies "playback" data store into place if they want playback
+       
+       fixme:  eventually, there's some menu option to start playback,
+       and we shouldn't be overwriting last recording with new one
+       (last recording should be copied to playback store at startup,
+       and then they can select "playback" from the menu) */
+    
+    playbackDataStoreHandle =
+        mingin_startReadPersistData( playbackDataStoreName,
+                                     &playbackDataLength );
+    
+    if( playbackDataStoreHandle == -1 ) {
+        /* store doesn't exist, no playback */
+        return 0;
+        }
+
+    maxigin_logString( "Loading save data header from playback data store: ",
+                       playbackDataStoreName );
+    
+    success = restoreStaticMemoryFromDataStore( playbackDataStoreHandle );
+
+    if( ! success ) {
+        mingin_log( "Failed to restore state from saved data "
+                    "in playback data store." );
+        mingin_endReadPersistData( playbackDataStoreHandle );
+        return 0;
+        }
+
+    /* jump to end and read padded int */
+    indexLengthDataPos = playbackDataLength - MAXIGIN_PADDED_INT_LENGTH;
+
+    success = seekAndReadInt( playbackDataStoreHandle,
+                              indexLengthDataPos, &indexLength );
+    
+    if( ! success ) {
+        maxigin_logInt( "Failed to seek to this position and read index "
+                        "length in playback data store: ",
+                        indexLengthDataPos );
+        
+        mingin_endReadPersistData( playbackDataStoreHandle );
+        return 0;
+        }
+
+    indexStartDataPos = playbackDataLength -
+        MAXIGIN_PADDED_INT_LENGTH - indexLength;
+
+    success = seekAndReadInt( playbackDataStoreHandle,
+                              indexStartDataPos, &firstFullSnapshotDataPos );
+
+    if( ! success ) {
+        maxigin_logInt( "Failed to seek to this position and read first "
+                        "index entry in playback data store: ",
+                        indexStartDataPos );
+        
+        mingin_endReadPersistData( playbackDataStoreHandle );
+        return 0;
+        }
+
+    /* now jump to that first full snapshot */
+
+    success = mingin_seekPersistData( playbackDataStoreHandle,
+                                      firstFullSnapshotDataPos );
+
+    if( ! success ) {
+        maxigin_logInt( "Failed to seek to this position and read first "
+                        "full snapshot in playback data store: ",
+                        firstFullSnapshotDataPos );
+        
+        mingin_endReadPersistData( playbackDataStoreHandle );
+        return 0;
+        }
+
+    success = restoreFromFullMemorySnapshot( playbackDataStoreHandle );
+
+    if( ! success ) {
+
+        maxigin_logInt( "Failed to restore first full memory snapshot from "
+                        "playback data store at this position: ",
+                        firstFullSnapshotDataPos );
+        return 0;
+        }
+
+    
+    mingin_log( "Playback started successfully\n" );
+    playbackRunning = 1;
+    
+    return 1;
+    }
+
+
+
+static char playbackStep( void ) {
+
+    if( ! playbackRunning ) {
+        return 0;
+        }
+
+    /* fixme
+       try to read a diff from current location
+       if that fails, rewind and try to read full snapshot
+
+       need to implement this function:
+       
+       restoreFromMemoryDiff
+
+    */
+    return 1;
+    }
+
+
+
 
 
 

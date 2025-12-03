@@ -1496,6 +1496,22 @@ static void copyMemoryIntoRecordingBuffer( int inIndex ) {
     }
 
 
+static void closeRecordingDataStores( void ) {
+
+    if( recordingDataStoreHandle != -1 ) {
+        mingin_endWritePersistData( recordingDataStoreHandle );
+        }
+    if( recordingIndexDataStoreHandle != -1 ) {
+        mingin_endWritePersistData( recordingIndexDataStoreHandle );
+        }
+
+    recordingDataStoreHandle = -1;
+    recordingIndexDataStoreHandle = -1;
+
+    recordingRunning = 0;
+    }
+
+
 
 static void recordFullMemorySnapshot( void ) {
     int r;
@@ -1514,14 +1530,22 @@ static void recordFullMemorySnapshot( void ) {
         maxigin_logString(
             "Failed to write data block to recording index data: ",
             recordingIndexDataStoreName );
-        recordingRunning = 0;
+        
+        closeRecordingDataStores();
         return;
         }
     
 
     /* write our full snapshot header */
-    writeStringToPeristentData( recordingDataStoreHandle, "F" );
-    
+    success = writeStringToPeristentData( recordingDataStoreHandle, "F" );
+
+    if( ! success ) {
+        mingin_log(
+            "Failed to write full memory snapshot header in recording\n" );
+        
+        closeRecordingDataStores();
+        return;
+        }
     
     for( r=0; r<numMemRecords; r++ ) {
         int recSize = memRecords[r].numBytes;
@@ -1534,7 +1558,7 @@ static void recordFullMemorySnapshot( void ) {
         if( ! success ) {
             maxigin_logString( "Failed to write data block to recording data: ",
                                recordingDataStoreName );
-            recordingRunning = 0;
+            closeRecordingDataStores();
             return;
             }
         }
@@ -1597,6 +1621,7 @@ static void recordMemoryDiff( void ) {
     int newIndex = 0;
     int b;
     int lastWritten = 0;
+    char success;
     
     if( ! diffRecordingEnabled ) {
         return;
@@ -1609,7 +1634,14 @@ static void recordMemoryDiff( void ) {
     copyMemoryIntoRecordingBuffer( newIndex );
 
     /* header for a diff */
-    writeStringToPeristentData( recordingDataStoreHandle, "D" );
+    success = writeStringToPeristentData( recordingDataStoreHandle, "D" );
+
+    if( ! success ) {
+        mingin_log( "Failed to write memory diff header in recording\n" );
+        
+        closeRecordingDataStores();
+        return;
+        }
     
     for( b=0; b<MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES; b++ ) {
         if( recordingBuffers[prevIndex][b] !=
@@ -1617,14 +1649,29 @@ static void recordMemoryDiff( void ) {
             /* a byte has changed */
 
             /* write its position offset from the previous one recorded */
-            writeIntToPerisistentData( recordingDataStoreHandle,
-                                       b - lastWritten );
+            success = writeIntToPerisistentData( recordingDataStoreHandle,
+                                                 b - lastWritten );
 
+            if( ! success ) {
+                mingin_log( "Failed to write diff position in recording\n" );
+        
+                closeRecordingDataStores();
+                return;
+                }
+            
             lastWritten = b;
 
             /* write its value */
-            mingin_writePersistData( recordingDataStoreHandle, 1,
-                                     &( recordingBuffers[newIndex][b] ) );
+            success = mingin_writePersistData(
+                recordingDataStoreHandle, 1,
+                &( recordingBuffers[newIndex][b] ) );
+            
+            if( ! success ) {
+                mingin_log( "Failed to write diff byte in recording\n" );
+        
+                closeRecordingDataStores();
+                return;
+                }
             }
         }
 
@@ -1632,9 +1679,14 @@ static void recordMemoryDiff( void ) {
        (each line in the diff starts with a valid non-negative position
        in our memory snapshot */
     
-    writeIntToPerisistentData( recordingDataStoreHandle, -1 );
+    success = writeIntToPerisistentData( recordingDataStoreHandle, -1 );
     
-            
+    if( ! success ) {
+        mingin_log( "Failed to write diff footer in recording\n" );
+        
+        closeRecordingDataStores();
+        return;
+        }
     }
 
 
@@ -1723,18 +1775,7 @@ static char restoreFromMemoryDiff( int inStoreReadHandle ) {
 
 
 
-static void closeRecordingDataStores( void ) {
 
-    if( recordingDataStoreHandle != -1 ) {
-        mingin_endWritePersistData( recordingDataStoreHandle );
-        }
-    if( recordingIndexDataStoreHandle != -1 ) {
-        mingin_endWritePersistData( recordingIndexDataStoreHandle );
-        }
-
-    recordingDataStoreHandle = -1;
-    recordingIndexDataStoreHandle = -1;
-    }
 
     
 
@@ -1766,17 +1807,12 @@ static void initRecording( void ) {
             mingin_startWritePersistData( recordingIndexDataStoreName );
         }
 
-    if( recordingDataStoreHandle != -1 &&
-        recordingIndexDataStoreHandle != -1 ) {
-        
-        recordingRunning = 1;
-        }
-    else {
+    if( recordingDataStoreHandle == -1 ||
+        recordingIndexDataStoreHandle == -1 ) {
+
         mingin_log( "Failed to open recording data stores for writing\n" );
 
         closeRecordingDataStores();
-        
-        recordingRunning = 0;
         return;
         }
 
@@ -1785,11 +1821,9 @@ static void initRecording( void ) {
     success = saveGameToDataStore( recordingDataStoreHandle );
 
     if( !success ) {
-        closeRecordingDataStores();
-        
         mingin_log( "Failed to write save game header to recording data.\n" );
         
-        recordingRunning = 0;
+        closeRecordingDataStores();
         return;
         }
     
@@ -1805,6 +1839,8 @@ static void initRecording( void ) {
     copyMemoryIntoRecordingBuffer( 0 );
 
     numDiffsSinceLastFullSnapshot = 0;
+
+    recordingRunning = 1;
     }
 
 

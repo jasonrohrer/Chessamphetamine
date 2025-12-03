@@ -947,7 +947,7 @@ void maxigin_initRegisterStaticMemory( void *inPointer, int inNumBytes,
 
 
 
-static const char *saveGameFileName = "maxgin_save.bin";
+static const char *saveGameDataStoreName = "maxgin_save.bin";
 
 
 #define MAXIGIN_FINGERPRINT_LENGTH  10
@@ -983,9 +983,6 @@ static char *getMemRecordsFingerprint( int *outTotalMemBytes ) {
 
 
 
-#define MAXIGIN_FILE_BUFFER_SIZE 1024
-static unsigned char maxiginFileBuffer[ MAXIGIN_FILE_BUFFER_SIZE ];
-
 
 /*
   Reads a \0-terminated string from data store.
@@ -1011,7 +1008,7 @@ static char readStringFromPersistData( int inStoreReadHandle,
                                           (unsigned char *)&( inBuffer[i] ) );
         }
     if( inBuffer[i] != '\0' && readNum == 1 ) {
-        /* didn't find termination in file
+        /* didn't find termination in data store
            because string was too long for buffer */
         mingin_log( "Error:  Buffer overflow when trying to read string from "
                     "persistent data store.\n" );
@@ -1153,8 +1150,8 @@ static char saveGameToDataStore( int inStoreWriteHandle ) {
 
     if( ! success ) {
         MAXIGIN_SAVED_GAME_WRITE_FAILURE:
-        maxigin_logString( "Failed to write to saved game file: ",
-                           saveGameFileName );
+        maxigin_logString( "Failed to write to saved game data: ",
+                           saveGameDataStoreName );
         return 0;
         }
 
@@ -1211,11 +1208,11 @@ static char saveGameToDataStore( int inStoreWriteHandle ) {
 
 
 static void saveGame( void ) {
-    int outHandle = mingin_startWritePersistData( saveGameFileName );
+    int outHandle = mingin_startWritePersistData( saveGameDataStoreName );
 
     if( outHandle == -1 ) {
         maxigin_logString( "Failed to open saved game for writing: ",
-                           saveGameFileName );
+                           saveGameDataStoreName );
         return;
         }
 
@@ -1245,14 +1242,14 @@ static char restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
     success = readIntFromPersistData( inStoreReadHandle, &readNumTotalBytes );
 
     if( ! success ) {
-        mingin_log( "Failed to read total num bytes from save file.\n" );
+        mingin_log( "Failed to read total num bytes from save data.\n" );
         return 0;
         }
 
     if( readNumTotalBytes != numTotalBytes ) {
-        mingin_log( "Save file does not match current total memory bytes, "
+        mingin_log( "Save data does not match current total memory bytes, "
                     "ignoring.\n" );
-        maxigin_logInt( "Save file has numTotalBytes = ", readNumTotalBytes );
+        maxigin_logInt( "Save data has numTotalBytes = ", readNumTotalBytes );
         maxigin_logInt( "Current live numTotalBytes = ", numTotalBytes );
         
         return 0;
@@ -1261,14 +1258,14 @@ static char restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
     success = readIntFromPersistData( inStoreReadHandle, &readNumMemRecords );
 
     if( ! success ) {
-        mingin_log( "Failed to read num memory records from save file.\n" );
+        mingin_log( "Failed to read num memory records from save data.\n" );
         return 0;
         }
     
     if( readNumMemRecords != numMemRecords ) {
-        mingin_log( "Save file does not match current numMemRecords, "
+        mingin_log( "Save data does not match current numMemRecords, "
                     "ignoring.\n" );
-        maxigin_logInt( "Save file has numMemRecords = ", readNumMemRecords );
+        maxigin_logInt( "Save data has numMemRecords = ", readNumMemRecords );
         maxigin_logInt( "Current live numMemRecords = ", numMemRecords );
         
         return 0;
@@ -1279,22 +1276,22 @@ static char restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
     readFingerprint = readShortStringFromPersistData( inStoreReadHandle );
     
     if( readFingerprint == 0 ) {
-        mingin_log( "Failed to read fingerprint from save file.\n" );
+        mingin_log( "Failed to read fingerprint from save data.\n" );
         return 0;
         }
     
     
     if( ! maxigin_stringsEqual( fingerprint, readFingerprint ) ) {
-        mingin_log( "Save file does not match current memory fingerprint, "
+        mingin_log( "Save data does not match current memory fingerprint, "
                     "ignoring.\n" );
-        maxigin_logString( "Save file has fingerprint = ",
-                           (char*)maxiginFileBuffer );
+        maxigin_logString( "Save data has fingerprint = ",
+                           readFingerprint );
         maxigin_logString( "Current live has fingerprint = ", fingerprint );
         
         return 0;
         }
 
-    /* now read the memory records from the saved file */
+    /* now read the memory records from the saved data */
 
     /* first read the descriptions and sizes to make sure they all match */
     for( i=0; i<numMemRecords; i++ ) {
@@ -1312,9 +1309,9 @@ static char restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
         
         if( ! maxigin_stringsEqual( liveDes, readDes ) ) {
             maxigin_logInt(
-                "Save file has wrong description for record # = ", i );
+                "Save data has wrong description for record # = ", i );
             
-            maxigin_logString( "Save file has description = ", readDes );
+            maxigin_logString( "Save data has description = ", readDes );
 
             maxigin_logString( "Live description = ", liveDes );
         
@@ -1332,9 +1329,9 @@ static char restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
 
         if( readNumBytes != memRecords[i].numBytes ) {
             maxigin_logInt(
-                "Save file has wrong numBytes for record # = ", i );
+                "Save data has wrong numBytes for record # = ", i );
             
-            maxigin_logInt( "Save file has numBytes = ", readNumBytes );
+            maxigin_logInt( "Save data has numBytes = ", readNumBytes );
 
             maxigin_logInt( "Live numBytes = ", memRecords[i].numBytes );
 
@@ -1357,7 +1354,7 @@ static char restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
         
         if( numRead !=  memRecords[i].numBytes ) {
             maxigin_logInt(
-                "Failed to read memory data from save file for record # = ", i );
+                "Failed to read memory data from save data for record # = ", i );
 
             return 0;
             }
@@ -1382,12 +1379,12 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
         return;
         }
     
-    readHandle = mingin_startReadPersistData( saveGameFileName,
+    readHandle = mingin_startReadPersistData( saveGameDataStoreName,
                                               &storeSize );
 
     if( readHandle == -1 ) {
         maxigin_logString( "Failed to open saved game for reading: ",
-                           saveGameFileName );
+                           saveGameDataStoreName );
         return;
         }
 
@@ -1397,7 +1394,7 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 
     
     if( success ) {
-        mingin_log( "Restored live memory from saved game file.\n" );
+        mingin_log( "Restored live memory from saved game data.\n" );
         }
     }
 
@@ -1412,7 +1409,7 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 #endif
 
 /*
-  buffer for our last state represented in the recording file
+  buffer for our last state represented in the recording data store
   and our current state, used for computing the next diff.
 */
 static unsigned char recordingBuffers[2][
@@ -1421,11 +1418,11 @@ static unsigned char recordingBuffers[2][
 static int latestRecordingIndex = -1;
 
 
-static const char *recordingFileName = "maxigin_recording.bin";
-static const char *recordingIndexFileName = "maxigin_recordingIndex.bin";
+static const char *recordingDataStoreName = "maxigin_recording.bin";
+static const char *recordingIndexDataStoreName = "maxigin_recordingIndex.bin";
 
-static int recordingFileHandle = -1;
-static int recordingIndexFileHandle = -1;
+static int recordingDataStoreHandle = -1;
+static int recordingIndexDataStoreHandle = -1;
 
 static char diffRecordingEnabled = 1;
 
@@ -1465,27 +1462,28 @@ static void copyMemoryIntoRecordingBuffer( int inIndex ) {
 
 static void recordFullMemorySnapshot( void ) {
     int r;
-    int startPos = mingin_getPersistDataPosition( recordingFileHandle );
+    int startPos = mingin_getPersistDataPosition( recordingDataStoreHandle );
     char success;
     
-    /* write the starting pos of this full snapshot into our index file
+    /* write the starting pos of this full snapshot into our index data store
        use a padded int so that we can jump by 12 bytes to go "frame by frame"
        through the index.
     */
     success =
-        writePaddedIntToPerisistentData( recordingIndexFileHandle, startPos );
+        writePaddedIntToPerisistentData( recordingIndexDataStoreHandle,
+                                         startPos );
 
     if( ! success ) {
         maxigin_logString(
-            "Failed to write data block to recording index file: ",
-            recordingIndexFileName );
+            "Failed to write data block to recording index data: ",
+            recordingIndexDataStoreName );
         recordingRunning = 0;
         return;
         }
     
 
     /* write our full snapshot header */
-    writeStringToPeristentData( recordingFileHandle, "F" );
+    writeStringToPeristentData( recordingDataStoreHandle, "F" );
     
     
     for( r=0; r<numMemRecords; r++ ) {
@@ -1493,11 +1491,12 @@ static void recordFullMemorySnapshot( void ) {
         unsigned char *recPointer = (unsigned char*)( memRecords[r].pointer );
 
         success =
-            mingin_writePersistData( recordingFileHandle, recSize, recPointer );
+            mingin_writePersistData( recordingDataStoreHandle,
+                                     recSize, recPointer );
 
         if( ! success ) {
-            maxigin_logString( "Failed to write data block to recording file: ",
-                               recordingFileName );
+            maxigin_logString( "Failed to write data block to recording data: ",
+                               recordingDataStoreName );
             recordingRunning = 0;
             return;
             }
@@ -1522,7 +1521,7 @@ static void recordMemoryDiff( void ) {
     copyMemoryIntoRecordingBuffer( newIndex );
 
     /* header for a diff */
-    writeStringToPeristentData( recordingFileHandle, "D" );
+    writeStringToPeristentData( recordingDataStoreHandle, "D" );
     
     for( b=0; b<MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES; b++ ) {
         if( recordingBuffers[prevIndex][b] !=
@@ -1530,10 +1529,10 @@ static void recordMemoryDiff( void ) {
             /* a byte has changed */
 
             /* write its position */
-            writeIntToPerisistentData( recordingFileHandle, b );
+            writeIntToPerisistentData( recordingDataStoreHandle, b );
 
             /* write its value */
-            mingin_writePersistData( recordingFileHandle, 1,
+            mingin_writePersistData( recordingDataStoreHandle, 1,
                                      &( recordingBuffers[newIndex][b] ) );
             }
         }
@@ -1542,12 +1541,26 @@ static void recordMemoryDiff( void ) {
        (each line in the diff starts with a valid non-negative position
        in our memory snapshot */
     
-    writeIntToPerisistentData( recordingFileHandle, -1 );
+    writeIntToPerisistentData( recordingDataStoreHandle, -1 );
     
             
     }
 
 
+
+
+static void closeRecordingDataStores( void ) {
+
+    if( recordingDataStoreHandle != -1 ) {
+        mingin_endWritePersistData( recordingDataStoreHandle );
+        }
+    if( recordingIndexDataStoreHandle != -1 ) {
+        mingin_endWritePersistData( recordingIndexDataStoreHandle );
+        }
+
+    recordingDataStoreHandle = -1;
+    recordingIndexDataStoreHandle = -1;
+    }
 
     
 
@@ -1563,41 +1576,39 @@ static void initRecording( void ) {
         diffRecordingEnabled = 0;
         }
 
-    maxigin_logString( "Starting recording into file: ", recordingFileName );
+    maxigin_logString( "Starting recording into data store: ",
+                       recordingDataStoreName );
     
-    recordingFileHandle = mingin_startWritePersistData( recordingFileName );
+    recordingDataStoreHandle =
+        mingin_startWritePersistData( recordingDataStoreName );
 
-    if( recordingFileHandle != -1 ) {
-        recordingIndexFileHandle =
-            mingin_startWritePersistData( recordingIndexFileName );
+    if( recordingDataStoreHandle != -1 ) {
+        recordingIndexDataStoreHandle =
+            mingin_startWritePersistData( recordingIndexDataStoreName );
         }
 
-    if( recordingFileHandle != -1 && recordingIndexFileHandle != -1 ) {
+    if( recordingDataStoreHandle != -1 &&
+        recordingIndexDataStoreHandle != -1 ) {
+        
         recordingRunning = 1;
         }
     else {
         mingin_log( "Failed to open recording data stores for writing\n" );
 
-        if( recordingFileHandle != -1 ) {
-            mingin_endWritePersistData( recordingFileHandle );
-            }
-        if( recordingIndexFileHandle != -1 ) {
-            mingin_endWritePersistData( recordingIndexFileHandle );
-            }
+        closeRecordingDataStores();
         
         recordingRunning = 0;
         return;
         }
 
-    /* start by writing a normal saved game to the start of the recording file
+    /* start by writing a normal saved game to the start of the recording data
        which is our current state that should be restored before playback */
-    success = saveGameToDataStore( recordingFileHandle );
+    success = saveGameToDataStore( recordingDataStoreHandle );
 
     if( !success ) {
-        mingin_endWritePersistData( recordingFileHandle );
-        mingin_endWritePersistData( recordingIndexFileHandle );
-
-        mingin_log( "Failed to write save game header to recording file.\n" );
+        closeRecordingDataStores();
+        
+        mingin_log( "Failed to write save game header to recording data.\n" );
         
         recordingRunning = 0;
         return;
@@ -1637,25 +1648,114 @@ static void stepRecording( void ) {
 
 
 
+#define MAXIGIN_DATA_COPY_BUFFER_SIZE  512
+static unsigned char dataCopyBuffer[ MAXIGIN_DATA_COPY_BUFFER_SIZE ];
+
+
+/*
+  Copies bytes from one open read data store into the end
+  of an open write data store.
+
+  Returns 1 on success, 0 on failure.
+*/
+static char copyIntoDataStore( int inStoreReadHandle,
+                               int inStoreWriteHandle,
+                               int inNumBytesToCopy ) {
+    int numCopied = 0;
+
+    while( numCopied < inNumBytesToCopy ) {
+        int numLeft = inNumBytesToCopy - numCopied;
+        int numThisTime = numLeft;
+        int numRead;
+        char success;
+        
+        if( numThisTime > MAXIGIN_DATA_COPY_BUFFER_SIZE ) {
+            numThisTime = MAXIGIN_DATA_COPY_BUFFER_SIZE;
+            }
+        
+        numRead = mingin_readPersistData( inStoreReadHandle, numThisTime,
+                                          dataCopyBuffer );
+
+        if( numRead == -1 || numRead == 0 ) {
+            /* error in read, or reached end of data before we got
+               inNumBytesToCopy */
+            return 0;
+            }
+        success = mingin_writePersistData( inStoreWriteHandle, numRead,
+                                           dataCopyBuffer );
+
+        if( ! success ) {
+            return 0;
+            }
+        numCopied += numRead;
+        }
+    
+    return 1;
+    }
+
+
+
 static void finalizeRecording( void ) {
     if( ! MAXIGIN_ENABLE_RECORDING ) {
         return;
         }
 
     if( recordingRunning ) {
-        /* fixme:
-           copy index to end of file, with look-back pointer,
-           and delete index */
+        int indexLength;
+        char success;
+        int recordingIndexReadHandle;
+        
+        mingin_endWritePersistData( recordingIndexDataStoreHandle );
+        recordingIndexDataStoreHandle = -1;
+
+        recordingIndexReadHandle =
+            mingin_startReadPersistData( recordingIndexDataStoreName,
+                                         &indexLength );
+
+        if( recordingIndexReadHandle == -1 ) {
+            mingin_log( "Failed to re-open recording index data at end "
+                        "of recording data.\n" );
+            
+            mingin_endWritePersistData( recordingDataStoreHandle );
+            recordingDataStoreHandle = -1;
+            return;
+            }
+        
+        success = copyIntoDataStore( recordingIndexReadHandle,
+                                     recordingDataStoreHandle, indexLength );
+
+        mingin_endReadPersistData( recordingIndexReadHandle );
+            
+        if( ! success ) {
+            mingin_log( "Failed to copy recording index into end "
+                        "of recording data.\n" );
+            mingin_endWritePersistData( recordingDataStoreHandle );
+            recordingDataStoreHandle = -1;
+            
+            return;
+            }
+
+        /* successfully added index to end, can delete index now */
+        mingin_deletePersistData( recordingIndexDataStoreName );
+        
+
+        /* now append length of index */
+        success = writeIntToPerisistentData( recordingDataStoreHandle,
+                                             indexLength );
+
+        if( ! success ) {
+            mingin_log( "Failed write length of index into end "
+                        "of recording data.\n" );
+            }
+            
+        mingin_endWritePersistData( recordingIndexDataStoreHandle );
+        recordingIndexDataStoreHandle = -1;
+
+        maxigin_logString( "Game recording finalized: ",
+                           recordingDataStoreName );
         }
 
-    if( recordingFileHandle != -1 ) {
-        mingin_endWritePersistData( recordingFileHandle );
-        recordingFileHandle = -1;
-        }
-    if( recordingIndexFileHandle != -1 ) {
-        mingin_endWritePersistData( recordingIndexFileHandle );
-        recordingIndexFileHandle = -1;
-        }
+    closeRecordingDataStores();
     }
 
 

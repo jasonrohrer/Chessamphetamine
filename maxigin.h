@@ -967,7 +967,7 @@ void maxigin_initRegisterStaticMemory( void *inPointer, int inNumBytes,
 
 
 
-static const char *saveGameDataStoreName = "maxgin_save.bin";
+static const char *saveGameDataStoreName = "maxigin_save.bin";
 
 
 #define MAXIGIN_FINGERPRINT_LENGTH  10
@@ -1233,7 +1233,13 @@ static char saveGameToDataStore( int inStoreWriteHandle ) {
 
 
 static void saveGame( void ) {
-    int outHandle = mingin_startWritePersistData( saveGameDataStoreName );
+    int outHandle;
+    
+    if( numMemRecords == 0 ) {
+        return;
+        }
+    
+    outHandle = mingin_startWritePersistData( saveGameDataStoreName );
 
     if( outHandle == -1 ) {
         maxigin_logString( "Failed to open saved game for writing: ",
@@ -1260,6 +1266,10 @@ static char restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
     int i;
 
     const char *readFingerprint;
+
+    if( numMemRecords == 0 ) {
+        return 0;
+        }
     
     fingerprint = getMemRecordsFingerprint( &numTotalBytes );
     
@@ -1532,6 +1542,22 @@ static void recordFullMemorySnapshot( void ) {
 
 
 
+static char checkHeader( int inStoreReadHandle, const char inTargetLetter ) {
+    const char *header = readShortStringFromPersistData( inStoreReadHandle );
+
+    if( header == 0 ||
+        header[0] != inTargetLetter ||
+        header[1] != '\0' ) {
+        
+        /* bad header */
+        return 0;
+        }
+    
+    return 1;
+    }
+    
+
+
 /*
   Restores a full memory snapshot from current position in a data store.
 
@@ -1540,14 +1566,10 @@ static void recordFullMemorySnapshot( void ) {
 static char restoreFromFullMemorySnapshot( int inStoreReadHandle ) {
     int r;
     
-    const char *header = readShortStringFromPersistData( inStoreReadHandle );
-
-    if( header == 0 ||
-        header[0] != 'F' ||
-        header[1] != '\0' ) {
-        /* bad header */
+    if( ! checkHeader( inStoreReadHandle, 'F' ) ) {
         return 0;
         }
+    
 
     for( r=0; r<numMemRecords; r++ ) {
         int recSize = memRecords[r].numBytes;
@@ -1574,6 +1596,7 @@ static void recordMemoryDiff( void ) {
     int prevIndex = latestRecordingIndex;
     int newIndex = 0;
     int b;
+    int lastWritten = 0;
     
     if( ! diffRecordingEnabled ) {
         return;
@@ -1593,8 +1616,11 @@ static void recordMemoryDiff( void ) {
             recordingBuffers[newIndex][b] ) {
             /* a byte has changed */
 
-            /* write its position */
-            writeIntToPerisistentData( recordingDataStoreHandle, b );
+            /* write its position offset from the previous one recorded */
+            writeIntToPerisistentData( recordingDataStoreHandle,
+                                       b - lastWritten );
+
+            lastWritten = b;
 
             /* write its value */
             mingin_writePersistData( recordingDataStoreHandle, 1,
@@ -1610,6 +1636,89 @@ static void recordMemoryDiff( void ) {
     
             
     }
+
+
+/*
+  Restores memory from diff at current position in a data store.
+
+  Returns 1 on success, 0 on failure.
+*/
+static char restoreFromMemoryDiff( int inStoreReadHandle ) {
+    char success;
+    int readInt;
+    int curRecord = 0;
+    int curRecordByte = 0;
+    unsigned char *curRecordPointer = 0;
+    
+    int numRead;
+    
+    if( ! checkHeader( inStoreReadHandle, 'D' ) ) {
+        return 0;
+        }
+
+    if( numMemRecords == 0 ) {
+        /* trying to restore diff into no live memory records */
+        return 0;
+        }
+
+    curRecordPointer = (unsigned char*)( memRecords[ curRecord ].pointer );
+    
+    
+
+    success = readIntFromPersistData( inStoreReadHandle, &readInt );
+
+    if( ! success ) {
+        /* must have at least 1 int, at least the -1 at the end,
+           even if diff is empty with no changes */
+        return 0;
+        }
+    
+    while( readInt != -1 ) {
+        /* readInt is our offset into our full static memory space
+           with static regions butted end-to-end
+           This offset is relative to the position of the last byte
+           in the diff */
+
+        curRecordByte += readInt;
+
+        while( curRecordByte > memRecords[ curRecord ].numBytes ) {
+            /* gone past the end of our current record
+               start marching into next record from 0 in that record */
+            curRecordByte -= memRecords[ curRecord ].numBytes;
+                
+            curRecord ++;
+            if( curRecord >= numMemRecords ) {
+                /* diff includes offsets that go beyond our last
+                   live memory recor */
+                return 0;
+                }
+            curRecordPointer =
+                (unsigned char*)( memRecords[ curRecord ].pointer );
+            }
+        
+        /* we've found a place for the offset read from the diff to land */
+
+        numRead = mingin_readPersistData(
+            inStoreReadHandle, 1,
+            &( curRecordPointer[ curRecordByte ] ) );
+
+        if( numRead != 1 ) {
+            return 0;
+            }
+
+        success = readIntFromPersistData( inStoreReadHandle, &readInt );
+        
+        if( ! success ) {
+            return 0;
+            }
+        }
+
+    /* got here, then we read the -1 terminator int at the end of
+       our diff block */
+
+    return 1;   
+    }
+
 
 
 
@@ -1637,6 +1746,9 @@ static void initRecording( void ) {
     recordingRunning = 0;
     
     if( ! MAXIGIN_ENABLE_RECORDING ) {
+        return;
+        }
+    if( numMemRecords == 0 ) {
         return;
         }
     if( MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES < totalMemoryRecordsBytes ) {
@@ -1839,6 +1951,10 @@ static int playbackDataLength;
 
 static char playbackRunning = 0;
 
+static int playbackFullSnapshotLastPlayed = 0;
+static int playbackIndexStartPos = 0;
+static int playbackNumFullSnapshots = 0;
+
 
 /* returns 1 on success, 0 on failure */
 static char seekAndReadInt( int inStoreReadHandle, int inPos, int *outInt ) {
@@ -1858,11 +1974,14 @@ static char initPlayback( void ) {
     char success;
     int indexLengthDataPos;
     int indexLength;
-    int indexStartDataPos;
 
     int firstFullSnapshotDataPos;
 
     playbackRunning = 0;
+
+    if( numMemRecords == 0 ) {
+        return 0;
+        }
     
     /* user copies "playback" data store into place if they want playback
        
@@ -1907,16 +2026,17 @@ static char initPlayback( void ) {
         return 0;
         }
 
-    indexStartDataPos = playbackDataLength -
+    playbackIndexStartPos = playbackDataLength -
         MAXIGIN_PADDED_INT_LENGTH - indexLength;
 
     success = seekAndReadInt( playbackDataStoreHandle,
-                              indexStartDataPos, &firstFullSnapshotDataPos );
+                              playbackIndexStartPos,
+                              &firstFullSnapshotDataPos );
 
     if( ! success ) {
         maxigin_logInt( "Failed to seek to this position and read first "
                         "index entry in playback data store: ",
-                        indexStartDataPos );
+                        playbackIndexStartPos );
         
         mingin_endReadPersistData( playbackDataStoreHandle );
         return 0;
@@ -1947,29 +2067,89 @@ static char initPlayback( void ) {
         }
 
     
-    mingin_log( "Playback started successfully\n" );
+    playbackFullSnapshotLastPlayed = 0;
+    playbackNumFullSnapshots = indexLength / MAXIGIN_PADDED_INT_LENGTH;
+    
+    maxigin_logInt( "Playback started successfully with num snapshots: ",
+                    playbackNumFullSnapshots );
+    
     playbackRunning = 1;
     
     return 1;
     }
 
 
+static void playbackEnd( void ) {
+    if( playbackDataStoreHandle != -1 ) {
+        mingin_endReadPersistData( playbackDataStoreHandle );
+        playbackDataStoreHandle = -1;
+        }
+    playbackRunning = 0;
+    }
+
 
 static char playbackStep( void ) {
-
+    int curDataPos;
+    char success;
+    
     if( ! playbackRunning ) {
         return 0;
         }
 
-    /* fixme
+    /* 
        try to read a diff from current location
        if that fails, rewind and try to read full snapshot
-
-       need to implement this function:
-       
-       restoreFromMemoryDiff
-
     */
+    curDataPos = mingin_getPersistDataPosition( playbackDataStoreHandle );
+
+    if( curDataPos == -1 ) {
+        mingin_log( "Playback failed to get current position from playback "
+                    "data source." );
+        playbackEnd();
+        return 0;
+        }
+
+    success = restoreFromMemoryDiff( playbackDataStoreHandle );
+
+    if( ! success ) {
+        /* diff reading failed
+           try reading a whole snapshot */
+
+        if( playbackFullSnapshotLastPlayed == playbackNumFullSnapshots - 1 ) {
+            /* reached end */
+            maxigin_logInt( "Reached end of playback with num snapshots: ",
+                            playbackNumFullSnapshots );
+            playbackEnd();
+            return 0;
+            }
+
+        /* rewind */
+        success = mingin_seekPersistData( playbackDataStoreHandle,
+                                          curDataPos );
+
+        if( !success ) {
+            mingin_log( "Seek-back failed in playback data source." );
+
+            playbackEnd();
+            return 0;
+            }
+        success = restoreFromFullMemorySnapshot( playbackDataStoreHandle );
+
+        if( !success ) {
+            mingin_log( "Neither full-memory snapshot nor partial diff "
+                        "restored successfully from playback data source." );
+            playbackEnd();
+            return 0;
+            }
+        
+        playbackFullSnapshotLastPlayed ++;
+        
+        maxigin_logInt( "Just played snapshot: ",
+                        playbackFullSnapshotLastPlayed );
+        }
+
+    
+    
     return 1;
     }
 

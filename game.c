@@ -20,7 +20,7 @@ enum GameUserAction {
 static int boxPosX = -1;
 static int boxPosY = -1;
 static int boxW = 10;
-static int boxH = 200;
+static int boxH = 40;
 static int boxVPerSecond = 120;
 static int boxDir = 1;
 
@@ -138,7 +138,7 @@ void maxiginGame_init( void ) {
     boxPosX = MAXIGIN_GAME_NATIVE_W / 2;
     boxPosY = MAXIGIN_GAME_NATIVE_H / 2;
 
-    boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 4;
+    boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 12;
 
 
     REGISTER_INT_MEM( boxPosX );

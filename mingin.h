@@ -819,7 +819,10 @@ char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
 
   Returns number of bytes read on success, -1 on failure.
   
-  Returns 0 only if inNumBytesToRead equals 0 OR end of data has been reached.
+  Returns a non-negative number < inNumBytesToRead ONLY if we've reached the
+  end of the data store.
+
+  fixme  ^^
   
   [jumpMinginProvides]
 */
@@ -899,8 +902,11 @@ int mingin_startReadBulkData( const char *inBulkName,
   Reads more data from an open bulk data resource.
 
   Returns number of bytes read on success, -1 on failure.
-  
-  Returns 0 only if inNumBytesToRead equals 0 OR end of data has been reached.
+
+  Returns a non-negative number < inNumBytesToRead ONLY if we've reached the
+  end of the data store.
+
+  fixme  ^^
   
   [jumpMinginProvides]
 */

@@ -112,7 +112,7 @@
 
 
 /*
-  If recording is enabled, what is the maximum total size of the size of the
+  If recording is enabled, what is the maximum total size of the
   static memory that the game will register with:
   
       maxigin_initRegisterStaticMemory
@@ -169,7 +169,7 @@
 
     --None of the C Standard Library functions or macros are used, not even the
       "freestanding" subset.  Maxigin never calls malloc, free, fopen, printf,
-      assert, etc., and it doesn't expect uint64 to exist.
+      assert, etc., and it doesn't expect uint64_t to exist.
       If you want to use these in your game, you're free to do so,
       but Maxigin doesn't force your game to depend on these.
 
@@ -180,13 +180,21 @@
 
   --No floating point types or math operations.
 
-  --No assumptions about the size of int or long or short.
+  --No assumptions about the size of int or long or short, beyond
+    the minimum sizes required by C89.
 
   --No platform-dependent code surrounded by #ifdefs.  The same code compiles
     and runs on every platform.
 
   --No program entry point (beyond whatever entry point is provided by
     the platform-specific code in mingin.h)
+
+  --Some functionality MAY depend on char and unsigned char being exactly
+    8 bits long (like conversion of a byte array to ASCII Hex, which will
+    generate two hex characters per byte), but other functionality makes
+    no explicit assumptions about the size of char, beyond the C89 requirement
+    that it's at least 8 bits.  Operation should stil be safe on platforms
+    with larger chars.
     
 */
 
@@ -273,8 +281,7 @@ void maxiginGame_init( void );
   ****
   
   ****
-  All general-purpose maxigin_ functions provided by mingin.h CAN be called
-  from this function.
+  All general-purpose maxigin_ functions  CAN be called from this function.
   ****
   
   ****
@@ -291,7 +298,7 @@ void maxiginGame_step( void );
 
 
 /*
-  Get the next native image full pixels
+  Get the next game-native-size image full pixels
   Each R, G, and B color component is 8 bytes, interleaved in
   RGBRGBRGB... in row-major order, starting from the top left corner
   of the screen and going left-to-right and top-to-bottom, with
@@ -464,7 +471,8 @@ void maxigin_logInt( const char *inLabel, int inVal );
 
 
 /*
-  Logs a labeled string value to the game engine log with a newline.
+  Logs a labeled \0-terminated string value to the game engine log with a
+  newline.
 
   [jumpMaxiginGeneral]
 */
@@ -473,7 +481,7 @@ void maxigin_logString( const char *inLabel, const char *inVal );
 
 
 /*
-  Gets the length of a string.
+  Gets the length of a \0-terminated string.
 
   [jumpMaxiginGeneral]
 */
@@ -482,7 +490,7 @@ int maxigin_stringLength( const char *inString );
 
 
 /*
-  Returns 1 if two strings are equal, 0 if not.
+  Returns 1 if two \0-terminated strings are equal, 0 if not.
 
   [jumpMaxiginGeneral]
 */
@@ -491,7 +499,7 @@ char maxigin_stringsEqual( const char *inStringA, const char *inStringB );
 
 
 /*
-  Generates a ASCII hex-encoding of a string, in uppercase hex.
+  Generates a ASCII hex-encoding of byte buffer, in uppercase hex.
 
   inHexBuffer must have room for at least 2 * inNumBytes + 1 characters.
 

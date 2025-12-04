@@ -720,6 +720,8 @@ void mingin_registerStickAxis( int inStickAxisHandle,
       [outLowerLimit, outUpperLimit]
 
   Returns 1 if joystick is available, or 0 if not.
+
+  [jumpMinginProvides]
 */
 char mingin_getStickPosition( int inStickAxisHandle,
                               int *outPosition,
@@ -986,14 +988,17 @@ void mingin_endReadBulkData( int inBulkDataHandle );
       This is tagged below with    [jumpPlatformCalls]
 
       
-  3.  Implementing SEVEN required platform infrastructure functions,
-      which Mingin will call internally.
+  3.  Implementing various mingin_ functions.
       
       These are tagged below with    [jumpPlatformRequired]
 
 
-   Design Note:
+      
+   = Design Notes =
 
+   
+   == Button handling and callbacks ==
+   
    We don't ask for a callback from the platform when any button is pressed or
    released, to support platforms that don't have button events.  Instead,
    we specifically poll for the DOWN state of a given button of interest.
@@ -1006,7 +1011,22 @@ void mingin_endReadBulkData( int inBulkDataHandle );
    for calls to minginPlatform_getLastButtonPressed(), if the platform supports
    that, since Mingin is not going to poll for every possible button's DOWN
    state to track this itself.
+
    
+   == Separation of persistent data and bulk data and logging ==
+
+   There are separate functions that must be implemented for read-only bulk
+   data (like graphics and sounds) and read/write persistent data (like saved
+   games).  On many plaforms, these might be implemented internally with
+   the same function for reading/writing files.
+
+   However, separating them makes it possible to support platforms where
+   they really are separate (like catridges that load graphics from a ROM
+   area, and keep a small flash area for saved games).
+
+   Keeping the logging separate also allows platforms that log remotely
+   through a network or devkit cable.
+
 */
 
 

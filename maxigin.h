@@ -697,8 +697,8 @@ static char buttonsDown[ LAST_MAXIGIN_USER_ACTION ];
 
 static char recordingRunning = 0;
 static char playbackRunning = 0;
-
-
+static char playbackPaused = 0;
+static int playbackSpeed = 1;
 
 
 /* RGB pixels of game's native image size */
@@ -886,6 +886,16 @@ void minginGame_step( char inFinalStep ) {
             initPlayback();
             }
         }
+
+    if( playbackRunning ) {
+        if( isActionFreshPressed( PLAYBACK_PAUSE ) ) {
+            playbackPaused = 1;
+            }
+        if( isActionFreshPressed( PLAYBACK_NORMAL ) ) {
+            playbackPaused = 0;
+            playbackSpeed = 1;
+            }
+        }
     
 
     if( ! playbackStep() ) {
@@ -912,13 +922,13 @@ static MinginButton quitMapping[] = { MGN_KEY_Q, MGN_KEY_ESCAPE, MGN_MAP_END };
 static MinginButton fullscreenMapping[] = { MGN_KEY_F, MGN_MAP_END };
 
 static MinginButton playbackMappings[7][2] =
-    { { MGN_KEY_BACKSLASH, MGN_MAP_END },
-      { MGN_KEY_EQUAL, MGN_MAP_END },
-      { MGN_KEY_MINUS, MGN_MAP_END },
-      { MGN_KEY_0, MGN_MAP_END },
-      { MGN_KEY_9, MGN_MAP_END },
-      { MGN_KEY_BRACKET_L, MGN_MAP_END },
-      { MGN_KEY_BRACKET_R, MGN_MAP_END } };
+    { { MGN_KEY_BACKSLASH, MGN_MAP_END },   /* start-stop */
+      { MGN_KEY_EQUAL, MGN_MAP_END },       /* faster */
+      { MGN_KEY_MINUS, MGN_MAP_END },       /* slower */
+      { MGN_KEY_0, MGN_MAP_END },           /* pause */
+      { MGN_KEY_9, MGN_MAP_END },           /* normal speed */
+      { MGN_KEY_BRACKET_L, MGN_MAP_END },   /* jump back */
+      { MGN_KEY_BRACKET_R, MGN_MAP_END } }; /* jump ahead */
 
 
 
@@ -2066,7 +2076,9 @@ static char initPlayback( void ) {
     int firstFullSnapshotDataPos;
 
     playbackRunning = 0;
-
+    playbackSpeed = 1;
+    playbackPaused = 0;
+    
     if( numMemRecords == 0 ) {
         return 0;
         }
@@ -2182,6 +2194,10 @@ static char playbackStep( void ) {
     
     if( ! playbackRunning ) {
         return 0;
+        }
+
+    if( playbackPaused ) {
+        return 1;
         }
 
     /* 

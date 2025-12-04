@@ -683,8 +683,8 @@ typedef enum MaxiginUserAction {
     PLAYBACK_SLOWER,
     PLAYBACK_PAUSE,
     PLAYBACK_NORMAL,
-    PLAYBACK_JUMP_HALF_AHEAD,
     PLAYBACK_JUMP_HALF_BACK,
+    PLAYBACK_JUMP_HALF_AHEAD,
     LAST_MAXIGIN_USER_ACTION
     } MaxiginUserAction;
 
@@ -808,6 +808,8 @@ static char playbackStep( void );
    obeys pause state */
 static char playbackSpeedStep( void );
 
+static void playbackJumpHalfAhead( void );
+static void playbackJumpHalfBack( void );
 
 static void playbackEnd( void );
 
@@ -902,6 +904,13 @@ void minginGame_step( char inFinalStep ) {
             playbackPaused = 0;
             playbackSpeed = 1;
             }
+        if( isActionFreshPressed( PLAYBACK_JUMP_HALF_AHEAD ) ) {
+            playbackJumpHalfAhead();
+            }
+        if( isActionFreshPressed( PLAYBACK_JUMP_HALF_BACK ) ) {
+            playbackJumpHalfBack();
+            }
+                        
         if( isActionFreshPressed( PLAYBACK_FASTER ) ) {
             if( playbackPaused ) {
                 /* faster button jumps ahead by one step when paused */
@@ -980,7 +989,7 @@ static void gameInit( void ) {
     mingin_registerButtonMapping( QUIT, quitMapping );
     mingin_registerButtonMapping( FULLSCREEN_TOGGLE, fullscreenMapping );
 
-    for( p = PLAYBACK_START_STOP; p <= PLAYBACK_JUMP_HALF_BACK; p++ ) {
+    for( p = PLAYBACK_START_STOP; p <= PLAYBACK_JUMP_HALF_AHEAD; p++ ) {
         
         mingin_registerButtonMapping(
             p, playbackMappings[ p - PLAYBACK_START_STOP ] );
@@ -2338,6 +2347,74 @@ static char playbackStep( void ) {
     
     return 1;
     }
+
+
+
+static void playbackJumpToFullSnapshot( int inFullSnapshotIndex ) {
+
+    int indexJumpPos = playbackIndexStartPos +
+        MAXIGIN_PADDED_INT_LENGTH * inFullSnapshotIndex;
+    int readPos;
+    char success;
+    
+    success = mingin_seekPersistData( playbackDataStoreHandle, indexJumpPos );
+
+    if( ! success ) {
+        maxigin_logInt( "Playback jump failed to seek into index at pos: ",
+                        indexJumpPos );
+        playbackEnd();
+        return;
+        }
+    
+    success = readIntFromPersistData( playbackDataStoreHandle, &readPos );
+    
+    if( ! success ) {
+        mingin_log( "Playback jump failed to read jump pos from index\n" );
+        playbackEnd();
+        return;
+        }
+
+    success = mingin_seekPersistData( playbackDataStoreHandle, readPos );
+
+    if( ! success ) {
+        maxigin_logInt( "Playback jump failed to seek to full frame at pos: ",
+                        readPos );
+        playbackEnd();
+        return;
+        }
+    playbackFullSnapshotLastPlayed = inFullSnapshotIndex - 1;
+
+    if( playbackPaused ) {
+        /* step now, to insta-jump to our jump snapshot
+           if not paused, the next play step will do this anyway,
+           and we don't want to double-step */
+        playbackStep();
+        }
+    }
+
+
+
+static void playbackJumpHalfAhead( void ) {
+
+    int numToJump =
+        ( playbackNumFullSnapshots - playbackFullSnapshotLastPlayed ) / 2;
+
+    if( numToJump > 0 ) {
+        playbackJumpToFullSnapshot( playbackFullSnapshotLastPlayed + numToJump );
+        }
+    }
+
+
+static void playbackJumpHalfBack( void ) {
+
+    int destToJump =
+        ( playbackFullSnapshotLastPlayed ) / 2;
+
+    if( destToJump < playbackFullSnapshotLastPlayed ) {
+        playbackJumpToFullSnapshot( destToJump );
+        }
+    }
+
 
 
 

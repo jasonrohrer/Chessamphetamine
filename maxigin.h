@@ -1274,6 +1274,28 @@ static char writePaddedIntToPerisistentData( int inStoreWriteHandle,
 
 
 
+/*
+  Reads int and jumps ahead MAXIGIN_PADDED_INT_LENGTH total bytes, to skip
+  all padding.
+
+  Returns 1 on success, 0 on failure.
+*/
+static char readPaddedIntFromPeristentData( int inStoreReadHandle,
+                                            int *outInt ) {
+    int numRead = mingin_readPersistData( inStoreReadHandle,
+                                          MAXIGIN_PADDED_INT_LENGTH,
+                                          intPadding );
+
+    if( numRead != MAXIGIN_PADDED_INT_LENGTH ){
+        return 0;
+        }
+
+    *outInt = maxigin_stringToInt( (char *)intPadding );
+    return 1;
+    }
+
+
+
 /* returns 1 on success, 0 on failure */
 static char saveGameToDataStore( int inStoreWriteHandle ) {
     char *fingerprint;
@@ -1630,7 +1652,15 @@ static void recordFullMemorySnapshot( void ) {
     int r;
     int startPos = mingin_getPersistDataPosition( recordingDataStoreHandle );
     char success;
+
+    if( startPos == -1 ) {
+        mingin_log( "Failed to get current recording data store postion.\n" );
+
+        closeRecordingDataStores();
+        return;
+        }
     
+        
     /* write the starting pos of this full snapshot into our index data store
        use a padded int so that we can jump by 12 bytes to go "frame by frame"
        through the index.
@@ -1675,6 +1705,18 @@ static void recordFullMemorySnapshot( void ) {
             return;
             }
         }
+    
+    /* write the position of this block start, as a padded int.
+       this will help us during reverse playback */
+    success = writePaddedIntToPerisistentData( recordingDataStoreHandle,
+                                               startPos );
+
+    if( ! success ) {
+        mingin_log( "Failed to write recording full snapshot start position "
+                    " at end of snapshot block.\n" );
+        closeRecordingDataStores();
+        return;
+        }   
     }
 
 
@@ -1702,6 +1744,8 @@ static char checkHeader( int inStoreReadHandle, const char inTargetLetter ) {
 */
 static char restoreFromFullMemorySnapshot( int inStoreReadHandle ) {
     int r;
+    int startPos;
+    char success;
     
     if( ! checkHeader( inStoreReadHandle, 'F' ) ) {
         return 0;
@@ -1723,6 +1767,14 @@ static char restoreFromFullMemorySnapshot( int inStoreReadHandle ) {
         }
 
     /* read all blocks */
+
+    /* now read start position footer, just to get past it */
+    success = readPaddedIntFromPeristentData( inStoreReadHandle, &startPos );
+
+    if( ! success ) {
+        return 0;
+        }
+    
     return 1;
     }
 
@@ -1735,6 +1787,7 @@ static void recordMemoryDiff( void ) {
     int b;
     int lastWritten = 0;
     char success;
+    int startPos;
     
     if( ! diffRecordingEnabled ) {
         return;
@@ -1743,6 +1796,16 @@ static void recordMemoryDiff( void ) {
     if( prevIndex == 0 ) {
         newIndex = 1;
         }
+
+    startPos = mingin_getPersistDataPosition( recordingDataStoreHandle );
+    
+    if( startPos == -1 ) {
+        mingin_log( "Failed to get current recording data store postion.\n" );
+
+        closeRecordingDataStores();
+        return;
+        }
+    
     
     copyMemoryIntoRecordingBuffer( newIndex );
 
@@ -1800,6 +1863,19 @@ static void recordMemoryDiff( void ) {
         closeRecordingDataStores();
         return;
         }
+
+    
+    /* write the position of this block start, as a padded int.
+       this will help us during reverse playback */
+    success = writePaddedIntToPerisistentData( recordingDataStoreHandle,
+                                               startPos );
+
+    if( ! success ) {
+        mingin_log( "Failed to write recording diff snapshot start position "
+                    " at end of snapshot block.\n" );
+        closeRecordingDataStores();
+        return;
+        } 
     }
 
 
@@ -1816,6 +1892,8 @@ static char restoreFromMemoryDiff( int inStoreReadHandle ) {
     unsigned char *curRecordPointer = 0;
     
     int numRead;
+    int startPos;
+    
     
     if( ! checkHeader( inStoreReadHandle, 'D' ) ) {
         return 0;
@@ -1880,6 +1958,15 @@ static char restoreFromMemoryDiff( int inStoreReadHandle ) {
 
     /* got here, then we read the -1 terminator int at the end of
        our diff block */
+    
+    /* now read start position footer, just to get past it */
+    success = readPaddedIntFromPeristentData( inStoreReadHandle, &startPos );
+
+    if( ! success ) {
+        return 0;
+        }
+
+    
 
     return 1;   
     }
@@ -2299,7 +2386,7 @@ static char playbackStep( void ) {
 
     if( curDataPos == -1 ) {
         mingin_log( "Playback failed to get current position from playback "
-                    "data source." );
+                    "data source.\n" );
         playbackEnd();
         return 0;
         }
@@ -2323,7 +2410,7 @@ static char playbackStep( void ) {
                                           curDataPos );
 
         if( !success ) {
-            mingin_log( "Seek-back failed in playback data source." );
+            mingin_log( "Seek-back failed in playback data source.\n" );
 
             playbackEnd();
             return 0;
@@ -2332,7 +2419,7 @@ static char playbackStep( void ) {
 
         if( !success ) {
             mingin_log( "Neither full-memory snapshot nor partial diff "
-                        "restored successfully from playback data source." );
+                        "restored successfully from playback data source.\n" );
             playbackEnd();
             return 0;
             }

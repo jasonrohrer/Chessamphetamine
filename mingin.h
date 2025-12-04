@@ -1205,10 +1205,10 @@ char mingin_isButtonDown( int inButtonHandle ) {
 
 
 
-#define MAX_WIN_W 4096
-#define MAX_WIN_H 2160
+#define MINGIN_LINUX_MAX_WIN_W 4096
+#define MINGIN_LINUX_MAX_WIN_H 2160
 
-#define LINUX_TARGET_FPS 60
+#define MINGIN_LINUX_TARGET_FPS 60
 
 /* needed for nanosleep in time.h */
 #define _POSIX_C_SOURCE 199309L 
@@ -1225,7 +1225,8 @@ char mingin_isButtonDown( int inButtonHandle ) {
 
 
 /* game's expected buffer is RGB */
-static unsigned char mn_gameScreenBuffer[ MAX_WIN_W * MAX_WIN_H * 3 ];
+static unsigned char mn_gameScreenBuffer[ MINGIN_LINUX_MAX_WIN_W *
+                                          MINGIN_LINUX_MAX_WIN_H * 3 ];
 
 static char mn_shouldQuit = 0;
 
@@ -1250,7 +1251,7 @@ static void mn_getMonitorSize( Display *inXDisplay,
 
 
 int mingin_getStepsPerSecond( void ) {
-    return LINUX_TARGET_FPS;
+    return MINGIN_LINUX_TARGET_FPS;
     }
 
 
@@ -1477,11 +1478,11 @@ static void mn_reconfigureWindowSize( Display *inXDisplay ) {
     
     /* make sure we're never bigger than our statically allocated
        framebuffer */
-    if( mn_windowW > MAX_WIN_W ) {
-        mn_windowW = MAX_WIN_W;
+    if( mn_windowW > MINGIN_LINUX_MAX_WIN_W ) {
+        mn_windowW = MINGIN_LINUX_MAX_WIN_W;
         }
-    if( mn_windowH > MAX_WIN_H ) {
-        mn_windowH = MAX_WIN_H;
+    if( mn_windowH > MINGIN_LINUX_MAX_WIN_H ) {
+        mn_windowH = MINGIN_LINUX_MAX_WIN_H;
         }
     mingin_log( "Window = " );
     mingin_log( mn_intToString( mn_windowW ) );
@@ -2152,10 +2153,11 @@ void mingin_endReadBulkData( int inBulkDataHandle ) {
   a new platform.
 */
 
-#define DUMMY_SCREEN_W 640
-#define DUMMY_SCREEN_H 480
+#define MINGIN_DUMMY_SCREEN_W 640
+#define MINGIN_DUMMY_SCREEN_H 480
 
-static unsigned char mn_dummyScreenBuffer[ DUMMY_SCREEN_W * DUMMY_SCREEN_H * 3 ];
+static unsigned char mn_dummyScreenBuffer[ MINGIN_DUMMY_SCREEN_W *
+                                           MINGIN_DUMMY_SCREEN_H * 3 ];
 
 static int mn_gotQuit = 0;
 
@@ -2172,7 +2174,7 @@ int main( void ) {
         minginGame_step( 0 );
         
         /* ask for screen pixels and do nothing with them */
-        minginGame_getScreenPixels( DUMMY_SCREEN_W, DUMMY_SCREEN_H,
+        minginGame_getScreenPixels( MINGIN_DUMMY_SCREEN_W, MINGIN_DUMMY_SCREEN_H,
                                     mn_dummyScreenBuffer );
 
         /* don't even bother asking for game audio samples */

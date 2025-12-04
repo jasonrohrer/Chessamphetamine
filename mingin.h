@@ -1234,9 +1234,6 @@ static int windowH = 0;
 static char areWeInStepFunction = 0;
 
 
-static void getMonitorSize( Display *inXDisplay,
-                            int *outW, int *outH );
-
 
 static void getMonitorSize( Display *inXDisplay,
                             int *outW, int *outH ) {
@@ -1335,12 +1332,8 @@ MinginButton mingin_getLastButtonPressed( void ) {
     lastButtonPressed = MGN_BUTTON_NONE;
     return last;
     }
-    
 
 
-static int stringLength( const char *inString );
-
-    
 
 static int stringLength( const char *inString ) {
     int i = 0;
@@ -1355,15 +1348,13 @@ void mingin_log( const char *inString ) {
     write( STDOUT_FILENO, inString, (unsigned int)stringLength( inString ) );
     }
 
-/*
-  Returns a static buffer that must be used before next call to intToString.
-*/
-static const char *intToString( int inInt );
 
 
 static char intToStringBuffer[20];
 
-
+/*
+  Returns a static buffer that must be used before next call to intToString.
+*/
 static const char *intToString( int inInt ) {
     unsigned int c = 0;
     /* start with billions */
@@ -1412,8 +1403,6 @@ static const char *intToString( int inInt ) {
 
 static void setupX11KeyMap( void );
 
-static void xSetFullscreen( Display *inXDisplay, Window inXWindow,
-                            char inToggle );
 
 
 static void xSetFullscreen( Display *inXDisplay, Window inXWindow,
@@ -1439,10 +1428,6 @@ static void xSetFullscreen( Display *inXDisplay, Window inXWindow,
 /*
   reconfigures based on xFullscreen and game's minimum viable screen size
 */
-static void reconfigureWindowSize( Display *inXDisplay );
-
-    
-
 static void reconfigureWindowSize( Display *inXDisplay ) {
     if( xFullscreen ) {
         getMonitorSize( inXDisplay, &windowW, &windowH );
@@ -1513,14 +1498,10 @@ typedef struct XWindowSetup {
         XVisualInfo *xVisual;
         GLXContext glxContext;
     } XWindowSetup;
-        
+
+
 
 /* returns 1 on success, 0 on failure */
-static char openXWindow( XWindowSetup *inSetup );
-static void closeXWindow( XWindowSetup *inSetup );
-
-
-
 static char openXWindow( XWindowSetup *inSetup ) {
     long unsigned int xBlackColor;
     int glxAttributes[] = { GLX_RGBA, GLX_DOUBLEBUFFER, None };

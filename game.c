@@ -84,16 +84,16 @@ void maxiginGame_step( void ) {
             newJumpMapping[0] = last;
 
             /* overwrite mapping for jump */
-            mingin_registerButtonMapping( JUMP, newJumpMapping );
+            maxigin_registerButtonMapping( JUMP, newJumpMapping );
             remappingJump = 0;
             }
         }
 
-    if( mingin_isButtonDown( JUMP ) ) {
+    if( maxigin_isButtonDown( JUMP ) ) {
         boxPosY -= 1;
         }
 
-    if( ! remappingJump && mingin_isButtonDown( REMAP ) ) {
+    if( ! remappingJump && maxigin_isButtonDown( REMAP ) ) {
         /* clear last button memory */
         mingin_getLastButtonPressed();
         remappingJump = 1;
@@ -131,8 +131,8 @@ static MinginButton remapMapping[] = { MGN_KEY_P, MGN_MAP_END };
 
 void maxiginGame_init( void ) {
     
-    mingin_registerButtonMapping( JUMP, jumpMapping );
-    mingin_registerButtonMapping( REMAP, remapMapping );
+    maxigin_registerButtonMapping( JUMP, jumpMapping );
+    maxigin_registerButtonMapping( REMAP, remapMapping );
     
     /* init position in image center */
     boxPosX = MAXIGIN_GAME_NATIVE_W / 2;

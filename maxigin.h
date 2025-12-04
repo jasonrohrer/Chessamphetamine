@@ -436,6 +436,43 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void );
 
 
 /*
+  Maxigin listens to certain buttons for its own functionality that's not
+  game-specific (like accessing a settings screen, toggling fullscreen, etc.)
+
+  If a game registers button handles directly with mingin_registerButtonMapping,
+  those registrations may clobber Maxigin's registrations.
+
+  Games that want to take full advantage of Maxigin's functionality should
+  call this instead of mingin_registerButtonMapping.
+
+  See mingin_registerButtonMapping in mingin.h for full documentation.
+
+  [jumpMaxiginGeneral]
+*/
+char maxigin_registerButtonMapping( int inButtonHandle,
+                                    const MinginButton inMapping[] );
+
+
+
+/*
+  Check whether a previously-mapped button handle is currently held down.
+  Returns 1 if pressed, 0 if not pressed.
+
+  Note that Maxigin might block reporting of certain buttons being down
+  depending on its own internal functionality.
+
+  See mingin_isButtonDown in mingin.h for full documentation.
+
+  Games that want to take full advantage of Maxigin's functionality should
+  call this instead of mingin_isButtonDown.
+  
+  [jumpMaxiginGeneral]
+*/
+char maxigin_isButtonDown( int inButtonHandle );
+
+
+
+/*
   Converts an int into a \0-terminated string.
   
   Returns a static buffer that must be used before next call to intToString.
@@ -631,36 +668,6 @@ void maxigin_flexHashFinish( MaxiginFlexHashState *inState );
 
 */
 
-
-
-/*
-  Maxigin listens to certain buttons for its own functionality that's not
-  game-specific (like accessing a settings screen, toggling fullscreen, etc.)
-
-  If a game registers button handles directly with mingin_registerButtonMapping,
-  those registrations may clobber Maxigin's registrations.
-
-  We redefine mingin_registerButtonMapping below, so that c files that
-  include maxigin.h call the maxigin version of this function instead.
-
-  See mingin_registerButtonMapping in mingin.h for full documentation.
-*/
-char maxiginInternal_registerButtonMapping( int inButtonHandle,
-                                            const MinginButton inMapping[] );
-
-
-
-/*
-  Check whether a previously-mapped button handle is currently held down.
-  Returns 1 if pressed, 0 if not pressed.
-
-  Note that Maxigin might block reporting of certain buttons being down
-  depending on its own internal functionality.
-
-  We redefine mingin_isButtonDown below, so that c files that
-  include maxigin.h call the maxigin version of this function instead.
-*/
-char maxiginInternal_isButtonDown( int inButtonHandle );
 
 
 
@@ -1017,8 +1024,10 @@ static void mx_gameInit( void ) {
 
 
 
-char maxiginInternal_registerButtonMapping( int inButtonHandle,
-                                            const MinginButton inMapping[] ) {
+
+
+char maxigin_registerButtonMapping( int inButtonHandle,
+                                    const MinginButton inMapping[] ) {
 
     /* push it up so it doesn't interfere with our mappings */
     inButtonHandle += LAST_MAXIGIN_USER_ACTION;
@@ -1028,7 +1037,7 @@ char maxiginInternal_registerButtonMapping( int inButtonHandle,
 
 
 
-char maxiginInternal_isButtonDown( int inButtonHandle ) {
+char maxigin_isButtonDown( int inButtonHandle ) {
     
     /* push it up so it doesn't interfere with our mappings */
     inButtonHandle += LAST_MAXIGIN_USER_ACTION;
@@ -3018,14 +3027,6 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
 /* end #ifdef MAXIGIN_IMPLEMENTATION */
 #endif
 
-
-
-/*
-  Make sure our versions of these functions get called,
-  so that our internal button mappings aren't clobbered.
-*/
-#define mingin_registerButtonMapping  maxiginInternal_registerButtonMapping
-#define mingin_isButtonDown           maxiginInternal_isButtonDown
 
 
 

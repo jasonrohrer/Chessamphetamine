@@ -675,7 +675,7 @@ static char areWeInMaxiginGameStepFunction = 0;
 
 
 
-enum MaxiginUserAction {
+typedef enum MaxiginUserAction {
     QUIT,
     FULLSCREEN_TOGGLE,
     PLAYBACK_START_STOP,
@@ -686,14 +686,18 @@ enum MaxiginUserAction {
     PLAYBACK_JUMP_HALF_AHEAD,
     PLAYBACK_JUMP_HALF_BACK,
     LAST_MAXIGIN_USER_ACTION
-    };
+    } MaxiginUserAction;
 
 
 
 
 static char initDone = 0;
 
-static char fullscreenTogglePressed = 0;
+static char buttonsDown[ LAST_MAXIGIN_USER_ACTION ];
+
+static char recordingRunning = 0;
+static char playbackRunning = 0;
+
 
 
 
@@ -798,9 +802,36 @@ static char initPlayback( void );
 /* returns 1 of playback happening, 0 if not */
 static char playbackStep( void );
 
+static void playbackEnd( void );
+
+
+
 static void gameInit( void );
 
 static void saveGame( void );
+
+
+static char isActionFreshPressed( MaxiginUserAction inAction ) {
+
+    char fresh = 0;
+    
+    if( mingin_isButtonDown( inAction ) ) {
+        if( ! buttonsDown[ inAction ] ) {
+            fresh = 1;
+            }
+        buttonsDown[ inAction ] = 1;
+        }
+    else {
+        buttonsDown[ inAction ] = 0;
+        }
+
+    return fresh;
+    }
+
+
+
+static char playbackInterruptedRecording = 0;
+
 
 
 void minginGame_step( char inFinalStep ) {
@@ -834,20 +865,36 @@ void minginGame_step( char inFinalStep ) {
         mingin_quit();
         return;
         }
+
+
+    if( isActionFreshPressed( FULLSCREEN_TOGGLE ) ) {
+        mingin_toggleFullscreen( ! mingin_isFullscreen() );
+        }
+
     
-    if( mingin_isButtonDown( FULLSCREEN_TOGGLE ) ) {
-
-        if( ! fullscreenTogglePressed ) {
-            fullscreenTogglePressed = 1;
-
-            mingin_toggleFullscreen( ! mingin_isFullscreen() );
+    if( isActionFreshPressed( PLAYBACK_START_STOP ) ) {
+        if( playbackRunning ) {
+            playbackEnd();
+            initRecording();
+            playbackInterruptedRecording = 0;
+            }
+        else {
+            if( recordingRunning ) {
+                finalizeRecording();
+                playbackInterruptedRecording = 1;
+                }
+            initPlayback();
             }
         }
-    else {
-        fullscreenTogglePressed = 0;
-        }
+    
 
     if( ! playbackStep() ) {
+
+        if( playbackInterruptedRecording ) {
+            /* playback has ended, resume recording */
+            initRecording();
+            playbackInterruptedRecording = 0;
+            }
         
         areWeInMaxiginGameStepFunction = 1;
     
@@ -885,7 +932,13 @@ static void gameInit( void ) {
         
         mingin_registerButtonMapping(
             p, playbackMappings[ p - PLAYBACK_START_STOP ] );
-        }  
+        }
+
+    /* all buttons start out unpressed */
+    for( p= QUIT; p< LAST_MAXIGIN_USER_ACTION; p++ ) {
+        buttonsDown[ p ] = 0;
+        }
+    
     
     areWeInMaxiginGameInitFunction = 1;
     
@@ -893,9 +946,8 @@ static void gameInit( void ) {
 
     areWeInMaxiginGameInitFunction = 0;
 
-    if( ! initPlayback() ) {
-        initRecording();
-        }
+
+    initRecording();
     }
 
 
@@ -1463,7 +1515,7 @@ static int recordingIndexDataStoreHandle = -1;
 
 static char diffRecordingEnabled = 1;
 
-static char recordingRunning = 0;
+
 
 static int numDiffsSinceLastFullSnapshot = 0;
 
@@ -1985,7 +2037,7 @@ static int playbackDataStoreHandle = -1;
 
 static int playbackDataLength;
 
-static char playbackRunning = 0;
+
 
 static int playbackFullSnapshotLastPlayed = 0;
 static int playbackIndexStartPos = 0;

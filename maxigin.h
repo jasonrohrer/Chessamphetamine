@@ -569,24 +569,24 @@ void maxigin_flexHash( const unsigned char *inBytes, int inNumBytes,
 
   [jumpMaxiginGeneral]
 */
-typedef struct FlexHashState {
+typedef struct MaxiginFlexHashState {
         int j;
         unsigned char n;
         unsigned char *hashBuffer;
         int hashLength;
         unsigned char lastInputByte;
-    } FlexHashState;
+    } MaxiginFlexHashState;
 
 
 
 /*
   Initialize an incremental mode run of flexHash.
 
-  The caller-provided hash buffer is incorporated into the FlexHashState.
+  The caller-provided hash buffer is incorporated into the MaxiginFlexHashState.
 
   [jumpMaxiginGeneral]
 */
-void maxigin_flexHashInit( FlexHashState *inState,
+void maxigin_flexHashInit( MaxiginFlexHashState *inState,
                            unsigned char *inHashBuffer,
                            int inHashLength );
 
@@ -597,7 +597,7 @@ void maxigin_flexHashInit( FlexHashState *inState,
   
   [jumpMaxiginGeneral]
 */
-void maxigin_flexHashAdd( FlexHashState *inState,
+void maxigin_flexHashAdd( MaxiginFlexHashState *inState,
                           const unsigned char *inBytes,
                           int inNumBytes );
 
@@ -614,7 +614,7 @@ void maxigin_flexHashAdd( FlexHashState *inState,
 
   [jumpMaxiginGeneral]
 */
-void maxigin_flexHashFinish( FlexHashState *inState );
+void maxigin_flexHashFinish( MaxiginFlexHashState *inState );
 
 
 
@@ -1093,7 +1093,7 @@ static char fingerprintHexBuffer[ MAXIGIN_FINGERPRINT_HEX_LENGTH ];
 
 
 static char *getMemRecordsFingerprint( int *outTotalMemBytes ) {
-    FlexHashState s;
+    MaxiginFlexHashState s;
     int i;
     int totalNumBytes = 0;
     
@@ -2685,7 +2685,7 @@ static const unsigned char flexHashTable[256] = {
 
 
 
-void maxigin_flexHashInit( FlexHashState *inState,
+void maxigin_flexHashInit( MaxiginFlexHashState *inState,
                            unsigned char *inHashBuffer,
                            int inHashLength ) {
 
@@ -2801,7 +2801,7 @@ void maxigin_flexHashInit( FlexHashState *inState,
 
 
 
-void maxigin_flexHashAdd( FlexHashState *inState,
+void maxigin_flexHashAdd( MaxiginFlexHashState *inState,
                           const unsigned char *inBytes,
                           int inNumBytes ) {
     
@@ -2922,7 +2922,7 @@ void maxigin_flexHashAdd( FlexHashState *inState,
 
 
 
-void maxigin_flexHashFinish( FlexHashState *inState ) {
+void maxigin_flexHashFinish( MaxiginFlexHashState *inState ) {
     int j, run;
     unsigned char n;
     int hashLength = inState->hashLength;
@@ -2951,7 +2951,7 @@ void maxigin_flexHashFinish( FlexHashState *inState ) {
 
 void maxigin_flexHash( const unsigned char *inBytes, int inNumBytes,
                        unsigned char *inHashBuffer, int inHashLength ) {
-    FlexHashState s;
+    MaxiginFlexHashState s;
     maxigin_flexHashInit( &s, inHashBuffer, inHashLength );
 
     maxigin_flexHashAdd( &s, inBytes, inNumBytes );

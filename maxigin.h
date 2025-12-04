@@ -799,8 +799,15 @@ static void finalizeRecording( void );
 /* returns 1 if playback started, 0 if not */
 static char initPlayback( void );
 
-/* returns 1 of playback happening, 0 if not */
+
+/* returns 1 of playback happening, 0 if not
+   ignores pause state */
 static char playbackStep( void );
+
+/* executes multi-steps, or delayed steps, basked on playbackSpeed
+   obeys pause state */
+static char playbackSpeedStep( void );
+
 
 static void playbackEnd( void );
 
@@ -889,16 +896,51 @@ void minginGame_step( char inFinalStep ) {
 
     if( playbackRunning ) {
         if( isActionFreshPressed( PLAYBACK_PAUSE ) ) {
-            playbackPaused = 1;
+            playbackPaused = ! playbackPaused;
             }
         if( isActionFreshPressed( PLAYBACK_NORMAL ) ) {
             playbackPaused = 0;
             playbackSpeed = 1;
             }
+        if( isActionFreshPressed( PLAYBACK_FASTER ) ) {
+            if( playbackPaused ) {
+                /* faster button jumps ahead by one step when paused */
+                playbackStep();
+                }
+            else {
+                /* not paused, faster adjusts speed */
+            
+                if( playbackSpeed >= 1 ) {
+                    playbackSpeed ++;
+                    }
+                else if( playbackSpeed == -2 ) {
+                    /* coming out of half-speed mode */
+                    playbackSpeed = 1;
+                    }
+                else if( playbackSpeed <= -4 ) {
+                    /* in slow down mode, get 2x faster per step
+                       to get out of it */
+                    
+                    playbackSpeed /= 2;
+                    }
+                }
+            }
+        if( isActionFreshPressed( PLAYBACK_SLOWER ) ) {
+            if( playbackSpeed > 1 ) {
+                playbackSpeed--;
+                }
+            else if( playbackSpeed == 1 ) {
+                playbackSpeed = -2;
+                }
+            else if( playbackSpeed < 0 ) {
+                /* twice as slow */
+                playbackSpeed *= 2;
+                }
+            }
         }
     
 
-    if( ! playbackStep() ) {
+    if( ! playbackSpeedStep() ) {
 
         if( playbackInterruptedRecording ) {
             /* playback has ended, resume recording */
@@ -2188,16 +2230,56 @@ static void playbackEnd( void ) {
     }
 
 
-static char playbackStep( void ) {
-    int curDataPos;
-    char success;
-    
+
+
+
+static int stepsSinceLastPlaybackStep = 0;
+
+static char playbackSpeedStep( void ) {
+    /* failure of a single step means failure of the whole thing */
+    char success = 1;
+
+        
     if( ! playbackRunning ) {
         return 0;
         }
 
     if( playbackPaused ) {
         return 1;
+        }
+    
+    if( playbackSpeed >= 1 ) {
+        int i;
+        /* we can't skip steps because diffs are accumulative  */
+        for( i=0; i<playbackSpeed; i++ ) {
+            success = success && playbackStep();
+            }
+        }
+    else if( playbackSpeed < 0 ) {
+        /* negative speeds mean fractional */
+        int stepsPerPlaybackStep = - playbackSpeed;
+
+        if( stepsSinceLastPlaybackStep >= stepsPerPlaybackStep ) {
+            success = success && playbackStep();
+            stepsSinceLastPlaybackStep = 0;
+            }
+        else {
+            stepsSinceLastPlaybackStep++;
+            }
+        }
+    
+    return success;
+    }
+
+
+
+static char playbackStep( void ) {
+        
+    int curDataPos;
+    char success;
+    
+    if( ! playbackRunning ) {
+        return 0;
         }
 
     /* 

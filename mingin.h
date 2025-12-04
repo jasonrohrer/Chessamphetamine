@@ -1493,22 +1493,22 @@ static void mn_reconfigureWindowSize( Display *inXDisplay ) {
 
 
 
-typedef struct XWindowSetup {
+typedef struct MinginXWindowSetup {
         Display *xDisplay;
         Window xWindow;
         int xScreen;
         XVisualInfo *xVisual;
         GLXContext glxContext;
-    } XWindowSetup;
+    } MinginXWindowSetup;
 
 
 
 /* returns 1 on success, 0 on failure */
-static char mn_openXWindow( XWindowSetup *inSetup ) {
+static char mn_openXWindow( MinginXWindowSetup *inSetup ) {
     long unsigned int xBlackColor;
     int glxAttributes[] = { GLX_RGBA, GLX_DOUBLEBUFFER, None };
 
-    XWindowSetup *s = inSetup;
+    MinginXWindowSetup *s = inSetup;
     
     s->xDisplay = XOpenDisplay( NULL );
 
@@ -1574,8 +1574,8 @@ static char mn_openXWindow( XWindowSetup *inSetup ) {
 
 
 
-static void mn_closeXWindow( XWindowSetup *inSetup ) {
-    XWindowSetup *s = inSetup;
+static void mn_closeXWindow( MinginXWindowSetup *inSetup ) {
+    MinginXWindowSetup *s = inSetup;
 
     XFree( s->xVisual );
     
@@ -1594,7 +1594,7 @@ static void mn_closeXWindow( XWindowSetup *inSetup ) {
         
 int main( void ) {
 
-    XWindowSetup xSetup;
+    MinginXWindowSetup xSetup;
     
 
     int b;

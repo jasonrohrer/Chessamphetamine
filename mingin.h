@@ -1101,14 +1101,15 @@ char minginPlatform_isButtonDown( MinginButton inButton );
 #define MINGIN_NUM_BUTTON_MAPPINGS 256
 #define MINGIN_MAX_BUTTON_MAPPING_ELEMENTS 32
 
-static MinginButton minginButtonMappings[ MINGIN_NUM_BUTTON_MAPPINGS ]
-                                        [ MINGIN_MAX_BUTTON_MAPPING_ELEMENTS ];
+static MinginButton mn_minginButtonMappings
+                        [ MINGIN_NUM_BUTTON_MAPPINGS ]
+                        [ MINGIN_MAX_BUTTON_MAPPING_ELEMENTS ];
 
 
 void minginInternal_init( void ) {
     int i;
     for( i=0; i< MINGIN_NUM_BUTTON_MAPPINGS; i++ ) {
-        minginButtonMappings[ i ][ 0 ] = MGN_MAP_END;
+        mn_minginButtonMappings[ i ][ 0 ] = MGN_MAP_END;
         }
     }
 
@@ -1132,12 +1133,12 @@ char mingin_registerButtonMapping( int inButtonHandle,
                end the mapping now */
             break;
             }
-        minginButtonMappings[ inButtonHandle ][i] = inMapping[i];
+        mn_minginButtonMappings[ inButtonHandle ][i] = inMapping[i];
         i++;
         }
     
     /* terminate */
-    minginButtonMappings[ inButtonHandle ][i] = MGN_MAP_END;
+    mn_minginButtonMappings[ inButtonHandle ][i] = MGN_MAP_END;
     
     
     
@@ -1152,9 +1153,9 @@ char mingin_isButtonDown( int inButtonHandle ) {
         return 0;
         }
     
-    while( minginButtonMappings[ inButtonHandle ][i] != MGN_MAP_END ) {
+    while( mn_minginButtonMappings[ inButtonHandle ][i] != MGN_MAP_END ) {
         if( minginPlatform_isButtonDown(
-                minginButtonMappings[ inButtonHandle ][i] ) ) {
+                mn_minginButtonMappings[ inButtonHandle ][i] ) ) {
             return 1;
             }
         i++;
@@ -1224,19 +1225,19 @@ char mingin_isButtonDown( int inButtonHandle ) {
 
 
 /* game's expected buffer is RGB */
-static unsigned char gameScreenBuffer[ MAX_WIN_W * MAX_WIN_H * 3 ];
+static unsigned char mn_gameScreenBuffer[ MAX_WIN_W * MAX_WIN_H * 3 ];
 
-static char shouldQuit = 0;
+static char mn_shouldQuit = 0;
 
-static int windowW = 0;
-static int windowH = 0;
+static int mn_windowW = 0;
+static int mn_windowH = 0;
 
-static char areWeInStepFunction = 0;
+static char mn_areWeInStepFunction = 0;
 
 
 
-static void getMonitorSize( Display *inXDisplay,
-                            int *outW, int *outH ) {
+static void mn_getMonitorSize( Display *inXDisplay,
+                               int *outW, int *outH ) {
     Window win = DefaultRootWindow( inXDisplay );
     XWindowAttributes getWinAttr;
     XGetWindowAttributes( inXDisplay, win, &getWinAttr );
@@ -1254,40 +1255,40 @@ int mingin_getStepsPerSecond( void ) {
 
 
 void mingin_quit( void ) {
-    if( ! areWeInStepFunction ) {
+    if( ! mn_areWeInStepFunction ) {
         mingin_log( "Error:  calling mingin_quit from "
                     "outside minginGame_step function\n" );
         return;
         }
-    shouldQuit = 1;
+    mn_shouldQuit = 1;
     }
 
-static char xFullscreen = 0;
+static char mn_xFullscreen = 0;
 
 char mingin_toggleFullscreen( char inFullscreen ) {
-    if( ! areWeInStepFunction ) {
+    if( ! mn_areWeInStepFunction ) {
         mingin_log( "Error:  calling mingin_toggleFullscreen from "
                     "outside minginGame_step function\n" );
         return 1;
         }
-    xFullscreen = inFullscreen;
+    mn_xFullscreen = inFullscreen;
     return 1;
     }
 
 char mingin_isFullscreen( void ) {
-    return xFullscreen;
+    return mn_xFullscreen;
     }
 
     
 
 /* memory for getLastButtonPressed call */
-static MinginButton lastButtonPressed = MGN_BUTTON_NONE;
+static MinginButton mn_lastButtonPressed = MGN_BUTTON_NONE;
 
 /* status tracking pressed/released state */
-static char buttonDown[ MGN_NUM_BUTTONS ];
+static char mn_buttonDown[ MGN_NUM_BUTTONS ];
 
 /* maps each Mingin key to an X11 XK_ keysym */
-static KeySym buttonToXKeyMap[ MGN_NUM_BUTTONS ];
+static KeySym mn_buttonToXKeyMap[ MGN_NUM_BUTTONS ];
 
 /* fixme:
    still need to handle controller input on Linux */
@@ -1298,7 +1299,7 @@ char minginPlatform_isButtonDown( MinginButton inButton ) {
         return 0;
         }
     
-    if( buttonDown[ inButton ] ) {
+    if( mn_buttonDown[ inButton ] ) {
         return 1;
         }
 
@@ -1306,7 +1307,7 @@ char minginPlatform_isButtonDown( MinginButton inButton ) {
         /* loop through entire list and see if anything is currently down */
         int i;
         for( i=0; i<MGN_NUM_BUTTONS; i++ ) {
-            if( buttonDown[i] ) {
+            if( mn_buttonDown[i] ) {
                 return 1;
                 }
             }
@@ -1316,10 +1317,10 @@ char minginPlatform_isButtonDown( MinginButton inButton ) {
     }
 
 
-static MinginButton mapXKeyToButton( KeySym inXKey ) {
+static MinginButton mn_mapXKeyToButton( KeySym inXKey ) {
     int i;
     for( i=0; i<MGN_NUM_BUTTONS; i++ ) {
-        if( buttonToXKeyMap[ i ] == inXKey ) {
+        if( mn_buttonToXKeyMap[ i ] == inXKey ) {
             return i;
             }
         }
@@ -1328,14 +1329,14 @@ static MinginButton mapXKeyToButton( KeySym inXKey ) {
 
 
 MinginButton mingin_getLastButtonPressed( void ) {
-    MinginButton last = lastButtonPressed;
-    lastButtonPressed = MGN_BUTTON_NONE;
+    MinginButton last = mn_lastButtonPressed;
+    mn_lastButtonPressed = MGN_BUTTON_NONE;
     return last;
     }
 
 
 
-static int stringLength( const char *inString ) {
+static int mn_stringLength( const char *inString ) {
     int i = 0;
     while( inString[i] != '\0' ) {
         i++;
@@ -1345,17 +1346,17 @@ static int stringLength( const char *inString ) {
         
 
 void mingin_log( const char *inString ) {
-    write( STDOUT_FILENO, inString, (unsigned int)stringLength( inString ) );
+    write( STDOUT_FILENO, inString, (unsigned int)mn_stringLength( inString ) );
     }
 
 
 
-static char intToStringBuffer[20];
+static char mn_intToStringBuffer[20];
 
 /*
-  Returns a static buffer that must be used before next call to intToString.
+  Returns a static buffer that must be used before next call to mn_intToString.
 */
-static const char *intToString( int inInt ) {
+static const char *mn_intToString( int inInt ) {
     unsigned int c = 0;
     /* start with billions */
     int divisor = 1000000000;
@@ -1368,7 +1369,7 @@ static const char *intToString( int inInt ) {
         return "0";
         }
     if( inInt < 0 ) {
-        intToStringBuffer[c] = '-';
+        mn_intToStringBuffer[c] = '-';
         c++;
         inInt *= -1;
         }
@@ -1378,12 +1379,12 @@ static const char *intToString( int inInt ) {
             if( q > 9 ) {
                 return formatError;
                 }
-            if( c >= sizeof( intToStringBuffer ) - 1 ) {
+            if( c >= sizeof( mn_intToStringBuffer ) - 1 ) {
                 /* out of room? */
                 return formatError;
                 }
             
-            intToStringBuffer[c] = (char)( '0' + q );
+            mn_intToStringBuffer[c] = (char)( '0' + q );
             c++;
             /* we've seen at least one non-zero digit,
                so start allowing zeros now */
@@ -1394,19 +1395,19 @@ static const char *intToString( int inInt ) {
         }
     
     /* terminate */
-    intToStringBuffer[c] = '\0';
+    mn_intToStringBuffer[c] = '\0';
     
-    return intToStringBuffer;  
+    return mn_intToStringBuffer;  
     }
 
 
 
-static void setupX11KeyMap( void );
+static void mn_setupX11KeyMap( void );
 
 
 
-static void xSetFullscreen( Display *inXDisplay, Window inXWindow,
-                            char inToggle ) {
+static void mn_xSetFullscreen( Display *inXDisplay, Window inXWindow,
+                               char inToggle ) {
     XEvent ev;
     Atom atom;
 
@@ -1426,18 +1427,18 @@ static void xSetFullscreen( Display *inXDisplay, Window inXWindow,
 
 
 /*
-  reconfigures based on xFullscreen and game's minimum viable screen size
+  reconfigures based on mn_xFullscreen and game's minimum viable screen size
 */
-static void reconfigureWindowSize( Display *inXDisplay ) {
-    if( xFullscreen ) {
-        getMonitorSize( inXDisplay, &windowW, &windowH );
+static void mn_reconfigureWindowSize( Display *inXDisplay ) {
+    if( mn_xFullscreen ) {
+        mn_getMonitorSize( inXDisplay, &mn_windowW, &mn_windowH );
         }
     else {
         int monW, monH;
         int gameW, gameH;
         int smallestMult;
         
-        getMonitorSize( inXDisplay, &monW, &monH );
+        mn_getMonitorSize( inXDisplay, &monW, &monH );
         minginGame_getMinimumViableScreenSize( &gameW, &gameH );
 
         if( monW < gameW || monH < gameH ) {
@@ -1445,8 +1446,8 @@ static void reconfigureWindowSize( Display *inXDisplay ) {
             physical monitor too small for game
             have window fill monitor
             */
-            windowW = monW;
-            windowH = monH;
+            mn_windowW = monW;
+            mn_windowH = monH;
             }
         else {
             /* monitor big enough for game */
@@ -1458,34 +1459,34 @@ static void reconfigureWindowSize( Display *inXDisplay ) {
                 smallestMult = hMult;
                 }
             
-            windowW = smallestMult * gameW;
-            windowH = smallestMult * gameH;
+            mn_windowW = smallestMult * gameW;
+            mn_windowH = smallestMult * gameH;
 
             while( smallestMult > 1 &&
-                ( windowW > ( 9 * monW ) / 10 ||
-                  windowH > ( 9 * monH ) / 10 ) ) {
+                ( mn_windowW > ( 9 * monW ) / 10 ||
+                  mn_windowH > ( 9 * monH ) / 10 ) ) {
 
                 /* window filling more than 90% of monitor, too big */
                 smallestMult --;
                 
-                windowW = smallestMult * gameW;
-                windowH = smallestMult * gameH;
+                mn_windowW = smallestMult * gameW;
+                mn_windowH = smallestMult * gameH;
                 }
             }
         }
     
     /* make sure we're never bigger than our statically allocated
        framebuffer */
-    if( windowW > MAX_WIN_W ) {
-        windowW = MAX_WIN_W;
+    if( mn_windowW > MAX_WIN_W ) {
+        mn_windowW = MAX_WIN_W;
         }
-    if( windowH > MAX_WIN_H ) {
-        windowH = MAX_WIN_H;
+    if( mn_windowH > MAX_WIN_H ) {
+        mn_windowH = MAX_WIN_H;
         }
     mingin_log( "Window = " );
-    mingin_log( intToString( windowW ) );
+    mingin_log( mn_intToString( mn_windowW ) );
     mingin_log( "," );
-    mingin_log( intToString( windowH ) );
+    mingin_log( mn_intToString( mn_windowH ) );
     mingin_log( "\n" );
     }
 
@@ -1502,7 +1503,7 @@ typedef struct XWindowSetup {
 
 
 /* returns 1 on success, 0 on failure */
-static char openXWindow( XWindowSetup *inSetup ) {
+static char mn_openXWindow( XWindowSetup *inSetup ) {
     long unsigned int xBlackColor;
     int glxAttributes[] = { GLX_RGBA, GLX_DOUBLEBUFFER, None };
 
@@ -1510,7 +1511,7 @@ static char openXWindow( XWindowSetup *inSetup ) {
     
     s->xDisplay = XOpenDisplay( NULL );
 
-    reconfigureWindowSize( s->xDisplay );
+    mn_reconfigureWindowSize( s->xDisplay );
 
     
     s->xScreen = DefaultScreen( s->xDisplay );
@@ -1530,7 +1531,7 @@ static char openXWindow( XWindowSetup *inSetup ) {
 
     s->xWindow = XCreateSimpleWindow(
         s->xDisplay, DefaultRootWindow( s->xDisplay ),
-        0, 0, (unsigned int)windowW, (unsigned int)windowH, 0,
+        0, 0, (unsigned int)mn_windowW, (unsigned int)mn_windowH, 0,
         xBlackColor, xBlackColor );
 
     
@@ -1562,7 +1563,7 @@ static char openXWindow( XWindowSetup *inSetup ) {
         }
 
     
-    xSetFullscreen( s->xDisplay, s->xWindow, xFullscreen );
+    mn_xSetFullscreen( s->xDisplay, s->xWindow, mn_xFullscreen );
 
     
     glXMakeCurrent( s->xDisplay, s->xWindow, s->glxContext );
@@ -1572,7 +1573,7 @@ static char openXWindow( XWindowSetup *inSetup ) {
 
 
 
-static void closeXWindow( XWindowSetup *inSetup ) {
+static void mn_closeXWindow( XWindowSetup *inSetup ) {
     XWindowSetup *s = inSetup;
 
     XFree( s->xVisual );
@@ -1598,7 +1599,7 @@ int main( void ) {
     int b;
 
     char currentlyFullscreen = 0;
-    xFullscreen = currentlyFullscreen;
+    mn_xFullscreen = currentlyFullscreen;
     
 
     mingin_log( "Linux mingin platform starting up\n" );
@@ -1608,21 +1609,21 @@ int main( void ) {
     minginInternal_init();
 
     for( b=0; b<MGN_NUM_BUTTONS; b++ ) {
-        buttonDown[b] = 0;
-        buttonToXKeyMap[b] = 0;
+        mn_buttonDown[b] = 0;
+        mn_buttonToXKeyMap[b] = 0;
         }
 
-    setupX11KeyMap();
+    mn_setupX11KeyMap();
     
 
-    if( ! openXWindow( &xSetup ) ) {
+    if( ! mn_openXWindow( &xSetup ) ) {
         mingin_log( "Opening X Window failed\n" );
         return 1;
         }
 
 
     
-    while( ! shouldQuit ) {
+    while( ! mn_shouldQuit ) {
         
         /* pump all events */
         while( XPending( xSetup.xDisplay ) > 0 ) {
@@ -1633,68 +1634,69 @@ int main( void ) {
                 
                 KeySym ks = XLookupKeysym( &(e.xkey), 0 );
                 
-                MinginButton button = mapXKeyToButton( ks );
+                MinginButton button = mn_mapXKeyToButton( ks );
                 
                 if( button > MGN_BUTTON_NONE ) {
-                    buttonDown[ button ] = 1;
+                    mn_buttonDown[ button ] = 1;
                     /* a new press to remember */
-                    lastButtonPressed = button;
+                    mn_lastButtonPressed = button;
                     }
                 }
             else if( e.type == KeyRelease ) {
                 KeySym ks = XLookupKeysym( &(e.xkey), 0 );
                 
-                MinginButton button = mapXKeyToButton( ks );
+                MinginButton button = mn_mapXKeyToButton( ks );
                 
                 if( button > MGN_BUTTON_NONE ) {
-                    buttonDown[ button ] = 0;
+                    mn_buttonDown[ button ] = 0;
                     }
                 }
             }
 
-        areWeInStepFunction = 1;
+        mn_areWeInStepFunction = 1;
 
         minginGame_step( 0 );
 
-        areWeInStepFunction = 0;
+        mn_areWeInStepFunction = 0;
         
         
-        if( shouldQuit ) {
+        if( mn_shouldQuit ) {
             /* mingin_quit called in the most recent step,
                so we can't call any minginGame_ functions again */
             break;
             }
         
         
-        minginGame_getScreenPixels( windowW, windowH, gameScreenBuffer );
+        minginGame_getScreenPixels( mn_windowW, mn_windowH,
+                                    mn_gameScreenBuffer );
 
         glRasterPos2f( -1, 1 );
         glPixelZoom( 1, -1 );
  
-        glDrawPixels( (GLsizei)windowW, (GLsizei)windowH,
-                      GL_RGB, GL_UNSIGNED_BYTE, gameScreenBuffer );
+        glDrawPixels( (GLsizei)mn_windowW, (GLsizei)mn_windowH,
+                      GL_RGB, GL_UNSIGNED_BYTE, mn_gameScreenBuffer );
 
         glXSwapBuffers( xSetup.xDisplay, xSetup.xWindow ); 
 
-        if( currentlyFullscreen != xFullscreen ) {
-            int oldW = windowW;
-            int oldH = windowH;
+        if( currentlyFullscreen != mn_xFullscreen ) {
+            int oldW = mn_windowW;
+            int oldH = mn_windowH;
 
-            reconfigureWindowSize( xSetup.xDisplay );
+            mn_reconfigureWindowSize( xSetup.xDisplay );
 
-            if( oldW != windowW ||
-                oldH != windowH ) {
+            if( oldW != mn_windowW ||
+                oldH != mn_windowH ) {
                 /* need to destroy and re-make window */
 
                 mingin_log( "Calling resize window with " );
-                mingin_log( intToString( windowW ) );
+                mingin_log( mn_intToString( mn_windowW ) );
                 mingin_log( "," );
-                mingin_log( intToString( windowH ) );
+                mingin_log( mn_intToString( mn_windowH ) );
                 mingin_log( "\n" );
 
-                closeXWindow( &xSetup );
+                mn_closeXWindow( &xSetup );
 
-                if( ! openXWindow( &xSetup ) ) {
+                if( ! mn_openXWindow( &xSetup ) ) {
                     mingin_log( "Failed to re-open X Window after toggling "
                                 "fullscreen mode\n" );
                     return 1;
@@ -1703,18 +1705,19 @@ int main( void ) {
             else {
                 /* same window size after fullscreen toggle,
                    no need to remake it */
-                xSetFullscreen( xSetup.xDisplay, xSetup.xWindow, xFullscreen );
+                mn_xSetFullscreen( xSetup.xDisplay, xSetup.xWindow,
+                                   mn_xFullscreen );
                 }
 
 
             
-            currentlyFullscreen = xFullscreen;
+            currentlyFullscreen = mn_xFullscreen;
 
             }
         }
 
     
-    closeXWindow( &xSetup );
+    mn_closeXWindow( &xSetup );
     
     
     return 1;
@@ -1722,183 +1725,183 @@ int main( void ) {
 
 
 
-static void setupX11KeyMap( void ) {
-    buttonToXKeyMap[ MGN_KEY_BACKSPACE ] = XK_BackSpace;
-    buttonToXKeyMap[ MGN_KEY_TAB ] = XK_Tab;
-    buttonToXKeyMap[ MGN_KEY_RETURN ] = XK_Return;
-    buttonToXKeyMap[ MGN_KEY_ESCAPE ] = XK_Escape;
-    buttonToXKeyMap[ MGN_KEY_DELETE ] = XK_Delete;
-    buttonToXKeyMap[ MGN_KEY_HOME ] = XK_Home;
-    buttonToXKeyMap[ MGN_KEY_LEFT ] = XK_Left;
-    buttonToXKeyMap[ MGN_KEY_UP ] = XK_Up;
-    buttonToXKeyMap[ MGN_KEY_RIGHT ] = XK_Right;
-    buttonToXKeyMap[ MGN_KEY_DOWN ] = XK_Down;
-    buttonToXKeyMap[ MGN_KEY_PAGE_UP ] = XK_Page_Up;
-    buttonToXKeyMap[ MGN_KEY_PAGE_DOWN ] = XK_Page_Down;
-    buttonToXKeyMap[ MGN_KEY_END ] = XK_End;
-    buttonToXKeyMap[ MGN_KEY_NUM_LOCK ] = XK_Num_Lock;
-    buttonToXKeyMap[ MGN_KEY_F1 ] = XK_F1;
-    buttonToXKeyMap[ MGN_KEY_F2 ] = XK_F2;
-    buttonToXKeyMap[ MGN_KEY_F3 ] = XK_F3;
-    buttonToXKeyMap[ MGN_KEY_F4 ] = XK_F4;
-    buttonToXKeyMap[ MGN_KEY_F5 ] = XK_F5;
-    buttonToXKeyMap[ MGN_KEY_F6 ] = XK_F6;
-    buttonToXKeyMap[ MGN_KEY_F7 ] = XK_F7;
-    buttonToXKeyMap[ MGN_KEY_F8 ] = XK_F8;
-    buttonToXKeyMap[ MGN_KEY_F9 ] = XK_F9;
-    buttonToXKeyMap[ MGN_KEY_F10 ] = XK_F10;
-    buttonToXKeyMap[ MGN_KEY_F11 ] = XK_F11;
-    buttonToXKeyMap[ MGN_KEY_F12 ] = XK_F12;
-    buttonToXKeyMap[ MGN_KEY_F13 ] = XK_F13;
-    buttonToXKeyMap[ MGN_KEY_F14 ] = XK_F14;
-    buttonToXKeyMap[ MGN_KEY_F15 ] = XK_F15;
-    buttonToXKeyMap[ MGN_KEY_F16 ] = XK_F16;
-    buttonToXKeyMap[ MGN_KEY_F17 ] = XK_F17;
-    buttonToXKeyMap[ MGN_KEY_F18 ] = XK_F18;
-    buttonToXKeyMap[ MGN_KEY_F19 ] = XK_F19;
-    buttonToXKeyMap[ MGN_KEY_F20 ] = XK_F20;
-    buttonToXKeyMap[ MGN_KEY_F21 ] = XK_F21;
-    buttonToXKeyMap[ MGN_KEY_F22 ] = XK_F22;
-    buttonToXKeyMap[ MGN_KEY_F23 ] = XK_F23;
-    buttonToXKeyMap[ MGN_KEY_F24 ] = XK_F24;
-    buttonToXKeyMap[ MGN_KEY_F25 ] = XK_F25;
-    buttonToXKeyMap[ MGN_KEY_F26 ] = XK_F26;
-    buttonToXKeyMap[ MGN_KEY_F27 ] = XK_F27;
-    buttonToXKeyMap[ MGN_KEY_F28 ] = XK_F28;
-    buttonToXKeyMap[ MGN_KEY_F29 ] = XK_F29;
-    buttonToXKeyMap[ MGN_KEY_F30 ] = XK_F30;
-    buttonToXKeyMap[ MGN_KEY_F31 ] = XK_F31;
-    buttonToXKeyMap[ MGN_KEY_F32 ] = XK_F32;
-    buttonToXKeyMap[ MGN_KEY_F33 ] = XK_F33;
-    buttonToXKeyMap[ MGN_KEY_F34 ] = XK_F34;
-    buttonToXKeyMap[ MGN_KEY_F35 ] = XK_F35;
-    buttonToXKeyMap[ MGN_KEY_SHIFT_L ] = XK_Shift_L;
-    buttonToXKeyMap[ MGN_KEY_SHIFT_R ] = XK_Shift_R;
-    buttonToXKeyMap[ MGN_KEY_CONTROL_L ] = XK_Control_L;
-    buttonToXKeyMap[ MGN_KEY_CONTROL_R ] = XK_Control_R;
-    buttonToXKeyMap[ MGN_KEY_CAPS_LOCK ] = XK_Caps_Lock;
-    buttonToXKeyMap[ MGN_KEY_META_L ] = XK_Meta_L;
-    buttonToXKeyMap[ MGN_KEY_META_R ] = XK_Meta_R;
-    buttonToXKeyMap[ MGN_KEY_ALT_L ] = XK_Alt_L;
-    buttonToXKeyMap[ MGN_KEY_ALT_R ] = XK_Alt_R;
-    buttonToXKeyMap[ MGN_KEY_SUPER_L ] = XK_Super_L;
-    buttonToXKeyMap[ MGN_KEY_SUPER_R ] = XK_Super_R;
-    buttonToXKeyMap[ MGN_KEY_SPACE ] = XK_space;
-    buttonToXKeyMap[ MGN_KEY_EXCLAMATION ] = XK_exclam;
-    buttonToXKeyMap[ MGN_KEY_DOUBLE_QUOTE ] = XK_quotedbl;
-    buttonToXKeyMap[ MGN_KEY_NUMBER_SIGN ] = XK_numbersign;
-    buttonToXKeyMap[ MGN_KEY_DOLLAR ] = XK_dollar;
-    buttonToXKeyMap[ MGN_KEY_PERCENT ] = XK_percent;
-    buttonToXKeyMap[ MGN_KEY_AMPERSAND ] = XK_ampersand;
-    buttonToXKeyMap[ MGN_KEY_APOSTROPHE ] = XK_apostrophe;
-    buttonToXKeyMap[ MGN_KEY_PAREN_L ] = XK_parenleft;
-    buttonToXKeyMap[ MGN_KEY_PAREN_R ] = XK_parenright;
-    buttonToXKeyMap[ MGN_KEY_ASTERISK ] = XK_asterisk;
-    buttonToXKeyMap[ MGN_KEY_PLUS ] = XK_plus;
-    buttonToXKeyMap[ MGN_KEY_COMMA ] = XK_comma;
-    buttonToXKeyMap[ MGN_KEY_MINUS ] = XK_minus;
-    buttonToXKeyMap[ MGN_KEY_PERIOD ] = XK_period;
-    buttonToXKeyMap[ MGN_KEY_SLASH ] = XK_slash;
-    buttonToXKeyMap[ MGN_KEY_0 ] = XK_0;
-    buttonToXKeyMap[ MGN_KEY_1 ] = XK_1;
-    buttonToXKeyMap[ MGN_KEY_2 ] = XK_2;
-    buttonToXKeyMap[ MGN_KEY_3 ] = XK_3;
-    buttonToXKeyMap[ MGN_KEY_4 ] = XK_4;
-    buttonToXKeyMap[ MGN_KEY_5 ] = XK_5;
-    buttonToXKeyMap[ MGN_KEY_6 ] = XK_6;
-    buttonToXKeyMap[ MGN_KEY_7 ] = XK_7;
-    buttonToXKeyMap[ MGN_KEY_8 ] = XK_8;
-    buttonToXKeyMap[ MGN_KEY_9 ] = XK_9;
-    buttonToXKeyMap[ MGN_KEY_COLON ] = XK_colon;
-    buttonToXKeyMap[ MGN_KEY_SEMICOLON ] = XK_semicolon;
-    buttonToXKeyMap[ MGN_KEY_LESS ] = XK_less;
-    buttonToXKeyMap[ MGN_KEY_EQUAL ] = XK_equal;
-    buttonToXKeyMap[ MGN_KEY_GREATER ] = XK_greater;
-    buttonToXKeyMap[ MGN_KEY_QUESTION ] = XK_question;
-    buttonToXKeyMap[ MGN_KEY_AT_SIGN ] = XK_at;
-    buttonToXKeyMap[ MGN_KEY_BRACKET_L ] = XK_bracketleft;
-    buttonToXKeyMap[ MGN_KEY_BACKSLASH ] = XK_backslash;
-    buttonToXKeyMap[ MGN_KEY_BRACKET_R ] = XK_bracketright;
-    buttonToXKeyMap[ MGN_KEY_CIRCUMFLEX ] = XK_asciicircum;
-    buttonToXKeyMap[ MGN_KEY_UNDERSCORE ] = XK_underscore;
-    buttonToXKeyMap[ MGN_KEY_BACK_TICK ] = XK_grave;
-    buttonToXKeyMap[ MGN_KEY_A ] = XK_a;
-    buttonToXKeyMap[ MGN_KEY_B ] = XK_b;
-    buttonToXKeyMap[ MGN_KEY_C ] = XK_c;
-    buttonToXKeyMap[ MGN_KEY_D ] = XK_d;
-    buttonToXKeyMap[ MGN_KEY_E ] = XK_e;
-    buttonToXKeyMap[ MGN_KEY_F ] = XK_f;
-    buttonToXKeyMap[ MGN_KEY_G ] = XK_g;
-    buttonToXKeyMap[ MGN_KEY_H ] = XK_h;
-    buttonToXKeyMap[ MGN_KEY_I ] = XK_i;
-    buttonToXKeyMap[ MGN_KEY_J ] = XK_j;
-    buttonToXKeyMap[ MGN_KEY_K ] = XK_k;
-    buttonToXKeyMap[ MGN_KEY_L ] = XK_l;
-    buttonToXKeyMap[ MGN_KEY_M ] = XK_m;
-    buttonToXKeyMap[ MGN_KEY_N ] = XK_n;
-    buttonToXKeyMap[ MGN_KEY_O ] = XK_o;
-    buttonToXKeyMap[ MGN_KEY_P ] = XK_p;
-    buttonToXKeyMap[ MGN_KEY_Q ] = XK_q;
-    buttonToXKeyMap[ MGN_KEY_R ] = XK_r;
-    buttonToXKeyMap[ MGN_KEY_S ] = XK_s;
-    buttonToXKeyMap[ MGN_KEY_T ] = XK_t;
-    buttonToXKeyMap[ MGN_KEY_U ] = XK_u;
-    buttonToXKeyMap[ MGN_KEY_V ] = XK_v;
-    buttonToXKeyMap[ MGN_KEY_W ] = XK_w;
-    buttonToXKeyMap[ MGN_KEY_X ] = XK_x;
-    buttonToXKeyMap[ MGN_KEY_Y ] = XK_y;
-    buttonToXKeyMap[ MGN_KEY_Z ] = XK_z;
-    buttonToXKeyMap[ MGN_KEY_BRACE_L ] = XK_braceleft;
-    buttonToXKeyMap[ MGN_KEY_VERTICAL_BAR ] = XK_bar;
-    buttonToXKeyMap[ MGN_KEY_BRACE_R ] = XK_braceright;
-    buttonToXKeyMap[ MGN_KEY_TILDE ] = XK_asciitilde;
+static void mn_setupX11KeyMap( void ) {
+    mn_buttonToXKeyMap[ MGN_KEY_BACKSPACE ] = XK_BackSpace;
+    mn_buttonToXKeyMap[ MGN_KEY_TAB ] = XK_Tab;
+    mn_buttonToXKeyMap[ MGN_KEY_RETURN ] = XK_Return;
+    mn_buttonToXKeyMap[ MGN_KEY_ESCAPE ] = XK_Escape;
+    mn_buttonToXKeyMap[ MGN_KEY_DELETE ] = XK_Delete;
+    mn_buttonToXKeyMap[ MGN_KEY_HOME ] = XK_Home;
+    mn_buttonToXKeyMap[ MGN_KEY_LEFT ] = XK_Left;
+    mn_buttonToXKeyMap[ MGN_KEY_UP ] = XK_Up;
+    mn_buttonToXKeyMap[ MGN_KEY_RIGHT ] = XK_Right;
+    mn_buttonToXKeyMap[ MGN_KEY_DOWN ] = XK_Down;
+    mn_buttonToXKeyMap[ MGN_KEY_PAGE_UP ] = XK_Page_Up;
+    mn_buttonToXKeyMap[ MGN_KEY_PAGE_DOWN ] = XK_Page_Down;
+    mn_buttonToXKeyMap[ MGN_KEY_END ] = XK_End;
+    mn_buttonToXKeyMap[ MGN_KEY_NUM_LOCK ] = XK_Num_Lock;
+    mn_buttonToXKeyMap[ MGN_KEY_F1 ] = XK_F1;
+    mn_buttonToXKeyMap[ MGN_KEY_F2 ] = XK_F2;
+    mn_buttonToXKeyMap[ MGN_KEY_F3 ] = XK_F3;
+    mn_buttonToXKeyMap[ MGN_KEY_F4 ] = XK_F4;
+    mn_buttonToXKeyMap[ MGN_KEY_F5 ] = XK_F5;
+    mn_buttonToXKeyMap[ MGN_KEY_F6 ] = XK_F6;
+    mn_buttonToXKeyMap[ MGN_KEY_F7 ] = XK_F7;
+    mn_buttonToXKeyMap[ MGN_KEY_F8 ] = XK_F8;
+    mn_buttonToXKeyMap[ MGN_KEY_F9 ] = XK_F9;
+    mn_buttonToXKeyMap[ MGN_KEY_F10 ] = XK_F10;
+    mn_buttonToXKeyMap[ MGN_KEY_F11 ] = XK_F11;
+    mn_buttonToXKeyMap[ MGN_KEY_F12 ] = XK_F12;
+    mn_buttonToXKeyMap[ MGN_KEY_F13 ] = XK_F13;
+    mn_buttonToXKeyMap[ MGN_KEY_F14 ] = XK_F14;
+    mn_buttonToXKeyMap[ MGN_KEY_F15 ] = XK_F15;
+    mn_buttonToXKeyMap[ MGN_KEY_F16 ] = XK_F16;
+    mn_buttonToXKeyMap[ MGN_KEY_F17 ] = XK_F17;
+    mn_buttonToXKeyMap[ MGN_KEY_F18 ] = XK_F18;
+    mn_buttonToXKeyMap[ MGN_KEY_F19 ] = XK_F19;
+    mn_buttonToXKeyMap[ MGN_KEY_F20 ] = XK_F20;
+    mn_buttonToXKeyMap[ MGN_KEY_F21 ] = XK_F21;
+    mn_buttonToXKeyMap[ MGN_KEY_F22 ] = XK_F22;
+    mn_buttonToXKeyMap[ MGN_KEY_F23 ] = XK_F23;
+    mn_buttonToXKeyMap[ MGN_KEY_F24 ] = XK_F24;
+    mn_buttonToXKeyMap[ MGN_KEY_F25 ] = XK_F25;
+    mn_buttonToXKeyMap[ MGN_KEY_F26 ] = XK_F26;
+    mn_buttonToXKeyMap[ MGN_KEY_F27 ] = XK_F27;
+    mn_buttonToXKeyMap[ MGN_KEY_F28 ] = XK_F28;
+    mn_buttonToXKeyMap[ MGN_KEY_F29 ] = XK_F29;
+    mn_buttonToXKeyMap[ MGN_KEY_F30 ] = XK_F30;
+    mn_buttonToXKeyMap[ MGN_KEY_F31 ] = XK_F31;
+    mn_buttonToXKeyMap[ MGN_KEY_F32 ] = XK_F32;
+    mn_buttonToXKeyMap[ MGN_KEY_F33 ] = XK_F33;
+    mn_buttonToXKeyMap[ MGN_KEY_F34 ] = XK_F34;
+    mn_buttonToXKeyMap[ MGN_KEY_F35 ] = XK_F35;
+    mn_buttonToXKeyMap[ MGN_KEY_SHIFT_L ] = XK_Shift_L;
+    mn_buttonToXKeyMap[ MGN_KEY_SHIFT_R ] = XK_Shift_R;
+    mn_buttonToXKeyMap[ MGN_KEY_CONTROL_L ] = XK_Control_L;
+    mn_buttonToXKeyMap[ MGN_KEY_CONTROL_R ] = XK_Control_R;
+    mn_buttonToXKeyMap[ MGN_KEY_CAPS_LOCK ] = XK_Caps_Lock;
+    mn_buttonToXKeyMap[ MGN_KEY_META_L ] = XK_Meta_L;
+    mn_buttonToXKeyMap[ MGN_KEY_META_R ] = XK_Meta_R;
+    mn_buttonToXKeyMap[ MGN_KEY_ALT_L ] = XK_Alt_L;
+    mn_buttonToXKeyMap[ MGN_KEY_ALT_R ] = XK_Alt_R;
+    mn_buttonToXKeyMap[ MGN_KEY_SUPER_L ] = XK_Super_L;
+    mn_buttonToXKeyMap[ MGN_KEY_SUPER_R ] = XK_Super_R;
+    mn_buttonToXKeyMap[ MGN_KEY_SPACE ] = XK_space;
+    mn_buttonToXKeyMap[ MGN_KEY_EXCLAMATION ] = XK_exclam;
+    mn_buttonToXKeyMap[ MGN_KEY_DOUBLE_QUOTE ] = XK_quotedbl;
+    mn_buttonToXKeyMap[ MGN_KEY_NUMBER_SIGN ] = XK_numbersign;
+    mn_buttonToXKeyMap[ MGN_KEY_DOLLAR ] = XK_dollar;
+    mn_buttonToXKeyMap[ MGN_KEY_PERCENT ] = XK_percent;
+    mn_buttonToXKeyMap[ MGN_KEY_AMPERSAND ] = XK_ampersand;
+    mn_buttonToXKeyMap[ MGN_KEY_APOSTROPHE ] = XK_apostrophe;
+    mn_buttonToXKeyMap[ MGN_KEY_PAREN_L ] = XK_parenleft;
+    mn_buttonToXKeyMap[ MGN_KEY_PAREN_R ] = XK_parenright;
+    mn_buttonToXKeyMap[ MGN_KEY_ASTERISK ] = XK_asterisk;
+    mn_buttonToXKeyMap[ MGN_KEY_PLUS ] = XK_plus;
+    mn_buttonToXKeyMap[ MGN_KEY_COMMA ] = XK_comma;
+    mn_buttonToXKeyMap[ MGN_KEY_MINUS ] = XK_minus;
+    mn_buttonToXKeyMap[ MGN_KEY_PERIOD ] = XK_period;
+    mn_buttonToXKeyMap[ MGN_KEY_SLASH ] = XK_slash;
+    mn_buttonToXKeyMap[ MGN_KEY_0 ] = XK_0;
+    mn_buttonToXKeyMap[ MGN_KEY_1 ] = XK_1;
+    mn_buttonToXKeyMap[ MGN_KEY_2 ] = XK_2;
+    mn_buttonToXKeyMap[ MGN_KEY_3 ] = XK_3;
+    mn_buttonToXKeyMap[ MGN_KEY_4 ] = XK_4;
+    mn_buttonToXKeyMap[ MGN_KEY_5 ] = XK_5;
+    mn_buttonToXKeyMap[ MGN_KEY_6 ] = XK_6;
+    mn_buttonToXKeyMap[ MGN_KEY_7 ] = XK_7;
+    mn_buttonToXKeyMap[ MGN_KEY_8 ] = XK_8;
+    mn_buttonToXKeyMap[ MGN_KEY_9 ] = XK_9;
+    mn_buttonToXKeyMap[ MGN_KEY_COLON ] = XK_colon;
+    mn_buttonToXKeyMap[ MGN_KEY_SEMICOLON ] = XK_semicolon;
+    mn_buttonToXKeyMap[ MGN_KEY_LESS ] = XK_less;
+    mn_buttonToXKeyMap[ MGN_KEY_EQUAL ] = XK_equal;
+    mn_buttonToXKeyMap[ MGN_KEY_GREATER ] = XK_greater;
+    mn_buttonToXKeyMap[ MGN_KEY_QUESTION ] = XK_question;
+    mn_buttonToXKeyMap[ MGN_KEY_AT_SIGN ] = XK_at;
+    mn_buttonToXKeyMap[ MGN_KEY_BRACKET_L ] = XK_bracketleft;
+    mn_buttonToXKeyMap[ MGN_KEY_BACKSLASH ] = XK_backslash;
+    mn_buttonToXKeyMap[ MGN_KEY_BRACKET_R ] = XK_bracketright;
+    mn_buttonToXKeyMap[ MGN_KEY_CIRCUMFLEX ] = XK_asciicircum;
+    mn_buttonToXKeyMap[ MGN_KEY_UNDERSCORE ] = XK_underscore;
+    mn_buttonToXKeyMap[ MGN_KEY_BACK_TICK ] = XK_grave;
+    mn_buttonToXKeyMap[ MGN_KEY_A ] = XK_a;
+    mn_buttonToXKeyMap[ MGN_KEY_B ] = XK_b;
+    mn_buttonToXKeyMap[ MGN_KEY_C ] = XK_c;
+    mn_buttonToXKeyMap[ MGN_KEY_D ] = XK_d;
+    mn_buttonToXKeyMap[ MGN_KEY_E ] = XK_e;
+    mn_buttonToXKeyMap[ MGN_KEY_F ] = XK_f;
+    mn_buttonToXKeyMap[ MGN_KEY_G ] = XK_g;
+    mn_buttonToXKeyMap[ MGN_KEY_H ] = XK_h;
+    mn_buttonToXKeyMap[ MGN_KEY_I ] = XK_i;
+    mn_buttonToXKeyMap[ MGN_KEY_J ] = XK_j;
+    mn_buttonToXKeyMap[ MGN_KEY_K ] = XK_k;
+    mn_buttonToXKeyMap[ MGN_KEY_L ] = XK_l;
+    mn_buttonToXKeyMap[ MGN_KEY_M ] = XK_m;
+    mn_buttonToXKeyMap[ MGN_KEY_N ] = XK_n;
+    mn_buttonToXKeyMap[ MGN_KEY_O ] = XK_o;
+    mn_buttonToXKeyMap[ MGN_KEY_P ] = XK_p;
+    mn_buttonToXKeyMap[ MGN_KEY_Q ] = XK_q;
+    mn_buttonToXKeyMap[ MGN_KEY_R ] = XK_r;
+    mn_buttonToXKeyMap[ MGN_KEY_S ] = XK_s;
+    mn_buttonToXKeyMap[ MGN_KEY_T ] = XK_t;
+    mn_buttonToXKeyMap[ MGN_KEY_U ] = XK_u;
+    mn_buttonToXKeyMap[ MGN_KEY_V ] = XK_v;
+    mn_buttonToXKeyMap[ MGN_KEY_W ] = XK_w;
+    mn_buttonToXKeyMap[ MGN_KEY_X ] = XK_x;
+    mn_buttonToXKeyMap[ MGN_KEY_Y ] = XK_y;
+    mn_buttonToXKeyMap[ MGN_KEY_Z ] = XK_z;
+    mn_buttonToXKeyMap[ MGN_KEY_BRACE_L ] = XK_braceleft;
+    mn_buttonToXKeyMap[ MGN_KEY_VERTICAL_BAR ] = XK_bar;
+    mn_buttonToXKeyMap[ MGN_KEY_BRACE_R ] = XK_braceright;
+    mn_buttonToXKeyMap[ MGN_KEY_TILDE ] = XK_asciitilde;
     }
 
 
 
 #define MINGIN_LINUX_MAX_PATH_LEN 255
-static char minginLinuxPathBuffer[ MINGIN_LINUX_MAX_PATH_LEN + 1 ];
+static char mn_minginLinuxPathBuffer[ MINGIN_LINUX_MAX_PATH_LEN + 1 ];
 
-static char *linuxGetFilePath( const char *inFolderName,
-                               const char *inFileName ) {
+static char *mn_linuxGetFilePath( const char *inFolderName,
+                                  const char *inFileName ) {
     int i = 0;
     int j = 0;
     while( i < MINGIN_LINUX_MAX_PATH_LEN &&
            inFolderName[i] != '\0' ) {
-        minginLinuxPathBuffer[i] = inFolderName[i];
+        mn_minginLinuxPathBuffer[i] = inFolderName[i];
         i++;
         }
     /* now separator */
     if( i < MINGIN_LINUX_MAX_PATH_LEN ) {
-        minginLinuxPathBuffer[i] = '/';
+        mn_minginLinuxPathBuffer[i] = '/';
         i++;
         }
     while( i < MINGIN_LINUX_MAX_PATH_LEN &&
            inFileName[j] != '\0' ) {
-        minginLinuxPathBuffer[i] = inFileName[j];
+        mn_minginLinuxPathBuffer[i] = inFileName[j];
         i++;
         j++;
         }
 
     /* now terminate */
     if( i < MINGIN_LINUX_MAX_PATH_LEN ) {
-        minginLinuxPathBuffer[i] = '\0';
+        mn_minginLinuxPathBuffer[i] = '\0';
         }
     
-    return minginLinuxPathBuffer;
+    return mn_minginLinuxPathBuffer;
     }
 
 
 #include <fcntl.h>
 #include <sys/stat.h>
 
-static int linuxFileOpenRead( const char *inFolderName,
+static int mn_linuxFileOpenRead( const char *inFolderName,
                               const char *inFileName,
                               int *outTotalBytes ) {
     struct stat statStruct;
     int fd;
     
-    char *path = linuxGetFilePath( inFolderName, inFileName );
+    char *path = mn_linuxGetFilePath( inFolderName, inFileName );
 
     *outTotalBytes = 0;
     
@@ -1916,8 +1919,8 @@ static int linuxFileOpenRead( const char *inFolderName,
     }
 
 
-static int linuxFileOpenWrite( const char *inFolderName,
-                               const char *inFileName ) {
+static int mn_linuxFileOpenWrite( const char *inFolderName,
+                                  const char *inFileName ) {
     /* make sure folder exists */
     struct stat statStruct;
     char folderExists = 0;
@@ -1933,7 +1936,7 @@ static int linuxFileOpenWrite( const char *inFolderName,
             }
         }
     if( folderExists ) {
-        char *path = linuxGetFilePath( inFolderName, inFileName );
+        char *path = mn_linuxGetFilePath( inFolderName, inFileName );
 
         int fd = open( path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU );
 
@@ -1946,8 +1949,8 @@ static int linuxFileOpenWrite( const char *inFolderName,
 
 
 
-static char linuxFileWrite( int inFD, int inNumBytesToWrite,
-                            const unsigned char *inByteBuffer ) {
+static char mn_linuxFileWrite( int inFD, int inNumBytesToWrite,
+                               const unsigned char *inByteBuffer ) {
     
     int numWritten = 0;
     
@@ -1969,8 +1972,8 @@ static char linuxFileWrite( int inFD, int inNumBytesToWrite,
 
 
 
-static int linuxFileRead( int inFD, int inNumBytesToRead,
-                          unsigned char *inByteBuffer ) {
+static int mn_linuxFileRead( int inFD, int inNumBytesToRead,
+                             unsigned char *inByteBuffer ) {
     int numRead = 0;
     
     while( numRead < inNumBytesToRead ) {
@@ -1995,7 +1998,7 @@ static int linuxFileRead( int inFD, int inNumBytesToRead,
 
 
 
-static char linuxFileSeek( int inFD, int inAbsoluteBytePosition ) {
+static char mn_linuxFileSeek( int inFD, int inAbsoluteBytePosition ) {
     off_t offset = lseek( inFD, inAbsoluteBytePosition, SEEK_SET );
     if( offset == (off_t)-1 ) {
         return 0;
@@ -2005,7 +2008,7 @@ static char linuxFileSeek( int inFD, int inAbsoluteBytePosition ) {
 
 
 
-static int linuxFileGetPos( int inFD ) {
+static int mn_linuxFileGetPos( int inFD ) {
     off_t offset = lseek( inFD, 0, SEEK_CUR );
     if( offset == (off_t)-1 ) {
         return -1;
@@ -2015,21 +2018,21 @@ static int linuxFileGetPos( int inFD ) {
 
 
 int mingin_startWritePersistData( const char *inStoreName ) {
-    return linuxFileOpenWrite( "settings", inStoreName );
+    return mn_linuxFileOpenWrite( "settings", inStoreName );
     }
 
 
 
 int mingin_startReadPersistData( const char *inStoreName,
                                  int *outTotalBytes ) {
-    return linuxFileOpenRead( "settings", inStoreName, outTotalBytes );
+    return mn_linuxFileOpenRead( "settings", inStoreName, outTotalBytes );
     }
 
 
 
 char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
                               const unsigned char *inByteBuffer ) {
-    return linuxFileWrite( inStoreWriteHandle, inNumBytesToWrite,
+    return mn_linuxFileWrite( inStoreWriteHandle, inNumBytesToWrite,
                            inByteBuffer );
     }
 
@@ -2038,20 +2041,20 @@ char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
 int mingin_readPersistData( int inStoreReadHandle, int inNumBytesToRead,
                             unsigned char *inByteBuffer ) {
 
-    return linuxFileRead( inStoreReadHandle, inNumBytesToRead, inByteBuffer );
+    return mn_linuxFileRead( inStoreReadHandle, inNumBytesToRead, inByteBuffer );
     }
 
 
 
 char mingin_seekPersistData( int inStoreReadHandle,
                              int inAbsoluteBytePosition ) {
-    return linuxFileSeek( inStoreReadHandle, inAbsoluteBytePosition );
+    return mn_linuxFileSeek( inStoreReadHandle, inAbsoluteBytePosition );
     }
 
 
 
 int mingin_getPersistDataPosition( int inStoreReadHandle ) {
-    return linuxFileGetPos( inStoreReadHandle );
+    return mn_linuxFileGetPos( inStoreReadHandle );
     }
 
 
@@ -2069,7 +2072,7 @@ void mingin_endReadPersistData( int inStoreReadHandle ) {
 
 void mingin_deletePersistData( const char *inStoreName ) {
     
-    char *path = linuxGetFilePath( "settings", inStoreName );
+    char *path = mn_linuxGetFilePath( "settings", inStoreName );
     
     unlink( path );
     }
@@ -2079,7 +2082,7 @@ void mingin_deletePersistData( const char *inStoreName ) {
 
 int mingin_startReadBulkData( const char *inBulkName,
                               int *outTotalBytes ) {
-    return linuxFileOpenRead( "data", inBulkName, outTotalBytes );
+    return mn_linuxFileOpenRead( "data", inBulkName, outTotalBytes );
     }
 
 
@@ -2087,7 +2090,7 @@ int mingin_startReadBulkData( const char *inBulkName,
 int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
                          unsigned char *inByteBuffer ) {
     
-    return linuxFileRead( inBulkDataHandle, inNumBytesToRead, inByteBuffer );
+    return mn_linuxFileRead( inBulkDataHandle, inNumBytesToRead, inByteBuffer );
     }
 
 
@@ -2095,13 +2098,13 @@ int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
 
 char mingin_seekBulkData( int inBulkDataHandle,
                           int inAbsoluteBytePosition ) {
-    return linuxFileSeek( inBulkDataHandle, inAbsoluteBytePosition );
+    return mn_linuxFileSeek( inBulkDataHandle, inAbsoluteBytePosition );
     }
 
 
 
 int mingin_getBulkDataPosition( int inBulkDataHandle ) {
-    return linuxFileGetPos( inBulkDataHandle );
+    return mn_linuxFileGetPos( inBulkDataHandle );
     }
 
 
@@ -2152,9 +2155,9 @@ void mingin_endReadBulkData( int inBulkDataHandle ) {
 #define DUMMY_SCREEN_W 640
 #define DUMMY_SCREEN_H 480
 
-static unsigned char dummyScreenBuffer[ DUMMY_SCREEN_W * DUMMY_SCREEN_H * 3 ];
+static unsigned char mn_dummyScreenBuffer[ DUMMY_SCREEN_W * DUMMY_SCREEN_H * 3 ];
 
-static int gotQuit = 0;
+static int mn_gotQuit = 0;
 
 
 
@@ -2162,7 +2165,7 @@ int main( void ) {
 
     minginInternal_init();
     
-    while( ! gotQuit ) {
+    while( ! mn_gotQuit ) {
         
         /* don't ask about the minimum screen size */
         
@@ -2170,7 +2173,7 @@ int main( void ) {
         
         /* ask for screen pixels and do nothing with them */
         minginGame_getScreenPixels( DUMMY_SCREEN_W, DUMMY_SCREEN_H,
-                                    dummyScreenBuffer );
+                                    mn_dummyScreenBuffer );
 
         /* don't even bother asking for game audio samples */
         }
@@ -2191,7 +2194,7 @@ int mingin_getStepsPerSecond( void ) {
 
 
 void mingin_quit( void ) {
-    gotQuit = 1;
+    mn_gotQuit = 1;
     }
 
 

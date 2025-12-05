@@ -1177,23 +1177,24 @@ static char mx_readStringFromPersistData( int inStoreReadHandle,
 
 
 
-#define MAXIGIN_READ_SHORT_STRING_LEN 64
-static char mx_shortStringReadBuffer[ MAXIGIN_READ_SHORT_STRING_LEN ];
 
 /*
   Reads a \0-terminated short string (< 63 chars long) into a static buffer.
 
-   Returns 0 on failure.
+  Returns 0 on failure.
 */
 static const char *mx_readShortStringFromPersistData( int inStoreReadHandle ) {
+
+    enum{         BUFFER_LEN            =  64 };
+    static  char  buffer[ BUFFER_LEN ];
+            char  success;
+            
     
-    char success = mx_readStringFromPersistData(
-        inStoreReadHandle,
-        MAXIGIN_READ_SHORT_STRING_LEN,
-        mx_shortStringReadBuffer );
-    
+    success = mx_readStringFromPersistData( inStoreReadHandle,
+                                            BUFFER_LEN,
+                                            buffer );
     if( success ) {
-        return mx_shortStringReadBuffer;
+        return buffer;
         }
     else {
         return 0;
@@ -1622,9 +1623,9 @@ static int mx_diffsBetweenSnapshots = 60;
 
 
 static void mx_copyMemoryIntoRecordingBuffer( int inIndex ) {
-    int b = 0;
-    int r = 0;
-    unsigned char *buffer = mx_recordingBuffers[ inIndex ];
+    int             r;
+    int             b       =  0;
+    unsigned char  *buffer  =  mx_recordingBuffers[ inIndex ];
     
     if( ! mx_diffRecordingEnabled ) {
         return;
@@ -1895,20 +1896,21 @@ static void mx_recordMemoryDiff( void ) {
     }
 
 
+
 /*
   Restores memory from diff at current position in a data store.
 
   Returns 1 on success, 0 on failure.
 */
 static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
-    char success;
-    int readInt;
-    int curRecord = 0;
-    int curRecordByte = 0;
-    unsigned char *curRecordPointer = 0;
-    
-    int numRead;
-    int startPos;
+    /* I learned it by watching you, John */
+    char            success;
+    int             readInt;
+    int             curRecord         =  0;
+    int             curRecordByte     =  0;
+    unsigned char  *curRecordPointer;
+    int             numRead;
+    int             startPos;
     
     
     if( ! mx_checkHeader( inStoreReadHandle, 'D' ) ) {

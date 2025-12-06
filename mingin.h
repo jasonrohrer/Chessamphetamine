@@ -1036,7 +1036,7 @@ void mingin_endReadBulkData( int inBulkDataHandle );
 
   [jumpPlatformCalls]
 */
-void minginInternal_init( void );
+static void minginInternal_init( void );
 
 
 
@@ -1049,7 +1049,7 @@ void minginInternal_init( void );
   
   [jumpPlatformRequired]
 */
-char minginPlatform_isButtonDown( MinginButton inButton );
+static char minginPlatform_isButtonDown( MinginButton inButton );
 
 
 
@@ -1106,7 +1106,7 @@ static MinginButton mn_minginButtonMappings
                         [ MINGIN_MAX_BUTTON_MAPPING_ELEMENTS ];
 
 
-void minginInternal_init( void ) {
+static void minginInternal_init( void ) {
     int i;
     for( i=0; i< MINGIN_NUM_BUTTON_MAPPINGS; i++ ) {
         mn_minginButtonMappings[ i ][ 0 ] = MGN_MAP_END;
@@ -1294,7 +1294,7 @@ static KeySym mn_buttonToXKeyMap[ MGN_NUM_BUTTONS ];
 /* fixme:
    still need to handle controller input on Linux */
 
-char minginPlatform_isButtonDown( MinginButton inButton ) {
+static char minginPlatform_isButtonDown( MinginButton inButton ) {
     if( inButton <= MGN_BUTTON_NONE ||
         inButton >= MGN_DUMMY_LAST_BUTTON ) {
         return 0;
@@ -2202,7 +2202,7 @@ void mingin_quit( void ) {
 
 
 
-char minginPlatform_isButtonDown( MinginButton inButton ) {
+static char minginPlatform_isButtonDown( MinginButton inButton ) {
     /* suppress warning */
     if( inButton == MGN_BUTTON_NONE ) {
         }

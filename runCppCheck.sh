@@ -1,0 +1,1 @@
+cppcheck --template='{file}:{line}:{severity}:{message}' --enable=all --quiet game.c

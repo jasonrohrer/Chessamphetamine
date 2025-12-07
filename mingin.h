@@ -260,7 +260,8 @@ void minginGame_step( char inFinalStep );
   
   [jumpGameRequired]
 */
-void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh );
+void minginGame_getMinimumViableScreenSize( int  *outWide,
+                                            int  *outHigh );
 
 
 
@@ -285,8 +286,9 @@ void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh );
 
   [jumpGameRequired]
 */
-void minginGame_getScreenPixels( int inWide, int inHigh,
-                                 unsigned char *inRGBBuffer );
+void minginGame_getScreenPixels( int             inWide,
+                                 int             inHigh,
+                                 unsigned char  *inRGBBuffer );
 
 
 
@@ -309,10 +311,10 @@ void minginGame_getScreenPixels( int inWide, int inHigh,
   
   [jumpGameRequired]
 */
-void minginGame_getAudioSamples( int inNumSamples,
-                                 int inNumChannels,
-                                 int inSamplesPerSecond,
-                                 unsigned char *inSampleBuffer );
+void minginGame_getAudioSamples( int             inNumSamples,
+                                 int             inNumChannels,
+                                 int             inSamplesPerSecond,
+                                 unsigned char  *inSampleBuffer );
 
 
 
@@ -613,8 +615,8 @@ typedef enum MinginButton {
 
   [jumpMinginProvides]
 */
-char mingin_registerButtonMapping( int inButtonHandle,
-                                   const MinginButton inMapping[] );
+char mingin_registerButtonMapping(        int           inButtonHandle,
+                                   const  MinginButton  inMapping[] );
 
 
 
@@ -669,8 +671,10 @@ MinginButton mingin_getLastButtonPressed( void );
 
   [jumpMinginProvides]
 */
-char mingin_getPointerLocation( int *outX, int *outY,
-                                int *outMaxX, int *outMaxY );
+char mingin_getPointerLocation( int  *outX,
+                                int  *outY,
+                                int  *outMaxX,
+                                int  *outMaxY );
 
 
 
@@ -708,8 +712,8 @@ typedef enum MinginStick {
 
   [jumpMinginProvides]
 */
-void mingin_registerStickAxis( int inStickAxisHandle,
-                               const MinginStick inMapping[] );
+void mingin_registerStickAxis(        int          inStickAxisHandle,
+                               const  MinginStick  inMapping[] );
 
 
 
@@ -723,10 +727,10 @@ void mingin_registerStickAxis( int inStickAxisHandle,
 
   [jumpMinginProvides]
 */
-char mingin_getStickPosition( int inStickAxisHandle,
-                              int *outPosition,
-                              int *outLowerLimit,
-                              int *outUpperLimit );
+char mingin_getStickPosition( int   inStickAxisHandle,
+                              int  *outPosition,
+                              int  *outLowerLimit,
+                              int  *outUpperLimit );
 
 
 
@@ -799,8 +803,8 @@ int mingin_startWritePersistData( const char *inStoreName );
   
   [jumpMinginProvides]
 */
-int mingin_startReadPersistData( const char *inStoreName,
-                                 int *outTotalBytes );
+int mingin_startReadPersistData( const  char  *inStoreName,
+                                        int   *outTotalBytes );
 
 
 
@@ -811,8 +815,9 @@ int mingin_startReadPersistData( const char *inStoreName,
   
   [jumpMinginProvides]
 */
-char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
-                              const unsigned char *inByteBuffer );
+char mingin_writePersistData(        int             inStoreWriteHandle,
+                                     int             inNumBytesToWrite,
+                              const  unsigned char  *inByteBuffer );
 
 
 
@@ -826,8 +831,9 @@ char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
   
   [jumpMinginProvides]
 */
-int mingin_readPersistData( int inStoreReadHandle, int inNumBytesToRead,
-                            unsigned char *inByteBuffer );
+int mingin_readPersistData( int             inStoreReadHandle,
+                            int             inNumBytesToRead,
+                            unsigned char  *inByteBuffer );
 
 
 
@@ -840,8 +846,8 @@ int mingin_readPersistData( int inStoreReadHandle, int inNumBytesToRead,
   
   [jumpMinginProvides]
 */
-char mingin_seekPersistData( int inStoreReadHandle,
-                             int inAbsoluteBytePosition );
+char mingin_seekPersistData( int  inStoreReadHandle,
+                             int  inAbsoluteBytePosition );
 
 
 
@@ -894,8 +900,8 @@ void mingin_deletePersistData( const char *inStoreName );
   
   [jumpMinginProvides]
 */
-int mingin_startReadBulkData( const char *inBulkName,
-                              int *outTotalBytes );
+int mingin_startReadBulkData( const  char  *inBulkName,
+                                     int   *outTotalBytes );
 
 
 
@@ -909,8 +915,9 @@ int mingin_startReadBulkData( const char *inBulkName,
   
   [jumpMinginProvides]
 */
-int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
-                         unsigned char *inByteBuffer );
+int mingin_readBulkData( int             inBulkDataHandle,
+                         int             inNumBytesToRead,
+                         unsigned char  *inByteBuffer );
 
 
 
@@ -923,8 +930,8 @@ int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
   
   [jumpMinginProvides]
 */
-char mingin_seekBulkData( int inBulkDataHandle,
-                          int inAbsoluteBytePosition );
+char mingin_seekBulkData( int  inBulkDataHandle,
+                          int  inAbsoluteBytePosition );
 
 
 
@@ -1098,36 +1105,45 @@ static char minginPlatform_isButtonDown( MinginButton inButton );
 
 
 
-#define MINGIN_NUM_BUTTON_MAPPINGS 256
-#define MINGIN_MAX_BUTTON_MAPPING_ELEMENTS 32
+#define MINGIN_NUM_BUTTON_MAPPINGS          256
+#define MINGIN_MAX_BUTTON_MAPPING_ELEMENTS  32
 
 static MinginButton mn_minginButtonMappings
-                        [ MINGIN_NUM_BUTTON_MAPPINGS ]
+                        [ MINGIN_NUM_BUTTON_MAPPINGS         ]
                         [ MINGIN_MAX_BUTTON_MAPPING_ELEMENTS ];
 
 
+
 static void minginInternal_init( void ) {
-    int i;
-    for( i=0; i< MINGIN_NUM_BUTTON_MAPPINGS; i++ ) {
+
+    int i = 0;
+
+    while( i < MINGIN_NUM_BUTTON_MAPPINGS ) {
         mn_minginButtonMappings[ i ][ 0 ] = MGN_MAP_END;
+        i++;
         }
     }
 
 
-char mingin_registerButtonMapping( int inButtonHandle,
-                                   const MinginButton inMapping[] ) {
+
+char mingin_registerButtonMapping(        int           inButtonHandle,
+                                   const  MinginButton  inMapping[] ) {
     int i = 0;
     
-    if( inButtonHandle < 0 || inButtonHandle >= MINGIN_NUM_BUTTON_MAPPINGS ) {
+    if( inButtonHandle < 0
+        ||
+        inButtonHandle >= MINGIN_NUM_BUTTON_MAPPINGS ) {
+        
         return 0;
         }
 
     /* leave room at end of our internal mapping for MGN_MAP_END */
     while( i < MINGIN_MAX_BUTTON_MAPPING_ELEMENTS - 1
            &&
-           inMapping[ i ] != MGN_MAP_END ) {
+           inMapping[i] != MGN_MAP_END ) {
 
-        if( inMapping[i] <= MGN_BUTTON_NONE ||
+        if( inMapping[i] <= MGN_BUTTON_NONE
+            ||
             inMapping[i] >= MGN_DUMMY_LAST_BUTTON ) {
             /* out of enum range
                end the mapping now */
@@ -1140,16 +1156,19 @@ char mingin_registerButtonMapping( int inButtonHandle,
     /* terminate */
     mn_minginButtonMappings[ inButtonHandle ][i] = MGN_MAP_END;
     
-    
-    
     return 1;
     }
 
 
+
 char mingin_isButtonDown( int inButtonHandle ) {
+
     int i = 0;
     
-    if( inButtonHandle < 0 || inButtonHandle >= MINGIN_NUM_BUTTON_MAPPINGS ) {
+    if( inButtonHandle < 0
+        ||
+        inButtonHandle >= MINGIN_NUM_BUTTON_MAPPINGS ) {
+        
         return 0;
         }
     
@@ -1205,13 +1224,14 @@ char mingin_isButtonDown( int inButtonHandle ) {
 
 
 
-#define MINGIN_LINUX_MAX_WIN_W 4096
-#define MINGIN_LINUX_MAX_WIN_H 2160
+#define MINGIN_LINUX_MAX_WIN_W   4096
+#define MINGIN_LINUX_MAX_WIN_H   2160
 
-#define MINGIN_LINUX_TARGET_FPS 60
+#define MINGIN_LINUX_TARGET_FPS  60
 
 /* needed for nanosleep in time.h */
-#define _POSIX_C_SOURCE 199309L 
+#define _POSIX_C_SOURCE          199309L
+
 #include <time.h>
 
 #include <X11/Xlib.h>
@@ -1228,31 +1248,33 @@ char mingin_isButtonDown( int inButtonHandle ) {
 static unsigned char mn_gameScreenBuffer[ MINGIN_LINUX_MAX_WIN_W *
                                           MINGIN_LINUX_MAX_WIN_H * 3 ];
 
-static char mn_shouldQuit = 0;
-
-static int mn_windowW = 0;
-static int mn_windowH = 0;
-
-static char mn_areWeInStepFunction = 0;
-
+static  char  mn_shouldQuit           =  0;
+static  int   mn_windowW              =  0;
+static  int   mn_windowH              =  0;
+static  char  mn_areWeInStepFunction  =  0;
+static  char  mn_xFullscreen          =  0;
 
 
-static void mn_getMonitorSize( Display *inXDisplay,
-                               int *outW, int *outH ) {
-    Window win = DefaultRootWindow( inXDisplay );
-    XWindowAttributes getWinAttr;
-    XGetWindowAttributes( inXDisplay, win, &getWinAttr );
 
-    *outW = getWinAttr.width;
-    *outH = getWinAttr.height;
+static void mn_getMonitorSize( Display  *inXDisplay,
+                               int      *outW,
+                               int      *outH ) {
+    
+    Window             win      =  DefaultRootWindow( inXDisplay );
+    XWindowAttributes  winAttr;
+    
+    XGetWindowAttributes( inXDisplay, win, &winAttr );
+
+    *outW = winAttr.width;
+    *outH = winAttr.height;
     }
-
 
 
 
 int mingin_getStepsPerSecond( void ) {
     return MINGIN_LINUX_TARGET_FPS;
     }
+
 
 
 void mingin_quit( void ) {
@@ -1264,7 +1286,7 @@ void mingin_quit( void ) {
     mn_shouldQuit = 1;
     }
 
-static char mn_xFullscreen = 0;
+
 
 char mingin_toggleFullscreen( char inFullscreen ) {
     if( ! mn_areWeInStepFunction ) {
@@ -1276,6 +1298,8 @@ char mingin_toggleFullscreen( char inFullscreen ) {
     return 1;
     }
 
+
+
 char mingin_isFullscreen( void ) {
     return mn_xFullscreen;
     }
@@ -1283,19 +1307,24 @@ char mingin_isFullscreen( void ) {
     
 
 /* memory for getLastButtonPressed call */
-static MinginButton mn_lastButtonPressed = MGN_BUTTON_NONE;
+static  MinginButton  mn_lastButtonPressed  =  MGN_BUTTON_NONE;
 
 /* status tracking pressed/released state */
-static char mn_buttonDown[ MGN_NUM_BUTTONS ];
+static  char          mn_buttonDown[ MGN_NUM_BUTTONS ];
 
 /* maps each Mingin key to an X11 XK_ keysym */
-static KeySym mn_buttonToXKeyMap[ MGN_NUM_BUTTONS ];
+static  KeySym        mn_buttonToXKeyMap[ MGN_NUM_BUTTONS ];
+
 
 /* fixme:
    still need to handle controller input on Linux */
 
+
+
 static char minginPlatform_isButtonDown( MinginButton inButton ) {
-    if( inButton <= MGN_BUTTON_NONE ||
+    
+    if( inButton <= MGN_BUTTON_NONE
+        ||
         inButton >= MGN_DUMMY_LAST_BUTTON ) {
         return 0;
         }
@@ -1306,11 +1335,14 @@ static char minginPlatform_isButtonDown( MinginButton inButton ) {
 
     if( inButton == MGN_ANY_KEY_OR_BUTTON ) {
         /* loop through entire list and see if anything is currently down */
-        int i;
-        for( i=0; i<MGN_NUM_BUTTONS; i++ ) {
+
+        int i = 0;
+
+        while( i < MGN_NUM_BUTTONS ) {
             if( mn_buttonDown[i] ) {
                 return 1;
                 }
+            i++;
             }
         }
     
@@ -1318,19 +1350,27 @@ static char minginPlatform_isButtonDown( MinginButton inButton ) {
     }
 
 
+
 static MinginButton mn_mapXKeyToButton( KeySym inXKey ) {
-    int i;
-    for( i=0; i<MGN_NUM_BUTTONS; i++ ) {
+
+    int i = 0;
+    
+    while( i < MGN_NUM_BUTTONS ) {
         if( mn_buttonToXKeyMap[ i ] == inXKey ) {
             return i;
             }
+        i++;
         }
+    
     return MGN_BUTTON_NONE;
     }
 
 
+
 MinginButton mingin_getLastButtonPressed( void ) {
+    
     MinginButton last = mn_lastButtonPressed;
+    
     mn_lastButtonPressed = MGN_BUTTON_NONE;
     return last;
     }
@@ -1338,54 +1378,59 @@ MinginButton mingin_getLastButtonPressed( void ) {
 
 
 static int mn_stringLength( const char *inString ) {
+    
     int i = 0;
+    
     while( inString[i] != '\0' ) {
         i++;
         }
+    
     return i;
     }
         
 
 void mingin_log( const char *inString ) {
-    write( STDOUT_FILENO, inString, (unsigned int)mn_stringLength( inString ) );
+    write( STDOUT_FILENO,
+           inString,
+           (unsigned int)mn_stringLength( inString ) );
     }
 
 
 
-static char mn_intToStringBuffer[20];
 
 /*
   Returns a static buffer that must be used before next call to mn_intToString.
 */
 static const char *mn_intToString( int inInt ) {
-    unsigned int c = 0;
-    /* start with billions */
-    int divisor = 1000000000;
-    const char *formatError = "[int_format_error]";
     
-    /* skip 0 digits until our first non-zero digit */
-    int qLowerLimit = 1;
-    
+    static  char           buffer[20];
+    const   char          *formatError  =  "[int_format_error]";
+            unsigned int   c            =  0;         
+            int            divisor      =  1000000000;  /* start w/ billions */
+            int            qLowerLimit  =  1;           /* skip 0 digits until
+                                                           our first non-zero
+                                                           digit */
     if( inInt == 0 ) {
         return "0";
         }
     if( inInt < 0 ) {
-        mn_intToStringBuffer[c] = '-';
+        buffer[c] = '-';
         c++;
         inInt *= -1;
         }
     while( divisor >= 1 ) {
+        
         int q = inInt / divisor;
+        
         if( q >= qLowerLimit ) {
             if( q > 9 ) {
                 return formatError;
                 }
-            if( c >= sizeof( mn_intToStringBuffer ) - 1 ) {
+            if( c >= sizeof( buffer ) - 1 ) {
                 /* out of room? */
                 return formatError;
                 }
-            
-            mn_intToStringBuffer[c] = (char)( '0' + q );
+            buffer[c] = (char)( '0' + q );
             c++;
             /* we've seen at least one non-zero digit,
                so start allowing zeros now */
@@ -1396,9 +1441,9 @@ static const char *mn_intToString( int inInt ) {
         }
     
     /* terminate */
-    mn_intToStringBuffer[c] = '\0';
+    buffer[c] = '\0';
     
-    return mn_intToStringBuffer;  
+    return buffer;  
     }
 
 
@@ -1407,21 +1452,30 @@ static void mn_setupX11KeyMap( void );
 
 
 
-static void mn_xSetFullscreen( Display *inXDisplay, Window inXWindow,
-                               char inToggle ) {
-    XEvent ev;
-    Atom atom;
+static void mn_xSetFullscreen( Display  *inXDisplay,
+                               Window    inXWindow,
+                               char      inToggle ) {
+    XEvent  ev;
+    Atom    atom;
 
-    ev.type = ClientMessage;
-    ev.xclient.window = inXWindow;
-    ev.xclient.message_type = XInternAtom( inXDisplay, "_NET_WM_STATE", False );
-    ev.xclient.format = 32;
-    ev.xclient.data.l[0] = inToggle;
-    atom = XInternAtom( inXDisplay, "_NET_WM_STATE_FULLSCREEN", False );
-    ev.xclient.data.l[1] = (long int)atom;
-    ev.xclient.data.l[2] = (long int)atom;
+    ev.type                  =  ClientMessage;
+    ev.xclient.window        =  inXWindow;
+    ev.xclient.message_type  =  XInternAtom( inXDisplay,
+                                             "_NET_WM_STATE",
+                                             False );
+    ev.xclient.format        =  32;
+    ev.xclient.data.l[0]     =  inToggle;
+    atom                     =  XInternAtom( inXDisplay,
+                                             "_NET_WM_STATE_FULLSCREEN",
+                                             False );
+    ev.xclient.data.l[1]     =  (long int)atom;
+    ev.xclient.data.l[2]     =  (long int)atom;
+    
     XSendEvent( inXDisplay,
-                DefaultRootWindow( inXDisplay ), False, ClientMessage, &ev );
+                DefaultRootWindow( inXDisplay ),
+                False,
+                ClientMessage,
+                &ev );
     }
 
 
@@ -1431,31 +1485,42 @@ static void mn_xSetFullscreen( Display *inXDisplay, Window inXWindow,
   reconfigures based on mn_xFullscreen and game's minimum viable screen size
 */
 static void mn_reconfigureWindowSize( Display *inXDisplay ) {
+    
     if( mn_xFullscreen ) {
-        mn_getMonitorSize( inXDisplay, &mn_windowW, &mn_windowH );
+        mn_getMonitorSize( inXDisplay,
+                           &mn_windowW,
+                           &mn_windowH );
         }
     else {
-        int monW, monH;
-        int gameW, gameH;
-        int smallestMult;
         
-        mn_getMonitorSize( inXDisplay, &monW, &monH );
-        minginGame_getMinimumViableScreenSize( &gameW, &gameH );
+        int  monW;
+        int  monH;
+        int  gameW;
+        int  gameH;
+        int  smallestMult;
+        
+        mn_getMonitorSize( inXDisplay,
+                           &monW,
+                           &monH );
+        
+        minginGame_getMinimumViableScreenSize( &gameW,
+                                               &gameH );
 
-        if( monW < gameW || monH < gameH ) {
-            /*
-            physical monitor too small for game
-            have window fill monitor
-            */
+        if( monW < gameW
+            ||
+            monH < gameH ) {
+            /* physical monitor too small for game
+               have window fill monitor */
             mn_windowW = monW;
             mn_windowH = monH;
             }
         else {
             /* monitor big enough for game */
-            int wMult = monW / gameW;
-            int hMult = monH / gameH;
+            int  wMult  =  monW / gameW;
+            int  hMult  =  monH / gameH;
 
             smallestMult = wMult;
+            
             if( hMult < smallestMult ) {
                 smallestMult = hMult;
                 }
@@ -1463,9 +1528,11 @@ static void mn_reconfigureWindowSize( Display *inXDisplay ) {
             mn_windowW = smallestMult * gameW;
             mn_windowH = smallestMult * gameH;
 
-            while( smallestMult > 1 &&
-                ( mn_windowW > ( 9 * monW ) / 10 ||
-                  mn_windowH > ( 9 * monH ) / 10 ) ) {
+            while( smallestMult > 1
+                   &&
+                   ( mn_windowW > ( 9 * monW ) / 10
+                     ||
+                     mn_windowH > ( 9 * monH ) / 10 ) ) {
 
                 /* window filling more than 90% of monitor, too big */
                 smallestMult --;
@@ -1494,21 +1561,26 @@ static void mn_reconfigureWindowSize( Display *inXDisplay ) {
 
 
 typedef struct MinginXWindowSetup {
-        Display *xDisplay;
-        Window xWindow;
-        int xScreen;
-        XVisualInfo *xVisual;
-        GLXContext glxContext;
+        
+        Display      *xDisplay;
+        Window        xWindow;
+        int           xScreen;
+        XVisualInfo  *xVisual;
+        GLXContext    glxContext;
+        
     } MinginXWindowSetup;
 
 
 
 /* returns 1 on success, 0 on failure */
 static char mn_openXWindow( MinginXWindowSetup *inSetup ) {
-    long unsigned int xBlackColor;
-    int glxAttributes[] = { GLX_RGBA, GLX_DOUBLEBUFFER, None };
-
-    MinginXWindowSetup *s = inSetup;
+    
+    MinginXWindowSetup  *s                =  inSetup;
+    int                  glxAttributes[]  = { GLX_RGBA,
+                                              GLX_DOUBLEBUFFER,
+                                              None };
+    unsigned long        xBlackColor;
+    
     
     s->xDisplay = XOpenDisplay( NULL );
 
@@ -1518,7 +1590,8 @@ static char mn_openXWindow( MinginXWindowSetup *inSetup ) {
     s->xScreen = DefaultScreen( s->xDisplay );
 
     
-    s->xVisual = glXChooseVisual( s->xDisplay, s->xScreen,
+    s->xVisual = glXChooseVisual( s->xDisplay,
+                                  s->xScreen,
                                   glxAttributes );
 
     if( ! s->xVisual ) {
@@ -1527,29 +1600,40 @@ static char mn_openXWindow( MinginXWindowSetup *inSetup ) {
         return 0;
         }
 
-    xBlackColor = BlackPixel( s->xDisplay, s->xScreen );
+    xBlackColor = BlackPixel( s->xDisplay,
+                              s->xScreen );
     
 
     s->xWindow = XCreateSimpleWindow(
-        s->xDisplay, DefaultRootWindow( s->xDisplay ),
-        0, 0, (unsigned int)mn_windowW, (unsigned int)mn_windowH, 0,
-        xBlackColor, xBlackColor );
+        s->xDisplay,
+        DefaultRootWindow( s->xDisplay ),
+        0, 0,
+        (unsigned int)mn_windowW,
+        (unsigned int)mn_windowH,
+        0,
+        xBlackColor,
+        xBlackColor );
 
     
-    XSelectInput( s->xDisplay, s->xWindow,
+    XSelectInput( s->xDisplay,
+                  s->xWindow,
                   StructureNotifyMask | KeyPressMask | KeyReleaseMask );
 
-    XMapWindow( s->xDisplay, s->xWindow );
+    XMapWindow( s->xDisplay,
+                s->xWindow );
 
-
-
-    s->glxContext = glXCreateContext( s->xDisplay, s->xVisual, NULL, GL_TRUE );
+    s->glxContext = glXCreateContext( s->xDisplay,
+                                      s->xVisual,
+                                      NULL,
+                                      GL_TRUE );
     
     if( ! s->glxContext ) {
         mingin_log( "Failed to create GLX context\n" );
-        XDestroyWindow( s->xDisplay, s->xWindow );
+        XDestroyWindow( s->xDisplay,
+                        s->xWindow );
         XFree( s->xVisual );
         XCloseDisplay( s->xDisplay );
+        
         return 0;
         }
 
@@ -1557,17 +1641,22 @@ static char mn_openXWindow( MinginXWindowSetup *inSetup ) {
     /* wait for MapNotify */
     while( 1 ) {
         XEvent e;
-        XNextEvent( s->xDisplay, &e);
+        XNextEvent( s->xDisplay,
+                    &e);
         if( e.type == MapNotify ) {
             break;
             }
         }
 
     
-    mn_xSetFullscreen( s->xDisplay, s->xWindow, mn_xFullscreen );
+    mn_xSetFullscreen( s->xDisplay,
+                       s->xWindow,
+                       mn_xFullscreen );
 
     
-    glXMakeCurrent( s->xDisplay, s->xWindow, s->glxContext );
+    glXMakeCurrent( s->xDisplay,
+                    s->xWindow,
+                    s->glxContext );
 
     return 1;
     }
@@ -1575,16 +1664,21 @@ static char mn_openXWindow( MinginXWindowSetup *inSetup ) {
 
 
 static void mn_closeXWindow( MinginXWindowSetup *inSetup ) {
-    MinginXWindowSetup *s = inSetup;
+    
+    MinginXWindowSetup  *s  =  inSetup;
 
     XFree( s->xVisual );
     
-    glXMakeCurrent( s->xDisplay, None, NULL );
+    glXMakeCurrent( s->xDisplay,
+                    None,
+                    NULL );
 
-    glXDestroyContext( s->xDisplay, s->glxContext );
+    glXDestroyContext( s->xDisplay,
+                       s->glxContext );
 
     
-    XDestroyWindow( s->xDisplay, s->xWindow );
+    XDestroyWindow( s->xDisplay,
+                    s->xWindow );
 
     XCloseDisplay( s->xDisplay );
     }
@@ -1594,24 +1688,21 @@ static void mn_closeXWindow( MinginXWindowSetup *inSetup ) {
         
 int main( void ) {
 
-    MinginXWindowSetup xSetup;
+    MinginXWindowSetup  xSetup;
+    int                 b;
+    char                currentlyFullscreen  =  0;
     
-
-    int b;
-
-    char currentlyFullscreen = 0;
     mn_xFullscreen = currentlyFullscreen;
-    
 
     mingin_log( "Linux mingin platform starting up\n" );
-
-    
     
     minginInternal_init();
 
-    for( b=0; b<MGN_NUM_BUTTONS; b++ ) {
+    b = 0;
+    while( b < MGN_NUM_BUTTONS ) {
         mn_buttonDown[b] = 0;
         mn_buttonToXKeyMap[b] = 0;
+        b++;
         }
 
     mn_setupX11KeyMap();
@@ -1628,14 +1719,16 @@ int main( void ) {
         
         /* pump all events */
         while( XPending( xSetup.xDisplay ) > 0 ) {
-            XEvent e;
-            XNextEvent( xSetup.xDisplay, &e );
+            
+            XEvent  e;
+            
+            XNextEvent( xSetup.xDisplay,
+                        &e );
 
             if( e.type == KeyPress ) {
-                
-                KeySym ks = XLookupKeysym( &(e.xkey), 0 );
-                
-                MinginButton button = mn_mapXKeyToButton( ks );
+                KeySym        ks      =  XLookupKeysym( &( e.xkey ),
+                                                        0 );
+                MinginButton  button  =  mn_mapXKeyToButton( ks );
                 
                 if( button > MGN_BUTTON_NONE ) {
                     mn_buttonDown[ button ] = 1;
@@ -1644,9 +1737,9 @@ int main( void ) {
                     }
                 }
             else if( e.type == KeyRelease ) {
-                KeySym ks = XLookupKeysym( &(e.xkey), 0 );
-                
-                MinginButton button = mn_mapXKeyToButton( ks );
+                KeySym        ks      =  XLookupKeysym( &(e.xkey),
+                                                        0 );
+                MinginButton  button  =  mn_mapXKeyToButton( ks );
                 
                 if( button > MGN_BUTTON_NONE ) {
                     mn_buttonDown[ button ] = 0;
@@ -1668,24 +1761,31 @@ int main( void ) {
             }
         
         
-        minginGame_getScreenPixels( mn_windowW, mn_windowH,
+        minginGame_getScreenPixels( mn_windowW,
+                                    mn_windowH,
                                     mn_gameScreenBuffer );
 
         glRasterPos2f( -1, 1 );
+        
         glPixelZoom( 1, -1 );
  
-        glDrawPixels( (GLsizei)mn_windowW, (GLsizei)mn_windowH,
-                      GL_RGB, GL_UNSIGNED_BYTE, mn_gameScreenBuffer );
+        glDrawPixels( (GLsizei)mn_windowW,
+                      (GLsizei)mn_windowH,
+                      GL_RGB,
+                      GL_UNSIGNED_BYTE,
+                      mn_gameScreenBuffer );
 
-        glXSwapBuffers( xSetup.xDisplay, xSetup.xWindow ); 
+        glXSwapBuffers( xSetup.xDisplay,
+                        xSetup.xWindow ); 
 
         if( currentlyFullscreen != mn_xFullscreen ) {
-            int oldW = mn_windowW;
-            int oldH = mn_windowH;
+            int  oldW  =  mn_windowW;
+            int  oldH  =  mn_windowH;
 
             mn_reconfigureWindowSize( xSetup.xDisplay );
 
-            if( oldW != mn_windowW ||
+            if( oldW != mn_windowW
+                ||
                 oldH != mn_windowH ) {
                 /* need to destroy and re-make window */
 
@@ -1706,7 +1806,8 @@ int main( void ) {
             else {
                 /* same window size after fullscreen toggle,
                    no need to remake it */
-                mn_xSetFullscreen( xSetup.xDisplay, xSetup.xWindow,
+                mn_xSetFullscreen( xSetup.xDisplay,
+                                   xSetup.xWindow,
                                    mn_xFullscreen );
                 }
 
@@ -1860,53 +1961,62 @@ static void mn_setupX11KeyMap( void ) {
 
 
 
-#define MINGIN_LINUX_MAX_PATH_LEN 255
-static char mn_minginLinuxPathBuffer[ MINGIN_LINUX_MAX_PATH_LEN + 1 ];
-
 static char *mn_linuxGetFilePath( const char *inFolderName,
                                   const char *inFileName ) {
-    int i = 0;
-    int j = 0;
-    while( i < MINGIN_LINUX_MAX_PATH_LEN &&
+    
+    enum{         MAX_PATH_LEN                =  255  };
+    static  char  buffer[ MAX_PATH_LEN + 1 ];
+            int   i                           =  0;
+            int   j                           =  0;
+    
+    while( i < MAX_PATH_LEN
+           &&
            inFolderName[i] != '\0' ) {
-        mn_minginLinuxPathBuffer[i] = inFolderName[i];
+        
+        buffer[i] = inFolderName[i];
         i++;
         }
+    
     /* now separator */
-    if( i < MINGIN_LINUX_MAX_PATH_LEN ) {
-        mn_minginLinuxPathBuffer[i] = '/';
+    if( i < MAX_PATH_LEN ) {
+        buffer[i] = '/';
         i++;
         }
-    while( i < MINGIN_LINUX_MAX_PATH_LEN &&
+    
+    while( i < MAX_PATH_LEN
+           &&
            inFileName[j] != '\0' ) {
-        mn_minginLinuxPathBuffer[i] = inFileName[j];
+        
+        buffer[i] = inFileName[j];
         i++;
         j++;
         }
 
     /* now terminate */
-    if( i < MINGIN_LINUX_MAX_PATH_LEN ) {
-        mn_minginLinuxPathBuffer[i] = '\0';
+    if( i < MAX_PATH_LEN ) {
+        buffer[i] = '\0';
         }
     
-    return mn_minginLinuxPathBuffer;
+    return buffer;
     }
+
 
 
 #include <fcntl.h>
 #include <sys/stat.h>
 
-static int mn_linuxFileOpenRead( const char *inFolderName,
-                              const char *inFileName,
-                              int *outTotalBytes ) {
-    struct stat statStruct;
-    int fd;
-    
-    char *path = mn_linuxGetFilePath( inFolderName, inFileName );
+static int mn_linuxFileOpenRead( const  char  *inFolderName,
+                                 const  char  *inFileName,
+                                        int   *outTotalBytes ) {
+    struct stat  statStruct;
+    int          fd;
+    char        *path        =  mn_linuxGetFilePath( inFolderName,
+                                                     inFileName );
 
     *outTotalBytes = 0;
     
     if( stat( path, &statStruct ) == 0 ) {
+        
         *outTotalBytes = (int)( statStruct.st_size );
         }
     else {
@@ -1914,17 +2024,20 @@ static int mn_linuxFileOpenRead( const char *inFolderName,
         return -1;
         }
     
-    fd = open( path, O_RDONLY );
+    fd = open( path,
+               O_RDONLY );
 
     return fd;
     }
 
 
-static int mn_linuxFileOpenWrite( const char *inFolderName,
-                                  const char *inFileName ) {
+
+static int mn_linuxFileOpenWrite( const  char  *inFolderName,
+                                  const  char  *inFileName ) {
+    struct stat  statStruct;
+    char         folderExists  =  0;
+
     /* make sure folder exists */
-    struct stat statStruct;
-    char folderExists = 0;
     
     /* Check if the path exists and retrieve its stat */
     if( stat( inFolderName, &statStruct ) == 0 ) {
@@ -1937,9 +2050,11 @@ static int mn_linuxFileOpenWrite( const char *inFolderName,
             }
         }
     if( folderExists ) {
-        char *path = mn_linuxGetFilePath( inFolderName, inFileName );
-
-        int fd = open( path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU );
+        
+        char  *path  =  mn_linuxGetFilePath( inFolderName,
+                                             inFileName );
+        int    fd    =  open( path,
+                              O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU );
 
         return fd;
         }
@@ -1950,17 +2065,18 @@ static int mn_linuxFileOpenWrite( const char *inFolderName,
 
 
 
-static char mn_linuxFileWrite( int inFD, int inNumBytesToWrite,
-                               const unsigned char *inByteBuffer ) {
+static char mn_linuxFileWrite(        int             inFD,
+                                      int             inNumBytesToWrite,
+                               const  unsigned char  *inByteBuffer ) {
     
     int numWritten = 0;
     
     while( numWritten < inNumBytesToWrite ) {
-        size_t numLeftToWrite = (size_t)( inNumBytesToWrite - numWritten );
-        
-        ssize_t numWrittenThisTime =
-            write( inFD, &inByteBuffer[numWritten], numLeftToWrite );
-
+        size_t   numLeftToWrite      =  (size_t)( inNumBytesToWrite -
+                                                  numWritten );
+        ssize_t  numWrittenThisTime  =  write( inFD,
+                                               &( inByteBuffer[ numWritten ] ),
+                                               numLeftToWrite );
         if( numWrittenThisTime == -1 ) {
             return 0;
             }
@@ -1973,15 +2089,17 @@ static char mn_linuxFileWrite( int inFD, int inNumBytesToWrite,
 
 
 
-static int mn_linuxFileRead( int inFD, int inNumBytesToRead,
-                             unsigned char *inByteBuffer ) {
+static int mn_linuxFileRead(           int    inFD,
+                                       int    inNumBytesToRead,
+                             unsigned  char  *inByteBuffer ) {
     int numRead = 0;
     
     while( numRead < inNumBytesToRead ) {
-        size_t numLeftToRead = (size_t)( inNumBytesToRead - numRead );
+        size_t   numLeftToRead    =  (size_t)( inNumBytesToRead - numRead );
         
-        ssize_t numReadThisTime =
-            read( inFD, &inByteBuffer[numRead], numLeftToRead );
+        ssize_t  numReadThisTime  =  read( inFD,
+                                           &( inByteBuffer[numRead] ),
+                                           numLeftToRead );
 
         if( numReadThisTime == 0 ) {
             /* truly reached end of file */
@@ -1999,9 +2117,14 @@ static int mn_linuxFileRead( int inFD, int inNumBytesToRead,
 
 
 
-static char mn_linuxFileSeek( int inFD, int inAbsoluteBytePosition ) {
-    off_t offset = lseek( inFD, inAbsoluteBytePosition, SEEK_SET );
-    if( offset == (off_t)-1 ) {
+static char mn_linuxFileSeek( int  inFD,
+                              int  inAbsoluteBytePosition ) {
+
+    off_t  offset  =  lseek( inFD,
+                             inAbsoluteBytePosition,
+                             SEEK_SET );
+    
+    if( offset == (off_t)( -1 ) ) {
         return 0;
         }
     return 1;
@@ -2010,46 +2133,61 @@ static char mn_linuxFileSeek( int inFD, int inAbsoluteBytePosition ) {
 
 
 static int mn_linuxFileGetPos( int inFD ) {
-    off_t offset = lseek( inFD, 0, SEEK_CUR );
-    if( offset == (off_t)-1 ) {
+    
+    off_t  offset  =  lseek( inFD,
+                             0,
+                             SEEK_CUR );
+    
+    if( offset == (off_t)( -1 ) ) {
         return -1;
         }
     return (int)offset;
     }
 
 
+
 int mingin_startWritePersistData( const char *inStoreName ) {
-    return mn_linuxFileOpenWrite( "settings", inStoreName );
+    return mn_linuxFileOpenWrite( "settings",
+                                  inStoreName );
     }
 
 
 
-int mingin_startReadPersistData( const char *inStoreName,
-                                 int *outTotalBytes ) {
-    return mn_linuxFileOpenRead( "settings", inStoreName, outTotalBytes );
+int mingin_startReadPersistData( const char  *inStoreName,
+                                       int   *outTotalBytes ) {
+    return mn_linuxFileOpenRead( "settings",
+                                 inStoreName,
+                                 outTotalBytes );
     }
 
 
 
-char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
-                              const unsigned char *inByteBuffer ) {
-    return mn_linuxFileWrite( inStoreWriteHandle, inNumBytesToWrite,
-                           inByteBuffer );
+char mingin_writePersistData(        int             inStoreWriteHandle,
+                                     int             inNumBytesToWrite,
+                              const  unsigned char  *inByteBuffer ) {
+    
+    return mn_linuxFileWrite( inStoreWriteHandle,
+                              inNumBytesToWrite,
+                              inByteBuffer );
     }
 
 
 
-int mingin_readPersistData( int inStoreReadHandle, int inNumBytesToRead,
-                            unsigned char *inByteBuffer ) {
+int mingin_readPersistData( int             inStoreReadHandle,
+                            int             inNumBytesToRead,
+                            unsigned char  *inByteBuffer ) {
 
-    return mn_linuxFileRead( inStoreReadHandle, inNumBytesToRead, inByteBuffer );
+    return mn_linuxFileRead( inStoreReadHandle,
+                             inNumBytesToRead,
+                             inByteBuffer );
     }
 
 
 
-char mingin_seekPersistData( int inStoreReadHandle,
-                             int inAbsoluteBytePosition ) {
-    return mn_linuxFileSeek( inStoreReadHandle, inAbsoluteBytePosition );
+char mingin_seekPersistData( int  inStoreReadHandle,
+                             int  inAbsoluteBytePosition ) {
+    return mn_linuxFileSeek( inStoreReadHandle,
+                             inAbsoluteBytePosition );
     }
 
 
@@ -2073,7 +2211,8 @@ void mingin_endReadPersistData( int inStoreReadHandle ) {
 
 void mingin_deletePersistData( const char *inStoreName ) {
     
-    char *path = mn_linuxGetFilePath( "settings", inStoreName );
+    char  *path  =  mn_linuxGetFilePath( "settings",
+                                         inStoreName );
     
     unlink( path );
     }
@@ -2081,25 +2220,31 @@ void mingin_deletePersistData( const char *inStoreName ) {
 
 
 
-int mingin_startReadBulkData( const char *inBulkName,
-                              int *outTotalBytes ) {
-    return mn_linuxFileOpenRead( "data", inBulkName, outTotalBytes );
+int mingin_startReadBulkData( const  char  *inBulkName,
+                                     int   *outTotalBytes ) {
+    return mn_linuxFileOpenRead( "data",
+                                 inBulkName,
+                                 outTotalBytes );
     }
 
 
 
-int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
-                         unsigned char *inByteBuffer ) {
+int mingin_readBulkData( int             inBulkDataHandle,
+                         int             inNumBytesToRead,
+                         unsigned char  *inByteBuffer ) {
     
-    return mn_linuxFileRead( inBulkDataHandle, inNumBytesToRead, inByteBuffer );
+    return mn_linuxFileRead( inBulkDataHandle,
+                             inNumBytesToRead,
+                             inByteBuffer );
     }
 
 
 
 
-char mingin_seekBulkData( int inBulkDataHandle,
-                          int inAbsoluteBytePosition ) {
-    return mn_linuxFileSeek( inBulkDataHandle, inAbsoluteBytePosition );
+char mingin_seekBulkData( int  inBulkDataHandle,
+                          int  inAbsoluteBytePosition ) {
+    return mn_linuxFileSeek( inBulkDataHandle,
+                             inAbsoluteBytePosition );
     }
 
 
@@ -2153,8 +2298,8 @@ void mingin_endReadBulkData( int inBulkDataHandle ) {
   a new platform.
 */
 
-#define MINGIN_DUMMY_SCREEN_W 640
-#define MINGIN_DUMMY_SCREEN_H 480
+#define  MINGIN_DUMMY_SCREEN_W  640
+#define  MINGIN_DUMMY_SCREEN_H  480
 
 static unsigned char mn_dummyScreenBuffer[ MINGIN_DUMMY_SCREEN_W *
                                            MINGIN_DUMMY_SCREEN_H * 3 ];
@@ -2174,7 +2319,8 @@ int main( void ) {
         minginGame_step( 0 );
         
         /* ask for screen pixels and do nothing with them */
-        minginGame_getScreenPixels( MINGIN_DUMMY_SCREEN_W, MINGIN_DUMMY_SCREEN_H,
+        minginGame_getScreenPixels( MINGIN_DUMMY_SCREEN_W,
+                                    MINGIN_DUMMY_SCREEN_H,
                                     mn_dummyScreenBuffer );
 
         /* don't even bother asking for game audio samples */
@@ -2252,8 +2398,8 @@ int mingin_startWritePersistData( const char *inStoreName ) {
 
 
 
-int mingin_startReadPersistData( const char *inStoreName,
-                                 int *outTotalBytes ) {
+int mingin_startReadPersistData( const char  *inStoreName,
+                                       int   *outTotalBytes ) {
     /* suppress  warning */
     if( inStoreName[0] == '\0' ) {
         }
@@ -2264,10 +2410,14 @@ int mingin_startReadPersistData( const char *inStoreName,
 
 
 
-char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
-                              const unsigned char *inByteBuffer ) {
+char mingin_writePersistData(        int             inStoreWriteHandle,
+                                     int             inNumBytesToWrite,
+                              const  unsigned char  *inByteBuffer ) {
     /* suppress warning */
-    if( inStoreWriteHandle > 0 || inNumBytesToWrite > 0 ||
+    if( inStoreWriteHandle > 0
+        ||
+        inNumBytesToWrite > 0
+        ||
         inByteBuffer != 0 ) {
         }
     return 0;
@@ -2275,10 +2425,14 @@ char mingin_writePersistData( int inStoreWriteHandle, int inNumBytesToWrite,
 
 
 
-int mingin_readPersistData( int inStoreReadHandle, int inNumBytesToRead,
-                            unsigned char *inByteBuffer ) {
+int mingin_readPersistData( int             inStoreReadHandle,
+                            int             inNumBytesToRead,
+                            unsigned char  *inByteBuffer ) {
     /* suppress warning */
-    if( inStoreReadHandle > 0 || inNumBytesToRead > 0 ||
+    if( inStoreReadHandle > 0
+        ||
+        inNumBytesToRead > 0
+        ||
         inByteBuffer != 0 ) {
         }
     return -1;
@@ -2286,10 +2440,12 @@ int mingin_readPersistData( int inStoreReadHandle, int inNumBytesToRead,
 
 
 
-char mingin_seekPersistData( int inStoreReadHandle,
-                             int inAbsoluteBytePosition ) {
+char mingin_seekPersistData( int  inStoreReadHandle,
+                             int  inAbsoluteBytePosition ) {
     /* suppress warning */
-    if( inStoreReadHandle > 0 || inAbsoluteBytePosition > 0 ) {
+    if( inStoreReadHandle > 0
+        ||
+        inAbsoluteBytePosition > 0 ) {
         }
     return 0;
     }
@@ -2321,8 +2477,8 @@ void mingin_endReadPersistData( int inStoreReadHandle ) {
 
 
 
-int mingin_startReadBulkData( const char *inBulkName,
-                              int *outTotalBytes ) {
+int mingin_startReadBulkData( const  char  *inBulkName,
+                                     int   *outTotalBytes ) {
     /* suppress warning */
     if( inBulkName[0] != '\0' ) {
         }
@@ -2332,10 +2488,14 @@ int mingin_startReadBulkData( const char *inBulkName,
 
 
 
-int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
-                         unsigned char *inByteBuffer ) {
+int mingin_readBulkData(          int    inBulkDataHandle,
+                                  int    inNumBytesToRead,
+                         unsigned char  *inByteBuffer ) {
     /* suppress warning */
-    if( inBulkDataHandle > 0 || inNumBytesToRead > 0 ||
+    if( inBulkDataHandle > 0
+        ||
+        inNumBytesToRead > 0
+        ||
         inByteBuffer != 0 ) {
         }
     return -1;
@@ -2344,10 +2504,12 @@ int mingin_readBulkData( int inBulkDataHandle, int inNumBytesToRead,
 
 
 
-char mingin_seekBulkData( int inBulkDataHandle,
-                          int inAbsoluteBytePosition ) {
+char mingin_seekBulkData( int  inBulkDataHandle,
+                          int  inAbsoluteBytePosition ) {
     /* suppress warning */
-    if( inBulkDataHandle > 0 || inAbsoluteBytePosition > 0 ) {
+    if( inBulkDataHandle > 0
+        ||
+        inAbsoluteBytePosition > 0 ) {
         }
     return 0;
     }

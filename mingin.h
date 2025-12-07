@@ -615,8 +615,8 @@ typedef enum MinginButton {
 
   [jumpMinginProvides]
 */
-char mingin_registerButtonMapping(        int           inButtonHandle,
-                                   const  MinginButton  inMapping[] );
+char mingin_registerButtonMapping( int                 inButtonHandle,
+                                   const MinginButton  inMapping[] );
 
 
 
@@ -712,8 +712,8 @@ typedef enum MinginStick {
 
   [jumpMinginProvides]
 */
-void mingin_registerStickAxis(        int          inStickAxisHandle,
-                               const  MinginStick  inMapping[] );
+void mingin_registerStickAxis( int                inStickAxisHandle,
+                               const MinginStick  inMapping[] );
 
 
 
@@ -803,8 +803,8 @@ int mingin_startWritePersistData( const char *inStoreName );
   
   [jumpMinginProvides]
 */
-int mingin_startReadPersistData( const  char  *inStoreName,
-                                        int   *outTotalBytes );
+int mingin_startReadPersistData( const char  *inStoreName,
+                                 int         *outTotalBytes );
 
 
 
@@ -815,9 +815,9 @@ int mingin_startReadPersistData( const  char  *inStoreName,
   
   [jumpMinginProvides]
 */
-char mingin_writePersistData(        int             inStoreWriteHandle,
-                                     int             inNumBytesToWrite,
-                              const  unsigned char  *inByteBuffer );
+char mingin_writePersistData( int                   inStoreWriteHandle,
+                              int                   inNumBytesToWrite,
+                              const unsigned char  *inByteBuffer );
 
 
 
@@ -900,8 +900,8 @@ void mingin_deletePersistData( const char *inStoreName );
   
   [jumpMinginProvides]
 */
-int mingin_startReadBulkData( const  char  *inBulkName,
-                                     int   *outTotalBytes );
+int mingin_startReadBulkData( const char  *inBulkName,
+                              int         *outTotalBytes );
 
 
 
@@ -1126,8 +1126,8 @@ static void minginInternal_init( void ) {
 
 
 
-char mingin_registerButtonMapping(        int           inButtonHandle,
-                                   const  MinginButton  inMapping[] ) {
+char mingin_registerButtonMapping( int                 inButtonHandle,
+                                   const MinginButton  inMapping[] ) {
     int i = 0;
     
     if( inButtonHandle < 0
@@ -1404,7 +1404,7 @@ void mingin_log( const char *inString ) {
 static const char *mn_intToString( int inInt ) {
     
     static  char           buffer[20];
-    const   char          *formatError  =  "[int_format_error]";
+            const char    *formatError  =  "[int_format_error]";
             unsigned int   c            =  0;         
             int            divisor      =  1000000000;  /* start w/ billions */
             int            qLowerLimit  =  1;           /* skip 0 digits until
@@ -1961,8 +1961,8 @@ static void mn_setupX11KeyMap( void ) {
 
 
 
-static char *mn_linuxGetFilePath( const char *inFolderName,
-                                  const char *inFileName ) {
+static char *mn_linuxGetFilePath( const char  *inFolderName,
+                                  const char  *inFileName ) {
     
     enum{         MAX_PATH_LEN                =  255  };
     static  char  buffer[ MAX_PATH_LEN + 1 ];
@@ -2005,13 +2005,13 @@ static char *mn_linuxGetFilePath( const char *inFolderName,
 #include <fcntl.h>
 #include <sys/stat.h>
 
-static int mn_linuxFileOpenRead( const  char  *inFolderName,
-                                 const  char  *inFileName,
-                                        int   *outTotalBytes ) {
-    struct stat  statStruct;
-    int          fd;
-    char        *path        =  mn_linuxGetFilePath( inFolderName,
-                                                     inFileName );
+static int mn_linuxFileOpenRead( const char  *inFolderName,
+                                 const char  *inFileName,
+                                 int         *outTotalBytes ) {
+    struct stat   statStruct;
+    int           fd;
+    char         *path        =  mn_linuxGetFilePath( inFolderName,
+                                                      inFileName );
 
     *outTotalBytes = 0;
     
@@ -2032,8 +2032,8 @@ static int mn_linuxFileOpenRead( const  char  *inFolderName,
 
 
 
-static int mn_linuxFileOpenWrite( const  char  *inFolderName,
-                                  const  char  *inFileName ) {
+static int mn_linuxFileOpenWrite( const char  *inFolderName,
+                                  const char  *inFileName ) {
     struct stat  statStruct;
     char         folderExists  =  0;
 
@@ -2065,9 +2065,9 @@ static int mn_linuxFileOpenWrite( const  char  *inFolderName,
 
 
 
-static char mn_linuxFileWrite(        int             inFD,
-                                      int             inNumBytesToWrite,
-                               const  unsigned char  *inByteBuffer ) {
+static char mn_linuxFileWrite( int                   inFD,
+                               int                   inNumBytesToWrite,
+                               const unsigned char  *inByteBuffer ) {
     
     int numWritten = 0;
     
@@ -2154,7 +2154,7 @@ int mingin_startWritePersistData( const char *inStoreName ) {
 
 
 int mingin_startReadPersistData( const char  *inStoreName,
-                                       int   *outTotalBytes ) {
+                                 int         *outTotalBytes ) {
     return mn_linuxFileOpenRead( "settings",
                                  inStoreName,
                                  outTotalBytes );
@@ -2162,9 +2162,9 @@ int mingin_startReadPersistData( const char  *inStoreName,
 
 
 
-char mingin_writePersistData(        int             inStoreWriteHandle,
-                                     int             inNumBytesToWrite,
-                              const  unsigned char  *inByteBuffer ) {
+char mingin_writePersistData( int                   inStoreWriteHandle,
+                              int                   inNumBytesToWrite,
+                              const unsigned char  *inByteBuffer ) {
     
     return mn_linuxFileWrite( inStoreWriteHandle,
                               inNumBytesToWrite,
@@ -2220,8 +2220,8 @@ void mingin_deletePersistData( const char *inStoreName ) {
 
 
 
-int mingin_startReadBulkData( const  char  *inBulkName,
-                                     int   *outTotalBytes ) {
+int mingin_startReadBulkData( const char  *inBulkName,
+                              int         *outTotalBytes ) {
     return mn_linuxFileOpenRead( "data",
                                  inBulkName,
                                  outTotalBytes );
@@ -2399,7 +2399,7 @@ int mingin_startWritePersistData( const char *inStoreName ) {
 
 
 int mingin_startReadPersistData( const char  *inStoreName,
-                                       int   *outTotalBytes ) {
+                                 int         *outTotalBytes ) {
     /* suppress  warning */
     if( inStoreName[0] == '\0' ) {
         }
@@ -2410,9 +2410,9 @@ int mingin_startReadPersistData( const char  *inStoreName,
 
 
 
-char mingin_writePersistData(        int             inStoreWriteHandle,
-                                     int             inNumBytesToWrite,
-                              const  unsigned char  *inByteBuffer ) {
+char mingin_writePersistData( int                   inStoreWriteHandle,
+                              int                   inNumBytesToWrite,
+                              const unsigned char  *inByteBuffer ) {
     /* suppress warning */
     if( inStoreWriteHandle > 0
         ||
@@ -2477,8 +2477,8 @@ void mingin_endReadPersistData( int inStoreReadHandle ) {
 
 
 
-int mingin_startReadBulkData( const  char  *inBulkName,
-                                     int   *outTotalBytes ) {
+int mingin_startReadBulkData( const char  *inBulkName,
+                              int         *outTotalBytes ) {
     /* suppress warning */
     if( inBulkName[0] != '\0' ) {
         }
@@ -2488,8 +2488,8 @@ int mingin_startReadBulkData( const  char  *inBulkName,
 
 
 
-int mingin_readBulkData(          int    inBulkDataHandle,
-                                  int    inNumBytesToRead,
+int mingin_readBulkData( int             inBulkDataHandle,
+                         int             inNumBytesToRead,
                          unsigned char  *inByteBuffer ) {
     /* suppress warning */
     if( inBulkDataHandle > 0

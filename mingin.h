@@ -226,7 +226,12 @@
   ****
   
   Will be called at least once, and before any other minginGame_ calls.
+
+  Parameters:
   
+      inFinalStep   1 if this is the final step of the game before exit
+                    0 otherwise
+                    
   [jumpGameRequired]
 */
 void minginGame_step( char inFinalStep );
@@ -257,7 +262,13 @@ void minginGame_step( char inFinalStep );
   Will not necessarily be called.
 
   If called, it will be called after at least one call to minginGame_step().
-  
+
+  Parameters:
+ 
+      outWide   pointer to where minum viable width should be returned
+
+      outHigh   pointer to where minum viable height should be returned
+      
   [jumpGameRequired]
 */
 void minginGame_getMinimumViableScreenSize( int  *outWide,
@@ -284,6 +295,15 @@ void minginGame_getMinimumViableScreenSize( int  *outWide,
 
   If called, it will be called after at least one call to minginGame_step().
 
+  Parameters:
+
+      inWide        width of the image to fill in pixels
+
+      inHigh        height of the image to fill in pixels
+
+      inRGBBuffer   buffer of (inWide * inHigh * 3) bytes to fill in
+                    RGBRGB... row major order starting at the top left corner.
+                    
   [jumpGameRequired]
 */
 void minginGame_getScreenPixels( int             inWide,
@@ -296,7 +316,7 @@ void minginGame_getScreenPixels( int             inWide,
   Get the next buffer full of audio samples.
   Samples are in Signed 16-bit little-endian, with channels interleaved
 
-  inSampleBuffer will have inNumSamples * inNumChannels * 2 bytes
+  inSampleBuffer will have inNumSampleFrames * inNumChannels * 2 bytes
 
   inNumSamples, inNumChannels, and inSamplesPerSecond may all change from
   call to call and aren't necessarily fixed across the entire run of the game.
@@ -308,10 +328,26 @@ void minginGame_getScreenPixels( int             inWide,
   Will not necessarily be called.
 
   If called, it will be called after at least one call to minginGame_step().
+
+  Parameters:
   
+      inNumSampleFrames         number of sample frames to write to the buffer
+      
+      inNumChannels             number of channels per sample frame
+
+      inSampleFramesPerSecond   number of sample frames per second (also known
+                                as the sound sample rate)
+                                
+      inSampleBuffer            buffer of
+                                (inNumSampleFrames * inNumChannels * 2) bytes
+                                to fill.  Each sample is in signed 16-bit
+                                little-endian PCM.  Channels in each
+                                frame are interleaved.  For stereo, channels
+                                are interleaved LRLRLR...
+      
   [jumpGameRequired]
 */
-void minginGame_getAudioSamples( int             inNumSamples,
+void minginGame_getAudioSamples( int             inNumSampleFrames,
                                  int             inNumChannels,
                                  int             inSamplesPerSecond,
                                  unsigned char  *inSampleBuffer );
@@ -363,6 +399,10 @@ void minginGame_getAudioSamples( int             inNumSamples,
   This value may change over time as the platform adjusts the game step time
   for any variety of reasons.
 
+  Returns:
+
+      the number of steps per second
+      
   [jumpMinginProvides]
 */
 int mingin_getStepsPerSecond( void );
@@ -377,7 +417,7 @@ int mingin_getStepsPerSecond( void );
 
   [jumpMinginProvides]
 */  
-#define MGN_MAP_END 0
+#define  MGN_MAP_END  0
 
 
 
@@ -386,10 +426,11 @@ int mingin_getStepsPerSecond( void );
   on some potential platforms.
 
   These values are used in calls:
+  
      mingin_registerButtonMapping
-       and
+         and
      mingin_getLastButtonPressed
-       (see below)
+         (see below)
 
   For a game to function on as many platforms as possible in an intelligent way,
   the game should cast a wide net for each call to mingin_registerButtonMapping
@@ -554,7 +595,8 @@ typedef enum MinginButton {
     MGN_DUMMY_LAST_BUTTON
     } MinginButton;
 
-#define MGN_NUM_BUTTONS  MGN_DUMMY_LAST_BUTTON
+
+#define  MGN_NUM_BUTTONS  MGN_DUMMY_LAST_BUTTON
 
     
 
@@ -610,8 +652,18 @@ typedef enum MinginButton {
   If there are more than 31 non-END elements in a mapping, the extra ones
   will be ignored.
   
-  Returns 1 on success, or 0 on failure (if inButtonHandle is out of
-  the supported range)
+  Parameters:
+
+      inButtonHandle   the game-defined button action to map
+
+      inMapping        an array of MinginButton values, ending with MGN_MAP_END,
+                       that should trigger this game-defined action
+                       
+  Returns:
+
+      1   on success
+      
+      0   on failure (if inButtonHandle is out of the supported range)
 
   [jumpMinginProvides]
 */
@@ -622,7 +674,6 @@ char mingin_registerButtonMapping( int                 inButtonHandle,
 
 /*
   Check whether a previously-mapped button handle is currently held down.
-  Returns 1 if pressed, 0 if not pressed.
 
   Continuing the above examples with JUMP and FIRE, we might check these
   in our minginGame_step() function with the following code:
@@ -633,6 +684,16 @@ char mingin_registerButtonMapping( int                 inButtonHandle,
       else if( mingin_isButtonDown( FIRE ) ) {
           ... do fire logic ...
           }
+
+  Parameters:
+
+      inButtonHandle   the game-defined button action to check
+
+  Returns:
+
+      1   if pressed
+
+      0   if not pressed.
 
   [jumpMinginProvides]
 */
@@ -648,12 +709,16 @@ char mingin_isButtonDown( int inButtonHandle );
   the user "live poke" a key or button to change an assigned button.
 
   In that case, this function would normally be called once to clear the memory
-  (which will include whatever button was pressed last, like the mouse
+  (which would return whatever button was pressed last, like the mouse
   button for clicking the setting),
   and then repeatedly every minginGame_step until a value is returned.
 
-  Returns MGN_BUTTON_NONE if no button has been pressed since the last time
-  the memory was cleared.
+  Returns:
+
+      the last button pressed   since the memory has been cleared
+
+      MGN_BUTTON_NONE           if no button has been pressed since the last
+                                time the memory was cleared
 
   [jumpMinginProvides]
 */
@@ -667,7 +732,21 @@ MinginButton mingin_getLastButtonPressed( void );
   Pointer location spans the game screen, with (0,0) at the top left corner
   of the screen, and (outMaxX,outMaxY) at the bottom right corner of the screen.
 
-  Returns 1 if pointer location is available, or 0 if not.
+  Parameters:
+
+      outX      pointer to where the x location should be returned
+
+      outY      pointer to where the y location should be returned
+
+      outMaxX   pointer to where the max x range value should be returned
+
+      outMaxY   pointer to where the max y range value should be returned
+
+  Returns:
+
+      1   if pointer location is available
+
+      0   if not
 
   [jumpMinginProvides]
 */
@@ -709,7 +788,15 @@ typedef enum MinginStick {
   to refer to the stick axes that it is interested in.  For example,
   it might define AIM_UP and then map it to
   { MGN_LEFT_STICK_Y, MGN_MIDDLE_STICK_Y, MGN_MAP_END }
+  
+  Parameters:
 
+      inStickAxisHandle   the game-defined stick axis to map
+
+      inMapping           an array of MinginStick values, ending with
+                          MGN_MAP_END, that should map to the game-defined
+                          stick axis.
+                       
   [jumpMinginProvides]
 */
 void mingin_registerStickAxis( int                inStickAxisHandle,
@@ -722,9 +809,24 @@ void mingin_registerStickAxis( int                inStickAxisHandle,
 
   The returned value in outPosition will be in the range
       [outLowerLimit, outUpperLimit]
+  
+  Parameters:
 
-  Returns 1 if joystick is available, or 0 if not.
+      inStickAxisHandle   the game-defined stick axis to check
 
+      outPosition         pointer to where the stick position should be returned
+
+      outLowerLimit       pointer to where the lower limit for that stick
+                          should be returned
+
+      outUpperLimit       pointer to where the upper limit for that stick
+                          should be returned                    
+  Returns:
+
+      1   if joystick is available
+
+      0   if not
+                          
   [jumpMinginProvides]
 */
 char mingin_getStickPosition( int   inStickAxisHandle,
@@ -740,12 +842,20 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 
   Note that some platforms might recall the last setting on future startups.
 
-  Returns 1 if toggling supported, 0 if toggling not supported.
-
   Note that you can check if toggling is supported before toggling
   by calling:
 
       mingin_toggleFullscreen( mingin_isFullscreen() )
+
+  Parameters:
+
+      inFullscreen   1 to switch to full screen, 0 to switch to windowed mode
+
+  Returns:
+
+      1   if toggling supported
+
+      0   if toggling not supported
 
   [jumpMinginProvides]
 */
@@ -754,7 +864,13 @@ char mingin_toggleFullscreen( char inFullscreen );
 
 
 /*
-  Returns 1 if fullscreen, 0 if windowed.
+  Checks current fullscreen status.
+  
+  Returns:
+
+      1   if fullscreen
+
+      0   if windowed
 
   [jumpMinginProvides]
 */
@@ -764,6 +880,10 @@ char mingin_isFullscreen( void );
 
 /*
   Writes a string to the log.
+
+  Parameters:
+
+      inString   the \0-terminated string to write to the log
 
   [jumpMinginProvides]
 */
@@ -786,7 +906,15 @@ void mingin_quit( void );
 /*
   Opens a named persistent data store for writing.
 
-  Returns store handle on success, -1 on failure.
+  Parameters:
+
+      inStoreName   the name of the store as a \0-terminated string.
+
+  Returns:
+
+      store handle   on success
+
+      -1             on failure
   
   [jumpMinginProvides]
 */
@@ -797,9 +925,17 @@ int mingin_startWritePersistData( const char *inStoreName );
 /*
   Opens a named persistent data store for reading.
 
-  *outTotalBytes set to the number of bytes in the data store.
-  
-  Returns store handle on success, -1 on failure.
+  Parameters:
+
+      inStoreName     the name of the store as a \0-terminated string.
+
+      outTotalBytes   pointer to where the number of bytes in the data
+                      store should be returned
+  Returns:
+
+      store handle   on success
+
+      -1             on failure
   
   [jumpMinginProvides]
 */
@@ -811,7 +947,19 @@ int mingin_startReadPersistData( const char  *inStoreName,
 /*
   Writes more data to an open persistent data store.
 
-  Returns 1 on success, 0 on failure.
+  Parameters:
+
+      inStoreWriteHandle   handle of the store to write to
+
+      inNumBytesToWrite    the number of bytes to write
+
+      inByteBuffer         the buffer of bytes to write
+      
+  Returns:
+
+      1   on success
+      
+      0   on failure
   
   [jumpMinginProvides]
 */
@@ -824,10 +972,22 @@ char mingin_writePersistData( int                   inStoreWriteHandle,
 /*
   Reads more data from an open persistent data store.
 
-  Returns number of bytes read on success, -1 on failure.
-  
-  Returns a non-negative number < inNumBytesToRead ONLY if we've reached the
-  end of the data store.
+  Parameters:
+
+      inStoreReadHandle   handle of the store to read from
+
+      inNumBytesToRead    the number of bytes to read
+
+      inByteBuffer        the buffer where read bytes should be returned
+      
+  Returns:
+
+      number of bytes read   on success
+
+      -1                     on failure
+      
+      returns a non-negative number < inNumBytesToRead ONLY if we've reached
+      the end of the data store and no more bytes can be read.
   
   [jumpMinginProvides]
 */
@@ -840,9 +1000,17 @@ int mingin_readPersistData( int             inStoreReadHandle,
 /*
   Seeks to a byte position in a persistent data store that is being read.
 
-  Position is relative to 0 at start of store.
+  Parameters:
 
-  Returns 1 on success, 0 on failure.
+      inStoreReadHandle        handle of the read store to seek in
+
+      inAbsoluteBytePosition   position relative to 0 at the start of the
+                               data store.
+  Returns:
+
+      1   on success
+
+      0   on failure
   
   [jumpMinginProvides]
 */
@@ -854,9 +1022,15 @@ char mingin_seekPersistData( int  inStoreReadHandle,
 /*
   Gets the current byte position in a data store that is being read.
 
-  Position is relative to 0 at start of store.
+  Parameters:
 
-  Returns -1 on failure.
+      inStoreReadHandle        handle of the read store to seek in
+
+  Returns:
+
+      position   relative to 0 at the start of the store
+
+      -1         on failure
   
   [jumpMinginProvides]
 */
@@ -867,6 +1041,10 @@ int mingin_getPersistDataPosition( int inStoreReadHandle );
 /*
   Ends writing persistent data store.
   
+  Parameters:
+
+      inStoreWriteHandle   handle of the write store to end writing
+  
   [jumpMinginProvides]
 */
 void mingin_endWritePersistData( int inStoreWriteHandle );
@@ -875,6 +1053,10 @@ void mingin_endWritePersistData( int inStoreWriteHandle );
 
 /*
   Ends reading persistent data store.
+   
+  Parameters:
+
+      inStoreReadHandle   handle of the read store to end reading 
   
   [jumpMinginProvides]
 */
@@ -885,6 +1067,10 @@ void mingin_endReadPersistData( int inStoreReadHandle );
 /*
   Deletes a persistent data store by name, if it exists.
 
+  Parameters:
+
+      inStoreName     the name of the store to delete as a \0-terminated string.
+
   [jumpMinginProvides]
 */
 void mingin_deletePersistData( const char *inStoreName );
@@ -894,9 +1080,18 @@ void mingin_deletePersistData( const char *inStoreName );
 /*
   Opens a named bulk data resource for reading.
 
-  *outTotalBytes set to the number of bytes in the data resoure.
   
-  Returns resource handle on success, -1 on failure.
+  Parameters:
+
+      inBulkName      the name of the bulk resource as a \0-terminated string.
+
+      outTotalBytes   pointer to where the number of bytes in the data
+                      resource should be returned
+  Returns:
+
+      resource handle   on success
+
+      -1                on failure
   
   [jumpMinginProvides]
 */
@@ -908,10 +1103,22 @@ int mingin_startReadBulkData( const char  *inBulkName,
 /*
   Reads more data from an open bulk data resource.
 
-  Returns number of bytes read on success, -1 on failure.
+  Parameters:
 
-  Returns a non-negative number < inNumBytesToRead ONLY if we've reached the
-  end of the data store.
+      inBulkDataHandle    handle of the bulk data resource to read from
+
+      inNumBytesToRead    the number of bytes to read
+
+      inByteBuffer        the buffer where read bytes should be returned
+      
+  Returns:
+
+      number of bytes read   on success
+
+      -1                     on failure
+      
+      returns a non-negative number < inNumBytesToRead ONLY if we've reached
+      the end of the bulk data resource and no more bytes can be read.
   
   [jumpMinginProvides]
 */
@@ -923,10 +1130,18 @@ int mingin_readBulkData( int             inBulkDataHandle,
 
 /*
   Seeks to a byte position in a bulk data resource.
+  
+  Parameters:
 
-  Position is relative to 0 at start of resource.
+      inBulkDataHandle         handle of the bulk data resource to seek in
 
-  Returns 1 on success, 0 on failure.
+      inAbsoluteBytePosition   position relative to 0 at the start of the
+                               bulk data resource.
+  Returns:
+
+      1   on success
+      
+      0   on failure
   
   [jumpMinginProvides]
 */
@@ -938,9 +1153,15 @@ char mingin_seekBulkData( int  inBulkDataHandle,
 /*
   Gets the current byte position in a bulk data resource.
 
-  Position is relative to 0 at start of resource.
+  Parameters:
 
-  Returns -1 on failure.
+      inStoreReadHandle        handle of the bulk resource to seek in
+
+  Returns:
+
+      position   relative to 0 at the start of the bulk data resource
+
+      -1         on failure
   
   [jumpMinginProvides]
 */
@@ -951,6 +1172,10 @@ int mingin_getBulkDataPosition( int inStoreReadHandle );
 
 /*
   Ends reading bulk data resource.
+  
+  Parameters:
+
+      inBulkDataHandle   handle of the bulk data resource to end reading 
   
   [jumpMinginProvides]
 */

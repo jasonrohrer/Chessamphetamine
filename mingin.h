@@ -150,17 +150,22 @@
   
   The game itself must implement these four functions:
   
-      void minginGame_step( char inFinalStep );
+      void minginGame_step( char  inFinalStep );
       
-      void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh );
       
-      void minginGame_getScreenPixels( int inWide, int inHigh,
-                                       unsigned char *inRGBBuffer );
+      void minginGame_getMinimumViableScreenSize( int  *outWide,
+                                                  int  *outHigh );
+
+                                                  
+      void minginGame_getScreenPixels( int             inWide,
+                                       int             inHigh,
+                                       unsigned char  *inRGBBuffer );
+
                                        
-      void minginGame_getAudioSamples( int inNumSamples,
-                                       int inNumChannels,
-                                       int inSamplesPerSecond,
-                                       unsigned char *inSampleBuffer );
+      void minginGame_getAudioSamples( int             inNumSamples,
+                                       int             inNumChannels,
+                                       int             inSamplesPerSecond,
+                                       unsigned char  *inSampleBuffer );
   
   Each function is tagged below with   [jumpGameRequired]
   
@@ -234,7 +239,7 @@
                     
   [jumpGameRequired]
 */
-void minginGame_step( char inFinalStep );
+void minginGame_step( char  inFinalStep );
 
 
 
@@ -697,7 +702,7 @@ char mingin_registerButtonMapping( int                 inButtonHandle,
 
   [jumpMinginProvides]
 */
-char mingin_isButtonDown( int inButtonHandle );
+char mingin_isButtonDown( int  inButtonHandle );
 
 
 
@@ -859,7 +864,7 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 
   [jumpMinginProvides]
 */
-char mingin_toggleFullscreen( char inFullscreen );
+char mingin_toggleFullscreen( char  inFullscreen );
 
 
 
@@ -887,7 +892,7 @@ char mingin_isFullscreen( void );
 
   [jumpMinginProvides]
 */
-void mingin_log( const char *inString );
+void mingin_log( const char  *inString );
 
 
 
@@ -918,7 +923,7 @@ void mingin_quit( void );
   
   [jumpMinginProvides]
 */
-int mingin_startWritePersistData( const char *inStoreName );
+int mingin_startWritePersistData( const char  *inStoreName );
 
 
 
@@ -1034,7 +1039,7 @@ char mingin_seekPersistData( int  inStoreReadHandle,
   
   [jumpMinginProvides]
 */
-int mingin_getPersistDataPosition( int inStoreReadHandle );
+int mingin_getPersistDataPosition( int  inStoreReadHandle );
 
 
 
@@ -1047,7 +1052,7 @@ int mingin_getPersistDataPosition( int inStoreReadHandle );
   
   [jumpMinginProvides]
 */
-void mingin_endWritePersistData( int inStoreWriteHandle );
+void mingin_endWritePersistData( int  inStoreWriteHandle );
 
 
 
@@ -1060,7 +1065,7 @@ void mingin_endWritePersistData( int inStoreWriteHandle );
   
   [jumpMinginProvides]
 */
-void mingin_endReadPersistData( int inStoreReadHandle );
+void mingin_endReadPersistData( int  inStoreReadHandle );
 
 
 
@@ -1073,7 +1078,7 @@ void mingin_endReadPersistData( int inStoreReadHandle );
 
   [jumpMinginProvides]
 */
-void mingin_deletePersistData( const char *inStoreName );
+void mingin_deletePersistData( const char  *inStoreName );
 
 
 
@@ -1165,7 +1170,7 @@ char mingin_seekBulkData( int  inBulkDataHandle,
   
   [jumpMinginProvides]
 */
-int mingin_getBulkDataPosition( int inStoreReadHandle );
+int mingin_getBulkDataPosition( int  inStoreReadHandle );
 
 
 
@@ -1179,7 +1184,7 @@ int mingin_getBulkDataPosition( int inStoreReadHandle );
   
   [jumpMinginProvides]
 */
-void mingin_endReadBulkData( int inBulkDataHandle );
+void mingin_endReadBulkData( int  inBulkDataHandle );
 
 
 
@@ -1299,7 +1304,7 @@ static void minginInternal_init( void );
   
   [jumpPlatformRequired]
 */
-static char minginPlatform_isButtonDown( MinginButton inButton );
+static char minginPlatform_isButtonDown( MinginButton  inButton );
 
 
 
@@ -1404,7 +1409,7 @@ char mingin_registerButtonMapping( int                 inButtonHandle,
 
 
 
-char mingin_isButtonDown( int inButtonHandle ) {
+char mingin_isButtonDown( int  inButtonHandle ) {
 
     int i = 0;
     
@@ -1531,7 +1536,7 @@ void mingin_quit( void ) {
 
 
 
-char mingin_toggleFullscreen( char inFullscreen ) {
+char mingin_toggleFullscreen( char  inFullscreen ) {
     if( ! mn_areWeInStepFunction ) {
         mingin_log( "Error:  calling mingin_toggleFullscreen from "
                     "outside minginGame_step function\n" );
@@ -1564,7 +1569,7 @@ static  KeySym        mn_buttonToXKeyMap[ MGN_NUM_BUTTONS ];
 
 
 
-static char minginPlatform_isButtonDown( MinginButton inButton ) {
+static char minginPlatform_isButtonDown( MinginButton  inButton ) {
     
     if( inButton <= MGN_BUTTON_NONE
         ||
@@ -1594,7 +1599,7 @@ static char minginPlatform_isButtonDown( MinginButton inButton ) {
 
 
 
-static MinginButton mn_mapXKeyToButton( KeySym inXKey ) {
+static MinginButton mn_mapXKeyToButton( KeySym  inXKey ) {
 
     int i = 0;
     
@@ -1620,7 +1625,7 @@ MinginButton mingin_getLastButtonPressed( void ) {
 
 
 
-static int mn_stringLength( const char *inString ) {
+static int mn_stringLength( const char  *inString ) {
     
     int i = 0;
     
@@ -1632,7 +1637,7 @@ static int mn_stringLength( const char *inString ) {
     }
         
 
-void mingin_log( const char *inString ) {
+void mingin_log( const char  *inString ) {
     write( STDOUT_FILENO,
            inString,
            (unsigned int)mn_stringLength( inString ) );
@@ -1644,7 +1649,7 @@ void mingin_log( const char *inString ) {
 /*
   Returns a static buffer that must be used before next call to mn_intToString
 */
-static const char *mn_intToString( int inInt ) {
+static const char *mn_intToString( int  inInt ) {
     
     static  char           buffer[20];
             const char    *formatError  =  "[int_format_error]";
@@ -1727,7 +1732,7 @@ static void mn_xSetFullscreen( Display  *inXDisplay,
 /*
   reconfigures based on mn_xFullscreen and game's minimum viable screen size
 */
-static void mn_reconfigureWindowSize( Display *inXDisplay ) {
+static void mn_reconfigureWindowSize( Display  *inXDisplay ) {
     
     if( mn_xFullscreen ) {
         mn_getMonitorSize( inXDisplay,
@@ -1816,7 +1821,7 @@ typedef struct MinginXWindowSetup {
 
 
 /* returns 1 on success, 0 on failure */
-static char mn_openXWindow( MinginXWindowSetup *inSetup ) {
+static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
     
     MinginXWindowSetup  *s                =  inSetup;
     int                  glxAttributes[]  = { GLX_RGBA,
@@ -1906,7 +1911,7 @@ static char mn_openXWindow( MinginXWindowSetup *inSetup ) {
 
 
 
-static void mn_closeXWindow( MinginXWindowSetup *inSetup ) {
+static void mn_closeXWindow( MinginXWindowSetup  *inSetup ) {
     
     MinginXWindowSetup  *s  =  inSetup;
 
@@ -2375,7 +2380,7 @@ static char mn_linuxFileSeek( int  inFD,
 
 
 
-static int mn_linuxFileGetPos( int inFD ) {
+static int mn_linuxFileGetPos( int  inFD ) {
     
     off_t  offset  =  lseek( inFD,
                              0,
@@ -2389,7 +2394,7 @@ static int mn_linuxFileGetPos( int inFD ) {
 
 
 
-int mingin_startWritePersistData( const char *inStoreName ) {
+int mingin_startWritePersistData( const char  *inStoreName ) {
     return mn_linuxFileOpenWrite( "settings",
                                   inStoreName );
     }
@@ -2435,24 +2440,24 @@ char mingin_seekPersistData( int  inStoreReadHandle,
 
 
 
-int mingin_getPersistDataPosition( int inStoreReadHandle ) {
+int mingin_getPersistDataPosition( int  inStoreReadHandle ) {
     return mn_linuxFileGetPos( inStoreReadHandle );
     }
 
 
 
-void mingin_endWritePersistData( int inStoreWriteHandle ) {
+void mingin_endWritePersistData( int  inStoreWriteHandle ) {
     close( inStoreWriteHandle );
     }
 
 
 
-void mingin_endReadPersistData( int inStoreReadHandle ) {
+void mingin_endReadPersistData( int  inStoreReadHandle ) {
     close( inStoreReadHandle );
     }
 
 
-void mingin_deletePersistData( const char *inStoreName ) {
+void mingin_deletePersistData( const char  *inStoreName ) {
     
     char  *path  =  mn_linuxGetFilePath( "settings",
                                          inStoreName );
@@ -2492,13 +2497,13 @@ char mingin_seekBulkData( int  inBulkDataHandle,
 
 
 
-int mingin_getBulkDataPosition( int inBulkDataHandle ) {
+int mingin_getBulkDataPosition( int  inBulkDataHandle ) {
     return mn_linuxFileGetPos( inBulkDataHandle );
     }
 
 
 
-void mingin_endReadBulkData( int inBulkDataHandle ) {
+void mingin_endReadBulkData( int  inBulkDataHandle ) {
     close( inBulkDataHandle );
     }
 
@@ -2591,7 +2596,7 @@ void mingin_quit( void ) {
 
 
 
-static char minginPlatform_isButtonDown( MinginButton inButton ) {
+static char minginPlatform_isButtonDown( MinginButton  inButton ) {
     /* suppress warning */
     if( inButton == MGN_BUTTON_NONE ) {
         }
@@ -2601,7 +2606,7 @@ static char minginPlatform_isButtonDown( MinginButton inButton ) {
 
 
 
-void mingin_log( const char *inString ) {
+void mingin_log( const char  *inString ) {
     /* suppress compiler warning */
     if( inString[0] == '\0' ) {
         }
@@ -2611,7 +2616,7 @@ void mingin_log( const char *inString ) {
 
 
 
-char mingin_toggleFullscreen( char inFullscreen ) {
+char mingin_toggleFullscreen( char  inFullscreen ) {
     /* suppress warning */
     if( inFullscreen ) {
         }
@@ -2632,7 +2637,7 @@ MinginButton mingin_getLastButtonPressed( void ) {
 
 
 
-int mingin_startWritePersistData( const char *inStoreName ) {
+int mingin_startWritePersistData( const char  *inStoreName ) {
     /* suppress  warning */
     if( inStoreName[0] == '\0' ) {
         }
@@ -2694,7 +2699,7 @@ char mingin_seekPersistData( int  inStoreReadHandle,
     }
 
 
-int mingin_getPersistDataPosition( int inStoreReadHandle ) {
+int mingin_getPersistDataPosition( int  inStoreReadHandle ) {
     /* suppress warning */
     if( inStoreReadHandle > 0 ) {
         }
@@ -2704,7 +2709,7 @@ int mingin_getPersistDataPosition( int inStoreReadHandle ) {
 
 
 
-void mingin_endWritePersistData( int inStoreWriteHandle ) {
+void mingin_endWritePersistData( int  inStoreWriteHandle ) {
     /* suppress warning */
     if( inStoreWriteHandle > 0 ) {
         }
@@ -2712,7 +2717,7 @@ void mingin_endWritePersistData( int inStoreWriteHandle ) {
 
 
 
-void mingin_endReadPersistData( int inStoreReadHandle ) {
+void mingin_endReadPersistData( int  inStoreReadHandle ) {
     /* suppress warning */
     if( inStoreReadHandle > 0 ) {
         }
@@ -2758,7 +2763,7 @@ char mingin_seekBulkData( int  inBulkDataHandle,
     }
 
 
-int mingin_getBulkDataPosition( int inBulkDataHandle ) {
+int mingin_getBulkDataPosition( int  inBulkDataHandle ) {
     /* suppress warning */
     if( inBulkDataHandle > 0 ) {
         }
@@ -2766,14 +2771,14 @@ int mingin_getBulkDataPosition( int inBulkDataHandle ) {
     }
 
 
-void mingin_endReadBulkData( int inBulkDataHandle ) {
+void mingin_endReadBulkData( int  inBulkDataHandle ) {
     /* suppress warning */
     if( inBulkDataHandle > 0 ) {
         }
     }
 
 
-void mingin_deletePersistData( const char *inStoreName ) {
+void mingin_deletePersistData( const char  *inStoreName ) {
     /* suppress warning */
     if( inBulkName[0] != '\0' ) {
         }

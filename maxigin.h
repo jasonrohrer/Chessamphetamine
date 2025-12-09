@@ -1283,15 +1283,16 @@ static  const char   *mx_saveGameDataStoreName  =  "maxigin_save.bin";
 
 static char *mx_getMemRecordsFingerprint( int  *outTotalMemBytes ) {
     
-    enum{                         FINGERPRINT_LENGTH  =  10,
-                                  HEX_LENGTH          =  FINGERPRINT_LENGTH
-                                                         * 2 + 1 };
+    enum{  FINGERPRINT_LENGTH  =  10,
+           HEX_LENGTH          =  FINGERPRINT_LENGTH * 2 + 1  };
     
-    static  unsigned char         fingerprintBuffer[ FINGERPRINT_LENGTH ];
-    static  char                  hexBuffer[ HEX_LENGTH ];
-            MaxiginFlexHashState  s;
-            int                   i;
-            int                   totalNumBytes       =  0;
+    static  unsigned char  fingerprintBuffer[ FINGERPRINT_LENGTH ];
+    static  char           hexBuffer[ HEX_LENGTH ];
+
+    MaxiginFlexHashState  s;
+    int                   i;
+    int                   totalNumBytes  =  0;
+
     
     maxigin_flexHashInit( &s,
                           FINGERPRINT_LENGTH,
@@ -1383,10 +1384,12 @@ static char mx_readStringFromPersistData( int    inStoreReadHandle,
 */
 static const char *mx_readShortStringFromPersistData( int  inStoreReadHandle ) {
 
-    enum{         BUFFER_LEN             =  64 };
+    enum{  BUFFER_LEN  =  64  };
+    
     static  char  buffer[ BUFFER_LEN ];
-            char  success;
-            
+    
+    char  success;
+    
     
     success = mx_readStringFromPersistData( inStoreReadHandle,
                                             BUFFER_LEN,
@@ -2380,11 +2383,11 @@ static char mx_copyIntoDataStore( int inStoreReadHandle,
                                   int inStoreWriteHandle,
                                   int inNumBytesToCopy ) {
     
-    enum{                  BUFFER_LEN  =  512 };
+    enum{  BUFFER_LEN  =  512  };
     
     static  unsigned char  buffer[ BUFFER_LEN ];
-    
-            int            numCopied   =  0;
+
+    int  numCopied  =  0;
             
 
     while( numCopied < inNumBytesToCopy ) {
@@ -2848,10 +2851,13 @@ static void mx_playbackJumpHalfBack( void ) {
 void maxigin_logString( const char  *inLabel,
                         const char  *inVal ) {
     
-    enum{         BUFFER_LEN             =  256 };
+    enum{  BUFFER_LEN  =  256  };
+    
     static  char  buffer[ BUFFER_LEN ];
-    int           i                      =  0;
-    int           j                      =  0;
+
+    int  i  =  0;
+    int  j  =  0;
+
     
     while( i < BUFFER_LEN - 2
            &&
@@ -2925,13 +2931,15 @@ char maxigin_stringsEqual( const char  *inStringA,
 
 const char *maxigin_intToString( int  inInt ) {
 
-    static  char          buffer[20];
-            unsigned int  c            =  0;
-                          /* start with billions */
-            int           divisor      =  1000000000;
-            const char   *formatError  =  "[int_format_error]";
-                          /* skip 0 digits until our first non-zero digit */
-            int           qLowerLimit  =  1;
+    static  char  buffer[20];
+
+    unsigned int  c            =  0;
+                  /* start with billions */
+    int           divisor      =  1000000000;
+    const char   *formatError  =  "[int_format_error]";
+                  /* skip 0 digits until our first non-zero digit */
+    int           qLowerLimit  =  1;
+
     
     if( inInt == 0 ) {
         return "0";

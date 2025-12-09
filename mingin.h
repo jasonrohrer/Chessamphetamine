@@ -2212,10 +2212,13 @@ static void mn_setupX11KeyMap( void ) {
 static char *mn_linuxGetFilePath( const char  *inFolderName,
                                   const char  *inFileName ) {
     
-    enum{         MAX_PATH_LEN                 =  255  };
+    enum{  MAX_PATH_LEN  =  255  };
+    
     static  char  buffer[ MAX_PATH_LEN + 1 ];
-            int   i                            =  0;
-            int   j                            =  0;
+
+    int  i  =  0;
+    int  j  =  0;
+    
     
     while( i < MAX_PATH_LEN
            &&

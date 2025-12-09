@@ -1069,7 +1069,7 @@ void mingin_endReadPersistData( int inStoreReadHandle );
 
   Parameters:
 
-      inStoreName     the name of the store to delete as a \0-terminated string.
+      inStoreName   the name of the store to delete as a \0-terminated string.
 
   [jumpMinginProvides]
 */
@@ -1155,7 +1155,7 @@ char mingin_seekBulkData( int  inBulkDataHandle,
 
   Parameters:
 
-      inStoreReadHandle        handle of the bulk resource to seek in
+      inStoreReadHandle   handle of the bulk resource to seek in
 
   Returns:
 
@@ -1204,26 +1204,34 @@ void mingin_endReadBulkData( int inBulkDataHandle );
   How to make a Mingin platform        [jumpPlatform]
   ===================================================
 
-  Porting Mingin to a new platform involves three aspects:
+  Porting Mingin to a new platform involves four aspects:
 
   1.  Providing a program entry point (main or whatever the platform needs).
       All platform-specific initialization can be done in this entry point,
       and the platform can also potentially use this to "run the show" in terms
-      of calling the game's minginGame_step( 0  ) function in a loop
+      of calling the game's minginGame_step( 0 ) function in a loop
       along with the other various minginGame_ functions, etc., though some
       platforms may trigger minginGame_step on some kind of system interrupt
       callback or some other mechanism.
 
       
-  2.  Initializing mingin itself at startup with a call to ONE function.
+  2.  Initializing mingin itself at startup with a call to ONE function,
+
+          minginInternal_init
   
-      This is tagged below with    [jumpPlatformCalls]
+      This is tagged below with       [jumpPlatformCalls]
 
       
-  3.  Implementing various mingin_ functions.
-      
-      These are tagged below with    [jumpPlatformRequired]
+  3.  Implementing ONE minginPlatform_ function,
 
+          minginPlatform_isButtonDown
+      
+      This are tagged below with      [jumpPlatformRequired]
+
+      
+  4.  Implementing all but two of the mingin_ functions above.
+
+      Explanation tagged below with   [jumpPlatformRequired]
 
       
    = Design Notes =
@@ -1278,6 +1286,16 @@ static void minginInternal_init( void );
   If inButton is MGN_ANY_KEY_OR_BUTTON, then this function should return 1
   if any button on the platform is currently held down, and 0 if no buttons
   are held down.
+
+  Parameters:
+
+      inButton   the platform button to check
+
+  Returns:
+
+      1   if pressed
+
+      0   if not pressed.
   
   [jumpPlatformRequired]
 */
@@ -1422,9 +1440,9 @@ char mingin_isButtonDown( int inButtonHandle ) {
 
 
 /*
-  ===============================================
-  Mingin platform implementations   [jumpSystems]
-  ===============================================
+  ==================================================
+  Mingin platform implementations      [jumpSystems]
+  ==================================================
 
   The following #ifdefs selectively compile platform-specific implmentation
   code.
@@ -1624,7 +1642,7 @@ void mingin_log( const char *inString ) {
 
 
 /*
-  Returns a static buffer that must be used before next call to mn_intToString.
+  Returns a static buffer that must be used before next call to mn_intToString
 */
 static const char *mn_intToString( int inInt ) {
     

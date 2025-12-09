@@ -43,11 +43,11 @@
   Include exactly once, in one .c file, like so, to compile in the
   implementation:
   
-      #define MINGIN_IMPLEMENTATION
+      #define   MINGIN_IMPLEMENTATION
   
-      #define MAXIGIN_IMPLEMENTATION
+      #define   MAXIGIN_IMPLEMENTATION
   
-      #include "maxigin.h"
+      #include  "maxigin.h"
 
   Maxigin implements the four functions needed by a Mingin game
   (see mingin.h), so your game shouldn't implement these directly.
@@ -59,8 +59,8 @@
 
 
 
-#ifndef MAXIGIN_H_INCLUDED
-#define MAXIGIN_H_INCLUDED
+#ifndef  MAXIGIN_H_INCLUDED
+#define  MAXIGIN_H_INCLUDED
 
 
 
@@ -72,7 +72,7 @@
   The following compile-time settings can be changed for each game that
   is built against Maxigin.
 
-  If these are defined in your C file before #define MAXIGIN_IMPLEMENTATION
+  If these are defined in your C file before #include "maxigin.h"
   your settings will be used instead.
 
   Each setting is tagged below with   [jumpSettings]
@@ -85,13 +85,18 @@
   The game image's native width and height.  This is the ideal size for
   the game's pixel content.
 
+  To set the native pixel size to 1280x720, do this:
+
+      #define  MAXIGIN_GAME_NATIVE_W  1280
+      #define  MAXIGIN_GAME_NATIVE_H  720
+
   [jumpSettings]
 */
-#ifndef MAXIGIN_GAME_NATIVE_W
-    #define MAXIGIN_GAME_NATIVE_W  640
+#ifndef  MAXIGIN_GAME_NATIVE_W
+    #define  MAXIGIN_GAME_NATIVE_W  640
 #endif
-#ifndef MAXIGIN_GAME_NATIVE_H
-    #define MAXIGIN_GAME_NATIVE_H  480
+#ifndef  MAXIGIN_GAME_NATIVE_H
+    #define  MAXIGIN_GAME_NATIVE_H  480
 #endif
 
 
@@ -102,12 +107,12 @@
 
   To disable recording, do this:
 
-      #define MAXIGIN_ENABLE_RECORDING 0
+      #define  MAXIGIN_ENABLE_RECORDING  0
 
   [jumpSettings]
 */
-#ifndef MAXIGIN_ENABLE_RECORDING
-    #define MAXIGIN_ENABLE_RECORDING 1
+#ifndef  MAXIGIN_ENABLE_RECORDING
+    #define  MAXIGIN_ENABLE_RECORDING  1
 #endif
 
 
@@ -128,12 +133,12 @@
 
   To set the max static size to 256, do this:
   
-      #define MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES  256
+      #define  MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES   256
       
   [jumpSettings]
 */
-#ifndef MAXIGIN_MAX_RECORDING_STATIC_MEMORY_MAX_BYTES
-    #define MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES  4096
+#ifndef  MAXIGIN_MAX_RECORDING_STATIC_MEMORY_MAX_BYTES
+    #define  MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES  4096
 #endif
 
 
@@ -154,10 +159,10 @@
 
   Why not just make all this part of mingin.h?  Because I don't want
   to force you to use it.  If you want to use mingin.h for cross-platform
-  portability only, and do things your own way, you're free to do that.
+  portability only, and do things your own way otherwise, you're free to do that.
 
   My goal is to make this code ridiculously portable:  100% C89, with absolutely
-  no includes or dependences beyond mingin.h
+  no includes or dependences, beyond mingin.h
 
   For maxium portability, along with being strict C89, this code plays by
   the following rules:
@@ -231,7 +236,9 @@
   any calls to maxiginGame_getNativePixels.
   
   Beyond that, the order and frequency of these function calls are not
-  guaranteed.
+  guaranteed.  For example, during recorded game playback mode, many calls
+  to maxiginGame_getNativePixels might be called with no calls to
+  maxiginGame_step in between.
   
   The only guarantee is that these functions will never be called concurrently.
 */
@@ -249,8 +256,7 @@
   ****
   
   ****
-  All general-purpose maxigin_ functions provided by mingin.h CAN be called
-  from this function.
+  All general-purpose maxigin_ functions CAN be called from this function.
   ****
   
   ****
@@ -281,7 +287,7 @@ void maxiginGame_init( void );
   ****
   
   ****
-  All general-purpose maxigin_ functions  CAN be called from this function.
+  All general-purpose maxigin_ functions CAN be called from this function.
   ****
   
   ****
@@ -318,11 +324,16 @@ void maxiginGame_step( void );
   Will not necessarily be called.
 
   If called, it will be called after one call to maxiginGame_init() and
-  at least one call to maxiginGame_step)_
+  at least one call to maxiginGame_step()
 
+  Parameters:
+
+      inRGBBuffer   buffer of pixel byte values in RGBRGB... row-major
+                    order starting at top left corner
+                    
   [jumpGameRequired]
 */
-void maxiginGame_getNativePixels( unsigned char *inRGBBuffer );
+void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer );
 
 
 
@@ -333,7 +344,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer );
   What Maxigin provides                [jumpMaxigin]
   ==================================================
   
-  Maxigin provides two sets functions.
+  Maxigin provides two sets of functions.
 
   The first set of init functions can ONLY be called from inside maxiginGame_init
 
@@ -358,16 +369,19 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer );
   Registers an area of static memory to be managed by Maxigin's hot-reloading
   system.
 
+  Parameters:
+
       inPointer       the start of the static memory area.
   
-      inNumBytes      the length of the memory are.
+      inNumBytes      the length of the memory area.
 
       inDescription   a unique descriptor string
   
   [jumpMaxiginInit]
 */
-void maxigin_initRegisterStaticMemory( void *inPointer, int inNumBytes,
-                                       const char *inDescription );
+void maxigin_initRegisterStaticMemory( void        *inPointer,
+                                       int          inNumBytes,
+                                       const char  *inDescription );
 
 
 
@@ -447,16 +461,28 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void );
 
   See mingin_registerButtonMapping in mingin.h for full documentation.
 
+  Parameters:
+
+      inButtonHandle   the game-defined button action to map
+
+      inMapping        an array of MinginButton values, ending with MGN_MAP_END,
+                       that should trigger this game-defined action
+                       
+  Returns:
+
+      1   on success
+      
+      0   on failure (if inButtonHandle is out of the supported range)  
+
   [jumpMaxiginGeneral]
 */
-char maxigin_registerButtonMapping( int inButtonHandle,
-                                    const MinginButton inMapping[] );
+char maxigin_registerButtonMapping( int                 inButtonHandle,
+                                    const MinginButton  inMapping[] );
 
 
 
 /*
   Check whether a previously-mapped button handle is currently held down.
-  Returns 1 if pressed, 0 if not pressed.
 
   Note that Maxigin might block reporting of certain buttons being down
   depending on its own internal functionality.
@@ -466,9 +492,19 @@ char maxigin_registerButtonMapping( int inButtonHandle,
   Games that want to take full advantage of Maxigin's functionality should
   call this instead of mingin_isButtonDown.
   
+  Parameters:
+
+      inButtonHandle   the game-defined button action to check
+
+  Returns:
+
+      1   if pressed
+
+      0   if not pressed.
+  
   [jumpMaxiginGeneral]
 */
-char maxigin_isButtonDown( int inButtonHandle );
+char maxigin_isButtonDown( int  inButtonHandle );
 
 
 
@@ -477,23 +513,54 @@ char maxigin_isButtonDown( int inButtonHandle );
   
   Returns a static buffer that must be used before next call to intToString.
 
+  Positive int values up to 9999999999 (under 10 billion) and negative
+  int values down to -9999999999 (above -10 billon) are supported.
+
+  Note that the int data type on some platforms might not support this
+  entire range.
+
+  Paramters:
+
+      inInt   the int value to convert
+
+  Return:
+
+      \0-terminated string   if conversion succeeded
+
+      "[int_format_error]"   if conversion failed
+
   [jumpMaxiginGeneral]
 */
-const char *maxigin_intToString( int inInt );
+const char *maxigin_intToString( int  inInt );
 
 
 
 /*
   Converts a \0-terminated string to an int.
 
-  Extra characters beyond the last digit charager are ignored.
+  Extra characters beyond the last digit character are ignored.
 
-  Empty string, or string starting with no digit or no - character results
+  Empty string, or string starting with no digit or no - character, results
   in a 0 return value.
+
+  Note that this function makes no assumptions about the maxiumum or minimum
+  value of an int.  C89 guarantees that an int can support at least the range
+  [-32767, 32767], so truly platform independent code should not exceed this
+  range.
+
+  Parameters:
+
+      inString   the \0-terminated string to convert.
+
+  Returns:
+
+      int value   if conversion succeeds
+
+      0           if conversion fails
 
   [jumpMaxiginGeneral]
 */
-int maxigin_stringToInt( const char *inString );
+int maxigin_stringToInt( const char  *inString );
 
 
 
@@ -501,9 +568,16 @@ int maxigin_stringToInt( const char *inString );
 /*
   Logs a labeled int value to the game engine log with a newline.
 
+  Parameters:
+
+      inLabel   the \0-terminated string label for the value in the log
+
+      inVal     the int value to log
+
   [jumpMaxiginGeneral]
 */
-void maxigin_logInt( const char *inLabel, int inVal );
+void maxigin_logInt( const char  *inLabel,
+                     int          inVal );
 
 
 
@@ -511,39 +585,76 @@ void maxigin_logInt( const char *inLabel, int inVal );
   Logs a labeled \0-terminated string value to the game engine log with a
   newline.
 
+  Parameters:
+
+      inLabel   the \0-terminated string label for the value in the log
+
+      inVal     the \0-terminated string value to log  
+
   [jumpMaxiginGeneral]
 */
-void maxigin_logString( const char *inLabel, const char *inVal );
+void maxigin_logString( const char  *inLabel,
+                        const char  *inVal );
 
 
 
 /*
   Gets the length of a \0-terminated string.
+  
+  Parameters:
 
+      inString   the \0-terminated string to measure.
+
+  Returns:
+
+      length of string
+      
   [jumpMaxiginGeneral]
 */
-int maxigin_stringLength( const char *inString );
+int maxigin_stringLength( const char  *inString );
 
 
 
 /*
-  Returns 1 if two \0-terminated strings are equal, 0 if not.
+  Tests whether strings are equal.
+    
+  Parameters:
+
+      inStringA   the first \0-terminated string to compare
+
+      inStringB   the second \0-terminated string to compare
+
+  Returns:
+
+      1   if two strings are equal
+
+      0   if not
 
   [jumpMaxiginGeneral]
 */
-char maxigin_stringsEqual( const char *inStringA, const char *inStringB );
+char maxigin_stringsEqual( const char  *inStringA,
+                           const char  *inStringB );
 
 
 
 /*
   Generates a ASCII hex-encoding of byte buffer, in uppercase hex.
 
-  inHexBuffer must have room for at least 2 * inNumBytes + 1 characters.
+  Parameters:
+
+      inNumBytes    the number of bytes to encode
+      
+      inBytes       the buffer of bytes to encode
+
+      inHexBuffer   the buffer to fill with the resulting hex encoding as
+                    a \0-terminated string.  Must have room for at least
+                    2 * inNumBytes + 1  characters.
 
   [jumpMaxiginGeneral]
 */
-void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
-                        char *inHexBuffer );
+void maxigin_hexEncode( int                   inNumBytes,
+                        const unsigned char  *inBytes,
+                        char                 *inHexBuffer );
 
 
 
@@ -567,7 +678,7 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
 
   The flexHash algorithm is a multibyte extension of a Pearson Hash.
 
-  Has several nice properties:
+  flexHash has several nice properties:
 
   1. Around 20% faster at producing a 20-byte hash than SHA1 on my test hardware.
   
@@ -593,10 +704,23 @@ void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
      Testing a 1-byte input hashed into a 2000-byte output hash over 10,000
      trials, the same bounds were observed.
 
+     
+  Parameters:
+
+      inNumBytes     number of bytes to hash
+
+      inBytes        buffer of bytes to hash
+
+      inHashLength   length of hash to produce
+
+      inHashBuffer   the buffer to fill with the resulting hash
+
   [jumpMaxiginGeneral]
 */
-void maxigin_flexHash( const unsigned char *inBytes, int inNumBytes,
-                       unsigned char *inHashBuffer, int inHashLength );
+void maxigin_flexHash( int                   inNumBytes,
+                       const unsigned char  *inBytes,
+                       int                   inHashLength,
+                       unsigned char        *inHashBuffer );
 
 
 
@@ -607,11 +731,11 @@ void maxigin_flexHash( const unsigned char *inBytes, int inNumBytes,
   [jumpMaxiginGeneral]
 */
 typedef struct MaxiginFlexHashState {
-        int j;
-        unsigned char n;
-        unsigned char *hashBuffer;
-        int hashLength;
-        unsigned char lastInputByte;
+        int             j;
+        unsigned char   n;
+        int             hashLength;
+        unsigned char  *hashBuffer;
+        unsigned char   lastInputByte;
     } MaxiginFlexHashState;
 
 
@@ -621,22 +745,40 @@ typedef struct MaxiginFlexHashState {
 
   The caller-provided hash buffer is incorporated into the MaxiginFlexHashState.
 
+  Parameters:
+
+      inState        the hash structure to initialize
+  
+      inHashLength   the byte length of the resulting hash
+
+      inHashBuffer   buffer where the resulting hash should be accumulated
+      
   [jumpMaxiginGeneral]
 */
-void maxigin_flexHashInit( MaxiginFlexHashState *inState,
-                           unsigned char *inHashBuffer,
-                           int inHashLength );
+void maxigin_flexHashInit( MaxiginFlexHashState  *inState,
+                           int                    inHashLength,
+                           unsigned char         *inHashBuffer );
 
 
 
 /*
   Adds another block of data to an incremental mode run of flexHash.
+
+  Parameters:
+
+      inState      the hash structure to update 
+  
+      inNumBytes   the number of bytes to hash
+
+      inBytes      the bytes to hash
   
   [jumpMaxiginGeneral]
 */
-void maxigin_flexHashAdd( MaxiginFlexHashState *inState,
-                          const unsigned char *inBytes,
-                          int inNumBytes );
+void maxigin_flexHashAdd( MaxiginFlexHashState  *inState,
+                          int                    inNumBytes,
+                          const unsigned char   *inBytes );
+
+
 
 /*
   Finishes an incremental mode run of flexHash.
@@ -649,9 +791,13 @@ void maxigin_flexHashAdd( MaxiginFlexHashState *inState,
 
   This hash result buffer can also be accessed in inState->hashBuffer
 
+  Parameters:
+
+      inState      the hash structure to finish
+
   [jumpMaxiginGeneral]
 */
-void maxigin_flexHashFinish( MaxiginFlexHashState *inState );
+void maxigin_flexHashFinish( MaxiginFlexHashState  *inState );
 
 
 
@@ -676,9 +822,6 @@ void maxigin_flexHashFinish( MaxiginFlexHashState *inState );
 #ifdef MAXIGIN_IMPLEMENTATION
 
 
-static char mx_areWeInMaxiginGameInitFunction = 0;
-
-static char mx_areWeInMaxiginGameStepFunction = 0;
 
 
 
@@ -696,46 +839,61 @@ typedef enum MaxiginUserAction {
     } MaxiginUserAction;
 
 
+static  char  mx_areWeInMaxiginGameInitFunction  =  0;
 
+static  char  mx_areWeInMaxiginGameStepFunction  =  0;
 
-static char mx_initDone = 0;
+static  char  mx_initDone                        =  0;
 
-static char mx_buttonsDown[ LAST_MAXIGIN_USER_ACTION ];
+static  char  mx_recordingRunning                =  0;
+static  char  mx_playbackRunning                 =  0;
+static  char  mx_playbackPaused                  =  0;
+static  int   mx_playbackSpeed                   =  1;
 
-static char mx_recordingRunning = 0;
-static char mx_playbackRunning = 0;
-static char mx_playbackPaused = 0;
-static int mx_playbackSpeed = 1;
-
-
-/* RGB pixels of game's native image size */
-static unsigned char mx_gameImageBuffer[ MAXIGIN_GAME_NATIVE_W *
-                                         MAXIGIN_GAME_NATIVE_H * 3 ];
+static  char  mx_buttonsDown[ LAST_MAXIGIN_USER_ACTION ];
 
 
 
-void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh ) {
+
+
+
+
+void minginGame_getMinimumViableScreenSize( int  *outWide,
+                                            int  *outHigh ) {
     *outWide = MAXIGIN_GAME_NATIVE_W;
     *outHigh = MAXIGIN_GAME_NATIVE_H;
     }
 
 
 
-void minginGame_getScreenPixels( int inWide, int inHigh,
-                                 unsigned char *inRGBBuffer ) {
-    int numPixels = inWide * inHigh;
-    int numPixelBytes = numPixels * 3;
-    int p;
-    int x, y;
+void minginGame_getScreenPixels( int             inWide,
+                                 int             inHigh,
+                                 unsigned char  *inRGBBuffer ) {
+    /* RGB pixels of game's native image size */
+    static  unsigned char  gameImageBuffer[ MAXIGIN_GAME_NATIVE_W *
+                                            MAXIGIN_GAME_NATIVE_H * 3 ];
     
-    int scaleFactor;
-    int scaleW, scaleH;
-    int scaledGameW, scaledGameH;
-    int offsetX, offsetY;
+            int            numPixels      =  inWide * inHigh;
+            int            numPixelBytes  =  numPixels * 3;
+            int            p;
+            
+            int            x;
+            int            y;
+            
+            int            scaleFactor;
+            
+            int            scaleW;
+            int            scaleH;
+            
+            int            scaledGameW;
+            int            scaledGameH;
+            
+            int            offsetX;
+            int            offsetY;
 
-    maxiginGame_getNativePixels( mx_gameImageBuffer );
+    maxiginGame_getNativePixels( gameImageBuffer );
 
-    scaleW = inWide /  MAXIGIN_GAME_NATIVE_W;
+    scaleW = inWide / MAXIGIN_GAME_NATIVE_W;
 
     scaleH = inHigh / MAXIGIN_GAME_NATIVE_H;
 
@@ -767,34 +925,47 @@ void minginGame_getScreenPixels( int inWide, int inHigh,
         }
     
 
-    if( offsetX > 0 || offsetY > 0 ) {
+    if( offsetX > 0
+        ||
+        offsetY > 0 ) {
+        
         /* black background beyond edges of our centered image */
-        for( p = 0; p<numPixelBytes; p++ ) {
+        for( p = 0;
+             p < numPixelBytes;
+             p ++ ) {
+            
             inRGBBuffer[p] = 0;
             }
         }
 
     /* naive nearest neighbor scaling */
-    for( y = offsetY; y < offsetY + scaledGameH; y++ ) {
+    for( y = offsetY;
+         y < offsetY + scaledGameH;
+         y ++ ) {
+        
         int rowStartDest = y * inWide * 3;
         int ySrcScaled = y - offsetY;
         int ySrcOrig = ySrcScaled /  scaleFactor;
         
         int rowStartSrcOrig = ySrcOrig * MAXIGIN_GAME_NATIVE_W * 3;
         
-        for( x = offsetX; x < offsetX + scaledGameW; x++ ) {
+        for( x = offsetX;
+             x < offsetX + scaledGameW;
+             x ++ ) {
+            
             int xSrcScaled = x - offsetX;
             int xSrcOrig = xSrcScaled /  scaleFactor;
         
             int pixDest = rowStartDest + x * 3;
             int pixSrcOrig = rowStartSrcOrig + xSrcOrig * 3;
 
-            inRGBBuffer[ pixDest ] = mx_gameImageBuffer[ pixSrcOrig ];
-            inRGBBuffer[ pixDest + 1 ] = mx_gameImageBuffer[ pixSrcOrig + 1 ];
-            inRGBBuffer[ pixDest + 2 ] = mx_gameImageBuffer[ pixSrcOrig + 2 ];
+            inRGBBuffer[ pixDest ]      =  gameImageBuffer[ pixSrcOrig ];
+            inRGBBuffer[ pixDest + 1 ]  =  gameImageBuffer[ pixSrcOrig + 1 ];
+            inRGBBuffer[ pixDest + 2 ]  =  gameImageBuffer[ pixSrcOrig + 2 ];
             }
         }
     }
+
 
 
 static void mx_initRecording( void );
@@ -827,7 +998,7 @@ static void mx_gameInit( void );
 static void mx_saveGame( void );
 
 
-static char mx_isActionFreshPressed( MaxiginUserAction inAction ) {
+static char mx_isActionFreshPressed( MaxiginUserAction  inAction ) {
 
     char fresh = 0;
     
@@ -850,7 +1021,7 @@ static char mx_playbackInterruptedRecording = 0;
 
 
 
-void minginGame_step( char inFinalStep ) {
+void minginGame_step( char  inFinalStep ) {
 
     if( ! mx_initDone ) {
         if( inFinalStep ) {
@@ -865,7 +1036,9 @@ void minginGame_step( char inFinalStep ) {
 
     /* handle both case where platform forced us to end and
        where user decided to quit */
-    if( inFinalStep || mingin_isButtonDown( QUIT ) ) {
+    if( inFinalStep
+        ||
+        mingin_isButtonDown( QUIT ) ) {
 
         if( inFinalStep ) {
             mingin_log( "Forced to quit by platform\n" );
@@ -976,37 +1149,48 @@ void minginGame_step( char inFinalStep ) {
 
 
 
-static MinginButton mx_quitMapping[] = { MGN_KEY_Q,
-                                         MGN_KEY_ESCAPE,
-                                         MGN_MAP_END };
+static  MinginButton  mx_quitMapping[] = { MGN_KEY_Q,
+                                           MGN_KEY_ESCAPE,
+                                           MGN_MAP_END };
 
-static MinginButton mx_fullscreenMapping[] = { MGN_KEY_F, MGN_MAP_END };
+static  MinginButton  mx_fullscreenMapping[] = { MGN_KEY_F,
+                                                 MGN_MAP_END };
 
-static MinginButton mx_playbackMappings[7][2] =
+static  MinginButton  mx_playbackMappings[7][2] =
     { { MGN_KEY_BACKSLASH, MGN_MAP_END },   /* start-stop */
-      { MGN_KEY_EQUAL, MGN_MAP_END },       /* faster */
-      { MGN_KEY_MINUS, MGN_MAP_END },       /* slower */
-      { MGN_KEY_0, MGN_MAP_END },           /* pause */
-      { MGN_KEY_9, MGN_MAP_END },           /* normal speed */
+      { MGN_KEY_EQUAL,     MGN_MAP_END },   /* faster */
+      { MGN_KEY_MINUS,     MGN_MAP_END },   /* slower */
+      { MGN_KEY_0,         MGN_MAP_END },   /* pause */
+      { MGN_KEY_9,         MGN_MAP_END },   /* normal speed */
       { MGN_KEY_BRACKET_L, MGN_MAP_END },   /* jump back */
       { MGN_KEY_BRACKET_R, MGN_MAP_END } }; /* jump ahead */
 
 
 
 static void mx_gameInit( void ) {
-    int p;
-    
-    mingin_registerButtonMapping( QUIT, mx_quitMapping );
-    mingin_registerButtonMapping( FULLSCREEN_TOGGLE, mx_fullscreenMapping );
 
-    for( p = PLAYBACK_START_STOP; p <= PLAYBACK_JUMP_HALF_AHEAD; p++ ) {
+    int  p;
+    
+    mingin_registerButtonMapping( QUIT,
+                                  mx_quitMapping );
+    
+    mingin_registerButtonMapping( FULLSCREEN_TOGGLE,
+                                  mx_fullscreenMapping );
+
+    for( p =  PLAYBACK_START_STOP;
+         p <= PLAYBACK_JUMP_HALF_AHEAD;
+         p ++ ) {
         
         mingin_registerButtonMapping(
-            p, mx_playbackMappings[ p - PLAYBACK_START_STOP ] );
+            p,
+            mx_playbackMappings[ p - PLAYBACK_START_STOP ] );
         }
 
     /* all buttons start out unpressed */
-    for( p= QUIT; p< LAST_MAXIGIN_USER_ACTION; p++ ) {
+    for( p = QUIT;
+         p < LAST_MAXIGIN_USER_ACTION;
+         p ++ ) {
+        
         mx_buttonsDown[ p ] = 0;
         }
     
@@ -1026,18 +1210,19 @@ static void mx_gameInit( void ) {
 
 
 
-char maxigin_registerButtonMapping( int inButtonHandle,
-                                    const MinginButton inMapping[] ) {
+char maxigin_registerButtonMapping( int                 inButtonHandle,
+                                    const MinginButton  inMapping[] ) {
 
     /* push it up so it doesn't interfere with our mappings */
     inButtonHandle += LAST_MAXIGIN_USER_ACTION;
 
-    return mingin_registerButtonMapping( inButtonHandle, inMapping );
+    return mingin_registerButtonMapping( inButtonHandle,
+                                         inMapping );
     }
 
 
 
-char maxigin_isButtonDown( int inButtonHandle ) {
+char maxigin_isButtonDown( int  inButtonHandle ) {
     
     /* push it up so it doesn't interfere with our mappings */
     inButtonHandle += LAST_MAXIGIN_USER_ACTION;
@@ -1049,23 +1234,23 @@ char maxigin_isButtonDown( int inButtonHandle ) {
 
 
 typedef struct MaxiginMemRec {
-        void *pointer;
-        int numBytes;
-        const char *description;
+        void        *pointer;
+        int          numBytes;
+        const char  *description;
     } MaxiginMemRec;
 
 
-#define MAXIGIN_MAX_MEM_RECORDS 1024
+#define  MAXIGIN_MAX_MEM_RECORDS  1024
 
-static MaxiginMemRec mx_memRecords[ MAXIGIN_MAX_MEM_RECORDS ];
+static  MaxiginMemRec  mx_memRecords[ MAXIGIN_MAX_MEM_RECORDS ];
 
-static int mx_numMemRecords = 0;
+static  int            mx_numMemRecords            =  0;
+static  int            mx_totalMemoryRecordsBytes  =  0;
 
-static int mx_totalMemoryRecordsBytes = 0;
 
-
-void maxigin_initRegisterStaticMemory( void *inPointer, int inNumBytes,
-                                       const char *inDescription ) {
+void maxigin_initRegisterStaticMemory( void        *inPointer,
+                                       int          inNumBytes,
+                                       const char  *inDescription ) {
     
     if( ! mx_areWeInMaxiginGameInitFunction ) {
         mingin_log( "Game tried to call maxigin_initRegisterStaticMemory "
@@ -1078,11 +1263,11 @@ void maxigin_initRegisterStaticMemory( void *inPointer, int inNumBytes,
                         MAXIGIN_MAX_MEM_RECORDS );
         return;
         }
-    mx_memRecords[ mx_numMemRecords ].pointer = inPointer;
-    mx_memRecords[ mx_numMemRecords ].numBytes = inNumBytes;
-    mx_memRecords[ mx_numMemRecords ].description = inDescription;
+    mx_memRecords[ mx_numMemRecords ].pointer      =  inPointer;
+    mx_memRecords[ mx_numMemRecords ].numBytes     =  inNumBytes;
+    mx_memRecords[ mx_numMemRecords ].description  =  inDescription;
 
-    mx_numMemRecords++;
+    mx_numMemRecords ++;
     mx_totalMemoryRecordsBytes += inNumBytes;
     }
 
@@ -1092,39 +1277,44 @@ void maxigin_initRegisterStaticMemory( void *inPointer, int inNumBytes,
 
 
 
-static const char *mx_saveGameDataStoreName = "maxigin_save.bin";
+static  const char   *mx_saveGameDataStoreName  =  "maxigin_save.bin";
 
 
-#define MAXIGIN_FINGERPRINT_LENGTH  10
-static unsigned char mx_fingerprintBuffer[ MAXIGIN_FINGERPRINT_LENGTH ];
 
-#define MAXIGIN_FINGERPRINT_HEX_LENGTH \
-    ( MAXIGIN_FINGERPRINT_LENGTH * 2 + 1 )
-
-static char mx_fingerprintHexBuffer[ MAXIGIN_FINGERPRINT_HEX_LENGTH ];
-
-
-static char *mx_getMemRecordsFingerprint( int *outTotalMemBytes ) {
-    MaxiginFlexHashState s;
-    int i;
-    int totalNumBytes = 0;
+static char *mx_getMemRecordsFingerprint( int  *outTotalMemBytes ) {
     
-    maxigin_flexHashInit( &s, mx_fingerprintBuffer,
-                          MAXIGIN_FINGERPRINT_LENGTH );
+    enum{                         FINGERPRINT_LENGTH  =  10,
+                                  HEX_LENGTH          =  FINGERPRINT_LENGTH
+                                                         * 2 + 1 };
     
-    for( i=0; i<mx_numMemRecords; i++ ) {
+    static  unsigned char         fingerprintBuffer[ FINGERPRINT_LENGTH ];
+    static  char                  hexBuffer[ HEX_LENGTH ];
+            MaxiginFlexHashState  s;
+            int                   i;
+            int                   totalNumBytes       =  0;
+    
+    maxigin_flexHashInit( &s,
+                          FINGERPRINT_LENGTH,
+                          fingerprintBuffer );
+    
+    for( i = 0;
+         i < mx_numMemRecords;
+         i ++ ) {
+        
         totalNumBytes += mx_memRecords[i].numBytes;
+        
         maxigin_flexHashAdd(
             &s,
-            (unsigned char *)( mx_memRecords[i].description ),
-            maxigin_stringLength( mx_memRecords[i].description ) );
+            maxigin_stringLength( mx_memRecords[i].description ),
+            (unsigned char *)( mx_memRecords[i].description ) );
         }
     *outTotalMemBytes = totalNumBytes;
 
-    maxigin_hexEncode( mx_fingerprintBuffer, MAXIGIN_FINGERPRINT_LENGTH,
-                       mx_fingerprintHexBuffer );
+    maxigin_hexEncode( FINGERPRINT_LENGTH,
+                       fingerprintBuffer, 
+                       hexBuffer );
     
-    return mx_fingerprintHexBuffer;
+    return hexBuffer;
     }
 
 
@@ -1137,35 +1327,45 @@ static char *mx_getMemRecordsFingerprint( int *outTotalMemBytes ) {
 
   Returns 1 on success, 0 on failure.
 */
-static char mx_readStringFromPersistData( int inStoreReadHandle,
-                                          int inMaxBytes,
-                                       char *inBuffer ) {
-    int i = 0;
+static char mx_readStringFromPersistData( int    inStoreReadHandle,
+                                          int    inMaxBytes,
+                                          char  *inBuffer ) {
+    int  i        =  0;
 
-    int readNum = mingin_readPersistData( inStoreReadHandle,
-                                          1,
-                                          (unsigned char *)&( inBuffer[i] ) );
-    while( readNum == 1 &&
-           i < inMaxBytes - 1 &&
+    int  readNum  =  mingin_readPersistData(
+                         inStoreReadHandle,
+                         1,
+                         (unsigned char *)&( inBuffer[i] ) );
+    
+    while( readNum == 1
+           &&
+           i < inMaxBytes - 1
+           &&
            inBuffer[i] != '\0' ) {
         i++;
         readNum = mingin_readPersistData( inStoreReadHandle,
                                           1,
                                           (unsigned char *)&( inBuffer[i] ) );
         }
-    if( inBuffer[i] != '\0' && readNum == 1 ) {
+    if( inBuffer[i] != '\0'
+        &&
+        readNum == 1 ) {
         /* didn't find termination in data store
            because string was too long for buffer */
         mingin_log( "Error:  Buffer overflow when trying to read string from "
                     "persistent data store.\n" );
         return 0;
         }
-    else if( inBuffer[i] != '\0' && readNum == 0 ) {
+    else if( inBuffer[i] != '\0'
+             &&
+             readNum == 0 ) {
         mingin_log( "Error:  Reached end of store when trying to read string "
                     "from persistent data store.\n" );
         return 0;
         }
-    else if( inBuffer[i] != '\0' && readNum == -1 ) {
+    else if( inBuffer[i] != '\0'
+             &&
+             readNum == -1 ) {
         mingin_log( "Error:  Got read failure when trying to read string "
                     "from persistent data store.\n" );
         return 0;
@@ -1176,16 +1376,14 @@ static char mx_readStringFromPersistData( int inStoreReadHandle,
 
 
 
-
-
 /*
   Reads a \0-terminated short string (< 63 chars long) into a static buffer.
 
   Returns 0 on failure.
 */
-static const char *mx_readShortStringFromPersistData( int inStoreReadHandle ) {
+static const char *mx_readShortStringFromPersistData( int  inStoreReadHandle ) {
 
-    enum{         BUFFER_LEN            =  64 };
+    enum{         BUFFER_LEN             =  64 };
     static  char  buffer[ BUFFER_LEN ];
             char  success;
             
@@ -1203,16 +1401,15 @@ static const char *mx_readShortStringFromPersistData( int inStoreReadHandle ) {
 
 
 
-
-
 /*
   Reads a \0-terminated string representation of an int from data store.
 
   Returns 1 on success, 0 on failure.
 */
-static char mx_readIntFromPersistData( int inStoreReadHandle,
-                                       int *outInt ) {
-    const char *read = mx_readShortStringFromPersistData( inStoreReadHandle );
+static char mx_readIntFromPersistData( int   inStoreReadHandle,
+                                       int  *outInt ) {
+    
+    const char  *read  =  mx_readShortStringFromPersistData( inStoreReadHandle );
 
     if( read == 0 ) {
         return 0;
@@ -1224,13 +1421,14 @@ static char mx_readIntFromPersistData( int inStoreReadHandle,
     }
 
 
+
 /*
   Writes a \0-terminated string representation of an int to data store.
 
   Returns 1 on success, 0 on failure.
 */
-static char mx_writeStringToPeristentData( int inStoreWriteHandle,
-                                           const char *inString ) {
+static char mx_writeStringToPeristentData( int          inStoreWriteHandle,
+                                           const char  *inString ) {
     
     return mingin_writePersistData( inStoreWriteHandle,
                                     maxigin_stringLength( inString ) + 1,
@@ -1243,17 +1441,20 @@ static char mx_writeStringToPeristentData( int inStoreWriteHandle,
 
   Returns 1 on success, 0 on failure.
 */
-static char mx_writeIntToPerisistentData( int inStoreWriteHandle,
-                                          int inInt ) {
+static char mx_writeIntToPerisistentData( int  inStoreWriteHandle,
+                                          int  inInt ) {
+    
     return mx_writeStringToPeristentData( inStoreWriteHandle,
                                           maxigin_intToString( inInt ) );
     }
 
 
 
-#define MAXIGIN_PADDED_INT_LENGTH 12
+#define  MAXIGIN_PADDED_INT_LENGTH  12
 
-static unsigned char mx_intPadding[ MAXIGIN_PADDED_INT_LENGTH ];
+static  unsigned char  mx_intPadding[ MAXIGIN_PADDED_INT_LENGTH ];
+
+
 
 /*
   Writes a \0-terminated string representation of an int to data store,
@@ -1261,12 +1462,13 @@ static unsigned char mx_intPadding[ MAXIGIN_PADDED_INT_LENGTH ];
 
   Returns 1 on success, 0 on failure.
 */
-static char mx_writePaddedIntToPerisistentData( int inStoreWriteHandle,
-                                                int inInt ) {
-    const char *intString = maxigin_intToString( inInt );
-    char success;
-    int b=0;
-    int len;
+static char mx_writePaddedIntToPerisistentData( int  inStoreWriteHandle,
+                                                int  inInt ) {
+    
+    const char  *intString  =  maxigin_intToString( inInt );
+    char         success;
+    int          b          =  0;
+    int          len;
     
     success = mingin_writePersistData( inStoreWriteHandle,
                                        maxigin_stringLength( intString ),
@@ -1278,6 +1480,7 @@ static char mx_writePaddedIntToPerisistentData( int inStoreWriteHandle,
     
     /* pad with \0     */
     len = maxigin_stringLength( intString );
+    
     while( len < MAXIGIN_PADDED_INT_LENGTH ) {
         mx_intPadding[b] = '\0';
         len++;
@@ -1285,7 +1488,9 @@ static char mx_writePaddedIntToPerisistentData( int inStoreWriteHandle,
         }
 
     /* write padding out */
-    return mingin_writePersistData( inStoreWriteHandle, b, mx_intPadding );
+    return mingin_writePersistData( inStoreWriteHandle,
+                                    b,
+                                    mx_intPadding );
     }
 
 
@@ -1296,11 +1501,12 @@ static char mx_writePaddedIntToPerisistentData( int inStoreWriteHandle,
 
   Returns 1 on success, 0 on failure.
 */
-static char mx_readPaddedIntFromPeristentData( int inStoreReadHandle,
-                                               int *outInt ) {
-    int numRead = mingin_readPersistData( inStoreReadHandle,
-                                          MAXIGIN_PADDED_INT_LENGTH,
-                                          mx_intPadding );
+static char mx_readPaddedIntFromPeristentData( int   inStoreReadHandle,
+                                               int  *outInt ) {
+    
+    int  numRead  =  mingin_readPersistData( inStoreReadHandle,
+                                             MAXIGIN_PADDED_INT_LENGTH,
+                                             mx_intPadding );
 
     if( numRead != MAXIGIN_PADDED_INT_LENGTH ){
         return 0;
@@ -1313,19 +1519,23 @@ static char mx_readPaddedIntFromPeristentData( int inStoreReadHandle,
 
 
 /* returns 1 on success, 0 on failure */
-static char mx_saveGameToDataStore( int inStoreWriteHandle ) {
-    char *fingerprint;
-    int numTotalBytes;
-    char success;
-    int i;
+static char mx_saveGameToDataStore( int  inStoreWriteHandle ) {
+    
+    char  *fingerprint;
+    int    numTotalBytes;
+    char   success;
+    int    i;
 
     fingerprint = mx_getMemRecordsFingerprint( &numTotalBytes );
 
 
-    success = mx_writeIntToPerisistentData( inStoreWriteHandle, numTotalBytes );
+    success = mx_writeIntToPerisistentData( inStoreWriteHandle,
+                                            numTotalBytes );
 
     if( ! success ) {
-        MAXIGIN_SAVED_GAME_WRITE_FAILURE:
+        
+MAXIGIN_SAVED_GAME_WRITE_FAILURE:
+        
         maxigin_logString( "Failed to write to saved game data: ",
                            mx_saveGameDataStoreName );
         return 0;
@@ -1340,7 +1550,8 @@ static char mx_saveGameToDataStore( int inStoreWriteHandle ) {
         }
 
     
-    success = mx_writeStringToPeristentData( inStoreWriteHandle, fingerprint );
+    success = mx_writeStringToPeristentData( inStoreWriteHandle,
+                                             fingerprint );
     
     if( ! success ) {
         goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
@@ -1349,10 +1560,14 @@ static char mx_saveGameToDataStore( int inStoreWriteHandle ) {
     /* first write all the descriptions and sizes
        on loading, we can bail out if these don't match, before
        overwriting anything */
-    for( i=0; i<mx_numMemRecords; i++ ) {
+    for( i = 0;
+         i < mx_numMemRecords;
+         i ++ ) {
+        
         const char *des = mx_memRecords[i].description;
     
-        success = mx_writeStringToPeristentData( inStoreWriteHandle, des );
+        success = mx_writeStringToPeristentData( inStoreWriteHandle,
+                                                 des );
 
         if( ! success ) {
             goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
@@ -1366,7 +1581,9 @@ static char mx_saveGameToDataStore( int inStoreWriteHandle ) {
         }
 
     /* now write the actual memory regions */
-    for( i=0; i<mx_numMemRecords; i++ ) {
+    for( i = 0;
+         i < mx_numMemRecords;
+         i ++ ) {
         
         /* write numBytes from memory location into storage */
         success = mingin_writePersistData(
@@ -1385,7 +1602,8 @@ static char mx_saveGameToDataStore( int inStoreWriteHandle ) {
 
 
 static void mx_saveGame( void ) {
-    int outHandle;
+    
+    int  outHandle;
     
     if( mx_numMemRecords == 0 ) {
         return;
@@ -1410,14 +1628,14 @@ static void mx_saveGame( void ) {
 
 /* returns 1 on success, 0 on failure */
 static char mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
-    char *fingerprint;
-    int numTotalBytes;
-    int readNumTotalBytes;
-    int readNumMemRecords;
-    char success;
-    int i;
-
-    const char *readFingerprint;
+    
+    char        *fingerprint;
+    int          numTotalBytes;
+    int          readNumTotalBytes;
+    int          readNumMemRecords;
+    char         success;
+    int          i;
+    const char  *readFingerprint;
 
     if( mx_numMemRecords == 0 ) {
         return 0;
@@ -1426,7 +1644,8 @@ static char mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
     fingerprint = mx_getMemRecordsFingerprint( &numTotalBytes );
     
  
-    success = mx_readIntFromPersistData( inStoreReadHandle, &readNumTotalBytes );
+    success = mx_readIntFromPersistData( inStoreReadHandle,
+                                         &readNumTotalBytes );
 
     if( ! success ) {
         mingin_log( "Failed to read total num bytes from save data.\n" );
@@ -1436,13 +1655,18 @@ static char mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
     if( readNumTotalBytes != numTotalBytes ) {
         mingin_log( "Save data does not match current total memory bytes, "
                     "ignoring.\n" );
-        maxigin_logInt( "Save data has numTotalBytes = ", readNumTotalBytes );
-        maxigin_logInt( "Current live numTotalBytes = ", numTotalBytes );
+        
+        maxigin_logInt( "Save data has numTotalBytes = ",
+                        readNumTotalBytes );
+        
+        maxigin_logInt( "Current live numTotalBytes = ",
+                        numTotalBytes );
         
         return 0;
         }
 
-    success = mx_readIntFromPersistData( inStoreReadHandle, &readNumMemRecords );
+    success = mx_readIntFromPersistData( inStoreReadHandle,
+                                         &readNumMemRecords );
 
     if( ! success ) {
         mingin_log( "Failed to read num memory records from save data.\n" );
@@ -1452,8 +1676,12 @@ static char mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
     if( readNumMemRecords != mx_numMemRecords ) {
         mingin_log( "Save data does not match current mx_numMemRecords, "
                     "ignoring.\n" );
-        maxigin_logInt( "Save data has mx_numMemRecords = ", readNumMemRecords );
-        maxigin_logInt( "Current live mx_numMemRecords = ", mx_numMemRecords );
+        
+        maxigin_logInt( "Save data has mx_numMemRecords = ",
+                        readNumMemRecords );
+        
+        maxigin_logInt( "Current live mx_numMemRecords = ",
+                        mx_numMemRecords );
         
         return 0;
         }
@@ -1468,12 +1696,17 @@ static char mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
         }
     
     
-    if( ! maxigin_stringsEqual( fingerprint, readFingerprint ) ) {
+    if( ! maxigin_stringsEqual( fingerprint,
+                                readFingerprint ) ) {
+        
         mingin_log( "Save data does not match current memory fingerprint, "
                     "ignoring.\n" );
+        
         maxigin_logString( "Save data has fingerprint = ",
                            readFingerprint );
-        maxigin_logString( "Current live has fingerprint = ", fingerprint );
+        
+        maxigin_logString( "Current live has fingerprint = ",
+                           fingerprint );
         
         return 0;
         }
@@ -1481,7 +1714,10 @@ static char mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
     /* now read the memory records from the saved data */
 
     /* first read the descriptions and sizes to make sure they all match */
-    for( i=0; i<mx_numMemRecords; i++ ) {
+    for( i = 0;
+         i < mx_numMemRecords;
+         i ++ ) {
+        
         const char *liveDes = mx_memRecords[i].description;
         const char *readDes =
             mx_readShortStringFromPersistData( inStoreReadHandle );
@@ -1494,19 +1730,23 @@ static char mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
             return 0;
             }
         
-        if( ! maxigin_stringsEqual( liveDes, readDes ) ) {
-            maxigin_logInt(
-                "Save data has wrong description for record # = ", i );
+        if( ! maxigin_stringsEqual( liveDes,
+                                    readDes ) ) {
+            maxigin_logInt( "Save data has wrong description for record # = ",
+                            i );
             
-            maxigin_logString( "Save data has description = ", readDes );
+            maxigin_logString( "Save data has description = ",
+                               readDes );
 
-            maxigin_logString( "Live description = ", liveDes );
-        
+            maxigin_logString( "Live description = ",
+                               liveDes );
+            
             return 0;
             }
         
         
-        success = mx_readIntFromPersistData( inStoreReadHandle, &readNumBytes );
+        success = mx_readIntFromPersistData( inStoreReadHandle,
+                                             &readNumBytes );
         
         if( ! success ) {
             maxigin_logInt( "Failed to read saved numBytes for record # = ",
@@ -1515,12 +1755,14 @@ static char mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
             }
 
         if( readNumBytes != mx_memRecords[i].numBytes ) {
-            maxigin_logInt(
-                "Save data has wrong numBytes for record # = ", i );
+            maxigin_logInt( "Save data has wrong numBytes for record # = ",
+                            i );
             
-            maxigin_logInt( "Save data has numBytes = ", readNumBytes );
+            maxigin_logInt( "Save data has numBytes = ",
+                            readNumBytes );
 
-            maxigin_logInt( "Live numBytes = ", mx_memRecords[i].numBytes );
+            maxigin_logInt( "Live numBytes = ",
+                            mx_memRecords[i].numBytes );
 
             return 0;
             }
@@ -1531,7 +1773,9 @@ static char mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
     /* Now it's safe to reach the memory regions into memory
        since everything above matches */
     
-    for( i=0; i<mx_numMemRecords; i++ ) {
+    for( i = 0;
+         i < mx_numMemRecords;
+         i ++ ) {
         
         /* read numBytes from memory location into storage */
         int numRead = mingin_readPersistData(
@@ -1593,9 +1837,10 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 
 #if( MAXIGIN_ENABLE_RECORDING == 0 )
     /* recording is off, shrink our recording buffer down to nothing */
-    #undef MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES
-    #define MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES 1
+    #undef   MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES
+    #define  MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES  1
 #endif
+
 
 /*
   buffer for our last state represented in the recording data store
@@ -1604,25 +1849,24 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 static unsigned char mx_recordingBuffers[2][
     MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES ];
 
-static int mx_latestRecordingIndex = -1;
+
+static  const char  *mx_recordingDataStoreName         =
+                                                   "maxigin_recording.bin";
+static  const char  *mx_recordingIndexDataStoreName    =
+                                                   "maxigin_recordingIndex.bin";
+static  int          mx_latestRecordingIndex           =  -1;
+static  int          mx_recordingDataStoreHandle       =  -1;
+static  int          mx_recordingIndexDataStoreHandle  =  -1;
+
+static  char         mx_diffRecordingEnabled           =  1;
+
+static  int          mx_numDiffsSinceLastFullSnapshot  =  0;
+static  int          mx_diffsBetweenSnapshots          =  60;
 
 
-static const char *mx_recordingDataStoreName = "maxigin_recording.bin";
-static const char *mx_recordingIndexDataStoreName = "maxigin_recordingIndex.bin";
 
-static int mx_recordingDataStoreHandle = -1;
-static int mx_recordingIndexDataStoreHandle = -1;
-
-static char mx_diffRecordingEnabled = 1;
-
-
-
-static int mx_numDiffsSinceLastFullSnapshot = 0;
-
-static int mx_diffsBetweenSnapshots = 60;
-
-
-static void mx_copyMemoryIntoRecordingBuffer( int inIndex ) {
+static void mx_copyMemoryIntoRecordingBuffer( int  inIndex ) {
+    
     int             r;
     int             b       =  0;
     unsigned char  *buffer  =  mx_recordingBuffers[ inIndex ];
@@ -1631,11 +1875,14 @@ static void mx_copyMemoryIntoRecordingBuffer( int inIndex ) {
         return;
         }
 
-    for( r=0; r<mx_numMemRecords; r++ ) {
+    for( r = 0;
+         r < mx_numMemRecords;
+         r ++ ) {
 
-        int rb = 0;
-        int recSize = mx_memRecords[r].numBytes;
-        unsigned char *recPointer = (unsigned char*)( mx_memRecords[r].pointer );
+        int             rb          =  0;
+        int             recSize     =  mx_memRecords[r].numBytes;
+        unsigned char  *recPointer  =
+                            (unsigned char*)( mx_memRecords[r].pointer );
         
         while( rb < recSize ) {
             buffer[b] = recPointer[ rb ];
@@ -1646,6 +1893,7 @@ static void mx_copyMemoryIntoRecordingBuffer( int inIndex ) {
     
     mx_latestRecordingIndex = inIndex; 
     }
+
 
 
 static void mx_closeRecordingDataStores( void ) {
@@ -1666,9 +1914,11 @@ static void mx_closeRecordingDataStores( void ) {
 
 
 static void mx_recordFullMemorySnapshot( void ) {
-    int r;
-    int startPos = mingin_getPersistDataPosition( mx_recordingDataStoreHandle );
-    char success;
+    
+    int   r;
+    int   startPos  =
+              mingin_getPersistDataPosition( mx_recordingDataStoreHandle );
+    char  success;
 
     if( startPos == -1 ) {
         mingin_log( "Failed to get current recording data store postion.\n" );
@@ -1697,7 +1947,8 @@ static void mx_recordFullMemorySnapshot( void ) {
     
 
     /* write our full snapshot header */
-    success = mx_writeStringToPeristentData( mx_recordingDataStoreHandle, "F" );
+    success = mx_writeStringToPeristentData( mx_recordingDataStoreHandle,
+                                             "F" );
 
     if( ! success ) {
         mingin_log(
@@ -1707,17 +1958,22 @@ static void mx_recordFullMemorySnapshot( void ) {
         return;
         }
     
-    for( r=0; r<mx_numMemRecords; r++ ) {
+    for( r = 0;
+         r < mx_numMemRecords;
+         r ++ ) {
+        
         int recSize = mx_memRecords[r].numBytes;
         unsigned char *recPointer = (unsigned char*)( mx_memRecords[r].pointer );
 
         success =
             mingin_writePersistData( mx_recordingDataStoreHandle,
-                                     recSize, recPointer );
+                                     recSize,
+                                     recPointer );
 
         if( ! success ) {
             maxigin_logString( "Failed to write data block to recording data: ",
                                mx_recordingDataStoreName );
+            
             mx_closeRecordingDataStores();
             return;
             }
@@ -1738,8 +1994,12 @@ static void mx_recordFullMemorySnapshot( void ) {
 
 
 
-static char mx_checkHeader( int inStoreReadHandle, const char inTargetLetter ) {
-    const char *header = mx_readShortStringFromPersistData( inStoreReadHandle );
+/* Returns 1 if header found matching inTargetLetter, 0 if not */
+static char mx_checkHeader( int         inStoreReadHandle,
+                            const char  inTargetLetter ) {
+    
+    const char  *header  =
+                     mx_readShortStringFromPersistData( inStoreReadHandle );
 
     if( header == 0 ||
         header[0] != inTargetLetter ||
@@ -1760,22 +2020,28 @@ static char mx_checkHeader( int inStoreReadHandle, const char inTargetLetter ) {
   Returns 1 on success, 0 on failure.
 */
 static char mx_restoreFromFullMemorySnapshot( int inStoreReadHandle ) {
-    int r;
-    int startPos;
-    char success;
+    
+    int   r;
+    int   startPos;
+    char  success;
     
     if( ! mx_checkHeader( inStoreReadHandle, 'F' ) ) {
         return 0;
         }
     
 
-    for( r=0; r<mx_numMemRecords; r++ ) {
-        int recSize = mx_memRecords[r].numBytes;
-        unsigned char *recPointer = (unsigned char*)( mx_memRecords[r].pointer );
-
-        int numRead =
-            mingin_readPersistData( inStoreReadHandle,
-                                    recSize, recPointer );
+    for( r = 0;
+         r < mx_numMemRecords;
+         r ++ ) {
+        
+        int             recSize     =  mx_memRecords[r].numBytes;
+        
+        unsigned char  *recPointer  =
+                            (unsigned char*)( mx_memRecords[r].pointer );
+        
+        int             numRead     =  mingin_readPersistData( inStoreReadHandle,
+                                                               recSize,
+                                                               recPointer );
 
         if( numRead != recSize ) {
             /* failed to read block */
@@ -1786,7 +2052,8 @@ static char mx_restoreFromFullMemorySnapshot( int inStoreReadHandle ) {
     /* read all blocks */
 
     /* now read start position footer, just to get past it */
-    success = mx_readPaddedIntFromPeristentData( inStoreReadHandle, &startPos );
+    success = mx_readPaddedIntFromPeristentData( inStoreReadHandle,
+                                                 &startPos );
 
     if( ! success ) {
         return 0;
@@ -1799,12 +2066,13 @@ static char mx_restoreFromFullMemorySnapshot( int inStoreReadHandle ) {
     
     
 static void mx_recordMemoryDiff( void ) {
-    int prevIndex = mx_latestRecordingIndex;
-    int newIndex = 0;
-    int b;
-    int lastWritten = 0;
-    char success;
-    int startPos;
+    
+    int   prevIndex    =  mx_latestRecordingIndex;
+    int   newIndex     =  0;
+    int   b;
+    int   lastWritten  =  0;
+    char  success;
+    int   startPos;
     
     if( ! mx_diffRecordingEnabled ) {
         return;
@@ -1827,7 +2095,8 @@ static void mx_recordMemoryDiff( void ) {
     mx_copyMemoryIntoRecordingBuffer( newIndex );
 
     /* header for a diff */
-    success = mx_writeStringToPeristentData( mx_recordingDataStoreHandle, "D" );
+    success = mx_writeStringToPeristentData( mx_recordingDataStoreHandle,
+                                             "D" );
 
     if( ! success ) {
         mingin_log( "Failed to write memory diff header in recording\n" );
@@ -1836,7 +2105,10 @@ static void mx_recordMemoryDiff( void ) {
         return;
         }
     
-    for( b=0; b<MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES; b++ ) {
+    for( b = 0;
+         b < MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES;
+         b ++ ) {
+        
         if( mx_recordingBuffers[prevIndex][b] !=
             mx_recordingBuffers[newIndex][b] ) {
             /* a byte has changed */
@@ -1872,7 +2144,8 @@ static void mx_recordMemoryDiff( void ) {
        (each line in the diff starts with a valid non-negative position
        in our memory snapshot */
     
-    success = mx_writeIntToPerisistentData( mx_recordingDataStoreHandle, -1 );
+    success = mx_writeIntToPerisistentData( mx_recordingDataStoreHandle,
+                                            -1 );
     
     if( ! success ) {
         mingin_log( "Failed to write diff footer in recording\n" );
@@ -1903,11 +2176,12 @@ static void mx_recordMemoryDiff( void ) {
   Returns 1 on success, 0 on failure.
 */
 static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
+    
     /* I learned it by watching you, John */
     char            success;
     int             readInt;
-    int             curRecord         =  0;
-    int             curRecordByte     =  0;
+    int             curRecord          =  0;
+    int             curRecordByte      =  0;
     unsigned char  *curRecordPointer;
     int             numRead;
     int             startPos;
@@ -1926,7 +2200,8 @@ static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
     
     
 
-    success = mx_readIntFromPersistData( inStoreReadHandle, &readInt );
+    success = mx_readIntFromPersistData( inStoreReadHandle,
+                                         &readInt );
 
     if( ! success ) {
         /* must have at least 1 int, at least the -1 at the end,
@@ -1967,7 +2242,8 @@ static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
             return 0;
             }
 
-        success = mx_readIntFromPersistData( inStoreReadHandle, &readInt );
+        success = mx_readIntFromPersistData( inStoreReadHandle,
+                                             &readInt );
         
         if( ! success ) {
             return 0;
@@ -1978,7 +2254,8 @@ static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
        our diff block */
     
     /* now read start position footer, just to get past it */
-    success = mx_readPaddedIntFromPeristentData( inStoreReadHandle, &startPos );
+    success = mx_readPaddedIntFromPeristentData( inStoreReadHandle,
+                                                 &startPos );
 
     if( ! success ) {
         return 0;
@@ -1999,8 +2276,10 @@ static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
 
 
 static void mx_initRecording( void ) {
-    int b, i;
-    int success;
+    
+    int  b;
+    int  i;
+    int  success;
     
     mx_recordingRunning = 0;
     
@@ -2048,8 +2327,14 @@ static void mx_initRecording( void ) {
         }
     
     /* zero out both buffers */
-    for( i=0; i<2; i++ ) {
-        for( b=0; b<MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES; b++ ) {
+    for( i = 0;
+         i < 2;
+         i ++ ) {
+        
+        for( b = 0;
+             b < MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES;
+             b ++ ) {
+            
             mx_recordingBuffers[i][b] = 0;
             }
         }
@@ -2066,7 +2351,9 @@ static void mx_initRecording( void ) {
 
 
 static void mx_stepRecording( void ) {
-    if( ! MAXIGIN_ENABLE_RECORDING || ! mx_recordingRunning ) {
+    if( ! MAXIGIN_ENABLE_RECORDING
+        ||
+        ! mx_recordingRunning ) {
         return;
         }
 
@@ -2083,10 +2370,6 @@ static void mx_stepRecording( void ) {
 
 
 
-#define MAXIGIN_DATA_COPY_BUFFER_SIZE  512
-static unsigned char mx_dataCopyBuffer[ MAXIGIN_DATA_COPY_BUFFER_SIZE ];
-
-
 /*
   Copies bytes from one open read data store into the end
   of an open write data store.
@@ -2096,28 +2379,38 @@ static unsigned char mx_dataCopyBuffer[ MAXIGIN_DATA_COPY_BUFFER_SIZE ];
 static char mx_copyIntoDataStore( int inStoreReadHandle,
                                   int inStoreWriteHandle,
                                   int inNumBytesToCopy ) {
-    int numCopied = 0;
+    
+    enum{                  BUFFER_LEN  =  512 };
+    
+    static  unsigned char  buffer[ BUFFER_LEN ];
+    
+            int            numCopied   =  0;
+            
 
     while( numCopied < inNumBytesToCopy ) {
-        int numLeft = inNumBytesToCopy - numCopied;
-        int numThisTime = numLeft;
-        int numRead;
-        char success;
         
-        if( numThisTime > MAXIGIN_DATA_COPY_BUFFER_SIZE ) {
-            numThisTime = MAXIGIN_DATA_COPY_BUFFER_SIZE;
+        int   numLeft      =  inNumBytesToCopy - numCopied;
+        int   numThisTime  =  numLeft;
+        int   numRead;
+        char  success;
+        
+        if( numThisTime > BUFFER_LEN ) {
+            numThisTime = BUFFER_LEN;
             }
         
-        numRead = mingin_readPersistData( inStoreReadHandle, numThisTime,
-                                          mx_dataCopyBuffer );
+        numRead = mingin_readPersistData( inStoreReadHandle,
+                                          numThisTime,
+                                          buffer );
 
         if( numRead == -1 || numRead < numThisTime ) {
             /* error in read, or reached end of data before we got
                inNumBytesToCopy */
             return 0;
             }
-        success = mingin_writePersistData( inStoreWriteHandle, numRead,
-                                           mx_dataCopyBuffer );
+        
+        success = mingin_writePersistData( inStoreWriteHandle,
+                                           numRead,
+                                           buffer );
 
         if( ! success ) {
             return 0;
@@ -2131,14 +2424,16 @@ static char mx_copyIntoDataStore( int inStoreReadHandle,
 
 
 static void mx_finalizeRecording( void ) {
+    
     if( ! MAXIGIN_ENABLE_RECORDING ) {
         return;
         }
 
     if( mx_recordingRunning ) {
-        int indexLength;
-        char success;
-        int recordingIndexReadHandle;
+        
+        int   indexLength;
+        char  success;
+        int   recordingIndexReadHandle;
         
         mingin_endWritePersistData( mx_recordingIndexDataStoreHandle );
         mx_recordingIndexDataStoreHandle = -1;
@@ -2178,7 +2473,8 @@ static void mx_finalizeRecording( void ) {
         /* now append length of index
            padded so we know how far to jump back to read it during playback */
         success = mx_writePaddedIntToPerisistentData(
-            mx_recordingDataStoreHandle, indexLength );
+            mx_recordingDataStoreHandle,
+            indexLength );
 
         if( ! success ) {
             mingin_log( "Failed write length of index into end "
@@ -2201,38 +2497,42 @@ static void mx_finalizeRecording( void ) {
 
 
 
-static const char *mx_playbackDataStoreName = "maxigin_playback.bin";
-static int mx_playbackDataStoreHandle = -1;
+static  const char  *mx_playbackDataStoreName           =
+                                                        "maxigin_playback.bin";
+static  int          mx_playbackDataStoreHandle         =  -1;
 
-static int mx_playbackDataLength;
+static  int          mx_playbackDataLength;
 
-
-
-static int mx_playbackFullSnapshotLastPlayed = 0;
-static int mx_playbackIndexStartPos = 0;
-static int mx_playbackNumFullSnapshots = 0;
+static  int          mx_playbackFullSnapshotLastPlayed  =  0;
+static  int          mx_playbackIndexStartPos           =  0;
+static  int          mx_playbackNumFullSnapshots        =  0;
 
 
 /* returns 1 on success, 0 on failure */
-static char mx_seekAndReadInt( int inStoreReadHandle, int inPos, int *outInt ) {
+static char mx_seekAndReadInt( int   inStoreReadHandle,
+                               int   inPos,
+                               int  *outInt ) {
     
-    char success = mingin_seekPersistData( inStoreReadHandle, inPos );
+    char  success  =  mingin_seekPersistData( inStoreReadHandle,
+                                              inPos );
     
     if( ! success ) {
         return 0;
         }
 
-    return mx_readIntFromPersistData( inStoreReadHandle, outInt );
+    return mx_readIntFromPersistData( inStoreReadHandle,
+                                      outInt );
     }
     
 
 
 static char mx_initPlayback( void ) {
-    char success;
-    int indexLengthDataPos;
-    int indexLength;
+    
+    char  success;
+    int   indexLengthDataPos;
+    int   indexLength;
 
-    int firstFullSnapshotDataPos;
+    int   firstFullSnapshotDataPos;
 
     mx_playbackRunning = 0;
     mx_playbackSpeed = 1;
@@ -2274,7 +2574,8 @@ static char mx_initPlayback( void ) {
     indexLengthDataPos = mx_playbackDataLength - MAXIGIN_PADDED_INT_LENGTH;
 
     success = mx_seekAndReadInt( mx_playbackDataStoreHandle,
-                                 indexLengthDataPos, &indexLength );
+                                 indexLengthDataPos,
+                                 &indexLength );
     
     if( ! success ) {
         maxigin_logInt( "Failed to seek to this position and read index "
@@ -2350,11 +2651,12 @@ static void mx_playbackEnd( void ) {
 
 
 
-static int mx_stepsSinceLastPlaybackStep = 0;
 
 static char mx_playbackSpeedStep( void ) {
     /* failure of a single step means failure of the whole thing */
-    char success = 1;
+
+    static  int   stepsSinceLastPlaybackStep  =  0;
+            char  success                     =  1;
 
         
     if( ! mx_playbackRunning ) {
@@ -2368,7 +2670,10 @@ static char mx_playbackSpeedStep( void ) {
     if( mx_playbackSpeed >= 1 ) {
         int i;
         /* we can't skip steps because diffs are accumulative  */
-        for( i=0; i<mx_playbackSpeed; i++ ) {
+        for( i = 0;
+             i < mx_playbackSpeed;
+             i ++ ) {
+            
             success = success && mx_playbackStep();
             }
         }
@@ -2376,12 +2681,12 @@ static char mx_playbackSpeedStep( void ) {
         /* negative speeds mean fractional */
         int stepsPerPlaybackStep = - mx_playbackSpeed;
 
-        if( mx_stepsSinceLastPlaybackStep >= stepsPerPlaybackStep ) {
+        if( stepsSinceLastPlaybackStep >= stepsPerPlaybackStep ) {
             success = success && mx_playbackStep();
-            mx_stepsSinceLastPlaybackStep = 0;
+            stepsSinceLastPlaybackStep = 0;
             }
         else {
-            mx_stepsSinceLastPlaybackStep++;
+            stepsSinceLastPlaybackStep++;
             }
         }
     
@@ -2392,8 +2697,8 @@ static char mx_playbackSpeedStep( void ) {
 
 static char mx_playbackStep( void ) {
         
-    int curDataPos;
-    char success;
+    int   curDataPos;
+    char  success;
     
     if( ! mx_playbackRunning ) {
         return 0;
@@ -2462,12 +2767,13 @@ static char mx_playbackStep( void ) {
 
 static void mx_playbackJumpToFullSnapshot( int inFullSnapshotIndex ) {
 
-    int indexJumpPos = mx_playbackIndexStartPos +
-        MAXIGIN_PADDED_INT_LENGTH * inFullSnapshotIndex;
-    int readPos;
-    char success;
+    int   indexJumpPos  =  mx_playbackIndexStartPos +
+                           MAXIGIN_PADDED_INT_LENGTH * inFullSnapshotIndex;
+    int   readPos;
+    char  success;
     
-    success = mingin_seekPersistData( mx_playbackDataStoreHandle, indexJumpPos );
+    success = mingin_seekPersistData( mx_playbackDataStoreHandle,
+                                      indexJumpPos );
 
     if( ! success ) {
         maxigin_logInt( "Playback jump failed to seek into index at pos: ",
@@ -2476,7 +2782,8 @@ static void mx_playbackJumpToFullSnapshot( int inFullSnapshotIndex ) {
         return;
         }
     
-    success = mx_readIntFromPersistData( mx_playbackDataStoreHandle, &readPos );
+    success = mx_readIntFromPersistData( mx_playbackDataStoreHandle,
+                                         &readPos );
     
     if( ! success ) {
         mingin_log( "Playback jump failed to read jump pos from index\n" );
@@ -2484,7 +2791,8 @@ static void mx_playbackJumpToFullSnapshot( int inFullSnapshotIndex ) {
         return;
         }
 
-    success = mingin_seekPersistData( mx_playbackDataStoreHandle, readPos );
+    success = mingin_seekPersistData( mx_playbackDataStoreHandle,
+                                      readPos );
 
     if( ! success ) {
         maxigin_logInt( "Playback jump failed to seek to full frame at pos: ",
@@ -2516,6 +2824,7 @@ static void mx_playbackJumpHalfAhead( void ) {
     }
 
 
+
 static void mx_playbackJumpHalfBack( void ) {
 
     int destToJump =
@@ -2534,43 +2843,55 @@ static void mx_playbackJumpHalfBack( void ) {
 
 
 
-#define MAXIGIN_LABELED_LOG_MAX_LENGTH  256
-
-static char mx_labeledLogBuffer[ MAXIGIN_LABELED_LOG_MAX_LENGTH ];
 
 
-void maxigin_logString( const char *inLabel, const char *inVal ) {
-    int i = 0;
-    int j = 0;
+void maxigin_logString( const char  *inLabel,
+                        const char  *inVal ) {
     
-    while( i < MAXIGIN_LABELED_LOG_MAX_LENGTH - 2 &&
+    enum{         BUFFER_LEN             =  256 };
+    static  char  buffer[ BUFFER_LEN ];
+    int           i                      =  0;
+    int           j                      =  0;
+    
+    while( i < BUFFER_LEN - 2
+           &&
            inLabel[i] != '\0' ) {
-        mx_labeledLogBuffer[i] = inLabel[i];
+        
+        buffer[i] = inLabel[i];
         i++;
         }
-    while( i < MAXIGIN_LABELED_LOG_MAX_LENGTH - 2 &&
+    
+    while( i < BUFFER_LEN - 2
+           &&
            inVal[j] != '\0' ) {
-        mx_labeledLogBuffer[i] = inVal[j];
+        
+        buffer[i] = inVal[j];
         i++;
         j++;
         }
-    mx_labeledLogBuffer[i] = '\n';
-    mx_labeledLogBuffer[i+1] = '\0';
+    
+    buffer[i] = '\n';
+    buffer[i+1] = '\0';
 
-    mingin_log( mx_labeledLogBuffer );
+    mingin_log( buffer );
     }
 
 
 
-void maxigin_logInt( const char *inLabel, int inVal ) {
-    const char *valString = maxigin_intToString( inVal );
+void maxigin_logInt( const char  *inLabel,
+                     int          inVal ) {
+    
+    const char  *valString  =  maxigin_intToString( inVal );
 
     maxigin_logString( inLabel, valString );
     }
 
 
-int maxigin_stringLength( const char *inString ) {
-    int len = 0;
+
+int maxigin_stringLength( const char  *inString ) {
+    
+    int  len  =  0;
+    
     while( inString[len] != '\0' ) {
         len++;
         }
@@ -2579,8 +2900,11 @@ int maxigin_stringLength( const char *inString ) {
 
 
 
-char maxigin_stringsEqual( const char *inStringA, const char *inStringB ) {
-    int i = 0;
+char maxigin_stringsEqual( const char  *inStringA,
+                           const char  *inStringB ) {
+    
+    int i  =  0;
+    
     while( inStringA[i] == inStringB[i] &&
            inStringA[i] != '\0' ) {
         i++;
@@ -2598,38 +2922,39 @@ char maxigin_stringsEqual( const char *inStringA, const char *inStringB ) {
 
 
 
-static char mx_intToStringBuffer[20];
 
+const char *maxigin_intToString( int  inInt ) {
 
-const char *maxigin_intToString( int inInt ) {
-    unsigned int c = 0;
-    /* start with billions */
-    int divisor = 1000000000;
-    const char *formatError = "[int_format_error]";
-    
-    /* skip 0 digits until our first non-zero digit */
-    int qLowerLimit = 1;
+    static  char          buffer[20];
+            unsigned int  c            =  0;
+                          /* start with billions */
+            int           divisor      =  1000000000;
+            const char   *formatError  =  "[int_format_error]";
+                          /* skip 0 digits until our first non-zero digit */
+            int           qLowerLimit  =  1;
     
     if( inInt == 0 ) {
         return "0";
         }
     if( inInt < 0 ) {
-        mx_intToStringBuffer[c] = '-';
+        buffer[c] = '-';
         c++;
         inInt *= -1;
         }
     while( divisor >= 1 ) {
-        int q = inInt / divisor;
+        
+        int  q  =  inInt / divisor;
+
         if( q >= qLowerLimit ) {
             if( q > 9 ) {
                 return formatError;
                 }
-            if( c >= sizeof( mx_intToStringBuffer ) - 1 ) {
+            if( c >= sizeof( buffer ) - 1 ) {
                 /* out of room? */
                 return formatError;
                 }
             
-            mx_intToStringBuffer[c] = (char)( '0' + q );
+            buffer[c] = (char)( '0' + q );
             c++;
             /* we've seen at least one non-zero digit,
                so start allowing zeros now */
@@ -2640,17 +2965,18 @@ const char *maxigin_intToString( int inInt ) {
         }
     
     /* terminate */
-    mx_intToStringBuffer[c] = '\0';
+    buffer[c] = '\0';
     
-    return mx_intToStringBuffer;  
+    return buffer;  
     }
 
 
 
-int maxigin_stringToInt( const char *inString ) {
-    int sign = 1;
-    int i = 0;
-    int val = 0;
+int maxigin_stringToInt( const char  *inString ) {
+    
+    int  sign  =  1;
+    int  i     =  0;
+    int  val   =  0;
     
     if( inString[i] == '-' ) {
         sign = -1;
@@ -2709,9 +3035,9 @@ static const unsigned char mx_flexHashTable[256] = {
 
 
 
-void maxigin_flexHashInit( MaxiginFlexHashState *inState,
-                           unsigned char *inHashBuffer,
-                           int inHashLength ) {
+void maxigin_flexHashInit( MaxiginFlexHashState  *inState,
+                           int                    inHashLength,
+                           unsigned char         *inHashBuffer ) {
 
     /*
       The following code inits the hash buffer with the following properties:
@@ -2726,14 +3052,19 @@ void maxigin_flexHashInit( MaxiginFlexHashState *inState,
          to buffers with 100,000,000 bytes with no cycling.
     */
     
-    int j;
-    unsigned char i, n, k, m, index;
-
-    int run;
+    int            j;
     
-    int hashLength = inHashLength;
-    unsigned int jBits;
-    unsigned char jBitsChar;
+    unsigned char  i;
+    unsigned char  n;
+    unsigned char  k;
+    unsigned char  m;
+    unsigned char  index;
+    
+    int            run;
+    
+    int            hashLength  =  inHashLength;
+    unsigned int   jBits;
+    unsigned char  jBitsChar;
     
     i = 0;
     k = 199;
@@ -2741,19 +3072,27 @@ void maxigin_flexHashInit( MaxiginFlexHashState *inState,
     m = 107;
     
     /* zero our buffer to start */
-    for( j=0; j < hashLength; j++ ) {
+    for( j = 0;
+         j < hashLength;
+         j ++ ) {
+        
         inHashBuffer[j] = 0;
         }
 
     /* run twice, and xor second run into bytes from first
        we xor into our all-0 buffer in the first run */
-    for( run=0; run<2; run++ ) {
+    for( run = 0;
+         run < 2;
+         run++ ) {
         
         /* offset each run by 1, in case anything about the cycling
            of our variables lines up perfectly with hashLength.
            This also means that we only do one run if hashLength = 1 */
         
-        for( j=run; j < hashLength; j++ ) {
+        for( j = run;
+             j < hashLength;
+             j ++ ) {
+            
             /* walk through table values in order (by incrementing i)
                and use those values to mix with our running n, plus our
                current buffer value (0 at first, or what we computed last run
@@ -2816,29 +3155,28 @@ void maxigin_flexHashInit( MaxiginFlexHashState *inState,
        byte in our buffer in the inHashLength=1 case */
     n = n ^ mx_flexHashTable[i];
 
-    inState->j = 0;
-    inState->n = n;
-    inState->hashBuffer = inHashBuffer;
-    inState->hashLength = hashLength;
-    inState->lastInputByte = 0;
+    inState->j              =  0;
+    inState->n              =  n;
+    inState->hashBuffer     =  inHashBuffer;
+    inState->hashLength     =  hashLength;
+    inState->lastInputByte  =  0;
     }
 
 
 
-void maxigin_flexHashAdd( MaxiginFlexHashState *inState,
-                          const unsigned char *inBytes,
-                          int inNumBytes ) {
+void maxigin_flexHashAdd( MaxiginFlexHashState  *inState,
+                          int                    inNumBytes, 
+                          const unsigned char   *inBytes ) {
     
-    int j;
-    unsigned char n;
-    int b;
-    int numBytes = inNumBytes;
-    int hashLength = inState->hashLength;
-    unsigned char *hashBuffer = inState->hashBuffer;
-    int bLimit, jLimit;
-    
-    n = inState->n;
-    j = inState->j;
+    int             j           =  inState->j;
+    unsigned char   n           =  inState->n;
+    int             b;
+    int             numBytes    =  inNumBytes;
+    int             hashLength  =  inState->hashLength;
+    unsigned char  *hashBuffer  =  inState->hashBuffer;
+    int             bLimit;
+    int             jLimit;
+
     
     /* mix in each byte of our hash buffer */
 
@@ -2946,14 +3284,15 @@ void maxigin_flexHashAdd( MaxiginFlexHashState *inState,
 
 
 
-void maxigin_flexHashFinish( MaxiginFlexHashState *inState ) {
-    int j, run;
-    unsigned char n;
-    int hashLength = inState->hashLength;
-    unsigned char *hashBuffer = inState->hashBuffer;
-    unsigned char lastByte = inState->lastInputByte;
+void maxigin_flexHashFinish( MaxiginFlexHashState  *inState ) {
     
-    n = inState->n;
+    int             j;
+    int             run;
+    unsigned char   n           =  inState->n;
+    int hashLength              =  inState->hashLength;
+    unsigned char  *hashBuffer  =  inState->hashBuffer;
+    unsigned char   lastByte    =  inState->lastInputByte;
+
     
     /*
       mix last input byte in 4 more times
@@ -2963,8 +3302,14 @@ void maxigin_flexHashFinish( MaxiginFlexHashState *inState ) {
       we want it to touch every byte in our hash directly)
      */
     
-    for( run=0; run<4; run++ ) {
-        for( j=0; j<hashLength; j++ ) {
+    for( run = 0;
+         run < 4;
+         run ++ ) {
+        
+        for( j = 0;
+             j < hashLength;
+             j ++ ) {
+            
             n = mx_flexHashTable[ hashBuffer[j] ^ lastByte ^ n ];
             hashBuffer[j] = n;
             }
@@ -2973,12 +3318,20 @@ void maxigin_flexHashFinish( MaxiginFlexHashState *inState ) {
 
 
 
-void maxigin_flexHash( const unsigned char *inBytes, int inNumBytes,
-                       unsigned char *inHashBuffer, int inHashLength ) {
-    MaxiginFlexHashState s;
-    maxigin_flexHashInit( &s, inHashBuffer, inHashLength );
+void maxigin_flexHash( int                   inNumBytes,
+                       const unsigned char  *inBytes,
+                       int                   inHashLength, 
+                       unsigned char        *inHashBuffer ) {
+    
+    MaxiginFlexHashState  s;
+    
+    maxigin_flexHashInit( &s,
+                          inHashLength,
+                          inHashBuffer );
 
-    maxigin_flexHashAdd( &s, inBytes, inNumBytes );
+    maxigin_flexHashAdd( &s,
+                         inNumBytes,
+                         inBytes );
 
     maxigin_flexHashFinish( &s );
     }
@@ -2988,7 +3341,7 @@ void maxigin_flexHash( const unsigned char *inBytes, int inNumBytes,
 
 
 /* for 4-bit nibbles */
-static char mx_nibbleToHex( unsigned char inNibble ) {
+static char mx_nibbleToHex( unsigned char  inNibble ) {
     if( inNibble < 10 ) {
         return (char)( '0' + inNibble );
         }
@@ -2999,15 +3352,20 @@ static char mx_nibbleToHex( unsigned char inNibble ) {
 
 
 
-void maxigin_hexEncode( const unsigned char *inBytes, int inNumBytes,
-                        char *inHexBuffer ) {
-    int stringPos = 0;
-    int i;
+void maxigin_hexEncode( int                   inNumBytes,
+                        const unsigned char  *inBytes, 
+                        char                 *inHexBuffer ) {
     
-    for( i=0; i < inNumBytes; i++ ) {
-        unsigned char b = inBytes[i];
-        unsigned char upper = ( b >> 4 );
-        unsigned char lower = b & 0x0F;
+    int  stringPos  =  0;
+    int  i;
+    
+    for( i = 0;
+         i < inNumBytes;
+         i ++ ) {
+        
+        unsigned char  b      =  inBytes[i];
+        unsigned char  upper  =  ( b >> 4 );
+        unsigned char  lower  =  b & 0x0F;
 
         inHexBuffer[ stringPos ] = mx_nibbleToHex( upper );
 

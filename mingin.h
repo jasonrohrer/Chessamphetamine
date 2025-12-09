@@ -2207,10 +2207,10 @@ static void mn_setupX11KeyMap( void ) {
 static char *mn_linuxGetFilePath( const char  *inFolderName,
                                   const char  *inFileName ) {
     
-    enum{         MAX_PATH_LEN                =  255  };
+    enum{         MAX_PATH_LEN                 =  255  };
     static  char  buffer[ MAX_PATH_LEN + 1 ];
-            int   i                           =  0;
-            int   j                           =  0;
+            int   i                            =  0;
+            int   j                            =  0;
     
     while( i < MAX_PATH_LEN
            &&
@@ -2253,8 +2253,8 @@ static int mn_linuxFileOpenRead( const char  *inFolderName,
                                  int         *outTotalBytes ) {
     struct stat   statStruct;
     int           fd;
-    char         *path        =  mn_linuxGetFilePath( inFolderName,
-                                                      inFileName );
+    char         *path         =  mn_linuxGetFilePath( inFolderName,
+                                                       inFileName );
 
     *outTotalBytes = 0;
     
@@ -2312,7 +2312,7 @@ static char mn_linuxFileWrite( int                   inFD,
                                int                   inNumBytesToWrite,
                                const unsigned char  *inByteBuffer ) {
     
-    int numWritten = 0;
+    int  numWritten  =  0;
     
     while( numWritten < inNumBytesToWrite ) {
         size_t   numLeftToWrite      =  (size_t)( inNumBytesToWrite -
@@ -2335,7 +2335,7 @@ static char mn_linuxFileWrite( int                   inFD,
 static int mn_linuxFileRead(           int    inFD,
                                        int    inNumBytesToRead,
                              unsigned  char  *inByteBuffer ) {
-    int numRead = 0;
+    int  numRead  =  0;
     
     while( numRead < inNumBytesToRead ) {
         size_t   numLeftToRead    =  (size_t)( inNumBytesToRead - numRead );
@@ -2544,10 +2544,10 @@ void mingin_endReadBulkData( int inBulkDataHandle ) {
 #define  MINGIN_DUMMY_SCREEN_W  640
 #define  MINGIN_DUMMY_SCREEN_H  480
 
-static unsigned char mn_dummyScreenBuffer[ MINGIN_DUMMY_SCREEN_W *
-                                           MINGIN_DUMMY_SCREEN_H * 3 ];
+static  unsigned char  mn_dummyScreenBuffer[ MINGIN_DUMMY_SCREEN_W *
+                                             MINGIN_DUMMY_SCREEN_H * 3 ];
 
-static int mn_gotQuit = 0;
+static  int            mn_gotQuit  =  0;
 
 
 

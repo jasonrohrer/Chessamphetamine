@@ -244,6 +244,8 @@ void maxiginGame_step( void ) {
         boxDir = 1;
         }
 
+
+    /* move bullets */
     for( i = 0;
          i < MAX_NUM_BULLETS;
          i ++ ) {

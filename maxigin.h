@@ -1868,11 +1868,23 @@ static  int          mx_diffsBetweenSnapshots          =  60;
 
 
 
-static void mx_copyMemoryIntoRecordingBuffer( int  inIndex ) {
+/*
+  Copies snapshot of memory into the next rotating slot of  mx_recordingBuffers
+  and updates mx_latestRecordingIndex to continue the rotation.
+*/
+static void mx_copyMemoryIntoRecordingBuffer( void ) {
     
     int             r;
-    int             b       =  0;
-    unsigned char  *buffer  =  mx_recordingBuffers[ inIndex ];
+    int             b           =  0;
+    int             nextBuffer  =  mx_latestRecordingIndex + 1;
+    unsigned char  *buffer;
+
+    if( nextBuffer > 1 ) {
+        nextBuffer = 0;
+        }
+
+    buffer =  mx_recordingBuffers[ nextBuffer ];
+    
     
     if( ! mx_diffRecordingEnabled ) {
         return;
@@ -1894,7 +1906,7 @@ static void mx_copyMemoryIntoRecordingBuffer( int  inIndex ) {
             }
         }
     
-    mx_latestRecordingIndex = inIndex; 
+    mx_latestRecordingIndex = nextBuffer; 
     }
 
 
@@ -1916,6 +1928,11 @@ static void mx_closeRecordingDataStores( void ) {
 
 
 
+/*
+  Writes a full memory snapshot to mx_recordingDataStoreHandle
+
+  Copies current memory state into rotating memory buffer
+*/
 static void mx_recordFullMemorySnapshot( void ) {
     
     int   r;
@@ -1992,7 +2009,9 @@ static void mx_recordFullMemorySnapshot( void ) {
                     " at end of snapshot block.\n" );
         mx_closeRecordingDataStores();
         return;
-        }   
+        }
+
+    mx_copyMemoryIntoRecordingBuffer();
     }
 
 
@@ -2067,7 +2086,11 @@ static char mx_restoreFromFullMemorySnapshot( int inStoreReadHandle ) {
 
 
     
-    
+/*
+  Writes a memory diff to mx_recordingDataStoreHandle
+
+  Copies current memory state into rotating memory buffer
+*/
 static void mx_recordMemoryDiff( void ) {
     
     int   prevIndex    =  mx_latestRecordingIndex;
@@ -2081,10 +2104,6 @@ static void mx_recordMemoryDiff( void ) {
         return;
         }
 
-    if( prevIndex == 0 ) {
-        newIndex = 1;
-        }
-
     startPos = mingin_getPersistDataPosition( mx_recordingDataStoreHandle );
     
     if( startPos == -1 ) {
@@ -2094,8 +2113,20 @@ static void mx_recordMemoryDiff( void ) {
         return;
         }
     
+    mx_copyMemoryIntoRecordingBuffer();
+
+    newIndex = mx_latestRecordingIndex;
+
     
-    mx_copyMemoryIntoRecordingBuffer( newIndex );
+    if( newIndex == prevIndex ) {
+        mingin_log( "Failed to update mx_latestRecordingIndex when recording "
+                    "memory diff." );
+        
+        mx_closeRecordingDataStores();
+        return;
+        }
+    
+        
 
     /* header for a diff */
     success = mx_writeStringToPeristentData( mx_recordingDataStoreHandle,
@@ -2114,8 +2145,15 @@ static void mx_recordMemoryDiff( void ) {
         
         if( mx_recordingBuffers[prevIndex][b] !=
             mx_recordingBuffers[newIndex][b] ) {
-            /* a byte has changed */
 
+            /* a byte has changed */
+            
+            unsigned char  xorValue  =
+                mx_recordingBuffers[prevIndex][b]
+                ^
+                mx_recordingBuffers[newIndex][b];
+            
+                
             /* write its position offset from the previous one recorded */
             success = mx_writeIntToPerisistentData( mx_recordingDataStoreHandle,
                                                     b - lastWritten );
@@ -2129,10 +2167,10 @@ static void mx_recordMemoryDiff( void ) {
             
             lastWritten = b;
 
-            /* write its value */
+            /* write its xor with previous value */
             success = mingin_writePersistData(
                 mx_recordingDataStoreHandle, 1,
-                &( mx_recordingBuffers[newIndex][b] ) );
+                &( xorValue ) );
             
             if( ! success ) {
                 mingin_log( "Failed to write diff byte in recording\n" );
@@ -2218,6 +2256,8 @@ static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
            This offset is relative to the position of the last byte
            in the diff */
 
+        unsigned char  xorValue;
+        
         curRecordByte += readInt;
 
         while( curRecordByte > mx_memRecords[ curRecord ].numBytes ) {
@@ -2238,12 +2278,16 @@ static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
         /* we've found a place for the offset read from the diff to land */
 
         numRead = mingin_readPersistData(
-            inStoreReadHandle, 1,
-            &( curRecordPointer[ curRecordByte ] ) );
+            inStoreReadHandle,
+            1,
+            &xorValue );
 
         if( numRead != 1 ) {
             return 0;
             }
+        
+        /* apply our xor */
+        curRecordPointer[ curRecordByte ] ^= xorValue;
 
         success = mx_readIntFromPersistData( inStoreReadHandle,
                                              &readInt );
@@ -2343,8 +2387,6 @@ static void mx_initRecording( void ) {
         }
     
     mx_recordFullMemorySnapshot();
-    
-    mx_copyMemoryIntoRecordingBuffer( 0 );
 
     mx_numDiffsSinceLastFullSnapshot = 0;
 

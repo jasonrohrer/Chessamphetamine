@@ -2272,7 +2272,7 @@ static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
         
         curRecordByte += readInt;
 
-        while( curRecordByte > mx_memRecords[ curRecord ].numBytes ) {
+        while( curRecordByte >= mx_memRecords[ curRecord ].numBytes ) {
             /* gone past the end of our current record
                start marching into next record from 0 in that record */
             curRecordByte -= mx_memRecords[ curRecord ].numBytes;

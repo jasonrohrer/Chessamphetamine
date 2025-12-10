@@ -1941,7 +1941,7 @@ static void mx_closeRecordingDataStores( void ) {
 /*
   Writes a full memory snapshot to mx_recordingDataStoreHandle
 
-  Copies current memory state into rotating memory buffer
+  Does NOT copy current memory state into rotating memory buffer
 */
 static void mx_recordFullMemorySnapshot( void ) {
     
@@ -2020,8 +2020,6 @@ static void mx_recordFullMemorySnapshot( void ) {
         mx_closeRecordingDataStores();
         return;
         }
-
-    mx_copyMemoryIntoRecordingBuffer();
     }
 
 
@@ -2399,6 +2397,8 @@ static void mx_initRecording( void ) {
     mx_recordFullMemorySnapshot();
 
     mx_numDiffsSinceLastFullSnapshot = 0;
+    
+    mx_copyMemoryIntoRecordingBuffer();
 
     mx_recordingRunning = 1;
     }

@@ -833,6 +833,7 @@ typedef enum MaxiginUserAction {
     PLAYBACK_SLOWER,
     PLAYBACK_PAUSE,
     PLAYBACK_NORMAL,
+    PLAYBACK_REVERSE,
     PLAYBACK_JUMP_HALF_BACK,
     PLAYBACK_JUMP_HALF_AHEAD,
     LAST_MAXIGIN_USER_ACTION
@@ -849,6 +850,8 @@ static  char  mx_recordingRunning                =  0;
 static  char  mx_playbackRunning                 =  0;
 static  char  mx_playbackPaused                  =  0;
 static  int   mx_playbackSpeed                   =  1;
+                                                    /* -1 for backward */
+static  char  mx_playbackDirection               =  1;
 
 static  char  mx_buttonsDown[ LAST_MAXIGIN_USER_ACTION ];
 
@@ -1083,6 +1086,12 @@ void minginGame_step( char  inFinalStep ) {
         if( mx_isActionFreshPressed( PLAYBACK_NORMAL ) ) {
             mx_playbackPaused = 0;
             mx_playbackSpeed = 1;
+            mx_playbackDirection = 1;
+            }
+        if( mx_isActionFreshPressed( PLAYBACK_REVERSE ) ) {
+            mx_playbackPaused = 0;
+            mx_playbackSpeed = 1;
+            mx_playbackDirection = -1;
             }
         if( mx_isActionFreshPressed( PLAYBACK_JUMP_HALF_AHEAD ) ) {
             mx_playbackJumpHalfAhead();
@@ -1156,12 +1165,13 @@ static  MinginButton  mx_quitMapping[] = { MGN_KEY_Q,
 static  MinginButton  mx_fullscreenMapping[] = { MGN_KEY_F,
                                                  MGN_MAP_END };
 
-static  MinginButton  mx_playbackMappings[7][2] =
+static  MinginButton  mx_playbackMappings[8][2] =
     { { MGN_KEY_BACKSLASH, MGN_MAP_END },   /* start-stop */
       { MGN_KEY_EQUAL,     MGN_MAP_END },   /* faster */
       { MGN_KEY_MINUS,     MGN_MAP_END },   /* slower */
       { MGN_KEY_0,         MGN_MAP_END },   /* pause */
       { MGN_KEY_9,         MGN_MAP_END },   /* normal speed */
+      { MGN_KEY_8,         MGN_MAP_END },   /* reverse playback */
       { MGN_KEY_BRACKET_L, MGN_MAP_END },   /* jump back */
       { MGN_KEY_BRACKET_R, MGN_MAP_END } }; /* jump ahead */
 
@@ -2584,9 +2594,10 @@ static char mx_initPlayback( void ) {
 
     int   firstFullSnapshotDataPos;
 
-    mx_playbackRunning = 0;
-    mx_playbackSpeed = 1;
-    mx_playbackPaused = 0;
+    mx_playbackRunning    =  0;
+    mx_playbackSpeed      =  1;
+    mx_playbackPaused     =  0;
+    mx_playbackDirection  =  1;
     
     if( mx_numMemRecords == 0 ) {
         return 0;
@@ -2745,7 +2756,25 @@ static char mx_playbackSpeedStep( void ) {
 
 
 
+static char mx_playbackStepForward( void );
+
+static char mx_playbackStepBackward( void );
+
+
+
 static char mx_playbackStep( void ) {
+    if( mx_playbackDirection == 1 ) {
+        return mx_playbackStepForward();
+        }
+    else if( mx_playbackDirection == -1 ) {
+        return mx_playbackStepBackward();
+        }
+    return 0;    
+    }
+
+
+
+static char mx_playbackStepForward( void ) {
         
     int   curDataPos;
     char  success;
@@ -2830,6 +2859,146 @@ static char mx_playbackStep( void ) {
 
 
 
+
+static char mx_playbackStepBackward( void ) {
+        
+    int   curDataPos;
+    char  success;
+    int   blockStartPos;
+    
+    if( ! mx_playbackRunning ) {
+        return 0;
+        }
+
+    
+    curDataPos = mingin_getPersistDataPosition( mx_playbackDataStoreHandle );
+
+
+    /* read the start pos from the end of the block before this position */
+
+    curDataPos -= MAXIGIN_PADDED_INT_LENGTH;
+
+    success = mingin_seekPersistData( mx_playbackDataStoreHandle,
+                                      curDataPos );
+
+    if( ! success ) {
+        mingin_log( "Reverse playback failed to seek back to read start "
+                    "position from previous block.\n" );
+        mx_playbackEnd();
+        return 0;
+        }
+
+    success = mx_readIntFromPersistData( mx_playbackDataStoreHandle,
+                                         &blockStartPos );
+
+    if( ! success ) {
+        mingin_log( "Reverse playback failed to read start position "
+                    "from previous block.\n" );
+        mx_playbackEnd();
+        return 0;
+        }
+
+    success = mingin_seekPersistData( mx_playbackDataStoreHandle,
+                                      blockStartPos );
+
+    if( ! success ) {
+        mingin_log( "Reverse playback failed to seek back to start "
+                    "of previous block.\n" );
+        mx_playbackEnd();
+        return 0;
+        }
+
+    success = mx_restoreFromMemoryDiff( mx_playbackDataStoreHandle );
+
+
+    if( success ) {
+        /* diff reading success */
+        
+        /* rewind, so we're ready for next reverse playback step */
+        success = mingin_seekPersistData( mx_playbackDataStoreHandle,
+                                          blockStartPos );
+
+        if( !success ) {
+            mingin_log( "Seek-back failed in playback data source.\n" );
+
+            mx_playbackEnd();
+            return 0;
+            }
+        }
+    else {
+        /* diff reading failed
+           try reading a whole snapshot */
+
+        if( mx_playbackFullSnapshotLastPlayed ==
+            0 ) {
+            
+            /* reached start (reverse end) */
+            mingin_log( "Reached start during reverse playback\n" );
+            
+            mx_playbackEnd();
+            return 0;
+            }
+
+        /* rewind */
+        success = mingin_seekPersistData( mx_playbackDataStoreHandle,
+                                          blockStartPos );
+        if( !success ) {
+            mingin_log( "Seek-back failed in playback data source.\n" );
+
+            mx_playbackEnd();
+            return 0;
+            }
+        
+        success = mx_restoreFromFullMemorySnapshot( mx_playbackDataStoreHandle );
+
+        if( !success ) {
+            mingin_log( "Neither full-memory snapshot nor partial diff "
+                        "restored successfully from playback data source.\n" );
+            mx_playbackEnd();
+            return 0;
+            }
+        
+        mx_playbackFullSnapshotLastPlayed --;
+        
+        maxigin_logInt( "Just reverse-played snapshot: ",
+                        mx_playbackFullSnapshotLastPlayed );
+
+        /* Snapshot is always a redundant frame when playing forward/backward
+           (it is preceeded by a diff that takes us to the exact memory
+           state in the snapshot ).
+           Thus, if we failed to read a diff, and found a snapshot
+           instead, we should go back to the previous diff and apply it now
+           to actually take a step backward. */
+
+        
+        /* rewind first, to prepare for next backward step*/
+        success = mingin_seekPersistData( mx_playbackDataStoreHandle,
+                                          blockStartPos );
+        if( !success ) {
+            mingin_log( "Seek-back failed in playback data source.\n" );
+
+            mx_playbackEnd();
+            return 0;
+            }
+
+        /* now just take another backward step, which should be
+           a diff step before this full snapshot */
+        success = mx_playbackStepBackward();
+
+        if( !success ) {
+            mingin_log( "Failed to reverse-play diff step that should "
+                        "occur before a snapshot." );
+            mx_playbackEnd();
+            return 0;
+            }
+        }
+    
+    
+    return 1;
+    }
+
+
+
 static void mx_playbackJumpToFullSnapshot( int inFullSnapshotIndex ) {
 
     int   indexJumpPos  =  mx_playbackIndexStartPos +
@@ -2868,10 +3037,20 @@ static void mx_playbackJumpToFullSnapshot( int inFullSnapshotIndex ) {
     mx_playbackFullSnapshotLastPlayed = inFullSnapshotIndex - 1;
 
     if( mx_playbackPaused ) {
-        /* step now, to insta-jump to our jump snapshot
+        /* step now, to insta-jump to our jump snapshot and apply it
            if not paused, the next play step will do this anyway,
            and we don't want to double-step */
-        mx_playbackStep();
+
+        /* note that we force FORWARD here, regardless of playback direction
+           to fully apply our snapshot */
+        mx_playbackStepForward();
+        }
+    else if( mx_playbackDirection == -1 ) {
+        /* not paused, but playing in reverse */
+
+        /* force a FORWARD step here to fully apply our snapshot */
+
+        mx_playbackStepForward();
         }
     }
 

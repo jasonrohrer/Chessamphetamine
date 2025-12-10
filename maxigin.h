@@ -2408,7 +2408,12 @@ static void mx_stepRecording( void ) {
         mx_numDiffsSinceLastFullSnapshot ++;
         }
     else {
+        /* always record a diff right before our snapshot so that
+           we can play the change recorded in our snapshot backwards */
+        mx_recordMemoryDiff();
+        
         mx_recordFullMemorySnapshot();
+        
         mx_numDiffsSinceLastFullSnapshot = 0;
         }
     }
@@ -2801,8 +2806,23 @@ static char mx_playbackStep( void ) {
         
         maxigin_logInt( "Just played snapshot: ",
                         mx_playbackFullSnapshotLastPlayed );
-        }
 
+        /* Snapshot is always a redundant frame when playing forward
+           (it is preceeded by a diff that takes us to the exact memory
+           state in the snapshot ).
+           Thus, if we failed to read a diff, and found a snapshot
+           instead, we should go on to the NEXT diff and apply it now
+           to actually take a step. */
+
+        success = mx_restoreFromMemoryDiff( mx_playbackDataStoreHandle );
+
+        if( !success ) {
+            mingin_log( "Failed to restore from the next diff after "
+                        "our just-played snapshot." );
+            mx_playbackEnd();
+            return 0;
+            }
+        }
     
     
     return 1;

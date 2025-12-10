@@ -1090,8 +1090,12 @@ void minginGame_step( char  inFinalStep ) {
             }
         if( mx_isActionFreshPressed( PLAYBACK_REVERSE ) ) {
             mx_playbackPaused = 0;
-            mx_playbackSpeed = 1;
-            mx_playbackDirection = -1;
+            if( mx_playbackDirection == 1 ) {
+                mx_playbackDirection = -1;
+                }
+            else {
+                mx_playbackDirection = 1;
+                }
             }
         if( mx_isActionFreshPressed( PLAYBACK_JUMP_HALF_AHEAD ) ) {
             mx_playbackJumpHalfAhead();

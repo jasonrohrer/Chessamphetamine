@@ -120,7 +120,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                  y < endY;
                  y ++ ) {
 
-                if( y >= 0 && y < MAXIGIN_GAME_NATIVE_H ) {
+                if( y >= 0
+                    &&
+                    y < MAXIGIN_GAME_NATIVE_H ) {
                     
                     int rowStart = y * MAXIGIN_GAME_NATIVE_W * 3;
         
@@ -128,7 +130,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                          x < endX;
                          x ++ ) {
 
-                        if( x >= 0 && x < MAXIGIN_GAME_NATIVE_W ) {
+                        if( x >= 0
+                            &&
+                            x < MAXIGIN_GAME_NATIVE_W ) {
                     
                             int pix = rowStart + x * 3;
                             inRGBBuffer[pix] = 0;

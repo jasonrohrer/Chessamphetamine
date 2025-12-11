@@ -1039,12 +1039,9 @@ void minginGame_getScreenPixels( int             inWide,
              x != xLimit;
              x ++ ) {
 
-            inRGBBuffer[ pixDest++ ]  =  r;
-            inRGBBuffer[ pixDest++ ]  =  g;
-            inRGBBuffer[ pixDest++ ]  =  b;
-
-            xDestFillCount ++;
-
+            /* we need to check this before incrementing
+               xDestFillCount, so that we don't walk off the end
+               of our source pixel row on our last dest pixel row */
             if( xDestFillCount == scaleFactor ) {
                 /* we've used our source pixel scaleFactor times
                    go on to next source pixel */
@@ -1054,6 +1051,12 @@ void minginGame_getScreenPixels( int             inWide,
                 g = gameImageBuffer[ pixSrcOrig++ ];
                 b = gameImageBuffer[ pixSrcOrig++ ];
                 }
+            
+            inRGBBuffer[ pixDest++ ]  =  r;
+            inRGBBuffer[ pixDest++ ]  =  g;
+            inRGBBuffer[ pixDest++ ]  =  b;
+
+            xDestFillCount ++;
             }
         }
     }

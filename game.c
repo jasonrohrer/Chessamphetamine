@@ -13,7 +13,8 @@
 enum GameUserAction {
     JUMP,
     SHOOT,
-    REMAP
+    REMAP,
+    CRASH
     };
 
 
@@ -224,7 +225,12 @@ void maxiginGame_step( void ) {
             }
         }
     
-        
+    if( maxigin_isButtonDown( CRASH ) ) {
+
+        int *baddAddress = (int*)0;
+
+        baddAddress[0] = 5;
+        }
     
     
     
@@ -273,11 +279,13 @@ void maxiginGame_step( void ) {
 
 
 
-static MinginButton jumpMapping[]  =   { MGN_KEY_SPACE,  MGN_MAP_END };
+static MinginButton jumpMapping[]   =  { MGN_KEY_SPACE,  MGN_MAP_END };
 
 static MinginButton shootMapping[]  =  { MGN_KEY_X,      MGN_MAP_END };
 
 static MinginButton remapMapping[]  =  { MGN_KEY_P,      MGN_MAP_END };
+
+static MinginButton crashMapping[]  =  { MGN_KEY_M,      MGN_MAP_END };
 
 
 #define REGISTER_INT_MEM( x )  \
@@ -306,6 +314,7 @@ void maxiginGame_init( void ) {
     maxigin_registerButtonMapping( JUMP,   jumpMapping );
     maxigin_registerButtonMapping( SHOOT,  shootMapping );
     maxigin_registerButtonMapping( REMAP,  remapMapping );
+    maxigin_registerButtonMapping( CRASH,  crashMapping );
     
     /* init position in image center */
     boxPosX = MAXIGIN_GAME_NATIVE_W / 2;

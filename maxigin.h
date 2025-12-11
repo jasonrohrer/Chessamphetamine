@@ -500,11 +500,52 @@ char maxigin_registerButtonMapping( int                 inButtonHandle,
 
       1   if pressed
 
-      0   if not pressed.
+      0   if not pressed
   
   [jumpMaxiginGeneral]
 */
 char maxigin_isButtonDown( int  inButtonHandle );
+
+
+
+/*
+  Reads an integer value from a persistent setting.
+
+  Parameters:
+
+      inSettingName    the name of the setting to read
+
+      inDefaultValue   the default value for the setting
+
+  Returns:
+
+      setting value    if found
+
+      inDefaultValue   if not found
+                          or reading fails
+      
+   [jumpMaxiginGeneral]
+*/     
+int maxigin_readIntSetting( const char  *inSettingName,
+                            int          inDefaultValue );
+
+
+
+/*
+  Writes an integer value to a persistent setting.
+
+  On write failure, this call has no effect.
+
+  Parameters:
+
+      inSettingName    the name of the setting to write
+
+      inValue          the value to write
+      
+   [jumpMaxiginGeneral]
+*/   
+void maxigin_writeIntSetting( const char  *inSettingName,
+                              int          inValue );
 
 
 
@@ -562,6 +603,32 @@ const char *maxigin_intToString( int  inInt );
 */
 int maxigin_stringToInt( const char  *inString );
 
+
+
+/*
+  Concatonates two strings.
+
+  Returns a static buffer from a rotating pool of 10 static buffers,
+  which allows for nested concatonations.
+
+  Max resulting string is 64 characters long, including the \0 termination.
+
+  If the resulting concatonation exceeds this length, it will be truncated.
+  
+  Parameters:
+
+      inStringA   the first \0-terminated string to concatonate
+
+      inStringB   the second \0-terminated string to concatonate
+
+  Returns:
+
+      Concatonated \0-terminated string
+  
+  [jumpMaxiginGeneral]    
+*/
+const char *maxigin_stringConcat( const char  *inStringA,
+                                  const char  *inStringB );
 
 
 
@@ -977,6 +1044,9 @@ static void mx_stepRecording( void );
 
 static void mx_finalizeRecording( void );
 
+static void mx_recordingCrashRecovery( void );
+
+
 /* returns 1 if playback started, 0 if not */
 static char mx_initPlayback( void );
 
@@ -1215,6 +1285,7 @@ static void mx_gameInit( void ) {
 
     mx_areWeInMaxiginGameInitFunction = 0;
 
+    mx_recordingCrashRecovery();
 
     mx_initRecording();
     }
@@ -2578,6 +2649,156 @@ static void mx_finalizeRecording( void ) {
 
 
 
+/* returns a unique recovery file name in a static buffer */
+static const char *mx_getRecordingRecoveryFileName( void ) {
+    int          recoveryNumber;
+    const char  *settingName      =  "maxigin_nextRecoveryNumber.bin";
+
+    const char  *returnVal;
+    
+    recoveryNumber = maxigin_readIntSetting( settingName, 0 );
+
+
+    returnVal = maxigin_stringConcat(
+        maxigin_stringConcat( "maxigin_crashRecording_",
+                              maxigin_intToString( recoveryNumber ) ),
+        ".bin" );
+    
+
+    recoveryNumber++;
+
+    maxigin_writeIntSetting( settingName, recoveryNumber );
+
+    return returnVal;
+    }
+
+
+
+void mx_recordingCrashRecovery( void ) {
+
+    int          recordingReadHandle;
+    int          indexReadHandle;
+    const char  *recoveryFileName;
+    int          recoveryWriteHandle;
+    int          recordingLength;
+    int          indexLength;
+    char         success;
+    
+    indexReadHandle =
+        mingin_startReadPersistData( mx_recordingIndexDataStoreName,
+                                     &indexLength );
+
+    if( indexReadHandle == -1 ) {
+        /* no index found, nothing to recover */
+        return;
+        }
+
+    maxigin_logString( "Found recording index file, "
+                       "attempting crash recovery: ",
+                       mx_recordingIndexDataStoreName );
+
+    recordingReadHandle =
+        mingin_startReadPersistData( mx_recordingDataStoreName,
+                                     &recordingLength );
+
+    if( recordingReadHandle == -1 ) {
+        maxigin_logString( "Failed to open recording file, "
+                           "aborting crash recovery: ",
+                           mx_recordingDataStoreName );
+        mingin_endReadPersistData( indexReadHandle );
+        return;
+        }
+
+    /* fixme:
+       open crash file for writing, etc.*/
+
+    recoveryFileName = mx_getRecordingRecoveryFileName();
+    
+    recoveryWriteHandle =
+        mingin_startWritePersistData( recoveryFileName );
+
+    if( recoveryWriteHandle == -1 ) {
+        maxigin_logString( "Failed to open recording recovery file "
+                           "for writing: ",
+                           recoveryFileName );
+        mingin_endReadPersistData( indexReadHandle );
+        mingin_endReadPersistData( recordingReadHandle );
+        return;
+        }
+
+
+
+    success = mx_copyIntoDataStore( recordingReadHandle,
+                                    recoveryWriteHandle,
+                                    recordingLength );
+
+    mingin_endReadPersistData( recordingReadHandle );
+            
+    if( ! success ) {
+        mingin_log( "Failed to copy recording data into recovery file.\n" );
+
+        mingin_endReadPersistData( indexReadHandle );
+        
+        mingin_endWritePersistData( recoveryWriteHandle );
+            
+        return;
+        }
+
+    success = mx_copyIntoDataStore( indexReadHandle,
+                                    recoveryWriteHandle,
+                                    indexLength );
+
+    mingin_endReadPersistData( indexReadHandle );
+            
+    if( ! success ) {
+        mingin_log( "Failed to copy recording index into recovery file.\n" );
+        
+        mingin_endWritePersistData( recoveryWriteHandle );
+            
+        return;
+        }
+
+    /* successfully added index to end, can delete index now */
+    mingin_deletePersistData( mx_recordingIndexDataStoreName );
+        
+
+    /* now append length of index
+       padded so we know how far to jump back to read it during playback */
+    success = mx_writePaddedIntToPerisistentData(
+        recoveryWriteHandle,
+        indexLength );
+
+    if( ! success ) {
+        mingin_log( "Failed write length of index into end "
+                    "of recording recovery file.\n" );
+        mingin_endWritePersistData( recoveryWriteHandle );
+            
+        return;
+        }
+
+    success =  mingin_writePersistData(
+        recoveryWriteHandle,
+        /* include the \0 termination */
+        maxigin_stringLength( mx_recordingMagicFooter ) + 1,
+        (unsigned char*)mx_recordingMagicFooter );
+
+    if( ! success ) {
+        mingin_log( "Failed write magic footer into end "
+                    "of recording recovery file.\n" );
+        mingin_endWritePersistData( recoveryWriteHandle );
+            
+        return;
+        }
+            
+            
+    mingin_endWritePersistData( recoveryWriteHandle );
+
+    maxigin_logString( "Recording recovery saved into: ",
+                       recoveryFileName );
+    }
+
+
+
 
 
 
@@ -3704,6 +3925,108 @@ void maxigin_hexEncode( int                   inNumBytes,
     inHexBuffer[stringPos] = '\0';
     }
 
+
+
+
+int maxigin_readIntSetting( const char  *inSettingName,
+                            int          inDefaultValue ) {
+    
+    int   readHandle;
+    int   v;
+    char  success;
+    
+    readHandle = mingin_startReadPersistData( inSettingName,
+                                              &v );
+
+    if( readHandle == -1 ) {
+        return inDefaultValue;
+        }
+
+    success = mx_readIntFromPersistData( readHandle,
+                                         &v );
+
+    mingin_endReadPersistData( readHandle );
+    
+    if( ! success ) {
+        return inDefaultValue;
+        }
+
+    return v;
+    }
+
+
+  
+void maxigin_writeIntSetting( const char  *inSettingName,
+                              int          inValue ) {
+    
+    int   writeHandle;
+
+    writeHandle = mingin_startWritePersistData( inSettingName );
+
+    if( writeHandle == -1 ) {
+        /* failed */
+        return;
+        }
+
+    /* on failure, writing a setting is a no-op */
+    
+    mx_writeIntToPerisistentData( writeHandle,
+                                  inValue );
+
+    mingin_endWritePersistData( writeHandle );
+    }
+
+
+
+const char *maxigin_stringConcat( const char  *inStringA,
+                                  const char  *inStringB ) {
+    
+    enum{  NUM_BUFFERS  =  10,
+           BUFFER_LEN   =  64 };
+
+    static  char  buffers[ NUM_BUFFERS ][ BUFFER_LEN ];
+    static  int   nextBuffer                             =  0;
+
+    int    i           =  0;
+    int    a           =  0;
+    int    b           =  0;
+    char  *returnVal;
+    
+    
+    while( i < BUFFER_LEN - 1
+           &&
+           inStringA[ a ] != '\0' ) {
+
+        buffers[ nextBuffer ][i] = inStringA[ a ];
+
+        a++;
+        i++;
+        }
+
+    while( i < BUFFER_LEN - 1
+           &&
+           inStringB[ b ] != '\0' ) {
+
+        buffers[ nextBuffer ][i] = inStringB[ b ];
+
+        b++;
+        i++;
+        }
+
+    /* terminate */
+
+    buffers[ nextBuffer ][i] = '\0';
+
+    returnVal = buffers[ nextBuffer ];
+
+    nextBuffer++;
+
+    if( nextBuffer >= NUM_BUFFERS ) {
+        nextBuffer = 0;
+        }
+
+    return returnVal;
+    }
 
 
 

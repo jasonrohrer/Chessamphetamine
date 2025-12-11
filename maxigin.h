@@ -1008,7 +1008,11 @@ void minginGame_getScreenPixels( int             inWide,
             }
         }
 
-    /* naive nearest neighbor scaling */
+    
+    /* nearest neighbor scaling
+       reducing the math operations in the inner loop resulted in a
+       35% - 40% speed up, depending on the scaling factor */
+    
     for( y = offsetY;
          y < offsetY + scaledGameH;
          y ++ ) {

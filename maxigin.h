@@ -1880,6 +1880,7 @@ static  char         mx_diffRecordingEnabled           =  1;
 static  int          mx_numDiffsSinceLastFullSnapshot  =  0;
 static  int          mx_diffsBetweenSnapshots          =  60;
 
+static  const char  *mx_recordingMagicFooter           =  "MX_RECORDING";
 
 
 /*
@@ -2543,10 +2544,30 @@ static void mx_finalizeRecording( void ) {
         if( ! success ) {
             mingin_log( "Failed write length of index into end "
                         "of recording data.\n" );
+            mingin_endWritePersistData( mx_recordingDataStoreHandle );
+            mx_recordingDataStoreHandle = -1;
+            
+            return;
+            }
+
+        success =  mingin_writePersistData(
+            mx_recordingDataStoreHandle,
+            /* include the \0 termination */
+            maxigin_stringLength( mx_recordingMagicFooter ) + 1,
+            (unsigned char*)mx_recordingMagicFooter );
+
+        if( ! success ) {
+            mingin_log( "Failed write magic footer into end "
+                        "of recording data.\n" );
+            mingin_endWritePersistData( mx_recordingDataStoreHandle );
+            mx_recordingDataStoreHandle = -1;
+            
+            return;
             }
             
-        mingin_endWritePersistData( mx_recordingIndexDataStoreHandle );
-        mx_recordingIndexDataStoreHandle = -1;
+            
+        mingin_endWritePersistData( mx_recordingDataStoreHandle );
+        mx_recordingDataStoreHandle = -1;
 
         maxigin_logString( "Game recording finalized: ",
                            mx_recordingDataStoreName );
@@ -2592,11 +2613,14 @@ static char mx_seekAndReadInt( int   inStoreReadHandle,
 
 static char mx_initPlayback( void ) {
     
-    char  success;
-    int   indexLengthDataPos;
-    int   indexLength;
-
-    int   firstFullSnapshotDataPos;
+    char   success;
+    int    indexLengthDataPos;
+    int    indexLength;
+    int    magicFooterDataPos;
+    char   magicFooterBuffer[ 20 ];
+    int    numRead;
+    
+    int    firstFullSnapshotDataPos;
 
     mx_playbackRunning    =  0;
     mx_playbackSpeed      =  1;
@@ -2635,9 +2659,58 @@ static char mx_initPlayback( void ) {
         return 0;
         }
 
-    /* jump to end and read padded int */
-    indexLengthDataPos = mx_playbackDataLength - MAXIGIN_PADDED_INT_LENGTH;
+    /* jump to end and make sure magic footer is there */
+    magicFooterDataPos = mx_playbackDataLength
+                         - maxigin_stringLength( mx_recordingMagicFooter )
+                         - 1;
+    
+    if( magicFooterDataPos < 0 ) {
+        mingin_log( "Playback file too short to even contain magic footer.\n" );
+        
+        mingin_endReadPersistData( mx_playbackDataStoreHandle );
+        return 0;
+        }
+    
+    success = mingin_seekPersistData( mx_playbackDataStoreHandle,
+                                      magicFooterDataPos );
+    
+    if( ! success ) {
+        maxigin_logInt( "Failed to seek to this position to read magic footer "
+                        "in playback data store: ",
+                        magicFooterDataPos );
+        
+        mingin_endReadPersistData( mx_playbackDataStoreHandle );
+        return 0;
+        }
 
+    numRead = mingin_readPersistData( mx_playbackDataStoreHandle,
+                                      sizeof( magicFooterBuffer ),
+                                      (unsigned char*)magicFooterBuffer );
+
+    if( numRead != maxigin_stringLength( mx_recordingMagicFooter ) + 1
+        ||
+        ! maxigin_stringsEqual( mx_recordingMagicFooter,
+                                magicFooterBuffer ) ) {
+
+        maxigin_logString( "Failed to find magic footer string at end of "
+                           "playback file: ", mx_recordingMagicFooter );
+        
+        mingin_endReadPersistData( mx_playbackDataStoreHandle );
+        return 0;
+        }
+        
+    
+    /* jump to end and read padded int */
+    indexLengthDataPos = magicFooterDataPos - MAXIGIN_PADDED_INT_LENGTH;
+
+    if( indexLengthDataPos < 0 ) {
+        mingin_log( "Playback file too short to even contain index lenth.\n" );
+        
+        mingin_endReadPersistData( mx_playbackDataStoreHandle );
+        return 0;
+        }
+
+    
     success = mx_seekAndReadInt( mx_playbackDataStoreHandle,
                                  indexLengthDataPos,
                                  &indexLength );
@@ -2651,8 +2724,7 @@ static char mx_initPlayback( void ) {
         return 0;
         }
 
-    mx_playbackIndexStartPos = mx_playbackDataLength -
-        MAXIGIN_PADDED_INT_LENGTH - indexLength;
+    mx_playbackIndexStartPos = indexLengthDataPos - indexLength;
 
     success = mx_seekAndReadInt( mx_playbackDataStoreHandle,
                                  mx_playbackIndexStartPos,

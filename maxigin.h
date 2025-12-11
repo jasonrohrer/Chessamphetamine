@@ -1018,20 +1018,38 @@ void minginGame_getScreenPixels( int             inWide,
         int ySrcOrig = ySrcScaled /  scaleFactor;
         
         int rowStartSrcOrig = ySrcOrig * MAXIGIN_GAME_NATIVE_W * 3;
+
+        int pixDest = rowStartDest + offsetX * 3;
+
+        int pixSrcOrig = rowStartSrcOrig;
+
+        unsigned char r = gameImageBuffer[ pixSrcOrig++ ];
+        unsigned char g = gameImageBuffer[ pixSrcOrig++ ];
+        unsigned char b = gameImageBuffer[ pixSrcOrig++ ];
+        
+        int xDestFillCount = 0;
+        
+        int xLimit = offsetX + scaledGameW;
         
         for( x = offsetX;
-             x < offsetX + scaledGameW;
+             x != xLimit;
              x ++ ) {
-            
-            int xSrcScaled = x - offsetX;
-            int xSrcOrig = xSrcScaled /  scaleFactor;
-        
-            int pixDest = rowStartDest + x * 3;
-            int pixSrcOrig = rowStartSrcOrig + xSrcOrig * 3;
 
-            inRGBBuffer[ pixDest ]      =  gameImageBuffer[ pixSrcOrig ];
-            inRGBBuffer[ pixDest + 1 ]  =  gameImageBuffer[ pixSrcOrig + 1 ];
-            inRGBBuffer[ pixDest + 2 ]  =  gameImageBuffer[ pixSrcOrig + 2 ];
+            inRGBBuffer[ pixDest++ ]  =  r;
+            inRGBBuffer[ pixDest++ ]  =  g;
+            inRGBBuffer[ pixDest++ ]  =  b;
+
+            xDestFillCount ++;
+
+            if( xDestFillCount == scaleFactor ) {
+                /* we've used our source pixel scaleFactor times
+                   go on to next source pixel */
+                xDestFillCount = 0;
+                
+                r = gameImageBuffer[ pixSrcOrig++ ];
+                g = gameImageBuffer[ pixSrcOrig++ ];
+                b = gameImageBuffer[ pixSrcOrig++ ];
+                }
             }
         }
     }

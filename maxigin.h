@@ -138,7 +138,7 @@
       
   [jumpSettings]
 */
-#ifndef  MAXIGIN_MAX_RECORDING_STATIC_MEMORY_MAX_BYTES
+#ifndef  MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES
     #define  MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES  4096
 #endif
 
@@ -502,8 +502,9 @@ void maxigin_writeIntSetting( const char  *inSettingName,
 
 /*
   Converts an int into a \0-terminated string.
-  
-  Returns a static buffer that must be used before next call to intToString.
+
+  Returns a static buffer from a rotating pool of 10 static buffers,
+  which allows for nested conversions.
 
   Positive int values up to 9999999999 (under 10 billion) and negative
   int values down to -9999999999 (above -10 billon) are supported.
@@ -562,7 +563,7 @@ int maxigin_stringToInt( const char  *inString );
   Returns a static buffer from a rotating pool of 10 static buffers,
   which allows for nested concatonations.
 
-  Max resulting string is 64 characters long, including the \0 termination.
+  Max resulting string is 128 characters long, including the \0 termination.
 
   If the resulting concatonation exceeds this length, it will be truncated.
   
@@ -582,6 +583,37 @@ const char *maxigin_stringConcat( const char  *inStringA,
                                   const char  *inStringB );
 
 
+/*
+  These versions of stringConcat take varying numbers of strings.
+
+  They still use the same pool of 10 static buffers described above.
+  
+  [jumpMaxiginGeneral] 
+*/
+const char *maxigin_stringConcat3( const char  *inStringA,
+                                   const char  *inStringB,
+                                   const char  *inStringC );
+
+const char *maxigin_stringConcat4( const char  *inStringA,
+                                   const char  *inStringB,
+                                   const char  *inStringC,
+                                   const char  *inStringD );
+
+const char *maxigin_stringConcat5( const char  *inStringA,
+                                   const char  *inStringB,
+                                   const char  *inStringC,
+                                   const char  *inStringD,
+                                   const char  *inStringE );
+
+const char *maxigin_stringConcat6( const char  *inStringA,
+                                   const char  *inStringB,
+                                   const char  *inStringC,
+                                   const char  *inStringD,
+                                   const char  *inStringE,
+                                   const char  *inStringF );
+
+
+
 
 /*
   Logs a labeled int value to the game engine log with a newline.
@@ -596,6 +628,31 @@ const char *maxigin_stringConcat( const char  *inStringA,
 */
 void maxigin_logInt( const char  *inLabel,
                      int          inVal );
+
+
+
+/*
+  Logs two string-embedded ints to the game engine log with a newline.
+
+  Parameters:
+
+      inStringA   the \0-terminated first string
+
+      inValB      the first int value
+
+      inStringC   the \0-terminated middle string
+
+      inValD      the second int value
+
+      inStringE   the \0-terminated end string
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_logInt2( const char  *inStringA,
+                      int          inValB,
+                      const char  *inStringC,
+                      int          inValD,
+                      const char  *inStringE );
 
 
 
@@ -2467,7 +2524,12 @@ static void mx_initRecording( void ) {
     if( MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES <
         mx_totalMemoryRecordsBytes ) {
         
-        mx_diffRecordingEnabled = 0;
+        maxigin_logInt2( "Only have room for recording ",
+                         MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES,
+                         " bytes, but ",
+                         mx_totalMemoryRecordsBytes,
+                         " registered.  Disabling recording." );
+        return;
         }
 
     maxigin_logString( "Starting recording into data store: ",
@@ -2752,9 +2814,7 @@ void mx_recordingCrashRecovery( void ) {
         mingin_endReadPersistData( indexReadHandle );
         return;
         }
-
-    /* fixme:
-       open crash file for writing, etc.*/
+    
 
     recoveryFileName = mx_getRecordingRecoveryFileName();
     
@@ -2893,6 +2953,17 @@ static char mx_initPlayback( void ) {
     mx_playbackDirection  =  1;
     
     if( mx_numMemRecords == 0 ) {
+        return 0;
+        }
+
+    if( MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES <
+        mx_totalMemoryRecordsBytes ) {
+        
+        maxigin_logInt2( "Only have room for playing back ",
+                         MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES,
+                         " bytes, but ",
+                         mx_totalMemoryRecordsBytes,
+                         " registered.  Disabling playback." );
         return 0;
         }
     
@@ -3476,6 +3547,26 @@ void maxigin_logInt( const char  *inLabel,
 
 
 
+void maxigin_logInt2( const char  *inStringA,
+                      int          inValB,
+                      const char  *inStringC,
+                      int          inValD,
+                      const char  *inStringE ) {
+
+    const char  *logString;
+
+    logString = maxigin_stringConcat6( inStringA,
+                                       maxigin_intToString( inValB ),
+                                       inStringC,
+                                       maxigin_intToString( inValD ),
+                                       inStringE,
+                                       "\n" );
+    mingin_log( logString );
+    }
+
+
+
+
 int maxigin_stringLength( const char  *inString ) {
     
     int  len  =  0;
@@ -3513,7 +3604,11 @@ char maxigin_stringsEqual( const char  *inStringA,
 
 const char *maxigin_intToString( int  inInt ) {
 
-    static  char  buffer[20];
+    enum{  NUM_BUFFERS  =  10,
+           BUFFER_LEN   =  20 };
+
+    static  char  buffers[ NUM_BUFFERS ][ BUFFER_LEN ];
+    static  int   nextBuffer                             =  0;
 
     unsigned int  c            =  0;
                   /* start with billions */
@@ -3521,7 +3616,10 @@ const char *maxigin_intToString( int  inInt ) {
     const char   *formatError  =  "[int_format_error]";
                   /* skip 0 digits until our first non-zero digit */
     int           qLowerLimit  =  1;
+    char         *buffer;
 
+    buffer = buffers[ nextBuffer ];
+    
     
     if( inInt == 0 ) {
         return "0";
@@ -3556,6 +3654,12 @@ const char *maxigin_intToString( int  inInt ) {
     
     /* terminate */
     buffer[c] = '\0';
+
+    nextBuffer++;
+
+    if( nextBuffer >= NUM_BUFFERS ) {
+        nextBuffer = 0;
+        }
     
     return buffer;  
     }
@@ -4026,7 +4130,7 @@ const char *maxigin_stringConcat( const char  *inStringA,
                                   const char  *inStringB ) {
     
     enum{  NUM_BUFFERS  =  10,
-           BUFFER_LEN   =  64 };
+           BUFFER_LEN   =  128 };
 
     static  char  buffers[ NUM_BUFFERS ][ BUFFER_LEN ];
     static  int   nextBuffer                             =  0;
@@ -4072,6 +4176,61 @@ const char *maxigin_stringConcat( const char  *inStringA,
     return returnVal;
     }
 
+
+
+const char *maxigin_stringConcat3( const char  *inStringA,
+                                   const char  *inStringB,
+                                   const char  *inStringC ) {
+    
+    return maxigin_stringConcat( maxigin_stringConcat( inStringA,
+                                                       inStringB ),
+                                 inStringC );
+    }
+
+
+
+const char *maxigin_stringConcat4( const char  *inStringA,
+                                   const char  *inStringB,
+                                   const char  *inStringC,
+                                   const char  *inStringD ) {
+    
+    return maxigin_stringConcat( maxigin_stringConcat3( inStringA,
+                                                        inStringB,
+                                                        inStringC ),
+                                 inStringD );
+    }
+
+
+
+const char *maxigin_stringConcat5( const char  *inStringA,
+                                   const char  *inStringB,
+                                   const char  *inStringC,
+                                   const char  *inStringD,
+                                   const char  *inStringE ) {
+    
+    return maxigin_stringConcat( maxigin_stringConcat4( inStringA,
+                                                        inStringB,
+                                                        inStringC,
+                                                        inStringD ),
+                                 inStringE );
+    }
+
+
+
+const char *maxigin_stringConcat6( const char  *inStringA,
+                                   const char  *inStringB,
+                                   const char  *inStringC,
+                                   const char  *inStringD,
+                                   const char  *inStringE,
+                                   const char  *inStringF ) {
+    
+    return maxigin_stringConcat( maxigin_stringConcat5( inStringA,
+                                                        inStringB,
+                                                        inStringC,
+                                                        inStringD,
+                                                        inStringE ),
+                                 inStringF );
+    }
 
 
 

@@ -2844,7 +2844,7 @@ void mingin_endReadBulkData( int  inBulkDataHandle ) {
 
 void mingin_deletePersistData( const char  *inStoreName ) {
     /* suppress warning */
-    if( inBulkName[0] != '\0' ) {
+    if( inStoreName[0] != '\0' ) {
         }
     }
 

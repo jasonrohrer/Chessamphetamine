@@ -116,6 +116,7 @@
 #endif
 
 
+
 /*
   If recording is enabled, what is the maximum total size of the
   static memory that the game will register with:
@@ -396,56 +397,6 @@ void maxigin_initRegisterStaticMemory( void        *inPointer,
   [jumpMaxiginInit]
 */
 void maxigin_initRestoreStaticMemoryFromLastRun( void );
-
-
-
-
-
-
-/*
-  CONSIDER:
-
-  Can we actually RECORD the state of this static memory to persistent storage
-  after every step (storing a no-op if it hasn't changed, or maybe only storing
-  a sparse map of which bytes have changed....)  and then use that to do
-  full game playback, including smooth rewinding and time jumping forward
-  and back?
-
-  The old game engine recorded input events, the system, clock, etc, and then
-  let the game code replay itself, which is useful for catching bugs, but also
-  fragile, and doesn't allow time-jumping, which made it too much of a pain
-  to use (if someone submitted a long game with a bug a the end, I didn't
-  have time to watch the whole thing).
-
-  What if this system allows fast forward and rewind, and then pause...
-
-  And then you can see a bug happen (or it will just end, if there was a crash).
-
-  Then you can rewind to the frame before the bug, and then "unleash" it
-  to run on the real game code again, but stop playing back, and then
-  try to trigger the bug yourself.  I.e., you get to the point right before
-  the bug, and then you take the reigns by clicking and pressing buttons.
-
-  Also possible to save space by not saving entire memory each step, but just
-  a diff from a keyframe.
-  
-  A few things to consider:
-
-  1. This will require two extra static buffers that are at least as big as all
-     of the registered memory regions, so that we can compute a diff at
-     each timestep (and keep track of the diff-summed state currently in our
-     file).  Probably give user a #define that lets them set this size, or
-     turn this off on platforms where we don't want 3x memory usage.
-     
-  2. Diff steps will vary in size, which means we can't just seek to a known
-     location in the file for accurate time-jumping.  However, we could
-     potentially write a separate index file in parallel that records
-     file pos offsets of keyframes every 5 seconds or whatever, and then,
-     when the recording is done we can append this index to our recording,
-     with a pointer at the end of the file that points back into the file
-     at the location where this index starts.
-*/
-
 
 
 
@@ -1061,6 +1012,74 @@ void minginGame_getScreenPixels( int             inWide,
         }
     }
 
+
+
+
+/*
+  Note about recording/playback:
+
+  We actually RECORD the state of this static memory to persistent storage
+  after every step (only storing a sparse map of which bytes have changed)
+  and then use that to do full game playback, including smooth rewinding and
+  time jumping forward and back.
+
+  The old minorGems game engine recorded input events, the system clock, etc,
+  and then let the game code replay itself, which is useful for catching bugs,
+  but also fragile, and doesn't allow time-jumping, which made it too much of a
+  pain to use (if someone submitted a long game with a bug a the end, I didn't
+  have time to watch the whole thing).
+
+  This system allows fast forward and rewind, and pause.
+
+  And then you can see a bug happen (or it will just end, if there was a crash).
+
+  Then you can rewind to the frame before the bug, and then "unleash" it
+  to run on the real game code again, but stop playing back, and then
+  try to trigger the bug yourself.  I.e., you get to the point right before
+  the bug, and then you take the reigns by clicking and pressing buttons.
+
+  We save space by not saving entire memory each step, but just a diff from a
+  periodic full keyframe.
+  
+  A few things to consider:
+
+  1. This requires two extra static buffers that are at least as big as all
+     of the registered memory regions, so that we can compute a diff at
+     each timestep (and keep track of the diff-summed state currently in our
+     file).  We give the .h user a #define that lets them set this size, or
+     turn this off on platforms where we don't want 3x memory usage.
+     
+  2. Diff steps will vary in size, which means we can't just seek to a known
+     location in the file for accurate time-jumping.  We could write a separate
+     index file in parallel that records file pos offsets of keyframes every 1
+     second or whatever, and then, when the recording is done, we append this
+     index to our recording, with a pointer at the end of the file that points
+     back into the file at the location where this index starts.  During
+     playback, we do instant time-jumping by jumping around in this
+     index portion of the file, which will tell us the location of the keyframe
+     to jump to in the main part of the file.
+
+  3. Since each diff step is an XOR from the previous state, we can use it
+     during playback to advance forward from the previous state, but we can
+     also use it to go backwards from this state back to the previous state
+     (xor can do and undo changes by applying it).  This allows reverse
+     playback.
+
+  4. Fast-forward and fast-rewind are achieved by simply playing multiple diff
+     steps before updating the screen.  This seems to work great for 2x, 4x,
+     8x, etc. during testing.  Of course, beyond that, instant time-jumping
+     can be used.
+
+  5. After a crash, the recording is not finalized (the index is not appended
+     to the end of the recording and removed as a separate file).  On the next
+     run, we do crash recovery and finalize this recording file.
+
+  6. The game's step code is skipped completely during playback.  We assume
+     that the step code is where the state is updated, and we've recorded
+     the entire state, so we can update it without calling the game's step.
+     However, the game's drawing code is still called to draw that changing
+     state.
+*/
 
 
 static void mx_initRecording( void );

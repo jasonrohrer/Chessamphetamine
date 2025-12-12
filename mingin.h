@@ -613,6 +613,8 @@ typedef enum MinginButton {
     MGN_BUTTON_SQUARE,
     MGN_BUTTON_A,
     MGN_BUTTON_MOUSE_LEFT,
+    MGN_BUTTON_MOUSE_MIDDLE,
+    MGN_BUTTON_MOUSE_RIGHT,
     MGN_DUMMY_LAST_BUTTON
     } MinginButton;
 
@@ -1655,6 +1657,24 @@ static MinginButton mn_mapXKeyToButton( KeySym  inXKey ) {
     }
 
 
+static MinginButton mn_mapXButtonToButton( unsigned int inButton ) {
+
+    switch( inButton ) {
+        case 1:
+            return MGN_BUTTON_MOUSE_LEFT;
+            break;
+        case 2:
+            return MGN_BUTTON_MOUSE_MIDDLE;
+            break;
+        case 3:
+            return MGN_BUTTON_MOUSE_RIGHT;
+            break;  
+        }
+
+    return MGN_BUTTON_NONE;
+    }
+
+
 
 MinginButton mingin_getLastButtonPressed( void ) {
     
@@ -1921,7 +1941,11 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
     
     XSelectInput( s->xDisplay,
                   s->xWindow,
-                  StructureNotifyMask | KeyPressMask | KeyReleaseMask );
+                  StructureNotifyMask |
+                  KeyPressMask        |
+                  KeyReleaseMask      |
+                  ButtonPressMask     |
+                  ButtonReleaseMask );
 
     XMapWindow( s->xDisplay,
                 s->xWindow );
@@ -2101,6 +2125,24 @@ int main( void ) {
                 KeySym        ks      =  XLookupKeysym( &(e.xkey),
                                                         0 );
                 MinginButton  button  =  mn_mapXKeyToButton( ks );
+                
+                if( button > MGN_BUTTON_NONE ) {
+                    mn_buttonDown[ button ] = 0;
+                    }
+                }
+            else if( e.type == ButtonPress ) {
+                MinginButton  button  =  mn_mapXButtonToButton(
+                                             e.xbutton.button );
+                
+                if( button > MGN_BUTTON_NONE ) {
+                    mn_buttonDown[ button ] = 1;
+                    /* a new press to remember */
+                    mn_lastButtonPressed = button;
+                    }
+                }
+            else if( e.type == ButtonRelease ) {
+                MinginButton  button  =  mn_mapXButtonToButton(
+                                             e.xbutton.button );
                 
                 if( button > MGN_BUTTON_NONE ) {
                     mn_buttonDown[ button ] = 0;

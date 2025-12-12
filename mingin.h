@@ -1853,11 +1853,17 @@ typedef struct MinginXWindowSetup {
         
         Display      *xDisplay;
         Window        xWindow;
+        Window        xRoot;
         int           xScreen;
         XVisualInfo  *xVisual;
         GLXContext    glxContext;
         
     } MinginXWindowSetup;
+
+
+
+static  char                 mn_XSetupLive  =  0;
+static  MinginXWindowSetup   mn_XSetup;
 
 
 
@@ -1869,7 +1875,6 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
                                                   GLX_DOUBLEBUFFER,
                                                   None };
     unsigned long            xBlackColor;
-    Window                   root;
     XRRScreenConfiguration  *conf;
         
     s->xDisplay = XOpenDisplay( NULL );
@@ -1877,9 +1882,9 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
     mn_reconfigureWindowSize( s->xDisplay );
 
     
-    root = DefaultRootWindow( s->xDisplay );
+    s->xRoot = DefaultRootWindow( s->xDisplay );
 
-    conf = XRRGetScreenInfo( s->xDisplay, root );
+    conf = XRRGetScreenInfo( s->xDisplay, s->xRoot );
     mn_screenRefreshRate = XRRConfigCurrentRate( conf );
 
     mingin_log( "Found monitor refresh reate " );
@@ -1905,7 +1910,7 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
 
     s->xWindow = XCreateSimpleWindow(
         s->xDisplay,
-        root,
+        s->xRoot,
         0, 0,
         (unsigned int)mn_windowW,
         (unsigned int)mn_windowH,
@@ -1984,10 +1989,66 @@ static void mn_closeXWindow( MinginXWindowSetup  *inSetup ) {
 
 
 
+char mingin_getPointerLocation( int  *outX,
+                                int  *outY,
+                                int  *outMaxX,
+                                int  *outMaxY ) {
+
+    Window        currentRoot;
+    Window        currentChild;
+    int           rootX;
+    int           rootY;
+    int           winX;
+    int           winY;
+    unsigned int  mask;
+    Bool          result;
+    
+    if( ! mn_XSetupLive ) {
+        return 0;
+        }
+    
+    result = XQueryPointer( mn_XSetup.xDisplay,
+                            mn_XSetup.xWindow,
+                            & currentRoot,
+                            & currentChild,
+                            & rootX,
+                            & rootY,
+                            & winX,
+                            & winY,
+                            & mask );
+
+    if( result != True ) {
+        return 0;
+        }
+        
+    if( currentRoot != mn_XSetup.xRoot ) {
+        return 0;
+        }
+    
+    if( winX < 0
+        ||
+        winX > mn_windowW
+        ||
+        winY < 0
+        ||
+        winY > mn_windowW ) {
+
+        return 0;
+        }
+
+    *outX    = winX;
+    *outY    = winY;
+    *outMaxX = mn_windowW;
+    *outMaxY = mn_windowH;
+
+    return 1;
+    }
+
+
+
         
 int main( void ) {
 
-    MinginXWindowSetup  xSetup;
     int                 b;
     char                currentlyFullscreen  =  0;
     
@@ -2007,21 +2068,22 @@ int main( void ) {
     mn_setupX11KeyMap();
     
 
-    if( ! mn_openXWindow( &xSetup ) ) {
+    if( ! mn_openXWindow( & mn_XSetup ) ) {
         mingin_log( "Opening X Window failed\n" );
         return 1;
         }
 
+    mn_XSetupLive = 1;
 
     
     while( ! mn_shouldQuit ) {
         
         /* pump all events */
-        while( XPending( xSetup.xDisplay ) > 0 ) {
+        while( XPending( mn_XSetup.xDisplay ) > 0 ) {
             
             XEvent  e;
             
-            XNextEvent( xSetup.xDisplay,
+            XNextEvent( mn_XSetup.xDisplay,
                         &e );
 
             if( e.type == KeyPress ) {
@@ -2074,14 +2136,14 @@ int main( void ) {
                       GL_UNSIGNED_BYTE,
                       mn_gameScreenBuffer );
 
-        glXSwapBuffers( xSetup.xDisplay,
-                        xSetup.xWindow ); 
+        glXSwapBuffers( mn_XSetup.xDisplay,
+                        mn_XSetup.xWindow ); 
 
         if( currentlyFullscreen != mn_xFullscreen ) {
             int  oldW  =  mn_windowW;
             int  oldH  =  mn_windowH;
 
-            mn_reconfigureWindowSize( xSetup.xDisplay );
+            mn_reconfigureWindowSize( mn_XSetup.xDisplay );
 
             if( oldW != mn_windowW
                 ||
@@ -2094,9 +2156,9 @@ int main( void ) {
                 mingin_log( mn_intToString( mn_windowH ) );
                 mingin_log( "\n" );
 
-                mn_closeXWindow( &xSetup );
+                mn_closeXWindow( & mn_XSetup );
 
-                if( ! mn_openXWindow( &xSetup ) ) {
+                if( ! mn_openXWindow( & mn_XSetup ) ) {
                     mingin_log( "Failed to re-open X Window after toggling "
                                 "fullscreen mode\n" );
                     return 1;
@@ -2105,8 +2167,8 @@ int main( void ) {
             else {
                 /* same window size after fullscreen toggle,
                    no need to remake it */
-                mn_xSetFullscreen( xSetup.xDisplay,
-                                   xSetup.xWindow,
+                mn_xSetFullscreen( mn_XSetup.xDisplay,
+                                   mn_XSetup.xWindow,
                                    mn_xFullscreen );
                 }
 
@@ -2124,7 +2186,7 @@ int main( void ) {
         } /* end of  while( ! mn_shouldQuit )  */
 
     
-    mn_closeXWindow( &xSetup );
+    mn_closeXWindow( & mn_XSetup );
     
     
     return 1;
@@ -2663,6 +2725,22 @@ void mingin_quit( void ) {
 static char minginPlatform_isButtonDown( MinginButton  inButton ) {
     /* suppress warning */
     if( inButton == MGN_BUTTON_NONE ) {
+        }
+    return 0;
+    }
+
+
+
+char mingin_getPointerLocation( int  *outX,
+                                int  *outY,
+                                int  *outMaxX,
+                                int  *outMaxY ) {
+    /* suppress warning */
+    if( *outX ||
+        *outY ||
+        *outMaxX ||
+        *outMaxY ) {
+        return 0;
         }
     return 0;
     }

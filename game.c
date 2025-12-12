@@ -183,10 +183,13 @@ static char remappingJump = 0;
 
 void maxiginGame_step( void ) {
     
-    int  r;
-    int  i;
-    int  boxVPerStep;
-
+    int   r;
+    int   i;
+    int   boxVPerStep;
+    char  pointerLive;
+    int   pointerX;
+    int   pointerY;
+    
     if( remappingJump ) {
         MinginButton last = mingin_getLastButtonPressed();
 
@@ -236,18 +239,30 @@ void maxiginGame_step( void ) {
     
 
     /* move box */
-    boxVPerStep = boxVPerSecond / r;
-    
-    if( boxVPerStep < 1 ) {
-        boxVPerStep = 1;
-        }
-    boxPosX += boxDir * boxVPerStep;
 
-    if( boxDir > 0 && boxPosX >= MAXIGIN_GAME_NATIVE_W ) {
-        boxDir = -1;
+    
+    pointerLive = maxigin_getPointerLocation( & pointerX,
+                                              & pointerY );
+    if( pointerLive ) {
+        boxPosX = pointerX;
+        boxPosY = pointerY;
         }
-    else if( boxDir < 0 && boxPosX <= 0 ) {
-        boxDir = 1;
+    else {
+        /* auto-move box, no on-screen pointer */
+        
+        boxVPerStep = boxVPerSecond / r;
+    
+        if( boxVPerStep < 1 ) {
+            boxVPerStep = 1;
+            }
+        boxPosX += boxDir * boxVPerStep;
+
+        if( boxDir > 0 && boxPosX >= MAXIGIN_GAME_NATIVE_W ) {
+            boxDir = -1;
+            }
+        else if( boxDir < 0 && boxPosX <= 0 ) {
+            boxDir = 1;
+            }
         }
 
 

@@ -460,6 +460,29 @@ char maxigin_isButtonDown( int  inButtonHandle );
 
 
 /*
+  Gets the current on-screen pointer location, if any.
+
+  Parameters:
+
+      outX   pointer to where the x location should be returned
+             returned value is in range 0 .. MAXIGIN_GAME_NATIVE_W
+
+      outY   pointer to where the y location should be returned
+             returned value is in range 0 .. MAXIGIN_GAME_NATIVE_H
+
+  Return:
+
+      1   if pointer location is on-screen and available
+
+      0   if pointer location is off-screen or not available
+  
+ */
+char maxigin_getPointerLocation( int  *outX,
+                                 int  *outY );
+
+
+
+/*
   Reads an integer value from a persistent setting.
 
   Parameters:
@@ -1414,6 +1437,37 @@ char maxigin_isButtonDown( int  inButtonHandle ) {
     inButtonHandle += LAST_MAXIGIN_USER_ACTION;
 
     return mingin_isButtonDown( inButtonHandle );
+    }
+
+
+
+char maxigin_getPointerLocation( int  *outX,
+                                 int  *outY ) {
+    int   rawX;
+    int   rawY;
+    int   maxX;
+    int   maxY;
+    char  avail;
+    
+    avail = mingin_getPointerLocation( &rawX,
+                                       &rawY,
+                                       &maxX,
+                                       &maxY );
+
+    if( ! avail ) {
+        return 0;
+        }
+    
+    rawX *= MAXIGIN_GAME_NATIVE_W;
+    rawX /= maxX;
+
+    rawY *= MAXIGIN_GAME_NATIVE_H;
+    rawY /= maxY;
+
+    *outX = rawX;
+    *outY = rawY;
+
+    return 1;
     }
 
 

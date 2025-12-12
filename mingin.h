@@ -414,6 +414,22 @@ int mingin_getStepsPerSecond( void );
 
 
 
+/*
+  How many milliseconds are left in the current step?
+
+  Returns:
+
+      the number of milliseconds left
+
+          or
+
+      -1  on platforms where this measurement is not supported.
+            
+  [jumpMinginProvides]
+*/
+int mingin_getMillisecondsLeftInStep( void );
+
+
 
 /*
   Used to end button mapping arrays in calls to:
@@ -1475,20 +1491,17 @@ char mingin_isButtonDown( int  inButtonHandle ) {
 #define MINGIN_LINUX_MAX_WIN_W   4096
 #define MINGIN_LINUX_MAX_WIN_H   2160
 
-#define MINGIN_LINUX_TARGET_FPS  60
-
-/* needed for nanosleep in time.h */
-#define _POSIX_C_SOURCE          199309L
-
-#include <time.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 
+#include <X11/extensions/Xrandr.h>
+
 #include <GL/glx.h>
 
 #include <unistd.h>
+#include <sys/time.h>
 
 
 
@@ -1496,12 +1509,13 @@ char mingin_isButtonDown( int  inButtonHandle ) {
 static unsigned char mn_gameScreenBuffer[ MINGIN_LINUX_MAX_WIN_W *
                                           MINGIN_LINUX_MAX_WIN_H * 3 ];
 
-static  char  mn_shouldQuit           =  0;
-static  int   mn_windowW              =  0;
-static  int   mn_windowH              =  0;
-static  char  mn_areWeInStepFunction  =  0;
-static  char  mn_xFullscreen          =  0;
-
+static  char            mn_shouldQuit           =  0;
+static  int             mn_windowW              =  0;
+static  int             mn_windowH              =  0;
+static  char            mn_areWeInStepFunction  =  0;
+static  char            mn_xFullscreen          =  0;
+static  int             mn_screenRefreshRate    =  0;
+static  struct timeval  mn_lastRedrawTime;
 
 
 static void mn_getMonitorSize( Display  *inXDisplay,
@@ -1520,7 +1534,34 @@ static void mn_getMonitorSize( Display  *inXDisplay,
 
 
 int mingin_getStepsPerSecond( void ) {
-    return MINGIN_LINUX_TARGET_FPS;
+    return mn_screenRefreshRate;
+    }
+
+
+
+int mingin_getMillisecondsLeftInStep( void ) {
+
+    static  struct timeval  currentTime;
+
+    int  msPassed;
+    int  msPerStep  =  1000 / mn_screenRefreshRate;
+    
+    gettimeofday( & currentTime,
+                  NULL );
+
+    msPassed =
+        (int)(
+            1000 * ( currentTime.tv_sec - mn_lastRedrawTime.tv_sec )
+            +
+            ( currentTime.tv_usec - mn_lastRedrawTime.tv_usec ) / 1000 );
+
+
+    if( msPassed > msPerStep ) {
+        return 0;
+        }
+    else {
+        return msPerStep - msPassed;
+        }
     }
 
 
@@ -1823,17 +1864,27 @@ typedef struct MinginXWindowSetup {
 /* returns 1 on success, 0 on failure */
 static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
     
-    MinginXWindowSetup  *s                =  inSetup;
-    int                  glxAttributes[]  = { GLX_RGBA,
-                                              GLX_DOUBLEBUFFER,
-                                              None };
-    unsigned long        xBlackColor;
-    
-    
+    MinginXWindowSetup      *s                =  inSetup;
+    int                      glxAttributes[]  = { GLX_RGBA,
+                                                  GLX_DOUBLEBUFFER,
+                                                  None };
+    unsigned long            xBlackColor;
+    Window                   root;
+    XRRScreenConfiguration  *conf;
+        
     s->xDisplay = XOpenDisplay( NULL );
 
     mn_reconfigureWindowSize( s->xDisplay );
 
+    
+    root = DefaultRootWindow( s->xDisplay );
+
+    conf = XRRGetScreenInfo( s->xDisplay, root );
+    mn_screenRefreshRate = XRRConfigCurrentRate( conf );
+
+    mingin_log( "Found monitor refresh reate " );
+    mingin_log( mn_intToString( mn_screenRefreshRate ) );
+    mingin_log( "\n" );
     
     s->xScreen = DefaultScreen( s->xDisplay );
 
@@ -1854,7 +1905,7 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
 
     s->xWindow = XCreateSimpleWindow(
         s->xDisplay,
-        DefaultRootWindow( s->xDisplay ),
+        root,
         0, 0,
         (unsigned int)mn_windowW,
         (unsigned int)mn_windowH,
@@ -2064,7 +2115,13 @@ int main( void ) {
             currentlyFullscreen = mn_xFullscreen;
 
             }
-        }
+
+        /* do this after resizing window (if we do that)
+           to give us a fresh start on our next step timing */
+        gettimeofday( & mn_lastRedrawTime,
+                      NULL );
+        
+        } /* end of  while( ! mn_shouldQuit )  */
 
     
     mn_closeXWindow( &xSetup );
@@ -2589,6 +2646,10 @@ int mingin_getStepsPerSecond( void ) {
     }
 
 
+
+int mingin_getMillisecondsLeftInStep( void ) {
+    return -1;
+    }
 
 
 

@@ -818,7 +818,11 @@ typedef enum MinginStick {
     MGN_MIDDLE_STICK_Y,
     MGN_RIGHT_STICK_X,
     MGN_RIGHT_STICK_Y,
+    MGN_LEFT_TRIGGER_STICK,
+    MGN_RIGHT_TRIGGER_STICK,
     MGN_THROTTLE_STICK,
+    MGN_DPAD_STICK_X,
+    MGN_DPAD_STICK_Y,
     MGN_DUMMY_LAST_STICK
     } MinginStick;
 
@@ -1652,11 +1656,27 @@ static  const char   *mn_gamepadIDStrings[ MGN_NUM_GAMEPADS ] = {
 
 #define  MINGIN_MAX_NUM_GAMEPAD_BUTTONS  32
 
+#define  MINGIN_MAX_NUM_GAMEPAD_STICKS   32
 
-/* maps /dev/input/js  button numbers (0, 1, 2, etc.) to MGN_BUTTON_ symbols,
-   ending with MGN_MAP_END */
-static  MinginButton        mn_jsButtonMap[ MGN_NUM_GAMEPADS ]
-                                          [ MINGIN_MAX_NUM_GAMEPAD_BUTTONS ];
+
+/* maps /dev/input/js  button numbers (0, 1, 2, etc.) to MGN_BUTTON_ symbols.
+   Each list of buttons is padded with MGN_MAP_END */
+static  MinginButton        mn_jsButtonToButtonMap
+                                [ MGN_NUM_GAMEPADS ]
+                                [ MINGIN_MAX_NUM_GAMEPAD_BUTTONS ];
+
+
+/* maps /dev/input/js  stick numbers (0, 1, 2, etc.) to MGN_BUTTON_ symbols
+   becaus some "sticks", like D-pads, are actually behaving line binary buttons
+   on certain controllers
+
+   2 indices at end are 0 for negative direction and 1 for positive direction
+   on the stick that maps to binary button presses
+   
+   Each list of buttons is padded with MGN_MAP_END */
+static  MinginButton        mn_jsStickToButtonMap
+                                [ MGN_NUM_GAMEPADS ]
+                                [ MINGIN_MAX_NUM_GAMEPAD_BUTTONS ][ 2 ];
 
 
 static  MinginLinuxGamepad  mn_activeGamepad  =  MGN_NO_GAMEPAD;
@@ -1746,6 +1766,7 @@ static MinginButton mn_mapXButtonToButton( unsigned int inButton ) {
     }
 
 
+
 /*
   Maps button index read from a /dev/input/js event to a MinginButton,
   based on the current active gamepad.
@@ -1764,7 +1785,7 @@ static MinginButton mn_mapJSButtonToButton( int inJSButton ) {
         return MGN_BUTTON_NONE;
         }
 
-    b = mn_jsButtonMap[ mn_activeGamepad ][ inJSButton ];
+    b = mn_jsButtonToButtonMap[ mn_activeGamepad ][ inJSButton ];
 
     if( b == MGN_MAP_END ) {
         return MGN_BUTTON_NONE;
@@ -1772,6 +1793,49 @@ static MinginButton mn_mapJSButtonToButton( int inJSButton ) {
 
     return b;
     }
+
+
+
+/*
+  Maps stick index and position read from a /dev/input/js event to a
+  MinginButton, based on the current active gamepad.
+
+  (Some "sticks" are actually binary on/off buttons, like the d-pad)
+
+  Returns MGN_BUTTON_NONE on failure.
+*/
+static MinginButton mn_mapJSStickToButton( int inJSButton,
+                                           int inStickPosition ) {
+    
+    MinginButton  b;
+    int           posIndex;
+    
+    if( inJSButton >= MINGIN_MAX_NUM_GAMEPAD_STICKS ) {
+        return MGN_BUTTON_NONE;
+        }
+    
+    if( mn_activeGamepad == MGN_NO_GAMEPAD ) {
+        return MGN_BUTTON_NONE;
+        }
+
+    if( inStickPosition < 0 ) {
+        posIndex = 0;
+        }
+    else {
+        posIndex = 1;
+        }
+    
+    b = mn_jsStickToButtonMap[ mn_activeGamepad ][ inJSButton ][ posIndex ];
+
+    if( b == MGN_MAP_END ) {
+        return MGN_BUTTON_NONE;
+        }
+
+    return b;
+    }
+
+
+
 
     
 
@@ -1880,7 +1944,7 @@ static const char *mn_intToString( int  inInt ) {
 static void mn_setupX11KeyMap( void );
 
 
-static void mn_setupLinuxGamepadButtonMap( void );
+static void mn_setupLinuxGamepadMaps( void );
 
 
 /*
@@ -2222,7 +2286,7 @@ int main( void ) {
 
     mn_setupX11KeyMap();
 
-    mn_setupLinuxGamepadButtonMap();
+    mn_setupLinuxGamepadMaps();
     
 
     if( ! mn_openXWindow( & mn_XSetup ) ) {
@@ -2301,10 +2365,17 @@ int main( void ) {
                 if( numRead == sizeof( struct js_event ) ) {
 
                     MinginButton  button;
+
+                    /* for stick axes that act like binary button
+                       presses, the axis will return 0 when either
+                       directional button is released, so we need
+                       to release both of them */
+                    MinginButton  buttonMinus;
+                    MinginButton  buttonPlus;
                     
                     switch (e.type) {
                         case JS_EVENT_BUTTON:
-                             button = mn_mapJSButtonToButton( e.number );
+                            button = mn_mapJSButtonToButton( e.number );
 
                             if( button > MGN_BUTTON_NONE ) {
                                 if( e.value ) {
@@ -2319,7 +2390,47 @@ int main( void ) {
                                 }
                             break;
                         case JS_EVENT_AXIS:
-                            /* fixme */
+                            if( e.value == 0 ) {
+                                /* might be a release of a stick
+                                   that behaves like a binary button */
+                                buttonPlus = mn_mapJSStickToButton( e.number,
+                                                                    1 );
+                                buttonMinus = mn_mapJSStickToButton( e.number,
+                                                                     -1 );
+
+                                if( buttonPlus > MGN_BUTTON_NONE ) {
+                                    /* release */
+                                    mn_buttonDown[ buttonPlus ] = 0;
+                                    }
+                                if( buttonMinus > MGN_BUTTON_NONE ) {
+                                    /* release */
+                                    mn_buttonDown[ buttonMinus ] = 0;
+                                    }
+                                }
+                            else {
+                                button = mn_mapJSStickToButton( e.number,
+                                                                e.value );
+                                /* negate the value to see
+                                   opposite side that might need to be
+                                   released */
+                                buttonMinus = mn_mapJSStickToButton( e.number,
+                                                                     -e.value );
+
+                                if( button > MGN_BUTTON_NONE ) {
+                                    mn_buttonDown[ button ] = 1;
+                                    /* a new press to remember */
+                                    mn_lastButtonPressed = button;
+                                    }
+                                if( buttonMinus > MGN_BUTTON_NONE ) {
+                                    /* release opposite side */
+                                    mn_buttonDown[ buttonMinus ] = 0;
+                                    }
+                                }
+                            
+                            /* fixme
+                               still need to handle stick movements
+                               for sticks that don't map to binary button
+                               presses */
                             break;
                         }
                     }
@@ -2573,7 +2684,7 @@ static void mn_setupX11KeyMap( void ) {
 
 
 
-static void mn_setupLinuxGamepadButtonMap( void ) {
+static void mn_setupLinuxGamepadMaps( void ) {
 
     int  i;
     int  j;
@@ -2586,7 +2697,7 @@ static void mn_setupLinuxGamepadButtonMap( void ) {
     
     while( i <= MGN_BUTTON_PS_STICK_RIGHT_PRESS ) {
         
-        mn_jsButtonMap[ MGN_PS_DUALSHOCK_4 ][ j ] = i;
+        mn_jsButtonToButtonMap[ MGN_PS_DUALSHOCK_4 ][ j ] = i;
 
         i ++;
         j ++;
@@ -2595,14 +2706,33 @@ static void mn_setupLinuxGamepadButtonMap( void ) {
     /* terminate list, and fill with MGN_MAP_END */
     while( j < MINGIN_MAX_NUM_GAMEPAD_BUTTONS ) {
         
-        mn_jsButtonMap[ MGN_PS_DUALSHOCK_4 ][ j ] = MGN_MAP_END;
+        mn_jsButtonToButtonMap[ MGN_PS_DUALSHOCK_4 ][ j ] = MGN_MAP_END;
         
         j++;
         }
 
+    /* for sticks to buttons, start by filling with MGN_MAP_END */
+    j = 0;
+
+    while( j < MINGIN_MAX_NUM_GAMEPAD_STICKS ) {
+        
+        mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ j ][ 0 ] = MGN_MAP_END;
+        mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ j ][ 1 ] = MGN_MAP_END;
+        
+        j ++;
+        }
+
+    mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ 6 ][ 0 ] =
+        MGN_BUTTON_DPAD_LEFT;
     
-    /* fixme:
-       ps d-pad buttons are reported like axes with hard left/right */
+    mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ 6 ][ 1 ] =
+        MGN_BUTTON_DPAD_RIGHT;
+
+    mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ 7 ][ 0 ] =
+        MGN_BUTTON_DPAD_UP;
+    
+    mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ 7 ][ 1 ] =
+        MGN_BUTTON_DPAD_DOWN;
     }
 
 

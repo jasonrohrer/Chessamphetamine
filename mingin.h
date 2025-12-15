@@ -610,6 +610,26 @@ typedef enum MinginButton {
     MGN_KEY_VERTICAL_BAR,
     MGN_KEY_BRACE_R,
     MGN_KEY_TILDE,
+    
+    MGN_BUTTON_PS_X,
+    MGN_BUTTON_PS_CIRCLE,
+    MGN_BUTTON_PS_TRIANGLE,
+    MGN_BUTTON_PS_SQUARE,
+    MGN_BUTTON_L1,
+    MGN_BUTTON_R1,
+    MGN_BUTTON_L2,
+    MGN_BUTTON_R2,
+    MGN_BUTTON_PS_SHARE,
+    MGN_BUTTON_PS_OPTIONS,
+    MGN_BUTTON_PS_PS,
+    MGN_BUTTON_PS_STICK_LEFT_PRESS,
+    MGN_BUTTON_PS_STICK_RIGHT_PRESS,
+
+    MGN_BUTTON_DPAD_LEFT,
+    MGN_BUTTON_DPAD_RIGHT,
+    MGN_BUTTON_DPAD_UP,
+    MGN_BUTTON_DPAD_DOWN,
+    
     MGN_BUTTON_SQUARE,
     MGN_BUTTON_A,
     MGN_BUTTON_MOUSE_LEFT,
@@ -1503,7 +1523,14 @@ char mingin_isButtonDown( int  inButtonHandle ) {
 #include <GL/glx.h>
 
 #include <unistd.h>
+#include <errno.h>
 #include <sys/time.h>
+
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <sys/ioctl.h>
+#include <linux/joystick.h>
 
 
 
@@ -1607,8 +1634,52 @@ static  char          mn_buttonDown[ MGN_NUM_BUTTONS ];
 static  KeySym        mn_buttonToXKeyMap[ MGN_NUM_BUTTONS ];
 
 
-/* fixme:
-   still need to handle controller input on Linux */
+
+
+#define  MGN_FIRST_GAMEPAD   0
+
+typedef enum MinginLinuxGamepad {
+    MGN_NO_GAMEPAD          =  -1,
+    MGN_PS_DUALSHOCK_4      =  MGN_FIRST_GAMEPAD,
+    MGN_NUM_GAMEPADS
+    } MinginLinuxGamepad;
+
+
+static  const char   *mn_gamepadIDStrings[ MGN_NUM_GAMEPADS ] = {
+    "Sony Interactive Entertainment Wireless Controller" 
+    };
+
+
+#define  MINGIN_MAX_NUM_GAMEPAD_BUTTONS  32
+
+
+/* maps /dev/input/js  button numbers (0, 1, 2, etc.) to MGN_BUTTON_ symbols,
+   ending with MGN_MAP_END */
+static  MinginButton        mn_jsButtonMap[ MGN_NUM_GAMEPADS ]
+                                          [ MINGIN_MAX_NUM_GAMEPAD_BUTTONS ];
+
+
+static  MinginLinuxGamepad  mn_activeGamepad  =  MGN_NO_GAMEPAD;
+
+
+/*
+  Looks through  /dev/input/js  devices for the first gamepad that matches
+  one of our mn_gamepadIDStrings.
+
+  Side Effects:
+
+      mn_activeGamepad   set to an index in MinginLinuxGamepad if found
+      
+      mn_activeGamepad   set to MGN_NO_GAMEPAD of not found
+
+  Returns:
+
+      file descriptor   for open gamepad if found
+
+      -1                if not found
+*/
+static int mn_openActiveGamepad( void );
+
 
 
 
@@ -1675,6 +1746,36 @@ static MinginButton mn_mapXButtonToButton( unsigned int inButton ) {
     }
 
 
+/*
+  Maps button index read from a /dev/input/js event to a MinginButton,
+  based on the current active gamepad.
+
+  Returns MGN_BUTTON_NONE on failure.
+*/
+static MinginButton mn_mapJSButtonToButton( int inJSButton ) {
+    
+    MinginButton  b;
+
+    if( inJSButton >= MINGIN_MAX_NUM_GAMEPAD_BUTTONS ) {
+        return MGN_BUTTON_NONE;
+        }
+    
+    if( mn_activeGamepad == MGN_NO_GAMEPAD ) {
+        return MGN_BUTTON_NONE;
+        }
+
+    b = mn_jsButtonMap[ mn_activeGamepad ][ inJSButton ];
+
+    if( b == MGN_MAP_END ) {
+        return MGN_BUTTON_NONE;
+        }
+
+    return b;
+    }
+
+    
+
+
 
 MinginButton mingin_getLastButtonPressed( void ) {
     
@@ -1696,6 +1797,25 @@ static int mn_stringLength( const char  *inString ) {
     
     return i;
     }
+
+
+
+static char mn_stringsEqual( const char  *inStringA,
+                             const char  *inStringB ) {
+    
+    int i  =  0;
+    
+    while( inStringA[i] == inStringB[i] &&
+           inStringA[i] != '\0' ) {
+        i++;
+        }
+
+    if( inStringA[i] == inStringB[i] ) {
+        /* both terminated */
+        return 1;
+        }
+    return 0;
+    } 
         
 
 void mingin_log( const char  *inString ) {
@@ -1758,6 +1878,16 @@ static const char *mn_intToString( int  inInt ) {
 
 
 static void mn_setupX11KeyMap( void );
+
+
+static void mn_setupLinuxGamepadButtonMap( void );
+
+
+/*
+  Maps an id string to an index in MinginLinuxGamepad, or -1 if no match
+*/
+static int mn_getGamepadIndex( const char  *inIDString );
+
 
 
 
@@ -2073,8 +2203,9 @@ char mingin_getPointerLocation( int  *outX,
         
 int main( void ) {
 
-    int                 b;
-    char                currentlyFullscreen  =  0;
+    int   b;
+    char  currentlyFullscreen  =  0;
+    int   gamepadFD            =  -1;
     
     mn_xFullscreen = currentlyFullscreen;
 
@@ -2090,6 +2221,8 @@ int main( void ) {
         }
 
     mn_setupX11KeyMap();
+
+    mn_setupLinuxGamepadButtonMap();
     
 
     if( ! mn_openXWindow( & mn_XSetup ) ) {
@@ -2100,9 +2233,12 @@ int main( void ) {
     mn_XSetupLive = 1;
 
     
+    gamepadFD = mn_openActiveGamepad();
+
+    
     while( ! mn_shouldQuit ) {
         
-        /* pump all events */
+        /* pump all X11 events */
         while( XPending( mn_XSetup.xDisplay ) > 0 ) {
             
             XEvent  e;
@@ -2149,6 +2285,69 @@ int main( void ) {
                     }
                 }
             }
+
+        /* pump all events for open joystick */
+        if( gamepadFD != -1 ) {
+
+            char             readMore  =  1;
+            ssize_t          numRead;
+            struct js_event  e;
+            
+            while( readMore ) {
+                numRead = read( gamepadFD,
+                                & e,
+                                sizeof( struct js_event ) );
+                
+                if( numRead == sizeof( struct js_event ) ) {
+
+                    MinginButton  button;
+                    
+                    switch (e.type) {
+                        case JS_EVENT_BUTTON:
+                             button = mn_mapJSButtonToButton( e.number );
+
+                            if( button > MGN_BUTTON_NONE ) {
+                                if( e.value ) {
+                                    mn_buttonDown[ button ] = 1;
+                                    /* a new press to remember */
+                                    mn_lastButtonPressed = button;
+                                    }
+                                else {
+                                    /* release */
+                                    mn_buttonDown[ button ] = 0;
+                                    }
+                                }
+                            break;
+                        case JS_EVENT_AXIS:
+                            /* fixme */
+                            break;
+                        }
+                    }
+                else if( numRead == -1 ) {
+                    readMore = 0;
+                    
+                    if( errno == EAGAIN
+                        ||
+                        errno == EINTR
+                        ||
+                        errno == EWOULDBLOCK ) {
+
+                        
+               
+                        /* no event ready, we've read all available */
+                        }
+                    else {
+                        /* error on reading... maybe joystick unplugged */
+                        close( gamepadFD );
+                        
+                        /* try to re-open, maybe switch joysticks */
+                        gamepadFD = mn_openActiveGamepad();
+                        }
+                    }
+                }
+            }
+        
+            
 
         mn_areWeInStepFunction = 1;
 
@@ -2229,7 +2428,11 @@ int main( void ) {
 
     
     mn_closeXWindow( & mn_XSetup );
-    
+
+    if( gamepadFD != -1 ) {
+        close( gamepadFD );
+        gamepadFD = -1;
+        }
     
     return 1;
     }
@@ -2370,6 +2573,129 @@ static void mn_setupX11KeyMap( void ) {
 
 
 
+static void mn_setupLinuxGamepadButtonMap( void ) {
+
+    int  i;
+    int  j;
+    
+    /* ps button map is in order in our MinginButton enum */
+    i = MGN_BUTTON_PS_X;
+
+    /* we walk through the /dev/input/js buttons, starting with 0 */
+    j = 0;
+    
+    while( i <= MGN_BUTTON_PS_STICK_RIGHT_PRESS ) {
+        
+        mn_jsButtonMap[ MGN_PS_DUALSHOCK_4 ][ j ] = i;
+
+        i ++;
+        j ++;
+        }
+
+    /* terminate list, and fill with MGN_MAP_END */
+    while( j < MINGIN_MAX_NUM_GAMEPAD_BUTTONS ) {
+        
+        mn_jsButtonMap[ MGN_PS_DUALSHOCK_4 ][ j ] = MGN_MAP_END;
+        
+        j++;
+        }
+
+    
+    /* fixme:
+       ps d-pad buttons are reported like axes with hard left/right */
+    }
+
+
+
+static int mn_getGamepadIndex( const char  *inIDString ) {
+
+    int i  =  MGN_FIRST_GAMEPAD;
+    
+    while( i < MGN_NUM_GAMEPADS ) {
+        if(  mn_stringsEqual( inIDString,
+                              mn_gamepadIDStrings[ i ] ) ) {
+            return i;
+            }
+        i ++;
+        }
+    
+    return -1;
+    }
+
+
+
+/*
+  Returns static string.
+
+  Only indexes 0..9 supported.
+*/
+static const char *mn_getJSPath( int  inIndex ) {
+
+    static  char  pathString[15]  = "/dev/input/js0";
+
+    int  digitPos  =  13;
+
+    
+    pathString[ digitPos ] = (char)( '0' + inIndex );
+    
+    return pathString;
+    }
+
+
+
+static int mn_openActiveGamepad( void ) {
+
+    int   fd;
+    char  name[ 128 ];
+    int   i             =  0;
+    int   result;
+    
+    while( i <= 9 ) {
+        fd = open( mn_getJSPath( i ),
+                   O_RDONLY | O_NONBLOCK );
+
+        if( fd != -1 ) {
+            /* opened a joystick device */
+
+            /* does it match one of our strings? */
+
+            result = ioctl( fd,
+                            JSIOCGNAME( sizeof( name ) ),
+                            name );
+
+            if( result >= 0 ) {
+                
+                int gamepadIndex  =
+                    mn_getGamepadIndex( name );
+
+                if( gamepadIndex != -1 ) {
+
+                    mn_activeGamepad = gamepadIndex;
+
+                    return fd;
+                    }
+                }
+
+            /* not a match */
+            close( fd );
+            }
+
+        i++;
+        }
+
+    /* got through all of /dev/input/js0 through /dev/input/js9
+       without finding one */
+
+    mn_activeGamepad = MGN_NO_GAMEPAD;
+
+    return -1;
+    }
+
+
+    
+
+
+
 static char *mn_linuxGetFilePath( const char  *inFolderName,
                                   const char  *inFileName ) {
     
@@ -2413,9 +2739,6 @@ static char *mn_linuxGetFilePath( const char  *inFolderName,
     }
 
 
-
-#include <fcntl.h>
-#include <sys/stat.h>
 
 static int mn_linuxFileOpenRead( const char  *inFolderName,
                                  const char  *inFileName,

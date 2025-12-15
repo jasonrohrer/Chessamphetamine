@@ -334,6 +334,9 @@ void maxiginGame_init( void ) {
     maxigin_registerButtonMapping( SHOOT,  shootMapping );
     maxigin_registerButtonMapping( REMAP,  remapMapping );
     maxigin_registerButtonMapping( CRASH,  crashMapping );
+
+    maxigin_logInt( "Primary button fro JUMP is: ",
+                    mingin_getPlatformPrimaryButton( JUMP ) );
     
     /* init position in image center */
     boxPosX = MAXIGIN_GAME_NATIVE_W / 2;

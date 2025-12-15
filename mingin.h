@@ -745,6 +745,36 @@ char mingin_isButtonDown( int  inButtonHandle );
 
 
 /*
+  Reports the primary button for triggering a previously registered button
+  handle on this platform.
+
+  A game might map JUMP to SPACE on a keyboard, TRIANGLE on a PS4, and
+  the Y button on an XBox.  This function would report which of these is
+  actually available on the current platform, and if multiple are available
+  (like a Linux machine with a keyboard AND a PS4 controller plugged in),
+  which on is preferred.
+
+  The results of this function can be used to display on-screen control hints
+  that vary by platform, and also for control remapping screens.
+
+  Parameters:
+
+      inButtonHandle   the game-defined button action to check
+
+  Returns:
+
+      the primary assigned button   if one is available
+
+      MGN_BUTTON_NONE               if none of the assigned buttons are
+                                    available on this platform.
+                        
+  [jumpMinginProvides]
+*/
+MinginButton mingin_getPlatformPrimaryButton( int  inButtonHandle );
+
+
+
+/*
   Gets the last button pressed before this function was called, and clears
   the memory of the last button pressed.
 
@@ -1729,6 +1759,20 @@ static char minginPlatform_isButtonDown( MinginButton  inButton ) {
         }
     
     return 0;
+    }
+
+
+
+MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
+    /* fixme
+       implement this on linux by checking for a controller and first
+       available mapped controller button... if no controller, return
+       first available mapped keyboard key */
+    
+    /* suppress warning */
+    if( inButtonHandle ) {
+        }
+    return MGN_BUTTON_NONE;
     }
 
 
@@ -3222,6 +3266,14 @@ static char minginPlatform_isButtonDown( MinginButton  inButton ) {
     if( inButton == MGN_BUTTON_NONE ) {
         }
     return 0;
+    }
+
+
+MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
+    /* suppress warning */
+    if( inButtonHandle ) {
+        }
+    return MGN_BUTTON_NONE;
     }
 
 

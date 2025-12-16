@@ -14,7 +14,8 @@ enum GameUserAction {
     JUMP,
     SHOOT,
     REMAP,
-    CRASH
+    CRASH,
+    BOX_THICK
     };
 
 
@@ -186,9 +187,16 @@ void maxiginGame_step( void ) {
     int   r;
     int   i;
     int   boxVPerStep;
+    
     char  pointerLive;
     int   pointerX;
     int   pointerY;
+    
+    char  stickLive;
+    int   stickPos;
+    int   stickLowerRange;
+    int   stickUpperRange;
+
     
     if( remappingJump ) {
         MinginButton last = mingin_getLastButtonPressed();
@@ -265,6 +273,27 @@ void maxiginGame_step( void ) {
             }
         }
 
+    stickLive = mingin_getStickPosition( BOX_THICK,
+                                         & stickPos,
+                                         & stickLowerRange,
+                                         & stickUpperRange );
+
+    if( stickLive ) {
+        
+        int  mid       =
+            ( stickUpperRange - stickLowerRange ) / 2
+            + stickLowerRange;
+        
+        int  halfSpan  =  ( stickUpperRange - mid );
+        
+        boxW = 20 + ( ( stickPos - mid ) * 20 ) / halfSpan;
+        boxW *= 2;
+        }
+    else {
+        /* no stick, default */
+        boxW = 10;
+        }
+
 
     /* move bullets */
     for( i = 0;
@@ -294,7 +323,7 @@ void maxiginGame_step( void ) {
 
 
 
-static MinginButton jumpMapping[]   =  { MGN_KEY_SPACE,  MGN_MAP_END };
+static MinginButton jumpMapping[]   =  { MGN_KEY_SPACE,     MGN_MAP_END };
 
 static MinginButton shootMapping[]  =  { MGN_KEY_X,
                                          MGN_BUTTON_MOUSE_LEFT,
@@ -302,9 +331,12 @@ static MinginButton shootMapping[]  =  { MGN_KEY_X,
                                          MGN_BUTTON_DPAD_UP,
                                          MGN_MAP_END };
 
-static MinginButton remapMapping[]  =  { MGN_KEY_P,      MGN_MAP_END };
+static MinginButton remapMapping[]  =  { MGN_KEY_P,         MGN_MAP_END };
 
-static MinginButton crashMapping[]  =  { MGN_KEY_M,      MGN_MAP_END };
+static MinginButton crashMapping[]  =  { MGN_KEY_M,         MGN_MAP_END };
+
+
+static MinginStick  thickMapping[]  =  { MGN_STICK_LEFT_Y,  MGN_MAP_END };
 
 
 #define REGISTER_INT_MEM( x )  \
@@ -337,6 +369,9 @@ void maxiginGame_init( void ) {
 
     maxigin_logInt( "Primary button fro JUMP is: ",
                     mingin_getPlatformPrimaryButton( JUMP ) );
+
+    mingin_registerStickAxis( BOX_THICK,  thickMapping );
+
     
     /* init position in image center */
     boxPosX = MAXIGIN_GAME_NATIVE_W / 2;

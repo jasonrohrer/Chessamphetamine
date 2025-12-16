@@ -665,14 +665,20 @@ typedef enum MinginButton {
       const int JUMP = 1;
       const int FIRE = 2;
   
-      const MinginButton jumpMapping[] = { MGN_KEY_SPACE, MGN_BUTTON_SQUARE,
-                                           MGN_BUTTON_A, MGN_MAP_END };
+      const MinginButton jumpMapping[] = { MGN_KEY_SPACE,
+                                           MGN_BUTTON_SQUARE,
+                                           MGN_BUTTON_A,
+                                           MGN_MAP_END };
                                 
       const MinginButton fireMapping[] = { MGN_BUTTON_MOUSE_LEFT,
-                                           MGN_KEY_X, MGN_MAP_END };
+                                           MGN_KEY_X,
+                                           MGN_MAP_END };
                             
-      mingin_registerButtonMapping( JUMP, jumpMapping );
-      mingin_registerButtonMapping( FIRE, fireMapping );
+      mingin_registerButtonMapping( JUMP,
+                                    jumpMapping );
+                                    
+      mingin_registerButtonMapping( FIRE,
+                                    fireMapping );
 
   In for more complex control schemes, an enum can be used, like so:
   
@@ -842,17 +848,14 @@ char mingin_getPointerLocation( int  *outX,
 */
 typedef enum MinginStick {
     MGN_STICK_NONE = MGN_MAP_END,
-    MGN_LEFT_STICK_X,
-    MGN_LEFT_STICK_Y,
-    MGN_MIDDLE_STICK_X,
-    MGN_MIDDLE_STICK_Y,
-    MGN_RIGHT_STICK_X,
-    MGN_RIGHT_STICK_Y,
-    MGN_LEFT_TRIGGER_STICK,
-    MGN_RIGHT_TRIGGER_STICK,
-    MGN_THROTTLE_STICK,
-    MGN_DPAD_STICK_X,
-    MGN_DPAD_STICK_Y,
+    MGN_STICK_LEFT_X,
+    MGN_STICK_LEFT_Y,
+    MGN_STICK_RIGHT_X,
+    MGN_STICK_RIGHT_Y,
+    MGN_STICK_LEFT_TRIGGER,
+    MGN_STICK_RIGHT_TRIGGER,
+    MGN_STICK_DPAD_X,
+    MGN_STICK_DPAD_Y,
     MGN_DUMMY_LAST_STICK
     } MinginStick;
 
@@ -864,7 +867,29 @@ typedef enum MinginStick {
   Similar to registering a button mapping, game can define constants as-needed
   to refer to the stick axes that it is interested in.  For example,
   it might define AIM_UP and then map it to
-  { MGN_LEFT_STICK_Y, MGN_MIDDLE_STICK_Y, MGN_MAP_END }
+  { MGN_LEFT_STICK_Y, MGN_RIGHT_STICK_Y, MGN_MAP_END }
+
+  The above examples could be accomplished with the following code:
+
+      const int AIM_UP = 1;
+  
+      const MinginButton aimUpMapping[] = { MGN_LEFT_STICK_Y,
+                                            MGN_RIGHT_STICK_Y,
+                                            MGN_MAP_END };
+                            
+      mingin_registerStickAxis( AIM_UP,
+                                aimUpMapping );
+
+  inStickAxisHandle can be in the range 0..255, which means 256 distinct
+  user actions can be mapped to sticks.
+
+  However, these can be remapped as many times as needed, allowing for
+  modal changes to controls, giving way more than 256 user actions if needed.
+
+  inMapping can contain at most 32 elements, including the final MGN_MAP_END
+
+  If there are more than 31 non-END elements in a mapping, the extra ones
+  will be ignored.
   
   Parameters:
 
@@ -873,10 +898,16 @@ typedef enum MinginStick {
       inMapping           an array of MinginStick values, ending with
                           MGN_MAP_END, that should map to the game-defined
                           stick axis.
+                          
+  Returns:
+
+      1   on success
+      
+      0   on failure (if inStickAxisHandle is out of the supported range)
                        
   [jumpMinginProvides]
 */
-void mingin_registerStickAxis( int                inStickAxisHandle,
+char mingin_registerStickAxis( int                inStickAxisHandle,
                                const MinginStick  inMapping[] );
 
 
@@ -886,6 +917,12 @@ void mingin_registerStickAxis( int                inStickAxisHandle,
 
   The returned value in outPosition will be in the range
       [outLowerLimit, outUpperLimit]
+
+  Note that if multiple mapped sticks are present on the active joystick
+  (for example, AIM_UP is mapped to both MGN_STICK_LEFT_Y and MGN_STICK_RIGHT_Y,
+  and both are present), the position of the stick with the largest current
+  magnitude value is returned.  This allows the player to switch back and
+  forth between the sticks to control aiming, for example.
   
   Parameters:
 
@@ -900,7 +937,7 @@ void mingin_registerStickAxis( int                inStickAxisHandle,
                           should be returned                    
   Returns:
 
-      1   if joystick is available
+      1   if stick is available
 
       0   if not
                           
@@ -1299,11 +1336,13 @@ void mingin_endReadBulkData( int  inBulkDataHandle );
       This is tagged below with       [jumpPlatformCalls]
 
       
-  3.  Implementing ONE minginPlatform_ function,
+  3.  Implementing TWO minginPlatform_ functions,
 
           minginPlatform_isButtonDown
+
+          minginPlatform_getStickPosition
       
-      This are tagged below with      [jumpPlatformRequired]
+      These are tagged below with      [jumpPlatformRequired]
 
       
   4.  Implementing all but two of the mingin_ functions above.
@@ -1381,6 +1420,38 @@ static char minginPlatform_isButtonDown( MinginButton  inButton );
 
 
 /*
+  Checks the position of a joystick axis.
+
+  The returned value in outPosition will be in the range
+      [outLowerLimit, outUpperLimit]
+
+  Parameters:
+
+      inStick         the stick to check   
+
+      outPosition     pointer to where the stick position should be returned
+
+      outLowerLimit   pointer to where the lower limit for that stick
+                      should be returned
+
+      outUpperLimit   pointer to where the upper limit for that stick
+                      should be returned                    
+  Returns:
+
+      1   if stick is available on the active gamepad
+
+      0   if not
+                          
+  [jumpMinginProvides]
+*/
+char minginPlatform_getStickPosition( MinginStick   inStick,
+                                      int          *outPosition,
+                                      int          *outLowerLimit,
+                                      int          *outUpperLimit );
+
+
+
+/*
   NOTE:
 
   Platform must implement all mingin_ functions above, except for these,
@@ -1390,6 +1461,9 @@ static char minginPlatform_isButtonDown( MinginButton  inButton );
     
     mingin_isButtonDown
 
+    mingin_registerStickAxis
+    
+    mingin_getStickPosition
     
   [jumpPlatformRequired]
 */
@@ -1426,11 +1500,19 @@ static char minginPlatform_isButtonDown( MinginButton  inButton );
 
 
 #define MINGIN_NUM_BUTTON_MAPPINGS          256
-#define MINGIN_MAX_BUTTON_MAPPING_ELEMENTS  32
+#define MINGIN_MAX_BUTTON_MAPPING_ELEMENTS   32
 
 static MinginButton mn_minginButtonMappings
                         [ MINGIN_NUM_BUTTON_MAPPINGS         ]
                         [ MINGIN_MAX_BUTTON_MAPPING_ELEMENTS ];
+
+
+#define MINGIN_NUM_STICK_MAPPINGS           256
+#define MINGIN_MAX_STICK_MAPPING_ELEMENTS    32
+
+static MinginStick mn_minginStickMappings
+                        [ MINGIN_NUM_STICK_MAPPINGS         ]
+                        [ MINGIN_MAX_STICK_MAPPING_ELEMENTS ];
 
 
 
@@ -1438,10 +1520,20 @@ static void minginInternal_init( void ) {
 
     int i = 0;
 
-    while( i < MINGIN_NUM_BUTTON_MAPPINGS ) {
+    for( i = 0;
+         i < MINGIN_NUM_BUTTON_MAPPINGS;
+         i ++ ) {
+        
         mn_minginButtonMappings[ i ][ 0 ] = MGN_MAP_END;
-        i++;
         }
+
+    for( i = 0;
+         i < MINGIN_NUM_STICK_MAPPINGS;
+         i ++ ) {
+        
+        mn_minginStickMappings[ i ][ 0 ] = MGN_MAP_END;
+        }
+    
     }
 
 
@@ -1505,6 +1597,109 @@ char mingin_isButtonDown( int  inButtonHandle ) {
     return 0;
     }
 
+
+
+char mingin_registerStickAxis( int                inStickAxisHandle,
+                               const MinginStick  inMapping[] ) {
+    int i = 0;
+    
+    if( inStickAxisHandle < 0
+        ||
+        inStickAxisHandle >= MINGIN_NUM_STICK_MAPPINGS ) {
+        
+        return 0;
+        }
+
+    /* leave room at end of our internal mapping for MGN_MAP_END */
+    while( i < MINGIN_MAX_STICK_MAPPING_ELEMENTS - 1
+           &&
+           inMapping[i] != MGN_MAP_END ) {
+
+        if( inMapping[i] <= MGN_STICK_NONE
+            ||
+            inMapping[i] >= MGN_DUMMY_LAST_STICK ) {
+            /* out of enum range
+               end the mapping now */
+            break;
+            }
+        mn_minginStickMappings[ inStickAxisHandle ][i] = inMapping[i];
+        i++;
+        }
+    
+    /* terminate */
+    mn_minginStickMappings[ inStickAxisHandle ][i] = MGN_MAP_END;
+    
+    return 1;
+    }
+
+
+
+static int  mn_abs( int inVal ) {
+    if( inVal < 0 ) {
+        inVal = - inVal;
+        }
+    return inVal;
+    }
+
+
+
+char mingin_getStickPosition( int   inStickAxisHandle,
+                              int  *outPosition,
+                              int  *outLowerLimit,
+                              int  *outUpperLimit ) {
+
+    int  i                =   0;
+    int  maxPosMagnitude  =  -1;
+    int  maxPosIndex      =  -1;
+    
+    if( inStickAxisHandle < 0
+        ||
+        inStickAxisHandle >= MINGIN_NUM_STICK_MAPPINGS ) {
+        
+        return 0;
+        }
+
+    /* find present mapped stick axis with largest magnitude position */
+    while( mn_minginStickMappings[ inStickAxisHandle ][i] != MGN_MAP_END ) {
+
+        int   pos;
+        int   lowerLimit;
+        int   upperLimit;
+        char  present;
+
+        present = minginPlatform_getStickPosition(
+                      mn_minginStickMappings[ inStickAxisHandle ][ i ],
+                      & pos,
+                      & lowerLimit,
+                      & upperLimit );
+
+        if( present ) {
+            int  absPos = mn_abs( pos );
+
+            if( absPos > maxPosMagnitude ) {
+                
+                maxPosMagnitude = absPos;
+                maxPosIndex     = i;
+                }
+            }
+        i++;
+        }
+
+    if( maxPosIndex == -1 ) {
+        return 0;
+        }
+
+    /* now that we've found the stick with the maximum magnitude,
+       return its values */
+    
+    minginPlatform_getStickPosition(
+        mn_minginStickMappings[ inStickAxisHandle ][ maxPosIndex ],
+        outPosition,
+        outLowerLimit,
+        outUpperLimit );
+    
+    return 1;
+    }
 
 
 /*
@@ -1689,27 +1884,76 @@ static  const char   *mn_gamepadIDStrings[ MGN_NUM_GAMEPADS ] = {
 #define  MINGIN_MAX_NUM_GAMEPAD_STICKS   32
 
 
-/* maps /dev/input/js  button numbers (0, 1, 2, etc.) to MGN_BUTTON_ symbols.
-   Each list of buttons is padded with MGN_MAP_END */
+/*
+  Maps /dev/input/js  button numbers (0, 1, 2, etc.) to MGN_BUTTON_ symbols
+  for a specific gamepad.
+   
+  Each list of buttons is padded with MGN_MAP_END
+*/
 static  MinginButton        mn_jsButtonToButtonMap
                                 [ MGN_NUM_GAMEPADS ]
                                 [ MINGIN_MAX_NUM_GAMEPAD_BUTTONS ];
 
 
-/* maps /dev/input/js  stick numbers (0, 1, 2, etc.) to MGN_BUTTON_ symbols
-   becaus some "sticks", like D-pads, are actually behaving line binary buttons
-   on certain controllers
+/*
+  Maps /dev/input/js  stick numbers (0, 1, 2, etc.) to MGN_BUTTON_ symbols
+  becaus some "sticks", like D-pads, are actually behaving line binary buttons
+  on certain gamepads.
 
-   2 indices at end are 0 for negative direction and 1 for positive direction
-   on the stick that maps to binary button presses
+  2 indices at end are 0 for negative direction and 1 for positive direction
+  on the stick that maps to binary button presses
    
-   Each list of buttons is padded with MGN_MAP_END */
+  Each list of buttons is padded with MGN_MAP_END
+*/
 static  MinginButton        mn_jsStickToButtonMap
                                 [ MGN_NUM_GAMEPADS ]
-                                [ MINGIN_MAX_NUM_GAMEPAD_BUTTONS ][ 2 ];
+                                [ MINGIN_MAX_NUM_GAMEPAD_BUTTONS ]
+                                [ 2 ];
+
+
+/*
+  Maps /dev/input/js  stick numbers (0, 1, 2, etc.) to MGN_STICK_ symbols
+  for a specific gamepad.
+   
+  Each list of sticks is padded with MGN_MAP_END
+*/
+static  MinginStick         mn_jsStickToStickMap
+                                [ MGN_NUM_GAMEPADS ]
+                                [ MINGIN_MAX_NUM_GAMEPAD_STICKS ];
+
+/*
+  Which sticks are present on each gamepad.
+*/
+static  char                mn_stickPresent
+                                [ MGN_NUM_GAMEPADS ]
+                                [ MGN_NUM_STICKS ];
+
+/*
+  Tracks range of each stick for each gamepad.
+
+  2 indices at end are 0 for lower limit and 1 for upper limit.
+
+  If a gamepad doesn't have a stick, both values will be 0.
+*/
+static  int                 mn_stickRange
+                                [ MGN_NUM_GAMEPADS ]
+                                [ MGN_NUM_STICKS ]
+                                [ 2 ];
+
+
 
 
 static  MinginLinuxGamepad  mn_activeGamepad  =  MGN_NO_GAMEPAD;
+
+
+/*
+  Tracks each stick position for our active gamepad.
+
+  If active gamepad doesn't have this stick, value will be 0.
+*/
+static  int                 mn_stickPosition
+                                [ MGN_NUM_STICKS ];
+
 
 
 /*
@@ -1748,18 +1992,44 @@ static char minginPlatform_isButtonDown( MinginButton  inButton ) {
     if( inButton == MGN_ANY_KEY_OR_BUTTON ) {
         /* loop through entire list and see if anything is currently down */
 
-        int i = 0;
+        int i;
 
-        while( i < MGN_NUM_BUTTONS ) {
+        for( i = 0;
+             i < MGN_NUM_BUTTONS;
+             i ++ ) {
+            
             if( mn_buttonDown[i] ) {
                 return 1;
                 }
-            i++;
             }
         }
     
     return 0;
     }
+
+
+
+char minginPlatform_getStickPosition( MinginStick   inStick,
+                                      int          *outPosition,
+                                      int          *outLowerLimit,
+                                      int          *outUpperLimit ) {
+
+    if( mn_activeGamepad == MGN_NO_GAMEPAD ) {
+        return 0;
+        }
+
+    if( ! mn_stickPresent[ mn_activeGamepad ][ inStick ] ) {
+        return 0;
+        }
+
+    *outPosition    =  mn_stickPosition[ inStick ];
+
+    *outLowerLimit  =  mn_stickRange[ mn_activeGamepad ][ inStick ][ 0 ];
+    *outUpperLimit  =  mn_stickRange[ mn_activeGamepad ][ inStick ][ 1 ];
+
+    return 1;
+    }
+
 
 
 
@@ -1779,17 +2049,20 @@ MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
 
 static MinginButton mn_mapXKeyToButton( KeySym  inXKey ) {
 
-    int i = 0;
-    
-    while( i < MGN_NUM_BUTTONS ) {
+    int i;
+
+    for( i = 0;
+         i < MGN_NUM_BUTTONS;
+         i ++ ) {
+        
         if( mn_buttonToXKeyMap[ i ] == inXKey ) {
             return i;
             }
-        i++;
         }
     
     return MGN_BUTTON_NONE;
     }
+
 
 
 static MinginButton mn_mapXButtonToButton( unsigned int inButton ) {
@@ -1854,9 +2127,13 @@ static MinginButton mn_mapJSStickToButton( int inJSButton,
     MinginButton  b;
     int           posIndex;
     
-    if( inJSButton >= MINGIN_MAX_NUM_GAMEPAD_STICKS ) {
+    if( inJSButton >= MINGIN_MAX_NUM_GAMEPAD_STICKS
+        ||
+        inJSButton < 0  ) {
+        
         return MGN_BUTTON_NONE;
         }
+
     
     if( mn_activeGamepad == MGN_NO_GAMEPAD ) {
         return MGN_BUTTON_NONE;
@@ -1880,7 +2157,36 @@ static MinginButton mn_mapJSStickToButton( int inJSButton,
 
 
 
+/*
+  Maps a stick index position from /dev/input/js event and records
+  that stick position in the appropriate slot in mn_stickPosition
+  for the active gamepad.
+*/
+static void mn_registerJSStickPosition( int inJSButton,
+                                        int inStickPosition ) {
+    
+    MinginStick  s;
+    
+    if( inJSButton >= MINGIN_MAX_NUM_GAMEPAD_STICKS
+        ||
+        inJSButton < 0 ) {
+        
+        return;
+        }
+    
+    if( mn_activeGamepad == MGN_NO_GAMEPAD ) {
+        return;
+        }
 
+    s = mn_jsStickToStickMap[ mn_activeGamepad ][ inJSButton ];
+
+    
+    if( s == MGN_MAP_END ) {
+        return;
+        }
+
+    mn_stickPosition[ s ] = inStickPosition;
+    }
     
 
 
@@ -2321,11 +2627,12 @@ int main( void ) {
     
     minginInternal_init();
 
-    b = 0;
-    while( b < MGN_NUM_BUTTONS ) {
+    for( b = 0;
+         b < MGN_NUM_BUTTONS;
+         b ++ ) {
+        
         mn_buttonDown[b] = 0;
         mn_buttonToXKeyMap[b] = 0;
-        b++;
         }
 
     mn_setupX11KeyMap();
@@ -2471,10 +2778,9 @@ int main( void ) {
                                     }
                                 }
                             
-                            /* fixme
-                               still need to handle stick movements
-                               for sticks that don't map to binary button
-                               presses */
+                            mn_registerJSStickPosition( e.number,
+                                                        e.value );
+
                             break;
                         }
                     }
@@ -2733,6 +3039,39 @@ static void mn_setupLinuxGamepadMaps( void ) {
     int  i;
     int  j;
     
+    /* start by filling all with MGN_MAP_END padding */
+    for( i = MGN_FIRST_GAMEPAD;
+         i < MGN_NUM_GAMEPADS;
+         i ++ ) {
+
+        for( j = 0;
+             j < MINGIN_MAX_NUM_GAMEPAD_BUTTONS;
+             j ++ ) {
+            
+            mn_jsButtonToButtonMap[ i ][ j ] = MGN_MAP_END;
+            }
+        
+        for( j = 0;
+             j < MINGIN_MAX_NUM_GAMEPAD_STICKS;
+             j ++ ) {
+            
+            mn_jsStickToButtonMap[ i ][ j ][0] = MGN_MAP_END;
+            mn_jsStickToButtonMap[ i ][ j ][1] = MGN_MAP_END;
+            
+            mn_jsStickToStickMap [ i ][ j ]    = MGN_MAP_END;
+
+            /* default to no sticks being present */
+            mn_stickPresent[ i ][ j ] = 0;
+                
+            /* default range of 0 for all sticks on all gamepads */
+            mn_stickRange[ i ][ j ][ 0 ] = 0;
+            mn_stickRange[ i ][ j ][ 1 ] = 0;
+            }
+        
+        }
+
+
+    
     /* ps button map is in order in our MinginButton enum */
     i = MGN_BUTTON_PS_X;
 
@@ -2747,24 +3086,6 @@ static void mn_setupLinuxGamepadMaps( void ) {
         j ++;
         }
 
-    /* terminate list, and fill with MGN_MAP_END */
-    while( j < MINGIN_MAX_NUM_GAMEPAD_BUTTONS ) {
-        
-        mn_jsButtonToButtonMap[ MGN_PS_DUALSHOCK_4 ][ j ] = MGN_MAP_END;
-        
-        j++;
-        }
-
-    /* for sticks to buttons, start by filling with MGN_MAP_END */
-    j = 0;
-
-    while( j < MINGIN_MAX_NUM_GAMEPAD_STICKS ) {
-        
-        mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ j ][ 0 ] = MGN_MAP_END;
-        mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ j ][ 1 ] = MGN_MAP_END;
-        
-        j ++;
-        }
 
     mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ 6 ][ 0 ] =
         MGN_BUTTON_DPAD_LEFT;
@@ -2777,6 +3098,27 @@ static void mn_setupLinuxGamepadMaps( void ) {
     
     mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ 7 ][ 1 ] =
         MGN_BUTTON_DPAD_DOWN;
+
+    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 0 ]  =  MGN_STICK_LEFT_X;
+    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 1 ]  =  MGN_STICK_LEFT_Y;
+    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 2 ]  =  MGN_STICK_LEFT_TRIGGER;
+    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 3 ]  =  MGN_STICK_RIGHT_X;
+    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 4 ]  =  MGN_STICK_RIGHT_Y;
+    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 5 ]  =  MGN_STICK_RIGHT_TRIGGER;
+    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 6 ]  =  MGN_STICK_DPAD_X;
+    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 7 ]  =  MGN_STICK_DPAD_Y;
+
+    /* all 8 sticks on PS4 controller have same range */
+    for( j = 0;
+         j < 7;
+         j ++ ) {
+        
+        MinginStick s  =  mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ j ];
+
+        mn_stickPresent[ MGN_PS_DUALSHOCK_4 ][ s ]       =       1;
+        mn_stickRange  [ MGN_PS_DUALSHOCK_4 ][ s ][ 0 ]  =  -32767;
+        mn_stickRange  [ MGN_PS_DUALSHOCK_4 ][ s ][ 1 ]  =   32767;
+        }
     }
 
 
@@ -2823,8 +3165,19 @@ static int mn_openActiveGamepad( void ) {
     char  name[ 128 ];
     int   i             =  0;
     int   result;
-    
-    while( i <= 9 ) {
+
+    /* whenever we open or re-open a gamepad, zero out our stick positions */
+    for( i = 0;
+         i < MGN_NUM_STICKS;
+         i ++ ) {
+        
+        mn_stickPosition[ i ] = 0;
+        }
+
+    for( i =  0;
+         i <= 9;
+         i ++ ) {
+        
         fd = open( mn_getJSPath( i ),
                    O_RDONLY | O_NONBLOCK );
 
@@ -2844,6 +3197,10 @@ static int mn_openActiveGamepad( void ) {
 
                 if( gamepadIndex != -1 ) {
 
+                    mingin_log( "Active gamepad opened: " );
+                    mingin_log( name );
+                    mingin_log( "\n" );
+                    
                     mn_activeGamepad = gamepadIndex;
 
                     return fd;
@@ -2853,8 +3210,6 @@ static int mn_openActiveGamepad( void ) {
             /* not a match */
             close( fd );
             }
-
-        i++;
         }
 
     /* got through all of /dev/input/js0 through /dev/input/js9

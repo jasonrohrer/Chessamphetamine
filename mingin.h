@@ -3109,8 +3109,8 @@ static void mn_setupLinuxGamepadMaps( void ) {
     mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 7 ]  =  MGN_STICK_DPAD_Y;
 
     /* all 8 sticks on PS4 controller have same range */
-    for( j = 0;
-         j < 7;
+    for( j =  0;
+         j <= 7;
          j ++ ) {
         
         MinginStick s  =  mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ j ];

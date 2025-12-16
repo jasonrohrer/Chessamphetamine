@@ -367,8 +367,8 @@ void maxiginGame_init( void ) {
     maxigin_registerButtonMapping( REMAP,  remapMapping );
     maxigin_registerButtonMapping( CRASH,  crashMapping );
 
-    maxigin_logInt( "Primary button fro JUMP is: ",
-                    mingin_getPlatformPrimaryButton( JUMP ) );
+    maxigin_logInt( "Primary button for SHOOT is: ",
+                    maxigin_getPlatformPrimaryButton( SHOOT ) );
 
     mingin_registerStickAxis( BOX_THICK,  thickMapping );
 

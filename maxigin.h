@@ -460,6 +460,30 @@ char maxigin_isButtonDown( int  inButtonHandle );
 
 
 /*
+  Same as mingin_getPlatformPrimaryButton, but accounts for Maxigin's
+  own internal button mapping.
+
+  Games that want to take full advantage of Maxigin's functionality should
+  call this instead of mingin_getPlatformPrimaryButton.
+  
+  Parameters:
+
+      inButtonHandle   the game-defined button action to check
+
+  Returns:
+
+      the primary assigned button   if one is available
+
+      MGN_BUTTON_NONE               if none of the assigned buttons are
+                                    available on this platform.
+                        
+  [jumpMaxiginGeneral]
+*/
+MinginButton maxigin_getPlatformPrimaryButton( int  inButtonHandle );
+
+
+
+/*
   Gets the current on-screen pointer location, if any.
 
   Parameters:
@@ -1438,6 +1462,16 @@ char maxigin_isButtonDown( int  inButtonHandle ) {
 
     return mingin_isButtonDown( inButtonHandle );
     }
+
+
+
+MinginButton maxigin_getPlatformPrimaryButton( int  inButtonHandle ) {
+    /* push it up so it doesn't interfere with our mappings */
+    inButtonHandle += LAST_MAXIGIN_USER_ACTION;
+
+    return mingin_getPlatformPrimaryButton( inButtonHandle );
+    }
+
 
 
 

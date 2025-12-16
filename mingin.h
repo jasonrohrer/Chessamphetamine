@@ -632,6 +632,7 @@ typedef enum MinginButton {
     
     MGN_BUTTON_SQUARE,
     MGN_BUTTON_A,
+    
     MGN_BUTTON_MOUSE_LEFT,
     MGN_BUTTON_MOUSE_MIDDLE,
     MGN_BUTTON_MOUSE_RIGHT,
@@ -1502,7 +1503,7 @@ char minginPlatform_getStickPosition( MinginStick   inStick,
 #define MINGIN_NUM_BUTTON_MAPPINGS          256
 #define MINGIN_MAX_BUTTON_MAPPING_ELEMENTS   32
 
-static MinginButton mn_minginButtonMappings
+static MinginButton minginButtonMappings
                         [ MINGIN_NUM_BUTTON_MAPPINGS         ]
                         [ MINGIN_MAX_BUTTON_MAPPING_ELEMENTS ];
 
@@ -1510,7 +1511,7 @@ static MinginButton mn_minginButtonMappings
 #define MINGIN_NUM_STICK_MAPPINGS           256
 #define MINGIN_MAX_STICK_MAPPING_ELEMENTS    32
 
-static MinginStick mn_minginStickMappings
+static MinginStick minginStickMappings
                         [ MINGIN_NUM_STICK_MAPPINGS         ]
                         [ MINGIN_MAX_STICK_MAPPING_ELEMENTS ];
 
@@ -1524,14 +1525,14 @@ static void minginInternal_init( void ) {
          i < MINGIN_NUM_BUTTON_MAPPINGS;
          i ++ ) {
         
-        mn_minginButtonMappings[ i ][ 0 ] = MGN_MAP_END;
+        minginButtonMappings[ i ][ 0 ] = MGN_MAP_END;
         }
 
     for( i = 0;
          i < MINGIN_NUM_STICK_MAPPINGS;
          i ++ ) {
         
-        mn_minginStickMappings[ i ][ 0 ] = MGN_MAP_END;
+        minginStickMappings[ i ][ 0 ] = MGN_MAP_END;
         }
     
     }
@@ -1561,12 +1562,12 @@ char mingin_registerButtonMapping( int                 inButtonHandle,
                end the mapping now */
             break;
             }
-        mn_minginButtonMappings[ inButtonHandle ][i] = inMapping[i];
+        minginButtonMappings[ inButtonHandle ][i] = inMapping[i];
         i++;
         }
     
     /* terminate */
-    mn_minginButtonMappings[ inButtonHandle ][i] = MGN_MAP_END;
+    minginButtonMappings[ inButtonHandle ][i] = MGN_MAP_END;
     
     return 1;
     }
@@ -1584,9 +1585,9 @@ char mingin_isButtonDown( int  inButtonHandle ) {
         return 0;
         }
     
-    while( mn_minginButtonMappings[ inButtonHandle ][i] != MGN_MAP_END ) {
+    while( minginButtonMappings[ inButtonHandle ][i] != MGN_MAP_END ) {
         if( minginPlatform_isButtonDown(
-                mn_minginButtonMappings[ inButtonHandle ][i] ) ) {
+                minginButtonMappings[ inButtonHandle ][i] ) ) {
             return 1;
             }
         i++;
@@ -1622,12 +1623,12 @@ char mingin_registerStickAxis( int                inStickAxisHandle,
                end the mapping now */
             break;
             }
-        mn_minginStickMappings[ inStickAxisHandle ][i] = inMapping[i];
+        minginStickMappings[ inStickAxisHandle ][i] = inMapping[i];
         i++;
         }
     
     /* terminate */
-    mn_minginStickMappings[ inStickAxisHandle ][i] = MGN_MAP_END;
+    minginStickMappings[ inStickAxisHandle ][i] = MGN_MAP_END;
     
     return 1;
     }
@@ -1660,7 +1661,7 @@ char mingin_getStickPosition( int   inStickAxisHandle,
         }
 
     /* find present mapped stick axis with largest magnitude position */
-    while( mn_minginStickMappings[ inStickAxisHandle ][i] != MGN_MAP_END ) {
+    while( minginStickMappings[ inStickAxisHandle ][i] != MGN_MAP_END ) {
 
         int   pos;
         int   lowerLimit;
@@ -1668,7 +1669,7 @@ char mingin_getStickPosition( int   inStickAxisHandle,
         char  present;
 
         present = minginPlatform_getStickPosition(
-                      mn_minginStickMappings[ inStickAxisHandle ][ i ],
+                      minginStickMappings[ inStickAxisHandle ][ i ],
                       & pos,
                       & lowerLimit,
                       & upperLimit );
@@ -1693,7 +1694,7 @@ char mingin_getStickPosition( int   inStickAxisHandle,
        return its values */
     
     minginPlatform_getStickPosition(
-        mn_minginStickMappings[ inStickAxisHandle ][ maxPosIndex ],
+        minginStickMappings[ inStickAxisHandle ][ maxPosIndex ],
         outPosition,
         outLowerLimit,
         outUpperLimit );
@@ -2032,16 +2033,114 @@ char minginPlatform_getStickPosition( MinginStick   inStick,
 
 
 
+static char mn_doesActiveGamepadHaveButton( MinginButton inButton ) {
+
+    int i;
+        
+    if( mn_activeGamepad == MGN_NO_GAMEPAD ) {
+        return 0;
+        }
+
+    i = 0;
+
+    while( mn_jsButtonToButtonMap[ mn_activeGamepad ][ i ]
+           !=
+           MGN_MAP_END ) {
+
+        if( mn_jsButtonToButtonMap[ mn_activeGamepad ][ i ] == inButton ) {
+            return 1;
+            }
+        i ++;
+        }
+    
+    i = 0;
+
+    while( mn_jsStickToButtonMap[ mn_activeGamepad ][ i ][ 0 ]
+           !=
+           MGN_MAP_END ) {
+
+        if( mn_jsStickToButtonMap[ mn_activeGamepad ][ i ][ 0 ] == inButton ) {
+            return 1;
+            }
+        i ++;
+        }
+
+    i = 0;
+    
+    while( mn_jsStickToButtonMap[ mn_activeGamepad ][ i ][ 1 ]
+           !=
+           MGN_MAP_END ) {
+
+        if( mn_jsStickToButtonMap[ mn_activeGamepad ][ i ][ 1 ] == inButton ) {
+            return 1;
+            }
+        i ++;
+        }
+    
+    return 0;
+    }
+
+
 
 MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
-    /* fixme
-       implement this on linux by checking for a controller and first
-       available mapped controller button... if no controller, return
-       first available mapped keyboard key */
+
+    int i;
     
-    /* suppress warning */
-    if( inButtonHandle ) {
+    if( mn_activeGamepad != MGN_NO_GAMEPAD ) {
+        /* gamepad active */
+
+        i = 0;
+
+        while( minginButtonMappings[ inButtonHandle ][ i ]
+               !=
+               MGN_MAP_END ) {
+            
+            MinginButton  b  =  minginButtonMappings[ inButtonHandle ][ i ];
+
+            if( b > MGN_KEY_TILDE
+                &&
+                b < MGN_BUTTON_MOUSE_LEFT ) {
+
+                /* gamepad buttons are above keyboard and below
+                   mouse in our button enum */
+            
+                if( mn_doesActiveGamepadHaveButton( b ) ) {
+                    return b;
+                    }
+                }         
+            i ++;
+            }
         }
+
+    /* didn't find a mapped gamepad button, or gamepad not active
+       consider keyboard */
+
+    i = 0;
+
+    while( minginButtonMappings[ inButtonHandle ][ i ]
+           !=
+           MGN_MAP_END ) {
+        
+        MinginButton  b  =  minginButtonMappings[ inButtonHandle ][ i ];
+
+        if( ( b >= MGN_KEY_BACKSPACE
+              &&
+              b <= MGN_KEY_TILDE )
+            ||
+            ( b >= MGN_BUTTON_MOUSE_LEFT
+              &&
+              b <= MGN_BUTTON_MOUSE_RIGHT ) ) {
+
+            /* all keys are possible on Linux keyboard, along with
+               all mouse buttons.
+
+               return first mapped key or mouse button found */
+
+            return b;
+            }
+        i++;
+        }
+
     return MGN_BUTTON_NONE;
     }
 

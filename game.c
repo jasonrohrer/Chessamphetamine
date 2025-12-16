@@ -2,7 +2,7 @@
 #define MINGIN_IMPLEMENTATION
 
 #define MAXIGIN_GAME_NATIVE_W  200
-#define MAXIGIN_GAME_NATIVE_H  200
+#define MAXIGIN_GAME_NATIVE_H  250
 
 #define MAXIGIN_IMPLEMENTATION
 
@@ -93,6 +93,17 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                 }
             }
         }
+
+    /* green dot at center of box for sanity check */
+    if( 1 ) {
+        int pix = boxPosY * MAXIGIN_GAME_NATIVE_W * 3 + boxPosX * 3;
+
+        inRGBBuffer[ pix++ ] = 0;
+        inRGBBuffer[ pix++ ] = 255;
+        inRGBBuffer[ pix++ ] = 0;
+        }
+    
+    
     /* put yellow square in top left corner as sanity check */
     
     for( y = 0; y < 10; y++ ) {

@@ -991,36 +991,24 @@ void minginGame_getMinimumViableScreenSize( int  *outWide,
 
 
 
-void minginGame_getScreenPixels( int             inWide,
-                                 int             inHigh,
-                                 unsigned char  *inRGBBuffer ) {
-    /* RGB pixels of game's native image size */
-    static  unsigned char  gameImageBuffer[ MAXIGIN_GAME_NATIVE_W *
-                                            MAXIGIN_GAME_NATIVE_H * 3 ];
+static void mx_computeScaling( int   inTargetWide,
+                               int   inTargetHigh,
+                               int  *outScaleFactor,
+                               int  *outOffsetX,
+                               int  *outOffsetY ) {
     
-            int            numPixels      =  inWide * inHigh;
-            int            numPixelBytes  =  numPixels * 3;
-            int            p;
+    int  scaleFactor;
+    int  scaleW;
+    int  scaleH;
+    int  scaledGameW;
+    int  scaledGameH;
             
-            int            x;
-            int            y;
-            
-            int            scaleFactor;
-            
-            int            scaleW;
-            int            scaleH;
-            
-            int            scaledGameW;
-            int            scaledGameH;
-            
-            int            offsetX;
-            int            offsetY;
+    int  offsetX;
+    int  offsetY;
+    
+    scaleW = inTargetWide / MAXIGIN_GAME_NATIVE_W;
 
-    maxiginGame_getNativePixels( gameImageBuffer );
-
-    scaleW = inWide / MAXIGIN_GAME_NATIVE_W;
-
-    scaleH = inHigh / MAXIGIN_GAME_NATIVE_H;
+    scaleH = inTargetHigh / MAXIGIN_GAME_NATIVE_H;
 
     scaleFactor = scaleW;
 
@@ -1042,13 +1030,53 @@ void minginGame_getScreenPixels( int             inWide,
     offsetX = 0;
     offsetY = 0;
 
-    if( scaledGameW < inWide ) {
-        offsetX = ( inWide - scaledGameW ) / 2;
+    if( scaledGameW < inTargetWide ) {
+        offsetX = ( inTargetWide - scaledGameW ) / 2;
         }
-    if( scaledGameH < inHigh ) {
-        offsetY = ( inHigh - scaledGameH ) / 2;
+    if( scaledGameH < inTargetHigh ) {
+        offsetY = ( inTargetHigh - scaledGameH ) / 2;
         }
+
+    *outScaleFactor = scaleFactor;
+    *outOffsetX     = offsetX;
+    *outOffsetY     = offsetY;
+    }
+
+
+
+
+void minginGame_getScreenPixels( int             inWide,
+                                 int             inHigh,
+                                 unsigned char  *inRGBBuffer ) {
+    /* RGB pixels of game's native image size */
+    static  unsigned char  gameImageBuffer[ MAXIGIN_GAME_NATIVE_W *
+                                            MAXIGIN_GAME_NATIVE_H * 3 ];
     
+            int            numPixels      =  inWide * inHigh;
+            int            numPixelBytes  =  numPixels * 3;
+            int            p;
+            
+            int            x;
+            int            y;
+            
+            int            scaleFactor;
+            
+            int            scaledGameW;
+            int            scaledGameH;
+            
+            int            offsetX;
+            int            offsetY;
+
+    maxiginGame_getNativePixels( gameImageBuffer );
+
+    mx_computeScaling( inWide,
+                       inHigh,
+                       & scaleFactor,
+                       & offsetX,
+                       & offsetY );
+    
+    scaledGameW = scaleFactor * MAXIGIN_GAME_NATIVE_W;
+    scaledGameH = scaleFactor * MAXIGIN_GAME_NATIVE_H;
 
     if( offsetX > 0
         ||
@@ -1482,7 +1510,10 @@ char maxigin_getPointerLocation( int  *outX,
     int   maxX;
     int   maxY;
     char  avail;
-    
+    int   scaleFactor;
+    int   offsetX;
+    int   offsetY;
+        
     avail = mingin_getPointerLocation( &rawX,
                                        &rawY,
                                        &maxX,
@@ -1491,12 +1522,18 @@ char maxigin_getPointerLocation( int  *outX,
     if( ! avail ) {
         return 0;
         }
-    
-    rawX *= MAXIGIN_GAME_NATIVE_W;
-    rawX /= maxX;
 
-    rawY *= MAXIGIN_GAME_NATIVE_H;
-    rawY /= maxY;
+    mx_computeScaling( maxX,
+                       maxY,
+                       & scaleFactor,
+                       & offsetX,
+                       & offsetY );
+
+    rawX -= offsetX;
+    rawX /= scaleFactor;
+
+    rawY -= offsetY;
+    rawY /= scaleFactor;
 
     *outX = rawX;
     *outY = rawY;

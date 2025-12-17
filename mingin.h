@@ -1275,7 +1275,7 @@ char mingin_seekBulkData( int  inBulkDataHandle,
 
   Parameters:
 
-      inStoreReadHandle   handle of the bulk resource to seek in
+      inBulkDataHandle   handle of the bulk resource to seek in
 
   Returns:
 
@@ -1285,7 +1285,7 @@ char mingin_seekBulkData( int  inBulkDataHandle,
   
   [jumpMinginProvides]
 */
-int mingin_getBulkDataPosition( int  inStoreReadHandle );
+int mingin_getBulkDataPosition( int  inBulkDataHandle );
 
 
 
@@ -1300,6 +1300,28 @@ int mingin_getBulkDataPosition( int  inStoreReadHandle );
   [jumpMinginProvides]
 */
 void mingin_endReadBulkData( int  inBulkDataHandle );
+
+
+
+/*
+  Gets whether a bulk data resource has changed since the last time
+  mingin_startReadBulkData was called for that resource.
+
+  Parameters:
+  
+      inBulkName   the name of the bulk resource as a \0-terminated string.
+
+  Returns:
+
+      1   if the resource has changed
+
+      0   if not
+          or
+          if checking for changes is not supported on this platform
+  
+  [jumpMinginProvides]
+*/
+char mingin_getBulkDataChanged( const char  *inBulkName );
 
 
 
@@ -1745,8 +1767,14 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 
 
 
-#define MINGIN_LINUX_MAX_WIN_W   4096
-#define MINGIN_LINUX_MAX_WIN_H   2160
+#define  MINGIN_LINUX_MAX_WIN_W              4096
+#define  MINGIN_LINUX_MAX_WIN_H              2160
+
+/* this should be set to be larger than the total number of bulk resource
+   files the game will read.  If this is too small, tracking of bulk resource
+   changes may become less reliable
+*/
+#define  MINGIN_MAX_NUM_BULK_CHANGE_RECORDS   128
 
 
 #include <X11/Xlib.h>
@@ -1780,6 +1808,8 @@ static  char            mn_areWeInStepFunction  =  0;
 static  char            mn_xFullscreen          =  0;
 static  int             mn_screenRefreshRate    =  0;
 static  struct timeval  mn_lastRedrawTime;
+static  const char     *mn_settingsDirName      =  "settings";
+static  const char     *mn_bulkDataDirName      =  "data";
 
 
 static void mn_getMonitorSize( Display  *inXDisplay,
@@ -3679,7 +3709,7 @@ static int mn_linuxFileGetPos( int  inFD ) {
 
 
 int mingin_startWritePersistData( const char  *inStoreName ) {
-    return mn_linuxFileOpenWrite( "settings",
+    return mn_linuxFileOpenWrite( mn_settingsDirName,
                                   inStoreName );
     }
 
@@ -3687,7 +3717,7 @@ int mingin_startWritePersistData( const char  *inStoreName ) {
 
 int mingin_startReadPersistData( const char  *inStoreName,
                                  int         *outTotalBytes ) {
-    return mn_linuxFileOpenRead( "settings",
+    return mn_linuxFileOpenRead( mn_settingsDirName,
                                  inStoreName,
                                  outTotalBytes );
     }
@@ -3741,20 +3771,148 @@ void mingin_endReadPersistData( int  inStoreReadHandle ) {
     }
 
 
+
 void mingin_deletePersistData( const char  *inStoreName ) {
     
-    char  *path  =  mn_linuxGetFilePath( "settings",
+    char  *path  =  mn_linuxGetFilePath( mn_settingsDirName,
                                          inStoreName );
     
     unlink( path );
     }
 
 
+/* including \0 termination */
+#define  MINGIN_BULK_NAME_MAX_LENGTH  128
+
+typedef struct MinginBulkChangeRecord {
+        
+        char    bulkName[ MINGIN_BULK_NAME_MAX_LENGTH ];
+        
+        time_t  modTime;
+        
+    } MinginBulkChangeRecord;
+
+
+
+static  MinginBulkChangeRecord  mn_bulkChangeRecords
+                                    [ MINGIN_MAX_NUM_BULK_CHANGE_RECORDS ];
+
+static  int                     mn_numBulkChangeRecords      =  0;
+static  time_t                  mn_latestBulkChangeModTime   =  0;
+static  char                    mn_bulkChangeOverflowLogged  =  0;
+
+
+/* note that in many circumstances, mn_latestBulkChangeModTime is sufficient
+   to track when any bulk data file changes, since a file will become
+   newer than the latest file when it is updated.
+
+   If we're only updating one file at a time, and the game client is
+   checking modified status fast enough to not miss any of these changes,
+   mn_latestBulkChangeModTime will not miss anything.
+
+   However, in cases where multiple files are being updated before
+   the game client checks for file modifications, some files might be missed.
+
+   This is why keeping one record per file is ideal, if we can.  However,
+   we don't want to waste static memory space with a huge buffer of these
+   to cover all cases.
+*/
+
+
+
+static void mn_logModTime( const char  *inBulkName ) {
+
+    int          i;
+    int          foundI     =  -1;
+    struct stat  fileStat;
+    const char  *path       =  mn_linuxGetFilePath( mn_bulkDataDirName,
+                                                    inBulkName );
+
+    if( stat( path,
+              & fileStat ) != 0 ) {
+
+        mingin_log( "Failed to get mod time for bulk data file: " );
+        mingin_log( inBulkName );
+        mingin_log( "\n" );
+        
+        return;
+        }
+
+    
+    /* update our global latest mod time */
+    
+    if( fileStat.st_mtime > mn_latestBulkChangeModTime ) {
+        mn_latestBulkChangeModTime = fileStat.st_mtime;
+        }
+    
+    
+    for( i = 0;
+         i < mn_numBulkChangeRecords;
+         i ++ ) {
+
+        if( mn_stringsEqual(
+                inBulkName,
+                mn_bulkChangeRecords[ i ].bulkName ) ) {
+
+            foundI = i;
+            break;
+            }
+        }
+
+    if( foundI == -1 ) {
+        /* no existing record, try to make a new one */
+        
+        if( mn_numBulkChangeRecords == MINGIN_MAX_NUM_BULK_CHANGE_RECORDS ) {
+            /* no room for new record */
+
+            if( ! mn_bulkChangeOverflowLogged ) {
+                /* only log once, to avoid flooding log with tons
+                   of messages if a game opens lots of bulk data files */
+                mingin_log( "Mingin:  Ran out of room in static "
+                            "bulkChangeRecord array, "
+                            "rapid-fire changes to bulk data files may result "
+                            "in some changes being missed.\n" );
+                
+                mn_bulkChangeOverflowLogged = 1;
+                }
+            
+            return;
+            }
+
+        foundI = mn_numBulkChangeRecords;
+
+        mn_bulkChangeRecords[ foundI ].modTime = 0;
+
+        /* copy name into record */
+        i = 0;
+        while( i < MINGIN_BULK_NAME_MAX_LENGTH - 1
+               &&
+               inBulkName[i] != '\0' ) {
+            
+            mn_bulkChangeRecords[ foundI ].bulkName[i] = inBulkName[i];
+            i ++;
+            }
+
+        /* terminate */
+        mn_bulkChangeRecords[ foundI ].bulkName[i] = '\0';
+        
+        mn_numBulkChangeRecords ++;
+        }
+
+    if( foundI != -1 ) {
+        /* update found (or new) record with mod time */
+        mn_bulkChangeRecords[ foundI ].modTime = fileStat.st_mtime;
+        }
+    }
+
 
 
 int mingin_startReadBulkData( const char  *inBulkName,
                               int         *outTotalBytes ) {
-    return mn_linuxFileOpenRead( "data",
+    
+    mn_logModTime( inBulkName );
+    
+    return mn_linuxFileOpenRead( mn_bulkDataDirName,
                                  inBulkName,
                                  outTotalBytes );
     }
@@ -3789,6 +3947,65 @@ int mingin_getBulkDataPosition( int  inBulkDataHandle ) {
 
 void mingin_endReadBulkData( int  inBulkDataHandle ) {
     close( inBulkDataHandle );
+    }
+
+
+
+char mingin_getBulkDataChanged( const char  *inBulkName ) {
+
+    int          i;
+    struct stat  fileStat;
+    const char  *path       =  mn_linuxGetFilePath( mn_bulkDataDirName,
+                                                    inBulkName );
+    
+    if( stat( path,
+              & fileStat ) != 0 ) {
+
+        mingin_log( "Failed to get mod time for bulk data file: " );
+        mingin_log( inBulkName );
+        mingin_log( "\n" );
+        
+        return 0;
+        }
+
+    if( fileStat.st_mtime > mn_latestBulkChangeModTime ) {
+        /* file is newer than our most recent global mod time
+           it definitely changed */
+
+        /* don't update our mod time until game client calls
+               mingin_startReadBulkData
+           since we're tracking whether data has changed since it was last
+           opened for reading
+        */
+        return 1;
+        }
+    
+    
+
+    for( i = 0;
+         i < mn_numBulkChangeRecords;
+         i ++ ) {
+
+        if( mn_stringsEqual(
+                inBulkName,
+                mn_bulkChangeRecords[ i ].bulkName ) ) {
+
+            /* found a match */
+            if( fileStat.st_mtime > mn_bulkChangeRecords[ i ].modTime ) {
+                /* newer than our record */
+                return 1;
+                }
+            }
+        }
+
+    /* not newer than our record, or no record found.
+       if no record found, that means either file hasn't been openend
+       for reading before, or we have a mn_bulkChangeRecords overflow
+       and can't track this file.
+       In that case, we count the file as changed only if it's mod
+       time is greater than our mn_latestBulkChangeModTime global mod tim.
+    */
+    return 0;
     }
 
 
@@ -3910,6 +4127,22 @@ char mingin_getPointerLocation( int  *outX,
         *outY ||
         *outMaxX ||
         *outMaxY ) {
+        return 0;
+        }
+    return 0;
+    }
+
+
+
+char minginPlatform_getStickPosition( MinginStick   inStick,
+                                      int          *outPosition,
+                                      int          *outLowerLimit,
+                                      int          *outUpperLimit ) {
+    /* suppress warning */
+    if( inStick ||
+        *outPosition ||
+        *outUpperLimit ||
+        *outLowerLimit ) {
         return 0;
         }
     return 0;
@@ -4075,6 +4308,7 @@ char mingin_seekBulkData( int  inBulkDataHandle,
     }
 
 
+
 int mingin_getBulkDataPosition( int  inBulkDataHandle ) {
     /* suppress warning */
     if( inBulkDataHandle > 0 ) {
@@ -4083,11 +4317,22 @@ int mingin_getBulkDataPosition( int  inBulkDataHandle ) {
     }
 
 
+
 void mingin_endReadBulkData( int  inBulkDataHandle ) {
     /* suppress warning */
     if( inBulkDataHandle > 0 ) {
         }
     }
+
+
+
+char mingin_getBulkDataChanged( const char  *inBulkName ) {
+    /* suppress warning */
+    if( inBulkName[0] != '\0' ) {
+        }
+    return 0;
+    }
+
 
 
 void mingin_deletePersistData( const char  *inStoreName ) {

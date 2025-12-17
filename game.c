@@ -45,6 +45,12 @@ static int boxVPerSecond = 120;
 static int boxDir = 1;
 
 
+#define  NUM_BULK_FILES  2
+
+static const char *fileNames[ NUM_BULK_FILES ] = { "bigPointer.tga",
+                                                   "bigPointer2.tga" };
+
+
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
@@ -208,7 +214,29 @@ void maxiginGame_step( void ) {
     int   stickLowerRange;
     int   stickUpperRange;
 
+    for( i = 0;
+         i < NUM_BULK_FILES;
+         i ++ ) {
     
+        if( mingin_getBulkDataChanged( fileNames[ i ] ) ) {
+            int  bulkHandle;
+            int  bulkSize;
+
+            mingin_log( "Bulk data changed: " );
+            mingin_log( fileNames[ i ] );
+            mingin_log( "\n" );
+
+            /* open again to reset changed status */
+
+            bulkHandle = mingin_startReadBulkData( fileNames[ i ],
+                                                   & bulkSize );
+
+            if( bulkHandle != -1 ) {
+                mingin_endReadBulkData( bulkHandle );
+                }
+            }
+        }
+        
     if( remappingJump ) {
         MinginButton last = mingin_getLastButtonPressed();
 
@@ -375,6 +403,27 @@ void maxiginGame_init( void ) {
         bulletSpeed[ i ].y = 0;
         }
 
+
+    for( i = 0;
+         i < NUM_BULK_FILES;
+         i ++ ) {
+        
+        int  bulkHandle;
+        int  bulkSize;
+    
+        bulkHandle = mingin_startReadBulkData( fileNames[ i ],
+                                               & bulkSize );
+
+        if( bulkHandle == -1 ) {
+            mingin_log( "Failed to open bulk data for reading: " );
+            mingin_log( fileNames[ i ] );
+            mingin_log( "\n" );
+            }
+        else {
+            mingin_endReadBulkData( bulkHandle );
+            }
+        }
+    
     
     maxigin_registerButtonMapping( JUMP,   jumpMapping );
     maxigin_registerButtonMapping( SHOOT,  shootMapping );

@@ -1905,7 +1905,7 @@ static  MinginButton        mn_jsButtonToButtonMap
 
 /*
   Maps /dev/input/js  stick numbers (0, 1, 2, etc.) to MGN_BUTTON_ symbols
-  becaus some "sticks", like D-pads, are actually behaving line binary buttons
+  becaus some "sticks", like D-pads, are actually behaving like binary buttons
   on certain gamepads.
 
   2 indices at end are 0 for negative direction and 1 for positive direction
@@ -1919,6 +1919,34 @@ static  MinginButton        mn_jsStickToButtonMap
                                 [ 2 ];
 
 
+
+/*
+  Maps /dev/input/js  stick numbers (0, 1, 2, etc.) to MGN_BUTTON_ symbols
+  becaus some "buttons", like triggers, are actually behaving like sticks only,
+  and not sending button press/release events, on certain gamepads.
+
+  Since these aren't binary on/off like D-pads, we need to set a threshold
+  above which we want a press and below which we want a release
+   
+  Each list of buttons is padded with MGN_MAP_END
+*/
+static  MinginButton        mn_jsStickThresholdToButtonMap
+                                [ MGN_NUM_GAMEPADS ]
+                                [ MINGIN_MAX_NUM_GAMEPAD_BUTTONS ];
+
+/*
+  The threshold values for buttons mapped in mn_jsStickThresholdToButtonMap
+
+  At or above this value, the button is pressed.
+  
+  Below this value, the button is released.
+*/
+static  int                 mn_jsStickThresholdToButtonThresholds
+                                [ MGN_NUM_GAMEPADS ]
+                                [ MINGIN_MAX_NUM_GAMEPAD_BUTTONS ];
+
+
+
 /*
   Maps /dev/input/js  stick numbers (0, 1, 2, etc.) to MGN_STICK_ symbols
   for a specific gamepad.
@@ -1928,6 +1956,8 @@ static  MinginButton        mn_jsStickToButtonMap
 static  MinginStick         mn_jsStickToStickMap
                                 [ MGN_NUM_GAMEPADS ]
                                 [ MINGIN_MAX_NUM_GAMEPAD_STICKS ];
+
+
 
 /*
   Which sticks are present on each gamepad.
@@ -2227,15 +2257,15 @@ static MinginButton mn_mapJSButtonToButton( int inJSButton ) {
 
   Returns MGN_BUTTON_NONE on failure.
 */
-static MinginButton mn_mapJSStickToButton( int inJSButton,
-                                           int inStickPosition ) {
+static MinginButton mn_mapJSStickToButton( int  inJSStick,
+                                           int  inStickPosition ) {
     
     MinginButton  b;
     int           posIndex;
     
-    if( inJSButton >= MINGIN_MAX_NUM_GAMEPAD_STICKS
+    if( inJSStick >= MINGIN_MAX_NUM_GAMEPAD_STICKS
         ||
-        inJSButton < 0  ) {
+        inJSStick < 0  ) {
         
         return MGN_BUTTON_NONE;
         }
@@ -2252,7 +2282,7 @@ static MinginButton mn_mapJSStickToButton( int inJSButton,
         posIndex = 1;
         }
     
-    b = mn_jsStickToButtonMap[ mn_activeGamepad ][ inJSButton ][ posIndex ];
+    b = mn_jsStickToButtonMap[ mn_activeGamepad ][ inJSStick ][ posIndex ];
 
     if( b == MGN_MAP_END ) {
         return MGN_BUTTON_NONE;
@@ -2264,18 +2294,79 @@ static MinginButton mn_mapJSStickToButton( int inJSButton,
 
 
 /*
+  Maps stick index and position read from a /dev/input/js event to a
+  MinginButton, based on the current active gamepad.
+
+  (Some "sticks" are actually thresholded on/off buttons, like the LT/RT
+   triggers on an XBox360 controller)
+
+  Parameters:
+
+     inJSStick         the stick index read from the /dev/input/js device.
+
+     inStickPosition   the position reported by the /dev/input/js device.
+
+     outPressed        pointer to where pressed state should be returned
+                       Set to 1 if pressed
+                       set to 0 if not pressed
+                       
+  Returns:
+
+      The button        if mapped 
+     
+      MGN_BUTTON_NONE   if not mapped
+*/
+static MinginButton mn_mapJSStickThresholdToButton( int    inJSStick,
+                                                    int    inStickPosition,
+                                                    char  *outPressed ) {
+    MinginButton  b;
+    
+    if( inJSStick >= MINGIN_MAX_NUM_GAMEPAD_STICKS
+        ||
+        inJSStick < 0  ) {
+        
+        return MGN_BUTTON_NONE;
+        }
+
+    
+    if( mn_activeGamepad == MGN_NO_GAMEPAD ) {
+        return MGN_BUTTON_NONE;
+        }
+    
+    b = mn_jsStickThresholdToButtonMap[ mn_activeGamepad ][ inJSStick ];
+
+    if( b == MGN_MAP_END ) {
+        return MGN_BUTTON_NONE;
+        }
+
+    if( inStickPosition
+        <
+        mn_jsStickThresholdToButtonThresholds[ mn_activeGamepad ]
+                                             [ inJSStick ] ) {
+        *outPressed = 0;
+        }
+    else {
+        *outPressed = 1;
+        }
+    
+    return b;
+    }
+
+
+
+/*
   Maps a stick index position from /dev/input/js event and records
   that stick position in the appropriate slot in mn_stickPosition
   for the active gamepad.
 */
-static void mn_registerJSStickPosition( int inJSButton,
+static void mn_registerJSStickPosition( int inJSStick,
                                         int inStickPosition ) {
     
     MinginStick  s;
     
-    if( inJSButton >= MINGIN_MAX_NUM_GAMEPAD_STICKS
+    if( inJSStick >= MINGIN_MAX_NUM_GAMEPAD_STICKS
         ||
-        inJSButton < 0 ) {
+        inJSStick < 0 ) {
         
         return;
         }
@@ -2284,7 +2375,7 @@ static void mn_registerJSStickPosition( int inJSButton,
         return;
         }
 
-    s = mn_jsStickToStickMap[ mn_activeGamepad ][ inJSButton ];
+    s = mn_jsStickToStickMap[ mn_activeGamepad ][ inJSStick ];
 
     
     if( s == MGN_MAP_END ) {
@@ -2822,7 +2913,8 @@ int main( void ) {
                 if( numRead == sizeof( struct js_event ) ) {
 
                     MinginButton  button;
-
+                    char          pressed;
+                    
                     /* for stick axes that act like binary button
                        presses, the axis will return 0 when either
                        directional button is released, so we need
@@ -2883,6 +2975,19 @@ int main( void ) {
                                     mn_buttonDown[ buttonMinus ] = 0;
                                     }
                                 }
+
+                            
+                            button = mn_mapJSStickThresholdToButton( e.number,
+                                                                     e.value,
+                                                                     & pressed );
+                            if( button > MGN_BUTTON_NONE ) {
+                                mn_buttonDown[ button ] = pressed;
+
+                                if( pressed ) {
+                                    mn_lastButtonPressed = button;
+                                    }
+                                }
+
                             
                             mn_registerJSStickPosition( e.number,
                                                         e.value );
@@ -3163,11 +3268,17 @@ static void mn_setupLinuxGamepadMaps( void ) {
              j < MINGIN_MAX_NUM_GAMEPAD_STICKS;
              j ++ ) {
             
-            mn_jsStickToButtonMap[ i ][ j ][0] = MGN_MAP_END;
-            mn_jsStickToButtonMap[ i ][ j ][1] = MGN_MAP_END;
+            mn_jsStickToButtonMap[ i ][ j ][0]               =  MGN_MAP_END;
+            mn_jsStickToButtonMap[ i ][ j ][1]               =  MGN_MAP_END;
             
-            mn_jsStickToStickMap [ i ][ j ]    = MGN_MAP_END;
+            mn_jsStickToStickMap [ i ][ j ]                  =  MGN_MAP_END;
+            
+            mn_jsStickThresholdToButtonMap[ i ][ j ]         =  MGN_MAP_END;
 
+            mn_jsStickThresholdToButtonThresholds[ i ][ j ]  =  0;
+
+
+            
             /* default to no sticks being present */
             mn_stickPresent[ i ][ j ] = 0;
                 
@@ -3245,6 +3356,16 @@ static void mn_setupLinuxGamepadMaps( void ) {
     mn_jsStickToButtonMap[ xboxGamepad ][ 7 ][ 0 ]  =  MGN_BUTTON_DPAD_UP;
     mn_jsStickToButtonMap[ xboxGamepad ][ 7 ][ 1 ]  =  MGN_BUTTON_DPAD_DOWN;
 
+    
+    /* map LT/RT trigger "sticks" to button presses */
+    mn_jsStickThresholdToButtonMap[ xboxGamepad ][ 2 ]  =  MGN_BUTTON_L2;
+    mn_jsStickThresholdToButtonMap[ xboxGamepad ][ 5 ]  =  MGN_BUTTON_R2;
+
+    /* set thresholds just above max negative value reported by these triggers */
+    mn_jsStickThresholdToButtonThresholds[ xboxGamepad ][ 2 ]  =  -32766;
+    mn_jsStickThresholdToButtonThresholds[ xboxGamepad ][ 5 ]  =  -32766;
+
+    
     mn_jsStickToStickMap[ xboxGamepad ][ 0 ]  =  MGN_STICK_LEFT_X;
     mn_jsStickToStickMap[ xboxGamepad ][ 1 ]  =  MGN_STICK_LEFT_Y;
     mn_jsStickToStickMap[ xboxGamepad ][ 2 ]  =  MGN_STICK_LEFT_TRIGGER;

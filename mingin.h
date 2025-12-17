@@ -2456,8 +2456,29 @@ static char mn_stringsEqual( const char  *inStringA,
         return 1;
         }
     return 0;
-    } 
-        
+    }
+
+
+
+static char mn_stringStartsWith( const char  *inString,
+                                 const char  *inPrefix ) {
+    
+    int i  =  0;
+    
+    while( inString[i] == inPrefix[i]
+           &&
+           inPrefix[i] != '\0' ) {
+        i++;
+        }
+
+    if( inPrefix[i] == '\0' ) {
+        /* reached end of prefix */
+        return 1;
+        }
+    return 0;
+    }
+
+
 
 void mingin_log( const char  *inString ) {
     write( STDOUT_FILENO,
@@ -3426,8 +3447,8 @@ static int mn_getGamepadIndex( const char  *inIDString ) {
     int i  =  MGN_FIRST_GAMEPAD;
     
     while( i < MGN_NUM_GAMEPADS ) {
-        if(  mn_stringsEqual( inIDString,
-                              mn_gamepadIDStrings[ i ] ) ) {
+        if(  mn_stringStartsWith( inIDString,
+                                  mn_gamepadIDStrings[ i ] ) ) {
             return i;
             }
         i ++;

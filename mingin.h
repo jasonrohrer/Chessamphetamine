@@ -622,16 +622,21 @@ typedef enum MinginButton {
     MGN_BUTTON_PS_SHARE,
     MGN_BUTTON_PS_OPTIONS,
     MGN_BUTTON_PS_PS,
-    MGN_BUTTON_PS_STICK_LEFT_PRESS,
-    MGN_BUTTON_PS_STICK_RIGHT_PRESS,
+    MGN_BUTTON_STICK_LEFT_PRESS,
+    MGN_BUTTON_STICK_RIGHT_PRESS,
 
     MGN_BUTTON_DPAD_LEFT,
     MGN_BUTTON_DPAD_RIGHT,
     MGN_BUTTON_DPAD_UP,
     MGN_BUTTON_DPAD_DOWN,
     
-    MGN_BUTTON_SQUARE,
-    MGN_BUTTON_A,
+    MGN_BUTTON_XBOX_A,
+    MGN_BUTTON_XBOX_B,
+    MGN_BUTTON_XBOX_X,
+    MGN_BUTTON_XBOX_Y,
+    MGN_BUTTON_XBOX_BACK,
+    MGN_BUTTON_XBOX_START,
+    MGN_BUTTON_XBOX_GUIDE,
     
     MGN_BUTTON_MOUSE_LEFT,
     MGN_BUTTON_MOUSE_MIDDLE,
@@ -1868,15 +1873,17 @@ static  KeySym        mn_buttonToXKeyMap[ MGN_NUM_BUTTONS ];
 
 #define  MGN_FIRST_GAMEPAD   0
 
-typedef enum MinginLinuxGamepad {
+typedef enum MinginGamepad {
     MGN_NO_GAMEPAD          =  -1,
     MGN_PS_DUALSHOCK_4      =  MGN_FIRST_GAMEPAD,
+    MGN_XBOX_360,
     MGN_NUM_GAMEPADS
-    } MinginLinuxGamepad;
+    } MinginGamepad;
 
 
 static  const char   *mn_gamepadIDStrings[ MGN_NUM_GAMEPADS ] = {
-    "Sony Interactive Entertainment Wireless Controller" 
+    "Sony Interactive Entertainment Wireless Controller",
+    "Microsoft X-Box 360 pad"
     };
 
 
@@ -1944,7 +1951,7 @@ static  int                 mn_stickRange
 
 
 
-static  MinginLinuxGamepad  mn_activeGamepad  =  MGN_NO_GAMEPAD;
+static  MinginGamepad  mn_activeGamepad  =  MGN_NO_GAMEPAD;
 
 
 /*
@@ -1963,7 +1970,7 @@ static  int                 mn_stickPosition
 
   Side Effects:
 
-      mn_activeGamepad   set to an index in MinginLinuxGamepad if found
+      mn_activeGamepad   set to an index in MinginGamepad if found
       
       mn_activeGamepad   set to MGN_NO_GAMEPAD of not found
 
@@ -2397,7 +2404,7 @@ static void mn_setupLinuxGamepadMaps( void );
 
 
 /*
-  Maps an id string to an index in MinginLinuxGamepad, or -1 if no match
+  Maps an id string to an index in MinginGamepad, or -1 if no match
 */
 static int mn_getGamepadIndex( const char  *inIDString );
 
@@ -3135,8 +3142,10 @@ static void mn_setupX11KeyMap( void ) {
 
 static void mn_setupLinuxGamepadMaps( void ) {
 
-    int  i;
-    int  j;
+    int            i;
+    int            j;
+    MinginGamepad  ps4Gamepad    =  MGN_PS_DUALSHOCK_4;
+    /*MinginGamepad  xboxGamepad  =  MGN_XBOX_360;*/
     
     /* start by filling all with MGN_MAP_END padding */
     for( i = MGN_FIRST_GAMEPAD;
@@ -3171,53 +3180,50 @@ static void mn_setupLinuxGamepadMaps( void ) {
 
 
     
-    /* ps button map is in order in our MinginButton enum */
-    i = MGN_BUTTON_PS_X;
-
-    /* we walk through the /dev/input/js buttons, starting with 0 */
-    j = 0;
+    /* First, setup PS Dualshock 4 controller */
     
-    while( i <= MGN_BUTTON_PS_STICK_RIGHT_PRESS ) {
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  0 ]  =  MGN_BUTTON_PS_X,
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  1 ]  =  MGN_BUTTON_PS_CIRCLE,
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  2 ]  =  MGN_BUTTON_PS_TRIANGLE,
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  3 ]  =  MGN_BUTTON_PS_SQUARE,
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  4 ]  =  MGN_BUTTON_L1,
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  5 ]  =  MGN_BUTTON_R1,
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  6 ]  =  MGN_BUTTON_L2,
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  7 ]  =  MGN_BUTTON_R2,
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  8 ]  =  MGN_BUTTON_PS_SHARE,
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  9 ]  =  MGN_BUTTON_PS_OPTIONS,
+    mn_jsButtonToButtonMap[ ps4Gamepad ][ 10 ]  =  MGN_BUTTON_PS_PS,
+    mn_jsButtonToButtonMap[ ps4Gamepad ][ 11 ]  =  MGN_BUTTON_STICK_LEFT_PRESS,
+    mn_jsButtonToButtonMap[ ps4Gamepad ][ 12 ]  =  MGN_BUTTON_STICK_RIGHT_PRESS,
         
-        mn_jsButtonToButtonMap[ MGN_PS_DUALSHOCK_4 ][ j ] = i;
+    mn_jsStickToButtonMap[ ps4Gamepad ][ 6 ][ 0 ]  =  MGN_BUTTON_DPAD_LEFT;
+    mn_jsStickToButtonMap[ ps4Gamepad ][ 6 ][ 1 ]  =  MGN_BUTTON_DPAD_RIGHT;
+    mn_jsStickToButtonMap[ ps4Gamepad ][ 7 ][ 0 ]  =  MGN_BUTTON_DPAD_UP;
+    mn_jsStickToButtonMap[ ps4Gamepad ][ 7 ][ 1 ]  =  MGN_BUTTON_DPAD_DOWN;
 
-        i ++;
-        j ++;
-        }
-
-
-    mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ 6 ][ 0 ] =
-        MGN_BUTTON_DPAD_LEFT;
-    
-    mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ 6 ][ 1 ] =
-        MGN_BUTTON_DPAD_RIGHT;
-
-    mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ 7 ][ 0 ] =
-        MGN_BUTTON_DPAD_UP;
-    
-    mn_jsStickToButtonMap[ MGN_PS_DUALSHOCK_4 ][ 7 ][ 1 ] =
-        MGN_BUTTON_DPAD_DOWN;
-
-    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 0 ]  =  MGN_STICK_LEFT_X;
-    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 1 ]  =  MGN_STICK_LEFT_Y;
-    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 2 ]  =  MGN_STICK_LEFT_TRIGGER;
-    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 3 ]  =  MGN_STICK_RIGHT_X;
-    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 4 ]  =  MGN_STICK_RIGHT_Y;
-    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 5 ]  =  MGN_STICK_RIGHT_TRIGGER;
-    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 6 ]  =  MGN_STICK_DPAD_X;
-    mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ 7 ]  =  MGN_STICK_DPAD_Y;
+    mn_jsStickToStickMap[ ps4Gamepad ][ 0 ]  =  MGN_STICK_LEFT_X;
+    mn_jsStickToStickMap[ ps4Gamepad ][ 1 ]  =  MGN_STICK_LEFT_Y;
+    mn_jsStickToStickMap[ ps4Gamepad ][ 2 ]  =  MGN_STICK_LEFT_TRIGGER;
+    mn_jsStickToStickMap[ ps4Gamepad ][ 3 ]  =  MGN_STICK_RIGHT_X;
+    mn_jsStickToStickMap[ ps4Gamepad ][ 4 ]  =  MGN_STICK_RIGHT_Y;
+    mn_jsStickToStickMap[ ps4Gamepad ][ 5 ]  =  MGN_STICK_RIGHT_TRIGGER;
+    mn_jsStickToStickMap[ ps4Gamepad ][ 6 ]  =  MGN_STICK_DPAD_X;
+    mn_jsStickToStickMap[ ps4Gamepad ][ 7 ]  =  MGN_STICK_DPAD_Y;
 
     /* all 8 sticks on PS4 controller have same range */
     for( j =  0;
          j <= 7;
          j ++ ) {
         
-        MinginStick s  =  mn_jsStickToStickMap[ MGN_PS_DUALSHOCK_4 ][ j ];
+        MinginStick s  =  mn_jsStickToStickMap[ ps4Gamepad ][ j ];
 
-        mn_stickPresent[ MGN_PS_DUALSHOCK_4 ][ s ]       =       1;
-        mn_stickRange  [ MGN_PS_DUALSHOCK_4 ][ s ][ 0 ]  =  -32767;
-        mn_stickRange  [ MGN_PS_DUALSHOCK_4 ][ s ][ 1 ]  =   32767;
+        mn_stickPresent[ ps4Gamepad ][ s ]       =       1;
+        mn_stickRange  [ ps4Gamepad ][ s ][ 0 ]  =  -32767;
+        mn_stickRange  [ ps4Gamepad ][ s ][ 1 ]  =   32767;
         }
+
+
+    /* Next, setup XBox 360 controller */
     }
 
 

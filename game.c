@@ -339,7 +339,10 @@ static MinginButton jumpMapping[]   =  { MGN_KEY_SPACE,     MGN_MAP_END };
 static MinginButton shootMapping[]  =  { MGN_KEY_X,
                                          MGN_BUTTON_MOUSE_LEFT,
                                          MGN_BUTTON_PS_X,
+                                         MGN_BUTTON_XBOX_A,
                                          MGN_BUTTON_DPAD_UP,
+                                         MGN_BUTTON_L1,
+                                         MGN_BUTTON_L2,
                                          MGN_MAP_END };
 
 static MinginButton remapMapping[]  =  { MGN_KEY_P,         MGN_MAP_END };

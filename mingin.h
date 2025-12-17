@@ -3144,8 +3144,8 @@ static void mn_setupLinuxGamepadMaps( void ) {
 
     int            i;
     int            j;
-    MinginGamepad  ps4Gamepad    =  MGN_PS_DUALSHOCK_4;
-    /*MinginGamepad  xboxGamepad  =  MGN_XBOX_360;*/
+    MinginGamepad  ps4Gamepad   =  MGN_PS_DUALSHOCK_4;
+    MinginGamepad  xboxGamepad  =  MGN_XBOX_360;
     
     /* start by filling all with MGN_MAP_END padding */
     for( i = MGN_FIRST_GAMEPAD;
@@ -3182,20 +3182,21 @@ static void mn_setupLinuxGamepadMaps( void ) {
     
     /* First, setup PS Dualshock 4 controller */
     
-    mn_jsButtonToButtonMap[ ps4Gamepad ][  0 ]  =  MGN_BUTTON_PS_X,
-    mn_jsButtonToButtonMap[ ps4Gamepad ][  1 ]  =  MGN_BUTTON_PS_CIRCLE,
-    mn_jsButtonToButtonMap[ ps4Gamepad ][  2 ]  =  MGN_BUTTON_PS_TRIANGLE,
-    mn_jsButtonToButtonMap[ ps4Gamepad ][  3 ]  =  MGN_BUTTON_PS_SQUARE,
-    mn_jsButtonToButtonMap[ ps4Gamepad ][  4 ]  =  MGN_BUTTON_L1,
-    mn_jsButtonToButtonMap[ ps4Gamepad ][  5 ]  =  MGN_BUTTON_R1,
-    mn_jsButtonToButtonMap[ ps4Gamepad ][  6 ]  =  MGN_BUTTON_L2,
-    mn_jsButtonToButtonMap[ ps4Gamepad ][  7 ]  =  MGN_BUTTON_R2,
-    mn_jsButtonToButtonMap[ ps4Gamepad ][  8 ]  =  MGN_BUTTON_PS_SHARE,
-    mn_jsButtonToButtonMap[ ps4Gamepad ][  9 ]  =  MGN_BUTTON_PS_OPTIONS,
-    mn_jsButtonToButtonMap[ ps4Gamepad ][ 10 ]  =  MGN_BUTTON_PS_PS,
-    mn_jsButtonToButtonMap[ ps4Gamepad ][ 11 ]  =  MGN_BUTTON_STICK_LEFT_PRESS,
-    mn_jsButtonToButtonMap[ ps4Gamepad ][ 12 ]  =  MGN_BUTTON_STICK_RIGHT_PRESS,
-        
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  0 ]  =  MGN_BUTTON_PS_X;
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  1 ]  =  MGN_BUTTON_PS_CIRCLE;
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  2 ]  =  MGN_BUTTON_PS_TRIANGLE;
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  3 ]  =  MGN_BUTTON_PS_SQUARE;
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  4 ]  =  MGN_BUTTON_L1;
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  5 ]  =  MGN_BUTTON_R1;
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  6 ]  =  MGN_BUTTON_L2;
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  7 ]  =  MGN_BUTTON_R2;
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  8 ]  =  MGN_BUTTON_PS_SHARE;
+    mn_jsButtonToButtonMap[ ps4Gamepad ][  9 ]  =  MGN_BUTTON_PS_OPTIONS;
+    mn_jsButtonToButtonMap[ ps4Gamepad ][ 10 ]  =  MGN_BUTTON_PS_PS;
+    mn_jsButtonToButtonMap[ ps4Gamepad ][ 11 ]  =  MGN_BUTTON_STICK_LEFT_PRESS;
+    mn_jsButtonToButtonMap[ ps4Gamepad ][ 12 ]  =  MGN_BUTTON_STICK_RIGHT_PRESS;
+
+    /* map d-pad "stick" positive/negative directions to Mingin d-pad buttons */
     mn_jsStickToButtonMap[ ps4Gamepad ][ 6 ][ 0 ]  =  MGN_BUTTON_DPAD_LEFT;
     mn_jsStickToButtonMap[ ps4Gamepad ][ 6 ][ 1 ]  =  MGN_BUTTON_DPAD_RIGHT;
     mn_jsStickToButtonMap[ ps4Gamepad ][ 7 ][ 0 ]  =  MGN_BUTTON_DPAD_UP;
@@ -3224,6 +3225,47 @@ static void mn_setupLinuxGamepadMaps( void ) {
 
 
     /* Next, setup XBox 360 controller */
+        
+    mn_jsButtonToButtonMap[ xboxGamepad ][  0 ]  =  MGN_BUTTON_XBOX_A;
+    mn_jsButtonToButtonMap[ xboxGamepad ][  1 ]  =  MGN_BUTTON_XBOX_B;
+    mn_jsButtonToButtonMap[ xboxGamepad ][  2 ]  =  MGN_BUTTON_XBOX_X;
+    mn_jsButtonToButtonMap[ xboxGamepad ][  3 ]  =  MGN_BUTTON_XBOX_Y;
+    mn_jsButtonToButtonMap[ xboxGamepad ][  4 ]  =  MGN_BUTTON_L1;
+    mn_jsButtonToButtonMap[ xboxGamepad ][  5 ]  =  MGN_BUTTON_R1;
+    /* xbox360 doesn't send button press/release events for LT and RT triggers */
+    mn_jsButtonToButtonMap[ xboxGamepad ][  6 ]  =  MGN_BUTTON_XBOX_BACK;
+    mn_jsButtonToButtonMap[ xboxGamepad ][  7 ]  =  MGN_BUTTON_XBOX_START;
+    mn_jsButtonToButtonMap[ xboxGamepad ][  8 ]  =  MGN_BUTTON_XBOX_GUIDE;
+    mn_jsButtonToButtonMap[ xboxGamepad ][  9 ]  =  MGN_BUTTON_STICK_LEFT_PRESS;
+    mn_jsButtonToButtonMap[ xboxGamepad ][ 10 ]  =  MGN_BUTTON_STICK_RIGHT_PRESS;
+
+    /* map d-pad "stick" positive/negative directions to Mingin d-pad buttons */
+    mn_jsStickToButtonMap[ xboxGamepad ][ 6 ][ 0 ]  =  MGN_BUTTON_DPAD_LEFT;
+    mn_jsStickToButtonMap[ xboxGamepad ][ 6 ][ 1 ]  =  MGN_BUTTON_DPAD_RIGHT;
+    mn_jsStickToButtonMap[ xboxGamepad ][ 7 ][ 0 ]  =  MGN_BUTTON_DPAD_UP;
+    mn_jsStickToButtonMap[ xboxGamepad ][ 7 ][ 1 ]  =  MGN_BUTTON_DPAD_DOWN;
+
+    mn_jsStickToStickMap[ xboxGamepad ][ 0 ]  =  MGN_STICK_LEFT_X;
+    mn_jsStickToStickMap[ xboxGamepad ][ 1 ]  =  MGN_STICK_LEFT_Y;
+    mn_jsStickToStickMap[ xboxGamepad ][ 2 ]  =  MGN_STICK_LEFT_TRIGGER;
+    mn_jsStickToStickMap[ xboxGamepad ][ 3 ]  =  MGN_STICK_RIGHT_X;
+    mn_jsStickToStickMap[ xboxGamepad ][ 4 ]  =  MGN_STICK_RIGHT_Y;
+    mn_jsStickToStickMap[ xboxGamepad ][ 5 ]  =  MGN_STICK_RIGHT_TRIGGER;
+    mn_jsStickToStickMap[ xboxGamepad ][ 6 ]  =  MGN_STICK_DPAD_X;
+    mn_jsStickToStickMap[ xboxGamepad ][ 7 ]  =  MGN_STICK_DPAD_Y;
+
+    /* all 8 sticks on XBox360 controller have same range */
+    for( j =  0;
+         j <= 7;
+         j ++ ) {
+        
+        MinginStick s  =  mn_jsStickToStickMap[ xboxGamepad ][ j ];
+
+        mn_stickPresent[ xboxGamepad ][ s ]       =       1;
+        mn_stickRange  [ xboxGamepad ][ s ][ 0 ]  =  -32767;
+        mn_stickRange  [ xboxGamepad ][ s ][ 1 ]  =   32767;
+        }
+
     }
 
 

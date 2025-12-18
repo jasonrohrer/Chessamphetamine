@@ -1702,7 +1702,7 @@ static char mx_readStringFromPersistData( int    inStoreReadHandle,
 
 
 /*
-  Reads a \0-terminated short string (< 63 chars long) into a static buffer.
+  Reads a \0-terminated short string (< 64 chars long) into a static buffer.
 
   Returns 0 on failure.
 */

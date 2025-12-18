@@ -1671,8 +1671,21 @@ static char mx_readStringFromPersistData( int    inStoreReadHandle,
     else if( inBuffer[i] != '\0'
              &&
              readNum == 0 ) {
-        mingin_log( "Error:  Reached end of store when trying to read string "
-                    "from persistent data store.\n" );
+        /* reached end of data store without finding termination byte
+           special case:  a data store that only contains one string, with
+           no termination at the end (to make file editable in a text editor)
+           Terminate our read string and return it */
+
+        if( i < inMaxBytes - 1 ) {
+            inBuffer[ i + 1 ] = '\0';
+            return 1;
+            }
+
+        /* reached end of data store AND we reached end of buffer?
+           While loop above should prevent this */
+            
+        mingin_log( "Error:  Reading string from persistent data store reached "
+                    "unexpected case\n" );
         return 0;
         }
     else if( inBuffer[i] != '\0'
@@ -2883,7 +2896,7 @@ static void mx_finalizeRecording( void ) {
 /* returns a unique recovery file name in a static buffer */
 static const char *mx_getRecordingRecoveryFileName( void ) {
     int          recoveryNumber;
-    const char  *settingName      =  "maxigin_nextRecoveryNumber.bin";
+    const char  *settingName      =  "maxigin_nextRecoveryNumber.ini";
 
     const char  *returnVal;
     
@@ -4232,8 +4245,9 @@ int maxigin_readIntSetting( const char  *inSettingName,
 void maxigin_writeIntSetting( const char  *inSettingName,
                               int          inValue ) {
     
-    int   writeHandle;
-
+    int          writeHandle;
+    const char  *intAsString;
+    
     writeHandle = mingin_startWritePersistData( inSettingName );
 
     if( writeHandle == -1 ) {
@@ -4242,9 +4256,16 @@ void maxigin_writeIntSetting( const char  *inSettingName,
         }
 
     /* on failure, writing a setting is a no-op */
-    
-    mx_writeIntToPerisistentData( writeHandle,
-                                  inValue );
+
+    /* special case here:
+       write lone int to setting without a terminating \0
+       This makes these settings files end-user editable */
+
+    intAsString = maxigin_intToString( inValue );
+
+    mingin_writePersistData( writeHandle,
+                             maxigin_stringLength( intAsString ),
+                             (unsigned char*)intAsString );
 
     mingin_endWritePersistData( writeHandle );
     }

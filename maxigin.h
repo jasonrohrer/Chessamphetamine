@@ -144,6 +144,37 @@
 
 
 
+/*
+  How many sprites are supported?
+  
+  To make room for 256 sprites, do this:
+
+      #define  MAXIGIN_MAX_NUM_SPRITES  256
+
+  [jumpSettings]
+*/
+#ifndef  MAXIGIN_MAX_NUM_SPRITES 
+    #define  MAXIGIN_MAX_NUM_SPRITES  1024
+#endif
+
+
+
+/*
+  Sprites are loaded into a statically allocated memory buffer.
+
+  The default size has room for 10 128x128 RGBA sprites.
+  
+  To allocate room for 100 16x16 RGBA sprites, do this:
+
+      #define  MAXIGIN_ENABLE_RECORDING  102400
+
+  [jumpSettings]
+*/
+#ifndef  MAXIGIN_MAX_TOTAL_SPRITE_BYTES
+    #define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  655360
+#endif
+
+
 
 
 /*
@@ -252,8 +283,12 @@
   This is called exactly once before any other maxiginGame_ calls are made.
 
   ****
-  This is the only maxiginGame_ function where maxigin_init functions can
+  This is the ONLY maxiginGame_ function where "maxigin_init" functions can
   be called.
+  ****
+
+  ****
+  Do not call maxigin-provided "maxigin_draw" functions from this function.
   ****
   
   ****
@@ -288,6 +323,10 @@ void maxiginGame_init( void );
   ****
   
   ****
+  Do not call maxigin-provided "maxigin_draw" functions from this function.
+  ****
+  
+  ****
   All general-purpose maxigin_ functions CAN be called from this function.
   ****
   
@@ -313,6 +352,11 @@ void maxiginGame_step( void );
       MAXIGIN_GAME_NATIVE_H * MAXIGIN_GAME_NATIVE_W
       
   total pixels.
+
+  ****
+  This is the ONLY maxiginGame_ function where "maxigin_draw" functions can
+  be called.
+  ****
   
   ****
   Do not call maxigin-provided "maxigin_" functions from this function.
@@ -345,17 +389,26 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer );
   What Maxigin provides                [jumpMaxigin]
   ==================================================
   
-  Maxigin provides two sets of functions.
+  Maxigin provides three sets of functions.
 
+  
   The first set of init functions can ONLY be called from inside maxiginGame_init
 
   Each init function is tagged with   [jumpMaxiginInit]
 
-  The second set of general functions can be called from either
+  
+  The second set of draw functions can ONLY be called from inside
+  maxiginGame_getNativePixels
+
+  Each init function is tagged with   [jumpMaxiginDraw]
+
+  
+  The third set of general functions can be called from either
   maxiginGame_init or maxiginGame_step.
 
   Each general function is tagged with  [jumpMaxiginGeneral]
 
+  
   ****
   Calling these functions from the wrong function might result in unexpected
   (though safe) behavior, and will result in an error message being written
@@ -397,6 +450,48 @@ void maxigin_initRegisterStaticMemory( void        *inPointer,
   [jumpMaxiginInit]
 */
 void maxigin_initRestoreStaticMemoryFromLastRun( void );
+
+
+
+/*
+  Loads a TGA-formatted sprite from the platform's bulk data store.
+
+  Sprites must be in RGBA 32-bit uncompressed TGA format.
+
+  Parameters:
+
+      inBulkResourceName   the name of the bulk data resource to load the sprite
+                           from
+
+  Returns:
+
+      sprite handle   on load success
+
+      -1              on failure;
+
+  [jumpMaxiginInit]      
+*/
+int maxigin_initSprite( const char  *inBulkResourceName );
+
+
+
+/*
+  Draws a sprite into the game's native pixel buffer.
+
+  Parameters:
+
+      inSpriteHandle   the sprite to draw
+
+      inCenterX        the x position in the game's native pixel buffer of the
+                       sprite's center
+ 
+      inCenterY        the y position in the game's native pixel buffer of the
+                       sprite's center
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawSprite( int  inSpriteHandle,
+                         int  inCenterX,
+                         int  inCenterY );
 
 
 
@@ -499,10 +594,13 @@ MinginButton maxigin_getPlatformPrimaryButton( int  inButtonHandle );
       1   if pointer location is on-screen and available
 
       0   if pointer location is off-screen or not available
-  
+                         
+  [jumpMaxiginGeneral] 
  */
 char maxigin_getPointerLocation( int  *outX,
                                  int  *outY );
+
+
 
 
 
@@ -966,6 +1064,9 @@ static  char  mx_areWeInMaxiginGameInitFunction  =  0;
 
 static  char  mx_areWeInMaxiginGameStepFunction  =  0;
 
+static  char  mx_areWeInMaxiginGameDrawFunction  =  0;
+
+
 static  char  mx_initDone                        =  0;
 
 static  char  mx_recordingRunning                =  0;
@@ -1044,31 +1145,38 @@ static void mx_computeScaling( int   inTargetWide,
 
 
 
+/* RGB pixels of game's native image size */
+static  unsigned char  mx_gameImageBuffer[ MAXIGIN_GAME_NATIVE_W *
+                                           MAXIGIN_GAME_NATIVE_H * 3 ];
+
 
 void minginGame_getScreenPixels( int             inWide,
                                  int             inHigh,
                                  unsigned char  *inRGBBuffer ) {
-    /* RGB pixels of game's native image size */
-    static  unsigned char  gameImageBuffer[ MAXIGIN_GAME_NATIVE_W *
-                                            MAXIGIN_GAME_NATIVE_H * 3 ];
     
-            int            numPixels      =  inWide * inHigh;
-            int            numPixelBytes  =  numPixels * 3;
-            int            p;
-            
-            int            x;
-            int            y;
-            
-            int            scaleFactor;
-            
-            int            scaledGameW;
-            int            scaledGameH;
-            
-            int            offsetX;
-            int            offsetY;
+    int  numPixels      =  inWide * inHigh;
+    int  numPixelBytes  =  numPixels * 3;
+    int  p;
 
-    maxiginGame_getNativePixels( gameImageBuffer );
+    int  x;
+    int  y;
+            
+    int  scaleFactor;
+            
+    int  scaledGameW;
+    int  scaledGameH;
+            
+    int  offsetX;
+    int  offsetY;
 
+
+    mx_areWeInMaxiginGameDrawFunction = 1;
+    
+    maxiginGame_getNativePixels( mx_gameImageBuffer );
+
+    mx_areWeInMaxiginGameDrawFunction = 0;
+
+    
     mx_computeScaling( inWide,
                        inHigh,
                        & scaleFactor,
@@ -1110,9 +1218,9 @@ void minginGame_getScreenPixels( int             inWide,
 
         int pixSrcOrig = rowStartSrcOrig;
 
-        unsigned char r = gameImageBuffer[ pixSrcOrig++ ];
-        unsigned char g = gameImageBuffer[ pixSrcOrig++ ];
-        unsigned char b = gameImageBuffer[ pixSrcOrig++ ];
+        unsigned char r = mx_gameImageBuffer[ pixSrcOrig++ ];
+        unsigned char g = mx_gameImageBuffer[ pixSrcOrig++ ];
+        unsigned char b = mx_gameImageBuffer[ pixSrcOrig++ ];
         
         int xDestFillCount = 0;
         
@@ -1130,9 +1238,9 @@ void minginGame_getScreenPixels( int             inWide,
                    go on to next source pixel */
                 xDestFillCount = 0;
                 
-                r = gameImageBuffer[ pixSrcOrig++ ];
-                g = gameImageBuffer[ pixSrcOrig++ ];
-                b = gameImageBuffer[ pixSrcOrig++ ];
+                r = mx_gameImageBuffer[ pixSrcOrig++ ];
+                g = mx_gameImageBuffer[ pixSrcOrig++ ];
+                b = mx_gameImageBuffer[ pixSrcOrig++ ];
                 }
             
             inRGBBuffer[ pixDest++ ]  =  r;
@@ -1143,6 +1251,342 @@ void minginGame_getScreenPixels( int             inWide,
             }
         }
     }
+
+
+
+
+typedef struct MaxiginSprite {
+        
+        int  w;
+        int  h;
+        /* index into mx_spriteBytes */
+        int  startByte;
+        
+    } MaxiginSprite;
+
+
+
+static  unsigned char  mx_spriteBytes  [ MAXIGIN_MAX_TOTAL_SPRITE_BYTES ];
+static  MaxiginSprite  mx_sprites      [ MAXIGIN_MAX_NUM_SPRITES        ];
+
+static  int            mx_numSpriteBytesUsed  =  0;
+static  int            mx_numSprites          =  0;
+
+
+
+        
+#define  MAXIGIN_TGA_BUFFER_SIZE  1024
+
+static  unsigned char  mx_tgaReadBuffer[ MAXIGIN_TGA_BUFFER_SIZE ];
+
+    
+
+int maxigin_initSprite( const char  *inBulkResourceName ) {
+    
+    int   bulkReadHandle;
+    int   numBytes;
+    int   numRead;
+
+    int   idFieldSize;
+    char  originAtTop;
+    int   w;
+    int   h;
+
+    int   neededSpriteBytes;
+    int   newSpriteHandle;
+
+    if( ! mx_areWeInMaxiginGameInitFunction ) {
+        mingin_log( "Game tried to call maxigin_initSprite "
+                    "from outside of maxiginGame_init\n" );
+        return -1;
+        }
+    
+    if( mx_numSprites >= MAXIGIN_MAX_NUM_SPRITES ) {
+        maxigin_logInt( "Alreaded loaded maximum number of sprites: ",
+                        mx_numSprites );
+        maxigin_logString( "Failed to load sprite: ",
+                           inBulkResourceName );
+        return -1;
+        }
+
+    bulkReadHandle = mingin_startReadBulkData( inBulkResourceName,
+                                               & numBytes );
+
+    if( bulkReadHandle == -1 ) {
+        maxigin_logString( "Failed to open sprite: ",
+                           inBulkResourceName );
+        return -1;
+        }
+
+    if( numBytes < 19 ) {
+        maxigin_logString( "Sprite file too small to contain TGA header: ",
+                           inBulkResourceName );
+        
+        mingin_endReadBulkData( bulkReadHandle );
+        
+        return -1;
+        }
+
+    numRead = mingin_readBulkData( bulkReadHandle,
+                                   19,
+                                   mx_tgaReadBuffer );
+
+    if( numRead != 19 ) {
+        maxigin_logString( "Failed to read TGA header: ",
+                           inBulkResourceName );
+        
+        mingin_endReadBulkData( bulkReadHandle );
+        
+        return -1;
+        }
+
+    if( mx_tgaReadBuffer[2]  != 2       /* image type code */
+        ||
+        mx_tgaReadBuffer[1]  != 0       /* color map type */
+        ||
+        mx_tgaReadBuffer[16] != 32 ) {  /* bits per pixel */
+        
+        maxigin_logString( "Only uncompressed unmapped 32-bit RGBA TGA files "
+                           "can be loaded: ",
+                           inBulkResourceName );
+
+        mingin_endReadBulkData( bulkReadHandle );
+        
+        return -1;
+        }
+
+    idFieldSize = mx_tgaReadBuffer[ 0 ];
+    
+    w = mx_tgaReadBuffer[ 13 ] << 8
+        |
+        mx_tgaReadBuffer[ 12 ];
+
+    h = mx_tgaReadBuffer[ 15 ] << 8
+        |
+        mx_tgaReadBuffer[ 14 ];
+    
+
+    /* image descriptor byte, with bit 5 indicating image vertical flip */
+    originAtTop = mx_tgaReadBuffer[ 17 ]
+                  &
+                  ( 1 << 5 );
+
+    
+    /* now read the id field and ignore it */
+    if( idFieldSize > 0 ) {
+        numRead = mingin_readBulkData( bulkReadHandle,
+                                       idFieldSize,
+                                       mx_tgaReadBuffer );
+
+        if( numRead != idFieldSize ) {
+            maxigin_logString( "Failed to read id field from TGA data: ",
+                               inBulkResourceName );
+
+            mingin_endReadBulkData( bulkReadHandle );
+        
+            return -1;
+            }
+        }
+
+    /* now we're done reading the header
+       image data next */
+    
+    /* TGA pixels are in BGRA order */
+
+    neededSpriteBytes = w * h * 4;
+    
+    if( numBytes - mingin_getBulkDataPosition( bulkReadHandle )
+        < neededSpriteBytes ) {
+
+        maxigin_logString( "Full TGA pixel data truncated: ",
+                           inBulkResourceName );
+
+        mingin_endReadBulkData( bulkReadHandle );
+        
+        return -1;
+        }
+
+    if( neededSpriteBytes + mx_numSpriteBytesUsed
+        >
+        MAXIGIN_MAX_TOTAL_SPRITE_BYTES ) {
+
+        maxigin_logString( "Not enough space in static memory to load sprite: ",
+                           inBulkResourceName );
+
+        maxigin_logInt2( "",
+                         MAXIGIN_MAX_TOTAL_SPRITE_BYTES,
+                         " bytes total, ",
+                         mx_numSpriteBytesUsed,
+                         " bytes used" );
+        
+        mingin_endReadBulkData( bulkReadHandle );
+        
+        return -1;
+        }
+
+    numRead = mingin_readBulkData(
+                  bulkReadHandle,
+                  neededSpriteBytes,
+                  &( mx_spriteBytes[ mx_numSpriteBytesUsed ] ) );
+
+    mingin_endReadBulkData( bulkReadHandle );
+    
+    if( numRead != neededSpriteBytes ) {
+        maxigin_logString( "Failed to read full TGA pixel data: ",
+                           inBulkResourceName );
+        return -1;
+        }
+
+    /* fixme:
+       need to flip BGRA to RGBA
+       need to handle case where not originAtTop
+    */
+    if( ! originAtTop ) {
+
+        }
+    
+
+    newSpriteHandle = mx_numSprites;
+    
+    mx_sprites[ newSpriteHandle ].w          =  w;
+    mx_sprites[ newSpriteHandle ].h          =  h;
+    mx_sprites[ newSpriteHandle ].startByte  =  mx_numSpriteBytesUsed;
+
+    mx_numSprites ++;
+    mx_numSpriteBytesUsed += neededSpriteBytes;
+    
+    return newSpriteHandle;
+    }
+
+
+
+void maxigin_drawSprite( int  inSpriteHandle,
+                         int  inCenterX,
+                         int  inCenterY ) {
+
+    int  startImageX;
+    int  startImageY;
+    int  endImageX;
+    int  endImageY;
+    
+    int  startSpriteX;
+    int  startSpriteY;
+    int  endSpriteX;
+    int  endSpriteY;
+    
+    int  x;
+    int  y;
+    int  imY;
+    
+    int  w;
+    int  h;
+    int  imW;
+    int  imH;
+    
+    int  startByte;
+
+    if( ! mx_areWeInMaxiginGameDrawFunction ) {
+
+        mingin_log( "Game tried to call maxigin_drawSprite "
+                    "from outside of maxiginGame_getNativePixels\n" );
+        return;
+        }
+
+    if( inSpriteHandle == -1 ) {
+        /* trying to draw a sprite that failed to load
+           ignore it */
+        return;
+        }
+    
+    if( inSpriteHandle >= mx_numSprites ) {
+        maxigin_logInt( "Game tried to draw an unknown sprite handle: ",
+                        inSpriteHandle );
+        }
+    
+    w             =  mx_sprites[ inSpriteHandle ].w;
+    h             =  mx_sprites[ inSpriteHandle ].h;
+    startByte     =  mx_sprites[ inSpriteHandle ].startByte;
+
+    imW           =  MAXIGIN_GAME_NATIVE_W;
+    imH           =  MAXIGIN_GAME_NATIVE_H;
+    
+    startImageX   =  inCenterX - w / 2;
+    startImageY   =  inCenterY - h / 2;
+    endImageX     =  startImageX + w;
+    endImageY     =  startImageY + h;
+
+    startSpriteX  =  0;
+    startSpriteY  =  0;
+    endSpriteX    =  w;
+    endSpriteY    =  h;
+
+    /* handle case where sprite is cut off by edge of game image */
+
+    if( startImageX < 0 ) {
+        startSpriteX -= startImageX;
+        startImageX = 0;
+        }
+    if( startImageY < 0 ) {
+        startSpriteY -= startImageY;
+        startImageY = 0;
+        }
+
+    if( endImageX > imW ) {
+        endSpriteX -= ( endImageX - imW );
+        }
+    if( endImageY > imH ) {
+        endSpriteY -= ( endImageY - imH );
+        }
+
+    if( startImageX >= imW
+        ||
+        startImageY >= imH
+        ||
+        endImageX   <=  0
+        ||
+        endImageY   <=  0 ) {
+
+        /* sprite drawn completely out of bounds, affecting no pixels at all */
+        return;
+        }
+    
+    
+    imY = startImageY;
+    
+    for( y = startSpriteY;
+         y < endSpriteY;
+         y ++ ) {
+
+        int spriteByte  =  startByte  +    y * 4 *   w   +  4 * startSpriteX;
+        int imageByte   =                imY * 3 * imW   +  3 * startImageX;
+
+        for( x = startSpriteX;
+             x < endSpriteX;
+             x ++ ) {
+
+            /* fixme */
+            /* blindy copy image in for now, ignoring alpha blending */
+
+            /* RGBA bytes */
+            mx_gameImageBuffer[ imageByte  ++ ] =
+                mx_spriteBytes[ spriteByte ++ ];
+
+            mx_gameImageBuffer[ imageByte  ++ ] =
+                mx_spriteBytes[ spriteByte ++ ];
+
+            mx_gameImageBuffer[ imageByte  ++ ] =
+                mx_spriteBytes[ spriteByte ++ ];
+
+            /* skip the alpha in the sprite
+               dest image has no alpha channel */
+            spriteByte ++;
+            }
+        
+        imY ++;
+        }
+    
+    }
+
 
 
 

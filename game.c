@@ -47,9 +47,10 @@ static int boxDir = 1;
 
 #define  NUM_BULK_FILES  2
 
-static const char *fileNames[ NUM_BULK_FILES ] = { "bigPointer.tga",
-                                                   "bigPointer2.tga" };
+static const char  *fileNames[ NUM_BULK_FILES ] = { "bigPointer.tga",
+                                                    "bigPointer2.tga" };
 
+static int          spriteHandles[ NUM_BULK_FILES ];
 
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
@@ -135,6 +136,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             int  endX    =  bulletPos[ i ].x + 2;
             int  endY    =  bulletPos[ i ].y + 2;
 
+            maxigin_drawSprite( spriteHandles[ 0 ],
+                                bulletPos[ i ].x,
+                                bulletPos[ i ].y );
+            
             for( y = startY;
                  y < endY;
                  y ++ ) {
@@ -407,20 +412,14 @@ void maxiginGame_init( void ) {
     for( i = 0;
          i < NUM_BULK_FILES;
          i ++ ) {
-        
-        int  bulkHandle;
-        int  bulkSize;
-    
-        bulkHandle = mingin_startReadBulkData( fileNames[ i ],
-                                               & bulkSize );
 
-        if( bulkHandle == -1 ) {
-            mingin_log( "Failed to open bulk data for reading: " );
+        spriteHandles[ i ] = maxigin_initSprite( fileNames[ i ] );
+
+
+        if( spriteHandles[ i]  == -1 ) {
+            mingin_log( "Failed to load sprite: " );
             mingin_log( fileNames[ i ] );
             mingin_log( "\n" );
-            }
-        else {
-            mingin_endReadBulkData( bulkHandle );
             }
         }
     

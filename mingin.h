@@ -3328,7 +3328,11 @@ static void mn_setupLinuxGamepadMaps( void ) {
 
             mn_jsStickThresholdToButtonThresholds[ i ][ j ]  =  0;
 
+            }
 
+        for( j = 0;
+             j < MGN_NUM_STICKS;
+             j ++ ) {
             
             /* default to no sticks being present */
             mn_stickPresent[ i ][ j ] = 0;

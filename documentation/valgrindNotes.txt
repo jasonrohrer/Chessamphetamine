@@ -1,0 +1,22 @@
+
+
+To watch an arbitrary memory region using gdb and valgrind:
+
+For example, to watch statically allocated array:
+
+static  unsigned char  staticArray[ 4096 ];
+
+  valgrind --tool=memcheck --vgdb=yes --vgdb-error=0 ./Chessamphetamine
+
+In separate terminal:
+
+  gdb ./Chessamphetamine
+
+Inside GDB:
+
+  target remote | /usr/bin/vgdb
+
+Set breakpoint at point where staticArray should no longer be written, then:
+
+  watch staticArray
+

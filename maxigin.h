@@ -1294,7 +1294,10 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
 
     int   neededSpriteBytes;
     int   newSpriteHandle;
-
+    int   b;
+    int   startByte;
+    
+    
     if( ! mx_areWeInMaxiginGameInitFunction ) {
         mingin_log( "Game tried to call maxigin_initSprite "
                     "from outside of maxiginGame_init\n" );
@@ -1318,7 +1321,7 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
         return -1;
         }
 
-    if( numBytes < 19 ) {
+    if( numBytes < 18 ) {
         maxigin_logString( "Sprite file too small to contain TGA header: ",
                            inBulkResourceName );
         
@@ -1328,10 +1331,10 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
         }
 
     numRead = mingin_readBulkData( bulkReadHandle,
-                                   19,
+                                   18,
                                    mx_tgaReadBuffer );
 
-    if( numRead != 19 ) {
+    if( numRead != 18 ) {
         maxigin_logString( "Failed to read TGA header: ",
                            inBulkResourceName );
         
@@ -1437,15 +1440,6 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
         return -1;
         }
 
-    /* fixme:
-       need to flip BGRA to RGBA
-       need to handle case where not originAtTop
-    */
-    if( ! originAtTop ) {
-
-        }
-    
-
     newSpriteHandle = mx_numSprites;
     
     mx_sprites[ newSpriteHandle ].w          =  w;
@@ -1454,6 +1448,33 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
 
     mx_numSprites ++;
     mx_numSpriteBytesUsed += neededSpriteBytes;
+
+
+    /* now do BGRA to RGBA conversion */
+
+    startByte = mx_sprites[ newSpriteHandle ].startByte;
+    b = startByte;
+
+    while( b < startByte + neededSpriteBytes ) {
+        
+        unsigned char  blue  =  mx_spriteBytes[ b ];
+        
+        /* swap red and blue bytes */
+        mx_spriteBytes[ b ] = mx_spriteBytes[ b + 2 ];
+
+        mx_spriteBytes[ b + 2 ] = blue;
+
+        b += 4;
+        }
+
+   
+    /* fixme:
+       need to handle case where not originAtTop
+    */
+    if( ! originAtTop ) {
+
+        }
+     
     
     return newSpriteHandle;
     }

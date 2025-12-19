@@ -2556,9 +2556,21 @@ static int mn_getGamepadIndex( const char  *inIDString );
 static void mn_xSetFullscreen( Display  *inXDisplay,
                                Window    inXWindow,
                                char      inToggle ) {
-    XEvent  ev;
-    Atom    atom;
+    XEvent          ev;
+    Atom            atom;
 
+    unsigned char  *p      =  (unsigned char *)( &ev );
+    int             i;
+
+    /* zero the XEvent structure that we're going to use */
+    for( i = 0;
+         i < (int)sizeof( ev );
+         i++ ) {
+        
+        p[ i ] = 0;
+        }
+        
+    
     ev.type                  =  ClientMessage;
     ev.xclient.window        =  inXWindow;
     ev.xclient.message_type  =  XInternAtom( inXDisplay,
@@ -3489,6 +3501,14 @@ static int mn_openActiveGamepad( void ) {
     int   i             =  0;
     int   result;
 
+    
+    /* init name buffer to avoid valgrind errors */
+    for( i = 0;
+         i < 128;
+         i ++ ) {
+        name[ i ] = '\0';
+        }
+    
     /* whenever we open or re-open a gamepad, zero out our stick positions */
     for( i = 0;
          i < MGN_NUM_STICKS;

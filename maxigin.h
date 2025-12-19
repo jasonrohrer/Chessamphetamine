@@ -1588,16 +1588,59 @@ void maxigin_drawSprite( int  inSpriteHandle,
             /* fixme */
             /* blindy copy image in for now, ignoring alpha blending */
 
-            /* RGBA bytes */
-            mx_gameImageBuffer[ imageByte  ++ ] =
-                mx_spriteBytes[ spriteByte ++ ];
+            unsigned char  a  =  mx_spriteBytes[ spriteByte + 3 ];
+            
+            if( a == 255 ) {
+                /* RGBA bytes */
+                mx_gameImageBuffer[ imageByte  ++ ] =
+                    mx_spriteBytes[ spriteByte ++ ];
 
-            mx_gameImageBuffer[ imageByte  ++ ] =
-                mx_spriteBytes[ spriteByte ++ ];
+                mx_gameImageBuffer[ imageByte  ++ ] =
+                    mx_spriteBytes[ spriteByte ++ ];
 
-            mx_gameImageBuffer[ imageByte  ++ ] =
-                mx_spriteBytes[ spriteByte ++ ];
+                mx_gameImageBuffer[ imageByte  ++ ] =
+                    mx_spriteBytes[ spriteByte ++ ];
+                }
+            else {
+                /* alpha blending */
 
+                /* red */
+                mx_gameImageBuffer[ imageByte ] =
+                    (unsigned char)( 
+                        ( mx_gameImageBuffer[ imageByte ] * ( 255 - a )
+                          +
+                          mx_spriteBytes[ spriteByte ]    * a )
+                        /
+                        255 );
+                
+                imageByte  ++;
+                spriteByte ++;
+
+                /* green */
+                mx_gameImageBuffer[ imageByte ] =
+                    (unsigned char)( 
+                        ( mx_gameImageBuffer[ imageByte ] * ( 255 - a )
+                          +
+                          mx_spriteBytes[ spriteByte ]    * a )
+                        /
+                        255 );
+                
+                imageByte  ++;
+                spriteByte ++;
+
+                /* blue */
+                mx_gameImageBuffer[ imageByte ] =
+                    (unsigned char)( 
+                        ( mx_gameImageBuffer[ imageByte ] * ( 255 - a )
+                          +
+                          mx_spriteBytes[ spriteByte ]    * a )
+                        /
+                        255 );
+                
+                imageByte  ++;
+                spriteByte ++;
+                }
+            
             /* skip the alpha in the sprite
                dest image has no alpha channel */
             spriteByte ++;

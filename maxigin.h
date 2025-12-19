@@ -1480,13 +1480,33 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
 
         b += 4;
         }
-
-   
-    /* fixme:
-       need to handle case where not originAtTop
-    */
+    
     if( ! originAtTop ) {
 
+        int  stopRow  =  h / 2;
+        int  r;
+
+        for( r = 0;
+             r < stopRow;
+             r ++ ) {
+
+            int  otherRow        =  ( h - 1 ) - r;
+            int  rStartByte      =  r        * w * 4;
+            int  otherStartByte  =  otherRow * w * 4;
+            int  rowBytes        =  w * 4;
+
+            for( b = 0;
+                 b < rowBytes;
+                 b ++ ) {
+
+                unsigned char  temp  =  mx_spriteBytes[ rStartByte + b ];
+
+                mx_spriteBytes    [ rStartByte     + b ] =
+                    mx_spriteBytes[ otherStartByte + b ];
+                
+                mx_spriteBytes[ otherStartByte + b ] = temp;
+                }
+            }
         }
      
     

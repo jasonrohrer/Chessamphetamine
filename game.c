@@ -105,11 +105,20 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     /* green dot at center of box for sanity check */
     if( 1 ) {
-        int pix = boxPosY * MAXIGIN_GAME_NATIVE_W * 3 + boxPosX * 3;
+        if( boxPosY >= 0
+            &&
+            boxPosY < MAXIGIN_GAME_NATIVE_H
+            &&
+            boxPosX >= 0
+            &&
+            boxPosX < MAXIGIN_GAME_NATIVE_W ) {
+            
+            int pix = boxPosY * MAXIGIN_GAME_NATIVE_W * 3 + boxPosX * 3;
 
-        inRGBBuffer[ pix++ ] = 0;
-        inRGBBuffer[ pix++ ] = 255;
-        inRGBBuffer[ pix++ ] = 0;
+            inRGBBuffer[ pix++ ] = 0;
+            inRGBBuffer[ pix++ ] = 255;
+            inRGBBuffer[ pix++ ] = 0;
+            }
         }
     
     

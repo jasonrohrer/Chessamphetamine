@@ -476,6 +476,20 @@ int maxigin_initSprite( const char  *inBulkResourceName );
 
 
 /*
+  Toggles additive blending for future maxigin_draw calls.
+
+  Parameters:
+
+      inAdditiveOn   1 to turn additive blending on
+                     0 to turn additive blending off
+                     
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawToggleAdditive( char  inAdditiveOn );
+
+
+    
+/*
   Draws a sprite into the game's native pixel buffer.
 
   Parameters:
@@ -1481,6 +1495,16 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
 
 
 
+static  char  mx_additiveBlend  =  0;
+
+
+
+void maxigin_drawToggleAdditive( char  inAdditiveOn ) {
+    mx_additiveBlend = inAdditiveOn;
+    }
+
+
+
 void maxigin_drawSprite( int  inSpriteHandle,
                          int  inCenterX,
                          int  inCenterY ) {
@@ -1581,69 +1605,172 @@ void maxigin_drawSprite( int  inSpriteHandle,
         int spriteByte  =  startByte  +    y * 4 *   w   +  4 * startSpriteX;
         int imageByte   =                imY * 3 * imW   +  3 * startImageX;
 
-        for( x = startSpriteX;
-             x < endSpriteX;
-             x ++ ) {
+        if( mx_additiveBlend ) {
+            /* different row loop for additive blending */
 
-            /* fixme */
-            /* blindy copy image in for now, ignoring alpha blending */
-
-            unsigned char  a  =  mx_spriteBytes[ spriteByte + 3 ];
+            for( x = startSpriteX;
+                 x < endSpriteX;
+                 x ++ ) {
+                
+                unsigned char  a  =  mx_spriteBytes[ spriteByte + 3 ];
             
-            if( a == 255 ) {
-                /* RGBA bytes */
-                mx_gameImageBuffer[ imageByte  ++ ] =
-                    mx_spriteBytes[ spriteByte ++ ];
+                if( a == 255 ) {
 
-                mx_gameImageBuffer[ imageByte  ++ ] =
-                    mx_spriteBytes[ spriteByte ++ ];
+                    int  v;
 
-                mx_gameImageBuffer[ imageByte  ++ ] =
-                    mx_spriteBytes[ spriteByte ++ ];
-                }
-            else {
-                /* alpha blending */
+                    /* red */
+                    v = mx_gameImageBuffer[ imageByte  ]
+                        +
+                        mx_spriteBytes    [ spriteByte ];
 
-                /* red */
-                mx_gameImageBuffer[ imageByte ] =
-                    (unsigned char)( 
-                        ( mx_gameImageBuffer[ imageByte ] * ( 255 - a )
-                          +
-                          mx_spriteBytes[ spriteByte ]    * a )
-                        /
-                        255 );
+                    if( v > 255 ) {
+                        v = 255;
+                        }
+                    mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
+
+                    imageByte  ++;
+                    spriteByte ++;
+
+                    /* green */
+                    v = mx_gameImageBuffer[ imageByte  ]
+                        +
+                        mx_spriteBytes    [ spriteByte ];
+
+                    if( v > 255 ) {
+                        v = 255;
+                        }
+                    mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
+
+                    imageByte  ++;
+                    spriteByte ++;
+
+                    /* blue */
+                    v = mx_gameImageBuffer[ imageByte  ]
+                        +
+                        mx_spriteBytes    [ spriteByte ];
+
+                    if( v > 255 ) {
+                        v = 255;
+                        }
+                    mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
+
+                    imageByte  ++;
+                    spriteByte ++;
+                    }
+                else {
+                    /* alpha blending */
+
+                    int  v;
+                    
+                    /* red */
+                    v = mx_gameImageBuffer[ imageByte ]
+                        +
+                        ( mx_spriteBytes[ spriteByte ] * a ) / 255;
+                    
+                    if( v > 255 ) {
+                        v = 255;
+                        }
+                    mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
                 
-                imageByte  ++;
-                spriteByte ++;
+                    imageByte  ++;
+                    spriteByte ++;
 
-                /* green */
-                mx_gameImageBuffer[ imageByte ] =
-                    (unsigned char)( 
-                        ( mx_gameImageBuffer[ imageByte ] * ( 255 - a )
-                          +
-                          mx_spriteBytes[ spriteByte ]    * a )
-                        /
-                        255 );
+                    /* green */
+                    v = mx_gameImageBuffer[ imageByte ]
+                        +
+                        ( mx_spriteBytes[ spriteByte ] * a ) / 255;
+                    
+                    if( v > 255 ) {
+                        v = 255;
+                        }
+                    mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
                 
-                imageByte  ++;
-                spriteByte ++;
+                    imageByte  ++;
+                    spriteByte ++;
 
-                /* blue */
-                mx_gameImageBuffer[ imageByte ] =
-                    (unsigned char)( 
-                        ( mx_gameImageBuffer[ imageByte ] * ( 255 - a )
-                          +
-                          mx_spriteBytes[ spriteByte ]    * a )
-                        /
-                        255 );
+                    /* blue */
+                    v = mx_gameImageBuffer[ imageByte ]
+                        +
+                        ( mx_spriteBytes[ spriteByte ] * a ) / 255;
+                    
+                    if( v > 255 ) {
+                        v = 255;
+                        }
+                    mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
                 
-                imageByte  ++;
-                spriteByte ++;
-                }
+                    imageByte  ++;
+                    spriteByte ++;
+                    }
             
-            /* skip the alpha in the sprite
-               dest image has no alpha channel */
-            spriteByte ++;
+                /* skip the alpha in the sprite
+                   dest image has no alpha channel */
+                spriteByte ++;
+                }
+            }
+        else {
+            /* non-additive blending row loop */
+            
+            for( x = startSpriteX;
+                 x < endSpriteX;
+                 x ++ ) {
+            
+                unsigned char  a  =  mx_spriteBytes[ spriteByte + 3 ];
+            
+                if( a == 255 ) {
+                    /* RGBA bytes */
+                    mx_gameImageBuffer[ imageByte  ++ ] =
+                        mx_spriteBytes[ spriteByte ++ ];
+
+                    mx_gameImageBuffer[ imageByte  ++ ] =
+                        mx_spriteBytes[ spriteByte ++ ];
+
+                    mx_gameImageBuffer[ imageByte  ++ ] =
+                        mx_spriteBytes[ spriteByte ++ ];
+                    }
+                else {
+                    /* alpha blending */
+
+                    /* red */
+                    mx_gameImageBuffer[ imageByte ] =
+                        (unsigned char)( 
+                            ( mx_gameImageBuffer[ imageByte ] * ( 255 - a )
+                              +
+                              mx_spriteBytes[ spriteByte ]    * a )
+                            /
+                            255 );
+                
+                    imageByte  ++;
+                    spriteByte ++;
+
+                    /* green */
+                    mx_gameImageBuffer[ imageByte ] =
+                        (unsigned char)( 
+                            ( mx_gameImageBuffer[ imageByte ] * ( 255 - a )
+                              +
+                              mx_spriteBytes[ spriteByte ]    * a )
+                            /
+                            255 );
+                
+                    imageByte  ++;
+                    spriteByte ++;
+
+                    /* blue */
+                    mx_gameImageBuffer[ imageByte ] =
+                        (unsigned char)( 
+                            ( mx_gameImageBuffer[ imageByte ] * ( 255 - a )
+                              +
+                              mx_spriteBytes[ spriteByte ]    * a )
+                            /
+                            255 );
+                
+                    imageByte  ++;
+                    spriteByte ++;
+                    }
+            
+                /* skip the alpha in the sprite
+                   dest image has no alpha channel */
+                spriteByte ++;
+                }
             }
         
         imY ++;

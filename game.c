@@ -45,9 +45,11 @@ static int boxVPerSecond = 120;
 static int boxDir = 1;
 
 
-#define  NUM_BULK_FILES  2
+#define  NUM_BULK_FILES  4
 
-static const char  *fileNames[ NUM_BULK_FILES ] = { "bigPointer.tga",
+static const char  *fileNames[ NUM_BULK_FILES ] = { "bullet.tga",
+                                                    "bulletGlow.tga",
+                                                    "bigPointer.tga",
                                                     "bigPointer2.tga" };
 
 static int          spriteHandles[ NUM_BULK_FILES ];
@@ -63,13 +65,13 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     int  y;
     int  i;
     
-    /* white background */
+    /* black background */
     for( p = 0; p<numPixels; p++ ) {
         int pix = p * 3;
 
-        inRGBBuffer[pix] = 255;
-        inRGBBuffer[pix + 1] = 255;
-        inRGBBuffer[pix + 2] = 255;
+        inRGBBuffer[pix] = 0;
+        inRGBBuffer[pix + 1] = 0;
+        inRGBBuffer[pix + 2] = 0;
         }
 
     /* now draw black box */
@@ -124,6 +126,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             }
         }
 
+    maxigin_drawToggleAdditive( 1 );
     
     for( i = 0;
          i < MAX_NUM_BULLETS;
@@ -139,7 +142,15 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             maxigin_drawSprite( spriteHandles[ 0 ],
                                 bulletPos[ i ].x,
                                 bulletPos[ i ].y );
+            /* double glow */
+            maxigin_drawSprite( spriteHandles[ 1 ],
+                                bulletPos[ i ].x,
+                                bulletPos[ i ].y );
+            maxigin_drawSprite( spriteHandles[ 1 ],
+                                bulletPos[ i ].x,
+                                bulletPos[ i ].y );
             
+            if( 0 )
             for( y = startY;
                  y < endY;
                  y ++ ) {
@@ -167,7 +178,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                     }
                 }
             }
-        } 
+        }
+
+    maxigin_drawToggleAdditive( 0 );
+    
     }
 
 

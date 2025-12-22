@@ -1268,13 +1268,19 @@ void minginGame_getScreenPixels( int             inWide,
 
 
 
+#define  MAXIGIN_SPRITE_MAX_BULK_NAME_LENGTH  64
 
 typedef struct MaxiginSprite {
         
-        int  w;
-        int  h;
+        int   w;
+        int   h;
+        
         /* index into mx_spriteBytes */
-        int  startByte;
+        int   startByte;
+
+        char  bulkResourceName[ MAXIGIN_SPRITE_MAX_BULK_NAME_LENGTH ];
+
+        char  pendingChange;
         
     } MaxiginSprite;
 
@@ -1295,8 +1301,9 @@ static  unsigned char  mx_tgaReadBuffer[ MAXIGIN_TGA_BUFFER_SIZE ];
 
     
 
-int maxigin_initSprite( const char  *inBulkResourceName ) {
-    
+
+static int mx_reloadSprite( const char  *inBulkResourceName ) {
+
     int   bulkReadHandle;
     int   numBytes;
     int   numRead;
@@ -1310,15 +1317,34 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
     int   newSpriteHandle;
     int   b;
     int   startByte;
+
+    char  makingNewSprite     =  0;
     
-    
-    if( ! mx_areWeInMaxiginGameInitFunction ) {
-        mingin_log( "Game tried to call maxigin_initSprite "
-                    "from outside of maxiginGame_init\n" );
-        return -1;
+
+
+    /* search for matching existing record
+       this might be a true reload */
+
+    for( newSpriteHandle = 0;
+         newSpriteHandle < mx_numSprites;
+         newSpriteHandle ++ ) {
+
+        if( maxigin_stringsEqual(
+                mx_sprites[ newSpriteHandle ].bulkResourceName,
+                inBulkResourceName ) ) {
+            break;
+            }
+        }
+
+    if( newSpriteHandle == mx_numSprites ) {
+        makingNewSprite = 1;
         }
     
-    if( mx_numSprites >= MAXIGIN_MAX_NUM_SPRITES ) {
+    
+    if( makingNewSprite
+        &&
+        mx_numSprites >= MAXIGIN_MAX_NUM_SPRITES ) {
+        
         maxigin_logInt( "Alreaded loaded maximum number of sprites: ",
                         mx_numSprites );
         maxigin_logString( "Failed to load sprite: ",
@@ -1423,7 +1449,70 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
         return -1;
         }
 
-    if( neededSpriteBytes + mx_numSpriteBytesUsed
+
+    
+    if( ! makingNewSprite
+        &&
+        ( mx_sprites[ newSpriteHandle ].w != w
+          ||
+          mx_sprites[ newSpriteHandle ].h != h ) ) {
+
+        /* mismatch with existing record, sprite changing size*/
+        
+        int  s;
+        int  oldNeededSpriteBytes  =  mx_sprites[ newSpriteHandle ].w *
+                                      mx_sprites[ newSpriteHandle ].h * 4;
+
+        if( neededSpriteBytes > oldNeededSpriteBytes ) {
+            /* reloaded sprite getting bigger */
+            if( neededSpriteBytes + mx_numSpriteBytesUsed - oldNeededSpriteBytes
+                >
+                MAXIGIN_MAX_TOTAL_SPRITE_BYTES ) {
+
+                maxigin_logString(
+                    "Not enough space in static memory to reload sprite that "
+                    "is increasing in size: ",
+                    inBulkResourceName );
+                
+                mingin_endReadBulkData( bulkReadHandle );
+        
+                return -1;
+                }
+            }
+
+        /* collapse memory location of existing sprite,
+           moving all subsequent sprite data back */
+
+        for( b = mx_sprites[ newSpriteHandle ].startByte;
+             b < mx_sprites[ newSpriteHandle ].startByte + oldNeededSpriteBytes;
+             b ++ ) {
+
+            mx_spriteBytes[ b ] = mx_spriteBytes[ b + oldNeededSpriteBytes ];
+            }
+
+        /* update all sprites that pointed into the now-moved sprite data */
+        for( s = 0;
+             s < mx_numSprites;
+             s ++ ) {
+            
+            if( mx_sprites[ s ].startByte
+                > 
+                mx_sprites[ newSpriteHandle ].startByte ) {
+
+                mx_sprites[ s ].startByte -= oldNeededSpriteBytes;
+                }
+            }
+        
+        makingNewSprite = 1;
+        
+        mx_numSpriteBytesUsed -= oldNeededSpriteBytes;
+        }
+
+    
+
+    if( makingNewSprite
+        &&
+        neededSpriteBytes + mx_numSpriteBytesUsed
         >
         MAXIGIN_MAX_TOTAL_SPRITE_BYTES ) {
 
@@ -1441,27 +1530,67 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
         return -1;
         }
 
-    numRead = mingin_readBulkData(
-                  bulkReadHandle,
-                  neededSpriteBytes,
-                  &( mx_spriteBytes[ mx_numSpriteBytesUsed ] ) );
+    if( makingNewSprite ) {
+        
+        /* read into end of sprite bytes */
+        
+        numRead = mingin_readBulkData(
+                      bulkReadHandle,
+                      neededSpriteBytes,
+                      &( mx_spriteBytes[ mx_numSpriteBytesUsed ] ) );
+        }
+    else {
+        
+        /* read into region pointed to by existing sprite record */
+        
+        startByte = mx_sprites[ newSpriteHandle ].startByte;
+        
+        numRead = mingin_readBulkData(
+                      bulkReadHandle,
+                      neededSpriteBytes,
+                      &( mx_spriteBytes[ startByte ] ) );
+        }
 
+    
     mingin_endReadBulkData( bulkReadHandle );
+
     
     if( numRead != neededSpriteBytes ) {
         maxigin_logString( "Failed to read full TGA pixel data: ",
                            inBulkResourceName );
         return -1;
         }
-
-    newSpriteHandle = mx_numSprites;
+    
     
     mx_sprites[ newSpriteHandle ].w          =  w;
     mx_sprites[ newSpriteHandle ].h          =  h;
-    mx_sprites[ newSpriteHandle ].startByte  =  mx_numSpriteBytesUsed;
 
-    mx_numSprites ++;
-    mx_numSpriteBytesUsed += neededSpriteBytes;
+    if( makingNewSprite ) {
+        mx_sprites[ newSpriteHandle ].startByte  =  mx_numSpriteBytesUsed;
+        mx_numSpriteBytesUsed += neededSpriteBytes;
+        }
+
+    /* copy bulk resource name into struct */
+    b = 0;
+    while( inBulkResourceName[ b ] != '\0'
+           &&
+           b < MAXIGIN_SPRITE_MAX_BULK_NAME_LENGTH - 1 ) {
+        
+        mx_sprites[ newSpriteHandle ].bulkResourceName[ b ] =
+                                    inBulkResourceName[ b ];
+        b++;
+        }
+    mx_sprites[ newSpriteHandle ].bulkResourceName[ b ] = '\0';
+
+    /* successfully loaded this sprite
+       change to data no longer pending */
+    mx_sprites[ newSpriteHandle ].pendingChange = 0;
+    
+
+    if( newSpriteHandle == mx_numSprites ) {
+        mx_numSprites ++;
+        }
+
 
 
     /* now do BGRA to RGBA conversion */
@@ -1512,6 +1641,53 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
     
     return newSpriteHandle;
     }
+
+
+
+int maxigin_initSprite( const char  *inBulkResourceName ) {
+
+    if( ! mx_areWeInMaxiginGameInitFunction ) {
+        mingin_log( "Game tried to call maxigin_initSprite "
+                    "from outside of maxiginGame_init\n" );
+        return -1;
+        }
+
+    return mx_reloadSprite( inBulkResourceName );
+    }
+
+
+
+static void mx_checkSpritesNeedReload( void ) {
+
+    int  s;
+
+    for( s = 0;
+         s < mx_numSprites;
+         s ++ ) {
+
+        if( mx_sprites[ s ].pendingChange
+            ||
+            mingin_getBulkDataChanged( mx_sprites[ s ].bulkResourceName ) ) {
+
+            /* we see a bulk data change for this sprite
+               however, the bulk data might be in the middle of being
+               written by an external editor, or may contain invalid
+               data for other reasons.
+               If that's the case, truncated TGA data will be found
+               and skipped, and the old sprite will remain in place.
+               But keep trying to reload it */
+            mx_sprites[ s ].pendingChange = 1;
+            
+            mx_reloadSprite( mx_sprites[ s ].bulkResourceName );
+            }
+        }
+    }
+
+
+
+    
+    
+
 
 
 
@@ -2041,6 +2217,9 @@ void minginGame_step( char  inFinalStep ) {
                 }
             }
         }
+
+
+    mx_checkSpritesNeedReload();
     
 
     if( ! mx_playbackSpeedStep() ) {

@@ -1794,6 +1794,7 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 #include <sys/ioctl.h>
 #include <sys/ioctl.h>
 #include <linux/joystick.h>
+#include <sys/inotify.h>
 
 
 
@@ -1810,6 +1811,8 @@ static  int             mn_screenRefreshRate    =  0;
 static  struct timeval  mn_lastRedrawTime;
 static  const char     *mn_settingsDirName      =  "settings";
 static  const char     *mn_bulkDataDirName      =  "data";
+static  int             mn_bulkInotifyFD        =  -1;
+
 
 
 static void mn_getMonitorSize( Display  *inXDisplay,
@@ -2880,10 +2883,35 @@ int main( void ) {
     int   b;
     char  currentlyFullscreen  =  0;
     int   gamepadFD            =  -1;
+
     
     mn_xFullscreen = currentlyFullscreen;
 
     mingin_log( "Linux mingin platform starting up\n" );
+
+
+    /* setup inotify watch for bulk data directory */
+    mn_bulkInotifyFD = inotify_init1( IN_NONBLOCK );
+    
+    if( mn_bulkInotifyFD < 0 ) {
+        mingin_log( "Failed to initialize inotify for watching "
+                    "bulk data changes.\n" );
+        }
+    else {
+        int  inotifyWD  =  inotify_add_watch(
+                               mn_bulkInotifyFD,
+                               mn_bulkDataDirName,
+                               IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE );
+        
+        if( inotifyWD < 0 ) {
+            mingin_log( "Failed to add bulk data dir to inotify for watching "
+                        "changes.\n" );
+
+            close( mn_bulkInotifyFD );
+            mn_bulkInotifyFD = -1;
+            }
+        }
+
     
     minginInternal_init();
 
@@ -2902,6 +2930,11 @@ int main( void ) {
 
     if( ! mn_openXWindow( & mn_XSetup ) ) {
         mingin_log( "Opening X Window failed\n" );
+
+        if( mn_bulkInotifyFD != -1 ) {
+            close( mn_bulkInotifyFD );
+            mn_bulkInotifyFD = -1;
+            }
         return 1;
         }
 
@@ -3137,6 +3170,10 @@ int main( void ) {
                 if( ! mn_openXWindow( & mn_XSetup ) ) {
                     mingin_log( "Failed to re-open X Window after toggling "
                                 "fullscreen mode\n" );
+                    if( mn_bulkInotifyFD != -1 ) {
+                        close( mn_bulkInotifyFD );
+                        mn_bulkInotifyFD = -1;
+                        }
                     return 1;
                     }
                 }
@@ -3167,6 +3204,11 @@ int main( void ) {
     if( gamepadFD != -1 ) {
         close( gamepadFD );
         gamepadFD = -1;
+        }
+
+    if( mn_bulkInotifyFD != -1 ) {        
+        close( mn_bulkInotifyFD );
+        mn_bulkInotifyFD = -1;
         }
     
     return 1;
@@ -3998,11 +4040,49 @@ void mingin_endReadBulkData( int  inBulkDataHandle ) {
 
 char mingin_getBulkDataChanged( const char  *inBulkName ) {
 
-    int          i;
-    struct stat  fileStat;
-    const char  *path       =  mn_linuxGetFilePath( mn_bulkDataDirName,
-                                                    inBulkName );
+    int           i;
+    struct stat   fileStat;
+    const char   *path       =  mn_linuxGetFilePath( mn_bulkDataDirName,
+                                                     inBulkName );
     
+    if( 0 ) {
+        
+        struct inotify_event  ev;
+        ssize_t               numRead;
+        char                  readEvent  =  1;
+    
+
+        if( mn_bulkInotifyFD == -1 ) {
+            return 0;
+            }
+
+        /* keep reading until we read all events that are ready*/
+        while( readEvent ) {
+        
+            numRead = read( mn_bulkInotifyFD,
+                            & ev,
+                            sizeof( ev ) );
+
+        
+            if( numRead == -1
+                &&
+                errno   == EAGAIN ) {
+            
+                /* no events left, would block */
+                return 0;
+                }
+               
+            if( numRead == -1 ) {
+                mingin_log( "Failed to read inotify event for "
+                            "bulk data directory.\n" );
+                close( mn_bulkInotifyFD );
+                mn_bulkInotifyFD = 1;
+                return 0;
+                }
+            }
+        }
+    
+ 
     if( stat( path,
               & fileStat ) != 0 ) {
 

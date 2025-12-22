@@ -1281,6 +1281,10 @@ typedef struct MaxiginSprite {
         char  bulkResourceName[ MAXIGIN_SPRITE_MAX_BULK_NAME_LENGTH ];
 
         char  pendingChange;
+
+        int   retryCount;
+
+        int   stepsUntilNextRetry;
         
     } MaxiginSprite;
 
@@ -1301,8 +1305,9 @@ static  unsigned char  mx_tgaReadBuffer[ MAXIGIN_TGA_BUFFER_SIZE ];
 
     
 
-
-static int mx_reloadSprite( const char  *inBulkResourceName ) {
+/* inReloadHandle is -1 if loading a new sprite */
+static int mx_reloadSprite( const char  *inBulkResourceName,
+                            int          inReloadHandle ) {
 
     int   bulkReadHandle;
     int   numBytes;
@@ -1319,36 +1324,28 @@ static int mx_reloadSprite( const char  *inBulkResourceName ) {
     int   startByte;
 
     char  makingNewSprite     =  0;
+
     
+    newSpriteHandle = inReloadHandle;
 
-
-    /* search for matching existing record
-       this might be a true reload */
-
-    for( newSpriteHandle = 0;
-         newSpriteHandle < mx_numSprites;
-         newSpriteHandle ++ ) {
-
-        if( maxigin_stringsEqual(
-                mx_sprites[ newSpriteHandle ].bulkResourceName,
-                inBulkResourceName ) ) {
-            break;
-            }
-        }
-
-    if( newSpriteHandle == mx_numSprites ) {
+    if( newSpriteHandle == -1 ) {
         makingNewSprite = 1;
+        newSpriteHandle = mx_numSprites;
         }
     
     
     if( makingNewSprite
         &&
         mx_numSprites >= MAXIGIN_MAX_NUM_SPRITES ) {
-        
-        maxigin_logInt( "Alreaded loaded maximum number of sprites: ",
-                        mx_numSprites );
-        maxigin_logString( "Failed to load sprite: ",
-                           inBulkResourceName );
+
+        if( inReloadHandle == -1 ) {
+            /* suppress error messages when reloading */
+            
+            maxigin_logInt( "Alreaded loaded maximum number of sprites: ",
+                            mx_numSprites );
+            maxigin_logString( "Failed to load sprite: ",
+                               inBulkResourceName );
+            }
         return -1;
         }
 
@@ -1356,14 +1353,18 @@ static int mx_reloadSprite( const char  *inBulkResourceName ) {
                                                & numBytes );
 
     if( bulkReadHandle == -1 ) {
-        maxigin_logString( "Failed to open sprite: ",
-                           inBulkResourceName );
+        if( inReloadHandle == -1 ) {
+            maxigin_logString( "Failed to open sprite: ",
+                               inBulkResourceName );
+            }
         return -1;
         }
 
     if( numBytes < 18 ) {
-        maxigin_logString( "Sprite file too small to contain TGA header: ",
-                           inBulkResourceName );
+        if( inReloadHandle == -1 ) {
+            maxigin_logString( "Sprite file too small to contain TGA header: ",
+                               inBulkResourceName );
+            }
         
         mingin_endReadBulkData( bulkReadHandle );
         
@@ -1375,8 +1376,10 @@ static int mx_reloadSprite( const char  *inBulkResourceName ) {
                                    mx_tgaReadBuffer );
 
     if( numRead != 18 ) {
-        maxigin_logString( "Failed to read TGA header: ",
-                           inBulkResourceName );
+        if( inReloadHandle == -1 ) {
+            maxigin_logString( "Failed to read TGA header: ",
+                               inBulkResourceName );
+            }
         
         mingin_endReadBulkData( bulkReadHandle );
         
@@ -1388,10 +1391,13 @@ static int mx_reloadSprite( const char  *inBulkResourceName ) {
         mx_tgaReadBuffer[1]  != 0       /* color map type */
         ||
         mx_tgaReadBuffer[16] != 32 ) {  /* bits per pixel */
-        
-        maxigin_logString( "Only uncompressed unmapped 32-bit RGBA TGA files "
-                           "can be loaded: ",
-                           inBulkResourceName );
+
+        if( inReloadHandle == -1 ) {
+            maxigin_logString(
+                "Only uncompressed unmapped 32-bit RGBA TGA files "
+                "can be loaded: ",
+                inBulkResourceName );
+            }
 
         mingin_endReadBulkData( bulkReadHandle );
         
@@ -1422,8 +1428,10 @@ static int mx_reloadSprite( const char  *inBulkResourceName ) {
                                        mx_tgaReadBuffer );
 
         if( numRead != idFieldSize ) {
-            maxigin_logString( "Failed to read id field from TGA data: ",
-                               inBulkResourceName );
+            if( inReloadHandle == -1 ) {
+                maxigin_logString( "Failed to read id field from TGA data: ",
+                                   inBulkResourceName );
+                }
 
             mingin_endReadBulkData( bulkReadHandle );
         
@@ -1441,8 +1449,10 @@ static int mx_reloadSprite( const char  *inBulkResourceName ) {
     if( numBytes - mingin_getBulkDataPosition( bulkReadHandle )
         < neededSpriteBytes ) {
 
-        maxigin_logString( "Full TGA pixel data truncated: ",
-                           inBulkResourceName );
+        if( inReloadHandle == -1 ) {
+            maxigin_logString( "Full TGA pixel data truncated: ",
+                               inBulkResourceName );
+            }
 
         mingin_endReadBulkData( bulkReadHandle );
         
@@ -1584,7 +1594,9 @@ static int mx_reloadSprite( const char  *inBulkResourceName ) {
 
     /* successfully loaded this sprite
        change to data no longer pending */
-    mx_sprites[ newSpriteHandle ].pendingChange = 0;
+    mx_sprites[ newSpriteHandle ].pendingChange       = 0;
+    mx_sprites[ newSpriteHandle ].retryCount          = 0;
+    mx_sprites[ newSpriteHandle ].stepsUntilNextRetry = 0;
     
 
     if( newSpriteHandle == mx_numSprites ) {
@@ -1652,7 +1664,8 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
         return -1;
         }
 
-    return mx_reloadSprite( inBulkResourceName );
+    return mx_reloadSprite( inBulkResourceName,
+                            -1 );
     }
 
 
@@ -1665,10 +1678,47 @@ static void mx_checkSpritesNeedReload( void ) {
          s < mx_numSprites;
          s ++ ) {
 
-        if( mx_sprites[ s ].pendingChange
-            ||
+        if( mx_sprites[ s ].pendingChange ) {
+
+            if( mx_sprites[ s ].stepsUntilNextRetry <= 0 ) {
+
+                int  retry   =  mx_sprites[ s ].retryCount;
+                int  handle  =  mx_reloadSprite(
+                                    mx_sprites[ s ].bulkResourceName,
+                                    s );
+
+                if( handle == -1 ) {
+                    /* with each failure, we wait more and more
+                       steps until we try again */
+                    mx_sprites[ s ].pendingChange = 1;
+                    mx_sprites[ s ].retryCount ++;
+                    
+                    mx_sprites[ s ].stepsUntilNextRetry =
+                                        mx_sprites[ s ].retryCount;
+                    }
+                else {
+                    /* success in reloading */
+
+                    maxigin_logInt(
+                        "Success in reloading sprite after retries: ",
+                        retry );
+                    
+                    mx_sprites[ s ].pendingChange       = 0;
+                    mx_sprites[ s ].retryCount          = 0;
+                    mx_sprites[ s ].stepsUntilNextRetry = 0;
+                    }
+                }
+            else {
+                /* wait another step before retrying */
+                mx_sprites[ s ].stepsUntilNextRetry --;
+                }
+            }
+        else if(
             mingin_getBulkDataChanged( mx_sprites[ s ].bulkResourceName ) ) {
 
+            int  handle  =  mx_reloadSprite( mx_sprites[ s ].bulkResourceName,
+                                             s );
+            
             /* we see a bulk data change for this sprite
                however, the bulk data might be in the middle of being
                written by an external editor, or may contain invalid
@@ -1676,9 +1726,12 @@ static void mx_checkSpritesNeedReload( void ) {
                If that's the case, truncated TGA data will be found
                and skipped, and the old sprite will remain in place.
                But keep trying to reload it */
-            mx_sprites[ s ].pendingChange = 1;
-            
-            mx_reloadSprite( mx_sprites[ s ].bulkResourceName );
+
+            if( handle == -1 ) {
+                mx_sprites[ s ].pendingChange       = 1;
+                mx_sprites[ s ].retryCount          = 1;
+                mx_sprites[ s ].stepsUntilNextRetry = 1;
+                }
             }
         }
     }

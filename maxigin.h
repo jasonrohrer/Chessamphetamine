@@ -1494,7 +1494,7 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
            moving all subsequent sprite data back */
 
         for( b = mx_sprites[ newSpriteHandle ].startByte;
-             b < mx_sprites[ newSpriteHandle ].startByte + oldNeededSpriteBytes;
+             b < mx_numSpriteBytesUsed - oldNeededSpriteBytes;
              b ++ ) {
 
             mx_spriteBytes[ b ] = mx_spriteBytes[ b + oldNeededSpriteBytes ];

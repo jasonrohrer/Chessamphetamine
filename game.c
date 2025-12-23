@@ -148,16 +148,29 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             int  endX    =  bulletPos[ i ].x + 2;
             int  endY    =  bulletPos[ i ].y + 2;
 
-            maxigin_drawSprite( spriteHandles[ 0 ],
-                                bulletPos[ i ].x,
-                                bulletPos[ i ].y );
-            /* double glow */
-            maxigin_drawSprite( spriteHandles[ 1 ],
-                                bulletPos[ i ].x,
-                                bulletPos[ i ].y );
-            maxigin_drawSprite( spriteHandles[ 1 ],
-                                bulletPos[ i ].x,
-                                bulletPos[ i ].y );
+            if( i % 3 == 0 ) {
+                
+                maxigin_drawSprite( spriteHandles[ 0 ],
+                                    bulletPos[ i ].x,
+                                    bulletPos[ i ].y );
+                /* double glow */
+                maxigin_drawSprite( spriteHandles[ 1 ],
+                                    bulletPos[ i ].x,
+                                    bulletPos[ i ].y );
+                maxigin_drawSprite( spriteHandles[ 1 ],
+                                    bulletPos[ i ].x,
+                                    bulletPos[ i ].y );
+                }
+            else if( i % 3 == 1 ) {
+                maxigin_drawSprite( spriteHandles[2],
+                                    bulletPos[ i ].x,
+                                    bulletPos[ i ].y );
+                }
+            else if( i % 3 == 2 ) {
+                maxigin_drawSprite( spriteHandles[3],
+                                    bulletPos[ i ].x,
+                                    bulletPos[ i ].y );
+                }
             
             if( 0 )
             for( y = startY;

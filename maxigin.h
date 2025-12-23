@@ -2476,6 +2476,14 @@ static void mx_checkSpritesNeedReload( void ) {
                     mx_sprites[ s ].pendingChange       = 0;
                     mx_sprites[ s ].retryCount          = 0;
                     mx_sprites[ s ].stepsUntilNextRetry = 0;
+
+                    if( mx_sprites[ s ].glowSpriteHandle != -1 ) {
+
+                        mx_regenerateGlowSprite(
+                            s,
+                            mx_sprites[ s ].glowRadius,
+                            mx_sprites[ s ].glowIterations );
+                        }
                     }
                 }
             else {
@@ -2506,6 +2514,15 @@ static void mx_checkSpritesNeedReload( void ) {
                 mx_sprites[ s ].pendingChange       = 1;
                 mx_sprites[ s ].retryCount          = 1;
                 mx_sprites[ s ].stepsUntilNextRetry = 1;
+                }
+            else {
+                if( mx_sprites[ s ].glowSpriteHandle != -1 ) {
+
+                    mx_regenerateGlowSprite(
+                        s,
+                        mx_sprites[ s ].glowRadius,
+                        mx_sprites[ s ].glowIterations );
+                    }
                 }
             }
         }

@@ -476,6 +476,34 @@ int maxigin_initSprite( const char  *inBulkResourceName );
 
 
 /*
+  Loads a TGA-formatted sprite from the platform's bulk data store, and
+  generates an internal glow sprite to go along with it.
+  Sprites must be in RGBA 32-bit uncompressed TGA format.
+
+  Parameters:
+
+      inBulkResourceName   the name of the bulk data resource to load the sprite
+                           from
+
+      inBlurRadius         the blur radius for the glow, in pixels
+
+      inBlurIterations     the number of iterations of the blur to apply
+      
+  Returns:
+
+      sprite handle   on load success
+
+      -1              on failure;
+
+  [jumpMaxiginInit]      
+*/
+int maxigin_initGlowSprite( const char  *inBulkResourceName,
+                            int          inBlurRadius,
+                            int          inBlurIterations );
+
+
+
+/*
   Toggles additive blending for future maxigin_draw calls.
 
   Parameters:
@@ -488,7 +516,21 @@ int maxigin_initSprite( const char  *inBulkResourceName );
 void maxigin_drawToggleAdditive( char  inAdditiveOn );
 
 
-    
+
+/*
+  Gets current additive blend toggle.
+
+  Returns:
+
+      1   if in additive blend mode
+      0   if not
+      
+  [jumpMaxiginDraw]
+*/
+char maxigin_drawGetAdditive( void );
+
+
+
 /*
   Draws a sprite into the game's native pixel buffer.
 
@@ -506,6 +548,30 @@ void maxigin_drawToggleAdditive( char  inAdditiveOn );
 void maxigin_drawSprite( int  inSpriteHandle,
                          int  inCenterX,
                          int  inCenterY );
+
+
+
+/*
+  Draws a glowing sprite into the game's native pixel buffer.
+
+  Note that if inSpriteHandle was initialized with maxigin_initSprite instead
+  of maxigin_initGlowSprite, this call is equivalent to maxigin_drawSprite
+  (it does nothing special in that case).
+
+  Parameters:
+
+      inSpriteHandle   the sprite to draw
+
+      inCenterX        the x position in the game's native pixel buffer of the
+                       sprite's center
+ 
+      inCenterY        the y position in the game's native pixel buffer of the
+                       sprite's center
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawGlowSprite( int  inSpriteHandle,
+                             int  inCenterX,
+                             int  inCenterY );
 
 
 
@@ -1270,21 +1336,31 @@ void minginGame_getScreenPixels( int             inWide,
 
 #define  MAXIGIN_SPRITE_MAX_BULK_NAME_LENGTH  64
 
+#define  MAXIGIN_SPRITE_HASH_LENGTH            4
+
+
 typedef struct MaxiginSprite {
         
-        int   w;
-        int   h;
+        int            w;
+        int            h;
         
         /* index into mx_spriteBytes */
-        int   startByte;
+        int            startByte;
 
-        char  bulkResourceName[ MAXIGIN_SPRITE_MAX_BULK_NAME_LENGTH ];
+        char           bulkResourceName[ MAXIGIN_SPRITE_MAX_BULK_NAME_LENGTH ];
 
-        char  pendingChange;
+        char           pendingChange;
 
-        int   retryCount;
+        int            retryCount;
 
-        int   stepsUntilNextRetry;
+        int            stepsUntilNextRetry;
+
+        /* -1 if this is not a glow sprite */
+        int            glowSpriteHandle;
+        int            glowRadius;
+        int            glowIterations;
+        
+        unsigned char  hash[ MAXIGIN_SPRITE_HASH_LENGTH ];
         
     } MaxiginSprite;
 
@@ -1299,17 +1375,134 @@ static  int            mx_numSprites          =  0;
 
 
         
-#define  MAXIGIN_TGA_BUFFER_SIZE  1024
+#define  MAXIGIN_TGA_BUFFER_SIZE  256
 
 static  unsigned char  mx_tgaReadBuffer[ MAXIGIN_TGA_BUFFER_SIZE ];
 
+
+
+#define  MAXIGIN_PADDED_INT_LENGTH  12
+
+
+/*
+  Reads int and jumps ahead MAXIGIN_PADDED_INT_LENGTH total bytes, to skip
+  all padding.
+
+  Returns 1 on success, 0 on failure.
+*/
+static char mx_readPaddedIntFromPeristentData( int   inStoreReadHandle,
+                                               int  *outInt );
+
+
+
+/*
+  Writes a \0-terminated string representation of an int to data store,
+  and pads it with \0 characters afterwards to fill paddedIntLength total.
+
+  Returns 1 on success, 0 on failure.
+*/
+static char mx_writePaddedIntToPerisistentData( int  inStoreWriteHandle,
+                                                int  inInt );
+
+
+
+/*
+  encapsulates both bulkReadHandle and persistentDataReadHandle
+  this allows us to cache generated sprites in our persistent data
+  and load them using the same code as fixed sprites loaded from bulk data
+*/
+typedef struct MinginOpenData {
+
+        int   readHandle;
+        /* 0 if persistent data, 1 if bulk data */
+        char  isBulk;
+        
+    } MinginOpenData;
+
+
+
+static int mx_readData( MinginOpenData  *inDataHandle,
+                        int              inNumBytesToRead,
+                        unsigned char   *inByteBuffer ) {
+
+    if( inDataHandle->isBulk ) {
+        return mingin_readBulkData( inDataHandle->readHandle,
+                                    inNumBytesToRead,
+                                    inByteBuffer );
+        }
+    else {
+        return mingin_readPersistData( inDataHandle->readHandle,
+                                       inNumBytesToRead,
+                                       inByteBuffer );
+        }
+    }
+
+
+
+static int mx_getDataPosition( MinginOpenData  *inDataHandle ) {
+    if( inDataHandle->isBulk ) {
+        return mingin_getBulkDataPosition( inDataHandle->readHandle );
+        }
+    else {
+        return mingin_getPersistDataPosition( inDataHandle->readHandle );
+        }
+    }
+
+        
+
+/* removes sprite data from sprite data store and collapses
+   subsequent sprite data back to fill the gap
+*/
+static void mx_removeSpriteData( int  inSpriteHandle ) {
+
+    int  b;
+    int  s;
+    int  oldSpriteBytes  =  mx_sprites[ inSpriteHandle ].w *
+                            mx_sprites[ inSpriteHandle ].h * 4;
+
+
+    if( mx_sprites[ inSpriteHandle ].startByte == -1 ) {
+        /* data already removed */
+        return;
+        }
+        
+    /* collapse memory location of existing sprite,
+       moving all subsequent sprite data back */
+
+    for( b = mx_sprites[ inSpriteHandle ].startByte;
+         b < mx_numSpriteBytesUsed - oldSpriteBytes;
+         b ++ ) {
+
+        mx_spriteBytes[ b ] = mx_spriteBytes[ b + oldSpriteBytes ];
+        }
+
+    /* update all sprites that pointed into the now-moved sprite data */
+    for( s = 0;
+         s < mx_numSprites;
+         s ++ ) {
+            
+        if( mx_sprites[ s ].startByte
+            > 
+            mx_sprites[ inSpriteHandle ].startByte ) {
+
+            mx_sprites[ s ].startByte -= oldSpriteBytes;
+            }
+        }
+
+    mx_numSpriteBytesUsed -= oldSpriteBytes;
+
+    /* stick -1 in for byte index of this sprite record, since
+       its data is gone */
+    mx_sprites[ inSpriteHandle ].startByte = -1;
+    }
+
     
 
-/* inReloadHandle is -1 if loading a new sprite */
-static int mx_reloadSprite( const char  *inBulkResourceName,
-                            int          inReloadHandle ) {
 
-    int   bulkReadHandle;
+static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
+                                        int              inReloadHandle,
+                                        MinginOpenData  *inReadHandle,
+                                        int              inNumBytesLeft ) {
     int   numBytes;
     int   numRead;
 
@@ -1349,16 +1542,9 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
         return -1;
         }
 
-    bulkReadHandle = mingin_startReadBulkData( inBulkResourceName,
-                                               & numBytes );
-
-    if( bulkReadHandle == -1 ) {
-        if( inReloadHandle == -1 ) {
-            maxigin_logString( "Failed to open sprite: ",
-                               inBulkResourceName );
-            }
-        return -1;
-        }
+    
+    numBytes       = inNumBytesLeft;
+    
 
     if( numBytes < 18 ) {
         if( inReloadHandle == -1 ) {
@@ -1366,22 +1552,18 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
                                inBulkResourceName );
             }
         
-        mingin_endReadBulkData( bulkReadHandle );
-        
         return -1;
         }
 
-    numRead = mingin_readBulkData( bulkReadHandle,
-                                   18,
-                                   mx_tgaReadBuffer );
+    numRead = mx_readData( inReadHandle,
+                           18,
+                           mx_tgaReadBuffer );
 
     if( numRead != 18 ) {
         if( inReloadHandle == -1 ) {
             maxigin_logString( "Failed to read TGA header: ",
                                inBulkResourceName );
             }
-        
-        mingin_endReadBulkData( bulkReadHandle );
         
         return -1;
         }
@@ -1398,8 +1580,6 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
                 "can be loaded: ",
                 inBulkResourceName );
             }
-
-        mingin_endReadBulkData( bulkReadHandle );
         
         return -1;
         }
@@ -1423,17 +1603,15 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
     
     /* now read the id field and ignore it */
     if( idFieldSize > 0 ) {
-        numRead = mingin_readBulkData( bulkReadHandle,
-                                       idFieldSize,
-                                       mx_tgaReadBuffer );
+        numRead = mx_readData( inReadHandle,
+                               idFieldSize,
+                               mx_tgaReadBuffer );
 
         if( numRead != idFieldSize ) {
             if( inReloadHandle == -1 ) {
                 maxigin_logString( "Failed to read id field from TGA data: ",
                                    inBulkResourceName );
                 }
-
-            mingin_endReadBulkData( bulkReadHandle );
         
             return -1;
             }
@@ -1446,19 +1624,26 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
 
     neededSpriteBytes = w * h * 4;
     
-    if( numBytes - mingin_getBulkDataPosition( bulkReadHandle )
+    if( numBytes - mx_getDataPosition( inReadHandle )
         < neededSpriteBytes ) {
 
         if( inReloadHandle == -1 ) {
             maxigin_logString( "Full TGA pixel data truncated: ",
                                inBulkResourceName );
             }
-
-        mingin_endReadBulkData( bulkReadHandle );
         
         return -1;
         }
 
+    
+    if( ! makingNewSprite
+        &&
+        mx_sprites[ newSpriteHandle ].startByte == -1 ) {
+
+        /* existing sprite data has been deleted before reload was called */
+
+        makingNewSprite = 1;
+        }
 
     
     if( ! makingNewSprite
@@ -1468,8 +1653,7 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
           mx_sprites[ newSpriteHandle ].h != h ) ) {
 
         /* mismatch with existing record, sprite changing size*/
-        
-        int  s;
+
         int  oldNeededSpriteBytes  =  mx_sprites[ newSpriteHandle ].w *
                                       mx_sprites[ newSpriteHandle ].h * 4;
 
@@ -1483,39 +1667,15 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
                     "Not enough space in static memory to reload sprite that "
                     "is increasing in size: ",
                     inBulkResourceName );
-                
-                mingin_endReadBulkData( bulkReadHandle );
         
                 return -1;
                 }
             }
 
-        /* collapse memory location of existing sprite,
-           moving all subsequent sprite data back */
 
-        for( b = mx_sprites[ newSpriteHandle ].startByte;
-             b < mx_numSpriteBytesUsed - oldNeededSpriteBytes;
-             b ++ ) {
-
-            mx_spriteBytes[ b ] = mx_spriteBytes[ b + oldNeededSpriteBytes ];
-            }
-
-        /* update all sprites that pointed into the now-moved sprite data */
-        for( s = 0;
-             s < mx_numSprites;
-             s ++ ) {
-            
-            if( mx_sprites[ s ].startByte
-                > 
-                mx_sprites[ newSpriteHandle ].startByte ) {
-
-                mx_sprites[ s ].startByte -= oldNeededSpriteBytes;
-                }
-            }
+        mx_removeSpriteData( newSpriteHandle );
         
         makingNewSprite = 1;
-        
-        mx_numSpriteBytesUsed -= oldNeededSpriteBytes;
         }
 
     
@@ -1535,8 +1695,6 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
                          mx_numSpriteBytesUsed,
                          " bytes used" );
         
-        mingin_endReadBulkData( bulkReadHandle );
-        
         return -1;
         }
 
@@ -1544,8 +1702,8 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
         
         /* read into end of sprite bytes */
         
-        numRead = mingin_readBulkData(
-                      bulkReadHandle,
+        numRead = mx_readData(
+                      inReadHandle,
                       neededSpriteBytes,
                       &( mx_spriteBytes[ mx_numSpriteBytesUsed ] ) );
         }
@@ -1555,14 +1713,11 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
         
         startByte = mx_sprites[ newSpriteHandle ].startByte;
         
-        numRead = mingin_readBulkData(
-                      bulkReadHandle,
+        numRead = mx_readData(
+                      inReadHandle,
                       neededSpriteBytes,
                       &( mx_spriteBytes[ startByte ] ) );
         }
-
-    
-    mingin_endReadBulkData( bulkReadHandle );
 
     
     if( numRead != neededSpriteBytes ) {
@@ -1597,8 +1752,10 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
     mx_sprites[ newSpriteHandle ].pendingChange       = 0;
     mx_sprites[ newSpriteHandle ].retryCount          = 0;
     mx_sprites[ newSpriteHandle ].stepsUntilNextRetry = 0;
-    
+    mx_sprites[ newSpriteHandle ].glowSpriteHandle    = -1;
 
+
+    
     if( newSpriteHandle == mx_numSprites ) {
         mx_numSprites ++;
         }
@@ -1649,9 +1806,50 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
                 }
             }
         }
+
+
+    /* hash bytes after origin flip and BGRA conversion */
+
+    maxigin_flexHash( neededSpriteBytes,
+                      &( mx_spriteBytes[ startByte ] ),
+                      MAXIGIN_SPRITE_HASH_LENGTH,
+                      mx_sprites[ newSpriteHandle ].hash );
      
     
     return newSpriteHandle;
+    }
+
+
+
+/* inReloadHandle is -1 if loading a new sprite */
+static int mx_reloadSprite( const char  *inBulkResourceName,
+                            int          inReloadHandle ) {
+    
+    int             numBytes;
+    int             spriteHandle;
+    MinginOpenData  openData;
+    
+    openData.readHandle = mingin_startReadBulkData( inBulkResourceName,
+                                                    & numBytes );
+
+    if( openData.readHandle == -1 ) {
+        if( inReloadHandle == -1 ) {
+            maxigin_logString( "Failed to open sprite: ",
+                               inBulkResourceName );
+            }
+        return -1;
+        }
+
+    openData.isBulk = 1;
+
+    spriteHandle = mx_reloadSpriteFromOpenData( inBulkResourceName,
+                                                inReloadHandle,
+                                                & openData,
+                                                numBytes );
+
+    mingin_endReadBulkData( openData.readHandle );
+    
+    return spriteHandle;
     }
 
 
@@ -1666,6 +1864,578 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
 
     return mx_reloadSprite( inBulkResourceName,
                             -1 );
+    }
+
+
+
+/* writes sprite pixel data to open handle as a TGA file */
+static void mx_writeSpriteToOpenData( int  inSpriteHandle,
+                                      int  inPersistentDataWriteHandle ) {
+
+    int            w;
+    int            h;
+    int            p;
+    int            b;
+    int            numPixels;
+    char           success;
+    unsigned char  tgaHeader[18];
+    
+
+    w = mx_sprites[ inSpriteHandle ].w;
+    h = mx_sprites[ inSpriteHandle ].h;
+
+    numPixels = w * h * 4;
+
+    /* empty ID field */
+    tgaHeader[ 0 ] = 0;
+    /* no color map */
+    tgaHeader[ 1 ] = 0;
+    /* image type, unmapped RGBA */
+    tgaHeader[ 2 ] = 2;
+    /* empty color map spec */
+    tgaHeader[ 3 ] = 0;
+    tgaHeader[ 4 ] = 0;
+    tgaHeader[ 5 ] = 0;
+    tgaHeader[ 6 ] = 0;
+    tgaHeader[ 7 ] = 0;
+    /* x origin 2-byte int */
+    tgaHeader[ 8 ] = 0;
+    tgaHeader[ 9 ] = 0;
+    /* y origin 2-byte int */
+    tgaHeader[ 10 ] = 0;
+    tgaHeader[ 11 ] = 0;
+    /* width, lo-hi byte */
+    tgaHeader[ 12 ] = (unsigned char)( w & 0xFF );
+    tgaHeader[ 13 ] = (unsigned char)( w >> 8 );
+    /* height, lo-hi byte */
+    tgaHeader[ 14 ] = (unsigned char)( h & 0xFF );
+    tgaHeader[ 15 ] = (unsigned char)( h >> 8 );
+    /* bits per pixel, RGBA is 32 */
+    tgaHeader[ 16 ] = 32;
+    /* 8-bit attribute (for the A component)
+       and a 1 in the 5th position, since origin at upper left corner */
+    tgaHeader[ 17 ] = 8 | 1 << 5;
+
+
+    success = mingin_writePersistData( inPersistentDataWriteHandle,
+                                       18,
+                                       tgaHeader );
+
+    if( ! success ) {
+        mingin_log( "Failed to write TGA header to persistent data store.\n" );
+        return;
+        }
+
+    /* perform RGBA to BGRA conversion as we write pixels to file */
+    
+    b = mx_sprites[ inSpriteHandle ].startByte;
+    
+    for( p = 0;
+         p < numPixels;
+         p ++ ) {
+
+        unsigned char  bgra[4];
+        
+        bgra[2] = mx_spriteBytes[ b ++ ];
+        bgra[1] = mx_spriteBytes[ b ++ ];
+        bgra[0] = mx_spriteBytes[ b ++ ];
+        bgra[3] = mx_spriteBytes[ b ++ ];
+        
+        success = mingin_writePersistData(
+                      inPersistentDataWriteHandle,
+                      4,
+                      bgra );
+        if( ! success ) {
+            mingin_log(
+                "Failed to write TGA pixel data to persistent data store.\n" );
+            return;
+            }
+        }
+    }
+
+
+
+static void mx_blurSprite( int  inSpriteHandle,
+                           int  inRadius,
+                           int  inIterations ) {
+
+    int  w                 =  mx_sprites[ inSpriteHandle ].w;
+    int  h                 =  mx_sprites[ inSpriteHandle ].h;
+    int  startByte         =  mx_sprites[ inSpriteHandle ].startByte;
+    int  tempStartByte;
+    int  sourceStartByte;
+    int  destStartByte;
+    int  i;
+    int  b;
+    int  y;
+    int  x;
+    int  neededExtraBytes  =  w * h * 4;
+    
+    if( mx_numSpriteBytesUsed + neededExtraBytes >
+        MAXIGIN_MAX_TOTAL_SPRITE_BYTES ) {
+
+        mingin_log( "Not enough extra sprites bytes in sprite data buffer "
+                    "to perform mx_blurSprite.\n" );
+        return;
+        }
+    
+    tempStartByte = mx_numSpriteBytesUsed;
+
+    /* zero out temp... black transparent pixels */
+    for( b = 0;
+         b < neededExtraBytes;
+         b ++ ) {
+        mx_spriteBytes[ tempStartByte + b ] = 0;
+        }
+    
+
+    /* start with main sprite as source, blank buffer as dest */
+    sourceStartByte = startByte;
+    destStartByte   = tempStartByte;
+    
+    for( i = 0;
+         i < inIterations;
+         i ++ ) {
+
+        int  tempTempStartByte;
+        int  startY              =  inRadius;
+        int  endY                =  h - inRadius;
+        int  startX              =  inRadius;
+        int  endX                =  w - inRadius;
+
+        /* ignore edge cases
+           start blur pushed into image far enough where
+           our blur radius never goes outside of image */
+
+        
+        for( y = startY;
+             y < endY;
+             y ++ ) {
+
+            int  boxAccume[4]  =  { 0, 0, 0, 0 };
+            int  py;
+            int  px;
+            int  pixelsInBox   =  0;
+            int  rowStart;
+            int  pix;
+            int  c;
+            
+            /* first, fill box accume with entire box around first pixel
+               in row */
+            for( py = y - inRadius;
+                 py <= y + inRadius;
+                 py ++ ) {
+
+                int  boxRowStart  =  py * w * 4 + sourceStartByte;
+                
+                for( px = 0;
+                     px < inRadius + inRadius + 1;
+                     px ++ ) {
+
+                    pix = boxRowStart + px * 4;
+                    c   = 0;
+                    
+                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
+
+                    pixelsInBox ++;
+                    }
+                }
+
+            /* set blur value for first pixel in row */
+
+            rowStart = y * w * 4 + destStartByte;
+            pix      = rowStart + startX * 4;
+            c        = 0;
+            
+            mx_spriteBytes[ pix++ ] =
+                (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
+            mx_spriteBytes[ pix++ ] =
+                (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
+            mx_spriteBytes[ pix++ ] =
+                (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
+            mx_spriteBytes[ pix++ ] =
+                (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
+
+            /* now process remaining pixels in row */
+            for( x = startX + 1;
+                 x < endX;
+                 x ++ ) {
+
+                /* subtract column to left that has fallen out of our
+                   moving box, add in column to right that has
+                   been added to our moving box */
+                for( py = y - inRadius;
+                     py <= y + inRadius;
+                     py ++ ) {
+
+                    int  boxRowStart  =  py * w * 4 + sourceStartByte;
+
+                    pix = boxRowStart + ( x - 1 - inRadius ) * 4;
+                    c   = 0;
+                    
+                    boxAccume[ c++ ] -= mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] -= mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] -= mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] -= mx_spriteBytes[ pix++ ];
+
+                    pix = boxRowStart + ( x + inRadius ) * 4;
+                    c   = 0;
+                    
+                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
+                    }
+
+                /* now our accume contains sum of all pixels
+                   in box around our pixel */
+                pix = rowStart + x * 4;
+                c   = 0;
+
+                mx_spriteBytes[ pix++ ] =
+                    (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
+                mx_spriteBytes[ pix++ ] =
+                    (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
+                mx_spriteBytes[ pix++ ] =
+                    (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
+                mx_spriteBytes[ pix++ ] =
+                    (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
+                }
+            
+            }
+
+        /* for next iteration, swap source and dest
+           blur back the other way */
+        tempTempStartByte = sourceStartByte;
+        sourceStartByte = destStartByte;
+        destStartByte = tempTempStartByte;
+        }
+
+    /* we're done with iterations
+       where did our final image end up? */
+
+    if( sourceStartByte == tempStartByte ) {
+
+        /* ended up in our temp buffer
+           copy result back in */
+        for( b = 0;
+             b < neededExtraBytes;
+             b ++ ) {
+            
+            mx_spriteBytes    [ startByte     + b ] =
+                mx_spriteBytes[ tempStartByte + b ];
+            }
+        }
+    /* else ended up in-place in our original sprite byte buffer */
+    /* don't need to do any copying */
+    }
+
+
+
+static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
+                                     int  inBlurRadius,
+                                     int  inBlurIterations ) {
+
+    const char    *glowSpriteDataName;
+    int            persistReadHandle;
+    int            numBytes;
+    int            numRead;
+    int            b;
+    int            glowW;
+    int            glowH;
+    int            glowBorder;
+    
+    char           readGlowFromFile;
+    unsigned char  hashBuffer[ MAXIGIN_SPRITE_HASH_LENGTH ];
+
+
+
+    glowBorder = inBlurRadius * inBlurIterations;
+    
+    glowW = mx_sprites[ inMainSpriteHandle ].w
+            +
+            2 * glowBorder;
+        
+    glowH = mx_sprites[ inMainSpriteHandle ].h
+            +
+            2 * glowBorder;
+    
+    glowSpriteDataName = maxigin_stringConcat(
+                             mx_sprites[ inMainSpriteHandle ].bulkResourceName,
+                             ".glow" );
+
+    readGlowFromFile = 0;
+    
+    persistReadHandle = mingin_startReadPersistData( glowSpriteDataName,
+                                                     & numBytes );
+    
+    if( persistReadHandle != -1 ) {
+
+        if( numBytes > MAXIGIN_SPRITE_HASH_LENGTH ) {
+
+            numRead = mingin_readPersistData( persistReadHandle,
+                                              MAXIGIN_SPRITE_HASH_LENGTH,
+                                              hashBuffer );
+            
+            if( numRead == MAXIGIN_SPRITE_HASH_LENGTH ) {
+
+                char  hashMatch        =  1;
+                int   readRadius;
+                int   readIterations;
+                char  success          =  0;
+                
+                for( b = 0;
+                     b < MAXIGIN_SPRITE_HASH_LENGTH;
+                     b ++ ) {
+                    
+                    if( hashBuffer[ b ] !=
+                        mx_sprites[ inMainSpriteHandle ].hash[ b ] ) {
+                        
+                        hashMatch = 0;
+                        break;
+                        }
+                    }
+
+                if( hashMatch ) {
+                    success =
+                        mx_readPaddedIntFromPeristentData(
+                            persistReadHandle,
+                            & readRadius );
+                    
+                    success = success
+                        &&
+                        mx_readPaddedIntFromPeristentData(
+                            persistReadHandle,
+                            & readIterations );
+
+                    if( readRadius != inBlurRadius
+                        ||
+                        readIterations != inBlurIterations ) {
+                        success = 0;
+                        }
+                    }
+                    
+                
+                if( success ) {
+                    if( mx_sprites[ inMainSpriteHandle ].glowSpriteHandle ==
+                        -1 ) {
+
+                        MinginOpenData  openData;
+                        
+                        /* load from glow file */
+                        openData.readHandle = persistReadHandle;
+                        openData.isBulk = 0;
+
+                        /* set a non-file-name (blank string )
+                           as inBulkResourceName
+                           since this glow sprite isn't actually in
+                           our bulk data store */
+                        mx_sprites[ inMainSpriteHandle ].glowSpriteHandle =
+                            mx_reloadSpriteFromOpenData(
+                                "",
+                                -1,
+                                & openData,
+                                /* TGA data comes right after hash bytes */
+                                numBytes - MAXIGIN_SPRITE_HASH_LENGTH );
+
+                        if( mx_sprites[ inMainSpriteHandle ].glowSpriteHandle !=
+                            -1 ) {
+                            /* successfully loaded from file */
+                            readGlowFromFile = 1;
+                            }
+                        }
+                    else {
+                        /* glow sprite with hash and parameter
+                           match already loaded */
+
+                        readGlowFromFile = 1;
+                        }
+                    }  
+                }
+            }
+        
+        mingin_endReadPersistData( persistReadHandle );
+        }
+
+    if( ! readGlowFromFile ) {
+
+        /* generate glow from scratch
+           cache it to file for future */
+
+        int  glowSpriteHandle;
+        int  neededGlowBytes;
+        int  glowCacheDataWriteHandle;
+        int  glowStartByte;
+        int  mainStartByte;
+        int  x;
+        int  y;
+        int  mainW;
+        int  mainH;
+        
+        glowSpriteHandle = mx_sprites[ inMainSpriteHandle ].glowSpriteHandle;
+
+
+        if( glowSpriteHandle != -1 ) {
+            mx_removeSpriteData( glowSpriteHandle );
+            }
+        else {
+            /* stick new glow sprite at end of sprite list */
+            glowSpriteHandle = mx_numSprites;
+
+            if( mx_numSprites >= MAXIGIN_MAX_NUM_SPRITES ) {
+
+                maxigin_logString(
+                    "Already have too many sprites when trying "
+                    "to create glow sprite for: ",
+                    mx_sprites[ inMainSpriteHandle ].bulkResourceName );
+                return;
+                }
+            }
+
+        neededGlowBytes = glowW * glowH * 4;
+
+        if( mx_numSpriteBytesUsed + neededGlowBytes
+            >
+            MAXIGIN_MAX_TOTAL_SPRITE_BYTES ) {
+
+            maxigin_logString(
+                "Already have too many sprite data bytes when trying "
+                "to create glow sprite for: ",
+                mx_sprites[ inMainSpriteHandle ].bulkResourceName );
+            
+            return;
+            }
+
+        
+        mx_sprites[ inMainSpriteHandle ].glowSpriteHandle = glowSpriteHandle;
+
+        glowStartByte  =  mx_numSpriteBytesUsed;
+        
+        mainW          =  mx_sprites[ inMainSpriteHandle ].w;
+        mainH          =  mx_sprites[ inMainSpriteHandle ].h;
+        mainStartByte  =  mx_sprites[ inMainSpriteHandle ].startByte;
+        
+        mx_sprites[ glowSpriteHandle ].w                = glowW;
+        mx_sprites[ glowSpriteHandle ].h                = glowH;
+        mx_sprites[ glowSpriteHandle ].startByte        = glowStartByte;
+        mx_sprites[ glowSpriteHandle ].glowSpriteHandle = -1;
+
+        mx_sprites[ glowSpriteHandle ].bulkResourceName[0] = '\0';
+
+        mx_numSprites ++;
+        mx_numSpriteBytesUsed += neededGlowBytes;
+
+
+        /* generate glow sprite pixels */
+
+        for( b = 0;
+             b < neededGlowBytes;
+             b ++ ) {
+            /* zero out glow sprite */
+            mx_spriteBytes[ b + glowStartByte ] = 0;
+            }
+
+        /* copy sprite into center of glow sprite, leaving border
+           of black transparent pixels */
+
+        for( y = 0;
+             y < mainH;
+             y ++ ) {
+
+            int  mainRowStart  =  y * mainW * 4;
+            int  glowY         =  y + glowBorder;
+            int  glowRowStart  =  glowY * glowW * 4;
+            
+            for( x = 0;
+                 x < mainW;
+                 x ++ ) {
+                
+                int  pixStart      =  mainRowStart + x * 4 + mainStartByte;
+                int  glowX         =  x + glowBorder;
+                int  glowPixStart  =  glowRowStart + glowX * 4 + glowStartByte;
+
+                mx_spriteBytes    [ glowPixStart     ++ ] =
+                    mx_spriteBytes[ pixStart         ++ ];
+                
+                mx_spriteBytes    [ glowPixStart     ++ ] =
+                    mx_spriteBytes[ pixStart         ++ ];
+                
+                mx_spriteBytes    [ glowPixStart     ++ ] =
+                    mx_spriteBytes[ pixStart         ++ ];
+                
+                mx_spriteBytes    [ glowPixStart     ++ ] =
+                    mx_spriteBytes[ pixStart         ++ ];
+                }
+            }
+
+        
+        mx_blurSprite( glowSpriteHandle,
+                       inBlurRadius,
+                       inBlurIterations );
+        
+
+        glowCacheDataWriteHandle =
+            mingin_startWritePersistData( glowSpriteDataName );
+
+        if( glowCacheDataWriteHandle == -1 ) {
+            maxigin_logString( "Failed to open persistent "
+                               "data cache file for writing: ",
+                               glowSpriteDataName );
+            return;
+            }
+
+        
+        mingin_writePersistData( glowCacheDataWriteHandle,
+                                 MAXIGIN_SPRITE_HASH_LENGTH,
+                                 mx_sprites[ inMainSpriteHandle ].hash );
+
+        /* next radius and iteration count as padded ints */
+        
+        mx_writePaddedIntToPerisistentData( glowCacheDataWriteHandle,
+                                            inBlurRadius );
+        
+        mx_writePaddedIntToPerisistentData( glowCacheDataWriteHandle,
+                                            inBlurIterations );
+
+        
+        mx_writeSpriteToOpenData( glowSpriteHandle,
+                                  glowCacheDataWriteHandle );
+
+
+        mingin_endWritePersistData( glowCacheDataWriteHandle );
+        }
+    
+    
+    }
+
+    
+
+
+int maxigin_initGlowSprite( const char  *inBulkResourceName,
+                            int          inBlurRadius,
+                            int          inBlurIterations ) {
+
+    int  spriteHandle;
+    
+    if( ! mx_areWeInMaxiginGameInitFunction ) {
+        mingin_log( "Game tried to call maxigin_initGlowSprite "
+                    "from outside of maxiginGame_init\n" );
+        return -1;
+        }
+
+    spriteHandle = mx_reloadSprite( inBulkResourceName,
+                                    -1 );
+
+    if( spriteHandle != -1 ) {
+        mx_regenerateGlowSprite( spriteHandle,
+                                 inBlurRadius,
+                                 inBlurIterations );
+        }
+
+    return spriteHandle;
     }
 
 
@@ -1714,8 +2484,13 @@ static void mx_checkSpritesNeedReload( void ) {
                 }
             }
         else if(
+            mx_sprites[ s ].bulkResourceName[ 0 ] != '\0'
+            &&
             mingin_getBulkDataChanged( mx_sprites[ s ].bulkResourceName ) ) {
 
+            /* skip checking any with blank bulkResourceNames,
+               since those are our internally-generated sprites */
+            
             int  handle  =  mx_reloadSprite( mx_sprites[ s ].bulkResourceName,
                                              s );
             
@@ -1750,6 +2525,12 @@ static  char  mx_additiveBlend  =  0;
 
 void maxigin_drawToggleAdditive( char  inAdditiveOn ) {
     mx_additiveBlend = inAdditiveOn;
+    }
+
+
+
+char maxigin_drawGetAdditive( void ) {
+    return mx_additiveBlend;
     }
 
 
@@ -2025,6 +2806,30 @@ void maxigin_drawSprite( int  inSpriteHandle,
         imY ++;
         }
     
+    }
+
+
+
+void maxigin_drawGlowSprite( int  inSpriteHandle,
+                             int  inCenterX,
+                             int  inCenterY ) {
+
+    char  oldAdditive  =  maxigin_drawGetAdditive();
+    
+    maxigin_drawSprite( inSpriteHandle,
+                        inCenterX,
+                        inCenterY );
+
+    if( mx_sprites[ inSpriteHandle ].glowSpriteHandle != -1 ) {
+
+        maxigin_drawToggleAdditive( 1 );
+
+        maxigin_drawSprite( mx_sprites[ inSpriteHandle ].glowSpriteHandle,
+                            inCenterX,
+                            inCenterY );
+
+        maxigin_drawToggleAdditive( oldAdditive );
+        }
     }
 
 
@@ -2664,18 +3469,12 @@ static char mx_writeIntToPerisistentData( int  inStoreWriteHandle,
 
 
 
-#define  MAXIGIN_PADDED_INT_LENGTH  12
 
 static  unsigned char  mx_intPadding[ MAXIGIN_PADDED_INT_LENGTH ];
 
 
 
-/*
-  Writes a \0-terminated string representation of an int to data store,
-  and pads it with \0 characters afterwards to fill paddedIntLength total.
 
-  Returns 1 on success, 0 on failure.
-*/
 static char mx_writePaddedIntToPerisistentData( int  inStoreWriteHandle,
                                                 int  inInt ) {
     
@@ -2709,12 +3508,6 @@ static char mx_writePaddedIntToPerisistentData( int  inStoreWriteHandle,
 
 
 
-/*
-  Reads int and jumps ahead MAXIGIN_PADDED_INT_LENGTH total bytes, to skip
-  all padding.
-
-  Returns 1 on success, 0 on failure.
-*/
 static char mx_readPaddedIntFromPeristentData( int   inStoreReadHandle,
                                                int  *outInt ) {
     

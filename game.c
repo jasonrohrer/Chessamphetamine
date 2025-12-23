@@ -167,9 +167,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                     bulletPos[ i ].y );
                 }
             else if( i % 3 == 2 ) {
-                maxigin_drawSprite( spriteHandles[3],
-                                    bulletPos[ i ].x,
-                                    bulletPos[ i ].y );
+                maxigin_drawGlowSprite( spriteHandles[3],
+                                        bulletPos[ i ].x,
+                                        bulletPos[ i ].y );
                 }
             
             if( 0 )
@@ -449,8 +449,15 @@ void maxiginGame_init( void ) {
          i < NUM_BULK_FILES;
          i ++ ) {
 
-        spriteHandles[ i ] = maxigin_initSprite( fileNames[ i ] );
-
+        if( i == 3 ) {
+            spriteHandles[ i ] = maxigin_initGlowSprite( fileNames[ i ],
+                                                         4,
+                                                         2 );
+            }
+        else {
+            spriteHandles[ i ] = maxigin_initSprite( fileNames[ i ] );
+            }
+        
 
         if( spriteHandles[ i]  == -1 ) {
             mingin_log( "Failed to load sprite: " );

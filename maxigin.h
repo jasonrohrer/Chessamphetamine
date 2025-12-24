@@ -2012,13 +2012,15 @@ static void mx_blurSprite( int  inSpriteHandle,
              y < endY;
              y ++ ) {
 
-            int  boxAccume[4]  =  { 0, 0, 0, 0 };
-            int  py;
-            int  px;
-            int  pixelsInBox   =  0;
-            int  rowStart;
-            int  pix;
-            int  c;
+            long           boxAccume[3]  =  { 0, 0, 0 };
+            long           alphaSum      =  0;
+            int            py;
+            int            px;
+            int            pixelsInBox   =  0;
+            int            rowStart;
+            int            pix;
+            int            c;
+            unsigned char  alpha;
             
             /* first, fill box accume with entire box around first pixel
                in row */
@@ -2032,13 +2034,18 @@ static void mx_blurSprite( int  inSpriteHandle,
                      px < inRadius + inRadius + 1;
                      px ++ ) {
 
-                    pix = boxRowStart + px * 4;
-                    c   = 0;
+                    pix   = boxRowStart + px * 4;
+                    c     = 0;
+                    alpha = mx_spriteBytes[ pix + 3 ];
+
+                    /* pre-multiply by alpha to avoid
+                       halos of residual color coming from
+                       fully transparent areas */
                     
-                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
-                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
-                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
-                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] += alpha * mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] += alpha * mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] += alpha * mx_spriteBytes[ pix++ ];
+                    alphaSum         += alpha;
 
                     pixelsInBox ++;
                     }
@@ -2049,16 +2056,24 @@ static void mx_blurSprite( int  inSpriteHandle,
             rowStart = y * w * 4 + destStartByte;
             pix      = rowStart + startX * 4;
             c        = 0;
-            
-            mx_spriteBytes[ pix++ ] =
-                (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
-            mx_spriteBytes[ pix++ ] =
-                (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
-            mx_spriteBytes[ pix++ ] =
-                (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
-            mx_spriteBytes[ pix++ ] =
-                (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
 
+            if( alphaSum == 0 ) {     
+                mx_spriteBytes[ pix++ ] = 0;
+                mx_spriteBytes[ pix++ ] = 0;
+                mx_spriteBytes[ pix++ ] = 0;
+                mx_spriteBytes[ pix++ ] = 0;
+                }
+            else { 
+                mx_spriteBytes[ pix++ ] =    
+                    (unsigned char)( boxAccume[ c++ ] / alphaSum );
+                mx_spriteBytes[ pix++ ] =
+                    (unsigned char)( boxAccume[ c++ ] / alphaSum );
+                mx_spriteBytes[ pix++ ] =
+                    (unsigned char)( boxAccume[ c++ ] / alphaSum );
+                mx_spriteBytes[ pix++ ] =
+                    (unsigned char)( alphaSum / pixelsInBox );
+                }
+            
             /* now process remaining pixels in row */
             for( x = startX + 1;
                  x < endX;
@@ -2073,21 +2088,24 @@ static void mx_blurSprite( int  inSpriteHandle,
 
                     int  boxRowStart  =  py * w * 4 + sourceStartByte;
 
-                    pix = boxRowStart + ( x - 1 - inRadius ) * 4;
-                    c   = 0;
-                    
-                    boxAccume[ c++ ] -= mx_spriteBytes[ pix++ ];
-                    boxAccume[ c++ ] -= mx_spriteBytes[ pix++ ];
-                    boxAccume[ c++ ] -= mx_spriteBytes[ pix++ ];
-                    boxAccume[ c++ ] -= mx_spriteBytes[ pix++ ];
+                    pix   = boxRowStart + ( x - 1 - inRadius ) * 4;
+                    c     = 0;
+                    alpha = mx_spriteBytes[ pix + 3 ];
 
-                    pix = boxRowStart + ( x + inRadius ) * 4;
-                    c   = 0;
+                    /* subtract pre-mulitiplied alpha left column */
+                    boxAccume[ c++ ] -= alpha * mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] -= alpha * mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] -= alpha * mx_spriteBytes[ pix++ ];
+                    alphaSum         -= alpha;
+
+                    pix   = boxRowStart + ( x + inRadius ) * 4;
+                    c     = 0;
+                    alpha = mx_spriteBytes[ pix + 3 ];
                     
-                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
-                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
-                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
-                    boxAccume[ c++ ] += mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] += alpha * mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] += alpha * mx_spriteBytes[ pix++ ];
+                    boxAccume[ c++ ] += alpha * mx_spriteBytes[ pix++ ];
+                    alphaSum         += alpha;
                     }
 
                 /* now our accume contains sum of all pixels
@@ -2095,14 +2113,22 @@ static void mx_blurSprite( int  inSpriteHandle,
                 pix = rowStart + x * 4;
                 c   = 0;
 
-                mx_spriteBytes[ pix++ ] =
-                    (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
-                mx_spriteBytes[ pix++ ] =
-                    (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
-                mx_spriteBytes[ pix++ ] =
-                    (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
-                mx_spriteBytes[ pix++ ] =
-                    (unsigned char)( boxAccume[ c++ ] / pixelsInBox );
+                if( alphaSum == 0 ) {
+                    mx_spriteBytes[ pix++ ] = 0;
+                    mx_spriteBytes[ pix++ ] = 0;
+                    mx_spriteBytes[ pix++ ] = 0;
+                    mx_spriteBytes[ pix++ ] = 0;
+                    }
+                else {
+                    mx_spriteBytes[ pix++ ] =
+                        (unsigned char)( boxAccume[ c++ ] / alphaSum );
+                    mx_spriteBytes[ pix++ ] =
+                        (unsigned char)( boxAccume[ c++ ] / alphaSum );
+                    mx_spriteBytes[ pix++ ] =
+                        (unsigned char)( boxAccume[ c++ ] / alphaSum );
+                    mx_spriteBytes[ pix++ ] =
+                        (unsigned char)( alphaSum / pixelsInBox );
+                    }
                 }
             
             }
@@ -2153,7 +2179,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
 
 
 
-    glowBorder = inBlurRadius * inBlurIterations;
+    glowBorder = inBlurRadius * inBlurIterations * 2;
     
     glowW = mx_sprites[ inMainSpriteHandle ].w
             +

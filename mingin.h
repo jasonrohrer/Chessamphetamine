@@ -1895,6 +1895,13 @@ static  MinginButton  mn_lastButtonPressed  =  MGN_BUTTON_NONE;
 /* status tracking pressed/released state */
 static  char          mn_buttonDown[ MGN_NUM_BUTTONS ];
 
+/* tracking whether button was pressed down since last call
+   to minginGame_step
+   If so, we should report button as down for at least one potential call
+   to isButtonDown (during next minginGame_step call)
+*/
+static  char          mn_buttonWasDownSinceLastStep[ MGN_NUM_BUTTONS ];
+
 /* maps each Mingin key to an X11 XK_ keysym */
 static  KeySym        mn_buttonToXKeyMap[ MGN_NUM_BUTTONS ];
 
@@ -2053,7 +2060,10 @@ static char minginPlatform_isButtonDown( MinginButton  inButton ) {
         return 0;
         }
     
-    if( mn_buttonDown[ inButton ] ) {
+    if( mn_buttonDown[ inButton ]
+        ||
+        mn_buttonWasDownSinceLastStep[ inButton ] ) {
+        
         return 1;
         }
 
@@ -2066,7 +2076,10 @@ static char minginPlatform_isButtonDown( MinginButton  inButton ) {
              i < MGN_NUM_BUTTONS;
              i ++ ) {
             
-            if( mn_buttonDown[i] ) {
+            if( mn_buttonDown[i]
+                ||
+                mn_buttonWasDownSinceLastStep[i] ) {
+                
                 return 1;
                 }
             }
@@ -2873,6 +2886,18 @@ char mingin_getPointerLocation( int  *outX,
     }
 
 
+static void mn_setButtonState( MinginButton  inButton,
+                               char          inDown ) {
+
+    mn_buttonDown[ inButton ] = inDown;
+
+    if( inDown ) {
+        mn_buttonWasDownSinceLastStep[ inButton ] = 1;
+        mn_lastButtonPressed = inButton;
+        }
+    }
+
+
 
         
 int main( void ) {
@@ -2892,6 +2917,7 @@ int main( void ) {
          b ++ ) {
         
         mn_buttonDown[b] = 0;
+        mn_buttonWasDownSinceLastStep[b] = 0;
         mn_buttonToXKeyMap[b] = 0;
         }
 
@@ -2927,9 +2953,7 @@ int main( void ) {
                 MinginButton  button  =  mn_mapXKeyToButton( ks );
                 
                 if( button > MGN_BUTTON_NONE ) {
-                    mn_buttonDown[ button ] = 1;
-                    /* a new press to remember */
-                    mn_lastButtonPressed = button;
+                    mn_setButtonState( button, 1 );
                     }
                 }
             else if( e.type == KeyRelease ) {
@@ -2938,7 +2962,7 @@ int main( void ) {
                 MinginButton  button  =  mn_mapXKeyToButton( ks );
                 
                 if( button > MGN_BUTTON_NONE ) {
-                    mn_buttonDown[ button ] = 0;
+                    mn_setButtonState( button, 0 );
                     }
                 }
             else if( e.type == ButtonPress ) {
@@ -2946,9 +2970,7 @@ int main( void ) {
                                              e.xbutton.button );
                 
                 if( button > MGN_BUTTON_NONE ) {
-                    mn_buttonDown[ button ] = 1;
-                    /* a new press to remember */
-                    mn_lastButtonPressed = button;
+                    mn_setButtonState( button, 1 );
                     }
                 }
             else if( e.type == ButtonRelease ) {
@@ -2956,7 +2978,7 @@ int main( void ) {
                                              e.xbutton.button );
                 
                 if( button > MGN_BUTTON_NONE ) {
-                    mn_buttonDown[ button ] = 0;
+                    mn_setButtonState( button, 0 );
                     }
                 }
             }
@@ -2991,13 +3013,12 @@ int main( void ) {
 
                             if( button > MGN_BUTTON_NONE ) {
                                 if( e.value ) {
-                                    mn_buttonDown[ button ] = 1;
-                                    /* a new press to remember */
-                                    mn_lastButtonPressed = button;
+                                    /* press */
+                                    mn_setButtonState( button, 1 );
                                     }
                                 else {
                                     /* release */
-                                    mn_buttonDown[ button ] = 0;
+                                    mn_setButtonState( button, 0 );
                                     }
                                 }
                             break;
@@ -3012,11 +3033,11 @@ int main( void ) {
 
                                 if( buttonPlus > MGN_BUTTON_NONE ) {
                                     /* release */
-                                    mn_buttonDown[ buttonPlus ] = 0;
+                                    mn_setButtonState( buttonPlus, 0 );
                                     }
                                 if( buttonMinus > MGN_BUTTON_NONE ) {
                                     /* release */
-                                    mn_buttonDown[ buttonMinus ] = 0;
+                                    mn_setButtonState( buttonMinus, 0 );
                                     }
                                 }
                             else {
@@ -3029,13 +3050,12 @@ int main( void ) {
                                                                      -e.value );
 
                                 if( button > MGN_BUTTON_NONE ) {
-                                    mn_buttonDown[ button ] = 1;
-                                    /* a new press to remember */
-                                    mn_lastButtonPressed = button;
+                                    /* press */
+                                    mn_setButtonState( button, 1 );
                                     }
                                 if( buttonMinus > MGN_BUTTON_NONE ) {
                                     /* release opposite side */
-                                    mn_buttonDown[ buttonMinus ] = 0;
+                                    mn_setButtonState( buttonMinus, 0 );
                                     }
                                 }
 
@@ -3044,11 +3064,8 @@ int main( void ) {
                                                                      e.value,
                                                                      & pressed );
                             if( button > MGN_BUTTON_NONE ) {
-                                mn_buttonDown[ button ] = pressed;
 
-                                if( pressed ) {
-                                    mn_lastButtonPressed = button;
-                                    }
+                                mn_setButtonState( button, pressed );
                                 }
 
                             
@@ -3089,6 +3106,15 @@ int main( void ) {
         minginGame_step( 0 );
 
         mn_areWeInStepFunction = 0;
+
+
+        /* any "was pressed at all" flags have been consumed by step
+           clear them */
+        for( b = 0;
+             b < MGN_NUM_BUTTONS;
+             b ++ ) {
+            mn_buttonWasDownSinceLastStep[b] = 0;
+            }
         
         
         if( mn_shouldQuit ) {

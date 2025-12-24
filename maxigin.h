@@ -1513,6 +1513,8 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
 
     int   neededSpriteBytes;
     int   newSpriteHandle;
+    int   neededFileSpriteBytes;
+    
     int   b;
     int   startByte;
 
@@ -1572,12 +1574,14 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
         ||
         mx_tgaReadBuffer[1]  != 0       /* color map type */
         ||
-        mx_tgaReadBuffer[16] != 32 ) {  /* bits per pixel */
+        ( mx_tgaReadBuffer[16] != 24
+          &&
+          mx_tgaReadBuffer[16] != 32 ) ) {  /* bits per pixel */
 
         if( inReloadHandle == -1 ) {
             maxigin_logString(
-                "Only uncompressed unmapped 32-bit RGBA TGA files "
-                "can be loaded: ",
+                "Only uncompressed unmapped 32-bit RGBA and 24-bit RGB "
+                "TGA files can be loaded: ",
                 inBulkResourceName );
             }
         
@@ -1623,9 +1627,16 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
     /* TGA pixels are in BGRA order */
 
     neededSpriteBytes = w * h * 4;
-    
+
+    if( mx_tgaReadBuffer[16] == 32 ) {
+        neededFileSpriteBytes = w * h * 4;
+        }
+    else {
+        neededFileSpriteBytes = w * h * 3;
+        }
+        
     if( numBytes - mx_getDataPosition( inReadHandle )
-        < neededSpriteBytes ) {
+        < neededFileSpriteBytes ) {
 
         if( inReloadHandle == -1 ) {
             maxigin_logString( "Full TGA pixel data truncated: ",
@@ -1704,7 +1715,7 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
         
         numRead = mx_readData(
                       inReadHandle,
-                      neededSpriteBytes,
+                      neededFileSpriteBytes,
                       &( mx_spriteBytes[ mx_numSpriteBytesUsed ] ) );
         }
     else {
@@ -1715,12 +1726,12 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
         
         numRead = mx_readData(
                       inReadHandle,
-                      neededSpriteBytes,
+                      neededFileSpriteBytes,
                       &( mx_spriteBytes[ startByte ] ) );
         }
 
     
-    if( numRead != neededSpriteBytes ) {
+    if( numRead != neededFileSpriteBytes ) {
         maxigin_logString( "Failed to read full TGA pixel data: ",
                            inBulkResourceName );
         return -1;
@@ -1765,11 +1776,48 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
         mx_numSprites ++;
         }
 
+    
+    startByte = mx_sprites[ newSpriteHandle ].startByte;
+    
+
+    if( neededSpriteBytes == w * h * 4
+        &&
+        neededFileSpriteBytes == w * h * 3 ) {
+        
+        /* we want BRGA sprite data, but we read BRG data from the file */
+        
+        /* do BRG -> BRGA conversion, with all A values set to 255 */
+
+        /* walk backward through file data, which is filled into our
+           first 3/4 of the sprite buffer, while we
+           also walk backward through our full sprite buffer,
+           copying pixels last-first
+        */
+        int fb  =  startByte + neededFileSpriteBytes - 1;
+        int sb  =  startByte + neededSpriteBytes     - 1;
+
+        while( fb > startByte
+               &&
+               sb > startByte ) {
+
+            /* each iteration, we move fb back by only 3 bytes
+               we move sb back by 4 bytes */
+
+            /* fixed, fully-opaque alpha */
+            mx_spriteBytes[ sb -- ] =  255;
+
+            /* copy g b r */
+            mx_spriteBytes[ sb -- ] = mx_spriteBytes[ fb -- ];
+            mx_spriteBytes[ sb -- ] = mx_spriteBytes[ fb -- ];
+            mx_spriteBytes[ sb -- ] = mx_spriteBytes[ fb -- ];
+            }
+        }
+    
 
 
     /* now do BGRA to RGBA conversion */
 
-    startByte = mx_sprites[ newSpriteHandle ].startByte;
+    
     b = startByte;
 
     while( b < startByte + neededSpriteBytes ) {

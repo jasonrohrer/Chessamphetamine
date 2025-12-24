@@ -45,12 +45,14 @@ static int boxVPerSecond = 120;
 static int boxDir = 1;
 
 
-#define  NUM_BULK_FILES  4
+#define  NUM_BULK_FILES  6
 
 static const char  *fileNames[ NUM_BULK_FILES ] = { "bullet.tga",
                                                     "bulletGlow.tga",
                                                     "bigPointer.tga",
-                                                    "bigPointer2.tga" };
+                                                    "bigPointer2.tga",
+                                                    "vertLine.tga",
+                                                    "horLine.tga" };
 
 static int          spriteHandles[ NUM_BULK_FILES ];
 
@@ -133,6 +135,22 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             inRGBBuffer[pix + 1] = 255;
             inRGBBuffer[pix + 2] = 0;
             }
+        }
+
+    
+
+    for( i = 0;
+         i < 9;
+         i ++ ) {
+
+        /* vert line */
+        maxigin_drawGlowSprite( spriteHandles[4],
+                                i * 20 + 19,
+                                MAXIGIN_GAME_NATIVE_H /  2);
+        /* hor line */
+        maxigin_drawGlowSprite( spriteHandles[5],
+                                MAXIGIN_GAME_NATIVE_W /  2,
+                                i * 20 + 44 );
         }
 
     maxigin_drawToggleAdditive( 1 );
@@ -449,7 +467,7 @@ void maxiginGame_init( void ) {
          i < NUM_BULK_FILES;
          i ++ ) {
 
-        if( i == 3 ) {
+        if( i == 3 || i == 4 || i == 5 ) {
             spriteHandles[ i ] = maxigin_initGlowSprite( fileNames[ i ],
                                                          4,
                                                          2 );

@@ -2723,7 +2723,8 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
 
     conf = XRRGetScreenInfo( s->xDisplay, s->xRoot );
     mn_screenRefreshRate = XRRConfigCurrentRate( conf );
-
+    XRRFreeScreenConfigInfo( conf );
+    
     mingin_log( "Found monitor refresh reate " );
     mingin_log( mn_intToString( mn_screenRefreshRate ) );
     mingin_log( "\n" );

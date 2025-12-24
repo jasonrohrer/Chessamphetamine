@@ -4195,12 +4195,11 @@ char mingin_getPointerLocation( int  *outX,
                                 int  *outMaxX,
                                 int  *outMaxY ) {
     /* suppress warning */
-    if( *outX ||
-        *outY ||
-        *outMaxX ||
-        *outMaxY ) {
-        return 0;
-        }
+    *outX = 0;
+    *outY = 0;
+    *outMaxX = 0;
+    *outMaxY = 0;
+    
     return 0;
     }
 

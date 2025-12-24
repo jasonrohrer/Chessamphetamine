@@ -1752,11 +1752,16 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
     mx_sprites[ newSpriteHandle ].pendingChange       = 0;
     mx_sprites[ newSpriteHandle ].retryCount          = 0;
     mx_sprites[ newSpriteHandle ].stepsUntilNextRetry = 0;
-    mx_sprites[ newSpriteHandle ].glowSpriteHandle    = -1;
+
 
 
     
     if( newSpriteHandle == mx_numSprites ) {
+
+        /* leave old glow handle in place if this isn't a new sprite record */
+        
+        mx_sprites[ newSpriteHandle ].glowSpriteHandle    = -1;
+            
         mx_numSprites ++;
         }
 
@@ -2271,6 +2276,12 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                             -1 ) {
                             /* successfully loaded from file */
                             readGlowFromFile = 1;
+                            
+                            maxigin_logString( "Successfully read cached glow "
+                                               "sprite from perisistent data "
+                                               "store for ",
+                                               mx_sprites[ inMainSpriteHandle ].
+                                                   bulkResourceName );
                             }
                         }
                     else {
@@ -2337,6 +2348,8 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
 
         
         mx_sprites[ inMainSpriteHandle ].glowSpriteHandle = glowSpriteHandle;
+        mx_sprites[ inMainSpriteHandle ].glowRadius       = inBlurRadius;
+        mx_sprites[ inMainSpriteHandle ].glowIterations   = inBlurIterations;
 
         glowStartByte  =  mx_numSpriteBytesUsed;
         

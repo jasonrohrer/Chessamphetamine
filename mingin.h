@@ -2887,6 +2887,7 @@ char mingin_getPointerLocation( int  *outX,
     }
 
 
+
 static void mn_setButtonState( MinginButton  inButton,
                                char          inDown ) {
 
@@ -2897,6 +2898,22 @@ static void mn_setButtonState( MinginButton  inButton,
         mn_lastButtonPressed = inButton;
         }
     }
+
+
+
+static void mn_releaseAllButtons( void ) {
+
+    int  b;
+    
+    for( b = 0;
+         b < MGN_NUM_BUTTONS;
+         b ++ ) {
+        
+        mn_buttonDown[b] = 0;
+        mn_buttonWasDownSinceLastStep[b] = 0;
+        }
+    }
+
 
 
 
@@ -3142,9 +3159,17 @@ int main( void ) {
         glXSwapBuffers( mn_XSetup.xDisplay,
                         mn_XSetup.xWindow ); 
 
+        
         if( currentlyFullscreen != mn_xFullscreen ) {
+            
             int  oldW  =  mn_windowW;
             int  oldH  =  mn_windowH;
+
+            /* when toggling fullscreen, we tend to miss button
+               release events that happen during toggle, which
+               takes some time.
+               Force all buttons to be released now */
+            mn_releaseAllButtons();
 
             mn_reconfigureWindowSize( mn_XSetup.xDisplay );
 

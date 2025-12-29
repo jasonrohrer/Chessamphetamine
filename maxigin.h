@@ -3222,6 +3222,7 @@ static void mx_drawLineHigh( int  inStartX,
     int  d;
     int  x;
     int  y;
+    int  pixelStartByte;
     
     if( dX < 0 ) {
         xDir = -1;
@@ -3232,22 +3233,46 @@ static void mx_drawLineHigh( int  inStartX,
     
     x = inStartX;
 
+
+    /* Fixme:
+       doing this inline instead of calling mx_drawPixel
+       is resulting in a 28% speed up
+
+       Probably just need a separate loop for each blending case
+       like what we do for the inner loop of drawSprite
+    */
+    pixelStartByte =
+        inStartY * MAXIGIN_GAME_NATIVE_W * 3
+        +
+        x * 3;
     
     for( y  = inStartY;
          y <= inEndY;
          y ++ ) {
 
-        mx_drawPixel( x, y );
+        /* replace color */
+
+        mx_gameImageBuffer[ pixelStartByte     ] = mx_drawColor.comp.red;
+        mx_gameImageBuffer[ pixelStartByte + 1 ] = mx_drawColor.comp.green;
+        mx_gameImageBuffer[ pixelStartByte + 2 ] = mx_drawColor.comp.blue;
+
+
+        /*mx_drawPixel( x, y );*/
         
         if( d > 0 ) {
         
             x = x + xDir;
 
+            pixelStartByte = pixelStartByte + xDir * 3;
+            
             d = d + 2 * ( dX - dY );
             }
         else {
             d = d + 2 * dX;
             }
+
+        /* next row */
+        pixelStartByte += MAXIGIN_GAME_NATIVE_W * 3;
         }
     }
 

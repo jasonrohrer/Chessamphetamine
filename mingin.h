@@ -2873,7 +2873,7 @@ char mingin_getPointerLocation( int  *outX,
         ||
         winY < 0
         ||
-        winY > mn_windowW ) {
+        winY > mn_windowH ) {
 
         return 0;
         }

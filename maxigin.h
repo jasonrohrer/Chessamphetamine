@@ -567,11 +567,57 @@ void maxigin_drawSprite( int  inSpriteHandle,
  
       inCenterY        the y position in the game's native pixel buffer of the
                        sprite's center
+                       
   [jumpMaxiginDraw]
 */
 void maxigin_drawGlowSprite( int  inSpriteHandle,
                              int  inCenterX,
                              int  inCenterY );
+
+
+/*
+  Sets the active draw color for future calls to drawing functions.
+  
+  Defaults to opaque white (255, 255, 255, 255).
+
+  The color components affect geometric shapes and do not change the colors
+  of sprites.
+
+  The alpha value changes the transparency of both geometric shapes and sprites.
+
+  Parameters:
+
+      inRed     red   value in [0..255]
+      
+      inGreen   green value in [0..255]
+      
+      inBlue    blue  value in [0..255]
+      
+      inAlpha   alpha value in [0..255]
+      
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawSetColor( unsigned char  inRed,
+                           unsigned char  inGreen,
+                           unsigned char  inBlue,
+                           unsigned char  inAlpha );
+
+
+/*
+  Sets the active alpha value for future calls to drawing functions,
+  without adjusting the R,G,B draw color.
+  
+  Defaults to opaque (255).
+
+  The alpha value affects both geometric shapes and sprites.
+
+  Parameters:
+      
+      inAlpha   alpha value in [0..255]
+      
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawSetAlpha( unsigned char  inAlpha );
 
 
 
@@ -2639,6 +2685,51 @@ char maxigin_drawGetAdditive( void ) {
 
 
 
+typedef union MaxiginColor {
+
+        struct {
+                
+                unsigned char  red;
+                
+                unsigned char  green;
+                
+                unsigned char  blue;
+                
+                unsigned char  alpha;
+                
+            } comp;
+
+        unsigned char val[ 4 ];
+        
+    } MaxiginColor;
+
+
+
+static MaxiginColor  mx_drawColor  =  { { 255, 255, 255, 255 } };
+
+
+void maxigin_drawSetColor( unsigned char  inRed,
+                           unsigned char  inGreen,
+                           unsigned char  inBlue,
+                           unsigned char  inAlpha ) {
+
+    mx_drawColor.comp.red    =  inRed;
+    mx_drawColor.comp.green  =  inGreen;
+    mx_drawColor.comp.blue   =  inBlue;
+    mx_drawColor.comp.alpha  =  inAlpha;
+    
+    }
+
+
+
+void maxigin_drawSetAlpha( unsigned char  inAlpha ) {
+    
+    mx_drawColor.comp.alpha  =  inAlpha;
+
+    }
+
+
+
 void maxigin_drawSprite( int  inSpriteHandle,
                          int  inCenterX,
                          int  inCenterY ) {
@@ -2664,6 +2755,9 @@ void maxigin_drawSprite( int  inSpriteHandle,
     
     int  startByte;
 
+    char drawAlphaSet;
+
+    
     if( ! mx_areWeInMaxiginGameDrawFunction ) {
 
         mingin_log( "Game tried to call maxigin_drawSprite "
@@ -2681,6 +2775,20 @@ void maxigin_drawSprite( int  inSpriteHandle,
         maxigin_logInt( "Game tried to draw an unknown sprite handle: ",
                         inSpriteHandle );
         }
+
+    
+    drawAlphaSet = 0;
+
+    if( mx_drawColor.comp.alpha < 255 ) {
+        drawAlphaSet = 1;
+        
+        if( mx_drawColor.comp.alpha == 0 ) {
+
+            /* draw alpha of 0 means sprite is invisible, skip it */
+            return;
+            }
+        }
+    
     
     w             =  mx_sprites[ inSpriteHandle ].w;
     h             =  mx_sprites[ inSpriteHandle ].h;
@@ -2747,7 +2855,11 @@ void maxigin_drawSprite( int  inSpriteHandle,
                  x ++ ) {
                 
                 unsigned char  a  =  mx_spriteBytes[ spriteByte + 3 ];
-            
+
+                if( drawAlphaSet ) {
+                    a = (unsigned char)( ( a * mx_drawColor.comp.alpha ) / 255 );
+                    }
+                    
                 if( a == 255 ) {
 
                     int  v;
@@ -2849,7 +2961,11 @@ void maxigin_drawSprite( int  inSpriteHandle,
                  x ++ ) {
             
                 unsigned char  a  =  mx_spriteBytes[ spriteByte + 3 ];
-            
+
+                if( drawAlphaSet ) {
+                    a = (unsigned char)( ( a * mx_drawColor.comp.alpha ) / 255 );
+                    }
+                
                 if( a == 255 ) {
                     /* RGBA bytes */
                     mx_gameImageBuffer[ imageByte  ++ ] =

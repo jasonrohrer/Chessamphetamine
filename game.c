@@ -27,22 +27,24 @@ typedef struct Vector{
     } Vector;
 
 
-static  char    bulletOn[ MAX_NUM_BULLETS ];
+static  char           bulletOn[ MAX_NUM_BULLETS ];
 
-static  Vector  bulletPos[ MAX_NUM_BULLETS ];
+static  Vector         bulletPos[ MAX_NUM_BULLETS ];
 
-static  Vector  bulletSpeed[ MAX_NUM_BULLETS ];
+static  Vector         bulletSpeed[ MAX_NUM_BULLETS ];
 
-static  int     stepsSinceLastBullet  =  0;
-static  int     msBetweenBullets      =  100;
+static  unsigned char  bulletFade[ MAX_NUM_BULLETS ];
+
+static  int            stepsSinceLastBullet  =    0;
+static  int            msBetweenBullets      =  100;
 
 
-static int boxPosX = -1;
-static int boxPosY = -1;
-static int boxW = 10;
-static int boxH = 40;
-static int boxVPerSecond = 120;
-static int boxDir = 1;
+static  int            boxPosX               =   -1;
+static  int            boxPosY               =   -1;
+static  int            boxW                  =   10;
+static  int            boxH                  =   40;
+static  int            boxVPerSecond         =  120;
+static  int            boxDir                =    1;
 
 
 #define  NUM_BULK_FILES  6
@@ -66,6 +68,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     int  x;
     int  y;
     int  i;
+
+    maxigin_drawSetAlpha( 255 );
     
     /* black background */
     for( p = 0; p<numPixels; p++ ) {
@@ -166,6 +170,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             int  endX    =  bulletPos[ i ].x + 2;
             int  endY    =  bulletPos[ i ].y + 2;
 
+            maxigin_drawSetAlpha( bulletFade[ i ] );
+            
             if( i % 3 == 0 ) {
                 
                 maxigin_drawSprite( spriteHandles[ 0 ],
@@ -245,6 +251,8 @@ static void fireBullet( int  inX,
 
             bulletSpeed[ i ].x = 0;
             bulletSpeed[ i ].y = -2;
+            
+            bulletFade[ i ] = 255;
             
             break;
             }
@@ -414,7 +422,12 @@ void maxiginGame_step( void ) {
                 bulletPos[ i ].y <= 0 ) {
                 bulletOn[ i ] = 0;
                 }
-            
+
+            bulletFade[ i ] -= 3;
+
+            if( bulletFade[ i ] == 0 ) {
+                bulletOn[ i ] = 0;
+                }
             }
         }
     }
@@ -513,7 +526,8 @@ void maxiginGame_init( void ) {
     REGISTER_ARRAY_MEM( bulletOn );
     REGISTER_ARRAY_MEM( bulletPos );
     REGISTER_ARRAY_MEM( bulletSpeed );
-
+    REGISTER_ARRAY_MEM( bulletFade );
+    
     REGISTER_INT_MEM( stepsSinceLastBullet );
 
     maxigin_initRestoreStaticMemoryFromLastRun();

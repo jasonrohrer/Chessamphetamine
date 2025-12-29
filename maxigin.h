@@ -622,6 +622,58 @@ void maxigin_drawSetAlpha( unsigned char  inAlpha );
 
 
 /*
+  Draws a line into the game's native pixel buffer.
+
+  Parameters:
+  
+      inStartX        the x position in the game's native pixel buffer of the
+                      start of the line
+                      
+      inStartY        the Y position in the game's native pixel buffer of the
+                      start of the line
+ 
+      inEndX          the x position in the game's native pixel buffer of the
+                      end of the line
+                      
+      inEndY          the Y position in the game's native pixel buffer of the
+                      end of the line
+       
+  [jumpMaxiginDraw]
+*/                      
+void maxigin_drawLine( int  inStartX,
+                       int  inStartY,
+                       int  inEndX,
+                       int  inEndY );
+
+
+
+/*
+  Draws a filled rectangle into the game's native pixel buffer.
+
+  Parameters:
+  
+      inStartX        the x position in the game's native pixel buffer of the
+                      start corner of the rectangle
+                      
+      inStartY        the Y position in the game's native pixel buffer of the
+                      start corner of the rectangle
+ 
+      inEndX          the x position in the game's native pixel buffer of the
+                      end corner of the rectangle
+                      
+      inEndY          the Y position in the game's native pixel buffer of the
+                      end corner of the rectangle
+       
+  [jumpMaxiginDraw]
+*/                      
+void maxigin_drawFillRect( int  inStartX,
+                           int  inStartY,
+                           int  inEndX,
+                           int  inEndY );
+
+
+
+/*
   Maxigin listens to certain buttons for its own functionality that's not
   game-specific (like accessing a settings screen, toggling fullscreen, etc.)
 
@@ -3050,6 +3102,239 @@ void maxigin_drawGlowSprite( int  inSpriteHandle,
 
         maxigin_drawToggleAdditive( oldAdditive );
         }
+    }
+
+
+
+
+static int mx_abs( int  inValue ) {
+    if( inValue < 0 ) {
+        return - inValue;
+        }
+    else {
+        return inValue;
+        }
+    }
+
+
+
+static void mx_drawPixel( int  inX,
+                          int  inY ) {
+
+    int  pixelStartByte;
+
+    if( mx_drawColor.comp.alpha == 0 ) {
+        /* fully transparent */
+        return;
+        }
+    
+    if( inX < 0
+        ||
+        inX >= MAXIGIN_GAME_NATIVE_W
+        ||
+        inY < 0
+        ||
+        inY >= MAXIGIN_GAME_NATIVE_H ) {
+        
+        /* out of image bounds */
+        return;
+        }
+
+    
+
+    pixelStartByte =
+        inY * MAXIGIN_GAME_NATIVE_W * 3
+        +
+        inX * 3;
+
+    if( mx_drawColor.comp.alpha == 255 ) {
+
+        if( ! mx_additiveBlend ) {
+            
+            /* replace color */
+
+            mx_gameImageBuffer[ pixelStartByte++ ] = mx_drawColor.comp.red;
+            mx_gameImageBuffer[ pixelStartByte++ ] = mx_drawColor.comp.green;
+            mx_gameImageBuffer[ pixelStartByte++ ] = mx_drawColor.comp.blue;
+            }
+        else {
+            /* fixme:
+               additive case */
+            }
+        }
+    else {
+        /* fixme:
+           alpha blending */
+        }
+    }
+
+
+static void mx_drawLineLow( int  inStartX,
+                            int  inStartY,
+                            int  inEndX,
+                            int  inEndY ) {
+    
+    int  dX    =  inEndX - inStartX;
+    int  dY    =  inEndY - inStartY;
+    int  yDir  =  1;
+    int  d;
+    int  x;
+    int  y;
+    
+    if( dY < 0 ) {
+        yDir = -1;
+        dY   = -dY;
+        }
+    
+    d = ( 2 * dY ) - dX;
+    
+    y = inStartY;
+
+    
+    for( x  = inStartX;
+         x <= inEndX;
+         x ++ ) {
+
+        mx_drawPixel( x, y );
+        
+        if( d > 0 ) {
+        
+            y = y + yDir;
+
+            d = d + 2 * ( dY - dX );
+            }
+        else {
+            d = d + 2 * dY;
+            }
+        }
+    }
+
+
+
+static void mx_drawLineHigh( int  inStartX,
+                             int  inStartY,
+                             int  inEndX,
+                             int  inEndY ) {
+    
+    int  dX    =  inEndX - inStartX;
+    int  dY    =  inEndY - inStartY;
+    int  xDir  =  1;
+    int  d;
+    int  x;
+    int  y;
+    
+    if( dX < 0 ) {
+        xDir = -1;
+        dX   = -dX;
+        }
+    
+    d = ( 2 * dX ) - dY;
+    
+    x = inStartX;
+
+    
+    for( y  = inStartY;
+         y <= inEndY;
+         y ++ ) {
+
+        mx_drawPixel( x, y );
+        
+        if( d > 0 ) {
+        
+            x = x + xDir;
+
+            d = d + 2 * ( dX - dY );
+            }
+        else {
+            d = d + 2 * dX;
+            }
+        }
+    }
+
+
+
+void maxigin_drawLine( int  inStartX,
+                       int  inStartY,
+                       int  inEndX,
+                       int  inEndY ) {
+
+    /* special case: vert line */
+    if( inStartX == inEndX ) {
+
+        int  y;
+        int  dir  =  1;
+
+        if( inEndY < inStartY ) {
+            dir = -1;
+            }
+        
+        for( y  = inStartY;
+             y != inEndY + dir;
+             y += dir ) {
+
+            mx_drawPixel( inStartX,
+                          y );
+            }
+        }
+
+    /* special case: horizontal line */
+    if( inStartY == inEndY ) {
+        
+        int  x;
+        int  dir  =  1;
+
+        if( inEndX < inStartX ) {
+            dir = -1;
+            }
+        
+        for( x  = inStartX;
+             x != inEndX + dir;
+             x += dir ) {
+
+            mx_drawPixel( x,
+                          inStartY );
+            }
+        }
+    
+    
+    /* General-purpose Bresenham's line algorithm */
+
+    if( mx_abs( inEndY - inStartY )
+        <
+        mx_abs( inEndX - inStartX ) ) {
+        
+        if( inStartX > inEndX ) {
+            mx_drawLineLow( inEndX, inEndY, inStartX, inStartY );
+            }
+        else {
+            mx_drawLineLow( inStartX, inStartY, inEndX, inEndY );
+            }
+        }
+    else {
+        if( inStartY > inEndY ) {
+            mx_drawLineHigh( inEndX, inEndY, inStartX, inStartY );
+            }
+        else {
+            mx_drawLineHigh( inStartX, inStartY, inEndX, inEndY );
+            }
+        }
+    }
+
+
+
+void maxigin_drawFillRect( int  inStartX,
+                           int  inStartY,
+                           int  inEndX,
+                           int  inEndY ) {
+
+    if( inStartX == inEndX
+        ||
+        inStartY == inEndY ) {
+
+        }
+
+    /* fixme:
+       implement rect drawing */
     }
 
 

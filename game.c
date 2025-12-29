@@ -46,6 +46,10 @@ static  int            boxH                  =   40;
 static  int            boxVPerSecond         =  120;
 static  int            boxDir                =    1;
 
+static  Vector         lineTip               =  { MAXIGIN_GAME_NATIVE_W / 2,
+                                                  MAXIGIN_GAME_NATIVE_H / 2 };
+
+    
 
 #define  NUM_BULK_FILES  6
 
@@ -227,6 +231,13 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
     maxigin_drawToggleAdditive( 0 );
+
+    maxigin_drawSetColor( 255, 255, 255, 255 );
+
+    maxigin_drawLine( MAXIGIN_GAME_NATIVE_W / 2,
+                      MAXIGIN_GAME_NATIVE_H / 2,
+                      lineTip.x,
+                      lineTip.y );
     
     }
 
@@ -360,6 +371,9 @@ void maxiginGame_step( void ) {
     if( pointerLive ) {
         boxPosX = pointerX;
         boxPosY = pointerY;
+
+        lineTip.x = pointerX;
+        lineTip.y = pointerY;
         }
     else {
         /* auto-move box, no on-screen pointer */
@@ -453,7 +467,7 @@ static MinginButton crashMapping[]  =  { MGN_KEY_M,         MGN_MAP_END };
 static MinginStick  thickMapping[]  =  { MGN_STICK_LEFT_Y,  MGN_MAP_END };
 
 
-#define REGISTER_INT_MEM( x )  \
+#define REGISTER_VAL_MEM( x )  \
     maxigin_initRegisterStaticMemory( &x, sizeof(x), #x )
 
 #define REGISTER_ARRAY_MEM( a ) \
@@ -516,19 +530,21 @@ void maxiginGame_init( void ) {
     boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 12;
 
 
-    REGISTER_INT_MEM( boxPosX );
-    REGISTER_INT_MEM( boxPosY );
-    REGISTER_INT_MEM( boxW );
-    REGISTER_INT_MEM( boxH );
-    REGISTER_INT_MEM( boxVPerSecond );
-    REGISTER_INT_MEM( boxDir );
+    REGISTER_VAL_MEM( boxPosX );
+    REGISTER_VAL_MEM( boxPosY );
+    REGISTER_VAL_MEM( boxW );
+    REGISTER_VAL_MEM( boxH );
+    REGISTER_VAL_MEM( boxVPerSecond );
+    REGISTER_VAL_MEM( boxDir );
 
     REGISTER_ARRAY_MEM( bulletOn );
     REGISTER_ARRAY_MEM( bulletPos );
     REGISTER_ARRAY_MEM( bulletSpeed );
     REGISTER_ARRAY_MEM( bulletFade );
     
-    REGISTER_INT_MEM( stepsSinceLastBullet );
+    REGISTER_VAL_MEM( stepsSinceLastBullet );
 
+    REGISTER_VAL_MEM( lineTip );
+    
     maxigin_initRestoreStaticMemoryFromLastRun();
     }

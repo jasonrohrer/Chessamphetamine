@@ -2804,6 +2804,11 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
                     s->xWindow,
                     s->glxContext );
 
+    glViewport( 0,
+                0,
+                (GLsizei)mn_windowW,
+                (GLsizei)mn_windowH );
+
     return 1;
     }
 

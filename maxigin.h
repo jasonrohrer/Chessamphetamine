@@ -3118,57 +3118,6 @@ static int mx_abs( int  inValue ) {
 
 
 
-static void mx_drawPixel( int  inX,
-                          int  inY ) {
-
-    int  pixelStartByte;
-
-    if( mx_drawColor.comp.alpha == 0 ) {
-        /* fully transparent */
-        return;
-        }
-    
-    if( inX < 0
-        ||
-        inX >= MAXIGIN_GAME_NATIVE_W
-        ||
-        inY < 0
-        ||
-        inY >= MAXIGIN_GAME_NATIVE_H ) {
-        
-        /* out of image bounds */
-        return;
-        }
-
-    
-
-    pixelStartByte =
-        inY * MAXIGIN_GAME_NATIVE_W * 3
-        +
-        inX * 3;
-
-    if( mx_drawColor.comp.alpha == 255 ) {
-
-        if( ! mx_additiveBlend ) {
-            
-            /* replace color */
-
-            mx_gameImageBuffer[ pixelStartByte++ ] = mx_drawColor.comp.red;
-            mx_gameImageBuffer[ pixelStartByte++ ] = mx_drawColor.comp.green;
-            mx_gameImageBuffer[ pixelStartByte++ ] = mx_drawColor.comp.blue;
-            }
-        else {
-            /* fixme:
-               additive case */
-            }
-        }
-    else {
-        /* fixme:
-           alpha blending */
-        }
-    }
-
-
 static void mx_drawLineLow( int  inStartX,
                             int  inStartY,
                             int  inEndX,
@@ -3277,18 +3226,21 @@ static void mx_drawLineLow( int  inStartX,
                 v = 255;
                 }
             mx_gameImageBuffer[ pixelStartByte + 2 ] = (unsigned char)v;
+
+            /* next col */
+            pixelStartByte += 3;
             }
         else {
             if( lineA == 255 ) {
         
                 /* no blend, pure replace */
-                mx_gameImageBuffer[ pixelStartByte     ] =
+                mx_gameImageBuffer[ pixelStartByte ++ ] =
                     mx_drawColor.comp.red;
                 
-                mx_gameImageBuffer[ pixelStartByte + 1 ] =
+                mx_gameImageBuffer[ pixelStartByte ++ ] =
                     mx_drawColor.comp.green;
                 
-                mx_gameImageBuffer[ pixelStartByte + 2 ] =
+                mx_gameImageBuffer[ pixelStartByte ++ ] =
                     mx_drawColor.comp.blue;
                 
                 }
@@ -3323,6 +3275,9 @@ static void mx_drawLineLow( int  inStartX,
                           linePreB )
                         /
                         255 );
+                
+                /* next col */
+                pixelStartByte += 3;
                 }
             }
         
@@ -3346,8 +3301,6 @@ static void mx_drawLineLow( int  inStartX,
             d += 2 * dY;
             }
 
-        /* next col */
-        pixelStartByte += 3;
         }
     }
 
@@ -3551,39 +3504,308 @@ void maxigin_drawLine( int  inStartX,
     if( inStartX == inEndX ) {
 
         int  y;
-        int  dir  =  1;
+        int  dir              =  1;
+        int  pixelStartByte;
+        int  lineA            =  mx_drawColor.comp.alpha;
+        int  rowHop;
+        
+        /* color components with alpha pre-multiplied */
+        int  linePreR         =  mx_drawColor.comp.red   * lineA;
+        int  linePreG         =  mx_drawColor.comp.green * lineA;
+        int  linePreB         =  mx_drawColor.comp.blue  * lineA;
+        int  lineScaledR      =  linePreR / 255;
+        int  lineScaledG      =  linePreG / 255;
+        int  lineScaledB      =  linePreB / 255;
+        
+        if( inStartX < 0
+            ||
+            inStartX >= MAXIGIN_GAME_NATIVE_W ) {
+            
+            /* vertical line outside left or right side of image */
+            return;
+            }
 
+        if( inStartY < 0
+            &&
+            inEndY < 0 ) {
+            /* completely outside top side of image */
+            return;
+            }
+        if( inStartY >= MAXIGIN_GAME_NATIVE_H
+            &&
+            inEndY   >= MAXIGIN_GAME_NATIVE_H ) {
+            /* completely outside bottom side of image */
+            return;
+            }
+
+        /* truncate vertical line inside image */
+        if( inStartY < 0 ) {
+            inStartY = 0;
+            }
+        else if( inStartY >= MAXIGIN_GAME_NATIVE_H ) {
+            inStartY = MAXIGIN_GAME_NATIVE_H - 1;
+            }
+        if( inEndY < 0 ) {
+            inEndY = 0;
+            }
+        else if( inEndY >= MAXIGIN_GAME_NATIVE_H ) {
+            inEndY = MAXIGIN_GAME_NATIVE_H - 1;
+            }
+        
+        
         if( inEndY < inStartY ) {
             dir = -1;
             }
-        
-        for( y  = inStartY;
-             y != inEndY + dir;
-             y += dir ) {
 
-            mx_drawPixel( inStartX,
-                          y );
-            }
+        rowHop          =  dir      * MAXIGIN_GAME_NATIVE_W * 3;
+        pixelStartByte  =  inStartY * MAXIGIN_GAME_NATIVE_W * 3 + inStartX;
         
+        
+        if( mx_additiveBlend ) {
+            /* additive blend */
+            
+            for( y  = inStartY;
+                 y != inEndY + dir;
+                 y += dir ) {
+                
+                int  v;
+
+                v = mx_gameImageBuffer[ pixelStartByte ] + lineScaledR;
+                if( v > 255 ) {
+                    v = 255;
+                    }
+                mx_gameImageBuffer[ pixelStartByte ] = (unsigned char)v;
+
+                v = mx_gameImageBuffer[ pixelStartByte + 1 ] + lineScaledG;
+                if( v > 255 ) {
+                    v = 255;
+                    }
+                mx_gameImageBuffer[ pixelStartByte + 1 ] = (unsigned char)v;
+
+                v = mx_gameImageBuffer[ pixelStartByte + 2 ] + lineScaledB;
+                if( v > 255 ) {
+                    v = 255;
+                    }
+                mx_gameImageBuffer[ pixelStartByte + 2 ] = (unsigned char)v; 
+
+                /* next row */
+                pixelStartByte += rowHop;
+                }
+            }
+        else {
+            if( lineA == 255 ) {
+                /* no blend, pure replace */
+                
+                for( y  = inStartY;
+                     y != inEndY + dir;
+                     y += dir ) {
+                    
+                    mx_gameImageBuffer[ pixelStartByte     ] =
+                        mx_drawColor.comp.red;
+                
+                    mx_gameImageBuffer[ pixelStartByte + 1 ] =
+                        mx_drawColor.comp.green;
+                
+                    mx_gameImageBuffer[ pixelStartByte + 2 ] =
+                        mx_drawColor.comp.blue;
+
+                    /* next row */
+                    pixelStartByte += rowHop;
+                    }
+                }
+            else {
+                /* weighted alpha blend */
+                
+                for( y  = inStartY;
+                     y != inEndY + dir;
+                     y += dir ) {
+                    
+                    mx_gameImageBuffer[ pixelStartByte ] =
+                        (unsigned char)( 
+                            ( mx_gameImageBuffer[ pixelStartByte ]
+                              * ( 255 - lineA )
+                              +
+                              linePreR )
+                            /
+                            255 );
+
+                    mx_gameImageBuffer[ pixelStartByte + 1 ] =
+                        (unsigned char)( 
+                            ( mx_gameImageBuffer[ pixelStartByte + 1 ]
+                              * ( 255 - lineA )
+                              +
+                              linePreG )
+                            /
+                            255 );
+
+                
+                    mx_gameImageBuffer[ pixelStartByte + 2 ] =
+                        (unsigned char)( 
+                            ( mx_gameImageBuffer[ pixelStartByte + 2 ]
+                              * ( 255 - lineA )
+                              +
+                              linePreB )
+                            /
+                            255 );
+                    /* next row */
+                    pixelStartByte += rowHop;
+                    }
+                }
+            }
         return;
         }
 
+    
     /* special case: horizontal line */
     if( inStartY == inEndY ) {
         
         int  x;
         int  dir  =  1;
+        int  pixelStartByte;
+        int  lineA            =  mx_drawColor.comp.alpha;
+        
+        /* color components with alpha pre-multiplied */
+        
+        int  linePreR         =  mx_drawColor.comp.red   * lineA;
+        int  linePreG         =  mx_drawColor.comp.green * lineA;
+        int  linePreB         =  mx_drawColor.comp.blue  * lineA;
+        int  lineScaledR      =  linePreR / 255;
+        int  lineScaledG      =  linePreG / 255;
+        int  lineScaledB      =  linePreB / 255;
 
+        if( inStartY < 0
+            ||
+            inStartY >= MAXIGIN_GAME_NATIVE_H ) {
+            
+            /* horizontal line above or below image */
+            return;
+            }
+
+        if( inStartX < 0
+            &&
+            inEndX < 0 ) {
+            /* completely outside left side of image */
+            return;
+            }
+        if( inStartX >= MAXIGIN_GAME_NATIVE_W
+            &&
+            inEndX   >= MAXIGIN_GAME_NATIVE_W ) {
+            /* completely outside right side of image */
+            return;
+            }
+        
+        /* truncate horizontal line inside image */
+        if( inStartX < 0 ) {
+            inStartX = 0;
+            }
+        else if( inStartX >= MAXIGIN_GAME_NATIVE_W ) {
+            inStartX = MAXIGIN_GAME_NATIVE_W - 1;
+            }
+        if( inEndX < 0 ) {
+            inEndX = 0;
+            }
+        else if( inEndX >= MAXIGIN_GAME_NATIVE_W ) {
+            inEndX = MAXIGIN_GAME_NATIVE_W - 1;
+            }
+
+        
         if( inEndX < inStartX ) {
             dir = -1;
             }
-        
-        for( x  = inStartX;
-             x != inEndX + dir;
-             x += dir ) {
 
-            mx_drawPixel( x,
-                          inStartY );
+        pixelStartByte  =  inStartY * MAXIGIN_GAME_NATIVE_W * 3 + inStartX;
+        
+        
+        if( mx_additiveBlend ) {
+            /* additive blend */
+            
+            for( x  = inStartX;
+                 x != inEndX + dir;
+                 x += dir ) {
+                
+                int  v;
+
+                v = mx_gameImageBuffer[ pixelStartByte ] + lineScaledR;
+                if( v > 255 ) {
+                    v = 255;
+                    }
+                mx_gameImageBuffer[ pixelStartByte ] = (unsigned char)v;
+
+                v = mx_gameImageBuffer[ pixelStartByte + 1 ] + lineScaledG;
+                if( v > 255 ) {
+                    v = 255;
+                    }
+                mx_gameImageBuffer[ pixelStartByte + 1 ] = (unsigned char)v;
+
+                v = mx_gameImageBuffer[ pixelStartByte + 2 ] + lineScaledB;
+                if( v > 255 ) {
+                    v = 255;
+                    }
+                mx_gameImageBuffer[ pixelStartByte + 2 ] = (unsigned char)v; 
+
+                /* next col */
+                pixelStartByte += 3;
+                }
+            }
+        else {
+            if( lineA == 255 ) {
+                /* no blend, pure replace */
+                
+                for( x  = inStartX;
+                     x != inEndX + dir;
+                     x += dir ) {
+
+                    
+                    mx_gameImageBuffer[ pixelStartByte ++ ] =
+                        mx_drawColor.comp.red;
+                
+                    mx_gameImageBuffer[ pixelStartByte ++ ] =
+                        mx_drawColor.comp.green;
+                
+                    mx_gameImageBuffer[ pixelStartByte ++ ] =
+                        mx_drawColor.comp.blue;
+
+                    }
+                }
+            else {
+                /* weighted alpha blend */
+                
+                for( x  = inStartX;
+                     x != inEndX + dir;
+                     x += dir ) {
+                    
+                    mx_gameImageBuffer[ pixelStartByte ] =
+                        (unsigned char)( 
+                            ( mx_gameImageBuffer[ pixelStartByte ]
+                              * ( 255 - lineA )
+                              +
+                              linePreR )
+                            /
+                            255 );
+
+                    mx_gameImageBuffer[ pixelStartByte + 1 ] =
+                        (unsigned char)( 
+                            ( mx_gameImageBuffer[ pixelStartByte + 1 ]
+                              * ( 255 - lineA )
+                              +
+                              linePreG )
+                            /
+                            255 );
+
+                
+                    mx_gameImageBuffer[ pixelStartByte + 2 ] =
+                        (unsigned char)( 
+                            ( mx_gameImageBuffer[ pixelStartByte + 2 ]
+                              * ( 255 - lineA )
+                              +
+                              linePreB )
+                            /
+                            255 );
+
+                    /* next col */
+                    pixelStartByte += 3;
+                    } 
+                }
             }
         return;
         }

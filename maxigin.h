@@ -3216,13 +3216,23 @@ static void mx_drawLineHigh( int  inStartX,
                              int  inEndX,
                              int  inEndY ) {
     
-    int  dX    =  inEndX - inStartX;
-    int  dY    =  inEndY - inStartY;
-    int  xDir  =  1;
+    int  dX               =  inEndX - inStartX;
+    int  dY               =  inEndY - inStartY;
+    int  xDir             =  1;
     int  d;
     int  x;
     int  y;
     int  pixelStartByte;
+    int  lineA            =  mx_drawColor.comp.alpha;
+    
+    /* color components with alpha pre-multiplied */
+    int  linePreR         =  mx_drawColor.comp.red   * lineA;
+    int  linePreG         =  mx_drawColor.comp.green * lineA;
+    int  linePreB         =  mx_drawColor.comp.blue  * lineA;
+    int  lineScaledR      =  linePreR / 255;
+    int  lineScaledG      =  linePreG / 255;
+    int  lineScaledB      =  linePreB / 255;
+    
     
     if( dX < 0 ) {
         xDir = -1;
@@ -3252,12 +3262,82 @@ static void mx_drawLineHigh( int  inStartX,
 
         /* replace color */
 
-        mx_gameImageBuffer[ pixelStartByte     ] = mx_drawColor.comp.red;
-        mx_gameImageBuffer[ pixelStartByte + 1 ] = mx_drawColor.comp.green;
-        mx_gameImageBuffer[ pixelStartByte + 2 ] = mx_drawColor.comp.blue;
+        
+        if( mx_additiveBlend ) {
+            
+            int  v;
 
+            v = mx_gameImageBuffer[ pixelStartByte ] + lineScaledR;
 
-        /*mx_drawPixel( x, y );*/
+            if( v > 255 ) {
+                v = 255;
+                }
+            mx_gameImageBuffer[ pixelStartByte ] = (unsigned char)v;
+
+                
+            v = mx_gameImageBuffer[ pixelStartByte + 1 ] + lineScaledG;
+                
+            if( v > 255 ) {
+                v = 255;
+                }
+            mx_gameImageBuffer[ pixelStartByte + 1 ] = (unsigned char)v;
+
+                
+            v = mx_gameImageBuffer[ pixelStartByte + 2 ] + lineScaledB;
+                
+            if( v > 255 ) {
+                v = 255;
+                }
+            mx_gameImageBuffer[ pixelStartByte + 2 ] = (unsigned char)v;
+            }
+        else {
+            if( lineA == 255 ) {
+        
+                /* no blend, pure replace */
+                mx_gameImageBuffer[ pixelStartByte     ] =
+                    mx_drawColor.comp.red;
+                
+                mx_gameImageBuffer[ pixelStartByte + 1 ] =
+                    mx_drawColor.comp.green;
+                
+                mx_gameImageBuffer[ pixelStartByte + 2 ] =
+                    mx_drawColor.comp.blue;
+                
+                }
+            else {
+                
+                /* alpha weighted blend, most expensive case */
+                
+                mx_gameImageBuffer[ pixelStartByte ] =
+                    (unsigned char)( 
+                        ( mx_gameImageBuffer[ pixelStartByte ]
+                          * ( 255 - lineA )
+                          +
+                          linePreR )
+                        /
+                        255 );
+
+                mx_gameImageBuffer[ pixelStartByte + 1 ] =
+                    (unsigned char)( 
+                        ( mx_gameImageBuffer[ pixelStartByte + 1 ]
+                          * ( 255 - lineA )
+                          +
+                          linePreG )
+                        /
+                        255 );
+
+                
+                mx_gameImageBuffer[ pixelStartByte + 2 ] =
+                    (unsigned char)( 
+                        ( mx_gameImageBuffer[ pixelStartByte + 2 ]
+                          * ( 255 - lineA )
+                          +
+                          linePreB )
+                        /
+                        255 );
+                }
+            }
+                
         
         if( d > 0 ) {
         
@@ -3282,6 +3362,12 @@ void maxigin_drawLine( int  inStartX,
                        int  inStartY,
                        int  inEndX,
                        int  inEndY ) {
+
+    
+    if( mx_drawColor.comp.alpha == 0 ) {
+        return;
+        }
+    
 
     /* special case: vert line */
     if( inStartX == inEndX ) {

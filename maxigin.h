@@ -3287,14 +3287,14 @@ static void mx_drawLineLow( int  inStartX,
         
         if( d > 0 ) {
         
-            y = y + yDir;
+            y += yDir;
 
             pixelStartByte += yDir * MAXIGIN_GAME_NATIVE_W * 3;
                 
-            d = d + 2 * ( dY - dX );
+            d += 2 * ( dY - dX );
             }
         else {
-            d = d + 2 * dY;
+            d += 2 * dY;
             }
 
         /* next col */
@@ -3424,14 +3424,14 @@ static void mx_drawLineHigh( int  inStartX,
         
         if( d > 0 ) {
         
-            x = x + xDir;
+            x += xDir;
 
-            pixelStartByte = pixelStartByte + xDir * 3;
+            pixelStartByte += xDir * 3;
             
-            d = d + 2 * ( dX - dY );
+            d += 2 * ( dX - dY );
             }
         else {
-            d = d + 2 * dX;
+            d += 2 * dX;
             }
 
         /* next row */

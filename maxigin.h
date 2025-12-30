@@ -3558,7 +3558,7 @@ void maxigin_drawLine( int  inStartX,
             }
 
         rowHop          =  dir      * MAXIGIN_GAME_NATIVE_W * 3;
-        pixelStartByte  =  inStartY * MAXIGIN_GAME_NATIVE_W * 3 + inStartX;
+        pixelStartByte  =  inStartY * MAXIGIN_GAME_NATIVE_W * 3 + inStartX * 3;
         
         
         if( mx_additiveBlend ) {
@@ -3663,6 +3663,7 @@ void maxigin_drawLine( int  inStartX,
         int  dir  =  1;
         int  pixelStartByte;
         int  lineA            =  mx_drawColor.comp.alpha;
+        int  colHop;
         
         /* color components with alpha pre-multiplied */
         
@@ -3713,7 +3714,8 @@ void maxigin_drawLine( int  inStartX,
             dir = -1;
             }
 
-        pixelStartByte  =  inStartY * MAXIGIN_GAME_NATIVE_W * 3 + inStartX;
+        colHop          =  3 * dir;
+        pixelStartByte  =  inStartY * MAXIGIN_GAME_NATIVE_W * 3 + inStartX * 3;
         
         
         if( mx_additiveBlend ) {
@@ -3744,7 +3746,7 @@ void maxigin_drawLine( int  inStartX,
                 mx_gameImageBuffer[ pixelStartByte + 2 ] = (unsigned char)v; 
 
                 /* next col */
-                pixelStartByte += 3;
+                pixelStartByte += colHop;
                 }
             }
         else {
@@ -3756,15 +3758,17 @@ void maxigin_drawLine( int  inStartX,
                      x += dir ) {
 
                     
-                    mx_gameImageBuffer[ pixelStartByte ++ ] =
+                    mx_gameImageBuffer[ pixelStartByte ] =
                         mx_drawColor.comp.red;
                 
-                    mx_gameImageBuffer[ pixelStartByte ++ ] =
+                    mx_gameImageBuffer[ pixelStartByte + 1 ] =
                         mx_drawColor.comp.green;
                 
-                    mx_gameImageBuffer[ pixelStartByte ++ ] =
+                    mx_gameImageBuffer[ pixelStartByte + 2 ] =
                         mx_drawColor.comp.blue;
 
+                    /* next col */
+                    pixelStartByte += colHop;
                     }
                 }
             else {
@@ -3803,7 +3807,7 @@ void maxigin_drawLine( int  inStartX,
                             255 );
 
                     /* next col */
-                    pixelStartByte += 3;
+                    pixelStartByte += colHop;
                     } 
                 }
             }

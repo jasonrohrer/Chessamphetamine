@@ -3201,6 +3201,47 @@ static void mx_drawLineLow( int  inStartX,
     
     y = inStartY;
 
+
+    /* easy bounds checking on end for x, truncate line */
+    if( inEndX >= MAXIGIN_GAME_NATIVE_W ) {
+        inEndX = MAXIGIN_GAME_NATIVE_W - 1;
+        }
+
+    /* walk through start of line until it is in-bounds in our image */
+    while( inStartX < 0
+           ||
+           y < 0
+           ||
+           y >= MAXIGIN_GAME_NATIVE_H ) {
+
+        inStartX ++;
+
+        if( inStartX > inEndX ) {
+            break;
+            }
+        
+        if( d > 0 ) {
+        
+            y += yDir;
+            
+            d += 2 * ( dY - dX );
+            }
+        else {
+            d += 2 * dY;
+            }
+        }
+
+    if( inStartX > inEndX
+        ||
+        y >= MAXIGIN_GAME_NATIVE_H
+        ||
+        y < 0 ) {
+
+        /* line is entirely outside of our image */
+        return;
+        }
+
+    
     pixelStartByte =
         y * MAXIGIN_GAME_NATIVE_W * 3
         +
@@ -3289,6 +3330,14 @@ static void mx_drawLineLow( int  inStartX,
         
             y += yDir;
 
+
+            /* bail out if y ever steps out of bounds */
+            if( y < 0
+                ||
+                y >= MAXIGIN_GAME_NATIVE_H ) {
+                break;
+                }
+            
             pixelStartByte += yDir * MAXIGIN_GAME_NATIVE_W * 3;
                 
             d += 2 * ( dY - dX );
@@ -3336,6 +3385,45 @@ static void mx_drawLineHigh( int  inStartX,
     
     x = inStartX;
 
+    
+    /* easy bounds checking on end for y, truncate line */
+    if( inEndY >= MAXIGIN_GAME_NATIVE_H ) {
+        inEndY = MAXIGIN_GAME_NATIVE_H - 1;
+        }
+
+    /* walk through start of line until it is in-bounds in our image */
+    while( inStartY < 0
+           ||
+           x < 0
+           ||
+           x >= MAXIGIN_GAME_NATIVE_W ) {
+
+        inStartY ++;
+
+        if( inStartY > inEndY ) {
+            break;
+            }
+        
+        if( d > 0 ) {
+        
+            x += xDir;
+            
+            d += 2 * ( dX - dY );
+            }
+        else {
+            d += 2 * dX;
+            }
+        }
+
+    if( inStartY > inEndY
+        ||
+        x < 0
+        ||
+        x >= MAXIGIN_GAME_NATIVE_W ) {
+
+        /* line is entirely outside of our image */
+        return;
+        }
     
     pixelStartByte =
         inStartY * MAXIGIN_GAME_NATIVE_W * 3
@@ -3426,6 +3514,13 @@ static void mx_drawLineHigh( int  inStartX,
         
             x += xDir;
 
+            /* bail out if x ever steps out of bounds */
+            if( x < 0
+                ||
+                x >= MAXIGIN_GAME_NATIVE_W ) {
+                break;
+                }
+            
             pixelStartByte += xDir * 3;
             
             d += 2 * ( dX - dY );
@@ -3469,6 +3564,8 @@ void maxigin_drawLine( int  inStartX,
             mx_drawPixel( inStartX,
                           y );
             }
+        
+        return;
         }
 
     /* special case: horizontal line */
@@ -3488,10 +3585,11 @@ void maxigin_drawLine( int  inStartX,
             mx_drawPixel( x,
                           inStartY );
             }
+        return;
         }
     
     
-    /* General-purpose Bresenham's line algorithm */
+    /* General-case Bresenham's line algorithm */
 
     if( mx_abs( inEndY - inStartY )
         <

@@ -62,6 +62,9 @@ static const char  *fileNames[ NUM_BULK_FILES ] = { "bullet.tga",
 
 static int          spriteHandles[ NUM_BULK_FILES ];
 
+static MaxiginGUI   gameGUI;
+
+
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
@@ -244,6 +247,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                           MAXIGIN_GAME_NATIVE_H / 2,
                           lineTip.x,
                           lineTip.y );
+
+
+    maxigin_drawGUI( &gameGUI );
     }
 
 
@@ -449,6 +455,23 @@ void maxiginGame_step( void ) {
                 }
             }
         }
+
+
+    maxigin_startGUI( &gameGUI );
+
+
+    maxigin_guiSlider( &gameGUI,
+                       5,
+                       MAXIGIN_GAME_NATIVE_W - 5,
+                       MAXIGIN_GAME_NATIVE_H / 2,
+                       10,
+                       20,
+                       10,
+                       0,
+                       100,
+                       75 );
+    
+    
     }
 
 

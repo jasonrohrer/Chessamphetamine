@@ -166,13 +166,38 @@
   
   To allocate room for 100 16x16 RGBA sprites, do this:
 
-      #define  MAXIGIN_ENABLE_RECORDING  102400
+      #define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  102400
 
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_TOTAL_SPRITE_BYTES
     #define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  655360
 #endif
+
+
+
+/*
+  Immediate mode GUI elements add themselves as draw components (lines, sprites,
+  rects, etc.) into a MaxiginGUI structure that has a static amount space in
+  it for draw components.
+
+  Note different MaxiginGUI structures can be used to split up the GUI,
+  so this setting defines the maximum number of draw components in a single
+  MaxiginGUI instance.
+
+  The default size has room for 512 draw components per MaxiginGUI instance.
+  
+  To make room for 1024 draw components per MaxiginGUI instance, do this:
+
+      #define  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS  1024
+
+  [jumpSettings]
+*/
+#ifndef  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS
+    #define  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS  512
+#endif
+
+  
 
 
 
@@ -670,6 +695,138 @@ void maxigin_drawFillRect( int  inStartX,
                            int  inStartY,
                            int  inEndX,
                            int  inEndY );
+
+
+
+/*
+  This structure stores results of immediate mode GUI calls that
+  happen during the game's step function so they can be drawn later during the
+  game's draw function.
+
+  [jumpMaxiginGeneral]
+*/
+typedef struct MaxiginGUI {
+        struct {
+                char           additiveBlend;
+                unsigned char  red;
+                unsigned char  green;
+                unsigned char  blue;
+                unsigned char  alpha;
+
+                enum {
+                    MX_GUI_DRAW_LINE,
+                    MX_GUI_FILL_RECT,
+                    MX_GUI_DRAW_SPRITE
+                    } drawType;
+
+                union {
+                        struct {
+                                int  startX;
+                                int  startY;
+                                int  endX;
+                                int  endY;
+                            } line;
+                        
+                        struct {
+                                int  startX;
+                                int  startY;
+                                int  endX;
+                                int  endY;
+                            } rect;
+                        
+                        struct {
+                                int  spriteHandle;
+                                int  centerX;
+                                int  centerY;
+                            } sprite;
+                        
+                    } drawParams;
+                
+            } drawComponents[ MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ];
+
+        int  numDrawComponents;
+        
+    } MaxiginGUI;
+
+
+
+/*
+  Draws a GUI instance into the game's native pixel buffer.
+
+  Parameters:
+  
+      inGUI   pointer to the structure representing the GUI instance to draw
+       
+  [jumpMaxiginDraw]
+*/ 
+void maxigin_drawGUI( MaxiginGUI *inGUI );
+
+
+
+/*
+  Initializes a GUI instance to prepare for immediate mode GUI calls.
+  Generally called in a game's step function before laying out the GUI.
+
+  Parameters:
+    
+      inGUI   pointer to the structure representing the GUI instance
+              to initialize
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_startGUI( MaxiginGUI *inGUI );
+
+
+
+/*
+  Adds a slider to a GUI instance in immediate mode.
+
+  Parameters:
+    
+      inGUI            pointer to the structure representing the GUI instance
+
+      inStartX         pixel x position of left edge of slider
+      
+      inEndX           pixel x position of right edge of slider
+
+      inY              pixel y position of vertical center of slider
+
+      inBarHeight      height of slider bar in pixels
+                       may have no effect if bar sprite is defined (fixme)
+                    
+      inThumbHeight    height of slider thumb (the moving part) in pixels
+                       may have no effect if thumb sprite is defined (fixme)
+
+      inThumbWidth     width of slider thumb (the moving part) in pixels
+                       may have no effect if thumb sprite is defined (fixme)
+
+      inMinValue       value returned by slider when thumb is far left
+
+      inMaxValue       value returned by slider when thumb is far right
+
+      inCurrentValue   current value of the slider
+
+  Returns:
+
+      slider value   at current position of slider thumb
+                     in range [inMinValue, inMaxValue]
+                     
+  [jumpMaxiginGeneral]
+*/
+int maxigin_guiSlider( MaxiginGUI  *inGUI,
+                       int          inStartX,
+                       int          inEndX,
+                       int          inY,
+                       int          inBarHeight,
+                       int          inThumbHeight,
+                       int          inThumbWidth,
+                       int          inMinValue,
+                       int          inMaxValue,
+                       int          inCurrentValue );
+
+
+
+
 
 
 
@@ -4071,6 +4228,215 @@ void maxigin_drawFillRect( int  inStartX,
                 }
             }
         }   
+    }
+
+
+
+
+
+void maxigin_drawGUI( MaxiginGUI *inGUI ) {
+
+    int  i;
+    int  drawType;
+    
+
+    for( i = 0;
+         i < inGUI->numDrawComponents;
+         i ++ ) {
+
+        drawType = inGUI->drawComponents[i].drawType;
+        
+        maxigin_drawToggleAdditive( inGUI->drawComponents[i].additiveBlend );
+
+        if( drawType == MX_GUI_DRAW_LINE
+            ||
+            drawType == MX_GUI_FILL_RECT ) {
+
+            maxigin_drawSetColor( inGUI->drawComponents[i].red,
+                                  inGUI->drawComponents[i].green,
+                                  inGUI->drawComponents[i].blue,
+                                  inGUI->drawComponents[i].alpha );
+            }
+        else if( drawType == MX_GUI_DRAW_SPRITE ) {
+
+            maxigin_drawSetAlpha( inGUI->drawComponents[i].alpha );
+            }
+
+        switch( drawType ) {
+            
+            case MX_GUI_DRAW_LINE:
+                maxigin_drawLine(
+                    inGUI->drawComponents[i].drawParams.line.startX,
+                    inGUI->drawComponents[i].drawParams.line.startY,
+                    inGUI->drawComponents[i].drawParams.line.endX,
+                    inGUI->drawComponents[i].drawParams.line.endY );
+                break;
+                
+            case MX_GUI_FILL_RECT:
+                maxigin_drawFillRect(
+                    inGUI->drawComponents[i].drawParams.rect.startX,
+                    inGUI->drawComponents[i].drawParams.rect.startY,
+                    inGUI->drawComponents[i].drawParams.rect.endX,
+                    inGUI->drawComponents[i].drawParams.rect.endY );
+                break;
+                
+            case MX_GUI_DRAW_SPRITE:
+                maxigin_drawSprite(
+                    inGUI->drawComponents[i].drawParams.sprite.spriteHandle,
+                    inGUI->drawComponents[i].drawParams.sprite.centerX,
+                    inGUI->drawComponents[i].drawParams.sprite.centerY );
+                break;
+                                  
+            }
+        }
+    }
+
+
+
+void maxigin_startGUI( MaxiginGUI *inGUI ) {
+    inGUI->numDrawComponents = 0;
+    }
+
+
+
+static void mx_guiSetColor( MaxiginGUI    *inGUI,
+                            int            inDrawComponentIndex,
+                            char           inAdditiveBlend,
+                            MaxiginColor  *inColor ) {
+
+    int  i  =  inDrawComponentIndex;
+    
+    inGUI->drawComponents[i].additiveBlend = inAdditiveBlend;
+
+    inGUI->drawComponents[i].red   = inColor->comp.red;
+    inGUI->drawComponents[i].green = inColor->comp.green;
+    inGUI->drawComponents[i].blue  = inColor->comp.blue;
+    inGUI->drawComponents[i].alpha = inColor->comp.alpha;
+    }
+
+
+
+static void mx_guiAddLine( MaxiginGUI    *inGUI,
+                           char           inAdditiveBlend,
+                           MaxiginColor  *inColor,
+                           int            inStartX,
+                           int            inStartY,
+                           int            inEndX,
+                           int            inEndY ) {
+
+    int  i  =  inGUI->numDrawComponents;
+
+    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
+        mingin_log( "Error:  trying to add a line to a full "
+                    "MaxiginGUI instance.\n" );
+        return;
+        }
+
+    mx_guiSetColor( inGUI,
+                    i,
+                    inAdditiveBlend,
+                    inColor );
+
+    inGUI->drawComponents[i].drawType = MX_GUI_DRAW_LINE;
+    
+    inGUI->drawComponents[i].drawParams.line.startX = inStartX;
+    inGUI->drawComponents[i].drawParams.line.startY = inStartY;
+    inGUI->drawComponents[i].drawParams.line.endX   = inEndX;
+    inGUI->drawComponents[i].drawParams.line.endY   = inEndY;
+
+    inGUI->numDrawComponents ++;
+    }
+
+
+
+static void mx_guiAddFillRect( MaxiginGUI    *inGUI,
+                               char           inAdditiveBlend,
+                               MaxiginColor  *inColor,
+                               int            inStartX,
+                               int            inStartY,
+                               int            inEndX,
+                               int            inEndY ) {
+
+    int  i  =  inGUI->numDrawComponents;
+
+    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
+        mingin_log( "Error:  trying to add a rectangle to a full "
+                    "MaxiginGUI instance.\n" );
+        return;
+        }
+
+    mx_guiSetColor( inGUI,
+                    i,
+                    inAdditiveBlend,
+                    inColor );
+
+    inGUI->drawComponents[i].drawType = MX_GUI_FILL_RECT;
+    
+    inGUI->drawComponents[i].drawParams.rect.startX = inStartX;
+    inGUI->drawComponents[i].drawParams.rect.startY = inStartY;
+    inGUI->drawComponents[i].drawParams.rect.endX   = inEndX;
+    inGUI->drawComponents[i].drawParams.rect.endY   = inEndY;
+
+    inGUI->numDrawComponents ++;
+    }
+
+
+
+int maxigin_guiSlider( MaxiginGUI  *inGUI,
+                       int          inStartX,
+                       int          inEndX,
+                       int          inY,
+                       int          inBarHeight,
+                       int          inThumbHeight,
+                       int          inThumbWidth,
+                       int          inMinValue,
+                       int          inMaxValue,
+                       int          inCurrentValue ) {
+
+    MaxiginColor  c;
+    int           thumPixelCenter;
+    
+    c.comp.red   = 255;
+    c.comp.green = 255;
+    c.comp.blue  = 255;
+    c.comp.alpha = 255;
+
+    thumPixelCenter =
+        ( ( inCurrentValue - inMinValue ) *
+          ( inEndX - inStartX ) )
+        / ( inMaxValue - inMinValue );
+
+    /* fixme:
+       finish implementation
+
+       allow user to provide sprites for thumb, etc.
+
+       pay attention to mouse pointer */
+    
+    mx_guiAddLine( inGUI,
+                   0,
+                   &c,
+                   inStartX,
+                   inY,
+                   inEndX,
+                   inY );
+
+    mx_guiAddFillRect( inGUI,
+                       0,
+                       &c,
+                       thumPixelCenter - inThumbWidth / 2,
+                       inY - inThumbHeight / 2,
+                       thumPixelCenter + inThumbWidth / 2,
+                       inY + inThumbHeight / 2 );
+
+    /* suppress warning */
+    if( inBarHeight > 0 ) {
+
+        }
+                       
+                       
+
+    return inCurrentValue;
     }
 
 

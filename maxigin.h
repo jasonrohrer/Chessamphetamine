@@ -3489,6 +3489,134 @@ static void mx_drawLineHigh( int  inStartX,
 
 
 
+/* Draws a horizontal line with no bounds or direction checking.
+
+   Parameters:
+
+       inStartX   the start x location of the line
+                  >= 0
+                  <  MAXIGIN_GAME_NATIVE_W
+                  
+       inEndX     the end x location of the line
+                  >= 0
+                  <  MAXIGIN_GAME_NATIVE_W
+                  >= inStartX
+
+       inY        the y location of the line
+                  >= 0
+                  <  MAXIGIN_GAME_NATIVE_H
+*/
+static void mx_drawFastHorizontalLine( int  inStartX,
+                                       int  inEndX,
+                                       int  inY ) {
+            
+    int  x;
+    int  pixelStartByte;
+    int  lineA            =  mx_drawColor.comp.alpha;
+        
+    /* color components with alpha pre-multiplied */
+    int  linePreR         =  mx_drawColor.comp.red   * lineA;
+    int  linePreG         =  mx_drawColor.comp.green * lineA;
+    int  linePreB         =  mx_drawColor.comp.blue  * lineA;
+    int  lineScaledR      =  linePreR / 255;
+    int  lineScaledG      =  linePreG / 255;
+    int  lineScaledB      =  linePreB / 255;
+        
+    pixelStartByte  =  inY * MAXIGIN_GAME_NATIVE_W * 3 + inStartX * 3;
+        
+    if( mx_additiveBlend ) {
+        /* additive blend */
+            
+        for( x  = inStartX;
+             x <= inEndX;
+             x ++ ) {
+                
+            int  v;
+
+            v = mx_gameImageBuffer[ pixelStartByte ] + lineScaledR;
+            if( v > 255 ) {
+                v = 255;
+                }
+            mx_gameImageBuffer[ pixelStartByte ] = (unsigned char)v;
+
+            v = mx_gameImageBuffer[ pixelStartByte + 1 ] + lineScaledG;
+            if( v > 255 ) {
+                v = 255;
+                }
+            mx_gameImageBuffer[ pixelStartByte + 1 ] = (unsigned char)v;
+
+            v = mx_gameImageBuffer[ pixelStartByte + 2 ] + lineScaledB;
+            if( v > 255 ) {
+                v = 255;
+                }
+            mx_gameImageBuffer[ pixelStartByte + 2 ] = (unsigned char)v; 
+
+            /* next col */
+            pixelStartByte += 3;
+            }
+        }
+    else {
+        if( lineA == 255 ) {
+            /* no blend, pure replace */
+                
+            for( x  = inStartX;
+                 x <= inEndX;
+                 x ++ ) {
+                    
+                mx_gameImageBuffer[ pixelStartByte ++ ] =
+                    mx_drawColor.comp.red;
+                
+                mx_gameImageBuffer[ pixelStartByte ++ ] =
+                    mx_drawColor.comp.green;
+                
+                mx_gameImageBuffer[ pixelStartByte ++ ] =
+                    mx_drawColor.comp.blue;
+                }
+            }
+        else {
+            /* weighted alpha blend */
+                
+            for( x  = inStartX;
+                 x <= inEndX;
+                 x ++ ) {
+                    
+                mx_gameImageBuffer[ pixelStartByte ] =
+                    (unsigned char)( 
+                        ( mx_gameImageBuffer[ pixelStartByte ]
+                          * ( 255 - lineA )
+                          +
+                          linePreR )
+                        /
+                        255 );
+
+                mx_gameImageBuffer[ pixelStartByte + 1 ] =
+                    (unsigned char)( 
+                        ( mx_gameImageBuffer[ pixelStartByte + 1 ]
+                          * ( 255 - lineA )
+                          +
+                          linePreG )
+                        /
+                        255 );
+
+                
+                mx_gameImageBuffer[ pixelStartByte + 2 ] =
+                    (unsigned char)( 
+                        ( mx_gameImageBuffer[ pixelStartByte + 2 ]
+                          * ( 255 - lineA )
+                          +
+                          linePreB )
+                        /
+                        255 );
+
+                /* next col */
+                pixelStartByte += 3;
+                } 
+            }
+        }
+    }
+
+
+
 void maxigin_drawLine( int  inStartX,
                        int  inStartY,
                        int  inEndX,
@@ -3664,19 +3792,7 @@ void maxigin_drawLine( int  inStartX,
     /* special case: horizontal line */
     if( inStartY == inEndY ) {
         
-        int  x;
         int  temp;
-        int  pixelStartByte;
-        int  lineA            =  mx_drawColor.comp.alpha;
-        
-        /* color components with alpha pre-multiplied */
-        
-        int  linePreR         =  mx_drawColor.comp.red   * lineA;
-        int  linePreG         =  mx_drawColor.comp.green * lineA;
-        int  linePreB         =  mx_drawColor.comp.blue  * lineA;
-        int  lineScaledR      =  linePreR / 255;
-        int  lineScaledG      =  linePreG / 255;
-        int  lineScaledB      =  linePreB / 255;
 
         if( inStartY < 0
             ||
@@ -3720,98 +3836,9 @@ void maxigin_drawLine( int  inStartX,
             inStartX = temp;
             }
 
-        
-        pixelStartByte  =  inStartY * MAXIGIN_GAME_NATIVE_W * 3 + inStartX * 3;
-        
-        if( mx_additiveBlend ) {
-            /* additive blend */
-            
-            for( x  = inStartX;
-                 x <= inEndX;
-                 x ++ ) {
-                
-                int  v;
-
-                v = mx_gameImageBuffer[ pixelStartByte ] + lineScaledR;
-                if( v > 255 ) {
-                    v = 255;
-                    }
-                mx_gameImageBuffer[ pixelStartByte ] = (unsigned char)v;
-
-                v = mx_gameImageBuffer[ pixelStartByte + 1 ] + lineScaledG;
-                if( v > 255 ) {
-                    v = 255;
-                    }
-                mx_gameImageBuffer[ pixelStartByte + 1 ] = (unsigned char)v;
-
-                v = mx_gameImageBuffer[ pixelStartByte + 2 ] + lineScaledB;
-                if( v > 255 ) {
-                    v = 255;
-                    }
-                mx_gameImageBuffer[ pixelStartByte + 2 ] = (unsigned char)v; 
-
-                /* next col */
-                pixelStartByte += 3;
-                }
-            }
-        else {
-            if( lineA == 255 ) {
-                /* no blend, pure replace */
-                
-                for( x  = inStartX;
-                     x <= inEndX;
-                     x ++ ) {
-                    
-                    mx_gameImageBuffer[ pixelStartByte ++ ] =
-                        mx_drawColor.comp.red;
-                
-                    mx_gameImageBuffer[ pixelStartByte ++ ] =
-                        mx_drawColor.comp.green;
-                
-                    mx_gameImageBuffer[ pixelStartByte ++ ] =
-                        mx_drawColor.comp.blue;
-                    }
-                }
-            else {
-                /* weighted alpha blend */
-                
-                for( x  = inStartX;
-                     x <= inEndX;
-                     x ++ ) {
-                    
-                    mx_gameImageBuffer[ pixelStartByte ] =
-                        (unsigned char)( 
-                            ( mx_gameImageBuffer[ pixelStartByte ]
-                              * ( 255 - lineA )
-                              +
-                              linePreR )
-                            /
-                            255 );
-
-                    mx_gameImageBuffer[ pixelStartByte + 1 ] =
-                        (unsigned char)( 
-                            ( mx_gameImageBuffer[ pixelStartByte + 1 ]
-                              * ( 255 - lineA )
-                              +
-                              linePreG )
-                            /
-                            255 );
-
-                
-                    mx_gameImageBuffer[ pixelStartByte + 2 ] =
-                        (unsigned char)( 
-                            ( mx_gameImageBuffer[ pixelStartByte + 2 ]
-                              * ( 255 - lineA )
-                              +
-                              linePreB )
-                            /
-                            255 );
-
-                    /* next col */
-                    pixelStartByte += 3;
-                    } 
-                }
-            }
+        mx_drawFastHorizontalLine( inStartX,
+                                   inEndX,
+                                   inStartY );
         return;
         }
     

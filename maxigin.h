@@ -3504,7 +3504,7 @@ void maxigin_drawLine( int  inStartX,
     if( inStartX == inEndX ) {
 
         int  y;
-        int  dir              =  1;
+        int  temp;
         int  pixelStartByte;
         int  lineA            =  mx_drawColor.comp.alpha;
         int  rowHop;
@@ -3552,21 +3552,25 @@ void maxigin_drawLine( int  inStartX,
             inEndY = MAXIGIN_GAME_NATIVE_H - 1;
             }
         
-        
-        if( inEndY < inStartY ) {
-            dir = -1;
-            }
 
-        rowHop          =  dir      * MAXIGIN_GAME_NATIVE_W * 3;
-        pixelStartByte  =  inStartY * MAXIGIN_GAME_NATIVE_W * 3 + inStartX * 3;
+        /* fix direction */
+        if( inStartY > inEndY ) {
+            temp     = inEndY;
+            inEndY   = inStartY;
+            inStartY = temp;
+            }
+        
+
+        rowHop          =  MAXIGIN_GAME_NATIVE_W * 3;
+        pixelStartByte  =  inStartY * rowHop + inStartX * 3;
         
         
         if( mx_additiveBlend ) {
             /* additive blend */
             
             for( y  = inStartY;
-                 y != inEndY + dir;
-                 y += dir ) {
+                 y <= inEndY;
+                 y ++ ) {
                 
                 int  v;
 
@@ -3597,8 +3601,8 @@ void maxigin_drawLine( int  inStartX,
                 /* no blend, pure replace */
                 
                 for( y  = inStartY;
-                     y != inEndY + dir;
-                     y += dir ) {
+                     y <= inEndY;
+                     y ++ ) {
                     
                     mx_gameImageBuffer[ pixelStartByte     ] =
                         mx_drawColor.comp.red;
@@ -3617,8 +3621,8 @@ void maxigin_drawLine( int  inStartX,
                 /* weighted alpha blend */
                 
                 for( y  = inStartY;
-                     y != inEndY + dir;
-                     y += dir ) {
+                     y <= inEndY;
+                     y ++ ) {
                     
                     mx_gameImageBuffer[ pixelStartByte ] =
                         (unsigned char)( 
@@ -3647,6 +3651,7 @@ void maxigin_drawLine( int  inStartX,
                               linePreB )
                             /
                             255 );
+                    
                     /* next row */
                     pixelStartByte += rowHop;
                     }
@@ -3660,10 +3665,9 @@ void maxigin_drawLine( int  inStartX,
     if( inStartY == inEndY ) {
         
         int  x;
-        int  dir  =  1;
+        int  temp;
         int  pixelStartByte;
         int  lineA            =  mx_drawColor.comp.alpha;
-        int  colHop;
         
         /* color components with alpha pre-multiplied */
         
@@ -3709,21 +3713,22 @@ void maxigin_drawLine( int  inStartX,
             inEndX = MAXIGIN_GAME_NATIVE_W - 1;
             }
 
-        
-        if( inEndX < inStartX ) {
-            dir = -1;
+        /* fix direction */
+        if( inStartX > inEndX ) {
+            temp     = inEndX;
+            inEndX   = inStartX;
+            inStartX = temp;
             }
 
-        colHop          =  3 * dir;
-        pixelStartByte  =  inStartY * MAXIGIN_GAME_NATIVE_W * 3 + inStartX * 3;
         
+        pixelStartByte  =  inStartY * MAXIGIN_GAME_NATIVE_W * 3 + inStartX * 3;
         
         if( mx_additiveBlend ) {
             /* additive blend */
             
             for( x  = inStartX;
-                 x != inEndX + dir;
-                 x += dir ) {
+                 x <= inEndX;
+                 x ++ ) {
                 
                 int  v;
 
@@ -3746,7 +3751,7 @@ void maxigin_drawLine( int  inStartX,
                 mx_gameImageBuffer[ pixelStartByte + 2 ] = (unsigned char)v; 
 
                 /* next col */
-                pixelStartByte += colHop;
+                pixelStartByte += 3;
                 }
             }
         else {
@@ -3754,29 +3759,25 @@ void maxigin_drawLine( int  inStartX,
                 /* no blend, pure replace */
                 
                 for( x  = inStartX;
-                     x != inEndX + dir;
-                     x += dir ) {
-
+                     x <= inEndX;
+                     x ++ ) {
                     
-                    mx_gameImageBuffer[ pixelStartByte ] =
+                    mx_gameImageBuffer[ pixelStartByte ++ ] =
                         mx_drawColor.comp.red;
                 
-                    mx_gameImageBuffer[ pixelStartByte + 1 ] =
+                    mx_gameImageBuffer[ pixelStartByte ++ ] =
                         mx_drawColor.comp.green;
                 
-                    mx_gameImageBuffer[ pixelStartByte + 2 ] =
+                    mx_gameImageBuffer[ pixelStartByte ++ ] =
                         mx_drawColor.comp.blue;
-
-                    /* next col */
-                    pixelStartByte += colHop;
                     }
                 }
             else {
                 /* weighted alpha blend */
                 
                 for( x  = inStartX;
-                     x != inEndX + dir;
-                     x += dir ) {
+                     x <= inEndX;
+                     x ++ ) {
                     
                     mx_gameImageBuffer[ pixelStartByte ] =
                         (unsigned char)( 
@@ -3807,7 +3808,7 @@ void maxigin_drawLine( int  inStartX,
                             255 );
 
                     /* next col */
-                    pixelStartByte += colHop;
+                    pixelStartByte += 3;
                     } 
                 }
             }

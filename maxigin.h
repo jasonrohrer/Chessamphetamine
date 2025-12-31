@@ -3920,8 +3920,6 @@ void maxigin_drawFillRect( int  inStartX,
         return;
         }
     
-    
-    
     /* trim to be in-bounds of image */
     if( inStartX < 0 ) {
         inStartX = 0;
@@ -3959,7 +3957,6 @@ void maxigin_drawFillRect( int  inStartX,
         inEndY   = inStartY;
         inStartY = temp;
         }
-
 
     rowHop         = MAXIGIN_GAME_NATIVE_W * 3;
     pixelStartByte = inStartY * rowHop + inStartX * 3;
@@ -4030,7 +4027,6 @@ void maxigin_drawFillRect( int  inStartX,
             }
         else {
             /* weighted alpha belnd */
-
                     
             for( y =  inStartY;
                  y <= inEndY;
@@ -4059,7 +4055,6 @@ void maxigin_drawFillRect( int  inStartX,
                               linePreG )
                             /
                             255 );
-
                 
                     mx_gameImageBuffer[ pixelStartByte + 2 ] =
                         (unsigned char)( 
@@ -4074,7 +4069,6 @@ void maxigin_drawFillRect( int  inStartX,
                     pixelStartByte += 3;
                     }
                 }
-            
             }
         }   
     }

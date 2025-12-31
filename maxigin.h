@@ -3845,14 +3845,208 @@ void maxigin_drawFillRect( int  inStartX,
                            int  inEndX,
                            int  inEndY ) {
 
-    if( inStartX == inEndX
-        ||
-        inStartY == inEndY ) {
-
+    int  x;
+    int  y;
+    int  pixelStartByte;
+    int  lineA            =  mx_drawColor.comp.alpha;
+    int  rowHop;
+    int  temp;
+    
+    /* color components with alpha pre-multiplied */   
+    int  linePreR         =  mx_drawColor.comp.red   * lineA;
+    int  linePreG         =  mx_drawColor.comp.green * lineA;
+    int  linePreB         =  mx_drawColor.comp.blue  * lineA;
+    int  lineScaledR      =  linePreR / 255;
+    int  lineScaledG      =  linePreG / 255;
+    int  lineScaledB      =  linePreB / 255;
+    
+    if( lineA == 0 ) {
+        return;
         }
 
-    /* fixme:
-       implement rect drawing */
+    /* skip rects that are completely out of bounds */
+    if( inStartX < 0
+        &&
+        inEndX < 0 ) {
+        
+        return;
+        }
+    if( inStartX >= MAXIGIN_GAME_NATIVE_W
+        &&
+        inEndX   >= MAXIGIN_GAME_NATIVE_W ) {
+        
+        return;
+        }
+    if( inStartY < 0
+        &&
+        inEndY < 0 ) {
+        
+        return;
+        }
+    if( inStartY >= MAXIGIN_GAME_NATIVE_H
+        &&
+        inEndY   >= MAXIGIN_GAME_NATIVE_H ) {
+        
+        return;
+        }
+    
+    
+    
+    /* trim to be in-bounds of image */
+    if( inStartX < 0 ) {
+        inStartX = 0;
+        }
+    if( inStartX >= MAXIGIN_GAME_NATIVE_W ) {
+        inStartX = MAXIGIN_GAME_NATIVE_W - 1;
+        }
+    if( inEndX < 0 ) {
+        inEndX = 0;
+        }
+    if( inEndX >= MAXIGIN_GAME_NATIVE_W ) {
+        inEndX = MAXIGIN_GAME_NATIVE_W - 1;
+        }
+    if( inStartY < 0 ) {
+        inStartY = 0;
+        }
+    if( inStartY >= MAXIGIN_GAME_NATIVE_H ) {
+        inStartY = MAXIGIN_GAME_NATIVE_H - 1;
+        }
+    if( inEndY < 0 ) {
+        inEndY = 0;
+        }
+    if( inEndY >= MAXIGIN_GAME_NATIVE_H ) {
+        inEndY = MAXIGIN_GAME_NATIVE_H - 1;
+        }
+
+    /* fix draw direction */
+    if( inStartX > inEndX ) {
+        temp     = inEndX;
+        inEndX   = inStartX;
+        inStartX = temp;
+        }
+    if( inStartY > inEndY ) {
+        temp     = inEndY;
+        inEndY   = inStartY;
+        inStartY = temp;
+        }
+
+
+    rowHop         = MAXIGIN_GAME_NATIVE_W * 3;
+    pixelStartByte = inStartY * rowHop + inStartX * 3;
+
+    if( mx_additiveBlend ) {
+        /* additive blend */
+        
+        for( y =  inStartY;
+             y <= inEndY;
+             y ++ ) {
+
+            pixelStartByte = y * rowHop + inStartX * 3;
+            
+            for( x =  inStartX;
+                 x <= inEndX;
+                 x ++ ) {
+                
+                int  v;
+
+                v = mx_gameImageBuffer[ pixelStartByte ] + lineScaledR;
+                if( v > 255 ) {
+                    v = 255;
+                    }
+                mx_gameImageBuffer[ pixelStartByte ] = (unsigned char)v;
+
+                v = mx_gameImageBuffer[ pixelStartByte + 1 ] + lineScaledG;
+                if( v > 255 ) {
+                    v = 255;
+                    }
+                mx_gameImageBuffer[ pixelStartByte + 1 ] = (unsigned char)v;
+
+                v = mx_gameImageBuffer[ pixelStartByte + 2 ] + lineScaledB;
+                if( v > 255 ) {
+                    v = 255;
+                    }
+                mx_gameImageBuffer[ pixelStartByte + 2 ] = (unsigned char)v; 
+
+                /* next col */
+                pixelStartByte += 3;
+                }
+            }
+        }
+    else {
+
+        if( lineA == 255 ) {
+            /* replace color, no blend */
+            
+            for( y =  inStartY;
+                 y <= inEndY;
+                 y ++ ) {
+
+                pixelStartByte = y * rowHop + inStartX * 3;
+
+                for( x =  inStartX;
+                     x <= inEndX;
+                     x ++ ) {
+
+                    mx_gameImageBuffer[ pixelStartByte ++ ] =
+                        mx_drawColor.comp.red;
+                    
+                    mx_gameImageBuffer[ pixelStartByte ++ ] =
+                        mx_drawColor.comp.green;
+                    
+                    mx_gameImageBuffer[ pixelStartByte ++ ] =
+                        mx_drawColor.comp.blue;
+                    }
+                }
+            }
+        else {
+            /* weighted alpha belnd */
+
+                    
+            for( y =  inStartY;
+                 y <= inEndY;
+                 y ++ ) {
+
+                pixelStartByte = y * rowHop + inStartX * 3;
+
+                for( x =  inStartX;
+                     x <= inEndX;
+                     x ++ ) {
+                                     
+                    mx_gameImageBuffer[ pixelStartByte ] =
+                        (unsigned char)( 
+                            ( mx_gameImageBuffer[ pixelStartByte ]
+                              * ( 255 - lineA )
+                              +
+                              linePreR )
+                            /
+                            255 );
+
+                    mx_gameImageBuffer[ pixelStartByte + 1 ] =
+                        (unsigned char)( 
+                            ( mx_gameImageBuffer[ pixelStartByte + 1 ]
+                              * ( 255 - lineA )
+                              +
+                              linePreG )
+                            /
+                            255 );
+
+                
+                    mx_gameImageBuffer[ pixelStartByte + 2 ] =
+                        (unsigned char)( 
+                            ( mx_gameImageBuffer[ pixelStartByte + 2 ]
+                              * ( 255 - lineA )
+                              +
+                              linePreB )
+                            /
+                            255 );
+
+                    /* next col */
+                    pixelStartByte += 3;
+                    }
+                }
+            
+            }
+        }   
     }
 
 

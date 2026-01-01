@@ -1392,6 +1392,7 @@ struct MaxiginGUI {
 
                 enum {
                     MX_GUI_DRAW_LINE,
+                    MX_GUI_DRAW_RECT,
                     MX_GUI_FILL_RECT,
                     MX_GUI_DRAW_SPRITE
                     } drawType;
@@ -4083,6 +4084,8 @@ void maxigin_drawRect( int  inStartX,
                        int  inEndX,
                        int  inEndY ) {
 
+    /* fixme
+       overlapping pixels at corners */
     maxigin_drawLine( inStartX,
                       inStartY,
                       inStartX,
@@ -4329,6 +4332,8 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
 
         if( drawType == MX_GUI_DRAW_LINE
             ||
+            drawType == MX_GUI_DRAW_RECT
+            ||
             drawType == MX_GUI_FILL_RECT ) {
 
             maxigin_drawSetColor( inGUI->drawComponents[i].red,
@@ -4349,6 +4354,14 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
                     inGUI->drawComponents[i].drawParams.line.startY,
                     inGUI->drawComponents[i].drawParams.line.endX,
                     inGUI->drawComponents[i].drawParams.line.endY );
+                break;
+                
+            case MX_GUI_DRAW_RECT:
+                maxigin_drawRect(
+                    inGUI->drawComponents[i].drawParams.rect.startX,
+                    inGUI->drawComponents[i].drawParams.rect.startY,
+                    inGUI->drawComponents[i].drawParams.rect.endX,
+                    inGUI->drawComponents[i].drawParams.rect.endY );
                 break;
                 
             case MX_GUI_FILL_RECT:
@@ -4428,13 +4441,14 @@ static void mx_guiAddLine( MaxiginGUI    *inGUI,
 
 
 
-static void mx_guiAddFillRect( MaxiginGUI    *inGUI,
-                               char           inAdditiveBlend,
-                               MaxiginColor  *inColor,
-                               int            inStartX,
-                               int            inStartY,
-                               int            inEndX,
-                               int            inEndY ) {
+static void mx_guiAddRect( MaxiginGUI    *inGUI,
+                           char           inAdditiveBlend,
+                           MaxiginColor  *inColor,
+                           int            inStartX,
+                           int            inStartY,
+                           int            inEndX,
+                           int            inEndY,
+                           int            inDrawType ) {
 
     int  i  =  inGUI->numDrawComponents;
 
@@ -4449,7 +4463,7 @@ static void mx_guiAddFillRect( MaxiginGUI    *inGUI,
                     inAdditiveBlend,
                     inColor );
 
-    inGUI->drawComponents[i].drawType = MX_GUI_FILL_RECT;
+    inGUI->drawComponents[i].drawType = inDrawType;
     
     inGUI->drawComponents[i].drawParams.rect.startX = inStartX;
     inGUI->drawComponents[i].drawParams.rect.startY = inStartY;
@@ -4459,6 +4473,54 @@ static void mx_guiAddFillRect( MaxiginGUI    *inGUI,
     inGUI->numDrawComponents ++;
     }
 
+
+static void mx_guiAddDrawRect( MaxiginGUI    *inGUI,
+                               char           inAdditiveBlend,
+                               MaxiginColor  *inColor,
+                               int            inStartX,
+                               int            inStartY,
+                               int            inEndX,
+                               int            inEndY ) {
+
+    mx_guiAddRect( inGUI,
+                   inAdditiveBlend,
+                   inColor,
+                   inStartX,
+                   inStartY,
+                   inEndX,
+                   inEndY,
+                   MX_GUI_DRAW_RECT );
+    }
+
+
+
+static void mx_guiAddFillRect( MaxiginGUI    *inGUI,
+                               char           inAdditiveBlend,
+                               MaxiginColor  *inColor,
+                               int            inStartX,
+                               int            inStartY,
+                               int            inEndX,
+                               int            inEndY ) {
+    
+    mx_guiAddRect( inGUI,
+                   inAdditiveBlend,
+                   inColor,
+                   inStartX,
+                   inStartY,
+                   inEndX,
+                   inEndY,
+                   MX_GUI_FILL_RECT );
+    }
+
+
+
+static void mx_makeColorGray( MaxiginColor   *inC,
+                              unsigned char   inGrayVal ) {
+
+    inC->val[0] = inGrayVal;
+    inC->val[1] = inGrayVal;
+    inC->val[2] = inGrayVal;
+    }
 
 
 int maxigin_guiSlider( MaxiginGUI  *inGUI,
@@ -4491,15 +4553,32 @@ int maxigin_guiSlider( MaxiginGUI  *inGUI,
        allow user to provide sprites for thumb, etc.
 
        pay attention to mouse pointer */
-    
-    mx_guiAddLine( inGUI,
-                   0,
-                   &c,
-                   inStartX,
-                   inY,
-                   inEndX,
-                   inY );
 
+    mx_makeColorGray( &c,
+                      128 );
+    
+    mx_guiAddFillRect( inGUI,
+                       0,
+                       &c,
+                       inStartX,
+                       inY - inBarHeight / 2,
+                       inEndX,
+                       inY + inBarHeight / 2 );
+
+    mx_makeColorGray( &c,
+                      255 );
+    
+    mx_guiAddDrawRect( inGUI,
+                       0,
+                       &c,
+                       inStartX,
+                       inY - inBarHeight / 2,
+                       inEndX,
+                       inY + inBarHeight / 2 );
+
+    mx_makeColorGray( &c,
+                      128 );
+    
     mx_guiAddFillRect( inGUI,
                        0,
                        &c,
@@ -4507,6 +4586,25 @@ int maxigin_guiSlider( MaxiginGUI  *inGUI,
                        inY - inThumbHeight / 2,
                        thumPixelCenter + inThumbWidth / 2,
                        inY + inThumbHeight / 2 );
+
+    mx_makeColorGray( &c,
+                      255 );
+    
+    mx_guiAddDrawRect( inGUI,
+                       0,
+                       &c,
+                       thumPixelCenter - inThumbWidth / 2,
+                       inY - inThumbHeight / 2,
+                       thumPixelCenter + inThumbWidth / 2,
+                       inY + inThumbHeight / 2 );
+
+    mx_guiAddLine( inGUI,
+                   0,
+                   &c,
+                   thumPixelCenter - inThumbWidth / 2,
+                   inY - inThumbHeight / 2,
+                   thumPixelCenter + inThumbWidth / 2,
+                   inY + inThumbHeight / 2 );
 
     /* suppress warning */
     if( inBarHeight > 0 ) {

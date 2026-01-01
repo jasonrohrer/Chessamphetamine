@@ -248,6 +248,15 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                           lineTip.x,
                           lineTip.y );
 
+    maxigin_drawToggleAdditive( 0 );
+    
+    maxigin_drawSetColor( 255, 0, 0, 255 );
+
+    
+    maxigin_drawRect( MAXIGIN_GAME_NATIVE_W / 2,
+                      MAXIGIN_GAME_NATIVE_H / 2,
+                      lineTip.x,
+                      lineTip.y );
 
     maxigin_drawGUI( &gameGUI );
     }

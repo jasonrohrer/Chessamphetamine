@@ -673,6 +673,32 @@ void maxigin_drawLine( int  inStartX,
 
 
 /*
+  Draws an empty rectangle of lines into the game's native pixel buffer.
+
+  Parameters:
+  
+      inStartX        the x position in the game's native pixel buffer of the
+                      start corner of the rectangle
+                      
+      inStartY        the Y position in the game's native pixel buffer of the
+                      start corner of the rectangle
+ 
+      inEndX          the x position in the game's native pixel buffer of the
+                      end corner of the rectangle
+                      
+      inEndY          the Y position in the game's native pixel buffer of the
+                      end corner of the rectangle
+       
+  [jumpMaxiginDraw]
+*/                      
+void maxigin_drawRect( int  inStartX,
+                       int  inStartY,
+                       int  inEndX,
+                       int  inEndY );
+
+
+
+/*
   Draws a filled rectangle into the game's native pixel buffer.
 
   Parameters:
@@ -4023,6 +4049,34 @@ void maxigin_drawLine( int  inStartX,
             mx_drawLineHigh( inStartX, inStartY, inEndX, inEndY );
             }
         }
+    }
+
+
+
+void maxigin_drawRect( int  inStartX,
+                       int  inStartY,
+                       int  inEndX,
+                       int  inEndY ) {
+
+    maxigin_drawLine( inStartX,
+                      inStartY,
+                      inStartX,
+                      inEndY );
+    
+    maxigin_drawLine( inStartX,
+                      inEndY,
+                      inEndX,
+                      inEndY );
+    
+    maxigin_drawLine( inEndX,
+                      inEndY,
+                      inEndX,
+                      inStartY );
+    
+    maxigin_drawLine( inEndX,
+                      inStartY,
+                      inStartX,
+                      inStartY );
     }
 
 

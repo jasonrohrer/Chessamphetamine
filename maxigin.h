@@ -729,50 +729,25 @@ void maxigin_drawFillRect( int  inStartX,
   happen during the game's step function so they can be drawn later during the
   game's draw function.
 
+  The user can allocate this structure as-needed for each gui instance,
+  like this:
+
+      MaxiginGUI myGUI;
+
+  Then in step function:
+
+      maxigin_startGUI( &myGUI );
+
+      maxigin_guiSlider( &myGUI, ....  );
+
+  Then in draw function:
+
+      maxigin_drawGUI( &myGUI );
+
   [jumpMaxiginGeneral]
 */
-typedef struct MaxiginGUI {
-        struct {
-                char           additiveBlend;
-                unsigned char  red;
-                unsigned char  green;
-                unsigned char  blue;
-                unsigned char  alpha;
+typedef struct MaxiginGUI MaxiginGUI;
 
-                enum {
-                    MX_GUI_DRAW_LINE,
-                    MX_GUI_FILL_RECT,
-                    MX_GUI_DRAW_SPRITE
-                    } drawType;
-
-                union {
-                        struct {
-                                int  startX;
-                                int  startY;
-                                int  endX;
-                                int  endY;
-                            } line;
-                        
-                        struct {
-                                int  startX;
-                                int  startY;
-                                int  endX;
-                                int  endY;
-                            } rect;
-                        
-                        struct {
-                                int  spriteHandle;
-                                int  centerX;
-                                int  centerY;
-                            } sprite;
-                        
-                    } drawParams;
-                
-            } drawComponents[ MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ];
-
-        int  numDrawComponents;
-        
-    } MaxiginGUI;
 
 
 
@@ -1396,6 +1371,56 @@ void maxigin_flexHashFinish( MaxiginFlexHashState  *inState );
 */
 
 
+
+/*
+  This structure definition is down here, since the end user never
+  needs to manipulate it.
+
+  However, it's still outside the MAXIGIN_IMPLEMENTATION ifdef, so that
+  the end user can allocate this structure for their gui instances.
+*/
+struct MaxiginGUI {
+        
+        int  numDrawComponents;  
+
+        struct {
+                char           additiveBlend;
+                unsigned char  red;
+                unsigned char  green;
+                unsigned char  blue;
+                unsigned char  alpha;
+
+                enum {
+                    MX_GUI_DRAW_LINE,
+                    MX_GUI_FILL_RECT,
+                    MX_GUI_DRAW_SPRITE
+                    } drawType;
+
+                union {
+                        struct {
+                                int  startX;
+                                int  startY;
+                                int  endX;
+                                int  endY;
+                            } line;
+                        
+                        struct {
+                                int  startX;
+                                int  startY;
+                                int  endX;
+                                int  endY;
+                            } rect;
+                        
+                        struct {
+                                int  spriteHandle;
+                                int  centerX;
+                                int  centerY;
+                            } sprite;
+                        
+                    } drawParams;
+                
+            } drawComponents[ MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ];
+    };
 
 
 

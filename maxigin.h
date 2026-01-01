@@ -805,8 +805,17 @@ void maxigin_startGUI( MaxiginGUI *inGUI );
 
       inMaxValue       value returned by slider when thumb is far right
 
-      inCurrentValue   current value of the slider
+      inCurrentValue   pointer to current value of the slider, which
+                       may be changed as the end user manipulates the slider
 
+      inSliderMoving   pointer to the slider's moving/non-moving state flag
+                       (tracks whether slider has been clicked by a held-down
+                        mouse, etc.)
+                        
+      inForceMoving    1 to force the slider to listen to arrow keys, controller
+                         etc. and force it to be in the moving state
+                       0 to not force it to move
+                   
   Returns:
 
       slider value   at current position of slider thumb
@@ -814,16 +823,18 @@ void maxigin_startGUI( MaxiginGUI *inGUI );
                      
   [jumpMaxiginGeneral]
 */
-int maxigin_guiSlider( MaxiginGUI  *inGUI,
-                       int          inStartX,
-                       int          inEndX,
-                       int          inY,
-                       int          inBarHeight,
-                       int          inThumbHeight,
-                       int          inThumbWidth,
-                       int          inMinValue,
-                       int          inMaxValue,
-                       int          inCurrentValue );
+void maxigin_guiSlider( MaxiginGUI  *inGUI,
+                        int          inStartX,
+                        int          inEndX,
+                        int          inY,
+                        int          inBarHeight,
+                        int          inThumbHeight,
+                        int          inThumbWidth,
+                        int          inMinValue,
+                        int          inMaxValue,
+                        int         *inCurrentValue,
+                        char        *inSliderMoving,
+                        char         inForceMoving );
 
 
 
@@ -4523,19 +4534,22 @@ static void mx_makeColorGray( MaxiginColor   *inC,
     }
 
 
-int maxigin_guiSlider( MaxiginGUI  *inGUI,
-                       int          inStartX,
-                       int          inEndX,
-                       int          inY,
-                       int          inBarHeight,
-                       int          inThumbHeight,
-                       int          inThumbWidth,
-                       int          inMinValue,
-                       int          inMaxValue,
-                       int          inCurrentValue ) {
+void maxigin_guiSlider( MaxiginGUI  *inGUI,
+                        int          inStartX,
+                        int          inEndX,
+                        int          inY,
+                        int          inBarHeight,
+                        int          inThumbHeight,
+                        int          inThumbWidth,
+                        int          inMinValue,
+                        int          inMaxValue,
+                        int         *inCurrentValue,
+                        char        *inSliderMoving,
+                        char         inForceMoving  ) {
 
     MaxiginColor  c;
     int           thumPixelCenter;
+    int           v                 =  *inCurrentValue;
     
     c.comp.red   = 255;
     c.comp.green = 255;
@@ -4543,10 +4557,15 @@ int maxigin_guiSlider( MaxiginGUI  *inGUI,
     c.comp.alpha = 255;
 
     thumPixelCenter =
-        ( ( inCurrentValue - inMinValue ) *
+        ( ( v - inMinValue ) *
           ( inEndX - inStartX ) )
         / ( inMaxValue - inMinValue );
 
+
+    if( inForceMoving ) {
+        *inSliderMoving = 1;
+        }
+    
     /* fixme:
        finish implementation
 
@@ -4554,6 +4573,8 @@ int maxigin_guiSlider( MaxiginGUI  *inGUI,
 
        pay attention to mouse pointer */
 
+
+    /* bar */
     mx_makeColorGray( &c,
                       128 );
     
@@ -4576,8 +4597,18 @@ int maxigin_guiSlider( MaxiginGUI  *inGUI,
                        inEndX,
                        inY + inBarHeight / 2 );
 
-    mx_makeColorGray( &c,
-                      128 );
+
+    /* thumb */
+
+    if( *inSliderMoving ) {
+        /* darker when moving */
+        mx_makeColorGray( &c,
+                          64 );
+        }
+    else {        
+        mx_makeColorGray( &c,
+                          128 );
+        }
     
     mx_guiAddFillRect( inGUI,
                        0,
@@ -4612,8 +4643,13 @@ int maxigin_guiSlider( MaxiginGUI  *inGUI,
         }
                        
                        
+    v --;
 
-    return inCurrentValue;
+    if( v < inMinValue ) {
+        v = inMinValue;
+        }
+    
+    *inCurrentValue = v;
     }
 
 

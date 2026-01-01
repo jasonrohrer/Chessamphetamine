@@ -185,7 +185,7 @@
   so this setting defines the maximum number of draw components in a single
   MaxiginGUI instance.
 
-  The default size has room for 512 draw components per MaxiginGUI instance.
+  The default size has room for 64 draw components per MaxiginGUI instance.
   
   To make room for 1024 draw components per MaxiginGUI instance, do this:
 
@@ -194,7 +194,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS
-    #define  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS  512
+    #define  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS  64
 #endif
 
   
@@ -1454,6 +1454,7 @@ typedef enum MaxiginUserAction {
     PLAYBACK_REVERSE,
     PLAYBACK_JUMP_HALF_BACK,
     PLAYBACK_JUMP_HALF_AHEAD,
+    MAXIGIN_MOUSE_BUTTON,
     LAST_MAXIGIN_USER_ACTION
     } MaxiginUserAction;
 
@@ -1478,7 +1479,8 @@ static  char  mx_buttonsDown[ LAST_MAXIGIN_USER_ACTION ];
 
 
 
-
+/* is inAction freshly pressed since last call to isActionFreshPressed */
+static char mx_isActionFreshPressed( MaxiginUserAction  inAction );
 
 
 
@@ -4556,15 +4558,92 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
     c.comp.blue  = 255;
     c.comp.alpha = 255;
 
-    thumPixelCenter =
-        ( ( v - inMinValue ) *
-          ( inEndX - inStartX ) )
-        / ( inMaxValue - inMinValue );
 
+
+    if( *inSliderMoving != 0 ) {
+        /* previously manipulated with mouse, or mouse pressed outside slider */
+
+        if( ! mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON ) ) {
+
+            *inSliderMoving = 0;
+            }  
+        }
+    
+
+    if( *inSliderMoving == 0 ) {
+
+        if( mx_isActionFreshPressed( MAXIGIN_MOUSE_BUTTON ) ) {
+
+            char avail;
+            int  x;
+            int  y;
+            
+            avail = maxigin_getPointerLocation( &x,
+                                                &y );
+
+            if( avail ) {
+
+                if( x >= inStartX
+                    &&
+                    x <= inEndX
+                    &&
+                    y >= inY - inThumbHeight / 2
+                    &&
+                    y <= inY + inThumbHeight / 2 ) {
+
+                    /* mouse clicked on slider */
+
+                    *inSliderMoving = 1;
+                    }
+                else {
+                    /* mouse avail and pressed, but clicked outside of slider */
+                    *inSliderMoving = -1;
+                    }
+                }
+            }
+        }
+
+    if( *inSliderMoving == 1 ) {
+        /* mouse controlling slider */
+
+        char avail;
+        int  x;
+        int  y;
+            
+        avail = maxigin_getPointerLocation( &x,
+                                            &y );
+
+        if( avail ) {
+            if( x < inStartX ) {
+                v = inMinValue;
+                }
+            else if( x > inEndX ) {
+                v = inMaxValue;
+                }
+            else {
+                /* in between min and max */
+
+                v = ( x - inStartX ) * ( inMaxValue - inMinValue )
+                    /
+                    ( inEndX - inStartX )
+                    + inMinValue;
+                }
+            } 
+        }
+    
+    
 
     if( inForceMoving ) {
         *inSliderMoving = 1;
+
+        /* fixme... listen to controller sticks, arrow keys, etc */
         }
+    
+    thumPixelCenter =
+        ( ( v - inMinValue ) *
+          ( inEndX - inStartX ) )
+        / ( inMaxValue - inMinValue )
+        + inStartX;
     
     /* fixme:
        finish implementation
@@ -4600,7 +4679,24 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
 
     /* thumb */
 
-    if( *inSliderMoving ) {
+
+    /* shadow */
+    mx_makeColorGray( &c,
+                      64 );
+
+    c.comp.alpha = 128;
+    
+    mx_guiAddFillRect( inGUI,
+                       0,
+                       &c,
+                       thumPixelCenter - inThumbWidth / 2 - 2,
+                       inY - inBarHeight / 2,
+                       thumPixelCenter + inThumbWidth / 2 + 2,
+                       inY + inBarHeight / 2 );
+
+    c.comp.alpha = 255;
+    
+    if( *inSliderMoving == 1 ) {
         /* darker when moving */
         mx_makeColorGray( &c,
                           64 );
@@ -4629,6 +4725,8 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
                        thumPixelCenter + inThumbWidth / 2,
                        inY + inThumbHeight / 2 );
 
+    /* suppress warning for now */
+    if( 0 )
     mx_guiAddLine( inGUI,
                    0,
                    &c,
@@ -4641,9 +4739,6 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
     if( inBarHeight > 0 ) {
 
         }
-                       
-                       
-    v --;
 
     if( v < inMinValue ) {
         v = inMinValue;
@@ -4927,6 +5022,9 @@ static  MinginButton  mx_quitMapping[] = { MGN_KEY_Q,
 static  MinginButton  mx_fullscreenMapping[] = { MGN_KEY_F,
                                                  MGN_MAP_END };
 
+static  MinginButton  mx_mouseButtonMapping[] = { MGN_BUTTON_MOUSE_LEFT,
+                                                  MGN_MAP_END };
+
 static  MinginButton  mx_playbackMappings[8][2] =
     { { MGN_KEY_BACKSLASH, MGN_MAP_END },   /* start-stop */
       { MGN_KEY_EQUAL,     MGN_MAP_END },   /* faster */
@@ -4948,6 +5046,9 @@ static void mx_gameInit( void ) {
     
     mingin_registerButtonMapping( FULLSCREEN_TOGGLE,
                                   mx_fullscreenMapping );
+
+    mingin_registerButtonMapping( MAXIGIN_MOUSE_BUTTON,
+                                  mx_mouseButtonMapping );
 
     for( p =  PLAYBACK_START_STOP;
          p <= PLAYBACK_JUMP_HALF_AHEAD;

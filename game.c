@@ -473,7 +473,7 @@ void maxiginGame_step( void ) {
     maxigin_guiSlider( &gameGUI,
                        5,
                        MAXIGIN_GAME_NATIVE_W - 5,
-                       MAXIGIN_GAME_NATIVE_H / 2,
+                       MAXIGIN_GAME_NATIVE_H - 30,
                        10,
                        20,
                        10,
@@ -562,6 +562,17 @@ void maxiginGame_init( void ) {
 
     mingin_registerStickAxis( BOX_THICK,  thickMapping );
 
+
+    maxigin_initSliderSprites( "sliderLeftEndEmpty.tga",
+                               "sliderLeftEndFull.tga",
+                               "sliderRightEndEmpty.tga",
+                               "sliderRightEndFull.tga",
+                               "sliderSliverEmpty.tga",
+                               "sliderSliverFull.tga",
+                               "sliderThumbPassive.tga",
+                               "sliderThumbActive.tga" );
+    
+                               
     
     /* init position in image center */
     boxPosX = MAXIGIN_GAME_NATIVE_W / 2;

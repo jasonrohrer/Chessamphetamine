@@ -194,7 +194,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS
-    #define  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS  64
+    #define  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS  512
 #endif
 
   
@@ -528,6 +528,52 @@ int maxigin_initSprite( const char  *inBulkResourceName );
 int maxigin_initGlowSprite( const char  *inBulkResourceName,
                             int          inBlurRadius,
                             int          inBlurIterations );
+
+
+/*
+  Sets TGA-formatted sprites to customize maxigin_guiSlider appearance.
+
+  All parameters are names of TGA resource name in platform's bulk data
+  store.
+
+  Parameters:
+  
+      inLeftEndEmptySpriteResource        left end of slider bar when empty.
+                                          center of sprite will be drawn
+                                          at left extent of slider.
+      
+      inLeftEndFullSpriteResource         left end of slider bar when full.
+                                          center of sprite will be drawn
+                                          at left extent of slider
+      
+      inRightEndEmptySpriteResource       right end of slider bar when empty.
+                                          center of sprite will be drawn
+                                          at right extent of slider
+      
+      inRightEndFullSpriteResource        right end of slider bar when full.
+                                          center of sprite will be drawn
+                                          at right extent of slider
+      
+      inMiddleSliverEmptySpriteResource   single pixel wide sliver of slider
+                                          bar middle when empty
+                                          
+      inMiddleSliverFullSpriteResource    single pixel wide sliver of slider
+                                          bar middle when full
+                                          
+      inThumbSpriteResource               slider thumb (part that moves)
+      
+      inThumbActiveSpriteResource         slider thumb when clicked/active
+
+  [jumpMaxiginInit]      
+*/ 
+void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
+                                const char  *inLeftEndFullSpriteResource,
+                                const char  *inRightEndEmptySpriteResource,
+                                const char  *inRightEndFullSpriteResource,
+                                const char  *inMiddleSliverEmptyrSpriteResource,
+                                const char  *inMiddleSliverFullSpriteResource,
+                                const char  *inThumbSpriteResource,
+                                const char  *inThumbActiveSpriteResource );
 
 
 
@@ -1720,6 +1766,11 @@ typedef struct MaxiginSprite {
         
         int            w;
         int            h;
+
+        /* how far visible pixels (alpha > 0) extend beyond left and
+           right of sprite center */
+        int            leftVisibleRadius;
+        int            rightVisibleRadius;
         
         /* index into mx_spriteBytes */
         int            startByte;
@@ -1887,7 +1938,11 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
     char  originAtTop;
     int   w;
     int   h;
-
+    int   y;
+    int   leftRadius;
+    int   rightRadius;
+    int   xCenter;
+    
     int   neededSpriteBytes;
     int   newSpriteHandle;
     int   neededFileSpriteBytes;
@@ -2236,6 +2291,44 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
                 }
             }
         }
+
+    /* now find left/right visible extents */
+    leftRadius  = 0;
+    rightRadius = 0;
+    xCenter     = w / 2;
+    
+    for( y = 0;
+         y < h;
+         y ++ ) {
+
+        int  curByte  =  startByte + y * w * 4;
+        int  x;
+        
+        for( x = 0;
+             x < h;
+             x ++ ) {
+
+            unsigned char  a  =  mx_spriteBytes[ curByte ];
+
+            if( a > 0 ) {
+
+                if( x - xCenter > rightRadius ) {
+                    rightRadius = x - xCenter;
+                    }
+                else if( xCenter - x > leftRadius ) {
+                    leftRadius = xCenter - x;
+                    }
+                }
+            
+            /* on to next pixel */
+            curByte += 4;
+            }
+        }
+
+    mx_sprites[ newSpriteHandle ].leftVisibleRadius  = leftRadius;
+    mx_sprites[ newSpriteHandle ].rightVisibleRadius = rightRadius;
+    
+    
 
 
     /* hash bytes after origin flip and BGRA conversion */
@@ -2903,6 +2996,68 @@ int maxigin_initGlowSprite( const char  *inBulkResourceName,
 
     return spriteHandle;
     }
+
+
+
+typedef struct MaxiginSliderSprites {
+
+        /* index 0 for empty, 1 for full */
+        int  left  [2];
+        int  right [2];
+        int  sliver[2];
+
+        /* index 0 for passive, 1 for active */
+        int  thumb [2];
+        
+    } MaxiginSliderSprites;
+
+
+char                   mx_sliderSpritesSet  =  0;
+MaxiginSliderSprites   mx_sliderSprites;
+
+    
+
+
+void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
+                                const char  *inLeftEndFullSpriteResource,
+                                const char  *inRightEndEmptySpriteResource,
+                                const char  *inRightEndFullSpriteResource,
+                                const char  *inMiddleSliverEmptySpriteResource,
+                                const char  *inMiddleSliverFullSpriteResource,
+                                const char  *inThumbSpriteResource,
+                                const char  *inThumbActiveSpriteResource ) {
+    
+    mx_sliderSprites.left[ 0 ] =
+        maxigin_initSprite( inLeftEndEmptySpriteResource );
+    
+    mx_sliderSprites.left[ 1 ] =
+        maxigin_initSprite( inLeftEndFullSpriteResource );
+
+
+    mx_sliderSprites.right[ 0 ] =
+        maxigin_initSprite( inRightEndEmptySpriteResource );
+
+    mx_sliderSprites.right[ 1 ] =
+        maxigin_initSprite( inRightEndFullSpriteResource );
+
+    
+    mx_sliderSprites.sliver[ 0 ] =
+        maxigin_initSprite( inMiddleSliverEmptySpriteResource );
+
+    mx_sliderSprites.sliver[ 1 ] =
+        maxigin_initSprite( inMiddleSliverFullSpriteResource );
+
+
+    mx_sliderSprites.thumb[ 0 ] =
+        maxigin_initSprite( inThumbSpriteResource );
+
+    mx_sliderSprites.thumb[ 1 ] =
+        maxigin_initSprite( inThumbActiveSpriteResource );
+
+    mx_sliderSpritesSet = 1;
+    }
+
+
 
 
 
@@ -4603,6 +4758,42 @@ static void mx_guiAddFillRect( MaxiginGUI    *inGUI,
     }
 
 
+static void mx_guiAddSprite( MaxiginGUI    *inGUI,
+                             char           inAdditiveBlend,
+                             unsigned char  inAlpha,
+                             int            inSpriteHandle,
+                             int            inCenterX,
+                             int            inCenterY ) {
+
+    int           i  =  inGUI->numDrawComponents;
+    MaxiginColor  c;
+    
+    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
+        mingin_log( "Error:  trying to add a sprite to a full "
+                    "MaxiginGUI instance.\n" );
+        return;
+        }
+
+    c.val[0] = 255;
+    c.val[1] = 255;
+    c.val[2] = 255;
+    c.val[3] = inAlpha;
+    
+    mx_guiSetColor( inGUI,
+                    i,
+                    inAdditiveBlend,
+                    &c );
+
+    inGUI->drawComponents[i].drawType = MX_GUI_DRAW_SPRITE;
+    
+    inGUI->drawComponents[i].drawParams.sprite.spriteHandle = inSpriteHandle;
+    inGUI->drawComponents[i].drawParams.sprite.centerX      = inCenterX;
+    inGUI->drawComponents[i].drawParams.sprite.centerY      = inCenterY;
+
+    inGUI->numDrawComponents ++;
+    }
+
+
 
 static void mx_makeColorGray( MaxiginColor   *inC,
                               unsigned char   inGrayVal ) {
@@ -4806,110 +4997,183 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
         }
 
     
+    *inCurrentValue = v;
+    
     thumPixelCenter =
         ( ( v - inMinValue ) *
           ( inEndX - inStartX ) )
         / ( inMaxValue - inMinValue )
         + inStartX;
-    
-    /* fixme:
-       finish implementation
-
-       allow user to provide sprites for thumb, etc. */
 
 
-    /* bar */
-    mx_makeColorGray( &c,
-                      128 );
-    
-    mx_guiAddFillRect( inGUI,
-                       0,
-                       &c,
-                       inStartX,
-                       inY - inBarHeight / 2,
-                       inEndX,
-                       inY + inBarHeight / 2 );
-
-    mx_makeColorGray( &c,
-                      255 );
-    
-    mx_guiAddDrawRect( inGUI,
-                       0,
-                       &c,
-                       inStartX,
-                       inY - inBarHeight / 2,
-                       inEndX,
-                       inY + inBarHeight / 2 );
+    /* now draw slider */
 
 
-    /* thumb */
+    if( mx_sliderSpritesSet ) {
+        /* use sprites */
 
+        int  x;
+        int  leftEndHandle;
+        int  rightEndHandle;
+        int  thumbHandle;
+        
+        if( v > inMinValue ) {
+            leftEndHandle = mx_sliderSprites.left[1];
+            }
+        else {
+            /* completely empty, show empty left end */
+            leftEndHandle = mx_sliderSprites.left[0];
+            }
 
-    /* shadow */
-    mx_makeColorGray( &c,
-                      64 );
+        
+        mx_guiAddSprite( inGUI,
+                         0,
+                         255,
+                         leftEndHandle,
+                         inStartX,
+                         inY );
 
-    c.comp.alpha = 128;
-    
-    mx_guiAddFillRect( inGUI,
-                       0,
-                       &c,
-                       thumPixelCenter - inThumbWidth / 2 - 2,
-                       inY - inBarHeight / 2,
-                       thumPixelCenter + inThumbWidth / 2 + 2,
-                       inY + inBarHeight / 2 );
+        for( x = inStartX;
+             x < inEndX;
+             x ++ ) {
 
-    c.comp.alpha = 255;
-    
-    if( *inSliderMoving == 1 ) {
-        /* darker when moving */
-        mx_makeColorGray( &c,
-                          64 );
+            int  sliverHandle;
+            
+            if( x < thumPixelCenter ) {
+                sliverHandle = mx_sliderSprites.sliver[1];
+                }
+            else {
+                sliverHandle = mx_sliderSprites.sliver[0]; 
+                }
+            
+            mx_guiAddSprite( inGUI,
+                             0,
+                             255,
+                             sliverHandle,
+                             x,
+                             inY );
+            }
+        
+
+        if( v < inMaxValue ) {
+            rightEndHandle = mx_sliderSprites.right[0];
+            }
+        else {
+            /* completely fully, show full right end */
+            rightEndHandle = mx_sliderSprites.right[1];
+            }
+
+        
+        mx_guiAddSprite( inGUI,
+                         0,
+                         255,
+                         rightEndHandle,
+                         inEndX,
+                         inY );
+
+        if( *inSliderMoving == 1 ) {
+            thumbHandle = mx_sliderSprites.thumb[1];
+            }
+        else {
+            thumbHandle = mx_sliderSprites.thumb[0];
+            }
+
+        mx_guiAddSprite( inGUI,
+                         0,
+                         255,
+                         thumbHandle,
+                         thumPixelCenter,
+                         inY );
         }
-    else {        
+    else {
+        /* no sprites set, draw directly with geometry  */
+
+
+        /* bar */
         mx_makeColorGray( &c,
                           128 );
+    
+        mx_guiAddFillRect( inGUI,
+                           0,
+                           &c,
+                           inStartX,
+                           inY - inBarHeight / 2,
+                           inEndX,
+                           inY + inBarHeight / 2 );
+
+        mx_makeColorGray( &c,
+                          255 );
+    
+        mx_guiAddDrawRect( inGUI,
+                           0,
+                           &c,
+                           inStartX,
+                           inY - inBarHeight / 2,
+                           inEndX,
+                           inY + inBarHeight / 2 );
+
+
+        /* thumb */
+
+
+        /* shadow */
+        mx_makeColorGray( &c,
+                          64 );
+
+        c.comp.alpha = 128;
+    
+        mx_guiAddFillRect( inGUI,
+                           0,
+                           &c,
+                           thumPixelCenter - inThumbWidth / 2 - 2,
+                           inY - inBarHeight / 2,
+                           thumPixelCenter + inThumbWidth / 2 + 2,
+                           inY + inBarHeight / 2 );
+
+        c.comp.alpha = 255;
+    
+        if( *inSliderMoving == 1 ) {
+            /* darker when moving */
+            mx_makeColorGray( &c,
+                              64 );
+            }
+        else {        
+            mx_makeColorGray( &c,
+                              128 );
+            }
+    
+        mx_guiAddFillRect( inGUI,
+                           0,
+                           &c,
+                           thumPixelCenter - inThumbWidth / 2,
+                           inY - inThumbHeight / 2,
+                           thumPixelCenter + inThumbWidth / 2,
+                           inY + inThumbHeight / 2 );
+
+        mx_makeColorGray( &c,
+                          255 );
+    
+        mx_guiAddDrawRect( inGUI,
+                           0,
+                           &c,
+                           thumPixelCenter - inThumbWidth / 2,
+                           inY - inThumbHeight / 2,
+                           thumPixelCenter + inThumbWidth / 2,
+                           inY + inThumbHeight / 2 );
+
+        /* suppress warning for now */
+        if( 0 )
+            mx_guiAddLine( inGUI,
+                           0,
+                           &c,
+                           thumPixelCenter - inThumbWidth / 2,
+                           inY - inThumbHeight / 2,
+                           thumPixelCenter + inThumbWidth / 2,
+                           inY + inThumbHeight / 2 );
+
         }
     
-    mx_guiAddFillRect( inGUI,
-                       0,
-                       &c,
-                       thumPixelCenter - inThumbWidth / 2,
-                       inY - inThumbHeight / 2,
-                       thumPixelCenter + inThumbWidth / 2,
-                       inY + inThumbHeight / 2 );
 
-    mx_makeColorGray( &c,
-                      255 );
-    
-    mx_guiAddDrawRect( inGUI,
-                       0,
-                       &c,
-                       thumPixelCenter - inThumbWidth / 2,
-                       inY - inThumbHeight / 2,
-                       thumPixelCenter + inThumbWidth / 2,
-                       inY + inThumbHeight / 2 );
-
-    /* suppress warning for now */
-    if( 0 )
-    mx_guiAddLine( inGUI,
-                   0,
-                   &c,
-                   thumPixelCenter - inThumbWidth / 2,
-                   inY - inThumbHeight / 2,
-                   thumPixelCenter + inThumbWidth / 2,
-                   inY + inThumbHeight / 2 );
-
-    /* suppress warning */
-    if( inBarHeight > 0 ) {
-
-        }
-
-    if( v < inMinValue ) {
-        v = inMinValue;
-        }
-    
-    *inCurrentValue = v;
     }
 
 

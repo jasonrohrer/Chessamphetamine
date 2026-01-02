@@ -502,7 +502,10 @@ int maxigin_initSprite( const char  *inBulkResourceName );
 
 /*
   Loads a TGA-formatted sprite from the platform's bulk data store, and
-  generates an internal glow sprite to go along with it.
+  generates an internal glow sprite to go along with it.  Calls to
+  maxigin_drawSprite for the resulting sprite handle will draw the underlying
+  sprite and additively blend in the glow sprite.
+  
   Sprites must be in RGBA 32-bit uncompressed TGA format.
 
   Parameters:
@@ -574,30 +577,6 @@ void maxigin_drawSprite( int  inSpriteHandle,
                          int  inCenterX,
                          int  inCenterY );
 
-
-
-/*
-  Draws a glowing sprite into the game's native pixel buffer.
-
-  Note that if inSpriteHandle was initialized with maxigin_initSprite instead
-  of maxigin_initGlowSprite, this call is equivalent to maxigin_drawSprite
-  (it does nothing special in that case).
-
-  Parameters:
-
-      inSpriteHandle   the sprite to draw
-
-      inCenterX        the x position in the game's native pixel buffer of the
-                       sprite's center
- 
-      inCenterY        the y position in the game's native pixel buffer of the
-                       sprite's center
-                       
-  [jumpMaxiginDraw]
-*/
-void maxigin_drawGlowSprite( int  inSpriteHandle,
-                             int  inCenterX,
-                             int  inCenterY );
 
 
 /*
@@ -3006,9 +2985,9 @@ void maxigin_drawSetAlpha( unsigned char  inAlpha ) {
 
 
 
-void maxigin_drawSprite( int  inSpriteHandle,
-                         int  inCenterX,
-                         int  inCenterY ) {
+static void mx_drawRegularSprite( int  inSpriteHandle,
+                                  int  inCenterX,
+                                  int  inCenterY ) {
 
     int  startImageX;
     int  startImageY;
@@ -3306,28 +3285,48 @@ void maxigin_drawSprite( int  inSpriteHandle,
 
 
 
-void maxigin_drawGlowSprite( int  inSpriteHandle,
+static void mx_drawGlowSprite( int  inSpriteHandle,
                              int  inCenterX,
                              int  inCenterY ) {
 
     char  oldAdditive  =  maxigin_drawGetAdditive();
     
-    maxigin_drawSprite( inSpriteHandle,
-                        inCenterX,
-                        inCenterY );
+    mx_drawRegularSprite( inSpriteHandle,
+                          inCenterX,
+                          inCenterY );
 
     if( mx_sprites[ inSpriteHandle ].glowSpriteHandle != -1 ) {
 
         maxigin_drawToggleAdditive( 1 );
 
-        maxigin_drawSprite( mx_sprites[ inSpriteHandle ].glowSpriteHandle,
-                            inCenterX,
-                            inCenterY );
+        mx_drawRegularSprite( mx_sprites[ inSpriteHandle ].glowSpriteHandle,
+                              inCenterX,
+                              inCenterY );
 
         maxigin_drawToggleAdditive( oldAdditive );
         }
     }
 
+
+
+void maxigin_drawSprite( int  inSpriteHandle,
+                         int  inCenterX,
+                         int  inCenterY ) {
+    
+    if( mx_sprites[ inSpriteHandle ].glowSpriteHandle != -1 ) {
+
+        mx_drawGlowSprite( inSpriteHandle,
+                           inCenterX,
+                           inCenterY );
+        }
+    else {
+        mx_drawRegularSprite( inSpriteHandle,
+                              inCenterX,
+                              inCenterY );
+        }
+    }
+
+    
 
 
 

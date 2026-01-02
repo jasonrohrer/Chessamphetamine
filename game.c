@@ -156,13 +156,13 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
          i ++ ) {
 
         /* vert line */
-        maxigin_drawGlowSprite( spriteHandles[4],
-                                i * 20 + 19,
-                                MAXIGIN_GAME_NATIVE_H /  2);
+        maxigin_drawSprite( spriteHandles[4],
+                            i * 20 + 19,
+                            MAXIGIN_GAME_NATIVE_H /  2);
         /* hor line */
-        maxigin_drawGlowSprite( spriteHandles[5],
-                                MAXIGIN_GAME_NATIVE_W /  2,
-                                i * 20 + 44 );
+        maxigin_drawSprite( spriteHandles[5],
+                            MAXIGIN_GAME_NATIVE_W /  2,
+                            i * 20 + 44 );
         }
 
     maxigin_drawToggleAdditive( 1 );
@@ -199,9 +199,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                     bulletPos[ i ].y );
                 }
             else if( i % 3 == 2 ) {
-                maxigin_drawGlowSprite( spriteHandles[3],
-                                        bulletPos[ i ].x,
-                                        bulletPos[ i ].y );
+                maxigin_drawSprite( spriteHandles[3],
+                                    bulletPos[ i ].x,
+                                    bulletPos[ i ].y );
                 }
             
             if( 0 )

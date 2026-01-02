@@ -928,6 +928,74 @@ char maxigin_getPointerLocation( int  *outX,
 
 
 
+/*
+  Maxigin listens to certain joystick axes for its own functionality that's not
+  game-specific (like moving through the settings screen, adjusting sliders,
+  etc.)
+
+  If a game registers sticks directly with mingin_registerStickAxis,
+  those registrations may clobber Maxigin's registrations.
+
+  Games that want to take full advantage of Maxigin's functionality should
+  call this instead of mingin_registerStickAxis.
+
+  See mingin_registerStickAxis in mingin.h for full documentation. 
+  
+  Parameters:
+
+      inStickAxisHandle   the game-defined stick axis to map
+
+      inMapping           an array of MinginStick values, ending with
+                          MGN_MAP_END, that should map to the game-defined
+                          stick axis.
+                          
+  Returns:
+
+      1   on success
+      
+      0   on failure (if inStickAxisHandle is out of the supported range)
+                       
+  [jumpMaxiginGeneral]
+*/
+char maxigin_registerStickAxis( int                inStickAxisHandle,
+                                const MinginStick  inMapping[] );
+
+
+
+/*
+  Checks the position of a previously-mapped joystick axis handle.
+
+  See mingin_getStickPosition in mingin.h for full documentation.
+
+  Games that want to take full advantage of Maxigin's functionality should
+  call this instead of mingin_getStickPosition.
+  
+  Parameters:
+
+      inStickAxisHandle   the game-defined stick axis to check
+
+      outPosition         pointer to where the stick position should be returned
+
+      outLowerLimit       pointer to where the lower limit for that stick
+                          should be returned
+
+      outUpperLimit       pointer to where the upper limit for that stick
+                          should be returned                    
+  Returns:
+
+      1   if stick is available
+
+      0   if not
+                          
+  [jumpMaxiginGeneral]
+*/
+char maxigin_getStickPosition( int   inStickAxisHandle,
+                               int  *outPosition,
+                               int  *outLowerLimit,
+                               int  *outUpperLimit );
+
+
+
 
 
 /*
@@ -1421,7 +1489,7 @@ struct MaxiginGUI {
 
 
 
-
+/* all of the button actions that Maxigin registers internally */
 typedef enum MaxiginUserAction {
     QUIT,
     FULLSCREEN_TOGGLE,
@@ -1434,8 +1502,18 @@ typedef enum MaxiginUserAction {
     PLAYBACK_JUMP_HALF_BACK,
     PLAYBACK_JUMP_HALF_AHEAD,
     MAXIGIN_MOUSE_BUTTON,
+    MAXIGIN_SLIDER_INCREASE,
+    MAXIGIN_SLIDER_DECREASE,
     LAST_MAXIGIN_USER_ACTION
     } MaxiginUserAction;
+
+
+/* all of the sticks that Maxigin registers internally */
+typedef enum MaxiginSticks {
+    MAXIGIN_STICK_SLIDER,
+    LAST_MAXIGIN_STICK
+    } MaxiginSticks;
+
 
 
 static  char  mx_areWeInMaxiginGameInitFunction  =  0;
@@ -4551,6 +4629,12 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
     MaxiginColor  c;
     int           thumPixelCenter;
     int           v                 =  *inCurrentValue;
+    int           fullRange         = inMaxValue - inMinValue;
+    int           tenPercent        = fullRange / 10;
+    
+    if( tenPercent < 1 ) {
+        tenPercent = 1;
+        }
     
     c.comp.red   = 255;
     c.comp.green = 255;
@@ -4635,8 +4719,92 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
     if( inForceMoving ) {
         *inSliderMoving = 1;
 
-        /* fixme... listen to controller sticks, arrow keys, etc */
+        /* we're in force moving mode, which means the game has this slider
+           active or selected, currently */
+        
+        /* listen to controller sticks, arrow keys, etc */
+
+        if( mx_isActionFreshPressed( MAXIGIN_SLIDER_DECREASE ) ) {
+
+            v -= tenPercent;
+            }
+        else if( mx_isActionFreshPressed( MAXIGIN_SLIDER_INCREASE ) ) {
+
+            v += tenPercent;
+            }
+        else {
+
+            /* move slider with sticks, potentially  */
+
+            int  pos;
+            int  lower;
+            int  upper;
+            
+            if( mingin_getStickPosition( MAXIGIN_STICK_SLIDER,
+                                         &pos,
+                                         &lower,
+                                         &upper ) ) {
+                /* stick available */
+
+                int  range           =  ( upper - lower );
+                int  half            =  range / 2;
+                int  mid             =  half + lower;
+                int  dead            =  range / 1000;
+                int  stepsPerSecond  =  mingin_getStepsPerSecond();
+                int  jump            =  0;
+
+
+                if( dead == 0 ) {
+                    dead = 1;
+                    }
+                
+                /* baseline:
+                   on a 0-100 slider at 60 fps, we should
+                   move 1 step per frame if stick partway pressed
+                   and 2 steps per frame if stick all the way pressed.
+
+                   For longer sliders, we should move faster.
+
+                   On platforms with slower frame rates, we should move
+                   faster.
+                */
+                
+                if( pos > mid + dead ) {
+
+                    jump = 1;
+
+                    if( pos > upper - dead ) {
+                        jump = 2;
+                        }
+                    }
+                else if( pos < mid - dead ) {
+
+                    jump = -1;
+
+                    if( pos < lower + dead ) {
+                        jump = -2;
+                        }
+                    }
+
+                if( stepsPerSecond < 60 ) {
+                    /* bigger jumps if fps lower */
+                    jump = ( jump * 60 ) / stepsPerSecond;
+                    }
+                if( fullRange > 100 ) {
+                    jump = ( jump * fullRange ) / 100;
+                    }
+                
+                v += jump;
+                }
+            }
+        if( v < inMinValue ) {
+            v = inMinValue;
+            }
+        if( v > inMaxValue ) {
+            v = inMaxValue;
+            }
         }
+
     
     thumPixelCenter =
         ( ( v - inMinValue ) *
@@ -4647,9 +4815,7 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
     /* fixme:
        finish implementation
 
-       allow user to provide sprites for thumb, etc.
-
-       pay attention to mouse pointer */
+       allow user to provide sprites for thumb, etc. */
 
 
     /* bar */
@@ -5024,6 +5190,14 @@ static  MinginButton  mx_fullscreenMapping[] = { MGN_KEY_F,
 static  MinginButton  mx_mouseButtonMapping[] = { MGN_BUTTON_MOUSE_LEFT,
                                                   MGN_MAP_END };
 
+static  MinginButton  mx_sliderIncreaseMapping[] = { MGN_KEY_RIGHT,
+                                                     MGN_BUTTON_DPAD_RIGHT,
+                                                     MGN_MAP_END };
+
+static  MinginButton  mx_sliderDecreaseMapping[] = { MGN_KEY_LEFT,
+                                                     MGN_BUTTON_DPAD_LEFT,
+                                                     MGN_MAP_END };
+
 static  MinginButton  mx_playbackMappings[8][2] =
     { { MGN_KEY_BACKSLASH, MGN_MAP_END },   /* start-stop */
       { MGN_KEY_EQUAL,     MGN_MAP_END },   /* faster */
@@ -5034,6 +5208,12 @@ static  MinginButton  mx_playbackMappings[8][2] =
       { MGN_KEY_BRACKET_L, MGN_MAP_END },   /* jump back */
       { MGN_KEY_BRACKET_R, MGN_MAP_END } }; /* jump ahead */
 
+
+static  MinginStick  mx_sliderStickMapping[] = { MGN_STICK_LEFT_X,
+                                                 MGN_STICK_RIGHT_X,
+                                                 MGN_MAP_END };
+
+    
 
 
 static void mx_gameInit( void ) {
@@ -5048,6 +5228,12 @@ static void mx_gameInit( void ) {
 
     mingin_registerButtonMapping( MAXIGIN_MOUSE_BUTTON,
                                   mx_mouseButtonMapping );
+
+    mingin_registerButtonMapping( MAXIGIN_SLIDER_INCREASE,
+                                  mx_sliderIncreaseMapping );
+    
+    mingin_registerButtonMapping( MAXIGIN_SLIDER_DECREASE,
+                                  mx_sliderDecreaseMapping );
 
     for( p =  PLAYBACK_START_STOP;
          p <= PLAYBACK_JUMP_HALF_AHEAD;
@@ -5065,6 +5251,11 @@ static void mx_gameInit( void ) {
         
         mx_buttonsDown[ p ] = 0;
         }
+
+
+    mingin_registerStickAxis( MAXIGIN_STICK_SLIDER,
+                              mx_sliderStickMapping );
+                              
     
     
     mx_areWeInMaxiginGameInitFunction = 1;
@@ -5152,6 +5343,33 @@ char maxigin_getPointerLocation( int  *outX,
 
     return 1;
     }
+
+
+
+char maxigin_registerStickAxis( int                inStickAxisHandle,
+                                const MinginStick  inMapping[] ) {
+    
+    inStickAxisHandle += LAST_MAXIGIN_STICK;
+
+    return mingin_registerStickAxis( inStickAxisHandle,
+                                     inMapping );
+    }
+
+
+
+char maxigin_getStickPosition( int   inStickAxisHandle,
+                               int  *outPosition,
+                               int  *outLowerLimit,
+                               int  *outUpperLimit ) {
+
+    inStickAxisHandle += LAST_MAXIGIN_STICK;
+
+    return mingin_getStickPosition( inStickAxisHandle,
+                                    outPosition,
+                                    outLowerLimit,
+                                    outUpperLimit );
+    }
+
 
 
 

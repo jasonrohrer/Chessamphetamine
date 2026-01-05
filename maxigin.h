@@ -587,7 +587,54 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
                                 const char  *inMiddleSliverEmptyrSpriteResource,
                                 const char  *inMiddleSliverFullSpriteResource,
                                 const char  *inThumbSpriteResource,
+                                const char  *inThumbHotSpriteResource,
                                 const char  *inThumbActiveSpriteResource );
+
+
+
+/*
+  This structure stores results of immediate mode GUI calls that
+  happen during the game's step function so they can be drawn later during the
+  game's draw function.
+
+  The user can allocate this structure as-needed for each gui instance,
+  like this:
+
+      MaxiginGUI myGUI;
+
+  Then in init function:
+
+      maxigin_initGUI( &myGUI );
+
+  Then in step function:
+
+      maxigin_startGUI( &myGUI );
+
+      maxigin_guiSlider( &myGUI, ....  );
+
+  Then in draw function:
+
+      maxigin_drawGUI( &myGUI );
+
+  [jumpMaxiginInit]
+*/
+typedef struct MaxiginGUI MaxiginGUI;
+
+
+
+/*
+  Initializes a MaxiginGUI structure.
+
+  Sprites must be in RGBA 32-bit uncompressed TGA format.
+
+  
+  Parameters:
+  
+      inGUI   pointer to the structure representing the GUI instance
+
+  [jumpMaxiginInit]      
+*/
+void maxigin_initGUI( MaxiginGUI *inGUI );
 
 
 
@@ -763,29 +810,7 @@ void maxigin_drawFillRect( int  inStartX,
 
 
 
-/*
-  This structure stores results of immediate mode GUI calls that
-  happen during the game's step function so they can be drawn later during the
-  game's draw function.
 
-  The user can allocate this structure as-needed for each gui instance,
-  like this:
-
-      MaxiginGUI myGUI;
-
-  Then in step function:
-
-      maxigin_startGUI( &myGUI );
-
-      maxigin_guiSlider( &myGUI, ....  );
-
-  Then in draw function:
-
-      maxigin_drawGUI( &myGUI );
-
-  [jumpMaxiginGeneral]
-*/
-typedef struct MaxiginGUI MaxiginGUI;
 
 
 
@@ -825,6 +850,9 @@ void maxigin_startGUI( MaxiginGUI *inGUI );
     
       inGUI            pointer to the structure representing the GUI instance
 
+      inCurrentValue   pointer to current value of the slider, which
+                       may be changed as the end user manipulates the slider
+
       inStartX         pixel x position of left edge of slider
       
       inEndX           pixel x position of right edge of slider
@@ -843,13 +871,6 @@ void maxigin_startGUI( MaxiginGUI *inGUI );
       inMinValue       value returned by slider when thumb is far left
 
       inMaxValue       value returned by slider when thumb is far right
-
-      inCurrentValue   pointer to current value of the slider, which
-                       may be changed as the end user manipulates the slider
-
-      inSliderMoving   pointer to the slider's moving/non-moving state flag
-                       (tracks whether slider has been clicked by a held-down
-                        mouse, etc.)
                         
       inForceMoving    1 to force the slider to listen to arrow keys, controller
                          etc. and force it to be in the moving state
@@ -863,6 +884,7 @@ void maxigin_startGUI( MaxiginGUI *inGUI );
   [jumpMaxiginGeneral]
 */
 void maxigin_guiSlider( MaxiginGUI  *inGUI,
+                        int         *inCurrentValue,
                         int          inStartX,
                         int          inEndX,
                         int          inY,
@@ -871,8 +893,6 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
                         int          inThumbWidth,
                         int          inMinValue,
                         int          inMaxValue,
-                        int         *inCurrentValue,
-                        char        *inSliderMoving,
                         char         inForceMoving );
 
 
@@ -1498,8 +1518,23 @@ void maxigin_flexHashFinish( MaxiginFlexHashState  *inState );
   the end user can allocate this structure for their gui instances.
 */
 struct MaxiginGUI {
+
+        /* Track ID of hot/active component across steps.
+           Hot means mouse is over.
+           Active means mouse was clicked on component in past and is
+           still being actively dragged. */
+        void  *hot;
+        void  *active;
+
+        /* These offsets are for when mouse is first clicked on a "handle"
+           on a given component, and the relative offset of the mouse
+           to that handle should be maintained as the mouse moves.
+           For example, a scroll bar thumb shouldn't jump to center on the
+           mouse when it is clicked slightly off-center.*/
+        int    activeMouseOffsetX;
+        int    activeMouseOffsetY;
         
-        int  numDrawComponents;  
+        int    numDrawComponents;  
 
         struct {
                 char           additiveBlend;
@@ -3037,8 +3072,8 @@ typedef struct MaxiginSliderSprites {
         int  bar[2];
         int  sliver[2];
 
-        /* index 0 for passive, 1 for active */
-        int  thumb [2];
+        /* index 0 for cold, 1 for hot, 2 for active */
+        int  thumb [3];
         
     } MaxiginSliderSprites;
 
@@ -3058,6 +3093,7 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
                                 const char  *inMiddleSliverEmptySpriteResource,
                                 const char  *inMiddleSliverFullSpriteResource,
                                 const char  *inThumbSpriteResource,
+                                const char  *inThumbHotSpriteResource,
                                 const char  *inThumbActiveSpriteResource ) {
     
     mx_sliderSprites.left[ 0 ] =
@@ -3092,6 +3128,9 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
         maxigin_initSprite( inThumbSpriteResource );
 
     mx_sliderSprites.thumb[ 1 ] =
+        maxigin_initSprite( inThumbHotSpriteResource );
+
+    mx_sliderSprites.thumb[ 2 ] =
         maxigin_initSprite( inThumbActiveSpriteResource );
 
     mx_sliderSpritesSet = 1;
@@ -4599,6 +4638,15 @@ void maxigin_drawFillRect( int  inStartX,
 
 
 
+void maxigin_initGUI( MaxiginGUI *inGUI ) {
+    
+    inGUI->hot                = 0;
+    inGUI->active             = 0;
+    inGUI->activeMouseOffsetX = 0;
+    inGUI->activeMouseOffsetY = 0;
+    inGUI->numDrawComponents  = 0;
+    }
+
 
 
 void maxigin_drawGUI( MaxiginGUI *inGUI ) {
@@ -4699,6 +4747,7 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
 
 
 void maxigin_startGUI( MaxiginGUI *inGUI ) {
+    inGUI->hot               = 0;
     inGUI->numDrawComponents = 0;
     }
 
@@ -4928,6 +4977,7 @@ static void mx_makeColorGray( MaxiginColor   *inC,
 
 
 void maxigin_guiSlider( MaxiginGUI  *inGUI,
+                        int         *inCurrentValue,
                         int          inStartX,
                         int          inEndX,
                         int          inY,
@@ -4936,8 +4986,6 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
                         int          inThumbWidth,
                         int          inMinValue,
                         int          inMaxValue,
-                        int         *inCurrentValue,
-                        char        *inSliderMoving,
                         char         inForceMoving  ) {
 
     MaxiginColor  c;
@@ -4957,50 +5005,57 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
 
 
 
-    if( *inSliderMoving != 0 ) {
-        /* previously manipulated with mouse, or mouse pressed outside slider */
+    if( inGUI->active == inCurrentValue ) {
+        /* previously manipulated with mouse */
 
         if( ! mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON ) ) {
 
-            *inSliderMoving = 0;
+            inGUI->active = 0;
+            inGUI->hot    = 0;
             }  
         }
     
 
-    if( *inSliderMoving == 0 ) {
+    if( inGUI->active == 0 ) {
+        /* no other component active */
 
-        if( mx_isActionFreshPressed( MAXIGIN_MOUSE_BUTTON ) ) {
-
-            char avail;
-            int  x;
-            int  y;
+        char avail;
+        int  x;
+        int  y;
             
-            avail = maxigin_getPointerLocation( &x,
-                                                &y );
+        avail = maxigin_getPointerLocation( &x,
+                                            &y );
 
-            if( avail ) {
+        if( avail ) {
 
-                if( x >= inStartX
-                    &&
-                    x <= inEndX
-                    &&
-                    y >= inY - inThumbHeight / 2
-                    &&
-                    y <= inY + inThumbHeight / 2 ) {
+            if( x >= inStartX
+                &&
+                x <= inEndX
+                &&
+                y >= inY - inThumbHeight / 2
+                &&
+                y <= inY + inThumbHeight / 2 ) {
 
-                    /* mouse clicked on slider */
+                /* mouse over slider */
 
-                    *inSliderMoving = 1;
-                    }
-                else {
-                    /* mouse avail and pressed, but clicked outside of slider */
-                    *inSliderMoving = -1;
-                    }
+                inGUI->hot = inCurrentValue;
+                }
+            else if( inGUI->hot == inCurrentValue ) {
+                /* mouse was over slider, but has moved out */
+                inGUI->hot = 0;
+                }
+            }
+
+        if( inGUI->hot == inCurrentValue ) {
+            /* mouse over slider */
+            if( mx_isActionFreshPressed( MAXIGIN_MOUSE_BUTTON ) ) {
+                /* mouse pressed on slider */
+                inGUI->active = inCurrentValue;
                 }
             }
         }
 
-    if( *inSliderMoving == 1 ) {
+    if( inGUI->active == inCurrentValue ) {
         /* mouse controlling slider */
 
         char avail;
@@ -5031,7 +5086,7 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
     
 
     if( inForceMoving ) {
-        *inSliderMoving = 1;
+        inGUI->active = inCurrentValue;
 
         /* we're in force moving mode, which means the game has this slider
            active or selected, currently */
@@ -5258,7 +5313,10 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
                          inEndX,
                          inY );
 
-        if( *inSliderMoving == 1 ) {
+        if( inGUI->active == inCurrentValue ) {
+            thumbHandle = mx_sliderSprites.thumb[2];
+            }
+        else if( inGUI->hot == inCurrentValue ) {
             thumbHandle = mx_sliderSprites.thumb[1];
             }
         else {
@@ -5319,10 +5377,15 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
 
         c.comp.alpha = 255;
     
-        if( *inSliderMoving == 1 ) {
+        if( inGUI->active == inCurrentValue ) {
             /* darker when moving */
             mx_makeColorGray( &c,
                               64 );
+            }
+        else if( inGUI->hot == inCurrentValue ) {
+            /* brighter when hot */
+            mx_makeColorGray( &c,
+                              192 );
             }
         else {        
             mx_makeColorGray( &c,

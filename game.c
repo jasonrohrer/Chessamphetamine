@@ -64,7 +64,6 @@ static int          spriteHandles[ NUM_BULK_FILES ];
 
 static MaxiginGUI   gameGUI;
 static int          sliderValue   =  75;
-static char         sliderMoving  =   0;
 
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
@@ -471,6 +470,7 @@ void maxiginGame_step( void ) {
 
 
     maxigin_guiSlider( &gameGUI,
+                       &sliderValue,
                        5,
                        MAXIGIN_GAME_NATIVE_W - 5,
                        MAXIGIN_GAME_NATIVE_H - 30,
@@ -479,8 +479,6 @@ void maxiginGame_step( void ) {
                        10,
                        0,
                        100,
-                       &sliderValue,
-                       &sliderMoving,
                        0 );
     
     
@@ -572,9 +570,12 @@ void maxiginGame_init( void ) {
                                "sliderSliverEmpty.tga",
                                "sliderSliverFull.tga",
                                "sliderThumbPassive.tga",
+                               "sliderThumbHot.tga",
                                "sliderThumbActive.tga" );
     
-                               
+
+    maxigin_initGUI( &gameGUI );
+    
     
     /* init position in image center */
     boxPosX = MAXIGIN_GAME_NATIVE_W / 2;

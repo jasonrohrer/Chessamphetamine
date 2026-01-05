@@ -1526,6 +1526,12 @@ struct MaxiginGUI {
         void  *hot;
         void  *active;
 
+        /* true if any active gui component has detected
+           that the mouse is held down (even if it's not over any gui
+           component  */
+        char   mouseDown;
+        
+
         /* These offsets are for when mouse is first clicked on a "handle"
            on a given component, and the relative offset of the mouse
            to that handle should be maintained as the mouse moves.
@@ -4642,6 +4648,7 @@ void maxigin_initGUI( MaxiginGUI *inGUI ) {
     
     inGUI->hot                = 0;
     inGUI->active             = 0;
+    inGUI->mouseDown          = 0;
     inGUI->activeMouseOffsetX = 0;
     inGUI->activeMouseOffsetY = 0;
     inGUI->numDrawComponents  = 0;
@@ -5060,7 +5067,11 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
 
                 /* mouse over slider */
 
-                inGUI->hot = inCurrentValue;
+                if( ! inGUI->mouseDown ) {
+                    /* mouse hovering, unpressed */
+                    
+                    inGUI->hot = inCurrentValue;
+                    }
                 }
             else if( inGUI->hot == inCurrentValue ) {
                 /* mouse was over slider, but has moved out */
@@ -5070,8 +5081,11 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
 
         if( inGUI->hot == inCurrentValue ) {
             /* mouse over slider */
-            if( mx_isActionFreshPressed( MAXIGIN_MOUSE_BUTTON ) ) {
-                /* mouse pressed on slider */
+            if( ! inGUI->mouseDown
+                &&
+                mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON ) ) {
+                
+                /* mouse newly pressed on slider */
 
                 int  thumbLeftR;
                 int  thumbRightR;
@@ -5102,6 +5116,10 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
             }
         }
 
+    
+    inGUI->mouseDown = mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON );
+    
+
     if( inGUI->active == inCurrentValue ) {
         /* mouse controlling slider */
 
@@ -5116,9 +5134,6 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
 
             x -= inGUI->activeMouseOffsetX;
             y -= inGUI->activeMouseOffsetY;
-
-            maxigin_logInt( "activeMouseOffsetX = ",
-                            inGUI->activeMouseOffsetX );
 
             thumbPixelCenter = x;
             thumbControlledByMouse = 1;

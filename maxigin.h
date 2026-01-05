@@ -612,6 +612,10 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
 
       maxigin_guiSlider( &myGUI, ....  );
 
+      ...  multiple maxigin_gui calls ...
+
+      maxigin_endGUI( &myGUI );
+
   Then in draw function:
 
       maxigin_drawGUI( &myGUI );
@@ -840,6 +844,21 @@ void maxigin_drawGUI( MaxiginGUI *inGUI );
   [jumpMaxiginGeneral]
 */
 void maxigin_startGUI( MaxiginGUI *inGUI );
+
+
+
+/*
+  Finalizes a GUI instance after last immediate mode GUI call.
+  Generally called in a game's step function after laying out the GUI.
+
+  Parameters:
+    
+      inGUI   pointer to the structure representing the GUI instance
+              to finalize
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_endGUI( MaxiginGUI *inGUI );
 
 
 
@@ -4760,6 +4779,31 @@ void maxigin_startGUI( MaxiginGUI *inGUI ) {
 
 
 
+void maxigin_endGUI( MaxiginGUI *inGUI ) {
+    if( ! inGUI->mouseDown ) {
+
+        if( mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON ) ) {
+
+            /* The button was pressed fresh this step, but NONE
+               of our GUI components were hit by it.
+               Mark it as pressed now, so none will react to it's pressed
+               state by accident next step. */
+
+            inGUI->mouseDown = 1;
+            }
+        }
+    else {
+        /* mouse marked as held down, has it released? */
+        if( ! mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON ) ) {
+
+            inGUI->mouseDown = 0;
+            }
+        }
+        
+    }
+
+
+
 static void mx_guiSetColor( MaxiginGUI    *inGUI,
                             int            inDrawComponentIndex,
                             char           inAdditiveBlend,
@@ -5090,8 +5134,8 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
                 int  thumbLeftR;
                 int  thumbRightR;
                 
-                inGUI->active = inCurrentValue;
-
+                inGUI->active    = inCurrentValue;
+                inGUI->mouseDown = 1;
 
                 /* is mouse over thumb? */
 
@@ -5115,9 +5159,6 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
                 }
             }
         }
-
-    
-    inGUI->mouseDown = mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON );
     
 
     if( inGUI->active == inCurrentValue ) {

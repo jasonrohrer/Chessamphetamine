@@ -64,6 +64,7 @@ static int          spriteHandles[ NUM_BULK_FILES ];
 
 static MaxiginGUI   gameGUI;
 static int          sliderValue   =  75;
+static int          sliderValueB  =  75;
 
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
@@ -468,7 +469,7 @@ void maxiginGame_step( void ) {
 
     maxigin_startGUI( &gameGUI );
 
-
+    
     maxigin_guiSlider( &gameGUI,
                        &sliderValue,
                        5,
@@ -480,7 +481,21 @@ void maxiginGame_step( void ) {
                        0,
                        100,
                        0 );
-    
+
+
+    maxigin_guiSlider( &gameGUI,
+                       &sliderValueB,
+                       5,
+                       MAXIGIN_GAME_NATIVE_W - 5,
+                       MAXIGIN_GAME_NATIVE_H - 50,
+                       10,
+                       20,
+                       10,
+                       0,
+                       100,
+                       0 );
+
+    maxigin_endGUI( &gameGUI );
     
     }
 

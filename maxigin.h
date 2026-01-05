@@ -554,11 +554,23 @@ int maxigin_initGlowSprite( const char  *inBulkResourceName,
                                           center of sprite will be drawn
                                           at right extent of slider
       
-      inMiddleSliverEmptySpriteResource   single pixel wide sliver of slider
+      inMiddleBarEmptySpriteResource      section of slider
                                           bar middle when empty
                                           
-      inMiddleSliverFullSpriteResource    single pixel wide sliver of slider
+      inMiddleBarFullSpriteResource       section of slider
                                           bar middle when full
+                                          
+      inMiddleSliverEmptySpriteResource   single pixel wide sliver of slider
+                                          bar middle when empty.
+                                          used to pad out slider bar when
+                                          slider width is not an even multiple
+                                          of inMiddleBar sprites.
+                                          
+      inMiddleSliverFullSpriteResource    single pixel wide sliver of slider
+                                          bar middle when full.
+                                          used to pad out slider bar when
+                                          slider width is not an even multiple
+                                          of inMiddleBar sprites.
                                           
       inThumbSpriteResource               slider thumb (part that moves)
       
@@ -570,6 +582,8 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
                                 const char  *inLeftEndFullSpriteResource,
                                 const char  *inRightEndEmptySpriteResource,
                                 const char  *inRightEndFullSpriteResource,
+                                const char  *inMiddleBarEmptyrSpriteResource,
+                                const char  *inMiddleBarFullSpriteResource,
                                 const char  *inMiddleSliverEmptyrSpriteResource,
                                 const char  *inMiddleSliverFullSpriteResource,
                                 const char  *inThumbSpriteResource,
@@ -1498,7 +1512,8 @@ struct MaxiginGUI {
                     MX_GUI_DRAW_LINE,
                     MX_GUI_DRAW_RECT,
                     MX_GUI_FILL_RECT,
-                    MX_GUI_DRAW_SPRITE
+                    MX_GUI_DRAW_SPRITE,
+                    MX_GUI_DRAW_SPRITE_SEQUENCE
                     } drawType;
 
                 union {
@@ -1521,6 +1536,19 @@ struct MaxiginGUI {
                                 int  centerX;
                                 int  centerY;
                             } sprite;
+
+                        /* a repeated sequence of the same sprite,
+                           with the center given for the first sprite,
+                           and count sprites drawn total with an offset
+                           between each sprite drawn */
+                        struct {
+                                int  spriteHandle;
+                                int  startCenterX;
+                                int  startCenterY;
+                                int  offsetX;
+                                int  offsetY;
+                                int  count;
+                            } spriteSequence;
                         
                     } drawParams;
                 
@@ -3004,6 +3032,7 @@ typedef struct MaxiginSliderSprites {
         /* index 0 for empty, 1 for full */
         int  left  [2];
         int  right [2];
+        int  bar[2];
         int  sliver[2];
 
         /* index 0 for passive, 1 for active */
@@ -3022,6 +3051,8 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
                                 const char  *inLeftEndFullSpriteResource,
                                 const char  *inRightEndEmptySpriteResource,
                                 const char  *inRightEndFullSpriteResource,
+                                const char  *inMiddleBarEmptySpriteResource,
+                                const char  *inMiddleBarFullSpriteResource,
                                 const char  *inMiddleSliverEmptySpriteResource,
                                 const char  *inMiddleSliverFullSpriteResource,
                                 const char  *inThumbSpriteResource,
@@ -3041,6 +3072,13 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
         maxigin_initSprite( inRightEndFullSpriteResource );
 
     
+    mx_sliderSprites.bar[ 0 ] =
+        maxigin_initSprite( inMiddleBarEmptySpriteResource );
+
+    mx_sliderSprites.bar[ 1 ] =
+        maxigin_initSprite( inMiddleBarFullSpriteResource );
+
+
     mx_sliderSprites.sliver[ 0 ] =
         maxigin_initSprite( inMiddleSliverEmptySpriteResource );
 
@@ -4586,7 +4624,9 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
                                   inGUI->drawComponents[i].blue,
                                   inGUI->drawComponents[i].alpha );
             }
-        else if( drawType == MX_GUI_DRAW_SPRITE ) {
+        else if( drawType == MX_GUI_DRAW_SPRITE
+                 ||
+                 drawType == MX_GUI_DRAW_SPRITE_SEQUENCE ) {
 
             maxigin_drawSetAlpha( inGUI->drawComponents[i].alpha );
             }
@@ -4623,7 +4663,33 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
                     inGUI->drawComponents[i].drawParams.sprite.centerX,
                     inGUI->drawComponents[i].drawParams.sprite.centerY );
                 break;
-                                  
+            case MX_GUI_DRAW_SPRITE_SEQUENCE: {
+
+                int  s;
+                int  x   =  inGUI->drawComponents[i].
+                                drawParams.spriteSequence.startCenterX;
+                int  y   =  inGUI->drawComponents[i].
+                                drawParams.spriteSequence.startCenterY;
+                
+                for( s = 0;
+                     s < inGUI->drawComponents[i].
+                         drawParams.spriteSequence.count;
+                     s ++ ) {
+
+                    maxigin_drawSprite(
+                        inGUI->drawComponents[i].
+                            drawParams.spriteSequence.spriteHandle,
+                        x,
+                        y );
+                
+                    x += inGUI->drawComponents[i].
+                        drawParams.spriteSequence.offsetX;
+                    y += inGUI->drawComponents[i].
+                        drawParams.spriteSequence.offsetY;
+                    }
+                
+                }
+                break;            
             }
         }
     }
@@ -4789,6 +4855,60 @@ static void mx_guiAddSprite( MaxiginGUI    *inGUI,
     inGUI->drawComponents[i].drawParams.sprite.spriteHandle = inSpriteHandle;
     inGUI->drawComponents[i].drawParams.sprite.centerX      = inCenterX;
     inGUI->drawComponents[i].drawParams.sprite.centerY      = inCenterY;
+
+    inGUI->numDrawComponents ++;
+    }
+
+
+
+static void mx_guiAddSpriteSequence( MaxiginGUI    *inGUI,
+                                     char           inAdditiveBlend,
+                                     unsigned char  inAlpha,
+                                     int            inSpriteHandle,
+                                     int            inStartCenterX,
+                                     int            inStartCenterY,
+                                     int            inOffsetX,
+                                     int            inOffsetY,
+                                     int            inCount ) {
+
+    int           i  =  inGUI->numDrawComponents;
+    MaxiginColor  c;
+    
+    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
+        mingin_log( "Error:  trying to add a sprite sequence to a full "
+                    "MaxiginGUI instance.\n" );
+        return;
+        }
+
+    c.val[0] = 255;
+    c.val[1] = 255;
+    c.val[2] = 255;
+    c.val[3] = inAlpha;
+    
+    mx_guiSetColor( inGUI,
+                    i,
+                    inAdditiveBlend,
+                    &c );
+
+    inGUI->drawComponents[i].drawType = MX_GUI_DRAW_SPRITE_SEQUENCE;
+    
+    inGUI->drawComponents[i].drawParams.spriteSequence.spriteHandle
+        = inSpriteHandle;
+    
+    inGUI->drawComponents[i].drawParams.spriteSequence.startCenterX
+        = inStartCenterX;
+    
+    inGUI->drawComponents[i].drawParams.spriteSequence.startCenterY
+        = inStartCenterY;
+
+    inGUI->drawComponents[i].drawParams.spriteSequence.offsetX
+        = inOffsetX;
+    
+    inGUI->drawComponents[i].drawParams.spriteSequence.offsetY
+        = inOffsetY;
+
+    inGUI->drawComponents[i].drawParams.spriteSequence.count
+        = inCount;
 
     inGUI->numDrawComponents ++;
     }
@@ -5011,8 +5131,7 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
 
     if( mx_sliderSpritesSet ) {
         /* use sprites */
-
-        int  x;
+        
         int  leftEndHandle;
         int  rightEndHandle;
         int  thumbHandle;
@@ -5033,25 +5152,30 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
                          inStartX,
                          inY );
 
-        for( x = inStartX;
-             x < inEndX;
-             x ++ ) {
+        if( thumPixelCenter > inStartX ) {
+            /* full bar to left of thumb */
+            mx_guiAddSpriteSequence( inGUI,
+                                     0,
+                                     255,
+                                     mx_sliderSprites.sliver[1],
+                                     inStartX,
+                                     inY,
+                                     1,
+                                     0,
+                                     thumPixelCenter - inStartX );
+            }
 
-            int  sliverHandle;
-            
-            if( x < thumPixelCenter ) {
-                sliverHandle = mx_sliderSprites.sliver[1];
-                }
-            else {
-                sliverHandle = mx_sliderSprites.sliver[0]; 
-                }
-            
-            mx_guiAddSprite( inGUI,
-                             0,
-                             255,
-                             sliverHandle,
-                             x,
-                             inY );
+        if( thumPixelCenter < inEndX ) {
+            /* empty bar to right of thumb */
+           mx_guiAddSpriteSequence( inGUI,
+                                     0,
+                                     255,
+                                     mx_sliderSprites.sliver[0],
+                                     thumPixelCenter,
+                                     inY,
+                                     1,
+                                     0,
+                                     inEndX - thumPixelCenter ); 
             }
         
 

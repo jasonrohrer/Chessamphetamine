@@ -567,6 +567,8 @@ void maxiginGame_init( void ) {
                                "sliderLeftEndFull.tga",
                                "sliderRightEndEmpty.tga",
                                "sliderRightEndFull.tga",
+                               "sliderBarEmpty.tga",
+                               "sliderBarFull.tga",
                                "sliderSliverEmpty.tga",
                                "sliderSliverFull.tga",
                                "sliderThumbPassive.tga",

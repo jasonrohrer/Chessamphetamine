@@ -4975,6 +4975,23 @@ static void mx_makeColorGray( MaxiginColor   *inC,
     }
 
 
+static void mx_getSliderThumbRadius( int   inThumbWidth,
+                                     int  *outLeftRadius,
+                                     int  *outRightRadius ) {
+    if( mx_sliderSpritesSet ) {
+        
+        int  thumbHandle  =  mx_sliderSprites.thumb[1];
+
+        *outLeftRadius  = mx_sprites[ thumbHandle ].leftVisibleRadius;
+        *outRightRadius = mx_sprites[ thumbHandle ].rightVisibleRadius;
+        }
+    else {
+        *outRightRadius = inThumbWidth / 2;
+        *outLeftRadius  = inThumbWidth / 2;
+        }
+    }
+
+
 
 void maxigin_guiSlider( MaxiginGUI  *inGUI,
                         int         *inCurrentValue,
@@ -4990,9 +5007,10 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
 
     MaxiginColor  c;
     int           thumbPixelCenter;
-    int           v                 =  *inCurrentValue;
-    int           fullRange         = inMaxValue - inMinValue;
-    int           tenPercent        = fullRange / 10;
+    int           thumbControlledByMouse  =   0;
+    int           v                       =  *inCurrentValue;
+    int           fullRange               =   inMaxValue - inMinValue;
+    int           tenPercent              =   fullRange / 10;
     
     if( tenPercent < 1 ) {
         tenPercent = 1;
@@ -5002,8 +5020,12 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
     c.comp.green = 255;
     c.comp.blue  = 255;
     c.comp.alpha = 255;
-
-
+    
+    thumbPixelCenter =
+        ( ( v - inMinValue ) *
+          ( inEndX - inStartX ) )
+        / ( inMaxValue - inMinValue )
+        + inStartX;
 
     if( inGUI->active == inCurrentValue ) {
         /* previously manipulated with mouse */
@@ -5050,7 +5072,32 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
             /* mouse over slider */
             if( mx_isActionFreshPressed( MAXIGIN_MOUSE_BUTTON ) ) {
                 /* mouse pressed on slider */
+
+                int  thumbLeftR;
+                int  thumbRightR;
+                
                 inGUI->active = inCurrentValue;
+
+
+                /* is mouse over thumb? */
+
+                mx_getSliderThumbRadius( inThumbWidth,
+                                         &thumbLeftR,
+                                         &thumbRightR );
+
+                if( x <= thumbPixelCenter + thumbRightR
+                    &&
+                    /* extra bit seems to help on left side */
+                    x >= thumbPixelCenter - thumbLeftR - 1 ) {
+
+                    inGUI->activeMouseOffsetX = x - thumbPixelCenter;
+                    }
+                else {
+                    /* thumb should jump to click position */
+                    inGUI->activeMouseOffsetX = 0;
+                    }
+
+                inGUI->activeMouseOffsetY = 0;
                 }
             }
         }
@@ -5066,16 +5113,28 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
                                             &y );
 
         if( avail ) {
+
+            x -= inGUI->activeMouseOffsetX;
+            y -= inGUI->activeMouseOffsetY;
+
+            maxigin_logInt( "activeMouseOffsetX = ",
+                            inGUI->activeMouseOffsetX );
+
+            thumbPixelCenter = x;
+            thumbControlledByMouse = 1;
+            
             if( x < inStartX ) {
                 v = inMinValue;
+                thumbControlledByMouse = 0;
                 }
             else if( x > inEndX ) {
                 v = inMaxValue;
+                thumbControlledByMouse = 0;
                 }
             else {
                 /* in between min and max */
 
-                v = ( x - inStartX ) * ( inMaxValue - inMinValue )
+                v = ( x - inStartX  + 1 ) * ( inMaxValue - inMinValue )
                     /
                     ( inEndX - inStartX )
                     + inMinValue;
@@ -5176,12 +5235,16 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
 
     
     *inCurrentValue = v;
+
+    if( ! thumbControlledByMouse ) {
+        
+        thumbPixelCenter =
+            ( ( v - inMinValue ) *
+              ( inEndX - inStartX ) )
+            / ( inMaxValue - inMinValue )
+            + inStartX;
+        }
     
-    thumbPixelCenter =
-        ( ( v - inMinValue ) *
-          ( inEndX - inStartX ) )
-        / ( inMaxValue - inMinValue )
-        + inStartX;
 
 
     /* now draw slider */

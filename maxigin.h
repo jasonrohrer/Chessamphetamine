@@ -5058,7 +5058,6 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
 
     MaxiginColor  c;
     int           thumbPixelCenter;
-    int           thumbControlledByMouse  =   0;
     int           v                       =  *inCurrentValue;
     int           fullRange               =   inMaxValue - inMinValue;
     int           tenPercent              =   fullRange / 10;
@@ -5177,15 +5176,12 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
             y -= inGUI->activeMouseOffsetY;
 
             thumbPixelCenter = x;
-            thumbControlledByMouse = 1;
             
             if( x < inStartX ) {
                 v = inMinValue;
-                thumbControlledByMouse = 0;
                 }
             else if( x > inEndX ) {
                 v = inMaxValue;
-                thumbControlledByMouse = 0;
                 }
             else {
                 /* in between min and max */
@@ -5292,7 +5288,12 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
     
     *inCurrentValue = v;
 
-    if( ! thumbControlledByMouse ) {
+    if( ( inEndX - inStartX )
+        >
+        2 * ( inMaxValue - inMinValue ) ) {
+
+        /* bar has way more pixels than legal values
+           thumb should snap to legal values */
         
         thumbPixelCenter =
             ( ( v - inMinValue ) *
@@ -5300,6 +5301,8 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
             / ( inMaxValue - inMinValue )
             + inStartX;
         }
+    /* else bar has enough resolution, thumb should move
+       smoothly with mouse and then snap to actual value when dropped */
     
 
 

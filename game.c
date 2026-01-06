@@ -63,8 +63,8 @@ static const char  *fileNames[ NUM_BULK_FILES ] = { "bullet.tga",
 static int          spriteHandles[ NUM_BULK_FILES ];
 
 static MaxiginGUI   gameGUI;
-static int          sliderValue   =  75;
-static int          sliderValueB  =  75;
+static int          sliderValue   =  7;
+static int          sliderValueB  =  7;
 
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
@@ -479,7 +479,7 @@ void maxiginGame_step( void ) {
                        20,
                        10,
                        0,
-                       100,
+                       10,
                        0 );
 
 
@@ -492,7 +492,7 @@ void maxiginGame_step( void ) {
                        20,
                        10,
                        0,
-                       100,
+                       200,
                        0 );
 
     maxigin_endGUI( &gameGUI );

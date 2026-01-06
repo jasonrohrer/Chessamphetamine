@@ -897,12 +897,13 @@ void maxigin_endGUI( MaxiginGUI *inGUI );
                    
   Returns:
 
-      slider value   at current position of slider thumb
-                     in range [inMinValue, inMaxValue]
+      1   if slider is currently being dragged by user
+
+      0   if not
                      
   [jumpMaxiginGeneral]
 */
-void maxigin_guiSlider( MaxiginGUI  *inGUI,
+char maxigin_guiSlider( MaxiginGUI  *inGUI,
                         int         *inCurrentValue,
                         int          inMinValue,
                         int          inMaxValue,
@@ -5083,7 +5084,7 @@ static void mx_getSliderThumbRadius( int   inThumbWidth,
 
 
 
-void maxigin_guiSlider( MaxiginGUI  *inGUI,
+char maxigin_guiSlider( MaxiginGUI  *inGUI,
                         int         *inCurrentValue,
                         int          inMinValue,
                         int          inMaxValue,
@@ -5585,6 +5586,8 @@ void maxigin_guiSlider( MaxiginGUI  *inGUI,
         }
     
 
+    /* return 1 if slider is active */
+    return ( inGUI->active == inCurrentValue );
     }
 
 
@@ -5720,6 +5723,8 @@ static char mx_playbackInterruptedRecording = 0;
 
 void minginGame_step( char  inFinalStep ) {
 
+    char  playbackPausedBySlider  =  0;
+    
     if( ! mx_initDone ) {
         if( inFinalStep ) {
             /* ended before we even got to init, do nothing */
@@ -5776,8 +5781,9 @@ void minginGame_step( char  inFinalStep ) {
 
     if( mx_playbackRunning ) {
 
-        int  oldPlaybackFrame;
-        int  newPlaybackFrame;
+        int   oldPlaybackFrame;
+        int   newPlaybackFrame;
+        char  playbackSliderActive;
         
         if( mx_isActionFreshPressed( PLAYBACK_PAUSE ) ) {
             mx_playbackPaused = ! mx_playbackPaused;
@@ -5846,19 +5852,31 @@ void minginGame_step( char  inFinalStep ) {
             + mx_playbackStepsSinceLastSnapshot;
 
         newPlaybackFrame = oldPlaybackFrame;
+
+        playbackSliderActive =
+            maxigin_guiSlider( &mx_internalGUI,
+                               &newPlaybackFrame,
+                               0,
+                               mx_playbackNumFullSnapshots
+                                   * mx_diffsBetweenSnapshots,
+                               20,
+                               MAXIGIN_GAME_NATIVE_W - 20,
+                               MAXIGIN_GAME_NATIVE_H - 30,
+                               10,
+                               20,
+                               10,
+                               1 );
+
+        if( ! mx_playbackPaused
+            &&
+            playbackSliderActive ) {
+            
+            /* temporarily pause playback while slider moving */
+            
+            mx_playbackPaused = 1;
+            playbackPausedBySlider = 1;
+            }
         
-        maxigin_guiSlider( &mx_internalGUI,
-                           &newPlaybackFrame,
-                           0,
-                           mx_playbackNumFullSnapshots
-                               * mx_diffsBetweenSnapshots,
-                           20,
-                           MAXIGIN_GAME_NATIVE_W - 20,
-                           MAXIGIN_GAME_NATIVE_H - 30,
-                           10,
-                           20,
-                           10,
-                           0 );
 
         if( oldPlaybackFrame != newPlaybackFrame ) {
             /* slider caused a change */
@@ -5928,7 +5946,11 @@ void minginGame_step( char  inFinalStep ) {
         mx_stepRecording();
         }
 
-
+    if( playbackPausedBySlider ) {
+        /* unpause temporary playback slider pause */
+        mx_playbackPaused = 0;
+        }
+    
     
     
     maxigin_endGUI( &mx_internalGUI );

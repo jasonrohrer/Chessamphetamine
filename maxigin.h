@@ -878,14 +878,14 @@ void maxigin_endGUI( MaxiginGUI *inGUI );
 
       inY              pixel y position of vertical center of slider
 
-      inBarHeight      height of slider bar in pixels
-                       may have no effect if bar sprite is defined (fixme)
+      inBarHeight      height of slider bar in pixels.
+                       has no effect if bar sprite is defined.
                     
-      inThumbHeight    height of slider thumb (the moving part) in pixels
-                       may have no effect if thumb sprite is defined (fixme)
+      inThumbHeight    height of slider thumb (the moving part) in pixels.
+                       has no effect if thumb sprite is defined.
 
-      inThumbWidth     width of slider thumb (the moving part) in pixels
-                       may have no effect if thumb sprite is defined (fixme)
+      inThumbWidth     width of slider thumb (the moving part) in pixels.
+                       has no effect if thumb sprite is defined.
 
       inMinValue       value returned by slider when thumb is far left
 
@@ -4433,26 +4433,41 @@ void maxigin_drawRect( int  inStartX,
                        int  inEndX,
                        int  inEndY ) {
 
-    /* fixme
-       overlapping pixels at corners */
+    /* prevent overlapping pixels at corners.
+       to make this easier, first ensure start is top left
+       and end is bottom right. */
+
+    int  temp;
+
+    if( inStartX > inEndX ) {
+        temp     = inEndX;
+        inEndX   = inStartX;
+        inStartX = temp;
+        }
+    if( inStartY > inEndY ) {
+        temp     = inEndY;
+        inEndY   = inStartY;
+        inStartY = temp;
+        }
+        
     maxigin_drawLine( inStartX,
                       inStartY,
                       inStartX,
                       inEndY );
     
-    maxigin_drawLine( inStartX,
+    maxigin_drawLine( inStartX + 1,  /* no overlap */
                       inEndY,
                       inEndX,
                       inEndY );
     
     maxigin_drawLine( inEndX,
-                      inEndY,
+                      inEndY - 1,    /* no overlap */
                       inEndX,
                       inStartY );
     
-    maxigin_drawLine( inEndX,
+    maxigin_drawLine( inEndX - 1,    /* no overlap */
                       inStartY,
-                      inStartX,
+                      inStartX + 1,  /* no overlap */
                       inStartY );
     }
 

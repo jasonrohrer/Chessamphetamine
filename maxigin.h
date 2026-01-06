@@ -1679,6 +1679,8 @@ static  int          mx_playbackDataLength;
 static  int          mx_playbackFullSnapshotLastPlayed  =  0;
 static  int          mx_playbackIndexStartPos           =  0;
 static  int          mx_playbackNumFullSnapshots        =  0;
+static  int          mx_playbackStepsSinceLastSnapshot  =  0;
+static  int          mx_diffsBetweenSnapshots           =  60;
 
 
 /* is inAction freshly pressed since last call to isActionFreshPressed */
@@ -5684,6 +5686,10 @@ static void mx_playbackEnd( void );
 
 static void mx_playbackJumpToFullSnapshot( int inFullSnapshotIndex );
 
+static char mx_playbackStepForward( void );
+static char mx_playbackStepBackward( void );
+
+
 static void mx_gameInit( void );
 
 static void mx_saveGame( void );
@@ -5771,6 +5777,7 @@ void minginGame_step( char  inFinalStep ) {
     if( mx_playbackRunning ) {
 
         int  oldPlaybackFrame;
+        int  newPlaybackFrame;
         
         if( mx_isActionFreshPressed( PLAYBACK_PAUSE ) ) {
             mx_playbackPaused = ! mx_playbackPaused;
@@ -5833,12 +5840,18 @@ void minginGame_step( char  inFinalStep ) {
             }
 
 
-        oldPlaybackFrame = mx_playbackFullSnapshotLastPlayed;
+        oldPlaybackFrame =
+            mx_playbackFullSnapshotLastPlayed
+            * mx_diffsBetweenSnapshots
+            + mx_playbackStepsSinceLastSnapshot;
+
+        newPlaybackFrame = oldPlaybackFrame;
         
         maxigin_guiSlider( &mx_internalGUI,
-                           &mx_playbackFullSnapshotLastPlayed,
+                           &newPlaybackFrame,
                            0,
-                           mx_playbackNumFullSnapshots,
+                           mx_playbackNumFullSnapshots
+                               * mx_diffsBetweenSnapshots,
                            20,
                            MAXIGIN_GAME_NATIVE_W - 20,
                            MAXIGIN_GAME_NATIVE_H - 30,
@@ -5847,9 +5860,50 @@ void minginGame_step( char  inFinalStep ) {
                            10,
                            0 );
 
-        if( oldPlaybackFrame != mx_playbackFullSnapshotLastPlayed ) {
+        if( oldPlaybackFrame != newPlaybackFrame ) {
             /* slider caused a change */
-            mx_playbackJumpToFullSnapshot( mx_playbackFullSnapshotLastPlayed );
+
+            int  newFullSnapshots =  newPlaybackFrame / mx_diffsBetweenSnapshots;
+            int  newSubSteps      =  newPlaybackFrame
+                                     - ( newFullSnapshots
+                                         * mx_diffsBetweenSnapshots );
+            int  f;
+            
+            if( newFullSnapshots != mx_playbackFullSnapshotLastPlayed ) {
+                
+                mx_playbackJumpToFullSnapshot( newFullSnapshots );
+
+                for( f = 0;
+                     f < newSubSteps;
+                     f ++ ) {
+                    mx_playbackStepForward();
+                    }
+                }
+            else if( newSubSteps != mx_playbackStepsSinceLastSnapshot ) {
+                /* same full frame, but sub steps have changed */
+
+                int   stepDiff  =  newSubSteps
+                                   - mx_playbackStepsSinceLastSnapshot;
+
+                char  negDir    =  0;
+
+                if( stepDiff < 0 ) {
+                    negDir   =   1;
+                    stepDiff = -stepDiff;
+                    }
+
+                for( f = 0;
+                     f < stepDiff;
+                     f ++ ) {
+                    
+                    if( negDir ) {
+                        mx_playbackStepBackward();
+                        }
+                    else {
+                        mx_playbackStepForward();
+                        }
+                    }
+                }
             }
         }
 
@@ -6711,7 +6765,6 @@ static  int          mx_recordingIndexDataStoreHandle  =  -1;
 static  char         mx_diffRecordingEnabled           =  1;
 
 static  int          mx_numDiffsSinceLastFullSnapshot  =  0;
-static  int          mx_diffsBetweenSnapshots          =  60;
 
 static  const char  *mx_recordingMagicFooter           =  "MX_RECORDING";
 
@@ -7821,12 +7874,6 @@ static char mx_playbackSpeedStep( void ) {
 
 
 
-static char mx_playbackStepForward( void );
-
-static char mx_playbackStepBackward( void );
-
-
-
 static char mx_playbackStep( void ) {
     if( mx_playbackDirection == 1 ) {
         return mx_playbackStepForward();
@@ -7863,7 +7910,11 @@ static char mx_playbackStepForward( void ) {
 
     success = mx_restoreFromMemoryDiff( mx_playbackDataStoreHandle );
 
+    mx_playbackStepsSinceLastSnapshot++;
+    
     if( ! success ) {
+        mx_playbackStepsSinceLastSnapshot = 0;
+        
         /* diff reading failed
            try reading a whole snapshot */
 
@@ -7978,6 +8029,9 @@ static char mx_playbackStepBackward( void ) {
 
     if( success ) {
         /* diff reading success */
+
+        mx_playbackStepsSinceLastSnapshot --;
+        
         
         /* rewind, so we're ready for next reverse playback step */
         success = mingin_seekPersistData( mx_playbackDataStoreHandle,
@@ -8024,6 +8078,7 @@ static char mx_playbackStepBackward( void ) {
             }
         
         mx_playbackFullSnapshotLastPlayed --;
+        mx_playbackStepsSinceLastSnapshot = mx_diffsBetweenSnapshots;
         
         maxigin_logInt( "Just reverse-played snapshot: ",
                         mx_playbackFullSnapshotLastPlayed );

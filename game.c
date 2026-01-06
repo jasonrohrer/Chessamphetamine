@@ -606,6 +606,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( boxVPerSecond );
     REGISTER_VAL_MEM( boxDir );
 
+    REGISTER_VAL_MEM( sliderValue );
+    REGISTER_VAL_MEM( sliderValueB );
 
     REGISTER_VAL_MEM( gameGUI );
     

@@ -472,27 +472,27 @@ void maxiginGame_step( void ) {
     
     maxigin_guiSlider( &gameGUI,
                        &sliderValue,
+                       0,
+                       10,
                        5,
                        MAXIGIN_GAME_NATIVE_W - 5,
                        30,
                        10,
                        20,
                        10,
-                       0,
-                       10,
                        0 );
 
 
     maxigin_guiSlider( &gameGUI,
                        &sliderValueB,
+                       0,
+                       200,
                        5,
                        MAXIGIN_GAME_NATIVE_W - 5,
                        50,
                        10,
                        20,
                        10,
-                       0,
-                       200,
                        0 );
 
     maxigin_endGUI( &gameGUI );

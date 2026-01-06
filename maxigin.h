@@ -872,6 +872,10 @@ void maxigin_endGUI( MaxiginGUI *inGUI );
       inCurrentValue   pointer to current value of the slider, which
                        may be changed as the end user manipulates the slider
 
+      inMinValue       value returned by slider when thumb is far left
+
+      inMaxValue       value returned by slider when thumb is far right
+
       inStartX         pixel x position of left edge of slider
       
       inEndX           pixel x position of right edge of slider
@@ -886,10 +890,6 @@ void maxigin_endGUI( MaxiginGUI *inGUI );
 
       inThumbWidth     width of slider thumb (the moving part) in pixels.
                        has no effect if thumb sprite is defined.
-
-      inMinValue       value returned by slider when thumb is far left
-
-      inMaxValue       value returned by slider when thumb is far right
                         
       inForceMoving    1 to force the slider to listen to arrow keys, controller
                          etc. and force it to be in the moving state
@@ -904,14 +904,14 @@ void maxigin_endGUI( MaxiginGUI *inGUI );
 */
 void maxigin_guiSlider( MaxiginGUI  *inGUI,
                         int         *inCurrentValue,
+                        int          inMinValue,
+                        int          inMaxValue,
                         int          inStartX,
                         int          inEndX,
                         int          inY,
                         int          inBarHeight,
                         int          inThumbHeight,
                         int          inThumbWidth,
-                        int          inMinValue,
-                        int          inMaxValue,
                         char         inForceMoving );
 
 
@@ -1650,24 +1650,35 @@ typedef enum MaxiginSticks {
 
 
 
-static  char  mx_areWeInMaxiginGameInitFunction  =  0;
+static  char        mx_areWeInMaxiginGameInitFunction  =  0;
 
-static  char  mx_areWeInMaxiginGameStepFunction  =  0;
+static  char        mx_areWeInMaxiginGameStepFunction  =  0;
 
-static  char  mx_areWeInMaxiginGameDrawFunction  =  0;
+static  char        mx_areWeInMaxiginGameDrawFunction  =  0;
 
 
-static  char  mx_initDone                        =  0;
+static  char        mx_initDone                        =  0;
 
-static  char  mx_recordingRunning                =  0;
-static  char  mx_playbackRunning                 =  0;
-static  char  mx_playbackPaused                  =  0;
-static  int   mx_playbackSpeed                   =  1;
-                                                    /* -1 for backward */
-static  char  mx_playbackDirection               =  1;
+static  char        mx_recordingRunning                =  0;
+static  char        mx_playbackRunning                 =  0;
+static  char        mx_playbackPaused                  =  0;
+static  int         mx_playbackSpeed                   =  1;
+                                                          /* -1 for backward */
+static  char        mx_playbackDirection               =  1;
 
-static  char  mx_buttonsDown[ LAST_MAXIGIN_USER_ACTION ];
+static  char        mx_buttonsDown[ LAST_MAXIGIN_USER_ACTION ];
 
+static  MaxiginGUI  mx_internalGUI;
+
+static  const char  *mx_playbackDataStoreName           =
+                                                        "maxigin_playback.bin";
+static  int          mx_playbackDataStoreHandle         =  -1;
+
+static  int          mx_playbackDataLength;
+
+static  int          mx_playbackFullSnapshotLastPlayed  =  0;
+static  int          mx_playbackIndexStartPos           =  0;
+static  int          mx_playbackNumFullSnapshots        =  0;
 
 
 /* is inAction freshly pressed since last call to isActionFreshPressed */
@@ -1765,6 +1776,8 @@ void minginGame_getScreenPixels( int             inWide,
     
     maxiginGame_getNativePixels( mx_gameImageBuffer );
 
+    maxigin_drawGUI( &mx_internalGUI );
+    
     mx_areWeInMaxiginGameDrawFunction = 0;
 
     
@@ -5070,14 +5083,14 @@ static void mx_getSliderThumbRadius( int   inThumbWidth,
 
 void maxigin_guiSlider( MaxiginGUI  *inGUI,
                         int         *inCurrentValue,
+                        int          inMinValue,
+                        int          inMaxValue,
                         int          inStartX,
                         int          inEndX,
                         int          inY,
                         int          inBarHeight,
                         int          inThumbHeight,
                         int          inThumbWidth,
-                        int          inMinValue,
-                        int          inMaxValue,
                         char         inForceMoving  ) {
 
     MaxiginColor  c;
@@ -5669,7 +5682,7 @@ static void mx_playbackJumpHalfBack( void );
 
 static void mx_playbackEnd( void );
 
-
+static void mx_playbackJumpToFullSnapshot( int inFullSnapshotIndex );
 
 static void mx_gameInit( void );
 
@@ -5733,6 +5746,7 @@ void minginGame_step( char  inFinalStep ) {
         return;
         }
 
+    maxigin_startGUI( &mx_internalGUI );
 
     if( mx_isActionFreshPressed( FULLSCREEN_TOGGLE ) ) {
         mingin_toggleFullscreen( ! mingin_isFullscreen() );
@@ -5755,6 +5769,9 @@ void minginGame_step( char  inFinalStep ) {
         }
 
     if( mx_playbackRunning ) {
+
+        int  oldPlaybackFrame;
+        
         if( mx_isActionFreshPressed( PLAYBACK_PAUSE ) ) {
             mx_playbackPaused = ! mx_playbackPaused;
             }
@@ -5814,6 +5831,26 @@ void minginGame_step( char  inFinalStep ) {
                 mx_playbackSpeed *= 2;
                 }
             }
+
+
+        oldPlaybackFrame = mx_playbackFullSnapshotLastPlayed;
+        
+        maxigin_guiSlider( &mx_internalGUI,
+                           &mx_playbackFullSnapshotLastPlayed,
+                           0,
+                           mx_playbackNumFullSnapshots,
+                           20,
+                           MAXIGIN_GAME_NATIVE_W - 20,
+                           MAXIGIN_GAME_NATIVE_H - 30,
+                           10,
+                           20,
+                           10,
+                           0 );
+
+        if( oldPlaybackFrame != mx_playbackFullSnapshotLastPlayed ) {
+            /* slider caused a change */
+            mx_playbackJumpToFullSnapshot( mx_playbackFullSnapshotLastPlayed );
+            }
         }
 
 
@@ -5836,6 +5873,12 @@ void minginGame_step( char  inFinalStep ) {
 
         mx_stepRecording();
         }
+
+
+    
+    
+    maxigin_endGUI( &mx_internalGUI );
+    
     }
 
 
@@ -5919,6 +5962,8 @@ static void mx_gameInit( void ) {
     
     
     mx_areWeInMaxiginGameInitFunction = 1;
+    
+    maxigin_initGUI( &mx_internalGUI );
     
     maxiginGame_init();
 
@@ -7523,15 +7568,7 @@ void mx_recordingCrashRecovery( void ) {
 
 
 
-static  const char  *mx_playbackDataStoreName           =
-                                                        "maxigin_playback.bin";
-static  int          mx_playbackDataStoreHandle         =  -1;
 
-static  int          mx_playbackDataLength;
-
-static  int          mx_playbackFullSnapshotLastPlayed  =  0;
-static  int          mx_playbackIndexStartPos           =  0;
-static  int          mx_playbackNumFullSnapshots        =  0;
 
 
 /* returns 1 on success, 0 on failure */

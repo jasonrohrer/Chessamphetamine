@@ -5865,7 +5865,7 @@ void minginGame_step( char  inFinalStep ) {
                                10,
                                20,
                                10,
-                               1 );
+                               0 );
 
         if( ! mx_playbackPaused
             &&

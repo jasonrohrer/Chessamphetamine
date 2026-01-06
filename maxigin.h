@@ -4812,6 +4812,15 @@ void maxigin_endGUI( MaxiginGUI *inGUI ) {
         if( ! mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON ) ) {
 
             inGUI->mouseDown = 0;
+
+            /* endGUI called after all of our components have had a chance
+               to update and notice that the mouse is no longer down.
+               Any active component should have become non-active.
+               However, if our GUI state is being loaded from a saved game
+               state, this might not be the case (if a component was active
+               when the game was saved). */
+            
+            inGUI->active = 0;
             }
         }
         

@@ -5978,11 +5978,40 @@ void minginGame_step( char  inFinalStep ) {
 
                 
                 if( success ) {
+
+                    int  extraStepCount  =  0;
+                    int  f;
+                    
                     mx_playbackInterruptedRecording = 1;
+                    mx_initPlayback();
+
+                    /* jump to last full frame,
+                       and play back as many diff frames as possible from
+                       there to get a full count of extra frames */
+                    mx_playbackJumpToFullSnapshot(
+                        mx_playbackNumFullSnapshots - 1 );
+
+                    mx_playbackDirection = 1;
+                    mx_playbackSpeed     = 1;
+
+                    while( mx_playbackStep() ) {
+                        extraStepCount ++;
+                        }
+
+                    /* got here, fell off end of playback */
+
+                    /* start again
+                       and walk the right number of steps this time */
                     mx_initPlayback();
 
                     mx_playbackJumpToFullSnapshot(
                         mx_playbackNumFullSnapshots - 1 );
+
+                    for( f = 0;
+                         f < extraStepCount;
+                         f ++ ) {
+                        mx_playbackStep();
+                        }
 
                     mx_playbackDirection = -1;
                     }

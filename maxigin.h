@@ -1683,6 +1683,10 @@ static  int          mx_playbackNumFullSnapshots        =  0;
 static  int          mx_playbackStepsSinceLastSnapshot  =  0;
 static  int          mx_diffsBetweenSnapshots           =  60;
 
+static  const char  *mx_recordingDataStoreName          =
+                                                   "maxigin_recording.bin";
+static  const char  *mx_recordingIndexDataStoreName     =
+                                                   "maxigin_recordingIndex.bin";
 
 /* is inAction freshly pressed since last call to isActionFreshPressed */
 static char mx_isActionFreshPressed( MaxiginUserAction  inAction );
@@ -5697,6 +5701,12 @@ static void mx_gameInit( void );
 
 static void mx_saveGame( void );
 
+static char mx_copyIntoDataStore( int inStoreReadHandle,
+                                  int inStoreWriteHandle,
+                                  int inNumBytesToCopy );
+
+
+
 
 static char mx_isActionFreshPressed( MaxiginUserAction  inAction ) {
 
@@ -5924,7 +5934,72 @@ void minginGame_step( char  inFinalStep ) {
                 }
             }
         }
+    else {
+        /* playback not running
+           watch for "reverse playback button"
+           to insta-rewind the current live game from this point back */
 
+        if( mx_isActionFreshPressed( PLAYBACK_REVERSE ) ) {
+            
+            
+            if( mx_recordingRunning ) {
+                char  success          =  0;
+                int   recordingLength;
+                int   recordingHandle;
+                int   playbackHandle;
+
+                /* end the recording, copy the recording file into the
+                   playback file, and then start playback from there */
+                
+                mx_finalizeRecording();
+                mx_playbackInterruptedRecording = 1;
+
+                recordingHandle =
+                    mingin_startReadPersistData( mx_recordingDataStoreName,
+                                                 &recordingLength );
+
+                if( recordingHandle != -1 ) {
+
+                    playbackHandle =
+                        mingin_startWritePersistData( mx_playbackDataStoreName );
+
+                    if( playbackHandle != -1 ) {
+
+                        success = mx_copyIntoDataStore( recordingHandle,
+                                                        playbackHandle,
+                                                        recordingLength );
+                        
+                        mingin_endWritePersistData( playbackHandle );
+                        }
+                    else {
+                        mingin_endReadPersistData( recordingHandle );
+                        }
+                    }
+
+                
+                if( success ) {
+                    mx_playbackInterruptedRecording = 1;
+                    mx_initPlayback();
+
+                    mx_playbackJumpToFullSnapshot(
+                        mx_playbackNumFullSnapshots - 1 );
+
+                    mx_playbackDirection = -1;
+                    }
+                else {
+                    /* playback failed for some reason */
+
+                    mingin_log( "Instant-reverse playback mid-game failed\n" );
+
+                    /* start recording again */
+                    
+                    mx_initRecording();
+                    }
+                }
+            }
+        }
+
+    
 
     mx_checkSpritesNeedReload();
     
@@ -6775,11 +6850,6 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 static unsigned char mx_recordingBuffers[2][
     MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES ];
 
-
-static  const char  *mx_recordingDataStoreName         =
-                                                   "maxigin_recording.bin";
-static  const char  *mx_recordingIndexDataStoreName    =
-                                                   "maxigin_recordingIndex.bin";
 static  int          mx_latestRecordingIndex           =  -1;
 static  int          mx_recordingDataStoreHandle       =  -1;
 static  int          mx_recordingIndexDataStoreHandle  =  -1;

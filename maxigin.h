@@ -1681,7 +1681,9 @@ static  int          mx_playbackFullSnapshotLastPlayed  =  0;
 static  int          mx_playbackIndexStartPos           =  0;
 static  int          mx_playbackNumFullSnapshots        =  0;
 static  int          mx_playbackStepsSinceLastSnapshot  =  0;
-static  int          mx_diffsBetweenSnapshots           =  60;
+static  int          mx_diffsBetweenSnapshots           =  300;
+static  int          mx_playbackTotalSteps              =  0;
+static  int          mx_playbackCurrentStep             =  0;
 
 static  const char  *mx_recordingDataStoreName          =
                                                    "maxigin_recording.bin";
@@ -5712,6 +5714,8 @@ static void mx_playbackEnd( void );
 
 static void mx_playbackJumpToFullSnapshot( int inFullSnapshotIndex );
 
+static void mx_playbackJumpToStep( int inStepNumber );
+
 static char mx_playbackStepForward( void );
 static char mx_playbackStepBackward( void );
 
@@ -5875,10 +5879,7 @@ void minginGame_step( char  inFinalStep ) {
             }
 
 
-        oldPlaybackFrame =
-            mx_playbackFullSnapshotLastPlayed
-            * mx_diffsBetweenSnapshots
-            + mx_playbackStepsSinceLastSnapshot;
+        oldPlaybackFrame = mx_playbackCurrentStep;
 
         newPlaybackFrame = oldPlaybackFrame;
 
@@ -5886,8 +5887,7 @@ void minginGame_step( char  inFinalStep ) {
             maxigin_guiSlider( &mx_internalGUI,
                                &newPlaybackFrame,
                                0,
-                               mx_playbackNumFullSnapshots
-                                   * mx_diffsBetweenSnapshots,
+                               mx_playbackTotalSteps,
                                20,
                                MAXIGIN_GAME_NATIVE_W - 40,
                                MAXIGIN_GAME_NATIVE_H - 30,
@@ -5910,47 +5910,7 @@ void minginGame_step( char  inFinalStep ) {
         if( oldPlaybackFrame != newPlaybackFrame ) {
             /* slider caused a change */
 
-            int  newFullSnapshots =  newPlaybackFrame / mx_diffsBetweenSnapshots;
-            int  newSubSteps      =  newPlaybackFrame
-                                     - ( newFullSnapshots
-                                         * mx_diffsBetweenSnapshots );
-            int  f;
-            
-            if( newFullSnapshots != mx_playbackFullSnapshotLastPlayed ) {
-                
-                mx_playbackJumpToFullSnapshot( newFullSnapshots );
-
-                for( f = 0;
-                     f < newSubSteps;
-                     f ++ ) {
-                    mx_playbackStepForward();
-                    }
-                }
-            else if( newSubSteps != mx_playbackStepsSinceLastSnapshot ) {
-                /* same full frame, but sub steps have changed */
-
-                int   stepDiff  =  newSubSteps
-                                   - mx_playbackStepsSinceLastSnapshot;
-
-                char  negDir    =  0;
-
-                if( stepDiff < 0 ) {
-                    negDir   =   1;
-                    stepDiff = -stepDiff;
-                    }
-
-                for( f = 0;
-                     f < stepDiff;
-                     f ++ ) {
-                    
-                    if( negDir ) {
-                        mx_playbackStepBackward();
-                        }
-                    else {
-                        mx_playbackStepForward();
-                        }
-                    }
-                }
+            mx_playbackJumpToStep( newPlaybackFrame );
             }
         }
     else {
@@ -5963,7 +5923,7 @@ void minginGame_step( char  inFinalStep ) {
             
             if( mx_recordingRunning ) {
                 
-                char  success          =  0;
+                char  success  =  0;
                 
                 /* end the recording, copy the recording file into the
                    playback file, and then start playback from there */
@@ -6021,42 +5981,14 @@ void minginGame_step( char  inFinalStep ) {
                     }
                 
                 if( success ) {
-
-                    int  extraStepCount  =  0;
-                    int  f;
-                    
                     mx_playbackInterruptedRecording = 1;
                     mx_initPlayback();
 
-                    /* jump to last full frame,
-                       and play back as many diff frames as possible from
-                       there to get a full count of extra frames */
-                    mx_playbackJumpToFullSnapshot(
-                        mx_playbackNumFullSnapshots - 1 );
-
-                    mx_playbackDirection = 1;
-                    mx_playbackSpeed     = 1;
-
-                    while( mx_playbackStep() ) {
-                        extraStepCount ++;
-                        }
-
-                    /* got here, fell off end of playback */
-
-                    /* start again
-                       and walk the right number of steps this time */
-                    mx_initPlayback();
-
-                    mx_playbackJumpToFullSnapshot(
-                        mx_playbackNumFullSnapshots - 1 );
-
-                    for( f = 0;
-                         f < extraStepCount;
-                         f ++ ) {
-                        mx_playbackStep();
-                        }
+                    /* jump to last step */
+                    mx_playbackJumpToStep( mx_playbackTotalSteps - 1 );
 
                     mx_playbackDirection = -1;
+                    mx_playbackSpeed     = 1;
                     }
                 else {
                     /* playback failed for some reason */
@@ -6526,8 +6458,8 @@ static char mx_writeStringToPeristentData( int          inStoreWriteHandle,
 
   Returns 1 on success, 0 on failure.
 */
-static char mx_writeIntToPerisistentData( int  inStoreWriteHandle,
-                                          int  inInt ) {
+static char mx_writeIntToPeristentData( int  inStoreWriteHandle,
+                                        int  inInt ) {
     
     return mx_writeStringToPeristentData( inStoreWriteHandle,
                                           maxigin_intToString( inInt ) );
@@ -6602,8 +6534,8 @@ static char mx_saveGameToDataStore( int  inStoreWriteHandle ) {
     fingerprint = mx_getMemRecordsFingerprint( &numTotalBytes );
 
 
-    success = mx_writeIntToPerisistentData( inStoreWriteHandle,
-                                            numTotalBytes );
+    success = mx_writeIntToPeristentData( inStoreWriteHandle,
+                                          numTotalBytes );
 
     if( ! success ) {
         
@@ -6615,8 +6547,8 @@ MAXIGIN_SAVED_GAME_WRITE_FAILURE:
         }
 
 
-    success = mx_writeIntToPerisistentData( inStoreWriteHandle,
-                                            mx_numMemRecords );
+    success = mx_writeIntToPeristentData( inStoreWriteHandle,
+                                          mx_numMemRecords );
 
     if( ! success ) {
         goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
@@ -6646,8 +6578,8 @@ MAXIGIN_SAVED_GAME_WRITE_FAILURE:
             goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
             }
         
-        success = mx_writeIntToPerisistentData( inStoreWriteHandle,
-                                                mx_memRecords[i].numBytes );
+        success = mx_writeIntToPeristentData( inStoreWriteHandle,
+                                              mx_memRecords[i].numBytes );
         if( ! success ) {
             goto MAXIGIN_SAVED_GAME_WRITE_FAILURE;
             }
@@ -6929,6 +6861,7 @@ static  int          mx_recordingIndexDataStoreHandle  =  -1;
 static  char         mx_diffRecordingEnabled           =  1;
 
 static  int          mx_numDiffsSinceLastFullSnapshot  =  0;
+static  int          mx_totalStepsRecorded             =  0;
 
 static  const char  *mx_recordingMagicFooter           =  "MX_RECORDING";
 
@@ -7013,17 +6946,31 @@ static void mx_recordFullMemorySnapshot( void ) {
         }
     
         
-    /* write the starting pos of this full snapshot into our index data store
-       use a padded int so that we can jump by 12 bytes to go "frame by frame"
-       through the index.
+    /* write the step number and starting pos of this full snapshot into our
+       index data store
+       use a padded int so that we can jump by 12 + 12 bytes to go
+       "frame by frame" through the index.
     */
+    
+    success =
+        mx_writePaddedIntToPerisistentData( mx_recordingIndexDataStoreHandle,
+                                            mx_totalStepsRecorded );
+    if( ! success ) {
+        maxigin_logString(
+            "Failed to write step number to recording index data: ",
+            mx_recordingIndexDataStoreName );
+        
+        mx_closeRecordingDataStores();
+        return;
+        }
+
+    
     success =
         mx_writePaddedIntToPerisistentData( mx_recordingIndexDataStoreHandle,
                                             startPos );
-
     if( ! success ) {
         maxigin_logString(
-            "Failed to write data block to recording index data: ",
+            "Failed to write data position to recording index data: ",
             mx_recordingIndexDataStoreName );
         
         mx_closeRecordingDataStores();
@@ -7042,6 +6989,20 @@ static void mx_recordFullMemorySnapshot( void ) {
         mx_closeRecordingDataStores();
         return;
         }
+
+
+    /* write step number */
+    success = mx_writeIntToPeristentData( mx_recordingDataStoreHandle,
+                                          mx_totalStepsRecorded );
+
+    if( ! success ) {
+        mingin_log( "Failed to write memory full snapshot step number "
+                    "in recording\n" );
+        
+        mx_closeRecordingDataStores();
+        return;
+        }
+    
     
     for( r = 0;
          r < mx_numMemRecords;
@@ -7109,12 +7070,23 @@ static char mx_restoreFromFullMemorySnapshot( int inStoreReadHandle ) {
     int   r;
     int   startPos;
     char  success;
+    int   readInt;
     
     if( ! mx_checkHeader( inStoreReadHandle, 'F' ) ) {
         return 0;
         }
-    
 
+    success = mx_readIntFromPersistData( inStoreReadHandle,
+                                         &readInt );
+
+    if( ! success ) {
+        /* failed to read step number */
+        return 0;
+        }
+
+    mx_playbackCurrentStep = readInt;
+
+    
     for( r = 0;
          r < mx_numMemRecords;
          r ++ ) {
@@ -7201,6 +7173,18 @@ static void mx_recordMemoryDiff( void ) {
         mx_closeRecordingDataStores();
         return;
         }
+
+    /* write step number */
+    success = mx_writeIntToPeristentData( mx_recordingDataStoreHandle,
+                                          mx_totalStepsRecorded );
+
+    if( ! success ) {
+        mingin_log( "Failed to write memory diff step number in recording\n" );
+        
+        mx_closeRecordingDataStores();
+        return;
+        }
+    
     
     for( b = 0;
          b < MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES;
@@ -7218,8 +7202,8 @@ static void mx_recordMemoryDiff( void ) {
             
                 
             /* write its position offset from the previous one recorded */
-            success = mx_writeIntToPerisistentData( mx_recordingDataStoreHandle,
-                                                    b - lastWritten );
+            success = mx_writeIntToPeristentData( mx_recordingDataStoreHandle,
+                                                  b - lastWritten );
 
             if( ! success ) {
                 mingin_log( "Failed to write diff position in recording\n" );
@@ -7248,8 +7232,8 @@ static void mx_recordMemoryDiff( void ) {
        (each line in the diff starts with a valid non-negative position
        in our memory snapshot */
     
-    success = mx_writeIntToPerisistentData( mx_recordingDataStoreHandle,
-                                            -1 );
+    success = mx_writeIntToPeristentData( mx_recordingDataStoreHandle,
+                                          -1 );
     
     if( ! success ) {
         mingin_log( "Failed to write diff footer in recording\n" );
@@ -7301,7 +7285,17 @@ static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
         }
 
     curRecordPointer = (unsigned char*)( mx_memRecords[ curRecord ].pointer );
-    
+
+
+    success = mx_readIntFromPersistData( inStoreReadHandle,
+                                         &readInt );
+
+    if( ! success ) {
+        /* failed to read step number */
+        return 0;
+        }
+
+    mx_playbackCurrentStep = readInt;
     
 
     success = mx_readIntFromPersistData( inStoreReadHandle,
@@ -7457,6 +7451,7 @@ static void mx_initRecording( void ) {
     mx_recordFullMemorySnapshot();
 
     mx_numDiffsSinceLastFullSnapshot = 0;
+    mx_totalStepsRecorded            = 0;
     
     mx_copyMemoryIntoRecordingBuffer();
 
@@ -7476,6 +7471,7 @@ static void mx_stepRecording( void ) {
     if( mx_numDiffsSinceLastFullSnapshot < mx_diffsBetweenSnapshots ) {
         mx_recordMemoryDiff();
         mx_numDiffsSinceLastFullSnapshot ++;
+        mx_totalStepsRecorded ++;
         }
     else {
         /* always record a diff right before our snapshot so that
@@ -7483,6 +7479,7 @@ static void mx_stepRecording( void ) {
         mx_recordMemoryDiff();
         
         mx_recordFullMemorySnapshot();
+        mx_totalStepsRecorded ++;
         
         mx_numDiffsSinceLastFullSnapshot = 0;
         }
@@ -7605,6 +7602,21 @@ static void mx_finalizeRecording( void ) {
             return;
             }
 
+        /* next add total step count, also padded */
+        success = mx_writePaddedIntToPerisistentData(
+            mx_recordingDataStoreHandle,
+            mx_totalStepsRecorded );
+
+        if( ! success ) {
+            mingin_log( "Failed write total step count into end "
+                        "of recording data.\n" );
+            mingin_endWritePersistData( mx_recordingDataStoreHandle );
+            mx_recordingDataStoreHandle = -1;
+            
+            return;
+            }
+
+
         success =  mingin_writePersistData(
             mx_recordingDataStoreHandle,
             /* include the \0 termination */
@@ -7658,6 +7670,136 @@ static const char *mx_getRecordingRecoveryFileName( void ) {
 
 
 
+/* returns -1 on failure */
+static int mx_getMaxStepNumber( int  inRecordingReadHandle,
+                                int  inStartSeekPos ) {
+
+    char  success;
+    int   readInt;
+    int   maxStepNumber  =  0;
+    int   curPos;
+    int   r;
+    
+    success = mingin_seekPersistData( inRecordingReadHandle,
+                                      inStartSeekPos );
+    
+    if( ! success ) {
+        return -1;
+        }
+
+    if( ! mx_checkHeader( inRecordingReadHandle, 'F' ) ) {
+        return -1;
+        }
+
+    success = mx_readIntFromPersistData( inRecordingReadHandle,
+                                         &readInt );
+
+    if( ! success ) {
+        /* failed to read step number */
+        return -1;
+        }
+
+    maxStepNumber = readInt;
+
+
+    /* now skip over the data from this full block */
+    curPos = mingin_getPersistDataPosition( inRecordingReadHandle );
+    
+    for( r = 0;
+         r < mx_numMemRecords;
+         r ++ ) {
+        
+        int  recSize  =  mx_memRecords[r].numBytes;
+
+        curPos += recSize;
+        }
+
+    success = mingin_seekPersistData( inRecordingReadHandle, curPos );
+
+    if( ! success ) {
+        /* failed to seek to end of full block position */
+        return -1;
+        }
+
+    
+    /* walk through diff blocks until the last one
+       updating maxStepNumber as we go */
+
+    while( success ) {
+        
+        if( ! mx_checkHeader( inRecordingReadHandle, 'D' ) ) {
+            break;
+            }
+
+        success = mx_readIntFromPersistData( inRecordingReadHandle,
+                                             &readInt );
+
+        if( ! success ) {
+            /* failed to read step number */
+            break;
+            }
+
+        maxStepNumber = readInt;
+        
+
+        /* now skip over the data from this diff */
+        success = mx_readIntFromPersistData( inRecordingReadHandle,
+                                             &readInt );
+        if( ! success ) {
+            /* must have at least 1 int, at least the -1 at the end,
+               even if diff is empty with no changes */
+            break;
+            }
+        
+        while( readInt != -1 ) {
+
+            /* skip the xor value */
+            unsigned char  xorValue;
+            int            numRead;
+        
+            numRead = mingin_readPersistData( inRecordingReadHandle,
+                                              1,
+                                              &xorValue );
+
+            if( numRead != 1 ) {
+                success = 0;
+                break;
+                }
+
+            /* read index of next diff xor */
+            success = mx_readIntFromPersistData( inRecordingReadHandle,
+                                                 &readInt );
+
+            if( ! success ) {
+                break;
+                }
+            }
+        }
+    
+
+    return maxStepNumber;
+    }
+
+
+
+/* returns 1 on success, 0 on failure */
+static char mx_seekAndReadInt( int   inStoreReadHandle,
+                               int   inPos,
+                               int  *outInt ) {
+    
+    char  success  =  mingin_seekPersistData( inStoreReadHandle,
+                                              inPos );
+    
+    if( ! success ) {
+        return 0;
+        }
+
+    return mx_readIntFromPersistData( inStoreReadHandle,
+                                      outInt );
+    }
+
+
+
 void mx_recordingCrashRecovery( void ) {
 
     int          recordingReadHandle;
@@ -7667,6 +7809,9 @@ void mx_recordingCrashRecovery( void ) {
     int          recordingLength;
     int          indexLength;
     char         success;
+    int          lastFullSnapshotPos;
+    int          totalSteps;
+
     
     indexReadHandle =
         mingin_startReadPersistData( mx_recordingIndexDataStoreName,
@@ -7713,12 +7858,12 @@ void mx_recordingCrashRecovery( void ) {
     success = mx_copyIntoDataStore( recordingReadHandle,
                                     recoveryWriteHandle,
                                     recordingLength );
-
-    mingin_endReadPersistData( recordingReadHandle );
             
     if( ! success ) {
         mingin_log( "Failed to copy recording data into recovery file.\n" );
 
+        mingin_endReadPersistData( recordingReadHandle );
+        
         mingin_endReadPersistData( indexReadHandle );
         
         mingin_endWritePersistData( recoveryWriteHandle );
@@ -7729,16 +7874,37 @@ void mx_recordingCrashRecovery( void ) {
     success = mx_copyIntoDataStore( indexReadHandle,
                                     recoveryWriteHandle,
                                     indexLength );
-
-    mingin_endReadPersistData( indexReadHandle );
             
     if( ! success ) {
         mingin_log( "Failed to copy recording index into recovery file.\n" );
+
+        mingin_endReadPersistData( recordingReadHandle );
+        
+        mingin_endWritePersistData( recoveryWriteHandle );
+
+        mingin_endReadPersistData( indexReadHandle ); 
+            
+        return;
+        }
+
+
+    /* read last full snapshot pos from end of index */
+    success = mx_seekAndReadInt( indexReadHandle,
+                                 indexLength - MAXIGIN_PADDED_INT_LENGTH,
+                                 &lastFullSnapshotPos );
+
+    mingin_endReadPersistData( indexReadHandle );
+    
+    if( ! success ) {
+        mingin_log( "Failed to seek/read last offset in recording index "
+                    "during recovery\n" );
+        mingin_endReadPersistData( recordingReadHandle );
         
         mingin_endWritePersistData( recoveryWriteHandle );
             
         return;
         }
+    
 
     /* successfully added index to end, can delete index now */
     mingin_deletePersistData( mx_recordingIndexDataStoreName );
@@ -7753,6 +7919,35 @@ void mx_recordingCrashRecovery( void ) {
     if( ! success ) {
         mingin_log( "Failed write length of index into end "
                     "of recording recovery file.\n" );
+
+        mingin_endReadPersistData( recordingReadHandle );
+        
+        mingin_endWritePersistData( recoveryWriteHandle );
+            
+        return;
+        }
+    
+
+    totalSteps = mx_getMaxStepNumber( recordingReadHandle,
+                                      lastFullSnapshotPos );
+    
+    mingin_endReadPersistData( recordingReadHandle );
+
+    if( totalSteps == -1 ) {
+        mingin_log( "Failed to determine total step count during"
+                    "recording recovery.\n" );
+        mingin_endWritePersistData( recoveryWriteHandle );
+            
+        return;
+        }
+
+    success = mx_writePaddedIntToPerisistentData(
+        recoveryWriteHandle,
+        totalSteps );
+
+    if( totalSteps == -1 ) {
+        mingin_log( "Failed to write total step count during"
+                    "recording recovery.\n" );
         mingin_endWritePersistData( recoveryWriteHandle );
             
         return;
@@ -7788,21 +7983,7 @@ void mx_recordingCrashRecovery( void ) {
 
 
 
-/* returns 1 on success, 0 on failure */
-static char mx_seekAndReadInt( int   inStoreReadHandle,
-                               int   inPos,
-                               int  *outInt ) {
-    
-    char  success  =  mingin_seekPersistData( inStoreReadHandle,
-                                              inPos );
-    
-    if( ! success ) {
-        return 0;
-        }
 
-    return mx_readIntFromPersistData( inStoreReadHandle,
-                                      outInt );
-    }
     
 
 
@@ -7810,18 +7991,22 @@ static char mx_initPlayback( void ) {
     
     char   success;
     int    indexLengthDataPos;
+    int    totalStepsDataPos;
     int    indexLength;
     int    magicFooterDataPos;
     char   magicFooterBuffer[ 20 ];
     int    numRead;
     
     int    firstFullSnapshotDataPos;
+    int    firstFullSnapshotStepNumber;
 
-    mx_playbackRunning    =  0;
-    mx_playbackSpeed      =  1;
-    mx_playbackPaused     =  0;
-    mx_playbackDirection  =  1;
-    
+    mx_playbackRunning      =  0;
+    mx_playbackSpeed        =  1;
+    mx_playbackPaused       =  0;
+    mx_playbackDirection    =  1;
+    mx_playbackCurrentStep  =  0;
+    mx_playbackTotalSteps   =  0;
+        
     if( mx_numMemRecords == 0 ) {
         return 0;
         }
@@ -7904,10 +8089,35 @@ static char mx_initPlayback( void ) {
         mingin_endReadPersistData( mx_playbackDataStoreHandle );
         return 0;
         }
-        
+
     
-    /* jump to end and read padded int */
-    indexLengthDataPos = magicFooterDataPos - MAXIGIN_PADDED_INT_LENGTH;
+    /* jump back more and read padded int */
+    totalStepsDataPos = magicFooterDataPos - MAXIGIN_PADDED_INT_LENGTH;
+
+    if( totalStepsDataPos < 0 ) {
+        mingin_log( "Playback file too short to even contain total steps.\n" );
+        
+        mingin_endReadPersistData( mx_playbackDataStoreHandle );
+        return 0;
+        }
+
+    
+    success = mx_seekAndReadInt( mx_playbackDataStoreHandle,
+                                 totalStepsDataPos,
+                                 & mx_playbackTotalSteps );
+    
+    if( ! success ) {
+        maxigin_logInt( "Failed to seek to this position and read total steps "
+                        "in playback data store: ",
+                        totalStepsDataPos );
+        
+        mingin_endReadPersistData( mx_playbackDataStoreHandle );
+        return 0;
+        }
+    
+    
+    /* jump back more and read another padded int */
+    indexLengthDataPos = totalStepsDataPos - MAXIGIN_PADDED_INT_LENGTH;
 
     if( indexLengthDataPos < 0 ) {
         mingin_log( "Playback file too short to even contain index lenth.\n" );
@@ -7934,17 +8144,40 @@ static char mx_initPlayback( void ) {
 
     success = mx_seekAndReadInt( mx_playbackDataStoreHandle,
                                  mx_playbackIndexStartPos,
-                                 &firstFullSnapshotDataPos );
+                                 &firstFullSnapshotStepNumber );
 
     if( ! success ) {
         maxigin_logInt( "Failed to seek to this position and read first "
-                        "index entry in playback data store: ",
+                        "step number in playback data store: ",
                         mx_playbackIndexStartPos );
         
         mingin_endReadPersistData( mx_playbackDataStoreHandle );
         return 0;
         }
 
+    if( firstFullSnapshotStepNumber != 0 ) {
+        maxigin_logInt( "Unexpected first full snapshot step number in "
+                        "playback data store: ",
+                        firstFullSnapshotStepNumber );
+        
+        mingin_endReadPersistData( mx_playbackDataStoreHandle );
+        return 0;
+        }
+
+    success = mx_seekAndReadInt( mx_playbackDataStoreHandle,
+                                 mx_playbackIndexStartPos
+                                     + MAXIGIN_PADDED_INT_LENGTH,
+                                 &firstFullSnapshotDataPos);
+
+    if( ! success ) {
+        mingin_log( "Failed to read first snapshot data position"
+                    "playback data store\n" );
+        
+        mingin_endReadPersistData( mx_playbackDataStoreHandle );
+        return 0;
+        }
+
+    
     /* now jump to that first full snapshot */
 
     success = mingin_seekPersistData( mx_playbackDataStoreHandle,
@@ -7971,7 +8204,8 @@ static char mx_initPlayback( void ) {
 
     
     mx_playbackFullSnapshotLastPlayed = 0;
-    mx_playbackNumFullSnapshots = indexLength / MAXIGIN_PADDED_INT_LENGTH;
+    mx_playbackNumFullSnapshots =
+        indexLength / ( MAXIGIN_PADDED_INT_LENGTH * 2 );
     
     maxigin_logInt( "Playback started successfully with num snapshots: ",
                     mx_playbackNumFullSnapshots );
@@ -8283,11 +8517,83 @@ static char mx_playbackStepBackward( void ) {
 
 
 
+static int mx_getSnapshotStepNumber( int inSnapshotNumber ) {
+
+    int   indexJumpPos  =  mx_playbackIndexStartPos +
+                           MAXIGIN_PADDED_INT_LENGTH * 2 * inSnapshotNumber;
+    char  success;
+    int   stepNumber;
+    
+    success = mingin_seekPersistData( mx_playbackDataStoreHandle,
+                                      indexJumpPos );
+
+    if( ! success ) {
+        maxigin_logInt( "Failed to seek into index at pos: ",
+                        indexJumpPos );
+        return -1;
+        }
+
+    success = mx_readIntFromPersistData( mx_playbackDataStoreHandle,
+                                         &stepNumber );
+    
+    if( ! success ) {
+        mingin_log( "Failed to read step number from index\n" );
+        return -1;
+        }
+    return stepNumber;
+    }
+
+
+
+static void mx_playbackJumpToStep( int inStepNumber ) {
+
+    /* find closest snapshot before or at inStepNumber */
+    int  snapshotGuess  =  inStepNumber / ( mx_diffsBetweenSnapshots + 1 );
+    int  snapshotStepNumber;
+
+    snapshotStepNumber = mx_getSnapshotStepNumber( snapshotGuess );
+
+    while( snapshotStepNumber > inStepNumber ) {
+        snapshotGuess --;
+        snapshotStepNumber = mx_getSnapshotStepNumber( snapshotGuess );
+        }
+
+    if( snapshotStepNumber == -1 ) {
+        maxigin_logInt( "Playback jump failed find full snapshot before step: ",
+                        inStepNumber );
+        mx_playbackEnd();
+        return;
+        }
+
+    mx_playbackJumpToFullSnapshot( snapshotGuess );
+
+    if( ! mx_playbackRunning ) {
+        /* jumping to snapshot failed */
+        return;
+        }
+
+    while( mx_playbackRunning
+           &&
+           mx_playbackCurrentStep < inStepNumber ) {
+        
+        mx_playbackStepForward();
+        }
+
+    if( ! mx_playbackRunning ) {
+        maxigin_logInt( "Playback failed to step forward to step number "
+                        "after jumping to full snapshot: ",
+                        inStepNumber );
+        }
+    }
+
+
+
 static void mx_playbackJumpToFullSnapshot( int inFullSnapshotIndex ) {
 
     int   indexJumpPos  =  mx_playbackIndexStartPos +
-                           MAXIGIN_PADDED_INT_LENGTH * inFullSnapshotIndex;
+                           MAXIGIN_PADDED_INT_LENGTH * 2 * inFullSnapshotIndex;
     int   readPos;
+    int   stepNumber;
     char  success;
     
     success = mingin_seekPersistData( mx_playbackDataStoreHandle,
@@ -8299,6 +8605,29 @@ static void mx_playbackJumpToFullSnapshot( int inFullSnapshotIndex ) {
         mx_playbackEnd();
         return;
         }
+
+    success = mx_readIntFromPersistData( mx_playbackDataStoreHandle,
+                                         &stepNumber );
+    
+    if( ! success ) {
+        mingin_log( "Playback jump failed to read step number from index\n" );
+        mx_playbackEnd();
+        return;
+        }
+
+    /* now jump to read full snapshot file position */
+    indexJumpPos += MAXIGIN_PADDED_INT_LENGTH;
+    
+    success = mingin_seekPersistData( mx_playbackDataStoreHandle,
+                                      indexJumpPos );
+
+    if( ! success ) {
+        maxigin_logInt( "Playback jump failed to seek into index at pos: ",
+                        indexJumpPos );
+        mx_playbackEnd();
+        return;
+        }
+    
     
     success = mx_readIntFromPersistData( mx_playbackDataStoreHandle,
                                          &readPos );

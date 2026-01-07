@@ -5105,6 +5105,8 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
     int           v                       =  *inCurrentValue;
     int           fullRange               =   inMaxValue - inMinValue;
     int           tenPercent              =   fullRange / 10;
+    int           thumbLeftR;
+    int           thumbRightR;
     
     if( tenPercent < 1 ) {
         tenPercent = 1;
@@ -5120,6 +5122,10 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
           ( inEndX - inStartX ) )
         / ( inMaxValue - inMinValue )
         + inStartX;
+    
+    mx_getSliderThumbRadius( inThumbWidth,
+                             &thumbLeftR,
+                             &thumbRightR );
 
     if( inGUI->active == inCurrentValue ) {
         /* previously manipulated with mouse */
@@ -5143,15 +5149,33 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                                             &y );
 
         if( avail ) {
+            char  over  =  0;
 
-            if( x >= inStartX
-                &&
-                x <= inEndX
-                &&
-                y >= inY - inThumbHeight / 2
+            if( y >= inY - inThumbHeight / 2
                 &&
                 y <= inY + inThumbHeight / 2 ) {
+                
+                if( x >= inStartX
+                    &&
+                    x <= inEndX ) {
 
+                    over = 1;
+                    }
+                else {
+                    /* mouse is not over horizontal extent of bar
+                       check if mouse over thumb, which might stick
+                       off the end of bar */
+                    if( x >= thumbPixelCenter - thumbLeftR
+                        &&
+                        x <= thumbPixelCenter + thumbRightR ) {
+                        
+                        over = 1;
+                        }
+                    }
+                }
+
+            if( over ) {
+                
                 /* mouse over slider */
 
                 if( ! inGUI->mouseDown ) {
@@ -5173,18 +5197,11 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                 mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON ) ) {
                 
                 /* mouse newly pressed on slider */
-
-                int  thumbLeftR;
-                int  thumbRightR;
                 
                 inGUI->active    = inCurrentValue;
                 inGUI->mouseDown = 1;
 
                 /* is mouse over thumb? */
-
-                mx_getSliderThumbRadius( inThumbWidth,
-                                         &thumbLeftR,
-                                         &thumbRightR );
 
                 if( x <= thumbPixelCenter + thumbRightR
                     &&
@@ -5223,9 +5240,11 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
             
             if( x < inStartX ) {
                 v = inMinValue;
+                thumbPixelCenter = inStartX;
                 }
             else if( x > inEndX ) {
                 v = inMaxValue;
+                thumbPixelCenter = inEndX;
                 }
             else {
                 /* in between min and max */
@@ -5870,7 +5889,7 @@ void minginGame_step( char  inFinalStep ) {
                                mx_playbackNumFullSnapshots
                                    * mx_diffsBetweenSnapshots,
                                20,
-                               MAXIGIN_GAME_NATIVE_W - 20,
+                               MAXIGIN_GAME_NATIVE_W - 40,
                                MAXIGIN_GAME_NATIVE_H - 30,
                                10,
                                20,

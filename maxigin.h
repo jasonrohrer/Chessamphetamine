@@ -5254,6 +5254,13 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                     /
                     ( inEndX - inStartX )
                     + inMinValue;
+
+                if( v > inMaxValue ) {
+                    v = inMaxValue;
+                    }
+                else if( v < inMinValue ) {
+                    v = inMinValue;
+                    }
                 }
             } 
         }
@@ -5886,7 +5893,7 @@ void minginGame_step( char  inFinalStep ) {
             maxigin_guiSlider( &mx_internalGUI,
                                &newPlaybackFrame,
                                0,
-                               mx_playbackTotalSteps,
+                               mx_playbackTotalSteps - 1,
                                20,
                                MAXIGIN_GAME_NATIVE_W - 40,
                                MAXIGIN_GAME_NATIVE_H - 30,

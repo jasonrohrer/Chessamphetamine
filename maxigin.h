@@ -5943,39 +5943,63 @@ void minginGame_step( char  inFinalStep ) {
             
             
             if( mx_recordingRunning ) {
+                
                 char  success          =  0;
-                int   recordingLength;
-                int   recordingHandle;
-                int   playbackHandle;
-
+                
                 /* end the recording, copy the recording file into the
                    playback file, and then start playback from there */
                 
                 mx_finalizeRecording();
                 mx_playbackInterruptedRecording = 1;
 
-                recordingHandle =
-                    mingin_startReadPersistData( mx_recordingDataStoreName,
-                                                 &recordingLength );
 
-                if( recordingHandle != -1 ) {
+                if( mingin_renamePersistData( mx_recordingDataStoreName,
+                                              mx_playbackDataStoreName ) ) {
+                    mingin_log( "Moved recording file into playback file "
+                                "for instant playback.\n" );
+                    success = 1;
+                    }
+                else {
+                    /* simple/quick rename failed, try copying data
+                       between files */
+                    int   recordingLength;
+                    int   recordingHandle;
+                    int   playbackHandle;
 
-                    playbackHandle =
-                        mingin_startWritePersistData( mx_playbackDataStoreName );
+                    mingin_log( "Moving recording file failed, trying "
+                                "data copy into playback file instead.\n" );
+                    
+                    recordingHandle =
+                        mingin_startReadPersistData( mx_recordingDataStoreName,
+                                                     &recordingLength );
 
-                    if( playbackHandle != -1 ) {
+                    if( recordingHandle != -1 ) {
 
-                        success = mx_copyIntoDataStore( recordingHandle,
-                                                        playbackHandle,
-                                                        recordingLength );
+                        playbackHandle =
+                            mingin_startWritePersistData(
+                                mx_playbackDataStoreName );
+
+                        if( playbackHandle != -1 ) {
+
+                            success = mx_copyIntoDataStore( recordingHandle,
+                                                            playbackHandle,
+                                                            recordingLength );
                         
-                        mingin_endWritePersistData( playbackHandle );
-                        }
-                    else {
+                            mingin_endWritePersistData( playbackHandle );
+                            }
+                        
                         mingin_endReadPersistData( recordingHandle );
+
+                        if( success ) {
+                            mingin_log(
+                                "Copied recording file data into playback file "
+                                "for instant playback.\n" );
+                            
+                            mingin_deletePersistData(
+                                mx_recordingDataStoreName );
+                            }
                         }
                     }
-
                 
                 if( success ) {
 

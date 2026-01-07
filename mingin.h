@@ -1198,6 +1198,28 @@ void mingin_deletePersistData( const char  *inStoreName );
 
 
 /*
+  Renames a persistent data store, if it exists.
+
+  Parameters:
+
+      inStoreName      the name of the store to rename as a \0-terminated string.
+
+      inStoreNewName   the new name for the store as a \0-terminated string.
+
+  Returns:
+
+      1   if renaming succeeded
+
+      0   if renaming failed or renaming is not supported on the platform.
+      
+  [jumpMinginProvides]
+*/
+char mingin_renamePersistData( const char  *inStoreName,
+                               const char  *inStoreNewName );
+
+
+
+/*
   Opens a named bulk data resource for reading.
 
   
@@ -1788,6 +1810,13 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 #include <unistd.h>
 #include <errno.h>
 #include <sys/time.h>
+
+/* provide a prototype of rename here,
+   which will be linked along with the other linux-specific stuff,
+   but it's only defined in stdio.h, which is not included */
+int  rename( const char  *oldpath,
+             const char  *newpath );
+
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -3628,25 +3657,35 @@ static int mn_openActiveGamepad( void ) {
 static char *mn_linuxGetFilePath( const char  *inFolderName,
                                   const char  *inFileName ) {
     
-    enum{  MAX_PATH_LEN  =  255  };
-    
-    static  char  buffer[ MAX_PATH_LEN + 1 ];
+    enum{  MAX_PATH_LEN  =  255,
+           NUM_BUFFERS   =    2   };
 
+    static  int   curBuffer  = 0;
+    
+    static  char  buffer[ NUM_BUFFERS ][ MAX_PATH_LEN + 1 ];
+
+    
     int  i  =  0;
     int  j  =  0;
+
     
+    curBuffer ++;
+
+    if( curBuffer >= NUM_BUFFERS ) {
+        curBuffer = 0;
+        }
     
     while( i < MAX_PATH_LEN
            &&
            inFolderName[i] != '\0' ) {
         
-        buffer[i] = inFolderName[i];
+        buffer[curBuffer][i] = inFolderName[i];
         i++;
         }
     
     /* now separator */
     if( i < MAX_PATH_LEN ) {
-        buffer[i] = '/';
+        buffer[curBuffer][i] = '/';
         i++;
         }
     
@@ -3654,17 +3693,17 @@ static char *mn_linuxGetFilePath( const char  *inFolderName,
            &&
            inFileName[j] != '\0' ) {
         
-        buffer[i] = inFileName[j];
+        buffer[curBuffer][i] = inFileName[j];
         i++;
         j++;
         }
 
     /* now terminate */
     if( i < MAX_PATH_LEN ) {
-        buffer[i] = '\0';
+        buffer[curBuffer][i] = '\0';
         }
     
-    return buffer;
+    return buffer[curBuffer];
     }
 
 
@@ -3881,6 +3920,25 @@ void mingin_deletePersistData( const char  *inStoreName ) {
     
     unlink( path );
     }
+
+
+
+char mingin_renamePersistData( const char  *inStoreName,
+                               const char  *inStoreNewName ) {
+
+    char  *pathOld  =  mn_linuxGetFilePath( mn_settingsDirName, inStoreName );
+    char  *pathNew  =  mn_linuxGetFilePath( mn_settingsDirName, inStoreNewName );
+
+    int    result   =  rename( pathOld, pathNew );
+
+    if( result == 0 ) {
+        return 1;
+        }
+    else {
+        return 0;
+        }
+    }
+
 
 
 /* including \0 termination */
@@ -4441,6 +4499,20 @@ void mingin_deletePersistData( const char  *inStoreName ) {
     if( inStoreName[0] != '\0' ) {
         }
     }
+
+
+
+char mingin_renamePersistData( const char  *inStoreName,
+                               const char  *inStoreNewName ) {
+    /* suppress warning */
+    if( inStoreName[0] != '\0'
+        ||
+        inStoreNewName[0] != '\0' ) {
+        }
+
+    return 0;
+    }
+
 
 
 

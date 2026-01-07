@@ -1680,7 +1680,6 @@ static  int          mx_playbackDataLength;
 static  int          mx_playbackFullSnapshotLastPlayed  =  0;
 static  int          mx_playbackIndexStartPos           =  0;
 static  int          mx_playbackNumFullSnapshots        =  0;
-static  int          mx_playbackStepsSinceLastSnapshot  =  0;
 static  int          mx_diffsBetweenSnapshots           =  300;
 static  int          mx_playbackTotalSteps              =  0;
 static  int          mx_playbackCurrentStep             =  0;
@@ -7385,7 +7384,8 @@ static void mx_initRecording( void ) {
     int  i;
     int  success;
     
-    mx_recordingRunning = 0;
+    mx_recordingRunning    = 0;
+    mx_totalStepsRecorded  = 0;
     
     if( ! MAXIGIN_ENABLE_RECORDING ) {
         return;
@@ -7451,7 +7451,6 @@ static void mx_initRecording( void ) {
     mx_recordFullMemorySnapshot();
 
     mx_numDiffsSinceLastFullSnapshot = 0;
-    mx_totalStepsRecorded            = 0;
     
     mx_copyMemoryIntoRecordingBuffer();
 
@@ -8307,11 +8306,8 @@ static char mx_playbackStepForward( void ) {
         }
 
     success = mx_restoreFromMemoryDiff( mx_playbackDataStoreHandle );
-
-    mx_playbackStepsSinceLastSnapshot++;
     
     if( ! success ) {
-        mx_playbackStepsSinceLastSnapshot = 0;
         
         /* diff reading failed
            try reading a whole snapshot */
@@ -8427,9 +8423,6 @@ static char mx_playbackStepBackward( void ) {
 
     if( success ) {
         /* diff reading success */
-
-        mx_playbackStepsSinceLastSnapshot --;
-        
         
         /* rewind, so we're ready for next reverse playback step */
         success = mingin_seekPersistData( mx_playbackDataStoreHandle,
@@ -8476,7 +8469,6 @@ static char mx_playbackStepBackward( void ) {
             }
         
         mx_playbackFullSnapshotLastPlayed --;
-        mx_playbackStepsSinceLastSnapshot = mx_diffsBetweenSnapshots;
         
         maxigin_logInt( "Just reverse-played snapshot: ",
                         mx_playbackFullSnapshotLastPlayed );

@@ -443,6 +443,8 @@ void maxiginGame_step( void ) {
 
         if( bulletOn[ i ] ) {
 
+            int  newBulletFade;
+            
             bulletPos[ i ].x += bulletSpeed[ i ].x;
             bulletPos[ i ].y += bulletSpeed[ i ].y;
 
@@ -458,8 +460,13 @@ void maxiginGame_step( void ) {
                 bulletOn[ i ] = 0;
                 }
 
-            bulletFade[ i ] -= 3;
+            newBulletFade = bulletFade[ i ] - 3;
 
+            if( newBulletFade < 0 ) {
+                newBulletFade = 0;
+                }
+            bulletFade[ i ] = (unsigned char)newBulletFade;
+            
             if( bulletFade[ i ] == 0 ) {
                 bulletOn[ i ] = 0;
                 }

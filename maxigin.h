@@ -9027,19 +9027,19 @@ void maxigin_flexHashInit( MaxiginFlexHashState  *inState,
             inHashBuffer[j] = n;
         
         
-            i = ( i + 1 ) & 0xFF;
+            i = (unsigned char)( ( i + 1 ) & 0xFF );
 
         
             /* k increments much more slowly, roughly 1/64 as often as i
                but because we use n to decide when k increments, this happens
                on a very chaotic schedule that doesn't seem to have a pattern */
             if( n == 13 || n == 101 || n == 173  || n == 207 ) {
-                k = ( k + 1 ) & 0xFF;
+                k = (unsigned char)( ( k + 1 ) & 0xFF );
                 }
 
             /* m increments roughly 1/256 as often as i */
             if( n == 67 ) {
-                m = ( m + 1 ) & 0xFF;
+                m = (unsigned char)( ( m + 1 ) & 0xFF );
                 }
             }
         }

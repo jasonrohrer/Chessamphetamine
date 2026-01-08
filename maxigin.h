@@ -3401,7 +3401,17 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
 
     if( inSpriteHandle == -1 ) {
         /* trying to draw a sprite that failed to load
-           ignore it */
+           draw a place-holder rect so that it's not totally invisible*/
+
+        maxigin_drawRect( inCenterX - 3,
+                          inCenterY - 3,
+                          inCenterX + 3,
+                          inCenterY + 3 );
+
+        maxigin_drawLine( inCenterX - 2,
+                          inCenterY - 2,
+                          inCenterX + 2,
+                          inCenterY + 2 );
         return;
         }
     

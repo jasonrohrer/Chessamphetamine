@@ -3179,7 +3179,28 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
     mx_sliderSprites.thumb[ 2 ] =
         maxigin_initSprite( inThumbActiveSpriteResource );
 
-    mx_sliderSpritesSet = 1;
+    mx_sliderSpritesSet =
+        ( mx_sliderSprites.left[ 0 ] > 0 )
+        &&
+        ( mx_sliderSprites.left[ 1 ] > 0 )
+        &&
+        ( mx_sliderSprites.right[ 0 ] > 0 )
+        &&
+        ( mx_sliderSprites.right[ 1 ] > 0 )
+        &&
+        ( mx_sliderSprites.bar[ 0 ] > 0 )
+        &&
+        ( mx_sliderSprites.bar[ 1 ] > 0 )
+        &&
+        ( mx_sliderSprites.sliver[ 0 ] > 0 )
+        &&
+        ( mx_sliderSprites.sliver[ 1 ] > 0 )
+        &&
+        ( mx_sliderSprites.thumb[ 0 ] > 0 )
+        &&
+        ( mx_sliderSprites.thumb[ 1 ] > 0 )
+        &&
+        ( mx_sliderSprites.thumb[ 2 ] > 0 );
     }
 
 

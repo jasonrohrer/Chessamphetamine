@@ -1,1 +1,1 @@
-tcc -g -o Chessamphetamine game.c -lX11 -lXrandr -lGLX -lGL
+tcc -g -o Chessamphetamine game.c -lX11 -lXrandr -lGLX -lGL -lasound

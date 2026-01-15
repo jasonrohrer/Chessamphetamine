@@ -1799,6 +1799,21 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 #define  MINGIN_MAX_NUM_BULK_CHANGE_RECORDS   128
 
 
+/* make inline keyword disappear in asoundlib header so it can compile
+   in a C89 environment */
+#ifndef  inline
+#define  inline
+#endif
+
+/* asoundlib depends on timespec struct */
+#ifndef  _POSIX_C_SOURCE
+#define  _POSIX_C_SOURCE  199309L
+#endif
+
+#include <alsa/asoundlib.h>
+
+
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
@@ -2950,6 +2965,12 @@ static void mn_releaseAllButtons( void ) {
 
 
 
+static void mn_openSound( void );
+
+static void mn_stepSound( void );
+
+static void mn_closeSound( void );
+
 
         
 int main( void ) {
@@ -2987,6 +3008,9 @@ int main( void ) {
 
     
     gamepadFD = mn_openActiveGamepad();
+
+
+    mn_openSound();
 
     
     while( ! mn_shouldQuit ) {
@@ -3174,6 +3198,8 @@ int main( void ) {
                so we can't call any minginGame_ functions again */
             break;
             }
+
+        mn_stepSound();
         
         
         minginGame_getScreenPixels( mn_windowW,
@@ -3247,6 +3273,8 @@ int main( void ) {
         
         } /* end of  while( ! mn_shouldQuit )  */
 
+
+    mn_closeSound();
     
     mn_closeXWindow( & mn_XSetup );
 
@@ -4168,6 +4196,83 @@ char mingin_getBulkDataChanged( const char  *inBulkName ) {
     return 0;
     }
 
+
+
+
+static char        soundOpen      =  0;
+static snd_pcm_t  *alsaPCMHandle  =  0;
+
+
+
+static void mn_soundCleanup( void ) {
+    if( alsaPCMHandle != 0 ) {
+        snd_pcm_drain( alsaPCMHandle );
+        snd_pcm_close( alsaPCMHandle );
+
+        snd_config_update_free_global();
+        
+        alsaPCMHandle = 0;
+        }
+    soundOpen = 0;
+    }
+
+
+
+static void mn_openSound( void ) {
+
+    int                   result;
+    snd_pcm_hw_params_t  *params;
+    enum{                 MAX_PARAMS_SIZE  =  2048 };
+    
+    static  unsigned char  alsaParamsBuffer[ MAX_PARAMS_SIZE ];
+
+    
+    if( snd_pcm_hw_params_sizeof() > MAX_PARAMS_SIZE ) {
+        mingin_log( "ALSA hardware parameters structure bigger than expected, "
+                    "opening audio device failed.\n" );
+        return;
+        }
+    
+    params = (snd_pcm_hw_params_t*) alsaParamsBuffer;
+    
+    
+    result = snd_pcm_open( &alsaPCMHandle,
+                           "default",
+                           SND_PCM_STREAM_PLAYBACK,
+                           SND_PCM_NONBLOCK );
+    if( result < 0 ) {
+        mingin_log( "Failed to open default ALSA sound device\n" );
+        mn_soundCleanup();
+        return;
+        }
+
+    /* setup params and fill with default values */  
+	snd_pcm_hw_params_any( alsaPCMHandle,
+                           params );
+
+    if( snd_pcm_hw_params_set_access( alsaPCMHandle,
+                                      params,
+                                      SND_PCM_ACCESS_RW_INTERLEAVED) < 0 ) {
+        mingin_log( "Failed to set ALSA parameter access "
+                    "mode to RW Interleaved\n" );
+        mn_soundCleanup();
+        return;
+        }
+    
+    /* fixme:
+       set rest of parameters
+       Sample code here:
+       https://gist.github.com/ghedo/963382/815c98d1ba0eda1b486eb9d80d9a91a81d995283
+    */
+    }
+
+static void mn_stepSound( void ) {}
+
+
+static void mn_closeSound( void ) {
+
+    mn_soundCleanup();
+    }
 
 
 

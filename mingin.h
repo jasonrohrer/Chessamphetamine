@@ -4199,9 +4199,19 @@ char mingin_getBulkDataChanged( const char  *inBulkName ) {
 
 
 
-static char        soundOpen      =  0;
-static snd_pcm_t  *alsaPCMHandle  =  0;
+#define  MN_SOUND_NUM_CHANNELS                 2
+#define  MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES  1024
 
+static  char                soundOpen             =      0;
+static  snd_pcm_t          *alsaPCMHandle         =      0;
+static  unsigned int        sampleRate            =  44100;
+static  snd_pcm_uframes_t   sampleFramesInPeriod  =
+                                             MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES;
+
+/* 2 bytes per sample (S16 LE) */
+static  unsigned char  sampleBuffer[ MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES
+                                     * 2
+                                     * MN_SOUND_NUM_CHANNELS ];
 
 
 static void mn_soundCleanup( void ) {
@@ -4221,7 +4231,11 @@ static void mn_soundCleanup( void ) {
 static void mn_openSound( void ) {
 
     int                   result;
-    snd_pcm_hw_params_t  *params;
+    unsigned int          temp;
+    unsigned int          alsaPeriods      =  1;
+    int                   dir;
+    snd_pcm_hw_params_t  *hwParams;
+    snd_pcm_sw_params_t  *swParams;
     enum{                 MAX_PARAMS_SIZE  =  2048 };
     
     static  unsigned char  alsaParamsBuffer[ MAX_PARAMS_SIZE ];
@@ -4232,8 +4246,18 @@ static void mn_openSound( void ) {
                     "opening audio device failed.\n" );
         return;
         }
-    
-    params = (snd_pcm_hw_params_t*) alsaParamsBuffer;
+
+    if( snd_pcm_sw_params_sizeof() > MAX_PARAMS_SIZE ) {
+        mingin_log( "ALSA software parameters structure bigger than expected, "
+                    "opening audio device failed.\n" );
+        return;
+        }
+
+    /* use same static buffer for both hardware and software params
+       since we set up hardware first, and then can re-init the buffer
+       as software params later */
+    hwParams = (snd_pcm_hw_params_t*) alsaParamsBuffer;
+    swParams = (snd_pcm_sw_params_t*) alsaParamsBuffer;
     
     
     result = snd_pcm_open( &alsaPCMHandle,
@@ -4247,31 +4271,261 @@ static void mn_openSound( void ) {
         }
 
     /* setup params and fill with default values */  
-	snd_pcm_hw_params_any( alsaPCMHandle,
-                           params );
+    snd_pcm_hw_params_any( alsaPCMHandle,
+                           hwParams );
 
     if( snd_pcm_hw_params_set_access( alsaPCMHandle,
-                                      params,
+                                      hwParams,
                                       SND_PCM_ACCESS_RW_INTERLEAVED) < 0 ) {
         mingin_log( "Failed to set ALSA parameter access "
                     "mode to RW Interleaved\n" );
         mn_soundCleanup();
         return;
         }
+
+    if( snd_pcm_hw_params_set_format( alsaPCMHandle,
+                                      hwParams,
+                                      SND_PCM_FORMAT_S16_LE ) < 0 ) {
+        mingin_log( "Failed to set ALSA format to PCM S16 LE\n" );
+        mn_soundCleanup();
+        return;
+        }
     
-    /* fixme:
-       set rest of parameters
-       Sample code here:
-       https://gist.github.com/ghedo/963382/815c98d1ba0eda1b486eb9d80d9a91a81d995283
-    */
+    if( snd_pcm_hw_params_set_channels( alsaPCMHandle,
+                                        hwParams,
+                                        MN_SOUND_NUM_CHANNELS ) < 0 ) {
+        mingin_log( "Failed to set ALSA format to 2 channels\n" );
+        mn_soundCleanup();
+        return;
+        }
+
+    dir = 0;
+    if( snd_pcm_hw_params_set_rate_near( alsaPCMHandle,
+                                         hwParams,
+                                         &sampleRate,
+                                         &dir ) < 0 ) {
+        mingin_log( "Failed to set ALSA sample rate near 44100\n" );
+        mn_soundCleanup();
+        return;
+        }
+
+    dir = 0;
+    if( snd_pcm_hw_params_set_period_size_near( alsaPCMHandle,
+                                                hwParams,
+                                                &sampleFramesInPeriod,
+                                                &dir ) < 0 ) {
+        mingin_log( "Failed to set ALSA sample buffer size near 1024\n" );
+        mn_soundCleanup();
+        return;
+        }
+
+    if( snd_pcm_hw_params_set_periods_near( alsaPCMHandle,
+                                            hwParams,
+                                            &alsaPeriods,
+                                            &dir ) < 0 ) {
+        mingin_log( "Failed to set ALSA to >= 1 period per buffer\n" );
+        mn_soundCleanup();
+        return;
+        }
+    
+                                            
+    
+    /* write parameters */
+    if( snd_pcm_hw_params( alsaPCMHandle,
+                           hwParams ) < 0 ) {
+        mingin_log( "Failed to write ALSA hardware parameters\n" );
+        mn_soundCleanup();
+        return;
+        }
+
+    /* sanity check that the parameters we actually got were in range */
+    
+    snd_pcm_hw_params_get_channels( hwParams,
+                                    &temp );
+
+    if( temp != 2 ) {
+        mingin_log( "Failed to set ALSA hardware to 2 channels\n" );
+        mn_soundCleanup();
+        return;
+        }
+
+    snd_pcm_hw_params_get_rate( hwParams,
+                                &sampleRate,
+                                &dir );
+    if( dir != 0 ) {
+        mingin_log( "Failed to get an exact integer sample rate from ALSA\n" );
+        mn_soundCleanup();
+        return;
+        }
+
+    snd_pcm_hw_params_get_period_size( hwParams,
+                                       &sampleFramesInPeriod,
+                                       &dir );
+    
+    if( sampleFramesInPeriod > MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES ) {
+        mingin_log( "ALSA set up a sound period that is larger that our static "
+                    "buffer\n" );
+        mn_soundCleanup();
+        return;
+        }
+
+    if( dir != 0 ) {
+        mingin_log( "Failed to get an exact integer period size from ALSA\n" );
+        mn_soundCleanup();
+        return;
+        }
+
+    snd_pcm_hw_params_get_periods( hwParams,
+                                   &alsaPeriods,
+                                   &dir );
+
+    if( alsaPeriods < 1 ) {
+        mingin_log( "Failed to set ALSA hardware to >= 1 period in buffer\n" );
+        mn_soundCleanup();
+        return;
+        }
+    
+    if( dir != 0 ) {
+        mingin_log( "Failed to get an exact integer number of periods in "
+                    "buffer from ALSA\n" );
+        mn_soundCleanup();
+        return;
+        }
+
+    snd_pcm_sw_params_current( alsaPCMHandle,
+                               swParams );
+
+    /* Start only when the first buffer is full, to prevent underruns at
+       startup */
+    snd_pcm_sw_params_set_start_threshold( alsaPCMHandle,
+                                           swParams,
+                                           alsaPeriods * sampleFramesInPeriod );
+
+    
+    snd_pcm_sw_params( alsaPCMHandle,
+                       swParams );
+    
+    soundOpen = 1;
+    
+    mingin_log( "Opened ALSA sound output\n" );
     }
 
-static void mn_stepSound( void ) {}
+
+static void mn_stepSound( void ) {
+    
+    snd_pcm_sframes_t  framesNeededResult;
+    
+    if( !soundOpen ) {
+        return;
+        }
+    
+    framesNeededResult = snd_pcm_avail_update( alsaPCMHandle );
+
+    printf( "Frames needed = %ld\n", framesNeededResult );
+    
+    if( framesNeededResult == 0 ) {
+        /* no frames needed */
+        return;
+        }
+
+    if( framesNeededResult < 0 ) {
+
+        if( framesNeededResult == -EPIPE ) {
+            snd_pcm_prepare( alsaPCMHandle );
+            return;
+            }
+        else {
+            mingin_log( "Error from ALSA when getting number of sound "
+                        "frames needed.  Closing audio.\n" );
+            mn_soundCleanup();
+            return;
+            }
+        }
+
+    /* keep going until we completely satisfy alsa's need for more samples */
+    while( framesNeededResult > 0 ) {
+    
+        snd_pcm_uframes_t  framesNeeded;
+        snd_pcm_sframes_t  result;
+        snd_pcm_uframes_t  framesWritten;
+        
+        framesNeeded = (snd_pcm_uframes_t)framesNeededResult;
+        
+        while( framesNeeded > 0 ) {
+
+            snd_pcm_uframes_t  framesThisLoop  =  framesNeeded;
+            
+            if( framesThisLoop > MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES ) {
+                framesThisLoop = MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES;
+                }
+
+            printf( "Trying to read %ld this loop\n", framesThisLoop );
+            
+            minginGame_getAudioSamples( (int)framesThisLoop,
+                                        MN_SOUND_NUM_CHANNELS,
+                                        (int)sampleRate,
+                                        sampleBuffer );
+    
+            result = snd_pcm_writei( alsaPCMHandle,
+                                     sampleBuffer,
+                                     framesThisLoop );
+
+            printf( "Write result %ld\n", result );
+
+            if( result == -EBADFD ) {
+                mingin_log(
+                    "ALSA is not in the right state to accept sound samples "
+                    "closing sound playback.\n" );
+                mn_soundCleanup();
+                return;
+                }
+            else if( result == -EPIPE ) {
+                mingin_log( "ALSA sound buffer underun!\n" );
+                snd_pcm_prepare( alsaPCMHandle );
+                }
+            else if( result == -ESTRPIPE ) {
+                mingin_log( "ALSA reporting that audio suspended "
+                            "closing sound playback.\n" );
+                mn_soundCleanup();
+                return;
+                }
+            else if( result < 0 ) {
+                mingin_log( "Unknown ALSA error code when trying "
+                            "to write samples\n" );
+                mn_soundCleanup();
+                return;
+                }
+
+            framesWritten = (snd_pcm_uframes_t)result;
+
+            if( framesWritten < framesThisLoop ) {
+                mingin_log( "ALSA accepted fewer sound frames than it said it "
+                            "was ready for.  Weird situation.  "
+                            "Closing sound playback.\n" );
+                mn_soundCleanup();
+                return;
+                }
+
+            framesNeeded -= framesThisLoop;
+            }
+
+        framesNeededResult = snd_pcm_avail_update( alsaPCMHandle );
+        printf( "Frames needed = %ld\n", framesNeededResult );
+
+        if( framesNeededResult == -EPIPE ) {
+            snd_pcm_prepare( alsaPCMHandle );
+            return;
+            }
+        }
+    
+    }
 
 
 static void mn_closeSound( void ) {
-
-    mn_soundCleanup();
+    if( soundOpen ) {
+        mn_soundCleanup();
+        mingin_log( "Closed ALSA sound output.\n" );
+        }
     }
 
 

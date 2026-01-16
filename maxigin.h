@@ -9472,6 +9472,38 @@ const char *maxigin_stringConcat6( const char  *inStringA,
     }
 
 
+#include <stdlib.h>
+
+void minginGame_getAudioSamples( int             inNumSampleFrames,
+                                 int             inNumChannels,
+                                 int             inSamplesPerSecond,
+                                 unsigned char  *inSampleBuffer ) {
+    int  f;
+    int  c;
+    int  b  =  0;
+
+    /* suppress warning */
+    if( inSamplesPerSecond == 0 ) {
+        }
+    
+
+    /* zero-out the sample buffer */
+    for( f = 0;
+         f < inNumSampleFrames;
+         f ++ ) {
+
+        for( c = 0;
+             c < inNumChannels;
+             c ++ ) {
+
+            inSampleBuffer[ b ] = (unsigned char)rand();
+            b++;
+            inSampleBuffer[ b ] = 0;/*(unsigned char)rand()*/;
+            b++;
+            }
+        }
+    }
+
 
 
 /* end #ifdef MAXIGIN_IMPLEMENTATION */

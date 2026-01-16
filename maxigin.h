@@ -1628,6 +1628,7 @@ struct MaxiginGUI {
 typedef enum MaxiginUserAction {
     QUIT,
     FULLSCREEN_TOGGLE,
+    SOUND_TOGGLE,
     PLAYBACK_START_STOP,
     PLAYBACK_FASTER,
     PLAYBACK_SLOWER,
@@ -6082,6 +6083,9 @@ static  MinginButton  mx_quitMapping[] = { MGN_KEY_Q,
 static  MinginButton  mx_fullscreenMapping[] = { MGN_KEY_F,
                                                  MGN_MAP_END };
 
+static  MinginButton  mx_soundToggleMapping[] = { MGN_KEY_S,
+                                                  MGN_MAP_END };
+
 static  MinginButton  mx_mouseButtonMapping[] = { MGN_BUTTON_MOUSE_LEFT,
                                                   MGN_MAP_END };
 
@@ -6120,6 +6124,9 @@ static void mx_gameInit( void ) {
     
     mingin_registerButtonMapping( FULLSCREEN_TOGGLE,
                                   mx_fullscreenMapping );
+
+    mingin_registerButtonMapping( SOUND_TOGGLE,
+                                  mx_soundToggleMapping );
 
     mingin_registerButtonMapping( MAXIGIN_MOUSE_BUTTON,
                                   mx_mouseButtonMapping );
@@ -9482,6 +9489,12 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
     int  c;
     int  b  =  0;
 
+    int  v  =  100;
+
+    if( mingin_isButtonDown( SOUND_TOGGLE ) ) {
+        v = 0;
+        }
+    
     /* suppress warning */
     if( inSamplesPerSecond == 0 ) {
         }
@@ -9496,7 +9509,8 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
              c < inNumChannels;
              c ++ ) {
 
-            inSampleBuffer[ b ] = (unsigned char)rand();
+            inSampleBuffer[ b ] =
+                (unsigned char)( ( v * (unsigned char)rand() ) / 100);
             b++;
             inSampleBuffer[ b ] = 0;/*(unsigned char)rand()*/;
             b++;

@@ -4202,10 +4202,12 @@ char mingin_getBulkDataChanged( const char  *inBulkName ) {
 #define  MN_SOUND_NUM_CHANNELS                 2
 #define  MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES  1024
 
-static  char                soundOpen             =      0;
-static  snd_pcm_t          *alsaPCMHandle         =      0;
-static  unsigned int        sampleRate            =  44100;
-static  snd_pcm_uframes_t   sampleFramesInPeriod  =
+static  char                soundOpen                =      0;
+static  snd_pcm_t          *alsaPCMHandle            =      0;
+static  unsigned int        sampleRate               =  44100;
+static  unsigned int        startupSilentFrames      =  10000;
+static  unsigned int        startupSilentFramesLeft  =      0;
+static  snd_pcm_uframes_t   sampleFramesInPeriod     =
                                              MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES;
 
 /* 2 bytes per sample (S16 LE) */
@@ -4239,6 +4241,7 @@ static void mn_openSound( void ) {
     
     static  unsigned char  alsaParamsBuffer[ MAX_PARAMS_SIZE ];
 
+    startupSilentFramesLeft = startupSilentFrames;
     
     if( snd_pcm_hw_params_sizeof() > MAX_PARAMS_SIZE ) {
         mingin_log( "ALSA hardware parameters structure bigger than expected, "
@@ -4427,11 +4430,42 @@ static void mn_stepSound( void ) {
                 framesThisLoop = MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES;
                 }
 
+            if( startupSilentFramesLeft > 0 ) {
+
+                unsigned int  f;
+                int           b;
+                int           c;
+                
+                if( framesThisLoop > startupSilentFramesLeft ) {
+                    framesThisLoop = startupSilentFramesLeft;
+                    }
+
+                /* fill with silence */
+                b = 0;
+                for( f = 0;
+                     f < framesThisLoop;
+                     f ++ ) {
+                    for( c = 0;
+                         c < MN_SOUND_NUM_CHANNELS;
+                         c ++ ) {
+
+                        sampleBuffer[ b ] = 0;
+                        b++;
+                        sampleBuffer[ b ] = 0;
+                        b++;
+                        }
+                    }
+                startupSilentFramesLeft -= (unsigned int)framesThisLoop;
+                }
+            else {
+                /* done writing silence at startup
+                   get samples from game */
                     
-            minginGame_getAudioSamples( (int)framesThisLoop,
-                                        MN_SOUND_NUM_CHANNELS,
-                                        (int)sampleRate,
-                                        sampleBuffer );
+                minginGame_getAudioSamples( (int)framesThisLoop,
+                                            MN_SOUND_NUM_CHANNELS,
+                                            (int)sampleRate,
+                                            sampleBuffer );
+                }
     
             result = snd_pcm_writei( alsaPCMHandle,
                                      sampleBuffer,

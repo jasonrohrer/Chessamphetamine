@@ -4438,10 +4438,40 @@ static void *mn_audioThreadFunction( void *inArg ) {
 static void mn_stepSound( void ) {
     
     snd_pcm_sframes_t  framesNeededResult;
+    int                waitResult;
     
     if( !soundOpen ) {
         return;
         }
+    
+    waitResult = snd_pcm_wait( alsaPCMHandle,
+                               100 );
+
+    if( waitResult == 0 ) {
+        /* timeout */
+        return;
+        }
+
+    if( waitResult < 0 ) {
+        /* error */
+        if( waitResult == -EPIPE
+            ||
+            waitResult == -ESTRPIPE ) {
+            
+            snd_pcm_recover( alsaPCMHandle,
+                             waitResult,
+                             1 );
+            return;
+            }
+        else {
+            mingin_log( "Unrecoverable error from ALSA when waiting for "
+                        "sound stream to be ready for more samples.  "
+                        "Closing audio.\n" );
+            mn_soundCleanup();
+            return;
+            }
+        }
+        
     
     framesNeededResult = snd_pcm_avail_update( alsaPCMHandle );
 

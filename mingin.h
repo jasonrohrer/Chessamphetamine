@@ -1805,26 +1805,33 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 #define  inline
 #endif
 
+
+/* for creating an audio thread */
+#include <pthread.h>
+
+
 /* asoundlib depends on timespec struct */
 #ifndef  _POSIX_C_SOURCE
 #define  _POSIX_C_SOURCE  199309L
 #endif
 
+/* for ALSA sound */
 #include <alsa/asoundlib.h>
 
 
-
+/* for creating an X11 window */
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
-
 #include <X11/extensions/Xrandr.h>
 
+/* for binding gl context to X11 window for fast display of game image */
 #include <GL/glx.h>
 
 #include <unistd.h>
 #include <errno.h>
 #include <sys/time.h>
+
 
 /* provide a prototype of rename here,
    which will be linked along with the other linux-specific stuff,
@@ -2965,7 +2972,14 @@ static void mn_releaseAllButtons( void ) {
 
 
 
+/* whether or not first call to minginGame_step has been called
+   we don't initilize sound thread until after that */
+static  char  firstStepRun  =  0;
+
+
 static void mn_openSound( void );
+
+static void *mn_audioThreadFunction( void *inArg );
 
 static void mn_stepSound( void );
 
@@ -3008,9 +3022,6 @@ int main( void ) {
 
     
     gamepadFD = mn_openActiveGamepad();
-
-
-    mn_openSound();
 
     
     while( ! mn_shouldQuit ) {
@@ -3199,7 +3210,13 @@ int main( void ) {
             break;
             }
 
-        mn_stepSound();
+
+        if( ! firstStepRun ) {
+            /* first step has been run now, can start sound thread */
+            mn_openSound();
+
+            firstStepRun = 1;
+            }
         
         
         minginGame_getScreenPixels( mn_windowW,
@@ -4199,8 +4216,8 @@ char mingin_getBulkDataChanged( const char  *inBulkName ) {
 
 
 
-#define  MN_SOUND_NUM_CHANNELS                 2
-#define  MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES  1024
+#define  MN_SOUND_NUM_CHANNELS                2
+#define  MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES  128
 
 static  char                soundOpen                =      0;
 static  snd_pcm_t          *alsaPCMHandle            =      0;
@@ -4232,15 +4249,18 @@ static void mn_soundCleanup( void ) {
 
 static void mn_openSound( void ) {
 
-    int                   result;
-    unsigned int          alsaPeriods      =  1;
-    int                   dir;
-    snd_pcm_hw_params_t  *hwParams;
-    snd_pcm_sw_params_t  *swParams;
-    enum{                 MAX_PARAMS_SIZE  =  2048 };
+    int                    result;
+    unsigned int           alsaPeriods      =  1;
+    int                    dir;
+    snd_pcm_hw_params_t   *hwParams;
+    snd_pcm_sw_params_t   *swParams;
+    enum{                  MAX_PARAMS_SIZE  =  2048 };
     
     static  unsigned char  alsaParamsBuffer[ MAX_PARAMS_SIZE ];
 
+    static  pthread_t      audioPthread;
+
+    
     startupSilentFramesLeft = startupSilentFrames;
     
     if( snd_pcm_hw_params_sizeof() > MAX_PARAMS_SIZE ) {
@@ -4370,9 +4390,49 @@ static void mn_openSound( void ) {
         }
     
     soundOpen = 1;
+
+
+    result = pthread_create( & audioPthread,
+                             0,
+                             & mn_audioThreadFunction,
+                             0 );
+
+    if( result != 0 ) {
+        mingin_log( "Failed to start audio thread.\n" );
+        mn_soundCleanup();
+        return;
+        }
+    
     
     mingin_log( "Opened ALSA sound output\n" );
     }
+
+
+
+static void *mn_audioThreadFunction( void *inArg ) {
+
+    /* suppress warning, arg not needed */
+    if( inArg == 0 ) {
+
+        }
+    
+    /* fixme, need locks ! */
+    while( 1 ) {
+
+        /* lock */
+        
+        if( ! soundOpen ) {
+            /* set done flag */
+
+            /* unlock */
+
+            return 0;
+            }
+
+        mn_stepSound();    
+        }
+    }
+
 
 
 static void mn_stepSound( void ) {

@@ -1629,6 +1629,7 @@ typedef enum MaxiginUserAction {
     QUIT,
     FULLSCREEN_TOGGLE,
     SOUND_TOGGLE,
+    SOUND_LOCK,
     PLAYBACK_START_STOP,
     PLAYBACK_FASTER,
     PLAYBACK_SLOWER,
@@ -5788,8 +5789,9 @@ static char mx_isActionFreshPressed( MaxiginUserAction  inAction ) {
 
 
 
-static char mx_playbackInterruptedRecording = 0;
+static  char  mx_playbackInterruptedRecording = 0;
 
+static  char  soundLocked                     = 0;
 
 
 void minginGame_step( char  inFinalStep ) {
@@ -5833,6 +5835,18 @@ void minginGame_step( char  inFinalStep ) {
     if( mx_isActionFreshPressed( FULLSCREEN_TOGGLE ) ) {
         mingin_toggleFullscreen( ! mingin_isFullscreen() );
         }
+
+    if( mx_isActionFreshPressed( SOUND_LOCK ) ) {
+        if( soundLocked ) {
+            soundLocked = 0;
+            mingin_unlockAudio();
+            }
+        else {
+            soundLocked = 1;
+            mingin_lockAudio();
+            }
+        }
+    
 
     
     if( mx_isActionFreshPressed( PLAYBACK_START_STOP ) ) {
@@ -6086,6 +6100,9 @@ static  MinginButton  mx_fullscreenMapping[] = { MGN_KEY_F,
 static  MinginButton  mx_soundToggleMapping[] = { MGN_KEY_S,
                                                   MGN_MAP_END };
 
+static  MinginButton  mx_soundLockMapping[] = { MGN_KEY_D,
+                                                MGN_MAP_END };
+
 static  MinginButton  mx_mouseButtonMapping[] = { MGN_BUTTON_MOUSE_LEFT,
                                                   MGN_MAP_END };
 
@@ -6127,6 +6144,9 @@ static void mx_gameInit( void ) {
 
     mingin_registerButtonMapping( SOUND_TOGGLE,
                                   mx_soundToggleMapping );
+
+    mingin_registerButtonMapping( SOUND_LOCK,
+                                  mx_soundLockMapping );
 
     mingin_registerButtonMapping( MAXIGIN_MOUSE_BUTTON,
                                   mx_mouseButtonMapping );

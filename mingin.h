@@ -334,6 +334,15 @@ void minginGame_getScreenPixels( int             inWide,
 
   If called, it will be called after at least one call to minginGame_step().
 
+  On some platforms, this may be called from another thread, which means it
+  might be called DURING minginGame_step().  Use these functions to block
+  the audio call from running when modifying parameters that modify audio
+  generation behavior:
+
+      mingin_lockAudio();
+      
+      mingin_unlockAudio();
+
   Parameters:
   
       inNumSampleFrames         number of sample frames to write to the buffer
@@ -428,6 +437,26 @@ int mingin_getStepsPerSecond( void );
   [jumpMinginProvides]
 */
 int mingin_getMillisecondsLeftInStep( void );
+
+
+
+/*
+  Prevents minginGame_getAudioSamples() from being called until
+  mingin_unlockAudio() is called.
+
+  [jumpMinginProvides]
+*/
+void mingin_lockAudio( void );
+
+
+
+/*
+  Allows minginGame_getAudioSamples() to be called after
+  mingin_lockAudio() was called previously.
+
+  [jumpMinginProvides]
+*/
+void mingin_unlockAudio( void );
 
 
 
@@ -4226,6 +4255,8 @@ static  unsigned int        startupSilentFrames      =  10000;
 static  unsigned int        startupSilentFramesLeft  =      0;
 static  snd_pcm_uframes_t   sampleFramesInPeriod     =
                                              MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES;
+static  pthread_t           audioThread;
+static  pthread_mutex_t     audioMutex;
 
 /* 2 bytes per sample (S16 LE) */
 static  unsigned char  sampleBuffer[ MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES
@@ -4257,8 +4288,6 @@ static void mn_openSound( void ) {
     enum{                  MAX_PARAMS_SIZE  =  2048 };
     
     static  unsigned char  alsaParamsBuffer[ MAX_PARAMS_SIZE ];
-
-    static  pthread_t      audioPthread;
 
     
     startupSilentFramesLeft = startupSilentFrames;
@@ -4388,11 +4417,21 @@ static void mn_openSound( void ) {
         mn_soundCleanup();
         return;
         }
+
+
+    if( pthread_mutex_init( &audioMutex, 0 ) != 0 ) {
+        /* this should never happen, pthread_mutex_init always returns 0 */
+
+        mingin_log( "Failed to create mutex for ALSA audio lock\n" );
+        mn_soundCleanup();
+        return;
+        }
+    
     
     soundOpen = 1;
 
 
-    result = pthread_create( & audioPthread,
+    result = pthread_create( & audioThread,
                              0,
                              & mn_audioThreadFunction,
                              0 );
@@ -4416,20 +4455,42 @@ static void *mn_audioThreadFunction( void *inArg ) {
 
         }
     
-    /* fixme, need locks ! */
     while( 1 ) {
-
-        /* lock */
+        
+        mingin_lockAudio();
         
         if( ! soundOpen ) {
-            /* set done flag */
-
-            /* unlock */
-
+            
+            mingin_unlockAudio();
+            
             return 0;
             }
 
+        mingin_unlockAudio();
+
         mn_stepSound();    
+        }
+    }
+
+
+
+void mingin_lockAudio( void ) {
+    
+    int  result  =  pthread_mutex_lock( &audioMutex );
+
+    if( result != 0 ) {
+        mingin_log( "Failed to lock audio mutex\n" );
+        }
+    }
+
+
+
+void mingin_unlockAudio( void ) {
+    
+    int  result  =  pthread_mutex_unlock( &audioMutex );
+
+    if( result != 0 ) {
+        mingin_log( "Failed to unlock audio mutex\n" );
         }
     }
 
@@ -4550,11 +4611,14 @@ static void mn_stepSound( void ) {
             else {
                 /* done writing silence at startup
                    get samples from game */
-                    
+
+                mingin_lockAudio();
+                
                 minginGame_getAudioSamples( (int)framesThisLoop,
                                             MN_SOUND_NUM_CHANNELS,
                                             (int)sampleRate,
                                             sampleBuffer );
+                mingin_unlockAudio();
                 }
     
             result = snd_pcm_writei( alsaPCMHandle,
@@ -4631,7 +4695,28 @@ static void mn_stepSound( void ) {
 
 static void mn_closeSound( void ) {
     if( soundOpen ) {
+
+        void  *threadReturnVal;
+        int    result;
+        
+        mingin_lockAudio();
+        soundOpen = 0;
+        mingin_unlockAudio();
+
+        result = pthread_join( audioThread, &threadReturnVal );
+
+        if( result != 0 ) {
+            mingin_log( "Failed to join audio thread at exit\n" );
+            }
+
+        result = pthread_mutex_destroy( &audioMutex );
+
+        if( result != 0 ) {
+            mingin_log( "Failed to destroy audio mutex at exit\n" );
+            }
+        
         mn_soundCleanup();
+        
         mingin_log( "Closed ALSA sound output.\n" );
         }
     }
@@ -4717,6 +4802,16 @@ int mingin_getStepsPerSecond( void ) {
 
 int mingin_getMillisecondsLeftInStep( void ) {
     return -1;
+    }
+
+
+
+void mingin_lockAudio( void ) {
+    }
+
+
+
+void mingin_lockAudio( void ) {
     }
 
 

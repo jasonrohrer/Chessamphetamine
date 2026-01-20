@@ -6223,7 +6223,9 @@ static void mx_gameInit( void ) {
                               
 
  
-    mx_startPlayingMusic( "musicLoop_stereo_16_44100.wav" );
+    if( 0 ) mx_startPlayingMusic( "musicLoop_stereo_16_44100.wav" );
+
+    mx_startPlayingMusic( "musicShortLoop.wav" );
 
     
     mx_areWeInMaxiginGameInitFunction = 1;
@@ -9620,6 +9622,10 @@ static int mx_mixInMusicSamples( int  inNumSampleFrames ) {
 
     if( numFramesLeft < numFramesToMix ) {
         mingin_log( "Reached end of music file\n" );
+        
+        mingin_endReadBulkData( mx_musicData.bulkResourceHandle );
+        mx_musicLoaded = 0;
+        
         return -1;
         }
     
@@ -9762,215 +9768,201 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                                  int             inSamplesPerSecond,
                                  unsigned char  *inSampleBuffer ) {
     int   f;
-    int   c;
-    int   b             =  0;
-    char  musicPlayed   =  0;
-    
-    /* suppress warning */
-    if( inSamplesPerSecond == 0 ) {
-        }
-    
-
-    
-    if( mx_musicLoaded ) {
-
-        int  numFramesMixed  =  0;
+    int   b               =  0;
+    int   numFramesMixed  =  0;
         
-        while( numFramesMixed < inNumSampleFrames ) {
+    while( numFramesMixed < inNumSampleFrames ) {
 
-            int  numFramesToMix   =  inNumSampleFrames - numFramesMixed;
-
+        int   numFramesToMix   =  inNumSampleFrames - numFramesMixed;
+        char  musicMixed       =  0;
+        
+        if( mx_musicLoaded ) {
+            
             /* num frames actually mixed might be smaller
                than requested */
             numFramesToMix = mx_mixInMusicSamples( numFramesToMix );
 
 
-            if( numFramesToMix < 0 ) {
-                /* error */
-                goto WAV_READ_FAILED;
-                
-                }
-                    
-            /* now our mixing buffer contains mixed frames */
-
-            
-            /* we would have to scale here, if we needed volume
-               adjustments, but skip that for now */
-
-            if( ! startFadeInDone ) {
-
-                int  samplesTotalFadeIn  =  ( inSamplesPerSecond / 1000 )
-                                              * msStartFadeIn;
-                int  samplesPerVolStep   =  samplesTotalFadeIn
-                                              / globalVolumeScale;
-                
-                for( f = 0;
-                     f < numFramesToMix;
-                     f ++ ) {
-
-                    if( globalVolume < globalVolumeScale ) {
-
-                        /* by ticking up a volume error, and then ticking
-                           up volume periodically, we can handle many
-                           volume steps for smooth fades and very long
-                           fade times */
-                        
-                        globalVolumeError += 1;
-
-                        if( globalVolumeError >= samplesPerVolStep ) {
-                            globalVolume ++;
-                            globalVolumeError = 0;
-                            }  
-                        mx_audioMixingBuffers[0][ f ] *= globalVolume;
-                        mx_audioMixingBuffers[1][ f ] *= globalVolume;
-
-                        mx_audioMixingBuffers[0][ f ] /= globalVolumeScale;
-                        mx_audioMixingBuffers[1][ f ] /= globalVolumeScale;
-                        }
-                    else {
-                        /* full volume, do nothing to our mixing buffer */
-                        }
-                    }
-
-                if( globalVolume == globalVolumeScale ) {
-                    
-                    startFadeInDone = 1;
-                    globalVolumeError = 0;
-                    }
-                }
-            else if( endFadeOutRunning
-                     &&
-                     ! endFadeOutAlmostDone ) {
-
-                int  samplesTotalFadeOut  =  ( inSamplesPerSecond / 1000 )
-                                               * msEndFadeOut;
-                int  samplesPerVolStep    =  samplesTotalFadeOut
-                                               / globalVolumeScale;
-                
-                for( f = 0;
-                     f < numFramesToMix;
-                     f ++ ) {
-
-                    if( globalVolume > 0 ) {
-
-                        /* by ticking up a volume error, and then ticking
-                           up volume periodically, we can handle many
-                           volume steps for smooth fades and very long
-                           fade times */
-                        
-                        globalVolumeError += 1;
-
-                        if( globalVolumeError >= samplesPerVolStep ) {
-                            globalVolume --;
-                            globalVolumeError = 0;
-                            }
-                        mx_audioMixingBuffers[0][ f ] *= globalVolume;
-                        mx_audioMixingBuffers[1][ f ] *= globalVolume;
-
-                        mx_audioMixingBuffers[0][ f ] /= globalVolumeScale;
-                        mx_audioMixingBuffers[1][ f ] /= globalVolumeScale;
-                        }
-                    else {
-                        mx_audioMixingBuffers[0][ f ] = 0;
-                        mx_audioMixingBuffers[1][ f ] = 0;
-                        }
-                    }
-
-                if( globalVolume == 0 ) {
-                    
-                    endFadeOutAlmostDone = 1;
-                    globalVolumeError = 0;
-                    buffersPostEndFadeOut = 0;
-                    }
-
+            if( numFramesToMix >= 0 ) {
+                musicMixed = 1;
                 }
             else {
-                /* just apply a static global volume to our mixing buffer */
-                for( f = 0;
-                     f < numFramesToMix;
-                     f ++ ) {
-
-                    if( globalVolume > 0 ) {
-                        
-                        mx_audioMixingBuffers[0][ f ] *= globalVolume;
-                        mx_audioMixingBuffers[1][ f ] *= globalVolume;
-
-                        mx_audioMixingBuffers[0][ f ] /= globalVolumeScale;
-                        mx_audioMixingBuffers[1][ f ] /= globalVolumeScale;
-                        }
-                    else {
-                        mx_audioMixingBuffers[0][ f ] = 0;
-                        mx_audioMixingBuffers[1][ f ] = 0;
-                        }
-                    }
+                /* error */
+                numFramesToMix = inNumSampleFrames - numFramesMixed;
                 }
+            }
+
+        if( ! musicMixed ) {
+            /* music didn't get mixed into our buffer
+               zero out buffer instead */
             
-            
+            if( numFramesToMix > MAXIGIN_AUDIO_MIXING_NUM_SAMPLES ) {
+                numFramesToMix = MAXIGIN_AUDIO_MIXING_NUM_SAMPLES;
+                }
+
             for( f = 0;
                  f < numFramesToMix;
                  f ++ ) {
 
-                short           left;
-                short           right;
-                unsigned short  uL;
-                unsigned short  uR;
-                        
-                left   =  (short)( mx_audioMixingBuffers[0][ f ] );
-                right  =  (short)( mx_audioMixingBuffers[1][ f ] );
-
-                uL = (unsigned short)left;
-                uR = (unsigned short)right;
-                        
-
-                inSampleBuffer[ b++ ] =
-                    (unsigned char)(  uL         & 0xFF );
-                inSampleBuffer[ b++ ] =
-                    (unsigned char)( ( uL >> 8 ) & 0xFF );
-
-                inSampleBuffer[ b++ ] =
-                    (unsigned char)(  uR         & 0xFF );
-                inSampleBuffer[ b++ ] =
-                    (unsigned char)( ( uR >> 8 ) & 0xFF );
-                }
-
-
-            numFramesMixed += numFramesToMix;
-
-            numFramesPlayedTotal += numFramesToMix;
-            }
-
-
-        if( endFadeOutAlmostDone ) {
-            buffersPostEndFadeOut ++;
-
-            if( buffersPostEndFadeOut > 5 ) {
-                endFadeOutDone = 1;
+                mx_audioMixingBuffers[0][ f ] = 0;
+                mx_audioMixingBuffers[1][ f ] = 0;
                 }
             }
         
-        musicPlayed = 1;
-        }
+        /* now our mixing buffer contains mixed frames
+           apply any global dynamic volume fades or levels */
 
-    WAV_READ_FAILED:
-    
-    if( ! musicPlayed ) {
-        
-        /* zero-out the sample buffer */
+        if( ! startFadeInDone ) {
+
+            int  samplesTotalFadeIn  =  ( inSamplesPerSecond / 1000 )
+                * msStartFadeIn;
+            int  samplesPerVolStep   =  samplesTotalFadeIn
+                / globalVolumeScale;
+                
+            for( f = 0;
+                 f < numFramesToMix;
+                 f ++ ) {
+
+                if( globalVolume < globalVolumeScale ) {
+
+                    /* by ticking up a volume error, and then ticking
+                       up volume periodically, we can handle many
+                       volume steps for smooth fades and very long
+                       fade times */
+                        
+                    globalVolumeError += 1;
+
+                    if( globalVolumeError >= samplesPerVolStep ) {
+                        globalVolume ++;
+                        globalVolumeError = 0;
+                        }  
+                    mx_audioMixingBuffers[0][ f ] *= globalVolume;
+                    mx_audioMixingBuffers[1][ f ] *= globalVolume;
+
+                    mx_audioMixingBuffers[0][ f ] /= globalVolumeScale;
+                    mx_audioMixingBuffers[1][ f ] /= globalVolumeScale;
+                    }
+                else {
+                    /* full volume, do nothing to our mixing buffer */
+                    }
+                }
+
+            if( globalVolume == globalVolumeScale ) {
+                    
+                startFadeInDone = 1;
+                globalVolumeError = 0;
+                }
+            }
+        else if( endFadeOutRunning
+                 &&
+                 ! endFadeOutAlmostDone ) {
+
+            int  samplesTotalFadeOut  =  ( inSamplesPerSecond / 1000 )
+                * msEndFadeOut;
+            int  samplesPerVolStep    =  samplesTotalFadeOut
+                / globalVolumeScale;
+                
+            for( f = 0;
+                 f < numFramesToMix;
+                 f ++ ) {
+
+                if( globalVolume > 0 ) {
+
+                    /* by ticking up a volume error, and then ticking
+                       up volume periodically, we can handle many
+                       volume steps for smooth fades and very long
+                       fade times */
+                        
+                    globalVolumeError += 1;
+
+                    if( globalVolumeError >= samplesPerVolStep ) {
+                        globalVolume --;
+                        globalVolumeError = 0;
+                        }
+                    mx_audioMixingBuffers[0][ f ] *= globalVolume;
+                    mx_audioMixingBuffers[1][ f ] *= globalVolume;
+
+                    mx_audioMixingBuffers[0][ f ] /= globalVolumeScale;
+                    mx_audioMixingBuffers[1][ f ] /= globalVolumeScale;
+                    }
+                else {
+                    mx_audioMixingBuffers[0][ f ] = 0;
+                    mx_audioMixingBuffers[1][ f ] = 0;
+                    }
+                }
+
+            if( globalVolume == 0 ) {
+                    
+                endFadeOutAlmostDone = 1;
+                globalVolumeError = 0;
+                buffersPostEndFadeOut = 0;
+                }
+
+            }
+        else {
+            /* just apply a static global volume to our mixing buffer */
+            for( f = 0;
+                 f < numFramesToMix;
+                 f ++ ) {
+
+                if( globalVolume > 0 ) {
+                        
+                    mx_audioMixingBuffers[0][ f ] *= globalVolume;
+                    mx_audioMixingBuffers[1][ f ] *= globalVolume;
+
+                    mx_audioMixingBuffers[0][ f ] /= globalVolumeScale;
+                    mx_audioMixingBuffers[1][ f ] /= globalVolumeScale;
+                    }
+                else {
+                    mx_audioMixingBuffers[0][ f ] = 0;
+                    mx_audioMixingBuffers[1][ f ] = 0;
+                    }
+                }
+            }
+            
+
         for( f = 0;
-             f < inNumSampleFrames;
+             f < numFramesToMix;
              f ++ ) {
 
-            for( c = 0;
-                 c < 2;
-                 c ++ ) {
+            short           left;
+            short           right;
+            unsigned short  uL;
+            unsigned short  uR;
+                        
+            left   =  (short)( mx_audioMixingBuffers[0][ f ] );
+            right  =  (short)( mx_audioMixingBuffers[1][ f ] );
 
-                inSampleBuffer[ b ] = 0;
-                b++;
-                inSampleBuffer[ b ] = 0;
-                b++;
-                }
+            uL = (unsigned short)left;
+            uR = (unsigned short)right;
+                        
+
+            inSampleBuffer[ b++ ] =
+                (unsigned char)(  uL         & 0xFF );
+            inSampleBuffer[ b++ ] =
+                (unsigned char)( ( uL >> 8 ) & 0xFF );
+
+            inSampleBuffer[ b++ ] =
+                (unsigned char)(  uR         & 0xFF );
+            inSampleBuffer[ b++ ] =
+                (unsigned char)( ( uR >> 8 ) & 0xFF );
+            }
+
+
+        numFramesMixed += numFramesToMix;
+
+        numFramesPlayedTotal += numFramesToMix;
+        }
+
+
+    if( endFadeOutAlmostDone ) {
+        buffersPostEndFadeOut ++;
+
+        if( buffersPostEndFadeOut > 5 ) {
+            endFadeOutDone = 1;
             }
         }
+       
     }
 
 

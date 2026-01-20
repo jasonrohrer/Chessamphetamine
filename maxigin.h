@@ -5767,6 +5767,9 @@ static char mx_copyIntoDataStore( int inStoreReadHandle,
                                   int inStoreWriteHandle,
                                   int inNumBytesToCopy );
 
+static void mx_startPlayingMusic( const char  *inMusicBulkResourceName );
+
+static void mx_stopPlayingMusic( void );
 
 
 
@@ -5825,6 +5828,8 @@ void minginGame_step( char  inFinalStep ) {
         mx_saveGame();
 
         mx_finalizeRecording();
+
+        mx_stopPlayingMusic();
         
         mingin_quit();
         return;
@@ -6131,7 +6136,7 @@ static  MinginStick  mx_sliderStickMapping[] = { MGN_STICK_LEFT_X,
 
 
 
-static void mx_startPlayingMusic( const char  *inMusicBulkResourceName );
+
 
 
 
@@ -9506,38 +9511,6 @@ const char *maxigin_stringConcat6( const char  *inStringA,
 
 
 
-void minginGame_getAudioSamples( int             inNumSampleFrames,
-                                 int             inNumChannels,
-                                 int             inSamplesPerSecond,
-                                 unsigned char  *inSampleBuffer ) {
-    int  f;
-    int  c;
-    int  b  =  0;
-    
-    /* suppress warning */
-    if( inSamplesPerSecond == 0 ) {
-        }
-    
-
-    /* zero-out the sample buffer */
-    for( f = 0;
-         f < inNumSampleFrames;
-         f ++ ) {
-
-        for( c = 0;
-             c < inNumChannels;
-             c ++ ) {
-
-            inSampleBuffer[ b ] = 0;
-            b++;
-            inSampleBuffer[ b ] = 0;
-            b++;
-            }
-        }
-    }
-
-
-
 typedef struct MaxiginWavFormat {
 
         int  bulkResourceHandle;
@@ -9548,12 +9521,215 @@ typedef struct MaxiginWavFormat {
         /* byte location of first sample in the bulk data store */
         int  firstSampleLocation;
 
-        int  numSamples;
+        int  numSampleFrames;
 
         /* total length of the data, including the header */
         int  totalDataLength;
         
     } MaxiginWavFormat;
+
+
+
+static  MaxiginWavFormat  mx_musicData;
+static  char              mx_musicLoaded  =  0;
+
+#define  MAXIGIN_AUDIO_MIXING_NUM_SAMPLES   256
+#define  MAXIGIN_WAV_READING_BYTES         1024
+
+static  int  mx_audioMixingBuffers[2][ MAXIGIN_AUDIO_MIXING_NUM_SAMPLES ];
+
+static  unsigned char  mx_wavReadingBuffer[ MAXIGIN_WAV_READING_BYTES ];
+
+
+
+void minginGame_getAudioSamples( int             inNumSampleFrames,
+                                 int             inSamplesPerSecond,
+                                 unsigned char  *inSampleBuffer ) {
+    int   f;
+    int   c;
+    int   b            =  0;
+    char  musicPlayed  =  0;
+    
+    /* suppress warning */
+    if( inSamplesPerSecond == 0 ) {
+        }
+    
+
+    
+    if( mx_musicLoaded ) {
+
+        int  dataPos;
+        int  numFramesLeft;
+        int  numFramesUsed;
+        int  numFramesMixed  =  0;
+        
+        dataPos = mingin_getBulkDataPosition( mx_musicData.bulkResourceHandle );
+
+        if( dataPos >= 0 ) {
+            numFramesUsed =
+                ( dataPos - mx_musicData.firstSampleLocation )
+                /
+                ( mx_musicData.numChannels * 2 );
+            numFramesLeft = mx_musicData.numSampleFrames - numFramesUsed;
+            
+            if( numFramesLeft >= inNumSampleFrames ) {
+
+                while( numFramesMixed < inNumSampleFrames ) {
+
+                    int  numFramesToMix   =  inNumSampleFrames - numFramesMixed;
+                    int  numBytesToRead;
+                    int  numBytesRead     =  0;
+
+                    /* f is frame index in our mixing buffer */
+                    f = 0;
+                    
+                    if( numFramesToMix > MAXIGIN_AUDIO_MIXING_NUM_SAMPLES ) {
+                        numFramesToMix = MAXIGIN_AUDIO_MIXING_NUM_SAMPLES;
+                        }
+                    
+                    numBytesToRead = numFramesToMix * 4;
+                    
+                    while( numBytesRead < numBytesToRead ) {
+
+                        int  numBytesToReadNow    =  numBytesToRead
+                                                     - numBytesRead;
+                        int  numRead;
+                        int  wavB                 =  0;
+                        
+                        if( numBytesToReadNow > MAXIGIN_WAV_READING_BYTES ) {
+
+                            numBytesToReadNow = MAXIGIN_WAV_READING_BYTES;
+                            }
+
+                        numRead =
+                            mingin_readBulkData(
+                                mx_musicData.bulkResourceHandle,
+                                numBytesToReadNow,
+                                mx_wavReadingBuffer );
+
+                        if( numRead != numBytesToReadNow ) {
+
+                            mingin_log(
+                                "Reading from music WAV bulk data failed\n" );
+                            
+                            mingin_endReadBulkData(
+                                mx_musicData.bulkResourceHandle );
+                            mx_musicLoaded = 0;
+                            
+                            goto WAV_READ_FAILED;
+                            }
+
+                        while( wavB < numBytesToReadNow ) {
+                            
+                            unsigned short  uL;
+                            unsigned short  uR;
+
+                            if( wavB >= MAXIGIN_WAV_READING_BYTES ) {
+                                mingin_log( "hey1\n" );
+                                }
+                            
+                            uL = (unsigned short)( 
+                                mx_wavReadingBuffer[ wavB     ] |
+                                mx_wavReadingBuffer[ wavB + 1 ] << 8 );
+
+                            wavB += 2;
+
+                            if( wavB >= MAXIGIN_WAV_READING_BYTES ) {
+                                mingin_log( "hey2\n" );
+                                }
+                            
+                            uR = (unsigned short)( 
+                                mx_wavReadingBuffer[ wavB     ] |
+                                mx_wavReadingBuffer[ wavB + 1 ] << 8 );
+
+                            wavB += 2;
+                            
+                            if( wavB > MAXIGIN_WAV_READING_BYTES ) {
+                                mingin_log( "hey3\n" );
+                                }
+
+                            if( f >= MAXIGIN_AUDIO_MIXING_NUM_SAMPLES ) {
+                                mingin_log( "hey4\n" );
+                                }
+                            
+                            mx_audioMixingBuffers[0][ f ] = (short)uL;
+                            mx_audioMixingBuffers[1][ f ] = (short)uR;
+                            
+                            /* next frame of 4 bytes
+                               wavB has already been advanced by 4*/
+                            f += 1;
+                            }
+
+                        numBytesRead += numBytesToReadNow;
+                        }
+                    
+
+                    /* now our mixing buffer contains mixed frames */
+                    /* we would have to scale here, if we needed volume
+                       adjustments, but skip that for now */
+
+                    
+                    for( f = 0;
+                         f < numFramesToMix;
+                         f ++ ) {
+
+                        short           left;
+                        short           right;
+                        unsigned short  uL;
+                        unsigned short  uR;
+                        
+                        left   =  (short)( mx_audioMixingBuffers[0][ f ] );
+                        right  =  (short)( mx_audioMixingBuffers[1][ f ] );
+
+                        uL = (unsigned short)left;
+                        uR = (unsigned short)right;
+                        
+
+                        inSampleBuffer[ b++ ] =
+                            (unsigned char)(  uL         & 0xFF );
+                        inSampleBuffer[ b++ ] =
+                            (unsigned char)( ( uL >> 8 ) & 0xFF );
+
+                        inSampleBuffer[ b++ ] =
+                            (unsigned char)(  uR         & 0xFF );
+                        inSampleBuffer[ b++ ] =
+                            (unsigned char)( ( uR >> 8 ) & 0xFF );
+                        }
+
+
+                    numFramesMixed += numFramesToMix;
+                    }
+
+                musicPlayed = 1;
+                }
+            }
+        }
+
+    WAV_READ_FAILED:
+    
+    if( ! musicPlayed ) {
+        
+        /* zero-out the sample buffer */
+        for( f = 0;
+             f < inNumSampleFrames;
+             f ++ ) {
+
+            for( c = 0;
+                 c < 2;
+                 c ++ ) {
+
+                inSampleBuffer[ b ] = 0;
+                b++;
+                inSampleBuffer[ b ] = 0;
+                b++;
+                }
+            }
+        }
+    }
+
+
+
+
 
 
 
@@ -9923,13 +10099,13 @@ static char mx_openWavData( const char        *inBulkResourceName,
 
     outFormat->firstSampleLocation = pos;
 
-    outFormat->numSamples = chunkSize / ( bytesPerBlock );
+    outFormat->numSampleFrames = chunkSize / ( bytesPerBlock );
 
     /* sanity check */
 
-    if( outFormat->numSamples * bytesPerBlock != chunkSize ) {
+    if( outFormat->numSampleFrames * bytesPerBlock != chunkSize ) {
         maxigin_logString( "WAV data chunk does not contain a whole number "
-                           "of samples: ",
+                           "of sample frames: ",
                            inBulkResourceName );
         
         mingin_endReadBulkData( bulkHandle );
@@ -9947,14 +10123,51 @@ static char mx_openWavData( const char        *inBulkResourceName,
 
 static void mx_startPlayingMusic( const char  *inMusicBulkResourceName ) {
 
-    MaxiginWavFormat  f;
     char              success;
 
     success = mx_openWavData( inMusicBulkResourceName,
-                              & f );
+                              & mx_musicData );
 
     if( success ) {
-        mingin_endReadBulkData( f.bulkResourceHandle );
+
+        if( mx_musicData.numChannels != 2 ) {
+            maxigin_logString( "Can only play 2-channel WAV data as music: ",
+                               inMusicBulkResourceName );
+
+            mingin_endReadBulkData( mx_musicData.bulkResourceHandle );
+
+            mingin_lockAudio();
+
+            mx_musicLoaded = 0;
+
+            mingin_unlockAudio();
+        
+            return;
+            }
+
+        mingin_lockAudio();
+
+        mx_musicLoaded = 1;
+
+        mingin_unlockAudio();
+        }
+    }
+
+
+static void mx_stopPlayingMusic( void ) {
+    
+    char  loaded  =  0;
+    
+    mingin_lockAudio();
+
+    if( mx_musicLoaded ) {
+        loaded = 1;
+        mx_musicLoaded = 0;
+        }
+    mingin_unlockAudio();
+
+    if( loaded ) {
+        mingin_endReadBulkData( mx_musicData.bulkResourceHandle );
         }
     }
 

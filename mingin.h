@@ -319,9 +319,10 @@ void minginGame_getScreenPixels( int             inWide,
 
 /*
   Get the next buffer full of audio samples.
-  Samples are in Signed 16-bit little-endian, with channels interleaved
+  Samples are in Signed 16-bit little-endian, with Left and Right channels
+  interleaved.
 
-  inSampleBuffer will have inNumSampleFrames * inNumChannels * 2 bytes
+  inSampleBuffer will have inNumSampleFrames * 2 * 2 bytes.
 
   inNumSamples, inNumChannels, and inSamplesPerSecond may all change from
   call to call and aren't necessarily fixed across the entire run of the game.
@@ -346,23 +347,19 @@ void minginGame_getScreenPixels( int             inWide,
   Parameters:
   
       inNumSampleFrames         number of sample frames to write to the buffer
-      
-      inNumChannels             number of channels per sample frame
 
       inSampleFramesPerSecond   number of sample frames per second (also known
                                 as the sound sample rate)
                                 
       inSampleBuffer            buffer of
-                                (inNumSampleFrames * inNumChannels * 2) bytes
+                                (inNumSampleFrames * 2 * 2) bytes
                                 to fill.  Each sample is in signed 16-bit
                                 little-endian PCM.  Channels in each
-                                frame are interleaved.  For stereo, channels
-                                are interleaved LRLRLR...
+                                frame are interleaved  LRLRLR...
       
   [jumpGameRequired]
 */
 void minginGame_getAudioSamples( int             inNumSampleFrames,
-                                 int             inNumChannels,
                                  int             inSamplesPerSecond,
                                  unsigned char  *inSampleBuffer );
 
@@ -4615,7 +4612,6 @@ static void mn_stepSound( void ) {
                 mingin_lockAudio();
                 
                 minginGame_getAudioSamples( (int)framesThisLoop,
-                                            MN_SOUND_NUM_CHANNELS,
                                             (int)sampleRate,
                                             sampleBuffer );
                 mingin_unlockAudio();

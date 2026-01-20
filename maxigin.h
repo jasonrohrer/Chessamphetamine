@@ -6240,9 +6240,9 @@ static void mx_gameInit( void ) {
                               
 
  
-    if( 0 ) mx_startPlayingMusic( "musicLoop_stereo_16_44100.wav" );
+    if( 1 ) mx_startPlayingMusic( "musicLoop_stereo_16_44100.wav" );
 
-    mx_startPlayingMusic( "musicShortLoop.wav" );
+    if( 0 ) mx_startPlayingMusic( "musicShortLoop.wav" );
 
     
     mx_areWeInMaxiginGameInitFunction = 1;

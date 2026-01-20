@@ -9758,34 +9758,18 @@ static int mx_mixInMusicSamples( int  inNumSampleFrames ) {
                             
                 unsigned short  uL;
                 unsigned short  uR;
-
-                if( wavB >= MAXIGIN_WAV_READING_BYTES ) {
-                    mingin_log( "hey1\n" );
-                    }
                             
                 uL = (unsigned short)( 
                     mx_wavReadingBuffer[ wavB     ] |
                     mx_wavReadingBuffer[ wavB + 1 ] << 8 );
 
                 wavB += 2;
-
-                if( wavB >= MAXIGIN_WAV_READING_BYTES ) {
-                    mingin_log( "hey2\n" );
-                    }
                             
                 uR = (unsigned short)( 
                     mx_wavReadingBuffer[ wavB     ] |
                     mx_wavReadingBuffer[ wavB + 1 ] << 8 );
 
                 wavB += 2;
-                            
-                if( wavB > MAXIGIN_WAV_READING_BYTES ) {
-                    mingin_log( "hey3\n" );
-                    }
-
-                if( f >= MAXIGIN_AUDIO_MIXING_NUM_SAMPLES ) {
-                    mingin_log( "hey4\n" );
-                    }
                             
                 mx_audioMixingBuffers[0][ f ] = (short)uL;
                 mx_audioMixingBuffers[1][ f ] = (short)uR;

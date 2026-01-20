@@ -5804,6 +5804,10 @@ static  char  quittingReady                    =  0;
    returns 0 while still in-progress */
 static char mx_stepSoundFadeOut( void );
 
+/* maps playback speed/direction to sound speed and direction */
+static void mx_setSoundSpeedAndDirection( int  inSpeed,
+                                          int  inDirection );
+
 
 
 void minginGame_step( char  inFinalStep ) {
@@ -5909,6 +5913,8 @@ void minginGame_step( char  inFinalStep ) {
         int   oldPlaybackFrame;
         int   newPlaybackFrame;
         char  playbackSliderActive;
+        int   oldSpeed               =  mx_playbackSpeed;
+        int   oldDir                 =  mx_playbackDirection;
         
         if( mx_isActionFreshPressed( PLAYBACK_PAUSE ) ) {
             mx_playbackPaused = ! mx_playbackPaused;
@@ -5968,6 +5974,14 @@ void minginGame_step( char  inFinalStep ) {
                 /* twice as slow */
                 mx_playbackSpeed *= 2;
                 }
+            }
+
+        if( oldSpeed != mx_playbackSpeed
+            ||
+            oldDir   != mx_playbackDirection ) {
+
+            mx_setSoundSpeedAndDirection( mx_playbackSpeed,
+                                          mx_playbackDirection );
             }
 
 
@@ -6081,6 +6095,9 @@ void minginGame_step( char  inFinalStep ) {
 
                     mx_playbackDirection = -1;
                     mx_playbackSpeed     = 1;
+
+                    mx_setSoundSpeedAndDirection( mx_playbackSpeed,
+                                                  mx_playbackDirection );
                     }
                 else {
                     /* playback failed for some reason */
@@ -9824,6 +9841,28 @@ static int mx_mixInMusicSamples( int  inNumSampleFrames ) {
     return numFramesToMix;
     }
 
+
+
+
+static  int  mx_soundSpeed  =  1;
+
+
+static void mx_setSoundSpeedAndDirection( int  inSpeed,
+                                          int  inDirection ) {
+    mingin_lockAudio();
+
+    if( inDirection > 0 ) {
+        mx_musicDirection = 1;
+        }
+    else {
+        mx_musicDirection = -1;
+        }
+
+    mx_soundSpeed = inSpeed;
+    
+    mingin_unlockAudio();
+    }
+
     
 
 static  int   numFramesPlayedTotal   =      0;
@@ -9884,15 +9923,35 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                                  int             inSamplesPerSecond,
                                  unsigned char  *inSampleBuffer ) {
     int   f;
-    int   b               =  0;
-    int   numFramesMixed  =  0;
-        
-    while( numFramesMixed < inNumSampleFrames ) {
+    int   b                      =  0;
+    int   numBufferFramesFilled  =  0;
+    int   fIncr                  =  1;
+    int   fAccum                 =  0;
+    int   fAccumThreshold        =  0;
+    
+    while( numBufferFramesFilled < inNumSampleFrames ) {
 
-        int   numFramesToMix   =  inNumSampleFrames - numFramesMixed;
+        int   numFramesToMix   =  inNumSampleFrames - numBufferFramesFilled;
         char  musicMixed       =  0;
+
+        if( mx_soundSpeed > 1 ) {
+            numFramesToMix *= mx_soundSpeed;
+            }
+        else if( mx_soundSpeed < 0 ) {
+            numFramesToMix /= (- mx_soundSpeed );
+            }
+        
+        if( numFramesToMix == 0 ) {
+            /* we only need to fill a few more frames
+               but our playback is in slow mode
+               Get one more frame of audio to cover this case */
+            numFramesToMix = 1;
+            }
+            
         
         if( mx_musicLoaded ) {
+
+            int  temp  =  numFramesToMix;
             
             /* num frames actually mixed might be smaller
                than requested */
@@ -9904,7 +9963,7 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                 }
             else {
                 /* error */
-                numFramesToMix = inNumSampleFrames - numFramesMixed;
+                numFramesToMix = temp;
                 }
             }
 
@@ -10017,29 +10076,60 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
             }
         else {
             /* just apply a static global volume to our mixing buffer */
-            for( f = 0;
-                 f < numFramesToMix;
-                 f ++ ) {
-
-                if( globalVolume > 0 ) {
+            if( globalVolume <= globalVolumeScale ) {
+                /*  not at max volume, there's something to adjust */
+                for( f = 0;
+                     f < numFramesToMix;
+                     f ++ ) {
+                    
+                    if( globalVolume > 0 ) {
                         
-                    mx_audioMixingBuffers[0][ f ] *= globalVolume;
-                    mx_audioMixingBuffers[1][ f ] *= globalVolume;
+                        mx_audioMixingBuffers[0][ f ] *= globalVolume;
+                        mx_audioMixingBuffers[1][ f ] *= globalVolume;
 
-                    mx_audioMixingBuffers[0][ f ] /= globalVolumeScale;
-                    mx_audioMixingBuffers[1][ f ] /= globalVolumeScale;
-                    }
-                else {
-                    mx_audioMixingBuffers[0][ f ] = 0;
-                    mx_audioMixingBuffers[1][ f ] = 0;
+                        mx_audioMixingBuffers[0][ f ] /= globalVolumeScale;
+                        mx_audioMixingBuffers[1][ f ] /= globalVolumeScale;
+                        }
+                    else {
+                        mx_audioMixingBuffers[0][ f ] = 0;
+                        mx_audioMixingBuffers[1][ f ] = 0;
+                        }
                     }
                 }
             }
-            
 
+
+        /* now convert our int mixing buffers to interleaved signed
+           short samples in our audio buffer */
+
+
+        /* account for speed by either skipping samples or
+           repeating samples */
+
+        
+        if( mx_soundSpeed > 1 ) {
+            
+            /* at increased speed, we skip samples
+               in our mixing buffer by incrementing f with
+               bigger steps */
+            
+            fIncr = mx_soundSpeed;
+            fAccumThreshold = 0;
+            }
+        else if( mx_soundSpeed < 0 ) {
+            /* don't increment f in each iteration */
+            fIncr = 0;
+
+            /* instead, wait for acculator to fill and then increment f */
+            fAccum = 0;
+            fAccumThreshold =  - mx_soundSpeed;
+            }
+            
         for( f = 0;
-             f < numFramesToMix;
-             f ++ ) {
+             f < numFramesToMix
+                 &&
+                 numBufferFramesFilled < inNumSampleFrames;
+             f += fIncr ) {
 
             short           left;
             short           right;
@@ -10062,13 +10152,24 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                 (unsigned char)(  uR         & 0xFF );
             inSampleBuffer[ b++ ] =
                 (unsigned char)( ( uR >> 8 ) & 0xFF );
+
+            numBufferFramesFilled ++;
+
+            if( fIncr == 0 ) {
+
+                fAccum ++;
+
+                if( fAccum >= fAccumThreshold ) {
+                    fAccum = 0;
+                    f++;
+                    }
+                }
             }
-
-
-        numFramesMixed += numFramesToMix;
-
-        numFramesPlayedTotal += numFramesToMix;
+        
         }
+    
+
+    numFramesPlayedTotal += numBufferFramesFilled;
 
 
     if( endFadeOutAlmostDone ) {

@@ -3015,7 +3015,7 @@ static void mn_releaseAllButtons( void ) {
 
 /* whether or not first call to minginGame_step has been called
    we don't initilize sound thread until after that */
-static  char  firstStepRun  =  0;
+static  char  mn_firstStepRun  =  0;
 
 
 static void mn_openSound( void );
@@ -3252,11 +3252,11 @@ int main( void ) {
             }
 
 
-        if( ! firstStepRun ) {
+        if( ! mn_firstStepRun ) {
             /* first step has been run now, can start sound thread */
             mn_openSound();
 
-            firstStepRun = 1;
+            mn_firstStepRun = 1;
             }
         
         
@@ -4260,32 +4260,32 @@ char mingin_getBulkDataChanged( const char  *inBulkName ) {
 #define  MN_SOUND_NUM_CHANNELS                2
 #define  MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES  128
 
-static  char                soundOpen                =      0;
-static  snd_pcm_t          *alsaPCMHandle            =      0;
-static  unsigned int        sampleRate               =  44100;
-static  unsigned int        startupSilentFrames      =  10000;
-static  unsigned int        startupSilentFramesLeft  =      0;
-static  snd_pcm_uframes_t   sampleFramesInPeriod     =
+static  char                mn_soundOpen                =      0;
+static  snd_pcm_t          *mn_alsaPCMHandle            =      0;
+static  unsigned int        mn_sampleRate               =  44100;
+static  unsigned int        mn_startupSilentFrames      =  10000;
+static  unsigned int        mn_startupSilentFramesLeft  =      0;
+static  snd_pcm_uframes_t   mn_sampleFramesInPeriod     =
                                              MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES;
-static  pthread_t           audioThread;
-static  pthread_mutex_t     audioMutex;
+static  pthread_t           mn_audioThread;
+static  pthread_mutex_t     mn_audioMutex;
 
 /* 2 bytes per sample (S16 LE) */
-static  unsigned char  sampleBuffer[ MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES
-                                     * 2
-                                     * MN_SOUND_NUM_CHANNELS ];
+static  unsigned char  mn_sampleBuffer[ MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES
+                                        * 2
+                                        * MN_SOUND_NUM_CHANNELS ];
 
 
 static void mn_soundCleanup( void ) {
-    if( alsaPCMHandle != 0 ) {
-        snd_pcm_drain( alsaPCMHandle );
-        snd_pcm_close( alsaPCMHandle );
+    if( mn_alsaPCMHandle != 0 ) {
+        snd_pcm_drain( mn_alsaPCMHandle );
+        snd_pcm_close( mn_alsaPCMHandle );
 
         snd_config_update_free_global();
         
-        alsaPCMHandle = 0;
+        mn_alsaPCMHandle = 0;
         }
-    soundOpen = 0;
+    mn_soundOpen = 0;
     }
 
 
@@ -4302,7 +4302,7 @@ static void mn_openSound( void ) {
     static  unsigned char  alsaParamsBuffer[ MAX_PARAMS_SIZE ];
 
     
-    startupSilentFramesLeft = startupSilentFrames;
+    mn_startupSilentFramesLeft = mn_startupSilentFrames;
     
     if( snd_pcm_hw_params_sizeof() > MAX_PARAMS_SIZE ) {
         mingin_log( "ALSA hardware parameters structure bigger than expected, "
@@ -4323,7 +4323,7 @@ static void mn_openSound( void ) {
     swParams = (snd_pcm_sw_params_t*) alsaParamsBuffer;
     
     
-    result = snd_pcm_open( &alsaPCMHandle,
+    result = snd_pcm_open( &mn_alsaPCMHandle,
                            "default",
                            SND_PCM_STREAM_PLAYBACK,
                            SND_PCM_NONBLOCK );
@@ -4334,10 +4334,10 @@ static void mn_openSound( void ) {
         }
 
     /* setup params and fill with default values */  
-    snd_pcm_hw_params_any( alsaPCMHandle,
+    snd_pcm_hw_params_any( mn_alsaPCMHandle,
                            hwParams );
 
-    if( snd_pcm_hw_params_set_access( alsaPCMHandle,
+    if( snd_pcm_hw_params_set_access( mn_alsaPCMHandle,
                                       hwParams,
                                       SND_PCM_ACCESS_RW_INTERLEAVED) < 0 ) {
         mingin_log( "Failed to set ALSA parameter access "
@@ -4346,7 +4346,7 @@ static void mn_openSound( void ) {
         return;
         }
 
-    if( snd_pcm_hw_params_set_format( alsaPCMHandle,
+    if( snd_pcm_hw_params_set_format( mn_alsaPCMHandle,
                                       hwParams,
                                       SND_PCM_FORMAT_S16_LE ) < 0 ) {
         mingin_log( "Failed to set ALSA format to PCM S16 LE\n" );
@@ -4354,7 +4354,7 @@ static void mn_openSound( void ) {
         return;
         }
     
-    if( snd_pcm_hw_params_set_channels( alsaPCMHandle,
+    if( snd_pcm_hw_params_set_channels( mn_alsaPCMHandle,
                                         hwParams,
                                         MN_SOUND_NUM_CHANNELS ) < 0 ) {
         mingin_log( "Failed to set ALSA format to 2 channels\n" );
@@ -4363,9 +4363,9 @@ static void mn_openSound( void ) {
         }
 
     dir = 0;
-    if( snd_pcm_hw_params_set_rate_near( alsaPCMHandle,
+    if( snd_pcm_hw_params_set_rate_near( mn_alsaPCMHandle,
                                          hwParams,
-                                         &sampleRate,
+                                         &mn_sampleRate,
                                          &dir ) < 0 ) {
         mingin_log( "Failed to set ALSA sample rate near 44100\n" );
         mn_soundCleanup();
@@ -4373,16 +4373,16 @@ static void mn_openSound( void ) {
         }
 
     dir = 0;
-    if( snd_pcm_hw_params_set_period_size_near( alsaPCMHandle,
+    if( snd_pcm_hw_params_set_period_size_near( mn_alsaPCMHandle,
                                                 hwParams,
-                                                &sampleFramesInPeriod,
+                                                &mn_sampleFramesInPeriod,
                                                 &dir ) < 0 ) {
         mingin_log( "Failed to set ALSA sample buffer size near 1024\n" );
         mn_soundCleanup();
         return;
         }
 
-    if( snd_pcm_hw_params_set_periods_near( alsaPCMHandle,
+    if( snd_pcm_hw_params_set_periods_near( mn_alsaPCMHandle,
                                             hwParams,
                                             &alsaPeriods,
                                             &dir ) < 0 ) {
@@ -4394,7 +4394,7 @@ static void mn_openSound( void ) {
                                             
     
     /* write parameters */
-    if( snd_pcm_hw_params( alsaPCMHandle,
+    if( snd_pcm_hw_params( mn_alsaPCMHandle,
                            hwParams ) < 0 ) {
         mingin_log( "Failed to write ALSA hardware parameters\n" );
         mn_soundCleanup();
@@ -4402,7 +4402,7 @@ static void mn_openSound( void ) {
         }
     
 
-    if( snd_pcm_sw_params_current( alsaPCMHandle,
+    if( snd_pcm_sw_params_current( mn_alsaPCMHandle,
                                    swParams ) < 0 ) {
         mingin_log( "Failed to get ALSA software parameters\n" );
         mn_soundCleanup();
@@ -4413,9 +4413,9 @@ static void mn_openSound( void ) {
     /* Start only when the first buffer is full, to prevent underruns at
        startup */
     if( snd_pcm_sw_params_set_start_threshold(
-            alsaPCMHandle,
+            mn_alsaPCMHandle,
             swParams,
-            alsaPeriods * sampleFramesInPeriod ) < 0 ) {
+            alsaPeriods * mn_sampleFramesInPeriod ) < 0 ) {
         
         mingin_log( "Failed to set ALSA start threshold\n" );
         mn_soundCleanup();
@@ -4423,7 +4423,7 @@ static void mn_openSound( void ) {
         }
 
     
-    if( snd_pcm_sw_params( alsaPCMHandle,
+    if( snd_pcm_sw_params( mn_alsaPCMHandle,
                            swParams ) < 0 ) {
         mingin_log( "Failed to set ALSA software parameters\n" );
         mn_soundCleanup();
@@ -4431,7 +4431,7 @@ static void mn_openSound( void ) {
         }
 
 
-    if( pthread_mutex_init( &audioMutex, 0 ) != 0 ) {
+    if( pthread_mutex_init( &mn_audioMutex, 0 ) != 0 ) {
         /* this should never happen, pthread_mutex_init always returns 0 */
 
         mingin_log( "Failed to create mutex for ALSA audio lock\n" );
@@ -4440,10 +4440,10 @@ static void mn_openSound( void ) {
         }
     
     
-    soundOpen = 1;
+    mn_soundOpen = 1;
 
 
-    result = pthread_create( & audioThread,
+    result = pthread_create( & mn_audioThread,
                              0,
                              & mn_audioThreadFunction,
                              0 );
@@ -4471,7 +4471,7 @@ static void *mn_audioThreadFunction( void *inArg ) {
         
         mingin_lockAudio();
         
-        if( ! soundOpen ) {
+        if( ! mn_soundOpen ) {
             
             mingin_unlockAudio();
             
@@ -4488,7 +4488,7 @@ static void *mn_audioThreadFunction( void *inArg ) {
 
 void mingin_lockAudio( void ) {
     
-    int  result  =  pthread_mutex_lock( &audioMutex );
+    int  result  =  pthread_mutex_lock( &mn_audioMutex );
 
     if( result != 0 ) {
         mingin_log( "Failed to lock audio mutex\n" );
@@ -4499,7 +4499,7 @@ void mingin_lockAudio( void ) {
 
 void mingin_unlockAudio( void ) {
     
-    int  result  =  pthread_mutex_unlock( &audioMutex );
+    int  result  =  pthread_mutex_unlock( &mn_audioMutex );
 
     if( result != 0 ) {
         mingin_log( "Failed to unlock audio mutex\n" );
@@ -4514,7 +4514,7 @@ char mingin_isSoundPlaying( void ) {
     
     mingin_lockAudio();
 
-    playing = soundOpen;
+    playing = mn_soundOpen;
 
     mingin_unlockAudio();
 
@@ -4528,11 +4528,11 @@ static void mn_stepSound( void ) {
     snd_pcm_sframes_t  framesNeededResult;
     int                waitResult;
     
-    if( !soundOpen ) {
+    if( !mn_soundOpen ) {
         return;
         }
     
-    waitResult = snd_pcm_wait( alsaPCMHandle,
+    waitResult = snd_pcm_wait( mn_alsaPCMHandle,
                                100 );
 
     if( waitResult == 0 ) {
@@ -4546,7 +4546,7 @@ static void mn_stepSound( void ) {
             ||
             waitResult == -ESTRPIPE ) {
             
-            snd_pcm_recover( alsaPCMHandle,
+            snd_pcm_recover( mn_alsaPCMHandle,
                              waitResult,
                              1 );
             return;
@@ -4561,7 +4561,7 @@ static void mn_stepSound( void ) {
         }
         
     
-    framesNeededResult = snd_pcm_avail_update( alsaPCMHandle );
+    framesNeededResult = snd_pcm_avail_update( mn_alsaPCMHandle );
 
     if( framesNeededResult == 0 ) {
         /* no frames needed */
@@ -4578,7 +4578,7 @@ static void mn_stepSound( void ) {
             ||
             framesNeededResult == -ESTRPIPE ) {
             
-            snd_pcm_recover( alsaPCMHandle,
+            snd_pcm_recover( mn_alsaPCMHandle,
                              (int)framesNeededResult,
                              1 );
             }
@@ -4608,14 +4608,14 @@ static void mn_stepSound( void ) {
                 framesThisLoop = MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES;
                 }
 
-            if( startupSilentFramesLeft > 0 ) {
+            if( mn_startupSilentFramesLeft > 0 ) {
 
                 unsigned int  f;
                 int           b;
                 int           c;
                 
-                if( framesThisLoop > startupSilentFramesLeft ) {
-                    framesThisLoop = startupSilentFramesLeft;
+                if( framesThisLoop > mn_startupSilentFramesLeft ) {
+                    framesThisLoop = mn_startupSilentFramesLeft;
                     }
 
                 /* fill with silence */
@@ -4627,13 +4627,13 @@ static void mn_stepSound( void ) {
                          c < MN_SOUND_NUM_CHANNELS;
                          c ++ ) {
 
-                        sampleBuffer[ b ] = 0;
+                        mn_sampleBuffer[ b ] = 0;
                         b++;
-                        sampleBuffer[ b ] = 0;
+                        mn_sampleBuffer[ b ] = 0;
                         b++;
                         }
                     }
-                startupSilentFramesLeft -= (unsigned int)framesThisLoop;
+                mn_startupSilentFramesLeft -= (unsigned int)framesThisLoop;
                 }
             else {
                 /* done writing silence at startup
@@ -4642,25 +4642,25 @@ static void mn_stepSound( void ) {
                 mingin_lockAudio();
                 
                 minginGame_getAudioSamples( (int)framesThisLoop,
-                                            (int)sampleRate,
-                                            sampleBuffer );
+                                            (int)mn_sampleRate,
+                                            mn_sampleBuffer );
                 mingin_unlockAudio();
                 }
     
-            result = snd_pcm_writei( alsaPCMHandle,
-                                     sampleBuffer,
+            result = snd_pcm_writei( mn_alsaPCMHandle,
+                                     mn_sampleBuffer,
                                      framesThisLoop );
             
             if( result == -EBADFD ) {
                 /* ALSA not in the right state to accept sound samples?
                    try again later */
 
-                snd_pcm_prepare( alsaPCMHandle );
+                snd_pcm_prepare( mn_alsaPCMHandle );
                 return;
                 }
             else if( result == -EPIPE ) {
                 mingin_log( "ALSA sound buffer underun!\n" );
-                snd_pcm_recover( alsaPCMHandle,
+                snd_pcm_recover( mn_alsaPCMHandle,
                                  (int)result,
                                  1 );
                 return;
@@ -4668,7 +4668,7 @@ static void mn_stepSound( void ) {
             else if( result == -ESTRPIPE ) {
                 mingin_log( "ALSA reporting that audio suspended\n" );
 
-                snd_pcm_recover( alsaPCMHandle,
+                snd_pcm_recover( mn_alsaPCMHandle,
                                  (int)result,
                                  1 );
                 return;
@@ -4698,11 +4698,11 @@ static void mn_stepSound( void ) {
             framesNeeded -= framesWritten;
             }
 
-        framesNeededResult = snd_pcm_avail_update( alsaPCMHandle );
+        framesNeededResult = snd_pcm_avail_update( mn_alsaPCMHandle );
 
         if( framesNeededResult == -EPIPE ) {
             mingin_log( "ALSA sound buffer underun!\n" );
-            snd_pcm_recover( alsaPCMHandle,
+            snd_pcm_recover( mn_alsaPCMHandle,
                              (int)result,
                              1 );
             return;
@@ -4710,7 +4710,7 @@ static void mn_stepSound( void ) {
         else if( framesNeededResult == -ESTRPIPE ) {
             mingin_log( "ALSA reporting that audio suspended\n" );
 
-            snd_pcm_recover( alsaPCMHandle,
+            snd_pcm_recover( mn_alsaPCMHandle,
                              (int)result,
                              1 );
             return;
@@ -4720,22 +4720,22 @@ static void mn_stepSound( void ) {
 
 
 static void mn_closeSound( void ) {
-    if( soundOpen ) {
+    if( mn_soundOpen ) {
 
         void  *threadReturnVal;
         int    result;
         
         mingin_lockAudio();
-        soundOpen = 0;
+        mn_soundOpen = 0;
         mingin_unlockAudio();
 
-        result = pthread_join( audioThread, &threadReturnVal );
+        result = pthread_join( mn_audioThread, &threadReturnVal );
 
         if( result != 0 ) {
             mingin_log( "Failed to join audio thread at exit\n" );
             }
 
-        result = pthread_mutex_destroy( &audioMutex );
+        result = pthread_mutex_destroy( &mn_audioMutex );
 
         if( result != 0 ) {
             mingin_log( "Failed to destroy audio mutex at exit\n" );

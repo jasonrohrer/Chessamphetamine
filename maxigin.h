@@ -9714,7 +9714,12 @@ static  int   msEndFadeOut           =    100;
 static  int   startFadeInDone        =      0;
 static  char  endFadeOutDone         =      0;
 static  char  endFadeOutRunning      =      0;
-static  int   endFadeOutStartFrame  =      -1;
+static  int   endFadeOutStartFrame   =     -1;
+
+/* let some extra buffers go out to sound card after we fully
+   fade out to avoid interrupting audio thread and causing a pop */
+static  char  endFadeOutAlmostDone   =      0;
+static  int   buffersPostEndFadeOut  =      0;
 
 
 
@@ -9827,15 +9832,15 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                         }
                     }
 
-                if( numFramesToMix + numFramesPlayedTotal >
-                    samplesTotalFadeIn ) {
+                if( globalVolume == globalVolumeScale ) {
+                    
                     startFadeInDone = 1;
                     globalVolumeError = 0;
                     }
                 }
             else if( endFadeOutRunning
                      &&
-                     ! endFadeOutDone ) {
+                     ! endFadeOutAlmostDone ) {
 
                 int  samplesTotalFadeOut  =  ( inSamplesPerSecond / 1000 )
                                                * msEndFadeOut;
@@ -9871,10 +9876,11 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                         }
                     }
 
-                if( ( numFramesToMix + numFramesPlayedTotal )
-                    - endFadeOutStartFrame
-                    >
-                    samplesTotalFadeOut ) {
+                if( globalVolume == 0 ) {
+                    
+                    endFadeOutAlmostDone = 1;
+                    globalVolumeError = 0;
+                    buffersPostEndFadeOut = 0;
                     }
 
                 }
@@ -9934,18 +9940,13 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
             }
 
 
-        if( endFadeOutRunning
-            &&
-            ! endFadeOutDone
-            &&
-            globalVolume == 0 ) {
-            
-            /* reached full fade-out by the end of this audio call-back */
+        if( endFadeOutAlmostDone ) {
+            buffersPostEndFadeOut ++;
 
-            endFadeOutDone = 1;
-            globalVolumeError = 0;
+            if( buffersPostEndFadeOut > 5 ) {
+                endFadeOutDone = 1;
+                }
             }
-
         
         musicPlayed = 1;
         }

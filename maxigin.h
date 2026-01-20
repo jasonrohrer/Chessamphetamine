@@ -5792,9 +5792,12 @@ static char mx_isActionFreshPressed( MaxiginUserAction  inAction ) {
 
 
 
-static  char  mx_playbackInterruptedRecording = 0;
+static  char  mx_playbackInterruptedRecording  =  0;
 
-static  char  soundLocked                     = 0;
+static  char  soundLocked                      =  0;
+/*
+  static  char  quitting                         =  0;*/
+
 
 
 void minginGame_step( char  inFinalStep ) {
@@ -9541,14 +9544,156 @@ static  int  mx_audioMixingBuffers[2][ MAXIGIN_AUDIO_MIXING_NUM_SAMPLES ];
 static  unsigned char  mx_wavReadingBuffer[ MAXIGIN_WAV_READING_BYTES ];
 
 
+/* mix music samples into mx_audioMixingBuffers
+   taking music fade, music volume, music direction, and music speed
+   into account.
+
+   Returns number of frames actually mixed into mx_audioMixingBuffers,
+   which may be smaller than inNumSampleFrames, if buffer smaller than
+   requested size.
+
+   Returns  -1  on error.
+*/
+static int mx_mixInMusicSamples( int  inNumSampleFrames ) {
+
+    
+    int  dataPos;
+    int  numFramesLeft;
+    int  numFramesUsed;
+    int  numBytesToRead;
+    int  numBytesRead     =  0;
+    int  f;
+    int  numFramesToMix   =  inNumSampleFrames;
+    
+    /* f is frame index in our mixing buffer */
+    f = 0;
+
+    /* truncate if there's not enough room in our mixing buffer */
+    if( numFramesToMix > MAXIGIN_AUDIO_MIXING_NUM_SAMPLES ) {
+        numFramesToMix = MAXIGIN_AUDIO_MIXING_NUM_SAMPLES;
+        }
+
+    dataPos = mingin_getBulkDataPosition( mx_musicData.bulkResourceHandle );
+
+    if( dataPos < 0 ) {
+        return -1;
+        }
+    
+    numFramesUsed =
+        ( dataPos - mx_musicData.firstSampleLocation )
+        /
+        ( mx_musicData.numChannels * 2 );
+    
+    numFramesLeft = mx_musicData.numSampleFrames - numFramesUsed;
+
+    if( numFramesLeft < numFramesToMix ) {
+        mingin_log( "Reached end of music file\n" );
+        return -1;
+        }
+    
+    numBytesToRead = numFramesToMix * 4;
+                    
+    while( numBytesRead < numBytesToRead ) {
+
+        int  numBytesToReadNow    =  numBytesToRead
+            - numBytesRead;
+        int  numRead;
+        int  wavB                 =  0;
+                        
+        if( numBytesToReadNow > MAXIGIN_WAV_READING_BYTES ) {
+
+            numBytesToReadNow = MAXIGIN_WAV_READING_BYTES;
+            }
+
+        numRead =
+            mingin_readBulkData(
+                mx_musicData.bulkResourceHandle,
+                numBytesToReadNow,
+                mx_wavReadingBuffer );
+
+        if( numRead != numBytesToReadNow ) {
+
+            mingin_log(
+                "Reading from music WAV bulk data failed\n" );
+                            
+            mingin_endReadBulkData(
+                mx_musicData.bulkResourceHandle );
+            mx_musicLoaded = 0;
+                            
+            return -1;
+            }
+
+        while( wavB < numBytesToReadNow ) {
+                            
+            unsigned short  uL;
+            unsigned short  uR;
+
+            if( wavB >= MAXIGIN_WAV_READING_BYTES ) {
+                mingin_log( "hey1\n" );
+                }
+                            
+            uL = (unsigned short)( 
+                mx_wavReadingBuffer[ wavB     ] |
+                mx_wavReadingBuffer[ wavB + 1 ] << 8 );
+
+            wavB += 2;
+
+            if( wavB >= MAXIGIN_WAV_READING_BYTES ) {
+                mingin_log( "hey2\n" );
+                }
+                            
+            uR = (unsigned short)( 
+                mx_wavReadingBuffer[ wavB     ] |
+                mx_wavReadingBuffer[ wavB + 1 ] << 8 );
+
+            wavB += 2;
+                            
+            if( wavB > MAXIGIN_WAV_READING_BYTES ) {
+                mingin_log( "hey3\n" );
+                }
+
+            if( f >= MAXIGIN_AUDIO_MIXING_NUM_SAMPLES ) {
+                mingin_log( "hey4\n" );
+                }
+                            
+            mx_audioMixingBuffers[0][ f ] = (short)uL;
+            mx_audioMixingBuffers[1][ f ] = (short)uR;
+                            
+            /* next frame of 4 bytes
+               wavB has already been advanced by 4*/
+            f += 1;
+            }
+
+        numBytesRead += numBytesToReadNow;
+        }
+
+    return numFramesToMix;
+    }
+
+    
+
+static  int   numFramesPlayedTotal   =      0;
+static  int   globalVolume           =      0;
+static  int   globalVolumeScale      =  10000;
+static  int   globalVolumeError      =      0;
+
+static  int   msStartFadeIn          =   5000;
+/*static  int   msEndFadeOut           =  100;*/
+static  int   startFadeInDone        =      0;
+static  char  endFadeOutDone         =      0;
+static  char  endFadeOutRunning      =      0;
+/*
+  static  int   endFadeOutStartSample  =   -1;*/
+
+
 
 void minginGame_getAudioSamples( int             inNumSampleFrames,
                                  int             inSamplesPerSecond,
                                  unsigned char  *inSampleBuffer ) {
     int   f;
     int   c;
-    int   b            =  0;
-    char  musicPlayed  =  0;
+    int   b             =  0;
+    char  musicPlayed   =  0;
     
     /* suppress warning */
     if( inSamplesPerSecond == 0 ) {
@@ -9558,151 +9703,108 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
     
     if( mx_musicLoaded ) {
 
-        int  dataPos;
-        int  numFramesLeft;
-        int  numFramesUsed;
         int  numFramesMixed  =  0;
         
-        dataPos = mingin_getBulkDataPosition( mx_musicData.bulkResourceHandle );
+        while( numFramesMixed < inNumSampleFrames ) {
 
-        if( dataPos >= 0 ) {
-            numFramesUsed =
-                ( dataPos - mx_musicData.firstSampleLocation )
-                /
-                ( mx_musicData.numChannels * 2 );
-            numFramesLeft = mx_musicData.numSampleFrames - numFramesUsed;
+            int  numFramesToMix   =  inNumSampleFrames - numFramesMixed;
+
+            /* num frames actually mixed might be smaller
+               than requested */
+            numFramesToMix = mx_mixInMusicSamples( numFramesToMix );
+
+
+            if( numFramesToMix < 0 ) {
+                /* error */
+                goto WAV_READ_FAILED;
+                
+                }
+                    
+            /* now our mixing buffer contains mixed frames */
+
             
-            if( numFramesLeft >= inNumSampleFrames ) {
+            /* we would have to scale here, if we needed volume
+               adjustments, but skip that for now */
 
-                while( numFramesMixed < inNumSampleFrames ) {
+            if( ! startFadeInDone ) {
 
-                    int  numFramesToMix   =  inNumSampleFrames - numFramesMixed;
-                    int  numBytesToRead;
-                    int  numBytesRead     =  0;
+                int  samplesTotalFadeIn  =  ( inSamplesPerSecond / 1000 )
+                                              * msStartFadeIn;
+                int  samplesPerVolStep   =  samplesTotalFadeIn
+                                              / globalVolumeScale;
+                
+                for( f = 0;
+                     f < numFramesToMix;
+                     f ++ ) {
 
-                    /* f is frame index in our mixing buffer */
-                    f = 0;
-                    
-                    if( numFramesToMix > MAXIGIN_AUDIO_MIXING_NUM_SAMPLES ) {
-                        numFramesToMix = MAXIGIN_AUDIO_MIXING_NUM_SAMPLES;
-                        }
-                    
-                    numBytesToRead = numFramesToMix * 4;
-                    
-                    while( numBytesRead < numBytesToRead ) {
+                    if( globalVolume < globalVolumeScale ) {
 
-                        int  numBytesToReadNow    =  numBytesToRead
-                                                     - numBytesRead;
-                        int  numRead;
-                        int  wavB                 =  0;
+                        /* by ticking up a volume error, and then ticking
+                           up volume periodically, we can handle many
+                           volume steps for smooth fades and very long
+                           fade times */
                         
-                        if( numBytesToReadNow > MAXIGIN_WAV_READING_BYTES ) {
+                        globalVolumeError += 1;
 
-                            numBytesToReadNow = MAXIGIN_WAV_READING_BYTES;
+                        if( globalVolumeError >= samplesPerVolStep ) {
+                            globalVolume ++;
+                            globalVolumeError = 0;
                             }
-
-                        numRead =
-                            mingin_readBulkData(
-                                mx_musicData.bulkResourceHandle,
-                                numBytesToReadNow,
-                                mx_wavReadingBuffer );
-
-                        if( numRead != numBytesToReadNow ) {
-
-                            mingin_log(
-                                "Reading from music WAV bulk data failed\n" );
-                            
-                            mingin_endReadBulkData(
-                                mx_musicData.bulkResourceHandle );
-                            mx_musicLoaded = 0;
-                            
-                            goto WAV_READ_FAILED;
-                            }
-
-                        while( wavB < numBytesToReadNow ) {
-                            
-                            unsigned short  uL;
-                            unsigned short  uR;
-
-                            if( wavB >= MAXIGIN_WAV_READING_BYTES ) {
-                                mingin_log( "hey1\n" );
-                                }
-                            
-                            uL = (unsigned short)( 
-                                mx_wavReadingBuffer[ wavB     ] |
-                                mx_wavReadingBuffer[ wavB + 1 ] << 8 );
-
-                            wavB += 2;
-
-                            if( wavB >= MAXIGIN_WAV_READING_BYTES ) {
-                                mingin_log( "hey2\n" );
-                                }
-                            
-                            uR = (unsigned short)( 
-                                mx_wavReadingBuffer[ wavB     ] |
-                                mx_wavReadingBuffer[ wavB + 1 ] << 8 );
-
-                            wavB += 2;
-                            
-                            if( wavB > MAXIGIN_WAV_READING_BYTES ) {
-                                mingin_log( "hey3\n" );
-                                }
-
-                            if( f >= MAXIGIN_AUDIO_MIXING_NUM_SAMPLES ) {
-                                mingin_log( "hey4\n" );
-                                }
-                            
-                            mx_audioMixingBuffers[0][ f ] = (short)uL;
-                            mx_audioMixingBuffers[1][ f ] = (short)uR;
-                            
-                            /* next frame of 4 bytes
-                               wavB has already been advanced by 4*/
-                            f += 1;
-                            }
-
-                        numBytesRead += numBytesToReadNow;
-                        }
-                    
-
-                    /* now our mixing buffer contains mixed frames */
-                    /* we would have to scale here, if we needed volume
-                       adjustments, but skip that for now */
-
-                    
-                    for( f = 0;
-                         f < numFramesToMix;
-                         f ++ ) {
-
-                        short           left;
-                        short           right;
-                        unsigned short  uL;
-                        unsigned short  uR;
                         
-                        left   =  (short)( mx_audioMixingBuffers[0][ f ] );
-                        right  =  (short)( mx_audioMixingBuffers[1][ f ] );
+                        mx_audioMixingBuffers[0][ f ] *= globalVolume;
+                        mx_audioMixingBuffers[1][ f ] *= globalVolume;
 
-                        uL = (unsigned short)left;
-                        uR = (unsigned short)right;
-                        
-
-                        inSampleBuffer[ b++ ] =
-                            (unsigned char)(  uL         & 0xFF );
-                        inSampleBuffer[ b++ ] =
-                            (unsigned char)( ( uL >> 8 ) & 0xFF );
-
-                        inSampleBuffer[ b++ ] =
-                            (unsigned char)(  uR         & 0xFF );
-                        inSampleBuffer[ b++ ] =
-                            (unsigned char)( ( uR >> 8 ) & 0xFF );
+                        mx_audioMixingBuffers[0][ f ] /= globalVolumeScale;
+                        mx_audioMixingBuffers[1][ f ] /= globalVolumeScale;
                         }
-
-
-                    numFramesMixed += numFramesToMix;
                     }
 
-                musicPlayed = 1;
+                if( numFramesToMix + numFramesPlayedTotal >
+                    samplesTotalFadeIn ) {
+                    startFadeInDone = 1;
+                    }
                 }
+            else if( endFadeOutRunning
+                     &&
+                     ! endFadeOutDone ) {
+
+                }
+
+            
+            for( f = 0;
+                 f < numFramesToMix;
+                 f ++ ) {
+
+                short           left;
+                short           right;
+                unsigned short  uL;
+                unsigned short  uR;
+                        
+                left   =  (short)( mx_audioMixingBuffers[0][ f ] );
+                right  =  (short)( mx_audioMixingBuffers[1][ f ] );
+
+                uL = (unsigned short)left;
+                uR = (unsigned short)right;
+                        
+
+                inSampleBuffer[ b++ ] =
+                    (unsigned char)(  uL         & 0xFF );
+                inSampleBuffer[ b++ ] =
+                    (unsigned char)( ( uL >> 8 ) & 0xFF );
+
+                inSampleBuffer[ b++ ] =
+                    (unsigned char)(  uR         & 0xFF );
+                inSampleBuffer[ b++ ] =
+                    (unsigned char)( ( uR >> 8 ) & 0xFF );
+                }
+
+
+            numFramesMixed += numFramesToMix;
+
+            numFramesPlayedTotal += numFramesToMix;
             }
+
+        musicPlayed = 1;
         }
 
     WAV_READ_FAILED:

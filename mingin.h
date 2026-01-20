@@ -458,6 +458,21 @@ void mingin_unlockAudio( void );
 
 
 /*
+  Checks whether sound is active and playing on this platform.
+
+  Returns:
+
+      1  if sound playing
+
+      0  if sound not playing
+
+  [jumpMinginProvides]
+*/
+char mingin_isSoundPlaying( void );
+
+
+
+/*
   Used to end button mapping arrays in calls to:
      mingin_registerButtonMapping
        (see below)
@@ -4489,6 +4504,21 @@ void mingin_unlockAudio( void ) {
     if( result != 0 ) {
         mingin_log( "Failed to unlock audio mutex\n" );
         }
+    }
+
+    
+
+char mingin_isSoundPlaying( void ) {
+
+    char  playing;
+    
+    mingin_lockAudio();
+
+    playing = soundOpen;
+
+    mingin_unlockAudio();
+
+    return playing;
     }
 
 

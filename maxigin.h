@@ -5795,8 +5795,14 @@ static char mx_isActionFreshPressed( MaxiginUserAction  inAction ) {
 static  char  mx_playbackInterruptedRecording  =  0;
 
 static  char  soundLocked                      =  0;
-/*
-  static  char  quitting                         =  0;*/
+static  char  quitting                         =  0;
+static  char  quittingReady                    =  0;
+
+
+
+/* initiates and steps sound fade out, returning 1 when finally done
+   returns 0 while still in-progress */
+static char mx_stepSoundFadeOut( void );
 
 
 
@@ -5817,17 +5823,40 @@ void minginGame_step( char  inFinalStep ) {
 
     /* handle both case where platform forced us to end and
        where user decided to quit */
-    if( inFinalStep
-        ||
+    if( inFinalStep ) {
+
+        mingin_log( "Forced to quit by platform\n" );
+
+        /* quit immediately, since this is our last step
+           we can't wait for music to fade out nicely, etc. */
+        quitting  = 1;
+        quittingReady = 1;
+        }
+
+    if( ! quitting
+        &&
         mingin_isButtonDown( QUIT ) ) {
 
-        if( inFinalStep ) {
-            mingin_log( "Forced to quit by platform\n" );
-            }
-        else {
-            mingin_log( "Got quit key\n" );
-            }
+        mingin_log( "Got quit key, starting sound fade out\n" );
+        
+        quitting  = 1;
+        quittingReady = 0;
+        }
 
+    if( quitting
+        &&
+        ! quittingReady ) {
+
+        /* wait for sound to be done fading out */
+        if( mx_stepSoundFadeOut() ) {
+            quittingReady = 1;
+            }
+        }
+
+    if( quitting
+        &&
+        quittingReady ) {
+        
         mx_saveGame();
 
         mx_finalizeRecording();
@@ -5835,8 +5864,11 @@ void minginGame_step( char  inFinalStep ) {
         mx_stopPlayingMusic();
         
         mingin_quit();
+
         return;
         }
+        
+    
 
     maxigin_startGUI( &mx_internalGUI );
 
@@ -9678,12 +9710,46 @@ static  int   globalVolumeScale      =  10000;
 static  int   globalVolumeError      =      0;
 
 static  int   msStartFadeIn          =   5000;
-/*static  int   msEndFadeOut           =  100;*/
+static  int   msEndFadeOut           =    100;
 static  int   startFadeInDone        =      0;
 static  char  endFadeOutDone         =      0;
 static  char  endFadeOutRunning      =      0;
-/*
-  static  int   endFadeOutStartSample  =   -1;*/
+static  int   endFadeOutStartFrame  =      -1;
+
+
+
+static char mx_stepSoundFadeOut( void ) {
+
+    if( ! mingin_isSoundPlaying() ) {
+        /* no sound playing, nothing to fade out, done */
+        return 1;
+        }
+    
+    mingin_lockAudio();
+
+
+    if( endFadeOutDone ) {
+
+        mingin_unlockAudio();
+
+        return 1;
+        }
+
+    if( ! endFadeOutRunning ) {
+        /* start fade out */
+
+        /* stop any fade-in that is still not done */
+        startFadeInDone = 1;
+        
+
+        endFadeOutStartFrame = numFramesPlayedTotal;
+        endFadeOutRunning = 1;
+        }
+
+    mingin_unlockAudio();
+
+    return 0;
+    }
 
 
 
@@ -9749,7 +9815,76 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                         if( globalVolumeError >= samplesPerVolStep ) {
                             globalVolume ++;
                             globalVolumeError = 0;
+                            }  
+                        mx_audioMixingBuffers[0][ f ] *= globalVolume;
+                        mx_audioMixingBuffers[1][ f ] *= globalVolume;
+
+                        mx_audioMixingBuffers[0][ f ] /= globalVolumeScale;
+                        mx_audioMixingBuffers[1][ f ] /= globalVolumeScale;
+                        }
+                    else {
+                        /* full volume, do nothing to our mixing buffer */
+                        }
+                    }
+
+                if( numFramesToMix + numFramesPlayedTotal >
+                    samplesTotalFadeIn ) {
+                    startFadeInDone = 1;
+                    globalVolumeError = 0;
+                    }
+                }
+            else if( endFadeOutRunning
+                     &&
+                     ! endFadeOutDone ) {
+
+                int  samplesTotalFadeOut  =  ( inSamplesPerSecond / 1000 )
+                                               * msEndFadeOut;
+                int  samplesPerVolStep    =  samplesTotalFadeOut
+                                               / globalVolumeScale;
+                
+                for( f = 0;
+                     f < numFramesToMix;
+                     f ++ ) {
+
+                    if( globalVolume > 0 ) {
+
+                        /* by ticking up a volume error, and then ticking
+                           up volume periodically, we can handle many
+                           volume steps for smooth fades and very long
+                           fade times */
+                        
+                        globalVolumeError += 1;
+
+                        if( globalVolumeError >= samplesPerVolStep ) {
+                            globalVolume --;
+                            globalVolumeError = 0;
                             }
+                        mx_audioMixingBuffers[0][ f ] *= globalVolume;
+                        mx_audioMixingBuffers[1][ f ] *= globalVolume;
+
+                        mx_audioMixingBuffers[0][ f ] /= globalVolumeScale;
+                        mx_audioMixingBuffers[1][ f ] /= globalVolumeScale;
+                        }
+                    else {
+                        mx_audioMixingBuffers[0][ f ] = 0;
+                        mx_audioMixingBuffers[1][ f ] = 0;
+                        }
+                    }
+
+                if( ( numFramesToMix + numFramesPlayedTotal )
+                    - endFadeOutStartFrame
+                    >
+                    samplesTotalFadeOut ) {
+                    }
+
+                }
+            else {
+                /* just apply a static global volume to our mixing buffer */
+                for( f = 0;
+                     f < numFramesToMix;
+                     f ++ ) {
+
+                    if( globalVolume > 0 ) {
                         
                         mx_audioMixingBuffers[0][ f ] *= globalVolume;
                         mx_audioMixingBuffers[1][ f ] *= globalVolume;
@@ -9757,19 +9892,13 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                         mx_audioMixingBuffers[0][ f ] /= globalVolumeScale;
                         mx_audioMixingBuffers[1][ f ] /= globalVolumeScale;
                         }
-                    }
-
-                if( numFramesToMix + numFramesPlayedTotal >
-                    samplesTotalFadeIn ) {
-                    startFadeInDone = 1;
+                    else {
+                        mx_audioMixingBuffers[0][ f ] = 0;
+                        mx_audioMixingBuffers[1][ f ] = 0;
+                        }
                     }
                 }
-            else if( endFadeOutRunning
-                     &&
-                     ! endFadeOutDone ) {
-
-                }
-
+            
             
             for( f = 0;
                  f < numFramesToMix;
@@ -9804,6 +9933,20 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
             numFramesPlayedTotal += numFramesToMix;
             }
 
+
+        if( endFadeOutRunning
+            &&
+            ! endFadeOutDone
+            &&
+            globalVolume == 0 ) {
+            
+            /* reached full fade-out by the end of this audio call-back */
+
+            endFadeOutDone = 1;
+            globalVolumeError = 0;
+            }
+
+        
         musicPlayed = 1;
         }
 

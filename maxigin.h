@@ -5915,6 +5915,7 @@ void minginGame_step( char  inFinalStep ) {
         char  playbackSliderActive;
         int   oldSpeed               =  mx_playbackSpeed;
         int   oldDir                 =  mx_playbackDirection;
+        char  oldPaused              =  mx_playbackPaused;
         
         if( mx_isActionFreshPressed( PLAYBACK_PAUSE ) ) {
             mx_playbackPaused = ! mx_playbackPaused;
@@ -5976,11 +5977,19 @@ void minginGame_step( char  inFinalStep ) {
                 }
             }
 
-        if( oldSpeed != mx_playbackSpeed
+        if( oldSpeed  != mx_playbackSpeed
             ||
-            oldDir   != mx_playbackDirection ) {
+            oldDir    != mx_playbackDirection
+            ||
+            oldPaused != mx_playbackPaused ) {
 
-            mx_setSoundSpeedAndDirection( mx_playbackSpeed,
+            int  setSpeed  =  mx_playbackSpeed;
+
+            if( mx_playbackPaused ) {
+                setSpeed = 0;
+                }
+            
+            mx_setSoundSpeedAndDirection( setSpeed,
                                           mx_playbackDirection );
             }
 
@@ -9933,7 +9942,9 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
             }
             
         
-        if( mx_musicLoaded ) {
+        if( mx_musicLoaded
+            &&
+            mx_soundSpeed != 0 ) {
 
             int  temp  =  numFramesToMix;
             

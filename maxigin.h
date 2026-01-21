@@ -9837,24 +9837,7 @@ static int mx_mixInMusicSamples( int  inNumSampleFrames ) {
 
 
 
-static  int  mx_soundSpeed  =  1;
 
-
-static void mx_setSoundSpeedAndDirection( int  inSpeed,
-                                          int  inDirection ) {
-    mingin_lockAudio();
-
-    if( inDirection > 0 ) {
-        mx_musicDirection = 1;
-        }
-    else {
-        mx_musicDirection = -1;
-        }
-
-    mx_soundSpeed = inSpeed;
-    
-    mingin_unlockAudio();
-    }
 
     
 
@@ -9874,7 +9857,43 @@ static  int   mx_endFadeOutStartFrame   =     -1;
    fade out to avoid interrupting audio thread and causing a pop */
 static  char  mx_endFadeOutAlmostDone   =      0;
 static  int   mx_buffersPostEndFadeOut  =      0;
+static  int   mx_soundSpeed             =      1;
 
+
+
+static void mx_setSoundSpeedAndDirection( int  inSpeed,
+                                          int  inDirection ) {
+    char  wasPaused  =  0;
+    
+    mingin_lockAudio();
+
+    if( inDirection > 0 ) {
+        mx_musicDirection = 1;
+        }
+    else {
+        mx_musicDirection = -1;
+        }
+
+    if( mx_soundSpeed == 0 ) {
+        wasPaused = 1;
+        }
+    
+    mx_soundSpeed = inSpeed;
+
+    if( wasPaused && mx_soundSpeed != 0 ) {
+        /* coming out of a pause */
+        /* ramp up volume to hide pop */
+
+        /* re-use start fade-in params for this, but make
+           it much shorter than our startup fade-in */
+        mx_globalVolume    =   0;
+        mx_startFadeInDone =   0;
+        mx_msStartFadeIn   = 100;
+
+        }
+    
+    mingin_unlockAudio();
+    }
 
 
 static char mx_stepSoundFadeOut( void ) {

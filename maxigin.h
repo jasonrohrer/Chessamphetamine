@@ -9099,7 +9099,7 @@ const char *maxigin_intToString( int  inInt ) {
             if( q > 9 ) {
                 return formatError;
                 }
-            if( c >= sizeof( buffer ) - 1 ) {
+            if( c >= BUFFER_LEN - 1 ) {
                 /* out of room? */
                 return formatError;
                 }
@@ -10084,7 +10084,6 @@ static int mx_getMusicFilePos( void ) {
 
     mingin_unlockAudio();
 
-
     return pos;
     }
 
@@ -10110,7 +10109,9 @@ static void mx_setMusicFilePos( int  inPos ) {
         inPos > mx_musicData.firstSampleLocation
               + mx_musicData.numSampleFrames
                 * 2 * mx_musicData.numChannels ) {
+
         /* inPos out of range */
+        mingin_unlockAudio();
         return;
         }
 
@@ -10118,7 +10119,6 @@ static void mx_setMusicFilePos( int  inPos ) {
                          inPos );
         
     mingin_unlockAudio();
-        
     }
 
 

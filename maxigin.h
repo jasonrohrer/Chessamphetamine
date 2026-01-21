@@ -9911,6 +9911,10 @@ static char mx_stepSoundFadeOut( void ) {
     }
 
 
+int  mx_lastSamplesPlayed[2];
+int  mx_soundPauseRampDone     =  0;
+
+
 
 void minginGame_getAudioSamples( int             inNumSampleFrames,
                                  int             inSamplesPerSecond,
@@ -9970,12 +9974,37 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                 numFramesToMix = MAXIGIN_AUDIO_MIXING_NUM_SAMPLES;
                 }
 
-            for( f = 0;
-                 f < numFramesToMix;
-                 f ++ ) {
+            if( mx_soundSpeed == 0
+                &&
+                ! mx_soundPauseRampDone ) {
 
-                mx_audioMixingBuffers[0][ f ] = 0;
-                mx_audioMixingBuffers[1][ f ] = 0;
+                /* apply ramp across numFramesToMix
+                   from our last-played sample to prevent a pop
+                   when sound stops suddenly */
+
+                for( f = 0;
+                     f < numFramesToMix;
+                     f ++ ) {
+
+                    int  rampPos  =  numFramesToMix - f;
+                    
+                    mx_audioMixingBuffers[0][ f ] =
+                        ( rampPos * mx_lastSamplesPlayed[0] ) / numFramesToMix;
+                    mx_audioMixingBuffers[1][ f ] =
+                        ( rampPos * mx_lastSamplesPlayed[1] ) / numFramesToMix;
+                    }
+                mx_soundPauseRampDone = 1;
+                }
+            else {
+                /* zero samples */
+
+                for( f = 0;
+                     f < numFramesToMix;
+                     f ++ ) {
+
+                    mx_audioMixingBuffers[0][ f ] = 0;
+                    mx_audioMixingBuffers[1][ f ] = 0;
+                    }
                 }
             }
         
@@ -10160,6 +10189,16 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                     }
                 }
             }
+
+        if( mx_soundSpeed != 0 ) {
+            /* save the last sample played, in case we pause sound later */
+            f = numFramesToMix - 1;
+            
+            mx_lastSamplesPlayed[0] = mx_audioMixingBuffers[0][ f ];
+            mx_lastSamplesPlayed[1] = mx_audioMixingBuffers[1][ f ];
+
+            mx_soundPauseRampDone = 0;
+            }    
         
         }
     

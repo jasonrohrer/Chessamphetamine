@@ -8360,6 +8360,9 @@ static void mx_playbackEnd( void ) {
         mx_playbackDataStoreHandle = -1;
         }
     mx_playbackRunning = 0;
+
+    mx_setSoundSpeedAndDirection( 1,
+                                  1 );
     }
 
 

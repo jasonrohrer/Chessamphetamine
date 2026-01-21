@@ -5792,12 +5792,12 @@ static char mx_isActionFreshPressed( MaxiginUserAction  inAction ) {
 
 
 
-static  char  mx_playbackInterruptedRecording  =  0;
-
-static  char  mx_soundLocked                   =  0;
-static  char  mx_quitting                      =  0;
-static  char  mx_quittingReady                 =  0;
-static  char  mx_playbackSliderActive          =  0;
+static  char  mx_playbackInterruptedRecording     =  0;
+static  char  mx_playbackInstantReverseRecording  =  0;
+static  char  mx_soundLocked                      =  0;
+static  char  mx_quitting                         =  0;
+static  char  mx_quittingReady                    =  0;
+static  char  mx_playbackSliderActive             =  0;
 
 
 /* initiates and steps sound fade out, returning 1 when finally done
@@ -5811,6 +5811,8 @@ static void mx_setSoundSpeedAndDirection( int  inSpeed,
 static int mx_getMusicFilePos( void );
 
 static void mx_setMusicFilePos( int  inPos );
+
+static void mx_renewSoundStartFadeIn( void );
 
 
 
@@ -5899,6 +5901,9 @@ void minginGame_step( char  inFinalStep ) {
 
     
     if( mx_isActionFreshPressed( PLAYBACK_START_STOP ) ) {
+        
+        mx_playbackInstantReverseRecording = 0;
+        
         if( mx_playbackRunning ) {
             mx_playbackEnd();
             mx_initRecording();
@@ -6074,7 +6079,7 @@ void minginGame_step( char  inFinalStep ) {
                 
                 mx_finalizeRecording();
                 mx_playbackInterruptedRecording = 1;
-
+                mx_playbackInstantReverseRecording = 1;
 
                 if( mingin_renamePersistData( mx_recordingDataStoreName,
                                               mx_playbackDataStoreName ) ) {
@@ -6125,7 +6130,6 @@ void minginGame_step( char  inFinalStep ) {
                     }
                 
                 if( success ) {
-                    mx_playbackInterruptedRecording = 1;
                     mx_initPlayback();
 
                     /* jump to last step */
@@ -6161,6 +6165,7 @@ void minginGame_step( char  inFinalStep ) {
             /* playback has ended, resume recording */
             mx_initRecording();
             mx_playbackInterruptedRecording = 0;
+            mx_playbackInstantReverseRecording = 0;
             }
         
         mx_areWeInMaxiginGameStepFunction = 1;
@@ -7031,6 +7036,7 @@ static  int          mx_numDiffsSinceLastFullSnapshot  =  0;
 static  int          mx_totalStepsRecorded             =  0;
 
 static  const char  *mx_recordingMagicFooter           =  "MX_RECORDING";
+static  char         mx_newPlaybackStarting            =  0;
 
 
 /*
@@ -7104,7 +7110,8 @@ static void mx_recordFullMemorySnapshot( void ) {
     int   startPos  =
               mingin_getPersistDataPosition( mx_recordingDataStoreHandle );
     char  success;
-
+    int   musicPos;
+    
     if( startPos == -1 ) {
         mingin_log( "Failed to get current recording data store postion.\n" );
 
@@ -7165,6 +7172,20 @@ static void mx_recordFullMemorySnapshot( void ) {
     if( ! success ) {
         mingin_log( "Failed to write memory full snapshot step number "
                     "in recording\n" );
+        
+        mx_closeRecordingDataStores();
+        return;
+        }
+
+    
+    /* write music position */
+    musicPos = mx_getMusicFilePos();
+
+    success = mx_writeIntToPeristentData( mx_recordingDataStoreHandle,
+                                          musicPos );
+
+    if( ! success ) {
+        mingin_log( "Failed to write music position in recording\n" );
         
         mx_closeRecordingDataStores();
         return;
@@ -7253,6 +7274,26 @@ static char mx_restoreFromFullMemorySnapshot( int inStoreReadHandle ) {
 
     mx_playbackCurrentStep = readInt;
 
+
+    success = mx_readIntFromPersistData( inStoreReadHandle,
+                                         &readInt );
+
+    if( ! success ) {
+        /* failed to read music position */
+        return 0;
+        }
+
+    if( readInt != -1 ) {
+        /* a meaningful music position
+           set it... */
+
+        /* but only if we're paused, otherwise there is a lot
+           of sample discontinuity and popping */
+        if( mx_playbackPaused || mx_newPlaybackStarting ) {
+            mx_setMusicFilePos( readInt );
+            }
+        }
+    
     
     for( r = 0;
          r < mx_numMemRecords;
@@ -8395,8 +8436,25 @@ static char mx_initPlayback( void ) {
         return 0;
         }
 
+    
+    /* fade in at start of fresh playback,
+       but not if we're doing instant reverse, because we start
+       playing that backward, and the music is already in the right place */
+    if( ! mx_playbackInstantReverseRecording ) {
+        mx_renewSoundStartFadeIn();
+
+        /* also don't do this if interrupting, because it will
+           jump our music file position,
+           which we don't need to do if immediatly reversing direction */
+        
+        mx_newPlaybackStarting = 1;
+        }
+    
     success = mx_restoreFromFullMemorySnapshot( mx_playbackDataStoreHandle );
 
+    mx_newPlaybackStarting = 0;
+
+    
     if( ! success ) {
 
         maxigin_logInt( "Failed to restore first full memory snapshot from "
@@ -9914,6 +9972,7 @@ static  int   mx_globalVolume           =      0;
 static  int   mx_globalVolumeScale      =  10000;
 static  int   mx_globalVolumeError      =      0;
 
+static  int   mx_msDefaultStartFadeIn   =   5000;
 static  int   mx_msStartFadeIn          =   5000;
 static  int   mx_msEndFadeOut           =    100;
 static  int   mx_startFadeInDone        =      0;
@@ -9926,6 +9985,14 @@ static  int   mx_endFadeOutStartFrame   =     -1;
 static  char  mx_endFadeOutAlmostDone   =      0;
 static  int   mx_buffersPostEndFadeOut  =      0;
 static  int   mx_soundSpeed             =      1;
+
+
+
+static void mx_renewSoundStartFadeIn( void ) {
+    mx_globalVolume = 0;
+    mx_startFadeInDone = 0;
+    mx_msStartFadeIn = mx_msDefaultStartFadeIn;
+    }
 
 
 

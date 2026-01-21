@@ -5814,6 +5814,7 @@ static void mx_setMusicFilePos( int  inPos );
 
 static void mx_renewSoundStartFadeIn( void );
 
+static void mx_startSoundPauseRamp( void );
 
 
 
@@ -8441,6 +8442,9 @@ static char mx_initPlayback( void ) {
        but not if we're doing instant reverse, because we start
        playing that backward, and the music is already in the right place */
     if( ! mx_playbackInstantReverseRecording ) {
+
+        mx_startSoundPauseRamp();
+        
         mx_renewSoundStartFadeIn();
 
         /* also don't do this if interrupting, because it will
@@ -9987,6 +9991,23 @@ static  int   mx_buffersPostEndFadeOut  =      0;
 static  int   mx_soundSpeed             =      1;
 
 
+/* for smooth ramping of last sample down to 0 when
+   sound suddenly pauses, to avoid pop */
+static  int   mx_lastSamplesPlayed[2];
+static  int   mx_lastSamplesPlayedGlobalVolume  =  0;
+static  int   mx_soundPauseRampRunning          =  0;
+
+
+
+static void mx_startSoundPauseRamp( void ) {
+    mingin_lockAudio();
+    
+    mx_soundPauseRampRunning = 1;
+    
+    mingin_unlockAudio();
+    }
+
+
 
 static void mx_renewSoundStartFadeIn( void ) {
     mx_globalVolume = 0;
@@ -10015,7 +10036,10 @@ static void mx_setSoundSpeedAndDirection( int  inSpeed,
     
     mx_soundSpeed = inSpeed;
 
-    if( wasPaused && mx_soundSpeed != 0 ) {
+    if( wasPaused
+        &&
+        mx_soundSpeed != 0 ) {
+        
         /* coming out of a pause */
         /* ramp up volume to hide pop */
 
@@ -10024,7 +10048,13 @@ static void mx_setSoundSpeedAndDirection( int  inSpeed,
         mx_globalVolume    =   0;
         mx_startFadeInDone =   0;
         mx_msStartFadeIn   = 100;
-
+        }
+    else if( ! wasPaused
+             &&
+             mx_soundSpeed == 0 ) {
+        /* going into a pause
+           avoid pop at end of audio that was paused */
+        mx_soundPauseRampRunning = 1;
         }
     
     mingin_unlockAudio();
@@ -10127,9 +10157,6 @@ static char mx_stepSoundFadeOut( void ) {
     }
 
 
-int  mx_lastSamplesPlayed[2];
-int  mx_soundPauseRampDone     =  0;
-
 
 
 void minginGame_getAudioSamples( int             inNumSampleFrames,
@@ -10190,39 +10217,20 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                 numFramesToMix = MAXIGIN_AUDIO_MIXING_NUM_SAMPLES;
                 }
 
-            if( mx_soundSpeed == 0
-                &&
-                ! mx_soundPauseRampDone ) {
+            /* zero samples */
 
-                /* apply ramp across numFramesToMix
-                   from our last-played sample to prevent a pop
-                   when sound stops suddenly */
+            for( f = 0;
+                 f < numFramesToMix;
+                 f ++ ) {
 
-                for( f = 0;
-                     f < numFramesToMix;
-                     f ++ ) {
-
-                    int  rampPos  =  numFramesToMix - f;
-                    
-                    mx_audioMixingBuffers[0][ f ] =
-                        ( rampPos * mx_lastSamplesPlayed[0] ) / numFramesToMix;
-                    mx_audioMixingBuffers[1][ f ] =
-                        ( rampPos * mx_lastSamplesPlayed[1] ) / numFramesToMix;
-                    }
-                mx_soundPauseRampDone = 1;
-                }
-            else {
-                /* zero samples */
-
-                for( f = 0;
-                     f < numFramesToMix;
-                     f ++ ) {
-
-                    mx_audioMixingBuffers[0][ f ] = 0;
-                    mx_audioMixingBuffers[1][ f ] = 0;
-                    }
+                mx_audioMixingBuffers[0][ f ] = 0;
+                mx_audioMixingBuffers[1][ f ] = 0;
                 }
             }
+
+    
+        
+        
         
         /* now our mixing buffer contains mixed frames
            apply any global dynamic volume fades or levels */
@@ -10383,6 +10391,33 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
             }
 
 
+        if( mx_soundPauseRampRunning ) {
+
+            /* apply ramp across numFramesToMix
+               from our last-played sample to prevent a pop
+               when sound stops suddenly */
+
+            for( f = 0;
+                 f < numFramesToMix;
+                 f ++ ) {
+
+                int  rampPos  =  numFramesToMix - f;
+                    
+                mx_audioMixingBuffers[0][ f ] +=
+                    ( mx_lastSamplesPlayedGlobalVolume *
+                      ( ( rampPos * mx_lastSamplesPlayed[0] )
+                        / numFramesToMix ) )
+                    / mx_globalVolumeScale;
+                
+                mx_audioMixingBuffers[1][ f ] +=
+                    ( mx_lastSamplesPlayedGlobalVolume *
+                      ( ( rampPos * mx_lastSamplesPlayed[1] )
+                        / numFramesToMix ) )
+                    / mx_globalVolumeScale;
+                }
+            mx_soundPauseRampRunning = 0;
+            }
+
         /* now convert our int mixing buffers to interleaved signed
            short samples in our audio buffer */
 
@@ -10457,7 +10492,7 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
             mx_lastSamplesPlayed[0] = mx_audioMixingBuffers[0][ f ];
             mx_lastSamplesPlayed[1] = mx_audioMixingBuffers[1][ f ];
 
-            mx_soundPauseRampDone = 0;
+            mx_lastSamplesPlayedGlobalVolume = mx_globalVolume;
             }    
         
         }

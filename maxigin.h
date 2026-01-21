@@ -5797,7 +5797,7 @@ static  char  mx_playbackInterruptedRecording  =  0;
 static  char  mx_soundLocked                   =  0;
 static  char  mx_quitting                      =  0;
 static  char  mx_quittingReady                 =  0;
-
+static  char  mx_playbackSliderActive          =  0;
 
 
 /* initiates and steps sound fade out, returning 1 when finally done
@@ -5807,6 +5807,11 @@ static char mx_stepSoundFadeOut( void );
 /* maps playback speed/direction to sound speed and direction */
 static void mx_setSoundSpeedAndDirection( int  inSpeed,
                                           int  inDirection );
+
+static int mx_getMusicFilePos( void );
+
+static void mx_setMusicFilePos( int  inPos );
+
 
 
 
@@ -6019,6 +6024,30 @@ void minginGame_step( char  inFinalStep ) {
             
             mx_playbackPaused = 1;
             playbackPausedBySlider = 1;
+            mx_playbackSliderActive = 1;
+
+            /* pause sound while slider moving */
+            mx_setSoundSpeedAndDirection( 0,
+                                          mx_playbackDirection );
+            }
+        
+
+        if( mx_playbackSliderActive
+            &&
+            ! playbackSliderActive ) {
+            /* slider was active before, not active now */
+
+            /* unpause sound if necessary */
+            int  setSpeed  =  mx_playbackSpeed;
+
+            if( mx_playbackPaused ) {
+                setSpeed = 0;
+                }
+            
+            mx_setSoundSpeedAndDirection( setSpeed,
+                                          mx_playbackDirection );
+
+            mx_playbackSliderActive = 0;
             }
         
 
@@ -7272,6 +7301,7 @@ static void mx_recordMemoryDiff( void ) {
     int   lastWritten  =  0;
     char  success;
     int   startPos;
+    int   musicPos;
     
     if( ! mx_diffRecordingEnabled ) {
         return;
@@ -7322,6 +7352,21 @@ static void mx_recordMemoryDiff( void ) {
         mx_closeRecordingDataStores();
         return;
         }
+
+    /* write music position */
+    musicPos = mx_getMusicFilePos();
+
+    success = mx_writeIntToPeristentData( mx_recordingDataStoreHandle,
+                                          musicPos );
+
+    if( ! success ) {
+        mingin_log( "Failed to write music position in recording\n" );
+        
+        mx_closeRecordingDataStores();
+        return;
+        }
+    
+    
     
     
     for( b = 0;
@@ -7434,6 +7479,26 @@ static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
         }
 
     mx_playbackCurrentStep = readInt;
+
+
+    success = mx_readIntFromPersistData( inStoreReadHandle,
+                                         &readInt );
+
+    if( ! success ) {
+        /* failed to read music position */
+        return 0;
+        }
+
+    if( readInt != -1 ) {
+        /* a meaningful music position
+           set it... */
+
+        /* but only if we're paused, otherwise there is a lot
+           of sample discontinuity and popping */
+        if( mx_playbackPaused ) {
+            mx_setMusicFilePos( readInt );
+            }
+        }
     
 
     success = mx_readIntFromPersistData( inStoreReadHandle,
@@ -9897,6 +9962,68 @@ static void mx_setSoundSpeedAndDirection( int  inSpeed,
     
     mingin_unlockAudio();
     }
+
+
+
+static int mx_getMusicFilePos( void ) {
+
+    int  pos;
+
+    if( ! mingin_isSoundPlaying() ) {
+        /* no sound playing  */
+        return -1;
+        }
+    
+    mingin_lockAudio();
+
+    if( ! mx_musicLoaded ) {
+        
+        mingin_unlockAudio();
+        
+        return -1;
+        }
+
+    pos = mingin_getBulkDataPosition( mx_musicData.bulkResourceHandle );
+
+    mingin_unlockAudio();
+
+
+    return pos;
+    }
+
+    
+
+static void mx_setMusicFilePos( int  inPos ) {
+
+    if( inPos < 0 ) {
+        return;
+        }
+
+    if( ! mingin_isSoundPlaying() ) {
+        /* no sound playing  */
+        return;
+        }
+    
+    mingin_lockAudio();
+
+    if( ! mx_musicLoaded
+        ||
+        inPos < mx_musicData.firstSampleLocation
+        ||
+        inPos > mx_musicData.firstSampleLocation
+              + mx_musicData.numSampleFrames
+                * 2 * mx_musicData.numChannels ) {
+        /* inPos out of range */
+        return;
+        }
+
+    mingin_seekBulkData( mx_musicData.bulkResourceHandle,
+                         inPos );
+        
+    mingin_unlockAudio();
+        
+    }
+
 
 
 static char mx_stepSoundFadeOut( void ) {

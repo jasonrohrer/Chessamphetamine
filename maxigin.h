@@ -10035,11 +10035,29 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
 
         if( ! mx_startFadeInDone ) {
 
+            int  volStepAmount       =  1;
             int  samplesTotalFadeIn  =  ( inSamplesPerSecond / 1000 )
-                * mx_msStartFadeIn;
-            int  samplesPerVolStep   =  samplesTotalFadeIn
-                / mx_globalVolumeScale;
-                
+                                        * mx_msStartFadeIn;
+            int  samplesPerVolStep;
+
+            if( mx_soundSpeed > 1 ) {
+                samplesTotalFadeIn *= mx_soundSpeed;
+                }
+            else if( mx_soundSpeed < 0 ) {
+                samplesTotalFadeIn /= (- mx_soundSpeed );
+                }
+            
+            samplesPerVolStep = samplesTotalFadeIn / mx_globalVolumeScale;
+           
+            if( samplesPerVolStep == 0 ) {
+                /* not enough fade-in samples to cover our full
+                   volume scale */
+
+                /* maybe we need to step more than one vol step per
+                   frame? */
+                volStepAmount = mx_globalVolumeScale / samplesTotalFadeIn;
+                }
+            
             for( f = 0;
                  f < numFramesToMix;
                  f ++ ) {
@@ -10054,9 +10072,13 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                     mx_globalVolumeError += 1;
 
                     if( mx_globalVolumeError >= samplesPerVolStep ) {
-                        mx_globalVolume ++;
+                        mx_globalVolume += volStepAmount;
+                        if( mx_globalVolume > mx_globalVolumeScale ) {
+                            mx_globalVolume = mx_globalVolumeScale;
+                            }
                         mx_globalVolumeError = 0;
-                        }  
+                        }
+                    
                     mx_audioMixingBuffers[0][ f ] *= mx_globalVolume;
                     mx_audioMixingBuffers[1][ f ] *= mx_globalVolume;
 
@@ -10078,11 +10100,29 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                  &&
                  ! mx_endFadeOutAlmostDone ) {
 
+            int  volStepAmount        =  1;
             int  samplesTotalFadeOut  =  ( inSamplesPerSecond / 1000 )
                 * mx_msEndFadeOut;
-            int  samplesPerVolStep    =  samplesTotalFadeOut
-                / mx_globalVolumeScale;
-                
+            int  samplesPerVolStep;
+            
+            if( mx_soundSpeed > 1 ) {
+                samplesTotalFadeOut *= mx_soundSpeed;
+                }
+            else if( mx_soundSpeed < 0 ) {
+                samplesTotalFadeOut /= (- mx_soundSpeed );
+                }
+            
+            samplesPerVolStep = samplesTotalFadeOut / mx_globalVolumeScale;
+
+            if( samplesPerVolStep == 0 ) {
+                /* not enough fade-out samples to cover our full
+                   volume scale */
+
+                /* maybe we need to step more than one vol step per
+                   frame? */
+                volStepAmount = mx_globalVolumeScale / samplesTotalFadeOut;
+                }
+            
             for( f = 0;
                  f < numFramesToMix;
                  f ++ ) {
@@ -10097,9 +10137,13 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                     mx_globalVolumeError += 1;
 
                     if( mx_globalVolumeError >= samplesPerVolStep ) {
-                        mx_globalVolume --;
+                        mx_globalVolume -= volStepAmount;
+                        if( mx_globalVolume < 0 ) {
+                            mx_globalVolume = 0;
+                            }
                         mx_globalVolumeError = 0;
                         }
+                    
                     mx_audioMixingBuffers[0][ f ] *= mx_globalVolume;
                     mx_audioMixingBuffers[1][ f ] *= mx_globalVolume;
 

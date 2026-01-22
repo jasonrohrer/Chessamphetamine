@@ -10071,14 +10071,11 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
                 dataPos -= 4;
                 
                 /* but rewind back there now */
-                if( ! mingin_seekPersistData( mx_musicData.bulkResourceHandle,
+                if( ! mingin_seekPersistData( soundData->bulkResourceHandle,
                                               dataPos ) ) {
                     mingin_log(
                         "Seeking backwards in WAV bulk data failed\n" );
-                            
-                    mingin_endReadBulkData( mx_musicData.bulkResourceHandle );
-                    mx_musicLoaded = 0;
-
+                    
                     mx_playingSoundEffects[ inPlayingSoundIndex ].done = 1;
                     return;
                     }

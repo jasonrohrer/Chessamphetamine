@@ -597,6 +597,9 @@ void maxiginGame_init( void ) {
     
 
     maxigin_initGUI( &gameGUI );
+
+    
+    maxigin_initMusicLoop( "musicLoop_stereo_16_44100.wav" );
     
     
     /* init position in image center */

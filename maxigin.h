@@ -593,6 +593,20 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
 
 
 /*
+  Initializes the music loop that will play as background music in the game.
+
+  Parameters:
+
+      inBulkResourceWavName   the name of the bulk data resource containing
+                              the WAV data of the music loop to play.
+                              
+  [jumpMaxiginInit]      
+*/
+void maxigin_initMusicLoop( const char  *inBulkResourceWavName );
+
+
+
+/*
   This structure stores results of immediate mode GUI calls that
   happen during the game's step function so they can be drawn later during the
   game's draw function.
@@ -628,9 +642,6 @@ typedef struct MaxiginGUI MaxiginGUI;
 
 /*
   Initializes a MaxiginGUI structure.
-
-  Sprites must be in RGBA 32-bit uncompressed TGA format.
-
   
   Parameters:
   
@@ -6293,12 +6304,6 @@ static void mx_gameInit( void ) {
 
     mingin_registerStickAxis( MAXIGIN_STICK_SLIDER,
                               mx_sliderStickMapping );
-                              
-
- 
-    if( 1 ) mx_startPlayingMusic( "musicLoop_stereo_16_44100.wav" );
-
-    if( 0 ) mx_startPlayingMusic( "musicShortLoop.wav" );
 
     
     mx_areWeInMaxiginGameInitFunction = 1;
@@ -10552,7 +10557,9 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
 
 
 
-
+void maxigin_initMusicLoop( const char  *inBulkResourceWavName ) {
+    mx_startPlayingMusic( inBulkResourceWavName );
+    }
 
 
 

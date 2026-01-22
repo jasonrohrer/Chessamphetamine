@@ -1668,6 +1668,7 @@ static  char        mx_playbackPaused                  =  0;
 static  int         mx_playbackSpeed                   =  1;
                                                           /* -1 for backward */
 static  char        mx_playbackDirection               =  1;
+static  char        mx_playbackJumping                 =  0;
 
 static  char        mx_buttonsDown[ LAST_MAXIGIN_USER_ACTION ];
 
@@ -5812,6 +5813,8 @@ static int mx_getMusicFilePos( void );
 
 static void mx_setMusicFilePos( int  inPos );
 
+static void mx_startSoundShortFadeIn( void );
+
 static void mx_renewSoundStartFadeIn( void );
 
 static void mx_startSoundPauseRamp( void );
@@ -6177,6 +6180,15 @@ void minginGame_step( char  inFinalStep ) {
 
         mx_stepRecording();
         }
+
+    /* if we jumped half-forward or half-back above
+       we set this to 1.
+       But those jumps waited for mx_playbackSpeedStep to actually
+       apply the snapshot after the jump.
+       So we need to leave mx_playbackJumping set until now, so
+       that our music jumps correctly in mx_playbackSpeedStep.
+    */
+    mx_playbackJumping = 0;
 
     if( playbackPausedBySlider ) {
         /* unpause temporary playback slider pause */
@@ -7290,7 +7302,12 @@ static char mx_restoreFromFullMemorySnapshot( int inStoreReadHandle ) {
 
         /* but only if we're paused, otherwise there is a lot
            of sample discontinuity and popping */
-        if( mx_playbackPaused || mx_newPlaybackStarting ) {
+        if( mx_playbackPaused
+            ||
+            mx_newPlaybackStarting
+            ||
+            mx_playbackJumping ) {
+            
             mx_setMusicFilePos( readInt );
             }
         }
@@ -8936,6 +8953,12 @@ static void mx_playbackJumpHalfAhead( void ) {
         ( mx_playbackNumFullSnapshots - mx_playbackFullSnapshotLastPlayed ) / 2;
 
     if( numToJump > 0 ) {
+        mx_startSoundPauseRamp();
+        
+        mx_startSoundShortFadeIn();
+
+        mx_playbackJumping = 1;
+        
         mx_playbackJumpToFullSnapshot(
             mx_playbackFullSnapshotLastPlayed + numToJump );
         }
@@ -8949,6 +8972,13 @@ static void mx_playbackJumpHalfBack( void ) {
         ( mx_playbackFullSnapshotLastPlayed ) / 2;
 
     if( destToJump < mx_playbackFullSnapshotLastPlayed ) {
+        
+        mx_startSoundPauseRamp();
+        
+        mx_startSoundShortFadeIn();
+
+        mx_playbackJumping = 1;
+        
         mx_playbackJumpToFullSnapshot( destToJump );
         }
     }
@@ -9977,6 +10007,7 @@ static  int   mx_globalVolumeScale      =  10000;
 static  int   mx_globalVolumeError      =      0;
 
 static  int   mx_msDefaultStartFadeIn   =   5000;
+static  int   mx_msDefaultShortFadeIn   =    100;
 static  int   mx_msStartFadeIn          =   5000;
 static  int   mx_msEndFadeOut           =    100;
 static  int   mx_startFadeInDone        =      0;
@@ -10013,6 +10044,14 @@ static void mx_renewSoundStartFadeIn( void ) {
     mx_globalVolume = 0;
     mx_startFadeInDone = 0;
     mx_msStartFadeIn = mx_msDefaultStartFadeIn;
+    }
+
+
+
+static void mx_startSoundShortFadeIn( void ) {
+    mx_globalVolume = 0;
+    mx_startFadeInDone = 0;
+    mx_msStartFadeIn = mx_msDefaultShortFadeIn;
     }
 
 

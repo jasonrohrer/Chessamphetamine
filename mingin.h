@@ -4974,7 +4974,7 @@ char mingin_getBulkDataChanged( const char  *inBulkName ) {
 
 
 #define  MN_SOUND_NUM_CHANNELS                2
-#define  MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES  128
+#define  MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES  512
 
 static  char                mn_soundOpen                =      0;
 static  snd_pcm_t          *mn_alsaPCMHandle            =      0;
@@ -5009,7 +5009,7 @@ static void mn_soundCleanup( void ) {
 static void mn_openSound( void ) {
 
     int                    result;
-    unsigned int           alsaPeriods      =  1;
+    unsigned int           alsaPeriods      =  2;
     int                    dir;
     snd_pcm_hw_params_t   *hwParams;
     snd_pcm_sw_params_t   *swParams;

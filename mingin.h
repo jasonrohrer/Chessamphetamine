@@ -4236,6 +4236,7 @@ static  char                  mn_bulkReadThreadLive    =  0;
 static  pthread_mutex_t       mn_bulkBufferMutex;
 /* this mutext protects file operations on the underlying files */
 static  pthread_mutex_t       mn_bulkFileOpsMutex;
+static  pthread_cond_t        mn_bulkCanWriteCondition;
 static  pthread_t             mn_bulkReadThread;
 
 
@@ -4303,7 +4304,10 @@ static MinginBulkReadBuffer *mn_getBulkReadBuffer( int  inBulkDataHandle ) {
     }
 
 
-static void mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
+/* returns
+     1  if something read
+     0  if the buffer was full OR there was nothing left to read in file */
+static char mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
     
     enum{  BUFFER_SIZE             =  512 };
     int    ourDesiredResourcePos;
@@ -4327,7 +4331,8 @@ static void mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
         /* consumer is behind, producer is nipping at consumer's
            heels, no room to read more */
         mn_unlockBulkBuffers();
-        return;
+        
+        return 0;
         }
 
     ourDesiredResourcePos = inBuffer->nextProducerResourcePos;
@@ -4359,7 +4364,7 @@ static void mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
     if( truePos == -1 ) {
         mingin_log( "Failed to get position from buffered bulk resource.\n" );
         mn_unlockBulkFileOps();
-        return;
+        return 0;
         }
 
     if( truePos != ourDesiredResourcePos ) {
@@ -4370,7 +4375,7 @@ static void mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
 
             mingin_log( "Failed to seek in buffered bulk resource.\n" );
             mn_unlockBulkFileOps();
-            return;
+            return 0;
             }
         }
 
@@ -4381,7 +4386,7 @@ static void mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
     if( numRead == -1 ) {
         mingin_log( "Failed to read from buffered bulk resource.\n" );
         mn_unlockBulkFileOps();
-        return;
+        return 0;
         }
 
     
@@ -4399,7 +4404,7 @@ static void mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
            just return, and deal with this next iteration */
 
         mn_unlockBulkBuffers();
-        return;
+        return 1;
         }
 
     if( numRead < maxNumReadBytes ) {
@@ -4429,6 +4434,8 @@ static void mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
     inBuffer->nextProducerResourcePos = ourDesiredResourcePos + numRead;
 
     mn_unlockBulkBuffers();
+
+    return 1;
     }
     
 
@@ -4444,6 +4451,8 @@ static void *mn_bulkReadThreadFunction( void *inArg ) {
         }
     
     while( 1 ) {
+
+        char  anyProgress = 0;
         
         mn_lockBulkBuffers();
         
@@ -4462,7 +4471,26 @@ static void *mn_bulkReadThreadFunction( void *inArg ) {
              i < numReadBuffers;
              i ++ ) {
 
-            mn_processBulkReadBuffer( &( mn_bulkReadBuffers[ i ] ) );
+            anyProgress =
+                anyProgress
+                ||
+                mn_processBulkReadBuffer( &( mn_bulkReadBuffers[ i ] ) );
+            }
+
+        if( ! anyProgress ) {
+            /* all buffers are full, waiting for consumer to read more */
+
+            /* sleep until some consumer signals us */
+            mn_lockBulkBuffers();
+
+            /* this sleeps until signal happens and then auto
+               re-aquires the mutex */
+            pthread_cond_wait( &mn_bulkCanWriteCondition,
+                               &mn_bulkBufferMutex );
+
+            /* but we actually don't need to keep holding the mutex
+               once we wake up */
+            mn_unlockBulkBuffers();
             }
         }
     }
@@ -4483,6 +4511,25 @@ static void mn_setupBulkReadThread( void ) {
         mingin_log( "Failed to create bulk read mutex \n" );
         return;
         }
+
+    if( pthread_mutex_init( &mn_bulkFileOpsMutex, 0 ) != 0 ) {
+        /* this should never happen, pthread_mutex_init always returns 0 */
+
+        mingin_log( "Failed to create bulk file operations mutex \n" );
+
+        pthread_mutex_destroy( &mn_bulkBufferMutex );
+        
+        return;
+        }
+
+    if( pthread_cond_init( &mn_bulkCanWriteCondition, 0 ) != 0 ) {
+        mingin_log( "Failed to create bulk can write condition\n" );
+
+        pthread_mutex_destroy( &mn_bulkFileOpsMutex );
+        pthread_mutex_destroy( &mn_bulkBufferMutex );
+        
+        return;
+        }
     
     mn_bulkReadThreadLive = 1;
 
@@ -4496,6 +4543,11 @@ static void mn_setupBulkReadThread( void ) {
     if( result != 0 ) {
         mingin_log( "Failed to start bulk read thread.\n" );
         mn_bulkReadThreadLive = 0;
+
+        pthread_cond_destroy( &mn_bulkCanWriteCondition );
+        pthread_mutex_destroy( &mn_bulkFileOpsMutex );
+        pthread_mutex_destroy( &mn_bulkBufferMutex );
+        
         return;
         }
 
@@ -4515,13 +4567,33 @@ static void mn_endBulkReadThread( void ) {
         
     mn_lockBulkBuffers();
     mn_bulkReadThreadLive = 0;
+
+    /* wake producer thread up if it's waiting */
+    pthread_cond_signal( &mn_bulkCanWriteCondition );
+    
     mn_unlockBulkBuffers();
 
+    
     result = pthread_join( mn_bulkReadThread, &threadReturnVal );
 
     if( result != 0 ) {
         mingin_log( "Failed to join bulk read thread at exit\n" );
         }
+
+    
+    result = pthread_cond_destroy( &mn_bulkCanWriteCondition );
+
+    if( result != 0 ) {
+        mingin_log( "Failed to destroy bulk can write condition at exit\n" );
+        }
+
+    
+    result = pthread_mutex_destroy( &mn_bulkFileOpsMutex );
+
+    if( result != 0 ) {
+        mingin_log( "Failed to destroy bulk file operations mutex at exit\n" );
+        }
+    
 
     result = pthread_mutex_destroy( &mn_bulkBufferMutex );
 
@@ -4708,6 +4780,12 @@ static int mn_bufferedBulkRead( int             inBulkDataHandle,
         
         }
 
+    if( b > 0 ){
+        /* tell producer that there's room to write more in the buffer
+           we must hold the lock while doing this */
+        pthread_cond_signal( & mn_bulkCanWriteCondition );
+        }
+
     mn_unlockBulkBuffers();
 
     return b;
@@ -4744,8 +4822,13 @@ static char mn_bufferedBulkSeek( int  inBulkDataHandle,
     buffer->nextConsumerResourcePos = inAbsoluteBytePosition;
     buffer->endOfFileReached = 0;
 
-    mn_unlockBulkBuffers();
+    /* tell producer that there's room to write more in the buffer
+       since all positions reset
+       we must hold the lock while doing this */
+    pthread_cond_signal( & mn_bulkCanWriteCondition );
 
+    mn_unlockBulkBuffers();
+        
     return 1;
     }
 

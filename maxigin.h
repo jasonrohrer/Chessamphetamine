@@ -10177,8 +10177,11 @@ static void mx_mixInAllSoundEffectsSamples( int  inNumSampleFrames ) {
 
              /* swap last into this spot and shrink */
 
-             mx_playingSoundEffects[ i ] =
-                 mx_playingSoundEffects[ mx_numPlayingSoundEffects - 1 ];
+             if( i != mx_numPlayingSoundEffects - 1 ) {
+
+                 mx_playingSoundEffects[ i ] =
+                     mx_playingSoundEffects[ mx_numPlayingSoundEffects - 1 ];
+                 }
              
              mx_numPlayingSoundEffects --;
              }
@@ -11372,6 +11375,11 @@ static void mx_startPlayingMusic( const char  *inMusicBulkResourceName ) {
 
     if( success ) {
 
+        /* half a second of stereo 16 44100 music */
+        enum{  BUFFER_SIZE  =  88200  };
+
+        static  unsigned char  buffer[ BUFFER_SIZE ];
+
         if( mx_musicData.numChannels != 2 ) {
             maxigin_logString( "Can only play 2-channel WAV data as music: ",
                                inMusicBulkResourceName );
@@ -11386,6 +11394,10 @@ static void mx_startPlayingMusic( const char  *inMusicBulkResourceName ) {
         
             return;
             }
+
+        mingin_setBulkDataReadBuffer( mx_musicData.bulkResourceHandle,
+                                      BUFFER_SIZE,
+                                      buffer );
 
         mingin_lockAudio();
 

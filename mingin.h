@@ -5093,7 +5093,7 @@ static void mn_openSound( void ) {
                                                 hwParams,
                                                 &mn_sampleFramesInPeriod,
                                                 &dir ) < 0 ) {
-        mingin_log( "Failed to set ALSA sample buffer size near 1024\n" );
+        mingin_log( "Failed to set ALSA sample buffer size near 512\n" );
         mn_soundCleanup();
         return;
         }

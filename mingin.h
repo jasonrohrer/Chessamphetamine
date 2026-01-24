@@ -4611,6 +4611,7 @@ void mingin_setBulkDataReadBuffer( int             inBulkDataHandle,
                                    unsigned char  *inBuffer ) {
 
     MinginBulkReadBuffer  *b;
+    int                    numRead;
     
     if( mn_numBulkReadBuffers >= MINGIN_MAX_BULK_READ_BUFFERS ) {
         /* full */
@@ -4636,15 +4637,39 @@ void mingin_setBulkDataReadBuffer( int             inBulkDataHandle,
     b->producerPos = 0;
     b->consumerPos = 0;
 
+    b->nextConsumerResourcePos = mn_linuxFileGetPos( inBulkDataHandle );
+
+    if( b->nextConsumerResourcePos == -1 ) {
+        /* failed to get pos */
+        return;
+        }
+    
+    /* pre-fill buffer */
+    numRead = mn_linuxFileRead( inBulkDataHandle,
+                                inBufferSize - 1,
+                                inBuffer );
+
+    if( numRead == -1 ) {
+        return;
+        }
+
+    b->producerPos += numRead;
+    
     b->nextProducerResourcePos = mn_linuxFileGetPos( inBulkDataHandle );
-    b->nextConsumerResourcePos = b->nextProducerResourcePos;
-    b->endOfFileReached = 0;
     
     if( b->nextProducerResourcePos == -1 ) {
         /* failed to get pos */
         return;
         }
+    
+    b->endOfFileReached = 0;
 
+    if( numRead != inBufferSize - 1 ) {
+        
+        /* got to end of file on first read */
+        b->endOfFileReached = 1;
+        }
+    
     mn_lockBulkBuffers();
     
     mn_numBulkReadBuffers ++;

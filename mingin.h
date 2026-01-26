@@ -4232,6 +4232,7 @@ static  MinginBulkReadBuffer  mn_bulkReadBuffers[ MINGIN_MAX_BULK_READ_BUFFERS ]
 
 static  int                   mn_numBulkReadBuffers    =  0;
 static  char                  mn_bulkReadThreadLive    =  0;
+static  char                  mn_bulkReadMutexesLive   =  0;
 /* this mutex protects the bulk buffer data structure */
 static  pthread_mutex_t       mn_bulkBufferMutex;
 /* this mutext protects file operations on the underlying files */
@@ -4243,7 +4244,13 @@ static  pthread_t             mn_bulkReadThread;
 
 static void mn_lockBulkBuffers( void ) {
     
-    int  result  =  pthread_mutex_lock( &mn_bulkBufferMutex );
+    int  result;
+
+    if( ! mn_bulkReadMutexesLive ) {
+        return;
+        }
+    
+    result = pthread_mutex_lock( &mn_bulkBufferMutex );
 
     if( result != 0 ) {
         mingin_log( "Failed to lock bulk read mutex\n" );
@@ -4254,7 +4261,13 @@ static void mn_lockBulkBuffers( void ) {
 
 static void mn_unlockBulkBuffers( void ) {
     
-    int  result  =  pthread_mutex_unlock( &mn_bulkBufferMutex );
+    int  result;
+
+    if( ! mn_bulkReadMutexesLive ) {
+        return;
+        }
+
+    result = pthread_mutex_unlock( &mn_bulkBufferMutex );
 
     if( result != 0 ) {
         mingin_log( "Failed to unlock bulk read mutex\n" );
@@ -4265,7 +4278,13 @@ static void mn_unlockBulkBuffers( void ) {
 
 static void mn_lockBulkFileOps( void ) {
     
-    int  result  =  pthread_mutex_lock( &mn_bulkFileOpsMutex );
+    int  result;
+
+    if( ! mn_bulkReadMutexesLive ) {
+        return;
+        }
+
+    result = pthread_mutex_lock( &mn_bulkFileOpsMutex );
 
     if( result != 0 ) {
         mingin_log( "Failed to lock bulk file operations mutex\n" );
@@ -4276,7 +4295,13 @@ static void mn_lockBulkFileOps( void ) {
 
 static void mn_unlockBulkFileOps( void ) {
     
-    int  result  =  pthread_mutex_unlock( &mn_bulkFileOpsMutex );
+    int  result;
+
+    if( ! mn_bulkReadMutexesLive ) {
+        return;
+        }
+
+    result = pthread_mutex_unlock( &mn_bulkFileOpsMutex );
 
     if( result != 0 ) {
         mingin_log( "Failed to unlock bulk file operations mutex\n" );
@@ -4388,6 +4413,9 @@ static char mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
         mn_unlockBulkFileOps();
         return 0;
         }
+    if( numRead == 0 ) {
+        printf( "Hey\n" );
+        }
 
     
     mn_unlockBulkFileOps();
@@ -4435,7 +4463,12 @@ static char mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
 
     mn_unlockBulkBuffers();
 
-    return 1;
+    if( numRead > 0 ) {
+        return 1;
+        }
+    else {
+        return 0;
+        }
     }
     
 
@@ -4483,6 +4516,13 @@ static void *mn_bulkReadThreadFunction( void *inArg ) {
             /* sleep until some consumer signals us */
             mn_lockBulkBuffers();
 
+            if( ! mn_bulkReadThreadLive ) {
+                /* but not if our thread has ended */
+                mn_unlockBulkBuffers();
+            
+                return 0;
+                }
+            
             /* this sleeps until signal happens and then auto
                re-aquires the mutex */
             pthread_cond_wait( &mn_bulkCanWriteCondition,
@@ -4504,6 +4544,8 @@ static void mn_setupBulkReadThread( void ) {
     if( mn_bulkReadThreadLive ) {
         return;
         }
+
+    mn_bulkReadMutexesLive = 0;
 
     if( pthread_mutex_init( &mn_bulkBufferMutex, 0 ) != 0 ) {
         /* this should never happen, pthread_mutex_init always returns 0 */
@@ -4530,6 +4572,8 @@ static void mn_setupBulkReadThread( void ) {
         
         return;
         }
+
+    mn_bulkReadMutexesLive = 1;
     
     mn_bulkReadThreadLive = 1;
 
@@ -4543,6 +4587,7 @@ static void mn_setupBulkReadThread( void ) {
     if( result != 0 ) {
         mingin_log( "Failed to start bulk read thread.\n" );
         mn_bulkReadThreadLive = 0;
+        mn_bulkReadMutexesLive = 0;
 
         pthread_cond_destroy( &mn_bulkCanWriteCondition );
         pthread_mutex_destroy( &mn_bulkFileOpsMutex );
@@ -4580,6 +4625,7 @@ static void mn_endBulkReadThread( void ) {
         mingin_log( "Failed to join bulk read thread at exit\n" );
         }
 
+    mn_bulkReadMutexesLive = 0;
     
     result = pthread_cond_destroy( &mn_bulkCanWriteCondition );
 
@@ -4612,19 +4658,22 @@ void mingin_setBulkDataReadBuffer( int             inBulkDataHandle,
 
     MinginBulkReadBuffer  *b;
     int                    numRead;
-    
+
+    mn_setupBulkReadThread();
+
+    mn_lockBulkBuffers();
+
     if( mn_numBulkReadBuffers >= MINGIN_MAX_BULK_READ_BUFFERS ) {
         /* full */
+        mn_unlockBulkBuffers();
         return;
         }
     
     if( mn_getBulkReadBuffer( inBulkDataHandle ) != 0 ) {
         /* exists already */
+        mn_unlockBulkBuffers();
         return;
         }
-
-    mn_setupBulkReadThread();
-    
 
     b = &( mn_bulkReadBuffers[ mn_numBulkReadBuffers ] );
 
@@ -4641,6 +4690,7 @@ void mingin_setBulkDataReadBuffer( int             inBulkDataHandle,
 
     if( b->nextConsumerResourcePos == -1 ) {
         /* failed to get pos */
+        mn_unlockBulkBuffers();
         return;
         }
     
@@ -4650,6 +4700,7 @@ void mingin_setBulkDataReadBuffer( int             inBulkDataHandle,
                                 inBuffer );
 
     if( numRead == -1 ) {
+        mn_unlockBulkBuffers();
         return;
         }
 
@@ -4659,6 +4710,7 @@ void mingin_setBulkDataReadBuffer( int             inBulkDataHandle,
     
     if( b->nextProducerResourcePos == -1 ) {
         /* failed to get pos */
+        mn_unlockBulkBuffers();
         return;
         }
     
@@ -4669,8 +4721,6 @@ void mingin_setBulkDataReadBuffer( int             inBulkDataHandle,
         /* got to end of file on first read */
         b->endOfFileReached = 1;
         }
-    
-    mn_lockBulkBuffers();
     
     mn_numBulkReadBuffers ++;
 
@@ -4714,6 +4764,8 @@ static void mn_removeBulkDataReadBuffer( int  inBulkDataHandle ) {
 
 
 
+/* must call mn_lockBulkBuffers before calling
+   unlocks before returning */
 static int mn_bufferedBulkRead( int             inBulkDataHandle,
                                 int             inNumBytesToRead,
                                 unsigned char  *inByteBuffer ) {
@@ -4726,10 +4778,9 @@ static int mn_bufferedBulkRead( int             inBulkDataHandle,
     buffer = mn_getBulkReadBuffer( inBulkDataHandle );
 
     if( buffer == 0 ) {
+        mn_unlockBulkBuffers();
         return -1;
         }
-
-    mn_lockBulkBuffers();
 
     p = buffer->producerPos;
     c = buffer->consumerPos;
@@ -4749,6 +4800,10 @@ static int mn_bufferedBulkRead( int             inBulkDataHandle,
 
     buffer->consumerPos = c;
     buffer->nextConsumerResourcePos += b;
+
+    if( b < inNumBytesToRead ) {
+        printf( "Hey 2\n" );
+        }
     
     if( b < inNumBytesToRead
         &&
@@ -4805,9 +4860,16 @@ static int mn_bufferedBulkRead( int             inBulkDataHandle,
         
         }
 
-    if( b > 0 ){
+    if( b > 0
+        &&
+        ! buffer->endOfFileReached ){
         /* tell producer that there's room to write more in the buffer
            we must hold the lock while doing this */
+
+        /* note that we do NOT do this if producer has reached the
+           end of the file, since that will wake them up to do
+           nothing */
+        
         pthread_cond_signal( & mn_bulkCanWriteCondition );
         }
 
@@ -4817,6 +4879,8 @@ static int mn_bufferedBulkRead( int             inBulkDataHandle,
     }
 
 
+/* must call mn_lockBulkBuffers before calling
+   unlocks before returning */
 static char mn_bufferedBulkSeek( int  inBulkDataHandle,
                                  int  inAbsoluteBytePosition ) {
 
@@ -4825,10 +4889,9 @@ static char mn_bufferedBulkSeek( int  inBulkDataHandle,
     buffer = mn_getBulkReadBuffer( inBulkDataHandle );
 
     if( buffer == 0 ) {
+        mn_unlockBulkBuffers();
         return 0;
         }
-
-    mn_lockBulkBuffers();
 
     if( buffer->nextConsumerResourcePos == inAbsoluteBytePosition ) {
         /* already there */
@@ -4859,6 +4922,8 @@ static char mn_bufferedBulkSeek( int  inBulkDataHandle,
 
 
 
+/* must call mn_lockBulkBuffers before calling
+   unlocks before returning */
 static int mn_bufferedBulkTell( int  inBulkDataHandle ) {
 
     int                    pos;
@@ -4867,10 +4932,9 @@ static int mn_bufferedBulkTell( int  inBulkDataHandle ) {
     buffer = mn_getBulkReadBuffer( inBulkDataHandle );
 
     if( buffer == 0 ) {
+        mn_unlockBulkBuffers();
         return -1;
         }
-    
-    mn_lockBulkBuffers();
 
     pos = buffer->nextConsumerResourcePos;
 
@@ -4884,18 +4948,37 @@ static int mn_bufferedBulkTell( int  inBulkDataHandle ) {
 int mingin_readBulkData( int             inBulkDataHandle,
                          int             inNumBytesToRead,
                          unsigned char  *inByteBuffer ) {
-
+    
+    /* call first without locking
+       if there are some buffered bulk resources,
+       we don't want to slow down ALL reads for non-buffered
+       resources with locking on every read */
+    
     if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
 
-        return mn_bufferedBulkRead( inBulkDataHandle,
-                                    inNumBytesToRead,
-                                    inByteBuffer );
+        /* we know it existed, but it might not exist still
+           lock and try again */
+
+        mn_lockBulkBuffers();
+
+        if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
+
+            /* this will unlock before returning */
+            return mn_bufferedBulkRead( inBulkDataHandle,
+                                        inNumBytesToRead,
+                                        inByteBuffer );
+            }
+        else {
+            mn_unlockBulkBuffers();
+            }
         }
-    else {
-        return mn_linuxFileRead( inBulkDataHandle,
-                                 inNumBytesToRead,
-                                 inByteBuffer );
-        }
+
+    /* if we fell through without returning, we didn't read a
+       buffered resource */
+    
+    return mn_linuxFileRead( inBulkDataHandle,
+                             inNumBytesToRead,
+                             inByteBuffer );
     }
 
 
@@ -4903,26 +4986,50 @@ int mingin_readBulkData( int             inBulkDataHandle,
 char mingin_seekBulkData( int  inBulkDataHandle,
                           int  inAbsoluteBytePosition ) {
 
+    /* see comments inside
+           mingin_readBulkData
+       for explanation of why we do things in this order */
+    
     if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
-        return mn_bufferedBulkSeek( inBulkDataHandle,
-                                    inAbsoluteBytePosition );
+        
+        mn_lockBulkBuffers();
+
+        if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
+            
+            return mn_bufferedBulkSeek( inBulkDataHandle,
+                                        inAbsoluteBytePosition );
+            }
+        else {
+            mn_unlockBulkBuffers();
+            }
         }
-    else {
-        return mn_linuxFileSeek( inBulkDataHandle,
-                                 inAbsoluteBytePosition );
-        }
+
+    return mn_linuxFileSeek( inBulkDataHandle,
+                             inAbsoluteBytePosition );
     }
 
 
 
 int mingin_getBulkDataPosition( int  inBulkDataHandle ) {
 
+    /* see comments inside
+           mingin_readBulkData
+       for explanation of why we do things in this order */
+
     if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
-        return mn_bufferedBulkTell( inBulkDataHandle );
+        
+        mn_lockBulkBuffers();
+
+        if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
+            
+            return mn_bufferedBulkTell( inBulkDataHandle );
+            }
+        else {
+            mn_unlockBulkBuffers();
+            }
         }
-    else {
-        return mn_linuxFileGetPos( inBulkDataHandle );
-        }
+    
+    return mn_linuxFileGetPos( inBulkDataHandle );
     }
 
 
@@ -4930,6 +5037,12 @@ int mingin_getBulkDataPosition( int  inBulkDataHandle ) {
 void mingin_endReadBulkData( int  inBulkDataHandle ) {
 
     if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
+
+        /* this is safe to do without locks around
+           checking for existence, since the remove
+           code locks and will just not find the buffer if it's
+           already been removed */
+        
         mn_removeBulkDataReadBuffer( inBulkDataHandle );
         }
     

@@ -10379,8 +10379,8 @@ static void mx_mixInMusicSamples( int  inNumSampleFrames ) {
         if( consumingLastFrame ) {
             /* this mixing batch consumes last frame in WAV data
                rewind so it will loop from here */
-            if( ! mingin_seekPersistData( mx_musicData.bulkResourceHandle,
-                                          mx_musicData.firstSampleLocation ) ) {
+            if( ! mingin_seekBulkData( mx_musicData.bulkResourceHandle,
+                                       mx_musicData.firstSampleLocation ) ) {
 
                 mingin_log(
                     "Seeking back to start of music WAV bulk data failed\n" );
@@ -10399,8 +10399,8 @@ static void mx_mixInMusicSamples( int  inNumSampleFrames ) {
                 mx_musicData.firstSampleLocation
                 + mx_musicData.numSampleFrames * 4 - 4;
             
-            if( ! mingin_seekPersistData( mx_musicData.bulkResourceHandle,
-                                          dataPos ) ) {
+            if( ! mingin_seekBulkData( mx_musicData.bulkResourceHandle,
+                                       dataPos ) ) {
                 mingin_log(
                     "Seeking to end of music WAV bulk data failed\n" );
                             

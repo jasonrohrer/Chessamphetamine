@@ -4879,11 +4879,12 @@ static int mn_bufferedBulkRead( int             inBulkDataHandle,
             }
         b += numRead;
 
+        /* keep track of where our consumer is at in the file now */
+        buffer->nextConsumerResourcePos += numRead;
+
         /* tell io thread that it needs to read from a different
            spot in the file next time */
-        buffer->nextProducerResourcePos =
-            buffer->nextConsumerResourcePos + numRead;
-        
+        buffer->nextProducerResourcePos = buffer->nextConsumerResourcePos;
         }
 
     if( b > 0

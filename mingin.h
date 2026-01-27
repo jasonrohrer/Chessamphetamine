@@ -42,13 +42,13 @@
   
   Include in your C code wherever like so:
 
-  #include "mingin.h"
+      #include "mingin.h"
 
   Include exactly once, in one .c file, like so, to compile in the
   implementation:
 
-  #define MINGIN_IMPLEMENTATION
-  #include "mingin.h"
+      #define MINGIN_IMPLEMENTATION
+      #include "mingin.h"
 
 */
 
@@ -97,7 +97,8 @@
 
   --The code makes no assumptions about what platform features are present,
     and Mingin can be used to run games on platforms that can only provide a
-    subset of the suggested infrastructure.
+    subset of the suggested infrastructure.  For example, some platforms might
+    not have sound output, and other platforms might not have mouse input.
 
 
     
@@ -120,7 +121,7 @@
       a game might stream music audio data that is too big to fit in RAM.
       
   6.  A way to read and write data that persists between runs of the game,
-      for saved games, settings, caches, and so on.
+      for saved games, settings, caches, recordings, and so on.
 
   7.  A way to log messages for the purposes of troubleshooting.
 
@@ -189,7 +190,13 @@
   minginGame_getScreenPixels might be called after multiple calls to
   minginGame_step, or multiple times between each call to minginGame_step, etc.
 
-  The only guarantee is that these functions will never be called concurrently.
+  The only guarantee is that the first three functions will never be called
+  concurrently.
+
+  On some platforms where audio runs in a separate thread,
+  minginGame_getAudioSamples might be called concurrently with the other
+  minginGame functions.  Lock functions are provided to prevent getAudioSamples
+  from being called at inconvenient times.
 */
 
 

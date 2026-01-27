@@ -10035,7 +10035,7 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
                 
                 dataPos -= numBytesToReadNow - 4;
                 
-                if( ! mingin_seekPersistData( soundData->bulkResourceHandle,
+                if( ! mingin_seekBulkData( soundData->bulkResourceHandle,
                                               dataPos ) ) {
                     mingin_log(
                         "Seeking backwards in WAV bulk data failed\n" );
@@ -10071,7 +10071,7 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
                 dataPos -= 4;
                 
                 /* but rewind back there now */
-                if( ! mingin_seekPersistData( soundData->bulkResourceHandle,
+                if( ! mingin_seekBulkData( soundData->bulkResourceHandle,
                                               dataPos ) ) {
                     mingin_log(
                         "Seeking backwards in WAV bulk data failed\n" );
@@ -10292,8 +10292,8 @@ static void mx_mixInMusicSamples( int  inNumSampleFrames ) {
                 
                 dataPos -= numBytesToReadNow - 4;
                 
-                if( ! mingin_seekPersistData( mx_musicData.bulkResourceHandle,
-                                              dataPos ) ) {
+                if( ! mingin_seekBulkData( mx_musicData.bulkResourceHandle,
+                                           dataPos ) ) {
                     mingin_log(
                         "Seeking backwards in WAV bulk data failed\n" );
                             
@@ -10332,8 +10332,8 @@ static void mx_mixInMusicSamples( int  inNumSampleFrames ) {
                 dataPos -= 4;
                 
                 /* but rewind back there now */
-                if( ! mingin_seekPersistData( mx_musicData.bulkResourceHandle,
-                                              dataPos ) ) {
+                if( ! mingin_seekBulkData( mx_musicData.bulkResourceHandle,
+                                           dataPos ) ) {
                     mingin_log(
                         "Seeking backwards in WAV bulk data failed\n" );
                             

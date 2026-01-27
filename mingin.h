@@ -4425,9 +4425,6 @@ static char mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
         mn_unlockBulkFileOps();
         return 0;
         }
-    if( numRead == 0 ) {
-        printf( "Hey\n" );
-        }
 
     
     mn_unlockBulkFileOps();
@@ -4832,10 +4829,6 @@ static int mn_bufferedBulkRead( int             inBulkDataHandle,
 
     buffer->consumerPos = c;
     buffer->nextConsumerResourcePos += b;
-
-    if( b < inNumBytesToRead ) {
-        printf( "Hey 2\n" );
-        }
     
     if( b < inNumBytesToRead
         &&

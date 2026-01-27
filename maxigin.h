@@ -10077,7 +10077,7 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
         
 
     if( mx_soundDirection == 1 ) {
-        if( numFramesToMix> numFramesLeft ) {
+        if( numFramesToMix > numFramesLeft ) {
             numFramesToMix = numFramesLeft;
             consumingLastFrame = 1;
             }

@@ -10031,8 +10031,7 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
     char                 consumingFirstFrame  =  0;
     int                  numFramesUsed;
     int                  numFramesLeft;
-    int                  numBytesToRead;
-    int                  wavB;
+    int                  dataPosJump;
 
         
     if( mx_playingSoundEffects[ inPlayingSoundIndex ].done ) {
@@ -10047,20 +10046,14 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
         numFramesToMix = MAXIGIN_AUDIO_MIXING_NUM_SAMPLES;
         }
 
-    if( mx_soundDirection == -1 ) {
-        /* f starts at end and walks backward */
-        f = numFramesToMix - 1;
-        }
-
     effect = &( mx_soundEffects[
                        mx_playingSoundEffects[
                            inPlayingSoundIndex ].soundHandle ] );
     
 
-    /* when playing forward, dataPos points to NEXT byte to read
-       when playing backward, dataPos points to last byte in next block
-       to read backward (last byte should be included in next backward
-       read) */
+    /* when playing forward OR backward dataPos points first byte of next sample
+       frame to read..
+    */
 
     dataPos = mx_playingSoundEffects[ inPlayingSoundIndex ].dataPos;
 
@@ -10076,11 +10069,12 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
     numFramesLeft = effect->numSampleFrames - numFramesUsed;
         
 
-    if( mx_soundDirection == 1 ) {
+    if( mx_soundDirection == 1 ) {     
         if( numFramesToMix > numFramesLeft ) {
             numFramesToMix = numFramesLeft;
             consumingLastFrame = 1;
             }
+        dataPosJump = 4;
         }
     else {
         /* backwards direction */
@@ -10091,19 +10085,10 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
             numFramesToMix = numFramesAvail;
             consumingFirstFrame = 1;
             }
+        dataPosJump = -4;
         }
-    
-    numBytesToRead = numFramesToMix * 4;
-
-    if( mx_soundDirection == -1 ) {
-        /* move backwards to start of block of bytes to read */
-
-        dataPos -= numBytesToRead - 4;
-        }
-
-    wavB = 0;
-        
-    while( wavB < numBytesToRead ) {
+ 
+    while( f < numFramesToMix ) {
                             
         unsigned short  uL;
         unsigned short  uR;
@@ -10111,23 +10096,17 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
         uL = (unsigned short)( 
             mx_soundBytes[ dataPos     ] |
             mx_soundBytes[ dataPos + 1 ] << 8 );
-
-        dataPos += 2;
                             
         uR = (unsigned short)( 
-            mx_soundBytes[ dataPos     ] |
-            mx_soundBytes[ dataPos + 1 ] << 8 );
+            mx_soundBytes[ dataPos + 2 ] |
+            mx_soundBytes[ dataPos + 3 ] << 8 );
 
-        dataPos += 2;
-
-        wavB += 4;
+        dataPos += dataPosJump;
         
         mx_audioMixingBuffers[0][ f ] += (short)uL;
         mx_audioMixingBuffers[1][ f ] += (short)uR;
                             
-        /* next (or previous, if backward) frame of 4 bytes
-           wavB has already been advanced by 4*/
-        f += mx_soundDirection;
+        f++;
         }
  
     if( consumingLastFrame ) {
@@ -10141,12 +10120,6 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
 
         mx_playingSoundEffects[ inPlayingSoundIndex ].done = 1;
         return;
-        }
-
-    if( mx_soundDirection == -1 ) {
-        /* move backwards to last byte in next block to read */
-
-        dataPos -= numBytesToRead - 4;
         }
 
     mx_playingSoundEffects[ inPlayingSoundIndex ].dataPos = dataPos;

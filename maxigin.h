@@ -5922,6 +5922,7 @@ static int mx_getNextJustEndedSoundEffect( void );
 static void mx_processDoneSoundEffects( void );
 
 
+static void mx_endAllSoundEffectsNow( void );
 
 
 
@@ -6158,6 +6159,13 @@ void minginGame_step( char  inFinalStep ) {
             if( mx_playbackPaused ) {
                 setSpeed = 0;
                 }
+
+            /* whenever slider dropped, whatever sound effects were
+               playing before are no longer relevant
+               they ramped to silence nicely when we grabbed slider
+               so just end them all now */
+            mx_endAllSoundEffectsNow();
+            
             
             mx_setSoundSpeedAndDirection( setSpeed,
                                           mx_playbackDirection );
@@ -10227,6 +10235,16 @@ static  int                        mx_justEndedSoundEffects[
                                        MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ];
 
 static  int                        mx_numJustEndedSoundEffects  =  0;
+
+
+
+static void mx_endAllSoundEffectsNow( void ) {
+    mingin_lockAudio();
+
+    mx_numPlayingSoundEffects = 0;
+
+    mingin_unlockAudio();
+    }
 
 
 static void mx_clearJustStartedSoundEffects( void ) {

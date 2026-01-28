@@ -5884,6 +5884,7 @@ static  char  mx_soundLocked                      =  0;
 static  char  mx_quitting                         =  0;
 static  char  mx_quittingReady                    =  0;
 static  char  mx_playbackSliderActive             =  0;
+static  char  mx_playbackBlockForwardSounds       =  0;
 
 
 /* initiates and steps sound fade out, returning 1 when finally done
@@ -6232,11 +6233,25 @@ void minginGame_step( char  inFinalStep ) {
                     }
                 
                 if( success ) {
+                    
+                    /* we block sound triggers here
+                       because we are initing playback from the first
+                       recorded frame and then
+
+                       fast-stepping forward to the
+                       last step, and then instant-reversing from there
+                       we don't want recorded sounds to trigger when
+                       we do this init or fast-stepping */
+                    mx_playbackBlockForwardSounds = 1;
+                    
                     mx_initPlayback();
 
                     /* jump to last step */
                     mx_playbackJumpToStep( mx_playbackTotalSteps - 1 );
 
+                    mx_playbackBlockForwardSounds = 0;
+
+                    
                     mx_playbackDirection = -1;
                     mx_playbackSpeed     = 1;
 
@@ -7443,7 +7458,9 @@ static char mx_restoreJustStartedSoundEffects( int  inStoreReadHandle ) {
                and only if we're playing forward */
             if( ! mx_playbackPaused
                 &&
-                mx_playbackDirection == 1) {
+                mx_playbackDirection == 1
+                &&
+                ! mx_playbackBlockForwardSounds ) {
                 
                 maxigin_playSoundEffect( readInt );
                 }

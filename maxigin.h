@@ -7628,7 +7628,9 @@ static char mx_restoreLiveSoundEffects( int   inStoreReadHandle ) {
         return 0;
         }
 
-    if( mx_playbackPaused ) {
+    if( mx_playbackPaused
+        ||
+        mx_playbackJumping ) {
         
         /* when restoring live effects, we auto-clear any playing effects
            because they're probably stale, or left over from a previously-played
@@ -7667,7 +7669,9 @@ static char mx_restoreLiveSoundEffects( int   inStoreReadHandle ) {
                 }
             
             /* only trigger them if we're paused */
-            if( mx_playbackPaused ) {
+            if( mx_playbackPaused
+                ||
+                mx_playbackJumping ) {
                 
                 mx_playSoundEffectWithPos( handle,
                                            dataPos );

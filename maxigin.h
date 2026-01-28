@@ -7439,8 +7439,11 @@ static char mx_restoreJustStartedSoundEffects( int  inStoreReadHandle ) {
                 return 0;
                 }
             
-            /* only play them if we're not paused */
-            if( ! mx_playbackPaused ) {
+            /* only play them if we're not paused
+               and only if we're playing forward */
+            if( ! mx_playbackPaused
+                &&
+                mx_playbackDirection == 1) {
                 
                 maxigin_playSoundEffect( readInt );
                 }

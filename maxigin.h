@@ -1737,6 +1737,7 @@ typedef enum MaxiginSticks {
     } MaxiginSticks;
 
 
+#define  MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS           40
 
 static  char        mx_areWeInMaxiginGameInitFunction  =  0;
 
@@ -5925,6 +5926,11 @@ static void mx_processDoneSoundEffects( void );
 static void mx_endAllSoundEffectsNow( void );
 
 
+/* passed-in buffers must have room for MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS */
+static int mx_getLiveSoundEffects( int *outHandleBuffer,
+                                   int *outDataPosBuffer );
+
+
 
 
 
@@ -6159,13 +6165,6 @@ void minginGame_step( char  inFinalStep ) {
             if( mx_playbackPaused ) {
                 setSpeed = 0;
                 }
-
-            /* whenever slider dropped, whatever sound effects were
-               playing before are no longer relevant
-               they ramped to silence nicely when we grabbed slider
-               so just end them all now */
-            mx_endAllSoundEffectsNow();
-            
             
             mx_setSoundSpeedAndDirection( setSpeed,
                                           mx_playbackDirection );
@@ -7238,8 +7237,8 @@ static void mx_closeRecordingDataStores( void ) {
 
 
 /* returns 1 on success, 0 on error */
-static char mx_recordSoundEffects( int (*inCountFunction)( void ),
-                                   int (*inGetNextFunction)( void ) ) {
+static char mx_recordSoundEffectsTriggers( int (*inCountFunction)( void ),
+                                           int (*inGetNextFunction)( void ) ) {
 
     int   numSoundEffects;
     char  success;
@@ -7259,7 +7258,7 @@ static char mx_recordSoundEffects( int (*inCountFunction)( void ),
         return 0;
         }
 
-    /* write handle of each just-started sound effect, and clear it
+    /* write handle of each just-started (or ended) sound effect, and clear it
        from list */
     s = inGetNextFunction();
     
@@ -7284,8 +7283,8 @@ static char mx_recordSoundEffects( int (*inCountFunction)( void ),
 /* returns 1 on success, 0 on error */
 static char mx_recordJustStartedSoundEffects( void ) {
 
-    return mx_recordSoundEffects( mx_getNumJustStartedSoundEffects,
-                                  mx_getNextJustStartedSoundEffect );
+    return mx_recordSoundEffectsTriggers( mx_getNumJustStartedSoundEffects,
+                                          mx_getNextJustStartedSoundEffect );
     }
 
 
@@ -7293,8 +7292,64 @@ static char mx_recordJustStartedSoundEffects( void ) {
 /* returns 1 on success, 0 on error */
 static char mx_recordJustEndedSoundEffects( void ) {
 
-    return mx_recordSoundEffects( mx_getNumJustEndedSoundEffects,
-                                  mx_getNextJustEndedSoundEffect );
+    return mx_recordSoundEffectsTriggers( mx_getNumJustEndedSoundEffects,
+                                          mx_getNextJustEndedSoundEffect );
+    }
+
+
+
+/* returns 1 on success, 0 on error */
+static char mx_recordLiveSoundEffects( void ) {
+
+    int   numSoundEffects;
+    char  success;
+    int   s;
+
+    static  int  handles[ MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ];
+    static  int  dataPositions[ MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ];
+    
+    
+    /* write number of sound effects */
+
+    numSoundEffects = mx_getLiveSoundEffects( handles,
+                                              dataPositions );
+
+    success = mx_writeIntToPeristentData( mx_recordingDataStoreHandle,
+                                          numSoundEffects );
+
+    if( ! success ) {
+        mingin_log( "Failed to write live sound effects count "
+                    "in recording\n" );
+        
+        return 0;
+        }
+
+    
+    /* write handle and position of each */
+    for( s = 0;
+         s < numSoundEffects;
+         s ++ ) {
+
+        success = mx_writeIntToPeristentData( mx_recordingDataStoreHandle,
+                                              handles[ s ] );
+
+        if( ! success ) {
+            mingin_log( "Failed to write live sound effect handle "
+                        "in recording\n" );
+            return 0;
+            }
+
+        success = mx_writeIntToPeristentData( mx_recordingDataStoreHandle,
+                                              dataPositions[ s ] );
+
+        if( ! success ) {
+            mingin_log( "Failed to write live sound effect data position "
+                        "in recording\n" );
+            return 0;
+            }
+        }
+
+    return 1;
     }
 
 
@@ -7412,6 +7467,17 @@ static void mx_recordFullMemorySnapshot( void ) {
         mx_closeRecordingDataStores();
         return;
         }
+
+    
+    success = mx_recordLiveSoundEffects();
+
+    if( ! success ) {
+        mingin_log( "Failed to write live sound effects "
+                    "in recording\n" );
+        
+        mx_closeRecordingDataStores();
+        return;
+        }
     
     
     for( r = 0;
@@ -7477,8 +7543,8 @@ static char mx_checkHeader( int         inStoreReadHandle,
   returns  1 on success
            0 on error
 */
-static char mx_restoreSoundEffects( int   inStoreReadHandle,
-                                    char  inStartingOrEnding ) {
+static char mx_restoreSoundEffectsTriggers( int   inStoreReadHandle,
+                                            char  inStartingOrEnding ) {
 
     int   readInt;
     char  success;
@@ -7537,6 +7603,81 @@ static char mx_restoreSoundEffects( int   inStoreReadHandle,
     }
 
 
+/* plays a sound effect
+   but jumps instantly to inDataPos in that sound effect if inDataPos != -1 */
+static void mx_playSoundEffectWithPos( int inSoundEffectHandle,
+                                       int inDataPos );
+
+
+
+/*                      
+  returns  1 on success
+           0 on error
+*/
+static char mx_restoreLiveSoundEffects( int   inStoreReadHandle ) {
+
+    int   readInt;
+    char  success;
+    int   s;
+    
+    success = mx_readIntFromPersistData( inStoreReadHandle,
+                                         &readInt );
+
+    if( ! success ) {
+        /* failed to read num sound effects */
+        return 0;
+        }
+
+    if( mx_playbackPaused ) {
+        
+        /* when restoring live effects, we auto-clear any playing effects
+           because they're probably stale, or left over from a previously-played
+           snapshot (if we're walking forward in time, trying to reach
+           a desired snapshot */
+
+        /* we are paused, so this is safe
+           to do without hearing cut-off glitching */
+        mx_endAllSoundEffectsNow();
+        }
+
+    if( readInt > 0 ) {
+        /* some sound effects live */
+
+        int  num  =  readInt;
+        
+        for( s = 0;
+             s < num;
+             s ++ ) {
+
+            int  handle;
+            int  dataPos;
+            
+            success = mx_readIntFromPersistData( inStoreReadHandle,
+                                                 &handle );
+            if( ! success ) {
+                /* failed to read next sound effect handle */
+                return 0;
+                }
+
+            success = mx_readIntFromPersistData( inStoreReadHandle,
+                                                 &dataPos );
+            if( ! success ) {
+                /* failed to read next sound effect dataPos */
+                return 0;
+                }
+            
+            /* only trigger them if we're paused */
+            if( mx_playbackPaused ) {
+                
+                mx_playSoundEffectWithPos( handle,
+                                           dataPos );
+                }
+            }
+        }
+
+    return 1;
+    }
+
 
 /*
   Restores a full memory snapshot from current position in a data store.
@@ -7589,8 +7730,8 @@ static char mx_restoreFromFullMemorySnapshot( int  inStoreReadHandle ) {
             }
         }
 
-    success = mx_restoreSoundEffects( inStoreReadHandle,
-                                      1 );
+    success = mx_restoreSoundEffectsTriggers( inStoreReadHandle,
+                                              1 );
 
     if( ! success ) {
         /* failed to read starting sound effects */
@@ -7598,14 +7739,22 @@ static char mx_restoreFromFullMemorySnapshot( int  inStoreReadHandle ) {
         }
 
     
-    success = mx_restoreSoundEffects( inStoreReadHandle,
-                                      0 );
+    success = mx_restoreSoundEffectsTriggers( inStoreReadHandle,
+                                              0 );
 
     if( ! success ) {
         /* failed to read ending sound effects */
         return 0;
         }
+
     
+    success = mx_restoreLiveSoundEffects( inStoreReadHandle );
+
+    if( ! success ) {
+        /* failed to read live sound effects */
+        return 0;
+        }
+
     
     for( r = 0;
          r < mx_numMemRecords;
@@ -7742,6 +7891,18 @@ static void mx_recordMemoryDiff( void ) {
         }
     
     
+    success = mx_recordLiveSoundEffects();
+
+    if( ! success ) {
+        mingin_log( "Failed to write live sound effects "
+                    "in recording\n" );
+        
+        mx_closeRecordingDataStores();
+        return;
+        }
+    
+    
+    
     for( b = 0;
          b < MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES;
          b ++ ) {
@@ -7872,20 +8033,30 @@ static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
             mx_setMusicFilePos( readInt );
             }
         }
+
     
-    success = mx_restoreSoundEffects( inStoreReadHandle,
-                                      1 );
+    success = mx_restoreSoundEffectsTriggers( inStoreReadHandle,
+                                              1 );
 
     if( ! success ) {
         /* failed to read starting sound effects */
         return 0;
         }
 
-    success = mx_restoreSoundEffects( inStoreReadHandle,
-                                      0 );
+    
+    success = mx_restoreSoundEffectsTriggers( inStoreReadHandle,
+                                              0 );
 
     if( ! success ) {
         /* failed to read ending sound effects */
+        return 0;
+        }
+
+    
+    success = mx_restoreLiveSoundEffects( inStoreReadHandle );
+
+    if( ! success ) {
+        /* failed to read live sound effects */
         return 0;
         }
 
@@ -10217,7 +10388,6 @@ typedef struct MaxiginPlayingSoundEffect {
     } MaxiginPlayingSoundEffect;
 
 
-#define MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS                       40
 
 static  MaxiginPlayingSoundEffect  mx_playingSoundEffects[
                                        MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ];
@@ -10297,6 +10467,33 @@ static int mx_getNextJustEndedSoundEffect( void ) {
 
 
 
+static int mx_getLiveSoundEffects( int *outHandleBuffer,
+                                   int *outDataPosBuffer ) {
+    int  num;
+    int  i;
+    
+    mingin_lockAudio();
+
+    num = 0;
+
+    for( i = 0;
+         i < mx_numPlayingSoundEffects;
+         i ++ ) {
+
+        if( ! mx_playingSoundEffects[i].done ) {
+            outHandleBuffer[i] = mx_playingSoundEffects[i].soundHandle;
+            outDataPosBuffer[i] = mx_playingSoundEffects[i].dataPos;
+
+            num ++;
+            }
+        }
+    mingin_unlockAudio();
+
+    return num;
+    }
+
+
+
 static void mx_processDoneSoundEffects( void ) {
 
     int  i;
@@ -10344,6 +10541,15 @@ static void mx_processDoneSoundEffects( void ) {
 
 void maxigin_playSoundEffect( int inSoundEffectHandle ) {
 
+    mx_playSoundEffectWithPos( inSoundEffectHandle,
+                               -1 );
+    }
+
+
+
+void mx_playSoundEffectWithPos( int inSoundEffectHandle,
+                                int inDataPos ) {
+    
     if( inSoundEffectHandle == -1 ) {
         return;
         }
@@ -10374,6 +10580,26 @@ void maxigin_playSoundEffect( int inSoundEffectHandle ) {
             mx_soundEffects[ inSoundEffectHandle ].numSampleFrames * 4
             - 4;
         }
+
+    if( inDataPos != -1 ) {
+        /* a data pos override */
+        
+        if( inDataPos < mx_soundEffects[ inSoundEffectHandle ].startByte
+            ||
+            inDataPos >
+                mx_soundEffects[ inSoundEffectHandle ].startByte +
+                mx_soundEffects[ inSoundEffectHandle ].numSampleFrames * 4
+                - 4 ) {
+            
+            maxigin_logInt( "Skipping playing sound effect because "
+                            "supplied data position is out of range: ",
+                            inDataPos );
+            return;
+            }
+        
+        mx_playingSoundEffects[ mx_numPlayingSoundEffects ].dataPos = inDataPos;
+        }
+    
 
     mx_playingSoundEffects[ mx_numPlayingSoundEffects ].done = 0;
 

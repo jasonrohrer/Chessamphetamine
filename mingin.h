@@ -5718,7 +5718,13 @@ void mingin_lockAudio( void ) {
 
 
 
-void mingin_lockAudio( void ) {
+void mingin_unlockAudio( void ) {
+    }
+
+
+
+char mingin_isSoundPlaying( void ) {
+    return 0;
     }
 
 
@@ -5905,6 +5911,20 @@ int mingin_startReadBulkData( const char  *inBulkName,
         }
     *outTotalBytes = 0;
     return -1;
+    }
+
+
+
+void mingin_setBulkDataReadBuffer( int             inBulkDataHandle,
+                                   int             inBufferSize,
+                                   unsigned char  *inBuffer ) {
+    /* suppress warning */
+    if( inBulkDataHandle > 0
+        ||
+        inBufferSize > 0
+        ||
+        inBuffer != 0 ) {
+        }
     }
 
 

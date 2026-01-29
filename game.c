@@ -62,6 +62,10 @@ static const char  *fileNames[ NUM_BULK_FILES ] = { "bullet.tga",
 
 static int          spriteHandles[ NUM_BULK_FILES ];
 
+static int          spriteStrip;
+static int          stripIndex    =   0;
+static int          stripC        =   0;
+
 static MaxiginGUI   gameGUI;
 static int          sliderValue   =   7;
 static int          sliderValueB  =   7;
@@ -182,7 +186,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
             maxigin_drawSetAlpha( bulletFade[ i ] );
             
-            if( i % 3 == 0 ) {
+            if( 0 && i % 4 == 0 ) {
                 
                 maxigin_drawSprite( spriteHandles[ 0 ],
                                     bulletPos[ i ].x,
@@ -195,13 +199,19 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                     bulletPos[ i ].x,
                                     bulletPos[ i ].y );
                 }
-            else if( i % 3 == 1 ) {
+            else if( 0 && i % 4 == 1 ) {
                 maxigin_drawSprite( spriteHandles[2],
                                     bulletPos[ i ].x,
                                     bulletPos[ i ].y );
                 }
-            else if( i % 3 == 2 ) {
+            else if( 0 && i % 4 == 2 ) {
                 maxigin_drawSprite( spriteHandles[3],
+                                    bulletPos[ i ].x,
+                                    bulletPos[ i ].y );
+                }
+            else if( 1 || i % 4 == 3) {
+                maxigin_drawSprite( maxigin_getSpriteFromStrip( spriteStrip,
+                                                                stripIndex ),
                                     bulletPos[ i ].x,
                                     bulletPos[ i ].y );
                 }
@@ -314,6 +324,19 @@ void maxiginGame_step( void ) {
     int   stickPos;
     int   stickLowerRange;
     int   stickUpperRange;
+
+    stripC ++;
+
+    if( stripC >= 10 ) {
+        stripC = 0;
+        
+        stripIndex ++;
+
+        if( stripIndex >= maxigin_getNumSpritesInStrip( spriteStrip ) ) {
+            stripIndex = 0;
+            }
+        }
+        
 
     for( i = 0;
          i < NUM_BULK_FILES;
@@ -574,7 +597,9 @@ void maxiginGame_init( void ) {
             mingin_log( "\n" );
             }
         }
-    
+
+    spriteStrip = maxigin_initSpriteStrip( "stripTest.tga",
+                                           16 );
     
     maxigin_registerButtonMapping( JUMP,   jumpMapping );
     maxigin_registerButtonMapping( SHOOT,  shootMapping );
@@ -636,6 +661,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( stepsSinceLastBullet );
 
     REGISTER_VAL_MEM( lineTip );
-    
+
+    REGISTER_VAL_MEM( stripIndex );
+
     maxigin_initRestoreStaticMemoryFromLastRun();
     }

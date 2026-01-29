@@ -160,6 +160,25 @@
 
 
 /*
+  How many unique sprite strips are supported?
+
+  Note that for each loaded sprite strip, the strip is split
+  up internally, and each sprite from the strip consumes one of the sprite
+  slots counting toward MAXIGIN_MAX_NUM_SPRITES
+  
+  To make room for 256 sprite strips, do this:
+
+      #define  MAXIGIN_MAX_NUM_SPRITE_STRIPS  256
+
+  [jumpSettings]
+*/
+#ifndef  MAXIGIN_MAX_NUM_SPRITE_STRIPS 
+    #define  MAXIGIN_MAX_NUM_SPRITE_STRIPS  64
+#endif
+
+
+
+/*
   Sprites are loaded into a statically allocated memory buffer.
 
   The default size has room for 10 128x128 RGBA sprites.
@@ -564,6 +583,34 @@ int maxigin_initGlowSprite( const char  *inBulkResourceName,
                             int          inBlurIterations );
 
 
+
+/*
+  Loads a TGA-formatted sprite strip from the platform's bulk data store.
+
+  Sprites must be in RGBA 32-bit uncompressed TGA format, in a
+  vertically oriented strip.
+
+  Parameters:
+
+      inBulkResourceName   the name of the bulk data resource to load the sprite
+                           strip from
+
+      inHeightPerSprite    the height in pixels of each sprite in the sheet.
+                           The strip total height must be an integer multiple
+                           of this number.
+  Returns:
+
+      sprite sheet handle   on load success
+
+      -1                    on failure;
+
+  [jumpMaxiginInit]      
+*/
+int maxigin_initSpriteStrip( const char  *inBulkResourceName,
+                             int          inHeightPerSprite );
+
+
+
 /*
   Sets TGA-formatted sprites to customize maxigin_guiSlider appearance.
 
@@ -901,6 +948,44 @@ void maxigin_drawFillRect( int  inStartX,
 */ 
 void maxigin_drawGUI( MaxiginGUI *inGUI );
 
+
+
+/*
+  Gets the number of sprites in a sprite strip.
+
+  Parameters:
+    
+      inSpriteStripHandle   handle to a loaded sprite strip
+      
+  Returns:
+
+      number of sprites in the strip
+     
+  [jumpMaxiginGeneral]
+*/
+int maxigin_getNumSpritesInStrip( int  inSpriteStripHandle );
+
+
+
+/*
+  Gets the number of sprites in a sprite strip.
+
+  Parameters:
+    
+      inSpriteStripHandle   handle to a loaded sprite strip
+
+      inSpriteIndex         index in the strip of the sprite to get
+      
+  Returns:
+
+      sprite handle   on success
+
+      -1              on error
+     
+  [jumpMaxiginGeneral]
+*/
+int maxigin_getSpriteFromStrip( int  inSpriteStripHandle,
+                                int  inSpriteIndex );
 
 
 
@@ -2122,6 +2207,68 @@ static void mx_removeSpriteData( int  inSpriteHandle ) {
     mx_sprites[ inSpriteHandle ].startByte = -1;
     }
 
+
+
+
+static void mx_recomputeSpriteAttributes( int  inSpriteHandle ) {
+
+    MaxiginSprite  *s            =  &( mx_sprites[ inSpriteHandle ] );
+    
+    int             leftRadius      =  0;
+    int             rightRadius     =  0;
+    int             w               =  s->w;
+    int             h               =  s->h;
+    int             xCenter         =  w / 2;
+    int             y;
+    int             startByte       =  s->startByte;
+    int             numSpriteBytes  =  w * h * 4;
+    
+    /* find left/right visible extents */
+    
+    for( y = 0;
+         y < h;
+         y ++ ) {
+
+        int  curByte  =  startByte + y * w * 4;
+        int  x;
+        
+        for( x = 0;
+             x < w;
+             x ++ ) {
+
+            unsigned char  a  =  mx_spriteBytes[ curByte ];
+
+            if( a > 0 ) {
+
+                if( x - xCenter > rightRadius ) {
+                    rightRadius = x - xCenter;
+                    }
+                else if( xCenter - x > leftRadius ) {
+                    leftRadius = xCenter - x;
+                    }
+                }
+            
+            /* on to next pixel */
+            curByte += 4;
+            }
+        }
+
+    s->leftVisibleRadius  = leftRadius;
+
+    /* center position is actually off by 1 in favor of left radius */
+    s->rightVisibleRadius = rightRadius + 1;
+    
+    
+
+
+    /* hash bytes after origin flip and BGRA conversion */
+
+    maxigin_flexHash( numSpriteBytes,
+                      &( mx_spriteBytes[ startByte ] ),
+                      MAXIGIN_SPRITE_HASH_LENGTH,
+                      s->hash );
+    }
+
     
 
 
@@ -2136,10 +2283,6 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
     char  originAtTop;
     int   w;
     int   h;
-    int   y;
-    int   leftRadius;
-    int   rightRadius;
-    int   xCenter;
     
     int   neededSpriteBytes;
     int   newSpriteHandle;
@@ -2490,53 +2633,8 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
             }
         }
 
-    /* now find left/right visible extents */
-    leftRadius  = 0;
-    rightRadius = 0;
-    xCenter     = w / 2;
     
-    for( y = 0;
-         y < h;
-         y ++ ) {
-
-        int  curByte  =  startByte + y * w * 4;
-        int  x;
-        
-        for( x = 0;
-             x < w;
-             x ++ ) {
-
-            unsigned char  a  =  mx_spriteBytes[ curByte ];
-
-            if( a > 0 ) {
-
-                if( x - xCenter > rightRadius ) {
-                    rightRadius = x - xCenter;
-                    }
-                else if( xCenter - x > leftRadius ) {
-                    leftRadius = xCenter - x;
-                    }
-                }
-            
-            /* on to next pixel */
-            curByte += 4;
-            }
-        }
-
-    mx_sprites[ newSpriteHandle ].leftVisibleRadius  = leftRadius;
-
-    /* center position is actually off by 1 in favor of left radius */
-    mx_sprites[ newSpriteHandle ].rightVisibleRadius = rightRadius + 1;
-    
-    
-
-
-    /* hash bytes after origin flip and BGRA conversion */
-
-    maxigin_flexHash( neededSpriteBytes,
-                      &( mx_spriteBytes[ startByte ] ),
-                      MAXIGIN_SPRITE_HASH_LENGTH,
-                      mx_sprites[ newSpriteHandle ].hash );
+    mx_recomputeSpriteAttributes( newSpriteHandle );
      
     
     return newSpriteHandle;
@@ -3386,8 +3484,151 @@ static void mx_checkSpritesNeedReload( void ) {
 
 
 
+/* each sprite strip points to sprites in the sprite pool
+   the handles for these sub-sprites are stored here */
+static  int  mx_stripSubSprites[ MAXIGIN_MAX_NUM_SPRITES ];
+
+static  int  mx_numStripSubSprites  =  0;
+
+
+typedef struct MaxiginSpriteStrip {
+
+        int  numSubSprites;
+
+        /* index of first strip sprite's handle in mx_stripSubSprites */
+        int  startIndex;
+        
+    } MaxiginSpriteStrip;
+
+
+static  MaxiginSpriteStrip  mx_spriteStrips[ MAXIGIN_MAX_NUM_SPRITE_STRIPS ];
+
+static  int                 mx_numSpriteStrips  =  0;
+
+
+
+int maxigin_initSpriteStrip( const char  *inBulkResourceName,
+                             int          inHeightPerSprite ) {
+
+    int                  mainSpriteHandle;
+    MaxiginSprite       *mainSprite;
+    int                  numSubSprites;
+    int                  newStripHandle;
+    MaxiginSpriteStrip  *newStrip;
+    int                  i;
+    int                  bytesPerSubSprite;
+    int                  nextSubStartByte;
     
+    if( mx_numSpriteStrips >= MAXIGIN_MAX_NUM_SPRITE_STRIPS ) {
+        maxigin_logString( "Failed to load sprite strip because we already "
+                           "have too many sprite strips loaded: ",
+                           inBulkResourceName );
+        return -1;
+        }
     
+    mainSpriteHandle = maxigin_initSprite( inBulkResourceName );
+
+    if( mainSpriteHandle == -1 ) {
+        return -1;
+        }
+
+    mainSprite = &( mx_sprites[ mainSpriteHandle ] );
+
+    numSubSprites = mainSprite->h / inHeightPerSprite;
+    
+    if( numSubSprites * inHeightPerSprite
+        !=
+        mainSprite->h ) {
+
+        maxigin_logString( "Failed to load sprite strip because strip height "
+                           "is not integer multiple of supplied height: ",
+                           inBulkResourceName );
+        return -1;
+        }
+
+    
+    /* make sure there's room for this many sub-sprites */
+
+    if( mx_numStripSubSprites + numSubSprites
+        >=
+        MAXIGIN_MAX_NUM_SPRITES ) {
+        
+        maxigin_logString( "Failed to load sprite strip because we already "
+                           "have too many strip sub sprites: ",
+                           inBulkResourceName );
+        return -1;
+        }
+
+    if( mx_numSprites + numSubSprites
+        >=
+        MAXIGIN_MAX_NUM_SPRITES ) {
+        
+        maxigin_logString( "Failed to load sprite strip because we already "
+                           "have too many sprites: ",
+                           inBulkResourceName );
+        return -1;
+        };
+
+
+    newStripHandle = mx_numSpriteStrips;
+
+    mx_numSpriteStrips ++;
+
+    newStrip = &( mx_spriteStrips[ newStripHandle ] );
+
+    newStrip->numSubSprites = numSubSprites;
+
+    newStrip->startIndex = mx_numStripSubSprites;
+
+    mx_numStripSubSprites += numSubSprites;
+
+    nextSubStartByte = mainSprite->startByte;
+    
+    bytesPerSubSprite = mainSprite->w * inHeightPerSprite * 4;
+    
+    for( i = 0;
+         i < numSubSprites;
+         i ++ ) {
+
+        int             subHandle  =  mx_numSprites;
+        MaxiginSprite  *subSprite  =  &( mx_sprites[ subHandle ] );
+
+        mx_numSprites ++;
+
+        mx_stripSubSprites[ i + newStrip->startIndex ] = subHandle;
+
+        subSprite->w = mainSprite->w;
+
+        subSprite->h = inHeightPerSprite;
+
+        subSprite->startByte = nextSubStartByte;
+
+        nextSubStartByte += bytesPerSubSprite;
+
+        subSprite->bulkResourceName[0] = '\0';
+
+        subSprite->pendingChange = 0;
+        subSprite->glowSpriteHandle = -1;
+
+        mx_recomputeSpriteAttributes( subHandle );
+        }
+    
+    return newStripHandle;
+    }
+
+
+
+int maxigin_getNumSpritesInStrip( int  inSpriteStripHandle ) {
+    return mx_spriteStrips[ inSpriteStripHandle ].numSubSprites;
+    }
+
+
+
+int maxigin_getSpriteFromStrip( int  inSpriteStripHandle,
+                                int  inSpriteIndex ) {
+    return mx_stripSubSprites[
+        mx_spriteStrips[ inSpriteStripHandle ].startIndex + inSpriteIndex ];
+    }
 
 
 

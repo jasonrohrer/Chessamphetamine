@@ -9048,7 +9048,7 @@ static char mx_playbackSpeedStep( void ) {
         /* negative speeds mean fractional */
         int stepsPerPlaybackStep = - mx_playbackSpeed;
 
-        if( stepsSinceLastPlaybackStep >= stepsPerPlaybackStep ) {
+        if( stepsSinceLastPlaybackStep >= stepsPerPlaybackStep - 1 ) {
             success = success && mx_playbackStep();
             stepsSinceLastPlaybackStep = 0;
             }

@@ -2,5 +2,5 @@
 # myself to stick to pure c89.
 # 
 
-gcc -g -std=c89 -fno-builtin -pedantic -Wall -Wextra -Werror -Wconversion -Wshadow -Wstrict-prototypes -Wold-style-definition -Wmissing-prototypes -Wmissing-declarations -Wdeclaration-after-statement -o Chessamphetamine game.c -lX11 -lXrandr -lGLX -lGL -lasound
+gcc -g -std=c89 -fno-builtin -pedantic -Wall -Wextra -Werror -Wconversion -Wshadow -Wstrict-prototypes -Wold-style-definition -Wmissing-prototypes -Wmissing-declarations -Wdeclaration-after-statement -o Chessamphetamine game.c -lX11 -lXrandr -lGLX -lGL -lasound -lpthread
 

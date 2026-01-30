@@ -582,9 +582,11 @@ void maxiginGame_init( void ) {
          i ++ ) {
 
         if( i == 3 || i == 4 || i == 5 ) {
-            spriteHandles[ i ] = maxigin_initGlowSprite( fileNames[ i ],
-                                                         4,
-                                                         2 );
+            spriteHandles[ i ] = maxigin_initSprite( fileNames[ i ] );
+
+            maxigin_initMakeGlowSprite( spriteHandles[ i ],
+                                        4,
+                                        2 );
             }
         else {
             spriteHandles[ i ] = maxigin_initSprite( fileNames[ i ] );
@@ -600,6 +602,10 @@ void maxiginGame_init( void ) {
 
     spriteStrip = maxigin_initSpriteStrip( "stripTest.tga",
                                            16 );
+
+    maxigin_initMakeGlowSpriteStrip( spriteStrip,
+                                     2,
+                                     2 );
     
     maxigin_registerButtonMapping( JUMP,   jumpMapping );
     maxigin_registerButtonMapping( SHOOT,  shootMapping );

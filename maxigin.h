@@ -554,33 +554,24 @@ int maxigin_initSprite( const char  *inBulkResourceName );
 
 
 /*
-  Loads a TGA-formatted sprite from the platform's bulk data store, and
-  generates an internal glow sprite to go along with it.  Calls to
-  maxigin_drawSprite for the resulting sprite handle will draw the underlying
+  Generates a blurred additive glow sprite for a given sprite.
+
+  Calls to maxigin_drawSprite for the sprite handle will draw the underlying
   sprite and additively blend in the glow sprite.
   
-  Sprites must be in RGBA 32-bit uncompressed TGA format.
-
   Parameters:
 
-      inBulkResourceName   the name of the bulk data resource to load the sprite
-                           from
-
-      inBlurRadius         the blur radius for the glow, in pixels
-
-      inBlurIterations     the number of iterations of the blur to apply
+      inSpriteHandle     the sprite to add a glow to
       
-  Returns:
+      inBlurRadius       the blur radius for the glow, in pixels
 
-      sprite handle   on load success
+      inBlurIterations   the number of iterations of the blur to apply
 
-      -1              on failure;
-
-  [jumpMaxiginInit]      
+  [jumpMaxiginInit]  
 */
-int maxigin_initGlowSprite( const char  *inBulkResourceName,
-                            int          inBlurRadius,
-                            int          inBlurIterations );
+void maxigin_initMakeGlowSprite( int  inSpriteHandle,
+                                 int  inBlurRadius,
+                                 int  inBlurIterations );
 
 
 
@@ -595,12 +586,12 @@ int maxigin_initGlowSprite( const char  *inBulkResourceName,
       inBulkResourceName   the name of the bulk data resource to load the sprite
                            strip from
 
-      inHeightPerSprite    the height in pixels of each sprite in the sheet.
+      inHeightPerSprite    the height in pixels of each sprite in the strip.
                            The strip total height must be an integer multiple
                            of this number.
   Returns:
 
-      sprite sheet handle   on load success
+      sprite strip handle   on load success
 
       -1                    on failure;
 
@@ -608,6 +599,25 @@ int maxigin_initGlowSprite( const char  *inBulkResourceName,
 */
 int maxigin_initSpriteStrip( const char  *inBulkResourceName,
                              int          inHeightPerSprite );
+
+
+
+/*
+  Same as maxigin_initMakeGlowSprite, but for all sprites in a sprite strip.
+  
+  Parameters:
+
+      inSpriteHandle     the sprite to add a glow to
+      
+      inBlurRadius       the blur radius for the glow, in pixels
+
+      inBlurIterations   the number of iterations of the blur to apply
+
+  [jumpMaxiginInit]  
+*/
+void maxigin_initMakeGlowSpriteStrip( int  inSpriteStripHandle,
+                                      int  inBlurRadius,
+                                      int  inBlurIterations );
 
 
 
@@ -1421,6 +1431,23 @@ const char *maxigin_stringConcat6( const char  *inStringA,
                                    const char  *inStringE,
                                    const char  *inStringF );
 
+/*
+  Copies a string, including the terminating \0, into a destination
+  byte buffer.
+
+  The destination buffer must have room.
+  
+  Parameters:
+
+      inString   the \0-terminated string to copy
+
+      inDest     the destination byte buffer
+  
+  [jumpMaxiginGeneral]    
+*/
+void maxigin_stringCopy( const char  *inString,
+                         char        *inDest );
+
 
 
 
@@ -2070,6 +2097,11 @@ typedef struct MaxiginSprite {
         int            glowSpriteHandle;
         int            glowRadius;
         int            glowIterations;
+
+        /* handle of full sprite strip that this is a sub-sprite of, or -1
+           if not part of a strip */
+        int            stripParentHandle;
+        int            stripIndex;
         
         unsigned char  hash[ MAXIGIN_SPRITE_HASH_LENGTH ];
         
@@ -2537,7 +2569,8 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
     mx_sprites[ newSpriteHandle ].retryCount          = 0;
     mx_sprites[ newSpriteHandle ].stepsUntilNextRetry = 0;
 
-
+    mx_sprites[ newSpriteHandle ].stripParentHandle = -1;
+    mx_sprites[ newSpriteHandle ].stripIndex = -1;
 
     
     if( newSpriteHandle == mx_numSprites ) {
@@ -2986,33 +3019,53 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                                      int  inBlurRadius,
                                      int  inBlurIterations ) {
 
-    const char    *glowSpriteDataName;
-    int            persistReadHandle;
-    int            numBytes;
-    int            numRead;
-    int            b;
-    int            glowW;
-    int            glowH;
-    int            glowBorder;
+    MaxiginSprite  *mainSprite;
+    const char     *glowSpriteDataName;
+    int             persistReadHandle;
+    int             numBytes;
+    int             numRead;
+    int             b;
+    int             glowW;
+    int             glowH;
+    int             glowBorder;
     
     char           readGlowFromFile;
     unsigned char  hashBuffer[ MAXIGIN_SPRITE_HASH_LENGTH ];
 
 
+    mainSprite = &( mx_sprites[ inMainSpriteHandle ] );
+
 
     glowBorder = inBlurRadius * inBlurIterations * 2;
     
-    glowW = mx_sprites[ inMainSpriteHandle ].w
+    glowW = mainSprite->w
             +
             2 * glowBorder;
         
-    glowH = mx_sprites[ inMainSpriteHandle ].h
+    glowH = mainSprite->h
             +
             2 * glowBorder;
-    
-    glowSpriteDataName = maxigin_stringConcat(
-                             mx_sprites[ inMainSpriteHandle ].bulkResourceName,
-                             ".glow" );
+
+    if( mainSprite->bulkResourceName[0] == '\0' ) {
+        /* empty source resource name, check if this is part of a strip */
+
+        if( mainSprite->stripParentHandle == -1 ) {
+            mingin_log( "Failed to make glow sprite for non-strip sprite "
+                        "without bulk resource name.\n" );
+            return;
+            }
+
+        glowSpriteDataName =
+            maxigin_stringConcat4(
+                mx_sprites[ mainSprite->stripParentHandle ].bulkResourceName,
+                "_strip_",
+                maxigin_intToString( mainSprite->stripIndex ),
+                ".glow" );
+        }
+    else {
+        glowSpriteDataName = maxigin_stringConcat( mainSprite->bulkResourceName,
+                                                   ".glow" );
+        }
 
     readGlowFromFile = 0;
     
@@ -3039,7 +3092,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                      b ++ ) {
                     
                     if( hashBuffer[ b ] !=
-                        mx_sprites[ inMainSpriteHandle ].hash[ b ] ) {
+                        mainSprite->hash[ b ] ) {
                         
                         hashMatch = 0;
                         break;
@@ -3069,7 +3122,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                     
                 
                 if( success ) {
-                    if( mx_sprites[ inMainSpriteHandle ].glowSpriteHandle ==
+                    if( mainSprite->glowSpriteHandle ==
                         -1 ) {
 
                         MinginOpenData  openData;
@@ -3082,7 +3135,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                            as inBulkResourceName
                            since this glow sprite isn't actually in
                            our bulk data store */
-                        mx_sprites[ inMainSpriteHandle ].glowSpriteHandle =
+                        mainSprite->glowSpriteHandle =
                             mx_reloadSpriteFromOpenData(
                                 "",
                                 -1,
@@ -3090,7 +3143,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                                 /* TGA data comes right after hash bytes */
                                 numBytes - MAXIGIN_SPRITE_HASH_LENGTH );
 
-                        if( mx_sprites[ inMainSpriteHandle ].glowSpriteHandle !=
+                        if( mainSprite->glowSpriteHandle !=
                             -1 ) {
                             /* successfully loaded from file */
                             readGlowFromFile = 1;
@@ -3098,8 +3151,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                             maxigin_logString( "Successfully read cached glow "
                                                "sprite from perisistent data "
                                                "store for ",
-                                               mx_sprites[ inMainSpriteHandle ].
-                                                   bulkResourceName );
+                                               mainSprite->bulkResourceName );
                             }
                         }
                     else {
@@ -3130,7 +3182,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
         int  mainW;
         int  mainH;
         
-        glowSpriteHandle = mx_sprites[ inMainSpriteHandle ].glowSpriteHandle;
+        glowSpriteHandle = mainSprite->glowSpriteHandle;
 
 
         if( glowSpriteHandle != -1 ) {
@@ -3145,7 +3197,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                 maxigin_logString(
                     "Already have too many sprites when trying "
                     "to create glow sprite for: ",
-                    mx_sprites[ inMainSpriteHandle ].bulkResourceName );
+                    mainSprite->bulkResourceName );
                 return;
                 }
             }
@@ -3159,21 +3211,21 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
             maxigin_logString(
                 "Already have too many sprite data bytes when trying "
                 "to create glow sprite for: ",
-                mx_sprites[ inMainSpriteHandle ].bulkResourceName );
+                mainSprite->bulkResourceName );
             
             return;
             }
 
         
-        mx_sprites[ inMainSpriteHandle ].glowSpriteHandle = glowSpriteHandle;
-        mx_sprites[ inMainSpriteHandle ].glowRadius       = inBlurRadius;
-        mx_sprites[ inMainSpriteHandle ].glowIterations   = inBlurIterations;
+        mainSprite->glowSpriteHandle = glowSpriteHandle;
+        mainSprite->glowRadius       = inBlurRadius;
+        mainSprite->glowIterations   = inBlurIterations;
 
         glowStartByte  =  mx_numSpriteBytesUsed;
         
-        mainW          =  mx_sprites[ inMainSpriteHandle ].w;
-        mainH          =  mx_sprites[ inMainSpriteHandle ].h;
-        mainStartByte  =  mx_sprites[ inMainSpriteHandle ].startByte;
+        mainW          =  mainSprite->w;
+        mainH          =  mainSprite->h;
+        mainStartByte  =  mainSprite->startByte;
         
         mx_sprites[ glowSpriteHandle ].w                = glowW;
         mx_sprites[ glowSpriteHandle ].h                = glowH;
@@ -3182,6 +3234,9 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
 
         mx_sprites[ glowSpriteHandle ].bulkResourceName[0] = '\0';
 
+        mx_sprites[ glowSpriteHandle ].stripParentHandle = -1;
+        mx_sprites[ glowSpriteHandle ].stripIndex = -1;
+        
         mx_numSprites ++;
         mx_numSpriteBytesUsed += neededGlowBytes;
 
@@ -3247,7 +3302,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
         
         mingin_writePersistData( glowCacheDataWriteHandle,
                                  MAXIGIN_SPRITE_HASH_LENGTH,
-                                 mx_sprites[ inMainSpriteHandle ].hash );
+                                 mainSprite->hash );
 
         /* next radius and iteration count as padded ints */
         
@@ -3265,34 +3320,27 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
         mingin_endWritePersistData( glowCacheDataWriteHandle );
         }
     
-    
     }
 
-    
 
 
-int maxigin_initGlowSprite( const char  *inBulkResourceName,
-                            int          inBlurRadius,
-                            int          inBlurIterations ) {
+void maxigin_initMakeGlowSprite( int  inSpriteHandle,
+                                 int  inBlurRadius,
+                                 int  inBlurIterations ) {
 
-    int  spriteHandle;
-    
     if( ! mx_areWeInMaxiginGameInitFunction ) {
-        mingin_log( "Game tried to call maxigin_initGlowSprite "
+        mingin_log( "Game tried to call maxigin_initMakeGlowSprite "
                     "from outside of maxiginGame_init\n" );
-        return -1;
+        return;
         }
 
-    spriteHandle = mx_reloadSprite( inBulkResourceName,
-                                    -1 );
-
-    if( spriteHandle != -1 ) {
-        mx_regenerateGlowSprite( spriteHandle,
-                                 inBlurRadius,
-                                 inBlurIterations );
+    if( inSpriteHandle < 0 ) {
+        return;
         }
 
-    return spriteHandle;
+    mx_regenerateGlowSprite( inSpriteHandle,
+                             inBlurRadius,
+                             inBlurIterations );
     }
 
 
@@ -3610,6 +3658,10 @@ int maxigin_initSpriteStrip( const char  *inBulkResourceName,
         subSprite->pendingChange = 0;
         subSprite->glowSpriteHandle = -1;
 
+        subSprite->stripParentHandle = mainSpriteHandle;
+        subSprite->stripIndex = i;
+        
+        
         mx_recomputeSpriteAttributes( subHandle );
         }
     
@@ -3630,6 +3682,35 @@ int maxigin_getSpriteFromStrip( int  inSpriteStripHandle,
         mx_spriteStrips[ inSpriteStripHandle ].startIndex + inSpriteIndex ];
     }
 
+
+
+void maxigin_initMakeGlowSpriteStrip( int  inSpriteStripHandle,
+                                      int  inBlurRadius,
+                                      int  inBlurIterations ) {
+
+    int  numSubSprites;
+    int  i;
+
+    
+    if( inSpriteStripHandle < 0 ) {
+        return;
+        }
+    
+    numSubSprites = mx_spriteStrips[ inSpriteStripHandle ].numSubSprites;
+    
+    for( i = 0;
+         i < numSubSprites;
+         i ++ ) {
+        
+        int  subSpriteHandle  =
+            mx_stripSubSprites[
+                mx_spriteStrips[ inSpriteStripHandle ].startIndex + i ];
+
+        maxigin_initMakeGlowSprite( subSpriteHandle,
+                                    inBlurRadius,
+                                    inBlurIterations );
+        }
+    }
 
 
 
@@ -10476,6 +10557,21 @@ const char *maxigin_stringConcat6( const char  *inStringA,
                                                         inStringD,
                                                         inStringE ),
                                  inStringF );
+    }
+
+
+
+void maxigin_stringCopy( const char  *inString,
+                         char        *inDest ) {
+
+    int  i  =  0;
+
+    while( inString[i] != '\0' ) {
+        inDest[i] = inString[i];
+        i++;
+        }
+
+    inDest[i] = '\0';
     }
 
 

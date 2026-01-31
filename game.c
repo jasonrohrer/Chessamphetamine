@@ -321,10 +321,13 @@ void maxiginGame_step( void ) {
     int   pointerY;
     
     char  stickLive;
-    int   stickPos;
-    int   stickLowerRange;
-    int   stickUpperRange;
 
+    /* leaving these uninitialized generates a warning in some compilers */
+    int   stickPos         =  0;
+    int   stickLowerRange  =  0;
+    int   stickUpperRange  =  0;
+
+    
     stripC ++;
 
     if( stripC >= 10 ) {

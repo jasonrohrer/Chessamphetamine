@@ -2626,9 +2626,18 @@ static char mn_stringStartsWith( const char  *inString,
 
 
 void mingin_log( const char  *inString ) {
-    write( STDOUT_FILENO,
-           inString,
-           (unsigned int)mn_stringLength( inString ) );
+
+    ssize_t  numWritten;
+    
+    numWritten = write( STDOUT_FILENO,
+                        inString,
+                        (unsigned int)mn_stringLength( inString ) );
+
+    if( numWritten == -1 ) {
+        /* error, but logging just failed, so there's nothing we can do
+           about this error
+           We're checking this mostly to supress a warning */
+        }
     }
 
 

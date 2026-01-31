@@ -5838,9 +5838,11 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
 
             /* move slider with sticks, potentially  */
 
-            int  pos;
-            int  lower;
-            int  upper;
+            /* leaving these uninitialized generates
+               a warning in some compilers */
+            int  pos    =  0;
+            int  lower  =  0;
+            int  upper  =  0;
             
             if( mingin_getStickPosition( MAXIGIN_STICK_SLIDER,
                                          &pos,

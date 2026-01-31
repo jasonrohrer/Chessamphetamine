@@ -1902,6 +1902,7 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 #include <X11/extensions/Xrandr.h>
 
 /* for binding gl context to X11 window for fast display of game image */
+#define GLX_GLXEXT_PROTOTYPES 1
 #include <GL/glx.h>
 
 #include <unistd.h>
@@ -2839,22 +2840,23 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
                                                   GLX_DOUBLEBUFFER,
                                                   None };
     unsigned long            xBlackColor;
-    XRRScreenConfiguration  *conf;
-        
+    XRRScreenResources      *xrrRes;
+    XRROutputInfo           *xrrOutput        =  0;
+    XRRCrtcInfo             *xrrCrtc          =  0;
+    int                      i;
+    int                      winX;
+    int                      winY;
+    unsigned int             winW;
+    unsigned int             winH;
+    unsigned int             winBorderW;
+    unsigned int             winDepth;
+    
     s->xDisplay = XOpenDisplay( NULL );
 
     mn_reconfigureWindowSize( s->xDisplay );
 
     
     s->xRoot = DefaultRootWindow( s->xDisplay );
-
-    conf = XRRGetScreenInfo( s->xDisplay, s->xRoot );
-    mn_screenRefreshRate = XRRConfigCurrentRate( conf );
-    XRRFreeScreenConfigInfo( conf );
-    
-    mingin_log( "Found monitor refresh reate " );
-    mingin_log( mn_intToString( mn_screenRefreshRate ) );
-    mingin_log( "\n" );
     
     s->xScreen = DefaultScreen( s->xDisplay );
 
@@ -2910,6 +2912,8 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
         return 0;
         }
 
+    glXSwapIntervalMESA( 1 );
+    
 
     /* wait for MapNotify */
     while( 1 ) {
@@ -2921,6 +2925,150 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
             }
         }
 
+    
+
+    if( !XGetGeometry( s->xDisplay,
+                       s->xWindow,
+                       &( s->xRoot ),
+                       &winX,
+                       &winY,
+                       &winW,
+                       &winH,
+                       &winBorderW,
+                       &winDepth ) ) {
+
+        mingin_log( "Failed to get X Window geometry\n" );
+
+        glXDestroyContext( s->xDisplay,
+                           s->glxContext );
+
+        XDestroyWindow( s->xDisplay,
+                        s->xWindow );
+        XFree( s->xVisual );
+        XCloseDisplay( s->xDisplay );
+        
+        return 0;
+        }
+    
+
+    xrrRes = XRRGetScreenResourcesCurrent( s->xDisplay,
+                                           s->xRoot );
+
+    if( ! xrrRes ) {
+        mingin_log( "Failed to get XRR ScreenResources\n" );
+
+        glXDestroyContext( s->xDisplay,
+                           s->glxContext );
+
+        XDestroyWindow( s->xDisplay,
+                        s->xWindow );
+        XFree( s->xVisual );
+        XCloseDisplay( s->xDisplay );
+        
+        return 0;
+        }
+
+    for( i = 0;
+         i < xrrRes->noutput;
+         i ++ ) {
+        
+        xrrOutput = XRRGetOutputInfo( s->xDisplay,
+                                  xrrRes,
+                                  xrrRes->outputs[ i ] );
+
+        if( ! xrrOutput
+            ||
+            xrrOutput->connection != RR_Connected
+            ||
+            xrrOutput->crtc == None ) {
+
+            if( xrrOutput ) {
+                XRRFreeOutputInfo( xrrOutput );
+                xrrOutput = 0;
+                continue;
+                }
+            }
+        
+
+        xrrCrtc = XRRGetCrtcInfo( s->xDisplay,
+                                  xrrRes,
+                                  xrrOutput->crtc );
+
+        if( ! xrrCrtc ) {
+            XRRFreeOutputInfo( xrrOutput );
+            xrrOutput = 0;
+            continue;
+            }
+
+        if( winX >= xrrCrtc->x
+            &&
+            winY >= xrrCrtc->y
+            &&
+            winX < xrrCrtc->x + (int)( xrrCrtc->width )
+            &&
+            winY < xrrCrtc->y + (int)( xrrCrtc->height ) ) {
+
+            /* found crtc that our window is on */
+            break;
+            }
+        XRRFreeCrtcInfo( xrrCrtc );
+        XRRFreeOutputInfo( xrrOutput );
+        xrrCrtc = 0;
+        xrrOutput = 0;
+        }
+
+    mn_screenRefreshRate = 0;
+    
+    if( xrrCrtc ) {
+
+        for( i = 0;
+             i < xrrRes->nmode;
+             i ++ ) {
+
+            XRRModeInfo  *mode  = &( xrrRes->modes[ i ] );
+
+            if( mode->id == xrrCrtc->mode ) {
+
+                if( mode->hTotal != 0
+                    &&
+                    mode->vTotal != 0 ) {
+
+                    mn_screenRefreshRate =
+                        (int)( mode->dotClock /
+                               ( mode->hTotal * mode->vTotal ) );
+                    }
+                break;
+                }
+            
+            }
+        
+        
+        }
+    
+    if( mn_screenRefreshRate == 0 ) {
+        /* use older way that sometimes produces bogus results */
+
+        XRRScreenConfiguration  *conf  =
+            XRRGetScreenInfo( s->xDisplay, s->xRoot );
+
+        mn_screenRefreshRate = XRRConfigCurrentRate( conf );
+
+        XRRFreeScreenConfigInfo( conf );
+        }
+    
+    if( xrrCrtc ) {
+        XRRFreeCrtcInfo( xrrCrtc );
+        }
+    if( xrrOutput ) {
+        XRRFreeOutputInfo( xrrOutput );
+        }
+    
+    XRRFreeScreenResources( xrrRes );
+    
+    mingin_log( "Found monitor refresh reate " );
+    mingin_log( mn_intToString( mn_screenRefreshRate ) );
+    mingin_log( "\n" );
+    
     
     mn_xSetFullscreen( s->xDisplay,
                        s->xWindow,

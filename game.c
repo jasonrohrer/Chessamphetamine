@@ -186,7 +186,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
             maxigin_drawSetAlpha( bulletFade[ i ] );
             
-            if( 0 && i % 4 == 0 ) {
+            if( i % 4 == 0 ) {
                 
                 maxigin_drawSprite( spriteHandles[ 0 ],
                                     bulletPos[ i ].x,
@@ -199,12 +199,12 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                     bulletPos[ i ].x,
                                     bulletPos[ i ].y );
                 }
-            else if( 0 && i % 4 == 1 ) {
+            else if( i % 4 == 1 ) {
                 maxigin_drawSprite( spriteHandles[2],
                                     bulletPos[ i ].x,
                                     bulletPos[ i ].y );
                 }
-            else if( 0 && i % 4 == 2 ) {
+            else if( i % 4 == 2 ) {
                 maxigin_drawSprite( spriteHandles[3],
                                     bulletPos[ i ].x,
                                     bulletPos[ i ].y );

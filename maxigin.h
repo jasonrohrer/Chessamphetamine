@@ -3615,49 +3615,6 @@ int maxigin_initSpriteStrip( const char  *inBulkResourceName,
 
 
 
-#ifdef BBBBBLAH
-static void mx_clearSpriteStrip( int  inStripHandle ) {
-
-    MaxiginSpriteStrip  *oldStrip   =  &( mx_spriteStrips[ inStripHandle ] );
-    
-    int                  oldStart   =  oldStrip->startIndex;
-    int                  oldNumSub  =  oldStrip->numSubSprites;
-
-    int                  oldNum     =  mx_numStripSubSprites;
-    int                  newNum     =  oldNum - oldNumSub;
-    int                  i;
-
-    
-    /* copy sub-sprite indices back to fill in gap */
-    for( i = oldStart;
-         i < newNum;
-         i ++ ) {
-
-        mx_stripSubSprites[i] = mx_stripSubSprites[ i + oldNumSub ];
-        }
-
-    mx_numStripSubSprites -= oldNumSub;
-    
-
-    /* shift start back for all later strips so
-       they point to the new, shifted locations */
-    for( i = 0;
-         i < mx_numSpriteStrips;
-         i ++ ) {
-
-        MaxiginSpriteStrip  *thisStrip  =  &( mx_spriteStrips[ i ] );
-
-        if( thisStrip->startIndex >= oldStart ) {
-            thisStrip->startIndex -= oldNumSub;
-            }
-        }
-         
-    oldStrip->numSubSprites = 0;
-    }
-#endif
-
-
-
 static int mx_regenSpriteStripChildren( int  inMainSpriteHandle,
                                         int  inStripHandle,
                                         int  inHeightPerSprite ) {

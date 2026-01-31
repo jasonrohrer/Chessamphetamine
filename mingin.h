@@ -1881,15 +1881,18 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 #define  inline
 #endif
 
+/* asoundlib depends on timespec struct
+   we need timespec for sleeping
+   we also need clock_nanosleep */
+#ifndef  _POSIX_C_SOURCE
+#define  _POSIX_C_SOURCE  200112L
+#endif
 
 /* for creating an audio thread */
 #include <pthread.h>
 
 
-/* asoundlib depends on timespec struct */
-#ifndef  _POSIX_C_SOURCE
-#define  _POSIX_C_SOURCE  199309L
-#endif
+
 
 /* for ALSA sound */
 #include <alsa/asoundlib.h>
@@ -1908,6 +1911,7 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 #include <unistd.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <time.h>
 
 
 /* provide a prototype of rename here,
@@ -3211,12 +3215,22 @@ static void mn_closeSound( void );
 
 static void mn_endBulkReadThread( void );
 
+/* returns  1  if we can count on vsync to maintian mn_screenRefreshRate
+   returns  0  otherwise */
+static char mn_detectVsync( void );
+
+
         
 int main( void ) {
 
     int   b;
-    char  currentlyFullscreen  =  0;
+    char  currentlyFullscreen  =   0;
     int   gamepadFD            =  -1;
+    char  vsyncOn              =   0;
+    long  frameNS              =   0;
+
+    struct timespec  nextFrameTime;
+
     
     mn_xFullscreen = currentlyFullscreen;
 
@@ -3243,9 +3257,20 @@ int main( void ) {
         return 1;
         }
 
+    if( mn_screenRefreshRate < 1 ) {
+        mn_screenRefreshRate = 60;
+        }
+    
+    
     mn_XSetupLive = 1;
 
+    vsyncOn = mn_detectVsync();
     
+    clock_gettime( CLOCK_MONOTONIC, &nextFrameTime );
+
+    frameNS = 1000000000L / mn_screenRefreshRate;
+    
+        
     gamepadFD = mn_openActiveGamepad();
 
     
@@ -3461,6 +3486,24 @@ int main( void ) {
         glXSwapBuffers( mn_XSetup.xDisplay,
                         mn_XSetup.xWindow ); 
 
+        if( ! vsyncOn ) {
+
+            nextFrameTime.tv_nsec += frameNS;
+
+            /* watch out for nsec overflow */
+            while( nextFrameTime.tv_nsec > 1000000000L ) {
+                nextFrameTime.tv_nsec   -= 1000000000L;
+                nextFrameTime.tv_sec ++;
+                }
+
+            clock_nanosleep( CLOCK_MONOTONIC,
+                             TIMER_ABSTIME,
+                             &nextFrameTime,
+                             0 );
+            }
+        
+        
+
         
         if( currentlyFullscreen != mn_xFullscreen ) {
             
@@ -3530,6 +3573,85 @@ int main( void ) {
     return 1;
     }
 
+
+
+static void mn_testSwapScreen( void ) {
+    glRasterPos2f( -1, 1 );
+    
+    glPixelZoom( 1, -1 );
+    
+    glDrawPixels( (GLsizei)mn_windowW,
+                  (GLsizei)mn_windowH,
+                  GL_RGB,
+                  GL_UNSIGNED_BYTE,
+                  mn_gameScreenBuffer );
+    
+    glXSwapBuffers( mn_XSetup.xDisplay,
+                    mn_XSetup.xWindow ); 
+    }
+
+
+
+static char mn_detectVsync( void ) {
+
+    int  numPixelBytes  =  mn_windowW * mn_windowH * 3;
+    int  i;
+    int  msPassed;
+    
+    struct timeval  timeA;
+    struct timeval  timeB;    
+    
+    /* make buffer black */
+    for( i = 0;
+         i < numPixelBytes;
+         i ++ ) {
+
+        mn_gameScreenBuffer[ i ] = 0;
+        }
+    
+
+
+    /* swap 5x to warm up */
+
+    for( i = 0;
+         i < 5;
+         i++ ) {
+        mn_testSwapScreen();
+        }
+    
+    /* now start timing before next swap */
+    
+    gettimeofday( & timeA,
+                  NULL );
+    
+    mn_testSwapScreen();
+
+    gettimeofday( & timeB,
+                  NULL );
+    
+    msPassed =
+        (int)(
+            1000 * ( timeB.tv_sec - timeA.tv_sec )
+            +
+            ( timeB.tv_usec - timeA.tv_usec ) / 1000 );
+
+    mingin_log( "MS measured between frames = " );
+    mingin_log( mn_intToString( msPassed ) );
+    mingin_log( "\n" );
+    
+
+    if( msPassed <
+        1000 / mn_screenRefreshRate - 2 ) {
+        /* time between swaps substantially quicker than our swap interval */
+
+        mingin_log( "VSync is OFF\n" );
+        return 0;
+        }
+    else {
+        mingin_log( "VSync is ON\n" );
+        return 0;
+        }    
+    }
 
 
 static void mn_setupX11KeyMap( void ) {

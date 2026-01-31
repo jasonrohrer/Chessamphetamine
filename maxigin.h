@@ -2102,6 +2102,10 @@ typedef struct MaxiginSprite {
            if not part of a strip */
         int            stripParentHandle;
         int            stripIndex;
+
+        /* if this sprite is the parent of a strip of sprites, this
+           is the handle to the sprite strip, or -1 if not */
+        int            stripChildHandle;
         
         unsigned char  hash[ MAXIGIN_SPRITE_HASH_LENGTH ];
         
@@ -2571,9 +2575,12 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
 
     mx_sprites[ newSpriteHandle ].stripParentHandle = -1;
     mx_sprites[ newSpriteHandle ].stripIndex = -1;
-
     
     if( newSpriteHandle == mx_numSprites ) {
+
+        /* leave stripChildHandle alone if we're reloading an existing sprite */
+        
+        mx_sprites[ newSpriteHandle ].stripChildHandle = -1;
 
         /* leave old glow handle in place if this isn't a new sprite record */
         
@@ -3236,6 +3243,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
 
         mx_sprites[ glowSpriteHandle ].stripParentHandle = -1;
         mx_sprites[ glowSpriteHandle ].stripIndex = -1;
+        mx_sprites[ glowSpriteHandle ].stripChildHandle = -1;
         
         mx_numSprites ++;
         mx_numSpriteBytesUsed += neededGlowBytes;
@@ -3439,6 +3447,45 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
     }
 
 
+/* strip handle is -1 to make a new strip
+   
+   if inStripHandle is an existing strip, inHeightPerSprite should be -1,
+   since the existing height per sprite will be used.
+   
+   returns handle to strip (which may equal inSpriteHandle if re-making
+   an existing strip) */
+static int mx_regenSpriteStripChildren( int  inMainSpriteHandle,
+                                        int  inStripHandle,
+                                        int  inHeightPerSprite );
+
+
+
+static void mx_postReloadStep( int  inSpriteHandle ) {
+    
+    MaxiginSprite  *s  =  &( mx_sprites[ inSpriteHandle ] );
+    
+    s->pendingChange       = 0;
+    s->retryCount          = 0;
+    s->stepsUntilNextRetry = 0;
+
+    if( s->glowSpriteHandle != -1 ) {
+
+        mx_regenerateGlowSprite(
+            inSpriteHandle,
+            s->glowRadius,
+            s->glowIterations );
+        }
+
+    if( s->stripChildHandle != -1 ) {
+        /* just reloaded a parent sprite of a strip
+           need to make new pointers for child sprites */
+
+        /* this will also re-gen glow sprites if needed */
+        mx_regenSpriteStripChildren( inSpriteHandle,
+                                     s->stripChildHandle,
+                                     -1 );
+        }
+    }
 
 
 
@@ -3474,18 +3521,8 @@ static void mx_checkSpritesNeedReload( void ) {
                     maxigin_logInt(
                         "Success in reloading sprite after retries: ",
                         retry );
-                    
-                    mx_sprites[ s ].pendingChange       = 0;
-                    mx_sprites[ s ].retryCount          = 0;
-                    mx_sprites[ s ].stepsUntilNextRetry = 0;
 
-                    if( mx_sprites[ s ].glowSpriteHandle != -1 ) {
-
-                        mx_regenerateGlowSprite(
-                            s,
-                            mx_sprites[ s ].glowRadius,
-                            mx_sprites[ s ].glowIterations );
-                        }
+                    mx_postReloadStep( s );
                     }
                 }
             else {
@@ -3518,13 +3555,7 @@ static void mx_checkSpritesNeedReload( void ) {
                 mx_sprites[ s ].stepsUntilNextRetry = 1;
                 }
             else {
-                if( mx_sprites[ s ].glowSpriteHandle != -1 ) {
-
-                    mx_regenerateGlowSprite(
-                        s,
-                        mx_sprites[ s ].glowRadius,
-                        mx_sprites[ s ].glowIterations );
-                    }
+                mx_postReloadStep( s );
                 }
             }
         }
@@ -3543,10 +3574,13 @@ typedef struct MaxiginSpriteStrip {
 
         int  numSubSprites;
 
+        int  heightPerSprite;
+
         /* index of first strip sprite's handle in mx_stripSubSprites */
         int  startIndex;
         
     } MaxiginSpriteStrip;
+
 
 
 static  MaxiginSpriteStrip  mx_spriteStrips[ MAXIGIN_MAX_NUM_SPRITE_STRIPS ];
@@ -3559,13 +3593,6 @@ int maxigin_initSpriteStrip( const char  *inBulkResourceName,
                              int          inHeightPerSprite ) {
 
     int                  mainSpriteHandle;
-    MaxiginSprite       *mainSprite;
-    int                  numSubSprites;
-    int                  newStripHandle;
-    MaxiginSpriteStrip  *newStrip;
-    int                  i;
-    int                  bytesPerSubSprite;
-    int                  nextSubStartByte;
     
     if( mx_numSpriteStrips >= MAXIGIN_MAX_NUM_SPRITE_STRIPS ) {
         maxigin_logString( "Failed to load sprite strip because we already "
@@ -3580,7 +3607,83 @@ int maxigin_initSpriteStrip( const char  *inBulkResourceName,
         return -1;
         }
 
-    mainSprite = &( mx_sprites[ mainSpriteHandle ] );
+    /* generate a brand new strip */
+    return mx_regenSpriteStripChildren( mainSpriteHandle,
+                                        -1,
+                                        inHeightPerSprite );
+    }
+
+
+
+#ifdef BBBBBLAH
+static void mx_clearSpriteStrip( int  inStripHandle ) {
+
+    MaxiginSpriteStrip  *oldStrip   =  &( mx_spriteStrips[ inStripHandle ] );
+    
+    int                  oldStart   =  oldStrip->startIndex;
+    int                  oldNumSub  =  oldStrip->numSubSprites;
+
+    int                  oldNum     =  mx_numStripSubSprites;
+    int                  newNum     =  oldNum - oldNumSub;
+    int                  i;
+
+    
+    /* copy sub-sprite indices back to fill in gap */
+    for( i = oldStart;
+         i < newNum;
+         i ++ ) {
+
+        mx_stripSubSprites[i] = mx_stripSubSprites[ i + oldNumSub ];
+        }
+
+    mx_numStripSubSprites -= oldNumSub;
+    
+
+    /* shift start back for all later strips so
+       they point to the new, shifted locations */
+    for( i = 0;
+         i < mx_numSpriteStrips;
+         i ++ ) {
+
+        MaxiginSpriteStrip  *thisStrip  =  &( mx_spriteStrips[ i ] );
+
+        if( thisStrip->startIndex >= oldStart ) {
+            thisStrip->startIndex -= oldNumSub;
+            }
+        }
+         
+    oldStrip->numSubSprites = 0;
+    }
+#endif
+
+
+
+static int mx_regenSpriteStripChildren( int  inMainSpriteHandle,
+                                        int  inStripHandle,
+                                        int  inHeightPerSprite ) {
+
+    MaxiginSprite       *mainSprite;
+    int                  numSubSprites;
+    int                  newStripHandle;
+    MaxiginSpriteStrip  *newStrip;
+    int                  i;
+    int                  bytesPerSubSprite;
+    int                  nextSubStartByte;
+    char                 exists;
+    
+    mainSprite = &( mx_sprites[ inMainSpriteHandle ] );
+
+    if( inHeightPerSprite == -1 ) {
+        if( inStripHandle == -1 ) {
+            maxigin_logString(
+                "Failed to load sprite strip because strip height "
+                "per sub-sprite not specified: ",
+                mainSprite->bulkResourceName );
+            return -1;
+            }
+        /* if height not given, extract it from existing strip */
+        inHeightPerSprite = mx_spriteStrips[ inStripHandle ].heightPerSprite;
+        }
 
     numSubSprites = mainSprite->h / inHeightPerSprite;
     
@@ -3590,46 +3693,73 @@ int maxigin_initSpriteStrip( const char  *inBulkResourceName,
 
         maxigin_logString( "Failed to load sprite strip because strip height "
                            "is not integer multiple of supplied height: ",
-                           inBulkResourceName );
+                           mainSprite->bulkResourceName );
         return -1;
         }
 
     
-    /* make sure there's room for this many sub-sprites */
 
-    if( mx_numStripSubSprites + numSubSprites
-        >=
-        MAXIGIN_MAX_NUM_SPRITES ) {
+
+
+    if( inStripHandle == -1 ) {
+
+        /* make sure there's room for this many new sub-sprites */
+
+        if( mx_numStripSubSprites + numSubSprites
+            >=
+            MAXIGIN_MAX_NUM_SPRITES ) {
         
-        maxigin_logString( "Failed to load sprite strip because we already "
-                           "have too many strip sub sprites: ",
-                           inBulkResourceName );
-        return -1;
+            maxigin_logString( "Failed to load sprite strip because we already "
+                               "have too many strip sub sprites: ",
+                               mainSprite->bulkResourceName );
+            return -1;
+            }
+
+        if( mx_numSprites + numSubSprites
+            >=
+            MAXIGIN_MAX_NUM_SPRITES ) {
+        
+            maxigin_logString( "Failed to load sprite strip because we already "
+                               "have too many sprites: ",
+                               mainSprite->bulkResourceName );
+            return -1;
+            };
+        
+        newStripHandle = mx_numSpriteStrips;
+        
+        mx_numSpriteStrips ++;
+
+        exists = 0;
         }
-
-    if( mx_numSprites + numSubSprites
-        >=
-        MAXIGIN_MAX_NUM_SPRITES ) {
+    else {
+        /* an existing strip, there's already room for it */
         
-        maxigin_logString( "Failed to load sprite strip because we already "
-                           "have too many sprites: ",
-                           inBulkResourceName );
-        return -1;
-        };
+        newStripHandle = inStripHandle;
 
-
-    newStripHandle = mx_numSpriteStrips;
-
-    mx_numSpriteStrips ++;
+        exists = 1;
+        }
+    
 
     newStrip = &( mx_spriteStrips[ newStripHandle ] );
 
-    newStrip->numSubSprites = numSubSprites;
+    if( ! exists ) {
+        newStrip->numSubSprites = numSubSprites;
 
-    newStrip->startIndex = mx_numStripSubSprites;
+        newStrip->startIndex = mx_numStripSubSprites;
 
-    mx_numStripSubSprites += numSubSprites;
-
+        newStrip->heightPerSprite = inHeightPerSprite;
+    
+        mx_numStripSubSprites += numSubSprites;
+        }
+    else {
+        if( numSubSprites != newStrip->numSubSprites ) {
+            maxigin_logString( "Failed to hot re-load sprite strip because "
+                               "of size mismatch with old strip: ",
+                               mainSprite->bulkResourceName );
+            return -1;
+            }
+        }
+    
     nextSubStartByte = mainSprite->startByte;
     
     bytesPerSubSprite = mainSprite->w * inHeightPerSprite * 4;
@@ -3638,12 +3768,23 @@ int maxigin_initSpriteStrip( const char  *inBulkResourceName,
          i < numSubSprites;
          i ++ ) {
 
-        int             subHandle  =  mx_numSprites;
-        MaxiginSprite  *subSprite  =  &( mx_sprites[ subHandle ] );
+        int             subHandle;
+        MaxiginSprite  *subSprite;
 
-        mx_numSprites ++;
+        if( ! exists ) {
+            subHandle = mx_numSprites;
+            
+            mx_numSprites ++;
 
-        mx_stripSubSprites[ i + newStrip->startIndex ] = subHandle;
+            mx_stripSubSprites[ i + newStrip->startIndex ] = subHandle;
+            }
+        else {
+            /* re-use existing sub-sprite, but point it at new data
+               from main sprite */
+            subHandle = mx_stripSubSprites[ i + newStrip->startIndex ];
+            }
+        
+        subSprite = &( mx_sprites[ subHandle ] );
 
         subSprite->w = mainSprite->w;
 
@@ -3656,14 +3797,25 @@ int maxigin_initSpriteStrip( const char  *inBulkResourceName,
         subSprite->bulkResourceName[0] = '\0';
 
         subSprite->pendingChange = 0;
-        subSprite->glowSpriteHandle = -1;
 
-        subSprite->stripParentHandle = mainSpriteHandle;
+        subSprite->stripParentHandle = inMainSpriteHandle;
         subSprite->stripIndex = i;
         
         
         mx_recomputeSpriteAttributes( subHandle );
+
+        if( ! exists ) {
+            subSprite->glowSpriteHandle = -1;
+            }
+        else if( subSprite->glowSpriteHandle != -1 ) {
+             mx_regenerateGlowSprite(
+                 subHandle,
+                 subSprite->glowRadius,
+                 subSprite->glowIterations );
+            }
         }
+
+    mainSprite->stripChildHandle = newStripHandle;
     
     return newStripHandle;
     }

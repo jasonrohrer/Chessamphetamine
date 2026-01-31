@@ -576,6 +576,13 @@ void maxiginGame_init( void ) {
         bulletSpeed[ i ].y = 0;
         }
 
+    
+    spriteStrip = maxigin_initSpriteStrip( "stripTest.tga",
+                                           16 );
+
+    maxigin_initMakeGlowSpriteStrip( spriteStrip,
+                                     2,
+                                     2 );
 
     for( i = 0;
          i < NUM_BULK_FILES;
@@ -600,12 +607,6 @@ void maxiginGame_init( void ) {
             }
         }
 
-    spriteStrip = maxigin_initSpriteStrip( "stripTest.tga",
-                                           16 );
-
-    maxigin_initMakeGlowSpriteStrip( spriteStrip,
-                                     2,
-                                     2 );
     
     maxigin_registerButtonMapping( JUMP,   jumpMapping );
     maxigin_registerButtonMapping( SHOOT,  shootMapping );

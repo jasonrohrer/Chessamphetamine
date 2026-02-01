@@ -3154,6 +3154,9 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                             -1 ) {
                             /* successfully loaded from file */
                             readGlowFromFile = 1;
+
+                            mainSprite->glowRadius = inBlurRadius;
+                            mainSprite->glowIterations = inBlurIterations;
                             
                             maxigin_logString( "Successfully read cached glow "
                                                "sprite from perisistent data "

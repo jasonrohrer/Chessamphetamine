@@ -63,6 +63,8 @@ static const char  *fileNames[ NUM_BULK_FILES ] = { "bullet.tga",
 static int          spriteHandles[ NUM_BULK_FILES ];
 
 static int          spriteStrip;
+static int          buttonHintStrip;
+
 static int          stripIndex    =   0;
 static int          stripC        =   0;
 
@@ -155,6 +157,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             }
         }
 
+    /* hint test */
+
+    maxigin_drawButtonHintSprite( SHOOT,
+                                  20,
+                                  20 );
     
 
     for( i = 0;
@@ -540,13 +547,9 @@ void maxiginGame_step( void ) {
 
 static MinginButton jumpMapping[]   =  { MGN_KEY_SPACE,     MGN_MAP_END };
 
-static MinginButton shootMapping[]  =  { MGN_KEY_X,
-                                         MGN_BUTTON_MOUSE_LEFT,
+static MinginButton shootMapping[]  =  { MGN_BUTTON_MOUSE_LEFT,
                                          MGN_BUTTON_PS_X,
                                          MGN_BUTTON_XBOX_A,
-                                         MGN_BUTTON_DPAD_UP,
-                                         MGN_BUTTON_L1,
-                                         MGN_BUTTON_L2,
                                          MGN_MAP_END };
 
 static MinginButton remapMapping[]  =  { MGN_KEY_P,         MGN_MAP_END };
@@ -586,6 +589,12 @@ void maxiginGame_init( void ) {
     maxigin_initMakeGlowSpriteStrip( spriteStrip,
                                      2,
                                      2 );
+
+    buttonHintStrip = maxigin_initSpriteStrip( "buttonHintStrip.tga",
+                                               16 );
+
+    maxigin_initKeyAndButtonHintSprites( buttonHintStrip,
+                                         shootMapping );
 
     for( i = 0;
          i < NUM_BULK_FILES;

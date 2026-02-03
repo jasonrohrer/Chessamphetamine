@@ -622,6 +622,40 @@ void maxigin_initMakeGlowSpriteStrip( int  inSpriteStripHandle,
 
 
 /*
+  Registers hint sprites to be used by Maxigin when drawing user
+  input control hints.
+
+  The following MinginButtons should have sprites assigned:
+
+  --All  MGN_BUTTON      buttons, for various controller and mouse button sprites
+
+  --The  MGN_ANY_KEY     button symbol, for a blank key cap sprite which
+                         Maxigin will auto-fill in with various key
+                         symbols using a font.
+
+  For non-single-symbol keys, like Space and Enter and Escape, Maxigin
+  will spell these out as words with a font if no sprite is provided.
+  
+  Additional sprites can be provided for other specific keys as-needed,
+  to override this spelling-out-with-words fallback behavior.
+
+  
+  Parameters:
+
+      inSpriteStripHandle   a handle to a strip of button/key sprites
+
+      inMapping             an array of MinginButton values, ending with
+                            MGN_MAP_END, corresponding to each sprite
+                            in the provided strip.
+
+  [jumpMaxiginInit]
+*/
+void maxigin_initKeyAndButtonHintSprites( int           inSpriteStripHandle,
+                                          MinginButton  inMapping[] );
+
+
+
+/*
   Sets TGA-formatted sprites to customize maxigin_guiSlider appearance.
 
   All parameters are names of TGA resource name in platform's bulk data
@@ -942,11 +976,6 @@ void maxigin_drawFillRect( int  inStartX,
 
 
 
-
-
-
-
-
 /*
   Draws a GUI instance into the game's native pixel buffer.
 
@@ -958,6 +987,25 @@ void maxigin_drawFillRect( int  inStartX,
 */ 
 void maxigin_drawGUI( MaxiginGUI *inGUI );
 
+
+
+/*
+  Draws the hint sprite associated with a given registered button mapping.
+
+  Parameters:
+
+      inButtonHandle   the game-defined button action to draw a sprite for
+      
+      inCenterX        the x position in the game's native pixel buffer of the
+                       sprite's center
+ 
+      inCenterY        the y position in the game's native pixel buffer of the
+                       sprite's center
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawButtonHintSprite( int  inButtonHandle,
+                                   int  inCenterX,
+                                   int  inCenterY );
 
 
 /*
@@ -12535,7 +12583,224 @@ static void mx_stopPlayingMusic( void ) {
         }
     }
 
+
+
+
+#define               MAXIGIN_MAX_NUM_HINT_SPRITES     128
+static  int           mx_buttonHintStripHandle      =   -1;
+static  MinginButton  mx_buttonHintMapping[ MAXIGIN_MAX_NUM_HINT_SPRITES ];
+
+void maxigin_initKeyAndButtonHintSprites( int           inSpriteStripHandle,
+                                          MinginButton  inMapping[] ) {
+
+    int  i;
     
+    mx_buttonHintStripHandle = inSpriteStripHandle;
+    
+    i = 0;
+
+    while( inMapping[i] != MGN_MAP_END
+           &&
+           /* leave room for termination, even if list full */
+           i < MAXIGIN_MAX_NUM_HINT_SPRITES - 1 ) {
+
+        mx_buttonHintMapping[i] = inMapping[i];
+
+        i ++;
+        }
+
+    if( inMapping[i] != MGN_MAP_END ) {
+        maxigin_logInt(
+            "inMapping passed into maxigin_initKeyAndButtonHintSprites "
+            "has too many buttons in it.  Max is ",
+            MAXIGIN_MAX_NUM_HINT_SPRITES );
+        }
+    
+    /* terminate list */
+    mx_buttonHintMapping[i] = MGN_MAP_END;
+
+    if( maxigin_getNumSpritesInStrip( mx_buttonHintStripHandle )
+        < i ) {
+
+        /* if we have more sprites than mapping slots, that's okay */
+        maxigin_logInt2(
+            "inMapping contains ",
+            i,
+            "elements, but sprite strip contains ",
+            maxigin_getNumSpritesInStrip( mx_buttonHintStripHandle ),
+            "elements in maxigin_initKeyAndButtonHintSprites" );
+        
+        mx_buttonHintStripHandle = -1;
+        }
+    }
+
+
+static  char         mx_buttonToNameMapReady                 =  0;
+static  const char  *mx_buttonToNameMap[ MGN_NUM_BUTTONS ];
+
+static void mx_setupButtonToNameMap( void ) {
+
+    int  i;
+
+    for( i = 0;
+         i < MGN_NUM_BUTTONS;
+         i ++ ) {
+        mx_buttonToNameMap[ i ] = "";
+        }
+    
+    mx_buttonToNameMap[ MGN_KEY_BACKSPACE ]     =  "Backspace";
+    mx_buttonToNameMap[ MGN_KEY_TAB ]           =  "Tab";
+    mx_buttonToNameMap[ MGN_KEY_RETURN ]        =  "Return";
+    mx_buttonToNameMap[ MGN_KEY_ESCAPE ]        =  "Escape";
+    mx_buttonToNameMap[ MGN_KEY_DELETE ]        =  "Delete";
+    mx_buttonToNameMap[ MGN_KEY_HOME ]          =  "Home";
+    mx_buttonToNameMap[ MGN_KEY_LEFT ]          =  "Left";
+    mx_buttonToNameMap[ MGN_KEY_UP ]            =  "Up";
+    mx_buttonToNameMap[ MGN_KEY_RIGHT ]         =  "Right";
+    mx_buttonToNameMap[ MGN_KEY_DOWN ]          =  "Down";
+    mx_buttonToNameMap[ MGN_KEY_PAGE_UP ]       =  "Page Up";
+    mx_buttonToNameMap[ MGN_KEY_PAGE_DOWN ]     =  "Page Down";
+    mx_buttonToNameMap[ MGN_KEY_END ]           =  "End";
+    mx_buttonToNameMap[ MGN_KEY_NUM_LOCK ]      =  "Num Lock";
+    mx_buttonToNameMap[ MGN_KEY_F1 ]            =  "F1";
+    mx_buttonToNameMap[ MGN_KEY_F2 ]            =  "F2";
+    mx_buttonToNameMap[ MGN_KEY_F3 ]            =  "F3";
+    mx_buttonToNameMap[ MGN_KEY_F4 ]            =  "F4";
+    mx_buttonToNameMap[ MGN_KEY_F5 ]            =  "F5";
+    mx_buttonToNameMap[ MGN_KEY_F6 ]            =  "F6";
+    mx_buttonToNameMap[ MGN_KEY_F7 ]            =  "F7";
+    mx_buttonToNameMap[ MGN_KEY_F8 ]            =  "F8";
+    mx_buttonToNameMap[ MGN_KEY_F9 ]            =  "F9";
+    mx_buttonToNameMap[ MGN_KEY_F10 ]           =  "F10";
+    mx_buttonToNameMap[ MGN_KEY_F11 ]           =  "F11";
+    mx_buttonToNameMap[ MGN_KEY_F12 ]           =  "F12";
+    mx_buttonToNameMap[ MGN_KEY_F13 ]           =  "F13";
+    mx_buttonToNameMap[ MGN_KEY_F14 ]           =  "F14";
+    mx_buttonToNameMap[ MGN_KEY_F15 ]           =  "F15";
+    mx_buttonToNameMap[ MGN_KEY_F16 ]           =  "F16";
+    mx_buttonToNameMap[ MGN_KEY_F17 ]           =  "F17";
+    mx_buttonToNameMap[ MGN_KEY_F18 ]           =  "F18";
+    mx_buttonToNameMap[ MGN_KEY_F19 ]           =  "F19";
+    mx_buttonToNameMap[ MGN_KEY_F20 ]           =  "F20";
+    mx_buttonToNameMap[ MGN_KEY_F21 ]           =  "F21";
+    mx_buttonToNameMap[ MGN_KEY_F22 ]           =  "F22";
+    mx_buttonToNameMap[ MGN_KEY_F23 ]           =  "F23";
+    mx_buttonToNameMap[ MGN_KEY_F24 ]           =  "F24";
+    mx_buttonToNameMap[ MGN_KEY_F25 ]           =  "F25";
+    mx_buttonToNameMap[ MGN_KEY_F26 ]           =  "F26";
+    mx_buttonToNameMap[ MGN_KEY_F27 ]           =  "F27";
+    mx_buttonToNameMap[ MGN_KEY_F28 ]           =  "F28";
+    mx_buttonToNameMap[ MGN_KEY_F29 ]           =  "F29";
+    mx_buttonToNameMap[ MGN_KEY_F30 ]           =  "F30";
+    mx_buttonToNameMap[ MGN_KEY_F31 ]           =  "F31";
+    mx_buttonToNameMap[ MGN_KEY_F32 ]           =  "F32";
+    mx_buttonToNameMap[ MGN_KEY_F33 ]           =  "F33";
+    mx_buttonToNameMap[ MGN_KEY_F34 ]           =  "F34";
+    mx_buttonToNameMap[ MGN_KEY_F35 ]           =  "F35";
+    mx_buttonToNameMap[ MGN_KEY_SHIFT_L ]       =  "Shift L";
+    mx_buttonToNameMap[ MGN_KEY_SHIFT_R ]       =  "Shift R";
+    mx_buttonToNameMap[ MGN_KEY_CONTROL_L ]     =  "Control L";
+    mx_buttonToNameMap[ MGN_KEY_CONTROL_R ]     =  "Control R";
+    mx_buttonToNameMap[ MGN_KEY_CAPS_LOCK ]     =  "Caps Lock";
+    mx_buttonToNameMap[ MGN_KEY_META_L ]        =  "Meta L";
+    mx_buttonToNameMap[ MGN_KEY_META_R ]        =  "Meta R";
+    mx_buttonToNameMap[ MGN_KEY_ALT_L ]         =  "Alt L";
+    mx_buttonToNameMap[ MGN_KEY_ALT_R ]         =  "Alt R";
+    mx_buttonToNameMap[ MGN_KEY_SUPER_L ]       =  "Super L";
+    mx_buttonToNameMap[ MGN_KEY_SUPER_R ]       =  "Super R";
+    mx_buttonToNameMap[ MGN_KEY_SPACE ]         =  "Space";
+
+    mx_buttonToNameMapReady = 1;
+    }
+
+
+
+void maxigin_drawButtonHintSprite( int  inButtonHandle,
+                                   int  inCenterX,
+                                   int  inCenterY ) {
+
+    MinginButton  primaryButton;
+    int           spriteHandle    =  -1;
+    int           i;
+    const char   *spelledOut      =   0;
+    
+    if( mx_buttonHintStripHandle == -1 ) {
+        return;
+        }
+
+    if( ! mx_buttonToNameMapReady ) {
+        mx_setupButtonToNameMap();
+        }
+
+    /* push out beyond maxigin internal button mappings */
+    inButtonHandle += LAST_MAXIGIN_USER_ACTION;
+    
+    
+    primaryButton = mingin_getPlatformPrimaryButton( inButtonHandle );
+
+    i = 0;
+
+    while( mx_buttonHintMapping[i] != primaryButton
+           &&
+           mx_buttonHintMapping[i] != MGN_MAP_END ) {
+        
+        i ++;
+        }
+
+    if( mx_buttonHintMapping[i] == primaryButton ) {
+        /* found it */
+
+        spriteHandle = maxigin_getSpriteFromStrip( mx_buttonHintStripHandle,
+                                                   i );
+        }
+
+    if( spriteHandle != -1 ) {
+
+        maxigin_drawSprite( spriteHandle,
+                            inCenterX,
+                            inCenterY );
+        return;
+        }
+    
+    if( primaryButton >= MGN_FIRST_PRINTABLE_KEY
+        &&
+        primaryButton <= MGN_LAST_PRINTABLE_KEY ) {
+
+        i = 0;
+
+        while( mx_buttonHintMapping[i] != MGN_ANY_KEY
+               &&
+               mx_buttonHintMapping[i] != MGN_MAP_END ) {
+        
+            i ++;
+            }
+
+        if( mx_buttonHintMapping[i] == MGN_ANY_KEY ) {
+            /* found the blank key cap sprite */
+
+            spriteHandle = maxigin_getSpriteFromStrip( mx_buttonHintStripHandle,
+                                                       i );
+
+            maxigin_drawSprite( spriteHandle,
+                                inCenterX,
+                                inCenterY );
+
+            /* fixme:  use font to draw printable character on key cap */
+            return;
+            }
+        }
+
+    spelledOut = mx_buttonToNameMap[ primaryButton ];
+
+    if( spelledOut[0] != '\0' ) {
+        /* we have a name for this key */
+
+        /* fixme:  draw the name with a font */
+
+        }
+    
+    }
+
     
                                    
 

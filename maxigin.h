@@ -2287,8 +2287,6 @@ static void mx_removeSpriteData( int  inSpriteHandle ) {
 
     mx_numSpriteBytesUsed -= oldSpriteBytes;
 
-    maxigin_logInt( "Num sprite bytes used: ", mx_numSpriteBytesUsed );
-    
     /* stick -1 in for byte index of this sprite record, since
        its data is gone */
     mx_sprites[ inSpriteHandle ].startByte = -1;
@@ -2604,7 +2602,6 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
     if( makingNewSprite ) {
         mx_sprites[ newSpriteHandle ].startByte  =  mx_numSpriteBytesUsed;
         mx_numSpriteBytesUsed += neededSpriteBytes;
-        maxigin_logInt( "Num sprite bytes used: ", mx_numSpriteBytesUsed );
         }
 
     /* copy bulk resource name into struct */
@@ -3105,19 +3102,6 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
             +
             2 * glowBorder;
 
-    maxigin_logString( "Gen glow for ", mainSprite->bulkResourceName );
-    
-    maxigin_logInt2( "  => Sprite w = ",
-                     mainSprite->w,
-                     ", Sprite h ",
-                     mainSprite->h,
-                     "" );
-    maxigin_logInt2( "  => Glow w = ",
-                     glowW,
-                     ", Glow h = ",
-                     glowH,
-                     "" );
-    
     if( mainSprite->bulkResourceName[0] == '\0' ) {
         /* empty source resource name, check if this is part of a strip */
 
@@ -3316,7 +3300,6 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
         mx_numSprites ++;
         mx_numSpriteBytesUsed += neededGlowBytes;
 
-        maxigin_logInt( "Num sprite bytes used: ", mx_numSpriteBytesUsed );
 
         /* generate glow sprite pixels */
 

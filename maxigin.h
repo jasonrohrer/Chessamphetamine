@@ -1820,6 +1820,44 @@ struct MaxiginGUI {
 
 
 
+/* temporarily dumps pixels to out.raw */
+static void mx_dumpRGBAPixels( unsigned char  *inStartByte,
+                               int             inW,
+                               int             inH ) {
+
+    int  numBytes     =  inW * inH * 4;
+    int  outHandle;
+    char success;
+    
+
+    outHandle = mingin_startWritePersistData( "out.raw" );
+
+    if( outHandle == -1 ) {
+        mingin_log( "Failed to open 'out.raw' persistent data for writing "
+                    "when trying to dump pixels.\n" );
+        return;
+        }
+
+    success = mingin_writePersistData( outHandle,
+                                       numBytes,
+                                       inStartByte );
+
+    if( ! success ) {
+        mingin_log( "Failed to dump raw pixels to persistent data\n" );
+        }
+
+    mingin_endWritePersistData( outHandle );
+
+    maxigin_logInt2( "Dumped RGBA pixels to out.raw with w = ",
+                     inW,
+                     ", h = ",
+                     inH,
+                     "" );
+    }
+
+    
+
+
 
 /* all of the button actions that Maxigin registers internally */
 typedef enum MaxiginUserAction {
@@ -2121,6 +2159,17 @@ static  int            mx_numSprites          =  0;
 
 
 
+static void mx_dumpSpriteRGBA( int  inSpriteHandle ) {
+
+    MaxiginSprite  *s  =  &( mx_sprites[ inSpriteHandle ] );
+
+    mx_dumpRGBAPixels( &( mx_spriteBytes[ s->startByte ] ),
+                       s->w,
+                       s->h );
+    }
+
+
+
         
 #define  MAXIGIN_TGA_BUFFER_SIZE  256
 
@@ -2238,6 +2287,8 @@ static void mx_removeSpriteData( int  inSpriteHandle ) {
 
     mx_numSpriteBytesUsed -= oldSpriteBytes;
 
+    maxigin_logInt( "Num sprite bytes used: ", mx_numSpriteBytesUsed );
+    
     /* stick -1 in for byte index of this sprite record, since
        its data is gone */
     mx_sprites[ inSpriteHandle ].startByte = -1;
@@ -2553,6 +2604,7 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
     if( makingNewSprite ) {
         mx_sprites[ newSpriteHandle ].startByte  =  mx_numSpriteBytesUsed;
         mx_numSpriteBytesUsed += neededSpriteBytes;
+        maxigin_logInt( "Num sprite bytes used: ", mx_numSpriteBytesUsed );
         }
 
     /* copy bulk resource name into struct */
@@ -3053,6 +3105,19 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
             +
             2 * glowBorder;
 
+    maxigin_logString( "Gen glow for ", mainSprite->bulkResourceName );
+    
+    maxigin_logInt2( "  => Sprite w = ",
+                     mainSprite->w,
+                     ", Sprite h ",
+                     mainSprite->h,
+                     "" );
+    maxigin_logInt2( "  => Glow w = ",
+                     glowW,
+                     ", Glow h = ",
+                     glowH,
+                     "" );
+    
     if( mainSprite->bulkResourceName[0] == '\0' ) {
         /* empty source resource name, check if this is part of a strip */
 
@@ -3251,6 +3316,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
         mx_numSprites ++;
         mx_numSpriteBytesUsed += neededGlowBytes;
 
+        maxigin_logInt( "Num sprite bytes used: ", mx_numSpriteBytesUsed );
 
         /* generate glow sprite pixels */
 
@@ -3767,11 +3833,30 @@ static int mx_regenSpriteStripChildren( int  inMainSpriteHandle,
         if( ! exists ) {
             subSprite->glowSpriteHandle = -1;
             }
-        else if( subSprite->glowSpriteHandle != -1 ) {
-             mx_regenerateGlowSprite(
-                 subHandle,
-                 subSprite->glowRadius,
-                 subSprite->glowIterations );
+        }
+
+    /* now that they are all pointing to the right spots in the new
+       parent sprite strip, we can regenerate glow sprites if needed.
+
+       If we do this inline in the loop above, the deletion of glow
+       sprites can cause our parent sprite strip to move,
+       causing later children to point to the wrong place */
+
+    for( i = 0;
+         i < numSubSprites;
+         i ++ ) {
+        
+        int             subHandle;
+        MaxiginSprite  *subSprite;
+
+        subHandle = mx_stripSubSprites[ i + newStrip->startIndex ];
+        subSprite = &( mx_sprites[ subHandle ] );
+        
+        if( subSprite->glowSpriteHandle != -1 ) {
+            mx_regenerateGlowSprite(
+                subHandle,
+                subSprite->glowRadius,
+                subSprite->glowIterations );
             }
         }
 
@@ -6872,6 +6957,13 @@ static void mx_gameInit( void ) {
     mx_recordingCrashRecovery();
 
     mx_initRecording();
+
+
+    /* supress warning
+       this function generally only called when debugging */
+    if( 0 ) {
+        mx_dumpSpriteRGBA( 0 );
+        }
     }
 
 

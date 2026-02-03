@@ -529,6 +529,7 @@ char mingin_isSoundPlaying( void );
 typedef enum MinginButton {
     MGN_BUTTON_NONE = MGN_MAP_END,
     MGN_ANY_KEY_OR_BUTTON,   /* maps to any and every key or button pressed */
+    MGN_ANY_KEY,             /* maps to any keyboard key pressed */
     MGN_KEY_BACKSPACE,
     MGN_KEY_TAB,
     MGN_KEY_RETURN,
@@ -693,9 +694,14 @@ typedef enum MinginButton {
     } MinginButton;
 
 
-#define  MGN_NUM_BUTTONS  MGN_DUMMY_LAST_BUTTON
+#define  MGN_NUM_BUTTONS         MGN_DUMMY_LAST_BUTTON
 
-    
+#define  MGN_FIRST_KEYBOARD_KEY  MGN_KEY_BACKSPACE
+#define  MGN_LAST_KEYBOARD_KEY   MGN_KEY_TILDE
+
+#define  MGN_FIRST_MOUSE_BUTTON  MGN_BUTTON_MOUSE_LEFT
+#define  MGN_LAST_MOUSE_BUTTON   MGN_BUTTON_MOUSE_RIGHT
+
 
 /*
   Registers a set of button types that should get mapped to one button
@@ -2216,6 +2222,24 @@ static char minginPlatform_isButtonDown( MinginButton  inButton ) {
                 }
             }
         }
+    if( inButton == MGN_ANY_KEY ) {
+        /* loop through entire list of keys
+           and see if anything is currently down */
+
+        int i;
+
+        for( i = MGN_FIRST_KEYBOARD_KEY;
+             i <= MGN_LAST_KEYBOARD_KEY;
+             i ++ ) {
+            
+            if( mn_buttonDown[i]
+                ||
+                mn_buttonWasDownSinceLastStep[i] ) {
+                
+                return 1;
+                }
+            }
+        }
     
     return 0;
     }
@@ -2309,9 +2333,9 @@ MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
             
             MinginButton  b  =  minginButtonMappings[ inButtonHandle ][ i ];
 
-            if( b > MGN_KEY_TILDE
+            if( b > MGN_LAST_KEYBOARD_KEY
                 &&
-                b < MGN_BUTTON_MOUSE_LEFT ) {
+                b < MGN_FIRST_MOUSE_BUTTON ) {
 
                 /* gamepad buttons are above keyboard and below
                    mouse in our button enum */
@@ -2335,13 +2359,13 @@ MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
         
         MinginButton  b  =  minginButtonMappings[ inButtonHandle ][ i ];
 
-        if( ( b >= MGN_KEY_BACKSPACE
+        if( ( b >= MGN_FIRST_KEYBOARD_KEY
               &&
-              b <= MGN_KEY_TILDE )
+              b <= MGN_LAST_KEYBOARD_KEY )
             ||
-            ( b >= MGN_BUTTON_MOUSE_LEFT
+            ( b >= MGN_FIRST_MOUSE_BUTTON
               &&
-              b <= MGN_BUTTON_MOUSE_RIGHT ) ) {
+              b <= MGN_LAST_MOUSE_BUTTON ) ) {
 
             /* all keys are possible on Linux keyboard, along with
                all mouse buttons.

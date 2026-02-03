@@ -3695,13 +3695,33 @@ static int mx_regenSpriteStripChildren( int  inMainSpriteHandle,
         }
 
     numSubSprites = mainSprite->h / inHeightPerSprite;
+
+    if( inStripHandle != -1 ) {
+        if( numSubSprites * inHeightPerSprite
+            != mainSprite->h
+            ||
+            numSubSprites != mx_spriteStrips[ inStripHandle ].numSubSprites ) {
+
+            /* some kind of mismatch */
+
+            /* we actually allow a taller/shorter strip if can still contain
+               the same number of sub-sprites that are all of a new,
+               taller/shorter same size */
+
+            /* number of sub sprites can't change, though */
+            numSubSprites = mx_spriteStrips[ inStripHandle ].numSubSprites;
+
+            /* we'll check if an interger multiple of this fits below */
+            inHeightPerSprite = mainSprite->h / numSubSprites;
+            }
+        }
     
     if( numSubSprites * inHeightPerSprite
         !=
         mainSprite->h ) {
 
-        maxigin_logString( "Failed to load sprite strip because strip height "
-                           "is not integer multiple of supplied height: ",
+        maxigin_logString( "Failed to (re) load sprite strip because strip "
+                           "height is not integer multiple of supplied height: ",
                            mainSprite->bulkResourceName );
         return -1;
         }

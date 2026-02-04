@@ -3,12 +3,12 @@
 /*
   Maxigin: a maximally portable, 100% pure C89, platform-independent,
            single-player video game engine with only one dependency (mingin.h)
-           
+
            by Jason Rohrer
-          
+
   This work is not copyrighted.  I place it into the public domain.
 
-  
+
   ===================================================
   Table of Contents                    [jumpContents]
   ===================================================
@@ -17,7 +17,7 @@
 
   -- How to compile                    [jumpCompile]
 
-  -- Static settings                   [jumpSettings] 
+  -- Static settings                   [jumpSettings]
 
   -- Why Maxigin?                      [jumpWhy]
 
@@ -35,18 +35,18 @@
   ==================================================
   How to compile                       [jumpCompile]
   ==================================================
-  
+
   Include in your C code wherever like so:
 
   #include "maxigin.h"
 
   Include exactly once, in one .c file, like so, to compile in the
   implementation:
-  
+
       #define   MINGIN_IMPLEMENTATION
-  
+
       #define   MAXIGIN_IMPLEMENTATION
-  
+
       #include  "maxigin.h"
 
   Maxigin implements the four functions needed by a Mingin game
@@ -76,7 +76,6 @@
   your settings will be used instead.
 
   Each setting is tagged below with   [jumpSettings]
-  
 */
 
 
@@ -93,10 +92,11 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_GAME_NATIVE_W
-    #define  MAXIGIN_GAME_NATIVE_W  640
+#define  MAXIGIN_GAME_NATIVE_W  640
 #endif
+
 #ifndef  MAXIGIN_GAME_NATIVE_H
-    #define  MAXIGIN_GAME_NATIVE_H  480
+#define  MAXIGIN_GAME_NATIVE_H  480
 #endif
 
 
@@ -112,7 +112,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_ENABLE_RECORDING
-    #define  MAXIGIN_ENABLE_RECORDING  1
+#define  MAXIGIN_ENABLE_RECORDING  1
 #endif
 
 
@@ -120,7 +120,7 @@
 /*
   If recording is enabled, what is the maximum total size of the
   static memory that the game will register with:
-  
+
       maxigin_initRegisterStaticMemory
 
   Maxigin will actually use 2x this amount of static memory internally as
@@ -133,28 +133,28 @@
   but incremental diff recording will be disabled.
 
   To set the max static size to 256, do this:
-  
+
       #define  MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES   256
-      
+
   [jumpSettings]
 */
 #ifndef  MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES
-    #define  MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES  4096
+#define  MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES  4096
 #endif
 
 
 
 /*
   How many unique sprites are supported?
-  
+
   To make room for 256 sprites, do this:
 
       #define  MAXIGIN_MAX_NUM_SPRITES  256
 
   [jumpSettings]
 */
-#ifndef  MAXIGIN_MAX_NUM_SPRITES 
-    #define  MAXIGIN_MAX_NUM_SPRITES  1024
+#ifndef  MAXIGIN_MAX_NUM_SPRITES
+#define  MAXIGIN_MAX_NUM_SPRITES  1024
 #endif
 
 
@@ -165,15 +165,15 @@
   Note that for each loaded sprite strip, the strip is split
   up internally, and each sprite from the strip consumes one of the sprite
   slots counting toward MAXIGIN_MAX_NUM_SPRITES
-  
+
   To make room for 256 sprite strips, do this:
 
       #define  MAXIGIN_MAX_NUM_SPRITE_STRIPS  256
 
   [jumpSettings]
 */
-#ifndef  MAXIGIN_MAX_NUM_SPRITE_STRIPS 
-    #define  MAXIGIN_MAX_NUM_SPRITE_STRIPS  64
+#ifndef  MAXIGIN_MAX_NUM_SPRITE_STRIPS
+#define  MAXIGIN_MAX_NUM_SPRITE_STRIPS  64
 #endif
 
 
@@ -182,7 +182,7 @@
   Sprites are loaded into a statically allocated memory buffer.
 
   The default size has room for 10 128x128 RGBA sprites.
-  
+
   To allocate room for 100 16x16 RGBA sprites, do this:
 
       #define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  102400
@@ -190,22 +190,22 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_TOTAL_SPRITE_BYTES
-    #define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  655360
+#define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  655360
 #endif
 
 
 
 /*
   How many unique sound effects are supported?
-  
+
   To make room for 64 sprites, do this:
 
       #define  MAXIGIN_MAX_NUM_SOUND_EFFECTS  64
 
   [jumpSettings]
 */
-#ifndef  MAXIGIN_MAX_NUM_SOUND_EFFECTS 
-    #define  MAXIGIN_MAX_NUM_SOUND_EFFECTS  16
+#ifndef  MAXIGIN_MAX_NUM_SOUND_EFFECTS
+#define  MAXIGIN_MAX_NUM_SOUND_EFFECTS  16
 #endif
 
 
@@ -215,7 +215,7 @@
 
   The default size has room for ten 5-second sound effects at 44100 Hz
   with 16 bit stereo samples.
-  
+
   To allocate room for twenty 5-second sound effects at 44100 Hz
   with 16 bit stereo samples, do this:
 
@@ -224,7 +224,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_TOTAL_SOUND_BYTES
-    #define  MAXIGIN_MAX_TOTAL_SOUND_BYTES  8820000
+#define  MAXIGIN_MAX_TOTAL_SOUND_BYTES  8820000
 #endif
 
 
@@ -239,7 +239,7 @@
   MaxiginGUI instance.
 
   The default size has room for 64 draw components per MaxiginGUI instance.
-  
+
   To make room for 1024 draw components per MaxiginGUI instance, do this:
 
       #define  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS  1024
@@ -247,10 +247,39 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS
-    #define  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS  64
+#define  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS  64
 #endif
 
-  
+
+
+/*
+  How many unique fonts are supported?
+
+  To make room for 10 fonts, do this:
+
+      #define  MAXIGIN_MAX_NUM_FONTS  10
+
+  [jumpSettings]
+*/
+#ifndef  MAXIGIN_MAX_NUM_FONTS
+#define  MAXIGIN_MAX_NUM_FONTS  4
+#endif
+
+
+
+/*
+  How many total characters in all fonts, combined, are supported?
+
+  To make room for 10000 characters across all fonts, do this:
+
+      #define MAXIGIN_MAX_TOTAL_FONT_CHARACTERS  10000
+      
+  [jumpSettings]
+*/    
+#ifndef  MAXIGIN_MAX_TOTAL_FONT_CHARACTERS
+#define  MAXIGIN_MAX_TOTAL_FONT_CHARACTERS  5000
+#endif
+
 
 
 
@@ -607,17 +636,64 @@ int maxigin_initSpriteStrip( const char  *inBulkResourceName,
   
   Parameters:
 
-      inSpriteHandle     the sprite to add a glow to
+      inSpriteStripHandle   the sprite strip to add a glow to
       
-      inBlurRadius       the blur radius for the glow, in pixels
+      inBlurRadius          the blur radius for the glow, in pixels
 
-      inBlurIterations   the number of iterations of the blur to apply
+      inBlurIterations      the number of iterations of the blur to apply
 
   [jumpMaxiginInit]  
 */
 void maxigin_initMakeGlowSpriteStrip( int  inSpriteStripHandle,
                                       int  inBlurRadius,
                                       int  inBlurIterations );
+
+
+/*
+  Initializes a UTF-8 font.
+
+  The idea here is that translators will supply their font in a sprite strip
+  along with a text file containing a list of single-code-point UTF-8 characters
+  corresponding to each sprite in the strip.
+
+  Parameters:
+  
+      inSpriteStripHandle       the sprite strip containing all the font sprites
+
+      inMapBulkResourceName   the bulk resource name of text data containing
+                              an ordered sequence of UTF-8 single code points
+                              corresponding to each sprite in the sprite
+                              strip.
+                              These UTF-8 code points are separated by ASCII
+                              space characters ( 0x20 in hex ) in the text
+                              data.
+
+      inCharSpacing           the space to insert between characters in the font
+                              when drawing, in pixels.
+                              If 0, characters will be drawn butted against
+                              each other.
+
+      inSpaceWidth            the width of any space characters (0x20) that occur
+                              in strings rendered with this font.  Also applies
+                              to any sprites in the strip that have no
+                              non-transparent pixels.
+
+      inFixedWidth            0       for variable-width characters
+                              n > 0   to force all characters to be n pixels
+                                      wide (with inSpacing added in between)
+  Returns:
+
+      font handle   on success
+
+      -1            on failure
+
+  [jumpMaxiginInit]      
+*/
+int maxigin_initFont( int          inSpriteStripHandle,
+                      const char  *inMapBulkResourceName,
+                      int          inCharSpacing,
+                      int          inSpaceWidth,
+                      int          inFixedWidth );
 
 
 
@@ -850,6 +926,41 @@ void maxigin_drawSprite( int  inSpriteHandle,
                          int  inCenterX,
                          int  inCenterY );
 
+
+
+typedef enum{ MAXIGIN_LEFT    =  -1,
+              MAXIGIN_CENTER  =   0,
+              MAXIGIN_RIGHT   =   1 
+    } MaxiginAlign;
+
+
+
+/*
+  Draws text using a font to the game's native pixel buffer.
+
+  Parameters:
+
+      inFontHandle   the font to use
+
+      inText         \0-terminated string of UTF-8 single-code-point characters
+
+      inLocationX    the x position in the game's native pixel buffer of the
+                     drawn text
+ 
+      inLocationY    the y position in the game's native pixel buffer of the
+                     drawn text
+                     
+      inAlign        the horizontal alignment of the text around the point
+                     (inLocationX, inLocationY).
+                     The text is always vertically centered on this point
+
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawText( int           inFontHandle,
+                       const char   *inText,
+                       int           inLocationX,
+                       int           inLocationY,
+                       MaxiginAlign  inAlign );
 
 
 /*
@@ -12870,8 +12981,680 @@ void maxigin_drawButtonHintSprite( int  inButtonHandle,
     
     }
 
+
+
+typedef struct MaxiginCharacterPair {
+
+        /* will be 0 as a marker for an empty hash table entry */
+        unsigned long  codePoint;
+
+        int            spriteHandle;
+        
+    } MaxiginCharacterPair;
+
+
+/* hash table has room for loading at 50%
+   each font uses a sub-section of this, depending on how many characters
+   it needs to support */
+#define  MAXIGIN_FONT_HASH_TABLE_SIZE  ( MAXIGIN_MAX_TOTAL_FONT_CHARACTERS * 2 )
+
+static  MaxiginCharacterPair  mx_fontHashTable[ MAXIGIN_FONT_HASH_TABLE_SIZE ];
+
+static  int                   mx_numCharHashEntries  =  0;
+
+
+
+
+typedef struct MaxiginFont {
+
+        /* maps one-byte UTF-8 characters directly to sprite handles,
+           or -1 if that one-byte character is not supported */
+        int            oneByteMap[128];
+
+        /* index to first position in mx_fontHashTable */
+        int            hashTableStart;
+
+        /* a power of 2 bigger than 2x character count */
+        int            hashTableNumEntries;
+
+        /* bitmask to apply to 32-bit code points to map
+           them into hash table */
+        unsigned long  hashMask;
+
+        
+        int            spacing;
+        int            spaceWidth;
+        int            fixedWidth;
+        
+    } MaxiginFont;
+
+
+
+static int mx_getHashTableSize( int  inNumCharactes ) {
+
+    int  powerOfTwo  =  1;
+    int  target      =  inNumCharactes * 2;
+
+    while( powerOfTwo < target ) {
+        powerOfTwo *= 2;
+        }
     
-                                   
+    return powerOfTwo;
+    }
+
+
+
+static  MaxiginFont  mx_fonts[ MAXIGIN_MAX_NUM_FONTS ];
+static  int          mx_numFonts                         =  0;
+
+
+
+/* auto-skips any space characters (0x20) before next code point
+   returns -1 on failure */
+static long mx_readNextCodePoint( int  inBulkResourceHandle ) {
+
+    unsigned char  c0;
+    unsigned char  c1;
+    unsigned char  c2;
+    unsigned char  c3;
+
+    c0 = 0x20;
+
+    /* keep reading until we get past any space characters */
+
+    while( c0 == 0x20 ) {
+        if( 1 != mingin_readBulkData( inBulkResourceHandle,
+                                      1,
+                                      &c0 ) ) {
+            return -1;
+            }
+        }
+    
+
+    if( c0 < 128 ) {
+        /* single byte case */
+        return (long)( c0 );
+        }
+    else if( ( c0 & 0xE0 ) == 0xC0 ) {
+        /* first byte is 110xxxxx
+           2-byte case */
+        if( 1 != mingin_readBulkData( inBulkResourceHandle,
+                                      1,
+                                      &c1 ) ) {
+            return -1;
+            }
+        if( ( c1 & 0xC0 ) != 0x80 ) {
+            /* invalid continuation byte */
+            return -1;
+            }
+        /* take 5 bits from first byte, and 6 bits from continuation */
+        return (long)( ( c0 & 0x1F ) << 6
+                       |
+                       ( c1 & 0x3F ) );
+        }
+    else if( ( c0 & 0xF0 ) == 0xE0 ) {
+        /* first byte is 1110xxxx
+           3-byte case */
+        if( 1 != mingin_readBulkData( inBulkResourceHandle,
+                                      1,
+                                      &c1 ) ) {
+            return -1;
+            }
+        if( ( c1 & 0xC0 ) != 0x80 ) {
+            /* invalid continuation byte */
+            return -1;
+            }
+        if( 1 != mingin_readBulkData( inBulkResourceHandle,
+                                      1,
+                                      &c2 ) ) {
+            return -1;
+            }
+        if( ( c2 & 0xC0 ) != 0x80 ) {
+            /* invalid continuation byte */
+            return -1;
+            }
+        /* take 4 bits from first byte, and 6 bits from each continuation */
+        return (long)( ( c0 & 0x0F ) << 12
+                       |
+                       ( c1 & 0x3F ) << 6
+                       |
+                       ( c2 & 0x3F ) );
+        }
+    else if( ( c0 & 0xF8 ) == 0xF0 ) {
+        /* first byte is 11110xxx
+           4-byte case */
+        if( 1 != mingin_readBulkData( inBulkResourceHandle,
+                                      1,
+                                      &c1 ) ) {
+            return -1;
+            }
+        if( ( c1 & 0xC0 ) != 0x80 ) {
+            /* invalid continuation byte */
+            return -1;
+            }
+        if( 1 != mingin_readBulkData( inBulkResourceHandle,
+                                      1,
+                                      &c2 ) ) {
+            return -1;
+            }
+        if( ( c2 & 0xC0 ) != 0x80 ) {
+            /* invalid continuation byte */
+            return -1;
+            }
+        if( 1 != mingin_readBulkData( inBulkResourceHandle,
+                                      1,
+                                      &c3 ) ) {
+            return -1;
+            }
+        if( ( c3 & 0xC0 ) != 0x80 ) {
+            /* invalid continuation byte */
+            return -1;
+            }
+        /* take 3 bits from first byte, and 6 bits from each continuation */
+        return (long)( ( c0 & 0x07 ) << 18
+                       |
+                       ( c1 & 0x3F ) << 12
+                       |
+                       ( c2 & 0x3F ) << 6
+                       |
+                       ( c3 & 0x3F ) );
+        }
+    else {
+        /* we should never get here */
+        return -1;
+        }
+    }
+
+
+
+
+/* outPoint set to the scanned code point, or -1 on failure
+
+   returns pointer to next byte after bytes used up by scan */
+static char *mx_scanNextCodePoint( char  *inBuffer,
+                                   long  *outPoint ) {
+
+    unsigned char  c0;
+    unsigned char  c1;
+    unsigned char  c2;
+    unsigned char  c3;
+
+    c0 = (unsigned char)( inBuffer[ 0 ] );
+
+    if( c0 == '\0' ) {
+        *outPoint = -1;
+        return inBuffer;
+        }
+    
+
+    if( c0 < 128 ) {
+        /* single byte case */
+        *outPoint = (long)( c0 );
+        return &( inBuffer[ 1 ] );
+        }
+    else if( ( c0 & 0xE0 ) == 0xC0 ) {
+        /* first byte is 110xxxxx
+           2-byte case */
+
+        c1 = (unsigned char)( inBuffer[ 1 ] );
+
+        if( c1 == '\0' ) {
+            *outPoint = -1;
+            return inBuffer;
+            }
+
+        if( ( c1 & 0xC0 ) != 0x80 ) {
+            /* invalid continuation byte */
+            *outPoint = -1;
+            return inBuffer;
+            }
+        
+        /* take 5 bits from first byte, and 6 bits from continuation */
+        *outPoint = (long)( ( c0 & 0x1F ) << 6
+                            |
+                            ( c1 & 0x3F ) );
+        
+        return &( inBuffer[ 2 ] );
+        }
+    else if( ( c0 & 0xF0 ) == 0xE0 ) {
+        /* first byte is 1110xxxx
+           3-byte case */
+
+        c1 = (unsigned char)( inBuffer[ 1 ] );
+
+        if( c1 == '\0' ) {
+            *outPoint = -1;
+            return inBuffer;
+            }
+
+        if( ( c1 & 0xC0 ) != 0x80 ) {
+            /* invalid continuation byte */
+            *outPoint = -1;
+            return inBuffer;
+            }
+
+        c2 = (unsigned char)( inBuffer[ 2 ] );
+
+        if( c2 == '\0' ) {
+            *outPoint = -1;
+            return inBuffer;
+            }
+
+        if( ( c2 & 0xC0 ) != 0x80 ) {
+            /* invalid continuation byte */
+            *outPoint = -1;
+            return inBuffer;
+            }
+
+        /* take 4 bits from first byte, and 6 bits from each continuation */
+        *outPoint =  (long)( ( c0 & 0x0F ) << 12
+                             |
+                             ( c1 & 0x3F ) << 6
+                             |
+                             ( c2 & 0x3F ) );
+        
+        return &( inBuffer[ 3 ] );
+        }
+    else if( ( c0 & 0xF8 ) == 0xF0 ) {
+        /* first byte is 11110xxx
+           4-byte case */
+        
+        c1 = (unsigned char)( inBuffer[ 1 ] );
+
+        if( c1 == '\0' ) {
+            *outPoint = -1;
+            return inBuffer;
+            }
+
+        if( ( c1 & 0xC0 ) != 0x80 ) {
+            /* invalid continuation byte */
+            *outPoint = -1;
+            return inBuffer;
+            }
+
+        c2 = (unsigned char)( inBuffer[ 2 ] );
+
+        if( c2 == '\0' ) {
+            *outPoint = -1;
+            return inBuffer;
+            }
+
+        if( ( c2 & 0xC0 ) != 0x80 ) {
+            /* invalid continuation byte */
+            *outPoint = -1;
+            return inBuffer;
+            }
+        
+        c3 = (unsigned char)( inBuffer[ 3 ] );
+
+        if( c3 == '\0' ) {
+            *outPoint = -1;
+            return inBuffer;
+            }
+
+        if( ( c3 & 0xC0 ) != 0x80 ) {
+            /* invalid continuation byte */
+            *outPoint = -1;
+            return inBuffer;
+            }
+        
+        /* take 3 bits from first byte, and 6 bits from each continuation */
+        *outPoint = (long)( ( c0 & 0x07 ) << 18
+                            |
+                            ( c1 & 0x3F ) << 12
+                            |
+                            ( c2 & 0x3F ) << 6
+                            |
+                            ( c3 & 0x3F ) );
+        
+        return &( inBuffer[ 4 ] );
+        }
+    else {
+        /* we should never get here */
+        *outPoint = -1;
+        return inBuffer;
+        }
+    }
+
+
+
+/* returns index to mx_fontHashTable
+   will return an index pointing to an empty entry if inCodePoint not found
+
+   returns -1   if hash table totally full and code point not found
+                (note that hash table 2x sizing should prevent this case)
+*/
+static int mx_fontHashLookup( MaxiginFont   *inFont,
+                              unsigned long  inCodePoint ) {
+    
+    int            start      =  inFont->hashTableStart;
+    int            size       =  inFont->hashTableNumEntries;
+    unsigned long  mask       =  inFont->hashMask;
+
+    int            next       =  (int)( inCodePoint & mask ) + start;
+    int            wrapCount  =  0;
+    
+    while( mx_fontHashTable[ next ].codePoint != inCodePoint
+           &&
+           mx_fontHashTable[ next ].codePoint != 0 ) {
+
+        next ++;
+
+        if( next - start >= size ) {
+            /* wrap around */
+            next = start;
+            wrapCount ++;
+
+            if( wrapCount >= 2 ) {
+                /* entire hash table is full ??
+                   this should never happen */
+                return -1;
+                }
+            }
+        }
+
+    /* found match, or found empty */
+
+    return next;
+    }
+
+
+/* returns sprite handle
+
+   returns -1   if sprite doesn't exist for code point in font
+*/
+static int mx_fontSpriteLookup( MaxiginFont   *inFont,
+                                unsigned long  inCodePoint ) {
+
+    if( inCodePoint < 128 ) {
+        return inFont->oneByteMap[ inCodePoint ];
+        }
+    else {
+        
+        int  hashLoc  =  mx_fontHashLookup( inFont,
+                                            inCodePoint );
+        
+        if( hashLoc == -1 ) {
+            return -1;
+            }
+    
+        if( mx_fontHashTable[ hashLoc ].codePoint == 0 ) {
+            /* found empty entry, code point does not exist in table */
+            return -1;
+            }
+
+        return mx_fontHashTable[ hashLoc ].spriteHandle;
+        }
+    }
+
+
+
+int maxigin_initFont( int          inSpriteStripHandle,
+                      const char  *inMapBulkResourceName,
+                      int          inCharSpacing,
+                      int          inSpaceWidth,
+                      int          inFixedWidth ) {
+
+    int           bulkHandle;
+    int           bulkSize;
+    long          codePoint;
+    int           numFontChars;
+    int           hashTableSize;
+    int           numCodePointsRead;
+    int           newFontHandle;
+    MaxiginFont  *f;
+    int           h;
+    int           b;
+    
+    
+    if( mx_numFonts >= MAXIGIN_MAX_NUM_FONTS ) {
+        maxigin_logString( "Too many fonts already loaded, "
+                           "loading a new font failed: ",
+                           inMapBulkResourceName );
+        return -1;
+        }
+
+    newFontHandle = mx_numFonts;
+    f = &( mx_fonts[ newFontHandle ] );
+    
+    numFontChars = maxigin_getNumSpritesInStrip( inSpriteStripHandle );;
+    
+    hashTableSize = mx_getHashTableSize( numFontChars );
+
+    if( hashTableSize + mx_numCharHashEntries
+        >
+        MAXIGIN_FONT_HASH_TABLE_SIZE ) {
+        
+        maxigin_logString( "Not enough extgra room in UTF-8 lookup hash table, "
+                           "loading a new font failed: ",
+                           inMapBulkResourceName  );
+        return -1;
+        }
+
+    
+    f->hashTableStart = mx_numCharHashEntries;
+    f->hashTableNumEntries = hashTableSize;
+    f->hashMask = (unsigned long)( hashTableSize - 1 );
+
+    f->spacing = inCharSpacing;
+    f->spaceWidth = inSpaceWidth;
+    f->fixedWidth = inFixedWidth;
+
+    /* clear one-byte map */
+    for( b = 0;
+         b < 128;
+         b ++ ) {
+        
+        f->oneByteMap[ b ] = -1;
+        }
+    
+    
+    /* zero out hash table */
+    for( h = f->hashTableStart;
+         h < f->hashTableStart + hashTableSize;
+         h ++ ) {
+
+        mx_fontHashTable[ h ].codePoint = 0;
+        }
+    
+    
+    bulkHandle = mingin_startReadBulkData( inMapBulkResourceName,
+                                           & bulkSize );
+
+    if( bulkHandle == -1 ) {
+        maxigin_logString( "Failed to open font UTF-8 character map: ",
+                           inMapBulkResourceName );
+        return -1;
+        }
+
+    codePoint = mx_readNextCodePoint( bulkHandle );
+
+    while( codePoint != -1
+           &&
+           numCodePointsRead < numFontChars ) {
+
+        if( codePoint < 128 ) {
+            /* a one-byte point
+               don't even bother storing this in the hash table */
+            f->oneByteMap[ codePoint ] =
+                maxigin_getSpriteFromStrip( inSpriteStripHandle,
+                                            numCodePointsRead );
+            }
+        else {
+            /* a multi-byte point, put in hash table */
+            
+            int  hashLoc  =  mx_fontHashLookup( f,
+                                                (unsigned long)codePoint );
+
+            if( hashLoc == -1 ) {
+                /* this should never happen, since we have already
+                   confirmed that there's 2x the needed space
+                   in the table */
+                maxigin_logString( "UTF-8 lookup hash table full (?), "
+                                   "loading a new font failed: ",
+                                   inMapBulkResourceName  );
+                mingin_endReadBulkData( bulkHandle );
+                return -1;
+                }
+
+            mx_fontHashTable[ hashLoc ].codePoint = (unsigned long)codePoint;
+        
+            mx_fontHashTable[ hashLoc ].spriteHandle =
+                maxigin_getSpriteFromStrip( inSpriteStripHandle,
+                                            numCodePointsRead );
+            }
+        
+        numCodePointsRead ++;
+        codePoint = mx_readNextCodePoint( bulkHandle );
+        }
+
+    if( codePoint != -1 ) {
+        maxigin_logString( "Font UTF-8 character map contains more entries "
+                           "than there are font sprites in the sprite strip: ",
+                           inMapBulkResourceName  );
+        }
+    else if( numCodePointsRead < numFontChars ) {
+        maxigin_logString( "Font UTF-8 character map contains fewer entries "
+                           "than there are font sprites in the sprite strip: ",
+                           inMapBulkResourceName  );
+        }
+
+    mingin_endReadBulkData( bulkHandle );
+
+    /* success */
+
+    mx_numFonts ++;
+
+    mx_numCharHashEntries += hashTableSize;
+    
+    
+    return newFontHandle;
+    }
+
+
+
+void maxigin_drawText( int           inFontHandle,
+                       const char   *inText,
+                       int           inLocationX,
+                       int           inLocationY,
+                       MaxiginAlign  inAlign ) {
+
+    MaxiginFont  *f              =  &( mx_fonts[ inFontHandle ] );
+    char         *nextText       =  (char*)inText;
+    int           numSprites     =  0;
+    int           totalPixWidth  =  0;
+    int           startX;
+    int           s;
+    enum{         BUFFER_LEN     =  256 };
+    
+    static  int  spriteHandles[ BUFFER_LEN ];
+    static  int  widthPerChar [ BUFFER_LEN ];
+    
+    /* first, convert our string into sprite handles */
+    while( nextText[0] != '\0' ) {
+
+        long  codePoint;
+        int   spriteHandle;
+        
+        nextText = mx_scanNextCodePoint( nextText,
+                                         &codePoint );
+
+        if( codePoint == -1 ) {
+            break;
+            }
+        spriteHandle = mx_fontSpriteLookup( f,
+                                            (unsigned long)codePoint );
+
+        
+        spriteHandles[ numSprites ] = spriteHandle;
+
+        if( f->fixedWidth <= 0 ) {
+            /* variable width chars */
+            if( spriteHandle >= 0 ) {
+                
+                widthPerChar[ numSprites ] =
+                    mx_sprites[ spriteHandle ].leftVisibleRadius
+                    +
+                    mx_sprites[ spriteHandle ].rightVisibleRadius;
+
+                if( widthPerChar[ numSprites ] == 0 ) {
+                    /* a blank character, treat as space */
+                    widthPerChar[ numSprites ] = f->spaceWidth;
+                    }
+                totalPixWidth += widthPerChar[ numSprites ];
+                }
+            else {
+                /* no sprite for this char, count as a space */
+                widthPerChar[ numSprites ] = f->spaceWidth;
+                totalPixWidth += f->spaceWidth;
+                }
+            }
+        else {
+            /* fixed width for all chars */
+            widthPerChar[ numSprites ] = f->fixedWidth;
+            totalPixWidth += f->fixedWidth;
+            }
+        
+        if( numSprites > 0 ) {
+            /* spacing between this char and previous one */
+            totalPixWidth += f->spacing;
+            }
+            
+        
+        numSprites ++;
+
+        if( numSprites >= BUFFER_LEN ) {
+            /* cut off at the max string length limit */
+            break;
+            }
+        }
+
+    
+    if( numSprites == 0
+        ||
+        totalPixWidth == 0 ) {
+        
+        return;
+        }
+
+    
+    switch( inAlign ) {
+        case MAXIGIN_LEFT:
+            startX = inLocationX;
+            break;
+        case MAXIGIN_RIGHT:
+            startX = inLocationX - totalPixWidth;
+            break;
+        default:
+            /* center */
+            startX = inLocationX - totalPixWidth / 2;
+            break;
+        }
+    
+    /* all sprites will be drawn centered by drawSprite
+       so pre-offset by first char left radius to achieve
+       pixel-perfect alignment */
+    if( spriteHandles[ 0 ] != -1 ) {
+        startX += mx_sprites[ spriteHandles[0] ].leftVisibleRadius;
+        }
+
+    for( s = 0;
+         s < numSprites;
+         s ++ ) {
+
+        if( s > 0 ) {
+            startX += f->spacing;
+            }
+        
+        if( spriteHandles[ s ] != -1 ) {
+            maxigin_drawSprite( spriteHandles[ s ],
+                                startX,
+                                inLocationY );
+            }
+        startX += widthPerChar[ s ];                  
+        }
+    }
+
 
 
 

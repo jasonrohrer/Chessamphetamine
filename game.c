@@ -75,6 +75,9 @@ static int          sliderValueB  =   7;
 static int          plunkSound    =  -1;
 
 
+static int          font          =  -1;
+
+
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
     int  boxStartX  =  boxPosX - boxW / 2;
@@ -162,6 +165,14 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     maxigin_drawButtonHintSprite( SHOOT,
                                   20,
                                   20 );
+
+    if( font != -1 ) {
+        maxigin_drawText( font,
+                          "aa aa",
+                          20,
+                          20,
+                          MAXIGIN_LEFT );
+        }
     
 
     for( i = 0;
@@ -570,7 +581,8 @@ static MinginStick  thickMapping[]  =  { MGN_STICK_LEFT_Y,  MGN_MAP_END };
 void maxiginGame_init( void ) {
 
     int  i;
-
+    int  fontStrip;
+    
     for( i = 0;
          i < MAX_NUM_BULLETS;
          i ++ ) {
@@ -619,6 +631,16 @@ void maxiginGame_init( void ) {
             }
         }
 
+    fontStrip = maxigin_initSpriteStrip( "fontTest.tga",
+                                         16 );
+    if( fontStrip != -1 ) {
+        font = maxigin_initFont( fontStrip,
+                                 "fontTest.txt",
+                                 2,
+                                 8,
+                                 5 );
+        }
+    
     
     maxigin_registerButtonMapping( JUMP,   jumpMapping );
     maxigin_registerButtonMapping( SHOOT,  shootMapping );

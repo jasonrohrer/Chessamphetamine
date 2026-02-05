@@ -4270,6 +4270,12 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
                 
                 unsigned char  a  =  mx_spriteBytes[ spriteByte + 3 ];
 
+                if( a == 0 ) {
+                    imageByte += 3;
+                    spriteByte += 4;
+                    continue;
+                    }
+                
                 if( drawAlphaSet ) {
                     a = (unsigned char)( ( a * mx_drawColor.comp.alpha ) / 255 );
                     }
@@ -4375,6 +4381,12 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
                  x ++ ) {
             
                 unsigned char  a  =  mx_spriteBytes[ spriteByte + 3 ];
+                
+                if( a == 0 ) {
+                    imageByte += 3;
+                    spriteByte += 4;
+                    continue;
+                    }
 
                 if( drawAlphaSet ) {
                     a = (unsigned char)( ( a * mx_drawColor.comp.alpha ) / 255 );

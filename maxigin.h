@@ -282,6 +282,24 @@
 
 
 
+/*
+  Maximum sprite tile height (including transparent areas) in pixels
+  for any font.
+
+  This value is used to allocate the kerning tables for fonts.
+
+  To set maximum font height to 64, do this:
+
+      #define MAXIGIN_MAX_FONT_SPRITE_HEIGHT  64
+      
+  [jumpSettings]
+*/    
+#ifndef  MAXIGIN_MAX_FONT_SPRITE_HEIGHT
+#define  MAXIGIN_MAX_FONT_SPRITE_HEIGHT  32
+#endif
+
+
+
 
 
 /*
@@ -2278,6 +2296,17 @@ typedef struct MaxiginSprite {
            right of sprite center */
         int            leftVisibleRadius;
         int            rightVisibleRadius;
+
+        
+        /*
+          Index for this sprite into font kerning table.
+
+          Only used for sprites that are font glyphs.
+          
+          -1 if it hasn't been computed.
+        */
+        int            kerningTableIndex;
+
         
         /* index into mx_spriteBytes */
         int            startByte;
@@ -2788,11 +2817,14 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
 
         /* leave stripChildHandle alone if we're reloading an existing sprite */
         
-        mx_sprites[ newSpriteHandle ].stripChildHandle = -1;
+        mx_sprites[ newSpriteHandle ].stripChildHandle  = -1;
 
         /* leave old glow handle in place if this isn't a new sprite record */
         
-        mx_sprites[ newSpriteHandle ].glowSpriteHandle    = -1;
+        mx_sprites[ newSpriteHandle ].glowSpriteHandle  = -1;
+
+        mx_sprites[ newSpriteHandle ].kerningTableIndex = -1;
+        
             
         mx_numSprites ++;
         }
@@ -3671,6 +3703,10 @@ static int mx_regenSpriteStripChildren( int  inMainSpriteHandle,
 
 
 
+static void mx_regenerateSpriteKerning( int  inSpriteHandle );
+
+
+
 static void mx_postReloadStep( int  inSpriteHandle ) {
     
     MaxiginSprite  *s  =  &( mx_sprites[ inSpriteHandle ] );
@@ -3695,6 +3731,10 @@ static void mx_postReloadStep( int  inSpriteHandle ) {
         mx_regenSpriteStripChildren( inSpriteHandle,
                                      s->stripChildHandle,
                                      -1 );
+        }
+
+    if( s->kerningTableIndex != -1 ) {
+        mx_regenerateSpriteKerning( inSpriteHandle );
         }
     }
 
@@ -3993,7 +4033,9 @@ static int mx_regenSpriteStripChildren( int  inMainSpriteHandle,
         mx_recomputeSpriteAttributes( subHandle );
 
         if( ! exists ) {
-            subSprite->glowSpriteHandle = -1;
+            subSprite->glowSpriteHandle  = -1;
+            
+            subSprite->kerningTableIndex = -1;
             }
         }
 
@@ -4019,6 +4061,9 @@ static int mx_regenSpriteStripChildren( int  inMainSpriteHandle,
                 subHandle,
                 subSprite->glowRadius,
                 subSprite->glowIterations );
+            }
+        if( subSprite->kerningTableIndex != -1 ) {
+            mx_regenerateSpriteKerning( subHandle );
             }
         }
 
@@ -13012,8 +13057,21 @@ typedef struct MaxiginCharacterPair {
 
 static  MaxiginCharacterPair  mx_fontHashTable[ MAXIGIN_FONT_HASH_TABLE_SIZE ];
 
-static  int                   mx_numCharHashEntries  =  0;
+static  int                   mx_numCharHashEntries      =  0;
 
+
+/*
+  each character has an index i into this table, for pixel row r:
+
+   [ i ][ 0 ][ r ]   is the left radius for row r
+   [ i ][ 1 ][ r ]   is the right radius for row r
+*/
+static  int                   mx_fontKerningTable
+                                  [ MAXIGIN_MAX_TOTAL_FONT_CHARACTERS ]
+                                  [2]
+                                  [ MAXIGIN_MAX_FONT_SPRITE_HEIGHT ];
+
+static  int                   mx_numKerningTableEntries  =  0;
 
 
 
@@ -13521,6 +13579,9 @@ int maxigin_initFont( int          inSpriteStripHandle,
             mx_fontHashTable[ hashLoc ].spriteHandle =
                 maxigin_getSpriteFromStrip( inSpriteStripHandle,
                                             numCodePointsRead );
+
+            mx_regenerateSpriteKerning(
+                mx_fontHashTable[ hashLoc ].spriteHandle );
             }
         
         numCodePointsRead ++;
@@ -13679,6 +13740,98 @@ void maxigin_drawText( int           inFontHandle,
         }
     }
 
+
+
+static  char  mx_fullKerningTableWarningPrinted  =  0;
+static  char  mx_tooTallKerningWarningPrinted  =  0;
+
+
+static void mx_regenerateSpriteKerning( int  inSpriteHandle ) {
+    
+    MaxiginSprite  *s            =  &( mx_sprites[ inSpriteHandle ] );
+    
+    int             w               =  s->w;
+    int             h               =  s->h;
+    int             xCenter         =  w / 2;
+    int             y;
+    int             startByte       =  s->startByte;
+    int             kerningIndex    =  s->kerningTableIndex;
+
+
+    if( h > MAXIGIN_MAX_FONT_SPRITE_HEIGHT ) {
+        
+        if( ! mx_tooTallKerningWarningPrinted ) {
+            
+            maxigin_logInt2( "Font character is ",
+                             h,
+                             " pixels tall, maxium height for kerning is ",
+                             MAXIGIN_MAX_FONT_SPRITE_HEIGHT,
+                             " font will not be kerned" );
+            mx_tooTallKerningWarningPrinted = 1;
+            }
+        
+        return;
+        }
+    
+    if( kerningIndex == -1 ) {
+        /* computing new entry for first time */
+
+        kerningIndex = mx_numKerningTableEntries;
+
+        if( kerningIndex >= MAXIGIN_MAX_TOTAL_FONT_CHARACTERS ) {
+            /* kerning table is full */
+
+            if( ! mx_fullKerningTableWarningPrinted ) {
+                mingin_log( "Kerning table is full, additional font characters "
+                            "will not be kerned.\n" );
+                mx_fullKerningTableWarningPrinted = 1;
+                }
+            
+            return;
+            }
+
+        mx_numKerningTableEntries ++;
+        }
+
+    s->kerningTableIndex = kerningIndex;
+        
+    
+    /* find left/right visible extents per row */
+    
+    for( y = 0;
+         y < h;
+         y ++ ) {
+
+        int   curByte      =  startByte + y * w * 4;
+        int   x;
+        int  *leftRowRad   = &( mx_fontKerningTable[ kerningIndex ][ 0 ][ y ] );
+        int  *rightRowRad  = &( mx_fontKerningTable[ kerningIndex ][ 1 ][ y ] );
+
+        *leftRowRad  = 0;
+        *rightRowRad = 0;
+        
+        for( x = 0;
+             x < w;
+             x ++ ) {
+
+            unsigned char  a  =  mx_spriteBytes[ curByte + 3 ];
+
+            if( a > 0 ) {
+
+                if( x - xCenter > *rightRowRad ) {
+                    *rightRowRad = x - xCenter;
+                    }
+                else if( xCenter - x > *leftRowRad ) {
+                    *leftRowRad = xCenter - x;
+                    }
+                }
+            
+            /* on to next pixel */
+            curByte += 4;
+            }
+        }
+
+    }
 
 
 

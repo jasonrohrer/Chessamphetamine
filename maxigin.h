@@ -13060,9 +13060,16 @@ static long mx_readNextCodePoint( int  inBulkResourceHandle ) {
 
     c0 = 0x20;
 
-    /* keep reading until we get past any space characters */
+    /* keep reading until we get past any white space characters */
 
-    while( c0 == 0x20 ) {
+    while( c0 == 0x20
+           ||
+           c0 == '\n'
+           ||
+           c0 == '\r'
+           ||
+           c0 == '\t' ) {
+        
         if( 1 != mingin_readBulkData( inBulkResourceHandle,
                                       1,
                                       &c0 ) ) {

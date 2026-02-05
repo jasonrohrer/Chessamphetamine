@@ -168,31 +168,33 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( font != -1 ) {
         maxigin_drawText( font,
-                          "ab c � � � � �",
+                          "ab c 中 文 日 本 €",
                           20,
-                          20,
+                          120,
                           MAXIGIN_LEFT );
 
         maxigin_drawText( font,
-                          "?????",
+                          "éüñß©",
                           20,
-                          40,
+                          140,
                           MAXIGIN_LEFT );
 
         maxigin_drawText( font,
                           "????",
                           20,
-                          60,
+                          160,
                           MAXIGIN_LEFT );
 
         maxigin_drawText( font,
                           "????????",
                           20,
-                          80,
+                          180,
                           MAXIGIN_LEFT );
         }
     
 
+    return;
+    
     for( i = 0;
          i < 9;
          i ++ ) {

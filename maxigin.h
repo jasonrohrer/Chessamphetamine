@@ -2480,7 +2480,7 @@ static void mx_recomputeSpriteAttributes( int  inSpriteHandle ) {
              x < w;
              x ++ ) {
 
-            unsigned char  a  =  mx_spriteBytes[ curByte ];
+            unsigned char  a  =  mx_spriteBytes[ curByte + 3 ];
 
             if( a > 0 ) {
 
@@ -13400,7 +13400,7 @@ int maxigin_initFont( int          inSpriteStripHandle,
     long          codePoint;
     int           numFontChars;
     int           hashTableSize;
-    int           numCodePointsRead;
+    int           numCodePointsRead  =  0;
     int           newFontHandle;
     MaxiginFont  *f;
     int           h;

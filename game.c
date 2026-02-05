@@ -168,9 +168,27 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( font != -1 ) {
         maxigin_drawText( font,
-                          "aa aa",
+                          "ab c é ü ñ ß ©",
                           20,
                           20,
+                          MAXIGIN_LEFT );
+
+        maxigin_drawText( font,
+                          "?????",
+                          20,
+                          40,
+                          MAXIGIN_LEFT );
+
+        maxigin_drawText( font,
+                          "????",
+                          20,
+                          60,
+                          MAXIGIN_LEFT );
+
+        maxigin_drawText( font,
+                          "????????",
+                          20,
+                          80,
                           MAXIGIN_LEFT );
         }
     
@@ -638,7 +656,7 @@ void maxiginGame_init( void ) {
                                  "fontTest.txt",
                                  2,
                                  8,
-                                 5 );
+                                 0 );
         }
     
     

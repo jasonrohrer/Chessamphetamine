@@ -168,7 +168,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( font != -1 ) {
         maxigin_drawText( font,
-                          "ab c 中 文 日 本 €",
+                          "abc中文日本€",
                           20,
                           120,
                           MAXIGIN_LEFT );
@@ -180,20 +180,24 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                           MAXIGIN_LEFT );
 
         maxigin_drawText( font,
-                          "????",
+                          "€✓★→",
                           20,
                           160,
-                          MAXIGIN_LEFT );
+                          MAXIGIN_CENTER );
 
         maxigin_drawText( font,
-                          "????????",
+                          "😀🚀🧠🎮",
                           20,
                           180,
-                          MAXIGIN_LEFT );
-        }
-    
+                          MAXIGIN_RIGHT );
 
-    return;
+        maxigin_drawText( font,
+                          "©",
+                          20,
+                          200,
+                          MAXIGIN_CENTER );
+        }
+
     
     for( i = 0;
          i < 9;
@@ -653,6 +657,11 @@ void maxiginGame_init( void ) {
 
     fontStrip = maxigin_initSpriteStrip( "fontTest.tga",
                                          16 );
+
+    if( 0 ) maxigin_initMakeGlowSpriteStrip( fontStrip,
+                                             2,
+                                             2 );
+    
     if( fontStrip != -1 ) {
         font = maxigin_initFont( fontStrip,
                                  "fontTest.txt",

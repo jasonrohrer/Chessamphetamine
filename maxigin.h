@@ -13555,7 +13555,7 @@ void maxigin_drawText( int           inFontHandle,
     enum{         BUFFER_LEN     =  256 };
     
     static  int  spriteHandles[ BUFFER_LEN ];
-    static  int  widthPerChar [ BUFFER_LEN ];
+    static  int  charCenterOffsetFromPrev[ BUFFER_LEN ];
     
     /* first, convert our string into sprite handles */
     while( nextText[0] != '\0' ) {
@@ -13579,26 +13579,40 @@ void maxigin_drawText( int           inFontHandle,
             /* variable width chars */
             if( spriteHandle >= 0 ) {
                 
-                widthPerChar[ numSprites ] =
+                charCenterOffsetFromPrev[ numSprites ] =
+                    mx_sprites[ spriteHandle ].leftVisibleRadius;
+                
+                totalPixWidth +=
                     mx_sprites[ spriteHandle ].leftVisibleRadius
                     +
-                    mx_sprites[ spriteHandle ].rightVisibleRadius;
-
-                if( widthPerChar[ numSprites ] == 0 ) {
-                    /* a blank character, treat as space */
-                    widthPerChar[ numSprites ] = f->spaceWidth;
-                    }
-                totalPixWidth += widthPerChar[ numSprites ];
+                    mx_sprites[ spriteHandle ].rightVisibleRadius;  
                 }
             else {
                 /* no sprite for this char, count as a space */
-                widthPerChar[ numSprites ] = f->spaceWidth;
+                charCenterOffsetFromPrev[ numSprites ] = f->spaceWidth / 2;
                 totalPixWidth += f->spaceWidth;
+                }
+
+            if( numSprites > 0 ) {
+                /* can push further based on right extent of previous char */
+                int  prevSpriteHandle  =  spriteHandles[ numSprites - 1 ];
+
+                if( prevSpriteHandle >= 0 ) {
+                    charCenterOffsetFromPrev[ numSprites ] +=
+                        mx_sprites[ prevSpriteHandle ].rightVisibleRadius;
+                    }
+                else {
+                    /* treat previous character as a space */
+                    charCenterOffsetFromPrev[ numSprites ] += f->spaceWidth / 2;
+                    }
+
+                /* also, seperate from previous char with spacing */
+                charCenterOffsetFromPrev[ numSprites ] += f->spacing;
                 }
             }
         else {
             /* fixed width for all chars */
-            widthPerChar[ numSprites ] = f->fixedWidth;
+            charCenterOffsetFromPrev[ numSprites ] = f->fixedWidth;
             totalPixWidth += f->fixedWidth;
             }
         
@@ -13637,28 +13651,19 @@ void maxigin_drawText( int           inFontHandle,
             startX = inLocationX - totalPixWidth / 2;
             break;
         }
-    
-    /* all sprites will be drawn centered by drawSprite
-       so pre-offset by first char left radius to achieve
-       pixel-perfect alignment */
-    if( spriteHandles[ 0 ] != -1 ) {
-        startX += mx_sprites[ spriteHandles[0] ].leftVisibleRadius;
-        }
 
     for( s = 0;
          s < numSprites;
          s ++ ) {
 
-        if( s > 0 ) {
-            startX += f->spacing;
-            }
+        startX += charCenterOffsetFromPrev[ s ];
         
         if( spriteHandles[ s ] != -1 ) {
             maxigin_drawSprite( spriteHandles[ s ],
                                 startX,
                                 inLocationY );
             }
-        startX += widthPerChar[ s ];                  
+                          
         }
     }
 

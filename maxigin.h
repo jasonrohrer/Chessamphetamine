@@ -13063,8 +13063,8 @@ static  int                   mx_numCharHashEntries      =  0;
 /*
   each character has an index i into this table, for pixel row r:
 
-   [ i ][ 0 ][ r ]   is the left radius for row r
-   [ i ][ 1 ][ r ]   is the right radius for row r
+   [ i ][ 0 ][ r ]   is the leftmost non-transparent pixel for row r
+   [ i ][ 1 ][ r ]   is the rightmost non-transparent pixel for row r
 */
 static  int                   mx_fontKerningTable
                                   [ MAXIGIN_MAX_TOTAL_FONT_CHARACTERS ]
@@ -13556,6 +13556,8 @@ int maxigin_initFont( int          inSpriteStripHandle,
             f->oneByteMap[ codePoint ] =
                 maxigin_getSpriteFromStrip( inSpriteStripHandle,
                                             numCodePointsRead );
+            
+            mx_regenerateSpriteKerning( f->oneByteMap[ codePoint ]  );
             }
         else {
             /* a multi-byte point, put in hash table */
@@ -13650,37 +13652,102 @@ void maxigin_drawText( int           inFontHandle,
 
         if( f->fixedWidth <= 0 ) {
             /* variable width chars */
-            if( spriteHandle >= 0 ) {
-                
-                charCenterOffsetFromPrev[ numSprites ] =
-                    mx_sprites[ spriteHandle ].leftVisibleRadius;
-                
-                totalPixWidth +=
-                    mx_sprites[ spriteHandle ].leftVisibleRadius
-                    +
-                    mx_sprites[ spriteHandle ].rightVisibleRadius;  
-                }
-            else {
-                /* no sprite for this char, count as a space */
-                charCenterOffsetFromPrev[ numSprites ] = f->spaceWidth / 2;
-                totalPixWidth += f->spaceWidth;
-                }
 
-            if( numSprites > 0 ) {
-                /* can push further based on right extent of previous char */
-                int  prevSpriteHandle  =  spriteHandles[ numSprites - 1 ];
-
-                if( prevSpriteHandle >= 0 ) {
-                    charCenterOffsetFromPrev[ numSprites ] +=
-                        mx_sprites[ prevSpriteHandle ].rightVisibleRadius;
+            if( numSprites == 0 ) {
+                /* the first sprite */
+                
+                if( spriteHandle >= 0 ) {
+                
+                    charCenterOffsetFromPrev[ numSprites ] =
+                        mx_sprites[ spriteHandle ].leftVisibleRadius;
+                
+                    totalPixWidth +=
+                        mx_sprites[ spriteHandle ].leftVisibleRadius
+                        +
+                        mx_sprites[ spriteHandle ].rightVisibleRadius;  
                     }
                 else {
-                    /* treat previous character as a space */
-                    charCenterOffsetFromPrev[ numSprites ] += f->spaceWidth / 2;
+                    /* no sprite for this char, count as a space */
+                    charCenterOffsetFromPrev[ numSprites ] = f->spaceWidth / 2;
+                    totalPixWidth += f->spaceWidth;
                     }
+                }
+            else {
+                /* a subsequent sprite */
 
-                /* also, seperate from previous char with spacing */
-                charCenterOffsetFromPrev[ numSprites ] += f->spacing;
+                int  prevHandle  = spriteHandles[ numSprites - 1 ];
+                
+                if( prevHandle == -1 ) {
+                    /* prev was a space */
+                    charCenterOffsetFromPrev[ numSprites ] = f->spaceWidth / 2;
+
+                    if( spriteHandle >= 0 ) {
+                        /* not space for this */
+                        charCenterOffsetFromPrev[ numSprites ] +=
+                            mx_sprites[ spriteHandle ].leftVisibleRadius;
+                        
+                        totalPixWidth +=
+                            mx_sprites[ spriteHandle ].leftVisibleRadius
+                            +
+                            mx_sprites[ spriteHandle ].rightVisibleRadius;
+                        }
+                    else {
+                        /* two spaces in a row */
+                        charCenterOffsetFromPrev[ numSprites ] = f->spaceWidth;
+                        totalPixWidth += f->spaceWidth;
+                        }
+                    }
+                else {
+                    /* prev was a non-space */
+
+                    if( spriteHandle == -1 ) {
+                        /* non-space followed by a space */
+                        charCenterOffsetFromPrev[ numSprites ] =
+                            mx_sprites[ prevHandle ].rightVisibleRadius;
+                        
+                        charCenterOffsetFromPrev[ numSprites ] +=
+                            f->spaceWidth / 2;
+                        
+                        totalPixWidth += f->spaceWidth;
+                        }
+                    else {
+                        /* non-space followed by a non-space
+                           kerning per pixel row! */
+                        int   w          =  mx_sprites[ spriteHandle ].w;
+                        int   h          =  mx_sprites[ spriteHandle ].h;
+                        int   prevI      =
+                                  mx_sprites[ prevHandle   ].kerningTableIndex;
+                        int   thisI      =
+                                  mx_sprites[ spriteHandle ].kerningTableIndex;
+                        int  *prevRight  =  mx_fontKerningTable[ prevI ][ 1 ];
+                        int  *thisLeft   =  mx_fontKerningTable[ thisI ][ 0 ];
+                        
+                        int  y;
+                        int  sep = -w;
+
+                        for( y = 0;
+                             y < h;
+                             y ++ ) {
+
+                            int  rowSep  = prevRight[y] - thisLeft[y];
+
+                            if( rowSep > sep ) {
+                                sep = rowSep;
+                                }
+                            }
+
+                        sep += 1;
+                        
+                        sep += f->spacing;
+                        
+                        charCenterOffsetFromPrev[ numSprites ] = sep;
+
+                        totalPixWidth += sep;
+                        
+                        totalPixWidth +=
+                            mx_sprites[ spriteHandle ].rightVisibleRadius;
+                        }
+                    }
                 }
             }
         else {
@@ -13688,12 +13755,7 @@ void maxigin_drawText( int           inFontHandle,
             charCenterOffsetFromPrev[ numSprites ] = f->fixedWidth;
             totalPixWidth += f->fixedWidth;
             }
-        
-        if( numSprites > 0 ) {
-            /* spacing between this char and previous one */
-            totalPixWidth += f->spacing;
-            }
-            
+
         
         numSprites ++;
 
@@ -13752,7 +13814,6 @@ static void mx_regenerateSpriteKerning( int  inSpriteHandle ) {
     
     int             w               =  s->w;
     int             h               =  s->h;
-    int             xCenter         =  w / 2;
     int             y;
     int             startByte       =  s->startByte;
     int             kerningIndex    =  s->kerningTableIndex;
@@ -13804,11 +13865,11 @@ static void mx_regenerateSpriteKerning( int  inSpriteHandle ) {
 
         int   curByte      =  startByte + y * w * 4;
         int   x;
-        int  *leftRowRad   = &( mx_fontKerningTable[ kerningIndex ][ 0 ][ y ] );
-        int  *rightRowRad  = &( mx_fontKerningTable[ kerningIndex ][ 1 ][ y ] );
+        int  *leftmost   = &( mx_fontKerningTable[ kerningIndex ][ 0 ][ y ] );
+        int  *rightmost  = &( mx_fontKerningTable[ kerningIndex ][ 1 ][ y ] );
 
-        *leftRowRad  = 0;
-        *rightRowRad = 0;
+        *leftmost  = w - 1;
+        *rightmost = 0;
         
         for( x = 0;
              x < w;
@@ -13818,11 +13879,11 @@ static void mx_regenerateSpriteKerning( int  inSpriteHandle ) {
 
             if( a > 0 ) {
 
-                if( x - xCenter > *rightRowRad ) {
-                    *rightRowRad = x - xCenter;
+                if( x > *rightmost ) {
+                    *rightmost = x;
                     }
-                else if( xCenter - x > *leftRowRad ) {
-                    *leftRowRad = xCenter - x;
+                if( x < *leftmost ) {
+                    *leftmost = x;
                     }
                 }
             

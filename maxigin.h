@@ -13638,7 +13638,7 @@ static  MaxiginKerningRecord  mx_kerningCache[
 static  char                  mx_kerningCacheInitialized  =  0;
 
 
-static void mx_initKerningCache( void ) {
+static void mx_clearKerningCache( void ) {
 
     int  i;
 
@@ -13733,7 +13733,7 @@ void maxigin_drawText( int           inFontHandle,
     static  int  charCenterOffsetFromPrev[ BUFFER_LEN ];
 
     if( ! mx_kerningCacheInitialized ) {
-        mx_initKerningCache();
+        mx_clearKerningCache();
         }
     
     /* first, convert our string into sprite handles */
@@ -13980,7 +13980,12 @@ static void mx_regenerateSpriteKerning( int  inSpriteHandle ) {
         }
 
     s->kerningTableIndex = kerningIndex;
-        
+
+
+    /* any time we regenerate kerning for any sprite
+       we must clear our kerning cache */
+    mx_kerningCacheInitialized = 0;
+    
     
     /* find left/right visible extents per row */
     

@@ -13615,6 +13615,103 @@ int maxigin_initFont( int          inSpriteStripHandle,
 
 
 
+/* must be a power of 2 */
+#define  MAXIGIN_NUM_KERNING_CACHE_ENTRIES  2048
+
+static  unsigned long  mx_kerningCacheHashMask  =
+                           MAXIGIN_NUM_KERNING_CACHE_ENTRIES - 1;
+
+
+typedef struct MaxiginKerningRecord {
+        
+        int  prevSpriteHandle;
+        int  nextSpriteHandle;
+
+        int            sep;
+        
+    } MaxiginKerningRecord;
+
+
+static  MaxiginKerningRecord  mx_kerningCache[
+                                  MAXIGIN_NUM_KERNING_CACHE_ENTRIES ];
+
+static  char                  mx_kerningCacheInitialized  =  0;
+
+
+static void mx_initKerningCache( void ) {
+
+    int  i;
+
+    for( i = 0;
+         i < MAXIGIN_NUM_KERNING_CACHE_ENTRIES;
+         i ++ ) {
+
+        MaxiginKerningRecord  *r  =  &( mx_kerningCache[ i ] );
+
+        r->prevSpriteHandle = 0;
+        r->nextSpriteHandle = 0;
+        r->sep              = 0;
+        }
+
+    mx_kerningCacheInitialized = 1;
+    }
+
+
+
+/* returns pointer to bin in kerning cache for a given sprite pair
+   bin may already contain values for a different pair */
+static MaxiginKerningRecord *mx_kerningCacheGetBin( int  inPrevSpriteHandle,
+                                                    int  inNextSpriteHandle ) {
+    unsigned long  key;
+
+    /* from Knuth */
+    key = (unsigned long)inPrevSpriteHandle * 2654435761;
+    
+
+    key = ( key
+            ^
+            (unsigned long)inNextSpriteHandle )
+        & mx_kerningCacheHashMask;
+
+    return &( mx_kerningCache[ key ] );
+    }
+
+
+
+#define  MAXIGIN_KERNING_CACHE_MISS   -9999
+
+/* returns sep, or MAXIGIN_KERNING_CACHE_MISS if not found */
+static int mx_kerningCacheLookup( int  inPrevSpriteHandle,
+                                  int  inNextSpriteHandle ) {
+
+    MaxiginKerningRecord  *r  =  mx_kerningCacheGetBin( inPrevSpriteHandle,
+                                                        inNextSpriteHandle );
+
+    if( r->prevSpriteHandle == inPrevSpriteHandle
+        &&
+        r->nextSpriteHandle == inNextSpriteHandle ) {
+        
+        return r->sep;
+        }
+    
+    return MAXIGIN_KERNING_CACHE_MISS;
+    }
+
+
+static void mx_kerningCacheInsert( int  inPrevSpriteHandle,
+                                   int  inNextSpriteHandle,
+                                   int  sep ) {
+
+    MaxiginKerningRecord  *r  =  mx_kerningCacheGetBin( inPrevSpriteHandle,
+                                                        inNextSpriteHandle );
+
+    r->prevSpriteHandle = inPrevSpriteHandle;
+    r->nextSpriteHandle = inNextSpriteHandle;
+    r->sep              = sep;
+    }
+
+
+
 void maxigin_drawText( int           inFontHandle,
                        const char   *inText,
                        int           inLocationX,
@@ -13627,10 +13724,17 @@ void maxigin_drawText( int           inFontHandle,
     int           totalPixWidth  =  0;
     int           startX;
     int           s;
+    char          fixed          =  ( f->fixedWidth > 0 );
+    int           spaceW         =  f->spaceWidth;
+    int           halfSpaceW     =  spaceW / 2;
     enum{         BUFFER_LEN     =  256 };
     
     static  int  spriteHandles[ BUFFER_LEN ];
     static  int  charCenterOffsetFromPrev[ BUFFER_LEN ];
+
+    if( ! mx_kerningCacheInitialized ) {
+        mx_initKerningCache();
+        }
     
     /* first, convert our string into sprite handles */
     while( nextText[0] != '\0' ) {
@@ -13650,7 +13754,7 @@ void maxigin_drawText( int           inFontHandle,
         
         spriteHandles[ numSprites ] = spriteHandle;
 
-        if( f->fixedWidth <= 0 ) {
+        if( ! fixed ) {
             /* variable width chars */
 
             if( numSprites == 0 ) {
@@ -13668,8 +13772,8 @@ void maxigin_drawText( int           inFontHandle,
                     }
                 else {
                     /* no sprite for this char, count as a space */
-                    charCenterOffsetFromPrev[ numSprites ] = f->spaceWidth / 2;
-                    totalPixWidth += f->spaceWidth;
+                    charCenterOffsetFromPrev[ numSprites ] = halfSpaceW;
+                    totalPixWidth += spaceW;
                     }
                 }
             else {
@@ -13679,7 +13783,7 @@ void maxigin_drawText( int           inFontHandle,
                 
                 if( prevHandle == -1 ) {
                     /* prev was a space */
-                    charCenterOffsetFromPrev[ numSprites ] = f->spaceWidth / 2;
+                    charCenterOffsetFromPrev[ numSprites ] = halfSpaceW;
 
                     if( spriteHandle >= 0 ) {
                         /* not space for this */
@@ -13693,8 +13797,8 @@ void maxigin_drawText( int           inFontHandle,
                         }
                     else {
                         /* two spaces in a row */
-                        charCenterOffsetFromPrev[ numSprites ] = f->spaceWidth;
-                        totalPixWidth += f->spaceWidth;
+                        charCenterOffsetFromPrev[ numSprites ] = spaceW;
+                        totalPixWidth += spaceW;
                         }
                     }
                 else {
@@ -13705,40 +13809,58 @@ void maxigin_drawText( int           inFontHandle,
                         charCenterOffsetFromPrev[ numSprites ] =
                             mx_sprites[ prevHandle ].rightVisibleRadius;
                         
-                        charCenterOffsetFromPrev[ numSprites ] +=
-                            f->spaceWidth / 2;
-                        
-                        totalPixWidth += f->spaceWidth;
+                        charCenterOffsetFromPrev[ numSprites ] += halfSpaceW;
+                                                
+                        totalPixWidth += spaceW;
                         }
                     else {
                         /* non-space followed by a non-space
                            kerning per pixel row! */
-                        int   w          =  mx_sprites[ spriteHandle ].w;
-                        int   h          =  mx_sprites[ spriteHandle ].h;
-                        int   prevI      =
-                                  mx_sprites[ prevHandle   ].kerningTableIndex;
-                        int   thisI      =
-                                  mx_sprites[ spriteHandle ].kerningTableIndex;
-                        int  *prevRight  =  mx_fontKerningTable[ prevI ][ 1 ];
-                        int  *thisLeft   =  mx_fontKerningTable[ thisI ][ 0 ];
+
+                        /* cached ? */
+
+                        int  sep  = mx_kerningCacheLookup( prevHandle,
+                                                           spriteHandle );
+
+                        if( sep == MAXIGIN_KERNING_CACHE_MISS ) {
+
+                            /* recompute it */
+                            
                         
-                        int  y;
-                        int  sep = -w;
+                            int   w          =  mx_sprites[ spriteHandle ].w;
+                            int   h          =  mx_sprites[ spriteHandle ].h;
+                            int   prevI      =
+                                    mx_sprites[ prevHandle   ].kerningTableIndex;
+                            int   thisI      =
+                                    mx_sprites[ spriteHandle ].kerningTableIndex;
+                            int  *prevRight  =
+                                    mx_fontKerningTable[ prevI ][ 1 ];
+                            int  *thisLeft   =
+                                    mx_fontKerningTable[ thisI ][ 0 ];
+                        
+                            int  y;
+                        
+                            sep = -w;
 
-                        for( y = 0;
-                             y < h;
-                             y ++ ) {
+                            for( y = 0;
+                                 y < h;
+                                 y ++ ) {
 
-                            int  rowSep  = prevRight[y] - thisLeft[y];
+                                int  rowSep  = prevRight[y] - thisLeft[y];
 
-                            if( rowSep > sep ) {
-                                sep = rowSep;
+                                if( rowSep > sep ) {
+                                    sep = rowSep;
+                                    }
                                 }
+                            
+                            sep += 1;
+                            
+                            sep += f->spacing;
+                            
+                            mx_kerningCacheInsert( prevHandle,
+                                                   spriteHandle,
+                                                   sep );
                             }
-
-                        sep += 1;
-                        
-                        sep += f->spacing;
                         
                         charCenterOffsetFromPrev[ numSprites ] = sep;
 

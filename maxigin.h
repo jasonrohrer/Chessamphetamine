@@ -13865,6 +13865,9 @@ void maxigin_drawText( int           inFontHandle,
                         charCenterOffsetFromPrev[ numSprites ] = sep;
 
                         totalPixWidth += sep;
+
+                        totalPixWidth -=
+                            mx_sprites[ prevHandle ].rightVisibleRadius;
                         
                         totalPixWidth +=
                             mx_sprites[ spriteHandle ].rightVisibleRadius;

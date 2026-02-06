@@ -177,7 +177,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                           "éüñß©",
                           20,
                           140,
-                          MAXIGIN_LEFT );
+                          MAXIGIN_RIGHT );
 
         maxigin_drawText( font,
                           "€✓★→",
@@ -190,53 +190,13 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                           20,
                           180,
                           MAXIGIN_RIGHT );
-
-        {
-
-            int q = 0;
-            int z = 0;
-            /*
-            int u = 0;
-
-            
-            for( u = 0;
-                 u < 10;
-                 u ++ )
-            for( z = 0;
-                 z < 200;
-                 z ++ )
-            for( q = 0;
-                 q < 200;
-                 q ++ ) {
-            */
-                maxigin_drawText( font,
-                                  "Too do boo abcdef",
-                                  20 + z,
-                                  200 + q,
-                                  MAXIGIN_LEFT );
-                /*
-                maxigin_drawText( font,
-                                  "Too do boo abcdef",
-                                  40 + z,
-                                  40 + q,
-                                  MAXIGIN_LEFT );
-                maxigin_drawText( font,
-                                  "Too do boo abcdef",
-                                  30 + z,
-                                  30 + q,
-                                  MAXIGIN_LEFT );
-                maxigin_drawText( font,
-                                  "Too do boo abcdef",
-                                  50 + z,
-                                  50 + q,
-                                  MAXIGIN_LEFT );
-                                  } 
-
-                                  exit( 0 );*/
-            }
+        
+        maxigin_drawText( font,
+                          "😀😀",
+                          20,
+                          200,
+                          MAXIGIN_CENTER );
         }
-
-    return;
     
     for( i = 0;
          i < 9;

@@ -1,0 +1,22 @@
+"Français"
+
+frenchFont.txt
+
+frenchFont.tga
+
+
+
+settings       "Paramètres"
+
+newGame        "Nouvelle Partie"
+
+quit           "Quitter"
+
+
+musicVolume    "Volume Musique"
+
+effectsVolume  "Volume Effets"
+
+fullscreen     "Plein Écran"
+
+

@@ -1,0 +1,22 @@
+"繁體中文"
+
+traditionalChineseFont.txt
+
+traditionalChineseFont.tga
+
+
+
+settings       "設定"
+
+newGame        "新遊戲"
+
+quit           "退出"
+
+
+musicVolume    "音樂音量"
+
+effectsVolume  "音效音量"
+
+fullscreen     "全螢幕"
+
+

@@ -338,7 +338,7 @@ static void insertCodePoint( long           inCodePoint,
 
 
 
-static  char  testMode = 1;
+static  char  testMode = 0;
 
 
 

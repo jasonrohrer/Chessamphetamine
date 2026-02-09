@@ -10,7 +10,7 @@ settings       "設定"
 
 newGame        "新遊戲"
 
-quit           "退出"
+quit           "離開"
 
 
 musicVolume    "音樂音量"

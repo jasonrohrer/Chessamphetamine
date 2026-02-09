@@ -8,15 +8,15 @@ frenchFont.tga
 
 settings       "Paramètres"
 
-newGame        "Nouvelle Partie"
+newGame        "Nouvelle partie"
 
 quit           "Quitter"
 
 
-musicVolume    "Volume Musique"
+musicVolume    "Volume musique"
 
-effectsVolume  "Volume Effets"
+effectsVolume  "Volume effets"
 
-fullscreen     "Plein Écran"
+fullscreen     "Plein écran"
 
 

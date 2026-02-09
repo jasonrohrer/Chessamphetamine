@@ -168,7 +168,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( font != -1 ) {
         maxigin_drawText( font,
-                          "abc中文日本€",
+                          "音效音量",
                           20,
                           120,
                           MAXIGIN_LEFT );
@@ -654,16 +654,16 @@ void maxiginGame_init( void ) {
             }
         }
 
-    fontStrip = maxigin_initSpriteStrip( "fontTest.tga",
-                                         16 );
+    fontStrip = maxigin_initSpriteStrip( "traditionalChineseFont.tga",
+                                         12 );
 
-    if( 0 ) maxigin_initMakeGlowSpriteStrip( fontStrip,
+    if( 1 ) maxigin_initMakeGlowSpriteStrip( fontStrip,
                                              2,
                                              2 );
     
     if( fontStrip != -1 ) {
         font = maxigin_initFont( fontStrip,
-                                 "fontTest.txt",
+                                 "traditionalChineseFont.txt",
                                  2,
                                  8,
                                  0 );

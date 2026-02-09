@@ -452,6 +452,9 @@ int main( int          inNumArgs,
         fprintf( outMapFile, "%s", codePointList[ i ].bytes );
         }
 
+    /* give last line a newline */
+    fprintf( outMapFile, "\n" );
+    
     fclose( outMapFile );
     
     

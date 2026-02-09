@@ -1,0 +1,22 @@
+"English"
+
+englishFont.txt
+
+englishFont.tga
+
+
+
+settings       "Settings"
+
+newGame        "New Game"
+
+quit           "Quit"
+
+
+musicVolume    "Music Volume"
+
+effectsVolume  "Effects Volume"
+
+fullscreen     "Fullscreen"
+
+

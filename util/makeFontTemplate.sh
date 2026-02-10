@@ -109,5 +109,16 @@ montage grid_*.png \
   -geometry +0+0 \
   $3
 
-
 rm grid_*.png
+
+
+# one black pixel in corner of empty grid so that Aesprite palette has black
+convert $3 -fill "rgba(0,0,0,1.0)" -draw "rectangle 0,0 0,0" temp.png
+
+mv temp.png $3
+
+
+# actually, invert the grid so we can draw with white instead, since
+# that's the eventual target for pixel fonts
+
+mogrify -negate $3

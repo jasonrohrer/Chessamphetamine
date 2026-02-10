@@ -439,7 +439,7 @@ void maxiginGame_init( void );
   
   The game must not depend on being asked for pixels to advance things.
 
-  The rate at which maxigin_gameStep is called can be found by calling
+  The rate at which maxiginGame_step is called can be found by calling
 
       mingin_getStepsPerSecond()
 

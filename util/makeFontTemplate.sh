@@ -2,21 +2,23 @@
 
 
 
-fontFile="/home/jasonrohrer/Downloads/fusionPixelFont/fusion-pixel-12px-proportional-zh_hant.pcf"
+#fontFile="/home/jasonrohrer/Downloads/fusionPixelFont/fusion-pixel-12px-proportional-zh_hant.pcf"
 
 #fontFile="/home/jasonrohrer/Downloads/fusionPixelFont/fusion-pixel-10px-proportional-latin.pcf"
+
+fontFile="/home/jasonrohrer/Downloads/fusionPixelFont/fusion-pixel-12px-proportional-latin.pcf"
 
 fontSize=12
 
 #fontFile="/usr/share/fonts/X11/misc/unifont.pcf.gz"
 
 
-if [ $# -ne 2 ]
+if [ $# -ne 3 ]
 then
    echo ""
    echo "Usage"
 
-   echo "bash makeFontTemplate.sh  englishFont.txt   englishFontTemplate.png"
+   echo "bash makeFontTemplate.sh  font.txt  fontTemplate.png  emptyGrid.png"
    echo ""
 
    exit 1
@@ -40,17 +42,50 @@ do
 	# call FontForge with the script and pass the codepoint.
 
 	outFileName="tile_${paddedNum}.png"
+	outGridFileName="grid_${paddedNum}.png"
 	
 	fontforge -lang=ff -c "Open(\"$fontFile\"); Select($codepoint); Export(\"$outFileName\", $fontSize );"
 
-	mogrify -background white -gravity center -extent 12x12 $outFileName
+	mogrify -background white -gravity center -extent 12x16 $outFileName
 
 	mogrify -fill "$bgA" -opaque white $outFileName
 
 	# place next to an empty square of opposite grid color
-	convert $outFileName -size 12x12 xc:"$bgB" +append temp.png
+	convert $outFileName -size 12x16 xc:"$bgB" +append temp.png
 
 	mv temp.png $outFileName
+
+	convert -size 12x16 xc:"$bgB" $outGridFileName
+	
+	# pink descender zone
+	convert $outFileName -fill "rgba(255,0,255,0.15)" -draw "rectangle 0,13 23,15" temp.png
+
+	mv temp.png $outFileName
+
+	convert $outGridFileName -fill "rgba(255,0,255,0.15)" -draw "rectangle 0,13 23,15" temp.png
+
+	mv temp.png $outGridFileName
+
+	
+	# blue accent zone
+	convert $outFileName -fill "rgba(0,0,255,0.15)" -draw "rectangle 0,0 23,3" temp.png
+
+	mv temp.png $outFileName
+
+	convert $outGridFileName -fill "rgba(0,0,255,0.15)" -draw "rectangle 0,0 23,3" temp.png
+
+	mv temp.png $outGridFileName
+
+	
+	# yellow lower-case ascender zone
+	convert $outFileName -fill "rgba(255,255,0,0.15)" -draw "rectangle 0,4 23,6" temp.png
+
+	mv temp.png $outFileName
+
+
+	convert $outGridFileName -fill "rgba(255,255,0,0.15)" -draw "rectangle 0,4 23,6" temp.png
+
+	mv temp.png $outGridFileName
 	
 	# swap bg colors to make checkerboard
 	bgTmp=$bgA
@@ -68,3 +103,11 @@ montage tile_*.png \
 
 rm tile_*.png
    
+
+montage grid_*.png \
+  -tile 1x \
+  -geometry +0+0 \
+  $3
+
+
+rm grid_*.png

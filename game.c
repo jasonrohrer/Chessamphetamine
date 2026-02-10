@@ -168,35 +168,49 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( font != -1 ) {
         maxigin_drawText( font,
-                          "音效音量",
+                          "Settings",
                           20,
                           120,
                           MAXIGIN_LEFT );
 
         maxigin_drawText( font,
-                          "éüñß©",
+                          "Effects Volume",
                           20,
                           140,
-                          MAXIGIN_RIGHT );
+                          MAXIGIN_LEFT );
 
         maxigin_drawText( font,
-                          "€✓★→",
+                          "New Game",
                           20,
                           160,
-                          MAXIGIN_CENTER );
+                          MAXIGIN_LEFT);
 
         maxigin_drawText( font,
-                          "😀🚀🧠🎮",
+                          "Quit",
                           20,
                           180,
-                          MAXIGIN_RIGHT );
+                          MAXIGIN_LEFT );
         
         maxigin_drawText( font,
-                          "😀😀",
+                          "Fullscreen",
                           20,
                           200,
-                          MAXIGIN_CENTER );
+                          MAXIGIN_LEFT );
+                
+        maxigin_drawText( font,
+                          "Music Volume",
+                          20,
+                          220,
+                          MAXIGIN_LEFT );
+                       
+        maxigin_drawText( font,
+                          "English",
+                          20,
+                          240,
+                          MAXIGIN_LEFT );
         }
+
+    return;
     
     for( i = 0;
          i < 9;
@@ -654,8 +668,8 @@ void maxiginGame_init( void ) {
             }
         }
 
-    fontStrip = maxigin_initSpriteStrip( "traditionalChineseFont.tga",
-                                         12 );
+    fontStrip = maxigin_initSpriteStrip( "englishFont.tga",
+                                         16 );
 
     if( 1 ) maxigin_initMakeGlowSpriteStrip( fontStrip,
                                              2,
@@ -663,7 +677,7 @@ void maxiginGame_init( void ) {
     
     if( fontStrip != -1 ) {
         font = maxigin_initFont( fontStrip,
-                                 "traditionalChineseFont.txt",
+                                 "englishFont.txt",
                                  2,
                                  8,
                                  0 );

@@ -300,6 +300,68 @@
 
 
 
+/*
+  How many language translation key strings are supported?
+
+  To make room for 20 translation keys, do this:
+
+      #define  MAXIGIN_MAX_NUM_TRANSLATION_KEYS  20
+
+  [jumpSettings]
+*/
+#ifndef  MAXIGIN_MAX_NUM_TRANSLATION_KEYS
+#define  MAXIGIN_MAX_NUM_TRANSLATION_KEYS  128
+#endif
+
+
+
+/*
+  How many total translation string bytes are supported?
+
+  To make room for 2048 translation string bytes, do this:
+
+      #define  MAXIGIN_MAX_TOTAL_TRANSLATION_STRING_BYTES  2048
+
+  [jumpSettings]
+*/
+#ifndef  MAXIGIN_MAX_TOTAL_TRANSLATION_STRING_BYTES
+#define  MAXIGIN_MAX_TOTAL_TRANSLATION_STRING_BYTES  4096
+#endif
+
+
+
+/*
+  How many languages are supported?
+
+  To make room for 20 languages, do this:
+
+      #define  MAXIGIN_MAX_NUM_LANGUAGES  20
+
+  [jumpSettings]
+*/
+#ifndef  MAXIGIN_MAX_NUM_LANGUAGES
+#define  MAXIGIN_MAX_NUM_LANGUAGES  16
+#endif
+
+
+
+/*
+  How many language fonts are supported?
+
+  Note that these are still included in MAXIGIN_MAX_NUM_FONTS above.
+
+  To make room for 20 language fonts, do this:
+
+      #define  MAXIGIN_MAX_NUM_LANGUAGE_FONTS  20 
+
+  [jumpSettings]
+*/
+#ifndef  MAXIGIN_MAX_NUM_LANGUAGE_FONTS
+#define  MAXIGIN_MAX_NUM_LANGUAGE_FONTS  2
+#endif
+
+
+
 
 
 /*
@@ -714,6 +776,51 @@ int maxigin_initFont( int          inSpriteStripHandle,
                       int          inFixedWidth );
 
 
+/*
+  Registers a game-defined integer translation key that maps to a
+  key string in language translation files.  After registration, the
+  phrase key can be used in calls to maxigin_drawLangText().
+
+  The idea here is that the game can define intger phrase constants as-needed,
+  like lang_settings, lang_newGame, lang_quit, and so on, and then map them to
+  the key strings that actually appear in the language files.
+
+  For example, the game might do something like this:
+
+      enum LanguageKeys {
+          lang_settings,
+          lang_newGame,
+          lang_quit };
+
+  And then make these calls:
+
+      maxigin_initTranslationKey( lang_settings,
+                                  "settings" );
+
+      maxigin_initTranslationKey( lang_newGame,
+                                  "newGame" );
+
+  Parameters:
+
+    inPhraseKey         game-defined integer phrase key.  Must be >= 0
+                        and  < MAXIGIN_MAX_NUM_TRANSLATION_KEYS
+
+    inPhraseKeyString   a \0-terminated phrase key string that occurs in the
+                        language bulk data resources.  At most 32
+                        bytes long including \0 termination.
+
+  Returns:
+
+    1   on success
+
+    0   on failure
+
+  [jumpMaxiginInit]      
+*/
+char maxigin_initTranslationKey( int          inPhraseKey,
+                                 const char  *inPhraseKeyString );
+
+
 
 /*
   Registers hint sprites to be used by Maxigin when drawing user
@@ -979,6 +1086,35 @@ void maxigin_drawText( int           inFontHandle,
                        int           inLocationX,
                        int           inLocationY,
                        MaxiginAlign  inAlign );
+
+
+
+/*
+  Draws language text using the active language and corresponding font
+  to the game's native pixel buffer.
+
+  Parameters:
+
+      inPhraseKey    a phrase key previously registered with
+                     maxigin_initTranslationKey()
+
+      inLocationX    the x position in the game's native pixel buffer of the
+                     drawn text
+ 
+      inLocationY    the y position in the game's native pixel buffer of the
+                     drawn text
+                     
+      inAlign        the horizontal alignment of the text around the point
+                     (inLocationX, inLocationY).
+                     The text is always vertically centered on this point
+
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawLangText( int           inPhraseKey,
+                           int           inLocationX,
+                           int           inLocationY,
+                           MaxiginAlign  inAlign );
+
 
 
 /*
@@ -7113,9 +7249,9 @@ static  MinginStick  mx_sliderStickMapping[] = { MGN_STICK_LEFT_X,
                                                  MGN_MAP_END };
 
 
+static void mx_clearTranslationKeys( void );
 
-
-
+static  void mx_initLanguages( void );
 
 
 static void mx_gameInit( void ) {
@@ -7164,6 +7300,10 @@ static void mx_gameInit( void ) {
     mingin_registerStickAxis( MAXIGIN_STICK_SLIDER,
                               mx_sliderStickMapping );
 
+    /* all translation keys start empty */
+    mx_clearTranslationKeys();
+
+    
     
     mx_areWeInMaxiginGameInitFunction = 1;
     
@@ -7173,6 +7313,10 @@ static void mx_gameInit( void ) {
 
     mx_areWeInMaxiginGameInitFunction = 0;
 
+    /* game set any translation keys during init, now we can load languages
+       based on those keys */
+    mx_initLanguages();
+    
     mx_recordingCrashRecovery();
 
     mx_initRecording();
@@ -7472,6 +7616,118 @@ static const char *mx_readShortStringFromPersistData( int  inStoreReadHandle ) {
         } 
     }
 
+
+/*
+  Reads a whitespace-terminated short string toke (< 64 chars long) into a static
+  buffer, consuming the trailing whiltespace character.
+
+  Valid whitespace includes ' ', '\n', '\r', and '\t'
+
+  Returns \0-terminated string token with no trailing whitespace
+  Returns 0 on failure.
+*/
+static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
+
+    enum{         BUFFER_LEN  =  64  };
+    int           i           =   0;
+    int           readNum;
+    
+    static  char  buffer[ BUFFER_LEN ];
+
+    
+
+    readNum = mingin_readBulkData( inBulkReadHandle,
+                                   1,
+                                   (unsigned char *)&( buffer[i] ) );
+    
+    while( readNum == 1
+           &&
+           i < BUFFER_LEN - 1
+           &&
+           buffer[i] != '\0'
+           &&
+           buffer[i] != ' '
+           &&
+           buffer[i] != '\n'
+           &&
+           buffer[i] != '\r'
+           &&
+           buffer[i] != '\t' ) {
+        i++;
+        readNum = mingin_readPersistData( inBulkReadHandle,
+                                          1,
+                                          (unsigned char *)&( buffer[i] ) );
+        }
+    
+    if( buffer[i] != '\0'
+        &&
+        buffer[i] != ' '
+        &&
+        buffer[i] != '\n'
+        &&
+        buffer[i] != '\r'
+        &&
+        buffer[i] != '\t'
+        &&
+        readNum == 1 ) {
+        /* didn't find termination in data store
+           because string was too long for buffer */
+        mingin_log( "Error:  Buffer overflow when trying to read string "
+                    "token from bulk data store.\n" );
+        return 0;
+        }
+    else if( buffer[i] != '\0'
+             &&
+             buffer[i] != ' '
+             &&
+             buffer[i] != '\n'
+             &&
+             buffer[i] != '\r'
+             &&
+             buffer[i] != '\t'
+             &&
+             readNum == 0 ) {
+        /* reached end of data store without finding whitespace
+           or termination byte
+           special case:  a data store that only contains one string, with
+           no termination at the end (to make file editable in a text editor)
+           Terminate our read string and return it */
+
+        if( i < BUFFER_LEN - 1 ) {
+            buffer[ i + 1 ] = '\0';
+            return buffer;
+            }
+
+        /* reached end of data store AND we reached end of buffer?
+           While loop above should prevent this */
+            
+        mingin_log( "Error:  Reading string token from bulk data reached "
+                    "unexpected case\n" );
+        return 0;
+        }
+    else if( buffer[i] != '\0'
+             &&
+             buffer[i] != ' '
+             &&
+             buffer[i] != '\n'
+             &&
+             buffer[i] != '\r'
+             &&
+             buffer[i] != '\t'
+             &&
+             readNum == -1 ) {
+        
+        mingin_log( "Error:  Got read failure when trying to read string "
+                    "token from bulk data.\n" );
+        return 0;
+        }
+
+    /* got here, safe to terminate buffer at first whitespace character
+       found */
+    buffer[ i ] = '\0';
+    
+    return buffer; 
+    }
 
 
 /*
@@ -14023,6 +14279,193 @@ static void mx_regenerateSpriteKerning( int  inSpriteHandle ) {
         }
 
     }
+
+
+
+
+
+
+
+#define  MAXIGIN_LANGUAGE_FONT_MAX_NAME_LENGTH  64
+
+static   MaxiginFont  *mx_languageFonts[ MAXIGIN_MAX_NUM_LANGUAGE_FONTS ];
+
+static   char          mx_languageFontBulkResourceNames
+                           [ MAXIGIN_MAX_NUM_LANGUAGE_FONTS            ]
+                           [ MAXIGIN_LANGUAGE_FONT_MAX_NAME_LENGTH + 1 ];
+
+static   int           mx_numLanguageFonts  =  0;
+
+
+#define  MAXIGIN_MAX_TRANSLATION_KEY_LENGTH  32
+
+static   char          mx_translationKeys
+                           [ MAXIGIN_MAX_NUM_TRANSLATION_KEYS ]
+                           [ MAXIGIN_MAX_TRANSLATION_KEY_LENGTH + 1 ];
+
+static   char          mx_anyTranslationKeysSet  = 0;
+
+
+static   char          mx_translationStringBytes
+                           [ MAXIGIN_MAX_TOTAL_TRANSLATION_STRING_BYTES ];
+
+static   int           mx_numTranslationStringBytes = 0;
+
+
+
+
+
+typedef struct MaxiginLanguage {
+
+        char         *displayName;
+
+        MaxiginFont  *font;
+
+        /* indices into mx_translationStringBytes, or -1 of
+           not present */
+        int           stringStartBytes[ MAXIGIN_MAX_NUM_TRANSLATION_KEYS ];
+        
+    } MaxiginLanguage;
+
+
+
+static  MaxiginLanguage  mx_languages[ MAXIGIN_MAX_NUM_LANGUAGES ];
+static  int              mx_numLanguages = 0;
+
+
+
+static void mx_clearTranslationKeys( void ) {
+    
+    int  t;
+    
+    for( t = 0;
+         t < MAXIGIN_MAX_NUM_TRANSLATION_KEYS;
+         t ++ ) {
+        
+        mx_translationKeys[ t ][ 0 ] = '\0';
+        }
+    }
+
+
+
+char maxigin_initTranslationKey( int          inPhraseKey,
+                                 const char  *inPhraseKeyString ) {
+
+    if( ! mx_areWeInMaxiginGameInitFunction ) {
+        mingin_log( "Game tried to call "
+                    "maxigin_initTranslationKey "
+                    "from outside of maxiginGame_init\n" );
+        return 0;
+        }
+    
+    if( inPhraseKey < 0
+        ||
+        inPhraseKey >= MAXIGIN_MAX_NUM_TRANSLATION_KEYS ) {
+
+        maxigin_logInt( "Translation key out of range: ",
+                        inPhraseKey );
+        
+        maxigin_logString( "  Corresponding key string = ",
+                           inPhraseKeyString );
+        return 0;
+        }
+
+    if( maxigin_stringLength( inPhraseKeyString )
+        >
+        MAXIGIN_MAX_TRANSLATION_KEY_LENGTH ) {
+        
+        maxigin_logString( "Translation key too long, skipping: ",
+                           inPhraseKeyString );
+        return 0;
+        }
+
+    maxigin_stringCopy( inPhraseKeyString,
+                        mx_translationKeys[ inPhraseKey ] );
+
+    mx_anyTranslationKeysSet = 1;
+
+    return 1;
+    }
+
+
+
+static void mx_initLanguage( const char  *inLanguageBulkResourceName ) {
+
+    int  languageHandle;
+    
+    if( mx_numLanguages >= MAXIGIN_MAX_NUM_LANGUAGES ) {
+        maxigin_logString( "Too many languages already loaded, skipping:  ",
+                           inLanguageBulkResourceName );
+        return;
+        }
+    
+    maxigin_logString( "Loading language:  ",
+                       inLanguageBulkResourceName );
+
+    languageHandle = mx_numLanguages;
+
+    /* fixme:
+
+       --open language file
+
+       --scan name
+
+       --scan font.txt
+       --scan font.tga
+       --scan spacing/fixed numbers
+
+       --check if matching language font exists already
+
+       --if not:
+    int maxigin_initFont( int          inSpriteStripHandle,
+                      const char  *inMapBulkResourceName,
+                      int          inCharSpacing,
+                      int          inSpaceWidth,
+                      int          inFixedWidth );
+
+       --Then scan each key and string
+
+       --for each key and string, find key in key table (populated by game)
+         --add string to translation bytes array
+         --register in matching index in language struct's table
+
+    */
+    }
+
+
+
+static void mx_initLanguages( void ) {
+
+    int          bulkHandle;
+    int          len;
+    const char  *token;
+
+    
+    if( ! mx_anyTranslationKeysSet ) {
+        mingin_log( "No translation keys set by game, so skipping loading "
+                    "languages" );
+        return;
+        }
+
+    bulkHandle = mingin_startReadBulkData( "languages.txt",
+                                           &len );
+
+    if( bulkHandle == -1 ) {
+        mingin_log( "Failed to open bulk data resource:  languages.txt\n" );
+        return;
+        }
+
+    token = mx_readShortTokenFromBulkData( bulkHandle );
+
+
+    while( token != 0 ) {
+
+        mx_initLanguage( token );
+        }
+    }
+
+
+
 
 
 

@@ -1,8 +1,8 @@
 "English"
 
-englishFont.txt
+latinFont.txt
 
-englishFont.tga
+latinFont.tga  2  8  0
 
 
 

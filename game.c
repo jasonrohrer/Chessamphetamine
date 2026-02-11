@@ -168,25 +168,25 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( font != -1 ) {
         maxigin_drawText( font,
-                          "Settings",
+                          "Français plan",
                           20,
                           120,
                           MAXIGIN_LEFT );
 
         maxigin_drawText( font,
-                          "Effects Volume",
+                          "Paramètres",
                           20,
                           140,
                           MAXIGIN_LEFT );
 
         maxigin_drawText( font,
-                          "New Game",
+                          "Plein écran",
                           20,
                           160,
                           MAXIGIN_LEFT);
 
         maxigin_drawText( font,
-                          "Quit",
+                          "Every quit",
                           20,
                           180,
                           MAXIGIN_LEFT );
@@ -668,7 +668,7 @@ void maxiginGame_init( void ) {
             }
         }
 
-    fontStrip = maxigin_initSpriteStrip( "englishFont.tga",
+    fontStrip = maxigin_initSpriteStrip( "latinFont.tga",
                                          16 );
 
     if( 1 ) maxigin_initMakeGlowSpriteStrip( fontStrip,
@@ -677,7 +677,7 @@ void maxiginGame_init( void ) {
     
     if( fontStrip != -1 ) {
         font = maxigin_initFont( fontStrip,
-                                 "englishFont.txt",
+                                 "latinFont.txt",
                                  2,
                                  8,
                                  0 );

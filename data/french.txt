@@ -1,8 +1,8 @@
 "Français"
 
-frenchFont.txt
+latinFont.txt
 
-frenchFont.tga
+latinFont.tga
 
 
 

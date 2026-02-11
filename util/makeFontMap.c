@@ -245,7 +245,7 @@ static char *scanNextCodePoint( char           *inBuffer,
 
 
 
-#define       CODE_POINT_LIST_MAX_SIZE     26
+#define       CODE_POINT_LIST_MAX_SIZE     10000
 static  int   numCodePoints             =      0;
 
 

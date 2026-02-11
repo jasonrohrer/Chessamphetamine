@@ -14404,6 +14404,16 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName ) {
 
     languageHandle = mx_numLanguages;
 
+    /* fix a bunch of unused warnings */
+
+    if( languageHandle ||  mx_languages[0].font != 0
+        || mx_numTranslationStringBytes || mx_translationStringBytes[0]
+        || mx_numLanguageFonts
+        || mx_languageFonts[0]->spacing
+        || mx_languageFontBulkResourceNames[0][0] ) {
+
+        }
+
     /* fixme:
 
        --open language file

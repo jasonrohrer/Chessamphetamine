@@ -7311,11 +7311,13 @@ static void mx_gameInit( void ) {
     
     maxiginGame_init();
 
-    mx_areWeInMaxiginGameInitFunction = 0;
-
     /* game set any translation keys during init, now we can load languages
        based on those keys */
     mx_initLanguages();
+
+    /* leave init flag set until here, b/c init languages loads sprites, etc */
+    mx_areWeInMaxiginGameInitFunction = 0;
+
     
     mx_recordingCrashRecovery();
 
@@ -7549,18 +7551,32 @@ static char mx_readStringFromPersistData( int    inStoreReadHandle,
                                           1,
                                           (unsigned char *)&( inBuffer[i] ) );
         }
-    if( inBuffer[i] != '\0'
+
+    if( readNum == 0
         &&
-        readNum == 1 ) {
+        i > 0 ) {
+        /* read some chars, but last read hit EOF, back up */
+        i --;
+        }
+    else if( readNum == 0
+             &&
+             i == 0 ) {
+        /* never read any chars */
+        return 0;
+        }
+    
+    if( readNum == 1
+        &&
+        inBuffer[i] != '\0' ) {
         /* didn't find termination in data store
            because string was too long for buffer */
         mingin_log( "Error:  Buffer overflow when trying to read string from "
                     "persistent data store.\n" );
         return 0;
         }
-    else if( inBuffer[i] != '\0'
+    else if( readNum == 0
              &&
-             readNum == 0 ) {
+             inBuffer[i] != '\0' ) {
         /* reached end of data store without finding termination byte
            special case:  a data store that only contains one string, with
            no termination at the end (to make file editable in a text editor)
@@ -7578,9 +7594,7 @@ static char mx_readStringFromPersistData( int    inStoreReadHandle,
                     "unexpected case\n" );
         return 0;
         }
-    else if( inBuffer[i] != '\0'
-             &&
-             readNum == -1 ) {
+    else if( readNum == -1 ) {
         mingin_log( "Error:  Got read failure when trying to read string "
                     "from persistent data store.\n" );
         return 0;
@@ -7618,84 +7632,152 @@ static const char *mx_readShortStringFromPersistData( int  inStoreReadHandle ) {
 
 
 /*
-  Reads a whitespace-terminated short string toke (< 64 chars long) into a static
-  buffer, consuming the trailing whiltespace character.
+  Reads a whitespace-terminated short string token (< 64 chars long) into a
+  static buffer.
+
+  Skips any whitespace before the token, and consumes the first whitespace
+  character after the token.
 
   Valid whitespace includes ' ', '\n', '\r', and '\t'
 
+  Has 10 internal buffers that it uses, round-robin, for interleaved calls
+  
   Returns \0-terminated string token with no trailing whitespace
   Returns 0 on failure.
 */
 static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
 
-    enum{         BUFFER_LEN  =  64  };
-    int           i           =   0;
+    enum{         NUM_BUFFERS  =  10,
+                  BUFFER_LEN   =  64  };
+    int           i            =   0;
     int           readNum;
+    char         *returnVal;
+    char          c;
     
-    static  char  buffer[ BUFFER_LEN ];
-
+    static  char  buffer[NUM_BUFFERS][ BUFFER_LEN ];
+    static  int   n                                   =  0;
     
 
+    /* skip white space */
     readNum = mingin_readBulkData( inBulkReadHandle,
                                    1,
-                                   (unsigned char *)&( buffer[i] ) );
+                                   (unsigned char *)&( c ) );
+
+    while( readNum == 1
+           &&
+           ( c == '\0'
+             ||
+             c == ' '
+             ||
+             c == '\n'
+             ||
+             c == '\r'
+             ||
+             c == '\t' ) ) {
+
+        readNum = mingin_readBulkData( inBulkReadHandle,
+                                   1,
+                                   (unsigned char *)&( c ) );
+        }
+
+    if( readNum != 1 ) {
+        /* read to end without finding anything but spaces */
+
+        mingin_log( "Failed to find non-whitespace character when "
+                    "reading string token from bulk data resource.\n" );
+        return 0;
+        }
+
+    /* put first non-whitespace in our buffer */
+    buffer[n][i] = c;
+
+    i++;
+
+    
+    /* now continue filling buffer with non-whitespace tokens */
+    
+    readNum = mingin_readPersistData( inBulkReadHandle,
+                                          1,
+                                          (unsigned char *)&( buffer[n][i] ) );
     
     while( readNum == 1
            &&
            i < BUFFER_LEN - 1
            &&
-           buffer[i] != '\0'
+           buffer[n][i] != '\0'
            &&
-           buffer[i] != ' '
+           buffer[n][i] != ' '
            &&
-           buffer[i] != '\n'
+           buffer[n][i] != '\n'
            &&
-           buffer[i] != '\r'
+           buffer[n][i] != '\r'
            &&
-           buffer[i] != '\t' ) {
+           buffer[n][i] != '\t' ) {
         i++;
         readNum = mingin_readPersistData( inBulkReadHandle,
                                           1,
-                                          (unsigned char *)&( buffer[i] ) );
+                                          (unsigned char *)&( buffer[n][i] ) );
+        }
+
+    if( readNum == 0
+        &&
+        i > 0 ) {
+        /* read some chars, but last read hit end of data, back up */
+        i --;
+        }
+    else if( readNum == 0
+             &&
+             i == 0 ) {
+        /* never read any chars */
+        return 0;
         }
     
-    if( buffer[i] != '\0'
+    if( readNum == 1
         &&
-        buffer[i] != ' '
+        buffer[n][i] != '\0'
         &&
-        buffer[i] != '\n'
+        buffer[n][i] != ' '
         &&
-        buffer[i] != '\r'
+        buffer[n][i] != '\n'
         &&
-        buffer[i] != '\t'
+        buffer[n][i] != '\r'
         &&
-        readNum == 1 ) {
+        buffer[n][i] != '\t' ) {
         /* didn't find termination in data store
            because string was too long for buffer */
         mingin_log( "Error:  Buffer overflow when trying to read string "
                     "token from bulk data store.\n" );
         return 0;
         }
-    else if( buffer[i] != '\0'
+    else if( readNum == 0
              &&
-             buffer[i] != ' '
+             buffer[n][i] != '\0'
              &&
-             buffer[i] != '\n'
+             buffer[n][i] != ' '
              &&
-             buffer[i] != '\r'
+             buffer[n][i] != '\n'
              &&
-             buffer[i] != '\t'
+             buffer[n][i] != '\r'
              &&
-             readNum == 0 ) {
+             buffer[n][i] != '\t' ) {
         /* reached end of data store without finding whitespace
            or termination byte
            special case:  a data store that only contains one string, with
-           no termination at the end (to make file editable in a text editor)
+           no whitespace at end
            Terminate our read string and return it */
 
         if( i < BUFFER_LEN - 1 ) {
-            buffer[ i + 1 ] = '\0';
-            return buffer;
+            buffer[n][ i + 1 ] = '\0';
+
+            returnVal = buffer[n];
+            
+            n++;
+
+            if( n >= NUM_BUFFERS ) {
+                n = 0;
+                }
+            
+            return returnVal;
             }
 
         /* reached end of data store AND we reached end of buffer?
@@ -7705,17 +7787,7 @@ static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
                     "unexpected case\n" );
         return 0;
         }
-    else if( buffer[i] != '\0'
-             &&
-             buffer[i] != ' '
-             &&
-             buffer[i] != '\n'
-             &&
-             buffer[i] != '\r'
-             &&
-             buffer[i] != '\t'
-             &&
-             readNum == -1 ) {
+    else if( readNum == -1 ) {
         
         mingin_log( "Error:  Got read failure when trying to read string "
                     "token from bulk data.\n" );
@@ -7724,9 +7796,17 @@ static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
 
     /* got here, safe to terminate buffer at first whitespace character
        found */
-    buffer[ i ] = '\0';
+    buffer[n][i] = '\0';
+
+    returnVal = buffer[n];
     
-    return buffer; 
+    n++;
+
+    if( n >= NUM_BUFFERS ) {
+        n = 0;
+        }
+
+    return returnVal; 
     }
 
 
@@ -7739,6 +7819,30 @@ static char mx_readIntFromPersistData( int   inStoreReadHandle,
                                        int  *outInt ) {
     
     const char  *read  =  mx_readShortStringFromPersistData( inStoreReadHandle );
+
+    if( read == 0 ) {
+        return 0;
+        }
+    
+    *outInt = maxigin_stringToInt( read );
+
+    return 1;
+    }
+
+
+/*
+  Reads a whitespace-delimited string representation of an int from
+  a bulk resource.
+
+  Skips any whitespace before the int, and consumes the first whitespace
+  character after the int.
+
+  Returns 1 on success, 0 on failure.
+*/
+static char mx_readIntTokenFromBulkData( int   inBulkReadHandle,
+                                         int  *outInt ) {
+    
+    const char  *read  =  mx_readShortTokenFromBulkData( inBulkReadHandle );
 
     if( read == 0 ) {
         return 0;
@@ -14313,11 +14417,12 @@ static   int           mx_numTranslationStringBytes = 0;
 
 
 
+#define  MAXIGIN_LANGUAGE_NAME_MAX_LENGTH  64
 
 
 typedef struct MaxiginLanguage {
 
-        char         *displayName;
+        char          displayName[ MAXIGIN_LANGUAGE_NAME_MAX_LENGTH + 1 ];
 
         MaxiginFont  *font;
 
@@ -14345,6 +14450,41 @@ static void mx_clearTranslationKeys( void ) {
         mx_translationKeys[ t ][ 0 ] = '\0';
         }
     }
+
+
+
+/* returns 0 if no matching language font found */
+static MaxiginFont *mx_findLanguageFont( const char  *inBulkResourceName,
+                                         int          inCharSpacing,
+                                         int          inSpaceWidth,
+                                         int          inFixedWidth ) {
+
+    int  i;
+
+
+    for( i = 0;
+         i < mx_numLanguageFonts;
+         i ++ ) {
+
+        if( maxigin_stringsEqual( inBulkResourceName,
+                                  mx_languageFontBulkResourceNames[i] ) ) {
+
+            MaxiginFont  *f  =  mx_languageFonts[ i ];
+
+            if( f->spacing    == inCharSpacing
+                &&
+                f->spaceWidth == inSpaceWidth
+                &&
+                f->fixedWidth == inFixedWidth ) {
+
+                return f;
+                }
+            }
+        }
+
+    return 0;
+    }
+
 
 
 
@@ -14389,9 +14529,91 @@ char maxigin_initTranslationKey( int          inPhraseKey,
 
 
 
+/* inMaxStringLength is max length of string to parse
+   will be truncated if longer
+
+   inDestBuffer  must have room for inMaxStringLength + 1 bytes (for \0 end)
+
+   closing quote is skipped in
+
+   returns 1 on success
+           0 on failure
+*/
+static int mx_readQuotedString( int    inBulkReadHandle,
+                                int    inMaxStringLength,
+                                char  *inDestBuffer ) {
+
+    int           i           =   0;
+    int           readNum;
+    char          c;
+    
+
+    /* consume up past first " mark */
+    
+    readNum = mingin_readBulkData( inBulkReadHandle,
+                                   1,
+                                   (unsigned char *)&( c ) );
+    
+    while( readNum == 1
+           &&
+           c != '"' ) {
+        readNum = mingin_readBulkData( inBulkReadHandle,
+                                       1,
+                                       (unsigned char *)&( c ) );
+        }
+
+    if( readNum != 1 ) {
+        mingin_log( "Failed to find first quote mark when scanning "
+                    "for quoted string in bulk resource\n" );
+        return 0;
+        }
+
+    
+    /* now consume until closing " mark and fill buffer with it */
+    
+    readNum = mingin_readBulkData( inBulkReadHandle,
+                                   1,
+                                   (unsigned char *)&( c ) );
+    
+    while( readNum == 1
+           &&
+           c != '"'
+           &&
+           i < inMaxStringLength ) {
+
+        inDestBuffer[i] =  c;
+        i++;
+        
+        readNum = mingin_readBulkData( inBulkReadHandle,
+                                   1,
+                                   (unsigned char *)&( c ) );
+        }
+
+    /* any of the cases where we fall out of loop are okay
+       either we consumed closing quote mark, or we reached the length limit,
+       or we got to the end of the data resource
+       In all cases, terminate whatever string we have and return */
+
+    inDestBuffer[i] = '\0';
+
+    return 1;
+    }
+
+
+
 static void mx_initLanguage( const char  *inLanguageBulkResourceName ) {
 
-    int  languageHandle;
+    MaxiginLanguage  *lang;
+    int               languageReadHandle;
+    int               dataLen;
+    const char       *langFontName;
+    const char       *langFontTextName;
+    int               fontHeight;
+    int               fontCharSpacing;
+    int               fontSpaceWidth;
+    int               fontFixedWidth;
+    char              success;
+
     
     if( mx_numLanguages >= MAXIGIN_MAX_NUM_LANGUAGES ) {
         maxigin_logString( "Too many languages already loaded, skipping:  ",
@@ -14402,31 +14624,178 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName ) {
     maxigin_logString( "Loading language:  ",
                        inLanguageBulkResourceName );
 
-    languageHandle = mx_numLanguages;
+    lang = &( mx_languages[ mx_numLanguages ] );
 
     /* fix a bunch of unused warnings */
 
-    if( languageHandle ||  mx_languages[0].font != 0
-        || mx_numTranslationStringBytes || mx_translationStringBytes[0]
-        || mx_numLanguageFonts
-        || mx_languageFonts[0]->spacing
-        || mx_languageFontBulkResourceNames[0][0] ) {
+    if( mx_languages[0].font != 0
+        && mx_numTranslationStringBytes && mx_translationStringBytes[0]
+        && mx_numLanguageFonts
+        && mx_languageFonts[0]->spacing
+        && mx_languageFontBulkResourceNames[0][0] ) {
 
         }
 
+    languageReadHandle = mingin_startReadBulkData( inLanguageBulkResourceName,
+                                                   &dataLen );
+
+    if( languageReadHandle == -1 ) {
+        maxigin_logString( "Failed to open language bulk resource: ",
+                           inLanguageBulkResourceName );
+        return;
+        }
+
+    mx_readQuotedString( languageReadHandle,
+                         MAXIGIN_LANGUAGE_NAME_MAX_LENGTH,
+                         lang->displayName );
+
+    langFontName = mx_readShortTokenFromBulkData( languageReadHandle );
+
+    if( langFontName == 0 ) {
+        maxigin_logString( "Failed to read font TGA name from language "
+                           "bulk resource: ",
+                           inLanguageBulkResourceName );
+        return;
+        }
+
+    if( maxigin_stringLength( langFontName ) >
+        MAXIGIN_LANGUAGE_FONT_MAX_NAME_LENGTH ) {
+
+        maxigin_logString( "Font TGA name too long in language "
+                           "bulk resource: ",
+                           inLanguageBulkResourceName );
+        return;
+        }
+    
+
+    success = mx_readIntTokenFromBulkData( languageReadHandle,
+                                           &fontHeight );
+
+    if( ! success ) {
+        maxigin_logString( "Failed to read font character height from language "
+                           "bulk resource: ",
+                           inLanguageBulkResourceName );
+        return;
+        }
+
+    success = mx_readIntTokenFromBulkData( languageReadHandle,
+                                           &fontCharSpacing );
+
+    if( ! success ) {
+        maxigin_logString( "Failed to read font character spacing from language "
+                           "bulk resource: ",
+                           inLanguageBulkResourceName );
+        return;
+        }
+
+    success = mx_readIntTokenFromBulkData( languageReadHandle,
+                                           &fontSpaceWidth );
+
+    if( ! success ) {
+        maxigin_logString( "Failed to read font space width from language "
+                           "bulk resource: ",
+                           inLanguageBulkResourceName );
+        return;
+        }
+
+    success = mx_readIntTokenFromBulkData( languageReadHandle,
+                                           &fontFixedWidth );
+
+    if( ! success ) {
+        maxigin_logString( "Failed to read font fixed width from language "
+                           "bulk resource: ",
+                           inLanguageBulkResourceName );
+        return;
+        }
+
+    langFontTextName = mx_readShortTokenFromBulkData( languageReadHandle );
+
+    if( langFontTextName == 0 ) {
+        maxigin_logString( "Failed to read font TXT name from language "
+                           "bulk resource: ",
+                           inLanguageBulkResourceName );
+        return;
+        }
+
+    
+    lang->font = mx_findLanguageFont( langFontName,
+                                      fontCharSpacing,
+                                      fontSpaceWidth,
+                                      fontFixedWidth );
+
+    if( lang->font == 0 ) {
+        /* no matching font found, build a new one */
+
+        int  stripHandle;
+        int  fontHandle;
+
+        if( mx_numLanguageFonts >= MAXIGIN_MAX_NUM_LANGUAGE_FONTS ) {
+            maxigin_logString( "Too many language fonts already when trying "
+                               "to create new one for language: ",
+                               inLanguageBulkResourceName );
+            return;
+            }
+        
+        stripHandle = maxigin_initSpriteStrip( langFontName,
+                                               fontHeight );
+
+        if( stripHandle == -1 ) {
+            mingin_log(
+                maxigin_stringConcat5(
+                    "Failed to read font strip ",
+                    langFontName,
+                    " specified in language bulk resource: ",
+                    inLanguageBulkResourceName,
+                    "\n" ) );
+            return;
+            }
+        
+        
+        fontHandle = maxigin_initFont( stripHandle,
+                                       langFontTextName,
+                                       fontCharSpacing,
+                                       fontSpaceWidth,
+                                       fontFixedWidth );
+
+        if( fontHandle == -1 ) {
+            mingin_log(
+                maxigin_stringConcat5(
+                    "Failed to read font mapping ",
+                    langFontName,
+                    " specified in language bulk resource: ",
+                    inLanguageBulkResourceName,
+                    "\n" ) );
+            return;
+            }
+
+        lang->font = &( mx_fonts[ fontHandle ] );
+        
+        mx_languageFonts[ mx_numLanguageFonts ] = lang->font;
+
+        maxigin_stringCopy( langFontName,
+                            mx_languageFontBulkResourceNames
+                                [ mx_numLanguageFonts ] );
+        
+        mx_numLanguageFonts ++;
+        }
+    
+    
+    mingin_endReadBulkData( languageReadHandle );
+    
+    
     /* fixme:
 
-       --open language file
+       X-open language file
 
-       --scan name
+       X-scan name
 
-       --scan font.txt
-       --scan font.tga
-       --scan spacing/fixed numbers
+       X-scan font.tga
+       X-scan font.txt
+       X-scan spacing/fixed numbers
 
-       --check if matching language font exists already
+       X-check if matching language font exists already
 
-       --if not:
+       X-if not:
     int maxigin_initFont( int          inSpriteStripHandle,
                       const char  *inMapBulkResourceName,
                       int          inCharSpacing,
@@ -14471,6 +14840,8 @@ static void mx_initLanguages( void ) {
     while( token != 0 ) {
 
         mx_initLanguage( token );
+
+        token = mx_readShortTokenFromBulkData( bulkHandle );
         }
     }
 

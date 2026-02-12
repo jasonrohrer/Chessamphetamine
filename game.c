@@ -713,7 +713,17 @@ void maxiginGame_init( void ) {
     
     maxigin_initMusicLoop( "musicLoop_stereo_16_44100.wav" );
 
+    maxigin_initSoundEffect( "hey1.wav" );
+    maxigin_initSoundEffect( "hey2.wav" );
     plunkSound = maxigin_initSoundEffect( "plunk1.wav" );
+
+    maxigin_initSoundEffect( "test_long.wav" );
+
+
+    maxigin_initTranslationKey( 0,
+                                "settings" );
+    maxigin_initTranslationKey( 1,
+                                "quit" );
     
     
     /* init position in image center */

@@ -1,8 +1,10 @@
 "English"
 
+latinFont.tga  16 2  8  0
+
 latinFont.txt
 
-latinFont.tga  2  8  0
+
 
 
 

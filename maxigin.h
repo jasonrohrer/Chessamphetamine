@@ -14924,34 +14924,6 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName ) {
 
     /* language successfully loaded */
     mx_numLanguages ++;
-    
-    
-    /* fixme:
-
-       X-open language file
-
-       X-scan name
-
-       X-scan font.tga
-       X-scan font.txt
-       X-scan spacing/fixed numbers
-
-       X-check if matching language font exists already
-
-       X-if not:
-    int maxigin_initFont( int          inSpriteStripHandle,
-                      const char  *inMapBulkResourceName,
-                      int          inCharSpacing,
-                      int          inSpaceWidth,
-                      int          inFixedWidth );
-
-       --Then scan each key and string
-
-       --for each key and string, find key in key table (populated by game)
-         --add string to translation bytes array
-         --register in matching index in language struct's table
-
-    */
     }
 
 

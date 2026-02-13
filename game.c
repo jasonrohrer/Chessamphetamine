@@ -167,50 +167,39 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                   20 );
 
     if( font != -1 ) {
-        maxigin_drawText( font,
-                          "Français plan",
-                          20,
-                          120,
-                          MAXIGIN_LEFT );
+        maxigin_drawLangText( 0,
+                              20,
+                              120,
+                              MAXIGIN_LEFT );
 
-        maxigin_drawText( font,
-                          "Paramètres",
-                          20,
-                          140,
-                          MAXIGIN_LEFT );
+        maxigin_drawLangText( 1,
+                              20,
+                              140,
+                              MAXIGIN_LEFT );
 
-        maxigin_drawText( font,
-                          "Plein écran",
-                          20,
-                          160,
-                          MAXIGIN_LEFT);
+        maxigin_drawLangText( 2,
+                              20,
+                              160,
+                              MAXIGIN_LEFT);
 
-        maxigin_drawText( font,
-                          "Every quit",
-                          20,
-                          180,
-                          MAXIGIN_LEFT );
+        maxigin_drawLangText( 3,
+                              20,
+                              180,
+                              MAXIGIN_LEFT );
         
-        maxigin_drawText( font,
-                          "Fullscreen",
-                          20,
-                          200,
-                          MAXIGIN_LEFT );
+        maxigin_drawLangText( 4,
+                              20,
+                              200,
+                              MAXIGIN_LEFT );
                 
-        maxigin_drawText( font,
-                          "Music Volume",
-                          20,
-                          220,
-                          MAXIGIN_LEFT );
+        maxigin_drawLangText( 5,
+                              20,
+                              220,
+                              MAXIGIN_LEFT );
                        
-        maxigin_drawText( font,
-                          "English",
-                          20,
-                          240,
-                          MAXIGIN_LEFT );
         }
 
-    return;
+
     
     for( i = 0;
          i < 9;
@@ -723,8 +712,16 @@ void maxiginGame_init( void ) {
     maxigin_initTranslationKey( 0,
                                 "settings" );
     maxigin_initTranslationKey( 1,
+                                "newGame" );
+    maxigin_initTranslationKey( 2,
                                 "quit" );
-    
+    maxigin_initTranslationKey( 3,
+                                "musicVolume" );
+    maxigin_initTranslationKey( 4,
+                                "effectsVolume" );
+    maxigin_initTranslationKey( 5,
+                                "fullscreen" );
+
     
     /* init position in image center */
     boxPosX = MAXIGIN_GAME_NATIVE_W / 2;

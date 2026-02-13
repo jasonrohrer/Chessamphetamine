@@ -14509,7 +14509,7 @@ static int mx_findLanguageFont( const char  *inBulkResourceName,
             }
         }
 
-    return 0;
+    return -1;
     }
 
 

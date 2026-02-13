@@ -11582,7 +11582,7 @@ static int mx_getNextJustStartedSoundEffect( void ) {
         return -1;
         }
 
-    returnVal = mx_justStartedSoundEffects[ mx_numJustStartedSoundEffects ];
+    returnVal = mx_justStartedSoundEffects[ mx_numJustStartedSoundEffects - 1 ];
 
     mx_numJustStartedSoundEffects--;
 
@@ -11598,7 +11598,7 @@ static int mx_getNextJustEndedSoundEffect( void ) {
         return -1;
         }
 
-    returnVal = mx_justEndedSoundEffects[ mx_numJustEndedSoundEffects ];
+    returnVal = mx_justEndedSoundEffects[ mx_numJustEndedSoundEffects - 1 ];
 
     mx_numJustEndedSoundEffects--;
 

@@ -1,0 +1,2 @@
+Chinese, Japanese, and Korean pixel fonts derived from the Fusion Pixel fonts
+by TakWolf (https://takwolf.com)

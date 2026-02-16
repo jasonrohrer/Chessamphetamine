@@ -14139,6 +14139,7 @@ void maxigin_drawText( int           inFontHandle,
     char          fixed          =  ( f->fixedWidth > 0 );
     int           spaceW         =  f->spaceWidth;
     int           halfSpaceW     =  spaceW / 2;
+    int           charSpaceW     =  f->spacing;
     enum{         BUFFER_LEN     =  256 };
     
     static  int  spriteHandles[ BUFFER_LEN ];
@@ -14267,12 +14268,12 @@ void maxigin_drawText( int           inFontHandle,
                             
                             sep += 1;
                             
-                            sep += f->spacing;
-                            
                             mx_kerningCacheInsert( prevHandle,
                                                    spriteHandle,
                                                    sep );
                             }
+
+                        sep += charSpaceW;
                         
                         charCenterOffsetFromPrev[ numSprites ] = sep;
 
@@ -14294,8 +14295,8 @@ void maxigin_drawText( int           inFontHandle,
 
             if( numSprites > 0 ) {
                 /* not first sprite */
-                charCenterOffsetFromPrev[ numSprites ] += f->spacing;
-                totalPixWidth += f->spacing;
+                charCenterOffsetFromPrev[ numSprites ] += charSpaceW;
+                totalPixWidth += charSpaceW;
                 } 
             }
 
@@ -14568,10 +14569,7 @@ static void mx_removeTranslationString( int  inStartByte ) {
 
 
 /* returns -1 if no matching language font found */
-static int mx_findLanguageFont( const char  *inBulkResourceName,
-                                int          inCharSpacing,
-                                int          inSpaceWidth,
-                                int          inFixedWidth ) {
+static int mx_findLanguageFont( const char  *inBulkResourceName ) {
 
     int  i;
 
@@ -14583,16 +14581,7 @@ static int mx_findLanguageFont( const char  *inBulkResourceName,
         if( maxigin_stringsEqual( inBulkResourceName,
                                   mx_languageFontBulkResourceNames[i] ) ) {
 
-            MaxiginFont  *f  =  &( mx_fonts[ mx_languageFontHandles[ i ] ] );
-
-            if( f->spacing    == inCharSpacing
-                &&
-                f->spaceWidth == inSpaceWidth
-                &&
-                f->fixedWidth == inFixedWidth ) {
-
-                return mx_languageFontHandles[ i ];
-                }
+            return mx_languageFontHandles[ i ];
             }
         }
 
@@ -14893,11 +14882,22 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
         }
 
     
-    lang->fontHandle = mx_findLanguageFont( langFontName,
-                                            fontCharSpacing,
-                                            fontSpaceWidth,
-                                            fontFixedWidth );
+    lang->fontHandle = mx_findLanguageFont( langFontName );
 
+    if( lang->fontHandle >= 0 ) {
+        /* found one
+           Update it's spacing settings.
+           Note that if multiple languages use the same font,
+           the spacing from the last one loaded (or hot-reloaded) will win.
+           This enables us to hot reload and tweak these settings when
+           a language file changes without completely re-making the font */
+        MaxiginFont  *font  =  &( mx_fonts[ lang->fontHandle ] );
+
+        font->spacing    = fontCharSpacing;
+        font->spaceWidth = fontSpaceWidth;
+        font->fixedWidth = fontFixedWidth;
+        }
+        
     if( lang->fontHandle == -1 ) {
         /* no matching font found, build a new one */
 

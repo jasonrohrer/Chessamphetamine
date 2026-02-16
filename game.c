@@ -75,8 +75,6 @@ static int          sliderValueB  =   7;
 static int          plunkSound    =  -1;
 
 
-static int          font          =  -1;
-
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
@@ -166,43 +164,44 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                   20,
                                   20 );
 
-    if( font != -1 ) {
-        maxigin_drawSetColor( 255, 255, 0, 255 );
-        maxigin_drawLangText( 0,
-                              20,
-                              120,
-                              MAXIGIN_LEFT );
 
-        maxigin_drawSetColor( 0, 255, 255, 255 );
-        maxigin_drawLangText( 1,
-                              20,
-                              140,
-                              MAXIGIN_LEFT );
-        
-        maxigin_drawResetColor();
-        maxigin_drawLangText( 2,
-                              20,
-                              160,
-                              MAXIGIN_LEFT);
+    maxigin_drawSetColor( 255, 255, 0, 255 );
+    maxigin_drawLangText( 0,
+                          20,
+                          120,
+                          MAXIGIN_LEFT );
 
-        maxigin_drawLangText( 3,
-                              20,
-                              180,
-                              MAXIGIN_LEFT );
+    maxigin_drawSetColor( 0, 255, 255, 255 );
+    maxigin_drawLangText( 1,
+                          20,
+                          140,
+                          MAXIGIN_LEFT );
         
-        maxigin_drawLangText( 4,
-                              20,
-                              200,
-                              MAXIGIN_LEFT );
+    maxigin_drawResetColor();
+    maxigin_drawLangText( 2,
+                          20,
+                          160,
+                          MAXIGIN_LEFT);
+
+    maxigin_drawLangText( 3,
+                          20,
+                          180,
+                          MAXIGIN_LEFT );
+        
+    maxigin_drawLangText( 4,
+                          20,
+                          200,
+                          MAXIGIN_LEFT );
                 
-        maxigin_drawLangText( 5,
-                              20,
-                              220,
-                              MAXIGIN_LEFT );
+    maxigin_drawLangText( 5,
+                          20,
+                          220,
+                          MAXIGIN_LEFT );
                        
-        }
 
 
+    return;
+    
     
     for( i = 0;
          i < 9;
@@ -612,7 +611,6 @@ static MinginStick  thickMapping[]  =  { MGN_STICK_LEFT_Y,  MGN_MAP_END };
 void maxiginGame_init( void ) {
 
     int  i;
-    int  fontStrip;
     
     for( i = 0;
          i < MAX_NUM_BULLETS;
@@ -662,21 +660,6 @@ void maxiginGame_init( void ) {
             }
         }
 
-    fontStrip = maxigin_initSpriteStrip( "latinFont.tga",
-                                         16 );
-
-    if( 1 ) maxigin_initMakeGlowSpriteStrip( fontStrip,
-                                             2,
-                                             2 );
-    
-    if( fontStrip != -1 ) {
-        font = maxigin_initFont( fontStrip,
-                                 "latinFont.txt",
-                                 2,
-                                 8,
-                                 0 );
-        }
-    
     
     maxigin_registerButtonMapping( JUMP,   jumpMapping );
     maxigin_registerButtonMapping( SHOOT,  shootMapping );

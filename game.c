@@ -167,16 +167,19 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                   20 );
 
     if( font != -1 ) {
+        maxigin_drawSetColor( 255, 255, 0, 255 );
         maxigin_drawLangText( 0,
                               20,
                               120,
                               MAXIGIN_LEFT );
 
+        maxigin_drawSetColor( 0, 255, 255, 255 );
         maxigin_drawLangText( 1,
                               20,
                               140,
                               MAXIGIN_LEFT );
-
+        
+        maxigin_drawSetColor( 255, 255, 255, 255 );
         maxigin_drawLangText( 2,
                               20,
                               160,
@@ -314,6 +317,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                       MAXIGIN_GAME_NATIVE_H / 2,
                       lineTip.x,
                       lineTip.y );
+
+    maxigin_drawSetColor( 255, 255, 255, 255 );
 
     maxigin_drawGUI( &gameGUI );
     }

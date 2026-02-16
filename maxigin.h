@@ -4342,7 +4342,8 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
     int  startByte;
 
     char drawAlphaSet;
-
+    char drawColorSet;
+    
     
     if( ! mx_areWeInMaxiginGameDrawFunction ) {
 
@@ -4383,6 +4384,17 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
             /* draw alpha of 0 means sprite is invisible, skip it */
             return;
             }
+        }
+
+    drawColorSet = 0;
+
+    if( mx_drawColor.comp.red < 255
+        ||
+        mx_drawColor.comp.green < 255
+        ||
+        mx_drawColor.comp.blue < 255 ) {
+        
+        drawColorSet = 1;
         }
     
     
@@ -4449,27 +4461,38 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
             for( x = startSpriteX;
                  x < endSpriteX;
                  x ++ ) {
-                
-                unsigned char  a  =  mx_spriteBytes[ spriteByte + 3 ];
 
+                unsigned char  r;
+                unsigned char  g;
+                unsigned char  b;
+                unsigned char  a  =  mx_spriteBytes[ spriteByte + 3 ];
+                
+                if( drawAlphaSet ) {
+                    a = (unsigned char)( ( a * mx_drawColor.comp.alpha ) / 255 );
+                    }
+                
                 if( a == 0 ) {
                     imageByte += 3;
                     spriteByte += 4;
                     continue;
                     }
-                
-                if( drawAlphaSet ) {
-                    a = (unsigned char)( ( a * mx_drawColor.comp.alpha ) / 255 );
+
+                r = mx_spriteBytes[ spriteByte ++ ];
+                g = mx_spriteBytes[ spriteByte ++ ];
+                b = mx_spriteBytes[ spriteByte ++ ];
+
+                if( drawColorSet ) {
+                    r = (unsigned char)( ( r * mx_drawColor.comp.red   ) / 255 );
+                    g = (unsigned char)( ( g * mx_drawColor.comp.green ) / 255 );
+                    b = (unsigned char)( ( b * mx_drawColor.comp.blue  ) / 255 );
                     }
-                    
+                
                 if( a == 255 ) {
 
                     int  v;
 
                     /* red */
-                    v = mx_gameImageBuffer[ imageByte  ]
-                        +
-                        mx_spriteBytes    [ spriteByte ];
+                    v = mx_gameImageBuffer[ imageByte  ] + r;
 
                     if( v > 255 ) {
                         v = 255;
@@ -4477,12 +4500,9 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
                     mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
 
                     imageByte  ++;
-                    spriteByte ++;
 
                     /* green */
-                    v = mx_gameImageBuffer[ imageByte  ]
-                        +
-                        mx_spriteBytes    [ spriteByte ];
+                    v = mx_gameImageBuffer[ imageByte  ] + g;
 
                     if( v > 255 ) {
                         v = 255;
@@ -4490,12 +4510,9 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
                     mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
 
                     imageByte  ++;
-                    spriteByte ++;
 
                     /* blue */
-                    v = mx_gameImageBuffer[ imageByte  ]
-                        +
-                        mx_spriteBytes    [ spriteByte ];
+                    v = mx_gameImageBuffer[ imageByte  ] + b;
 
                     if( v > 255 ) {
                         v = 255;
@@ -4503,7 +4520,6 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
                     mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
 
                     imageByte  ++;
-                    spriteByte ++;
                     }
                 else {
                     /* alpha blending */
@@ -4513,7 +4529,7 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
                     /* red */
                     v = mx_gameImageBuffer[ imageByte ]
                         +
-                        ( mx_spriteBytes[ spriteByte ] * a ) / 255;
+                        ( r * a ) / 255;
                     
                     if( v > 255 ) {
                         v = 255;
@@ -4521,12 +4537,11 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
                     mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
                 
                     imageByte  ++;
-                    spriteByte ++;
 
                     /* green */
                     v = mx_gameImageBuffer[ imageByte ]
                         +
-                        ( mx_spriteBytes[ spriteByte ] * a ) / 255;
+                        ( g * a ) / 255;
                     
                     if( v > 255 ) {
                         v = 255;
@@ -4534,12 +4549,11 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
                     mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
                 
                     imageByte  ++;
-                    spriteByte ++;
 
                     /* blue */
                     v = mx_gameImageBuffer[ imageByte ]
                         +
-                        ( mx_spriteBytes[ spriteByte ] * a ) / 255;
+                        ( b * a ) / 255;
                     
                     if( v > 255 ) {
                         v = 255;
@@ -4547,7 +4561,6 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
                     mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
                 
                     imageByte  ++;
-                    spriteByte ++;
                     }
             
                 /* skip the alpha in the sprite
@@ -4562,28 +4575,38 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
                  x < endSpriteX;
                  x ++ ) {
             
+                unsigned char  r;
+                unsigned char  g;
+                unsigned char  b;
                 unsigned char  a  =  mx_spriteBytes[ spriteByte + 3 ];
-                
+
+                if( drawAlphaSet ) {
+                    a = (unsigned char)( ( a * mx_drawColor.comp.alpha ) / 255 );
+                    }
+                                
                 if( a == 0 ) {
                     imageByte += 3;
                     spriteByte += 4;
                     continue;
                     }
 
-                if( drawAlphaSet ) {
-                    a = (unsigned char)( ( a * mx_drawColor.comp.alpha ) / 255 );
+                r = mx_spriteBytes[ spriteByte ++ ];
+                g = mx_spriteBytes[ spriteByte ++ ];
+                b = mx_spriteBytes[ spriteByte ++ ];
+
+                if( drawColorSet ) {
+                    r = (unsigned char)( ( r * mx_drawColor.comp.red   ) / 255 );
+                    g = (unsigned char)( ( g * mx_drawColor.comp.green ) / 255 );
+                    b = (unsigned char)( ( b * mx_drawColor.comp.blue  ) / 255 );
                     }
                 
                 if( a == 255 ) {
                     /* RGBA bytes */
-                    mx_gameImageBuffer[ imageByte  ++ ] =
-                        mx_spriteBytes[ spriteByte ++ ];
+                    mx_gameImageBuffer[ imageByte  ++ ] = r;
 
-                    mx_gameImageBuffer[ imageByte  ++ ] =
-                        mx_spriteBytes[ spriteByte ++ ];
+                    mx_gameImageBuffer[ imageByte  ++ ] = g;
 
-                    mx_gameImageBuffer[ imageByte  ++ ] =
-                        mx_spriteBytes[ spriteByte ++ ];
+                    mx_gameImageBuffer[ imageByte  ++ ] = b;
                     }
                 else {
                     /* alpha blending */
@@ -4593,36 +4616,33 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
                         (unsigned char)( 
                             ( mx_gameImageBuffer[ imageByte ] * ( 255 - a )
                               +
-                              mx_spriteBytes[ spriteByte ]    * a )
+                              r * a )
                             /
                             255 );
                 
                     imageByte  ++;
-                    spriteByte ++;
 
                     /* green */
                     mx_gameImageBuffer[ imageByte ] =
                         (unsigned char)( 
                             ( mx_gameImageBuffer[ imageByte ] * ( 255 - a )
                               +
-                              mx_spriteBytes[ spriteByte ]    * a )
+                              g * a )
                             /
                             255 );
                 
                     imageByte  ++;
-                    spriteByte ++;
 
                     /* blue */
                     mx_gameImageBuffer[ imageByte ] =
                         (unsigned char)( 
                             ( mx_gameImageBuffer[ imageByte ] * ( 255 - a )
                               +
-                              mx_spriteBytes[ spriteByte ]    * a )
+                              b * a )
                             /
                             255 );
                 
                     imageByte  ++;
-                    spriteByte ++;
                     }
             
                 /* skip the alpha in the sprite

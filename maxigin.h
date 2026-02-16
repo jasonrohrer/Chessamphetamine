@@ -6849,6 +6849,8 @@ static int mx_getLiveSoundEffects( int *outHandleBuffer,
 static void mx_nextLang( void );
 
 
+static void mx_checkLangNeedsReload( void );
+
 
 
 void minginGame_step( char  inFinalStep ) {
@@ -7210,7 +7212,8 @@ void minginGame_step( char  inFinalStep ) {
     
 
     mx_checkSpritesNeedReload();
-
+    mx_checkLangNeedsReload();
+    
     mx_processDoneSoundEffects();
 
     if( ! mx_playbackSpeedStep() ) {
@@ -7734,9 +7737,6 @@ static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
 
     if( readNum != 1 ) {
         /* read to end without finding anything but spaces */
-
-        mingin_log( "Failed to find non-whitespace character when "
-                    "reading string token from bulk data resource.\n" );
         return 0;
         }
 
@@ -14480,13 +14480,14 @@ static   int           mx_numTranslationStringBytes = 0;
 
 typedef struct MaxiginLanguage {
 
-        char          displayName[ MAXIGIN_LANGUAGE_NAME_MAX_LENGTH + 1 ];
-
+        char          displayName     [ MAXIGIN_LANGUAGE_NAME_MAX_LENGTH + 1 ];
+        char          bulkResourceName[ MAXIGIN_LANGUAGE_NAME_MAX_LENGTH + 1 ];
+        
         int           fontHandle;
 
         /* pointers to starts of strings in mx_translationStringBytes, or 0 of
            not present */
-        char         *stringPointers[ MAXIGIN_MAX_NUM_TRANSLATION_KEYS ];
+        int           stringStartBytes[ MAXIGIN_MAX_NUM_TRANSLATION_KEYS ];
         
     } MaxiginLanguage;
 
@@ -14522,6 +14523,48 @@ static void mx_clearTranslationKeys( void ) {
         }
     }
 
+
+
+/* removes a translation string from mx_translationStringBytes, slides
+   later strings back, and updates languages that point to those later strings
+*/
+static void mx_removeTranslationString( int  inStartByte ) {
+
+    char  *s         =  &( mx_translationStringBytes[ inStartByte ] );
+    int    len       =  maxigin_stringLength( s ) + 1;
+    int    b;
+    int    afterPos  =  inStartByte + len;
+    int    ln;
+    
+    for( b = afterPos;
+         b < MAXIGIN_MAX_TOTAL_TRANSLATION_STRING_BYTES;
+         b ++ ) {
+
+        mx_translationStringBytes[ b - len ] =
+            mx_translationStringBytes[ b ];
+        }
+
+    for( ln = 0;
+         ln < mx_numLanguages;
+         ln ++ ) {
+
+        MaxiginLanguage  *lang  =  &( mx_languages[ ln ] );
+        int               i;
+
+        for( i = 0;
+             i < MAXIGIN_MAX_NUM_TRANSLATION_KEYS;
+             i ++ ) {
+
+            if( lang->stringStartBytes[ i ] > inStartByte ) {
+                lang->stringStartBytes[ i ] -= len;
+                }
+            }
+        
+        }
+    }
+
+
+    
 
 
 /* returns -1 if no matching language font found */
@@ -14692,7 +14735,9 @@ static char mx_readQuotedString( int    inBulkReadHandle,
 
 
 
-static void mx_initLanguage( const char  *inLanguageBulkResourceName ) {
+/* inits language in mx_languages in inSlot, or adds to end if inSlot is -1 */
+static void mx_initLanguage( const char  *inLanguageBulkResourceName,
+                             int          inSlot ) {
 
     MaxiginLanguage  *lang;
     int               languageReadHandle;
@@ -14706,18 +14751,41 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName ) {
     char              success;
     int               i;
     const char       *nextKey;
+    char              isNewLangSlot;
     
     if( mx_numLanguages >= MAXIGIN_MAX_NUM_LANGUAGES ) {
         maxigin_logString( "Too many languages already loaded, skipping:  ",
                            inLanguageBulkResourceName );
         return;
         }
-    
+
+
+    if( maxigin_stringLength( inLanguageBulkResourceName )
+        >
+        MAXIGIN_LANGUAGE_NAME_MAX_LENGTH ) {
+
+        maxigin_logString( "Failed to loadlanguage bulk resource with name "
+                           "that is too long: ",
+                           inLanguageBulkResourceName );
+        return;
+        }
+        
     maxigin_logString( "Loading language:  ",
                        inLanguageBulkResourceName );
 
-    lang = &( mx_languages[ mx_numLanguages ] );
+    isNewLangSlot = 0;
+    
+    if( inSlot == -1 ) {
+        isNewLangSlot = 1;
+        inSlot = mx_numLanguages;
+        }
+    
+    lang = &( mx_languages[ inSlot ] );
 
+    
+    maxigin_stringCopy( inLanguageBulkResourceName,
+                        lang->bulkResourceName );
+    
 
     languageReadHandle = mingin_startReadBulkData( inLanguageBulkResourceName,
                                                    &dataLen );
@@ -14897,7 +14965,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName ) {
     for( i = 0;
          i < MAXIGIN_MAX_NUM_TRANSLATION_KEYS;
          i ++ ) {
-        lang->stringPointers[ i ] = 0;
+        lang->stringStartBytes[ i ] = -1;
         }
 
 
@@ -14950,11 +15018,11 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName ) {
             return;
             }
 
-        lang->stringPointers[ key ] =
-            &( mx_translationStringBytes[ mx_numTranslationStringBytes ] );
+        lang->stringStartBytes[ key ] = mx_numTranslationStringBytes;
 
         mx_numTranslationStringBytes +=
-            maxigin_stringLength( lang->stringPointers[ key ] );
+            maxigin_stringLength(
+                &( mx_translationStringBytes[ mx_numTranslationStringBytes ] ) );
 
         /* also advance past termination byte */
         mx_numTranslationStringBytes += 1;
@@ -14967,7 +15035,9 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName ) {
 
 
     /* language successfully loaded */
-    mx_numLanguages ++;
+    if( isNewLangSlot ) {
+        mx_numLanguages ++;
+        }
     }
 
 
@@ -14998,7 +15068,8 @@ static void mx_initLanguages( void ) {
 
     while( token != 0 ) {
 
-        mx_initLanguage( token );
+        mx_initLanguage( token,
+                         -1 );
 
         token = mx_readShortTokenFromBulkData( bulkHandle );
         }
@@ -15043,7 +15114,8 @@ void maxigin_drawLangText( int           inPhraseKey,
         }
 
 
-    langString = lang->stringPointers[ inPhraseKey ];
+    langString = &( mx_translationStringBytes[
+                        lang->stringStartBytes[ inPhraseKey ] ] );
 
     if( langString == 0 ) {
         if( ! mx_drawLangFailureShown ) {
@@ -15060,6 +15132,45 @@ void maxigin_drawLangText( int           inPhraseKey,
                       inLocationX,
                       inLocationY,
                       inAlign ); 
+    }
+
+
+
+static void mx_checkLangNeedsReload( void ) {
+    int  ln;
+
+    for( ln = 0;
+         ln < mx_numLanguages;
+         ln ++ ) {
+
+        MaxiginLanguage  *lang  =  &( mx_languages[ ln ] );
+        
+        if( mingin_getBulkDataChanged( lang->bulkResourceName ) ) {
+
+            int  k;
+
+            char  bulkName[ MAXIGIN_LANGUAGE_NAME_MAX_LENGTH + 1 ];
+
+            maxigin_stringCopy( lang->bulkResourceName,
+                                bulkName );
+            
+            for( k = 0;
+                 k < MAXIGIN_MAX_NUM_TRANSLATION_KEYS;
+                 k ++ ) {
+
+                if( lang->stringStartBytes[ k ] != -1 ) {
+
+                    mx_removeTranslationString( lang->stringStartBytes[ k ] );
+
+                    lang->stringStartBytes[ k ] = -1;
+                    }
+                }
+
+            /* re-init in same spot */
+            mx_initLanguage( lang->bulkResourceName,
+                             ln );
+            }
+        }
     }
 
 

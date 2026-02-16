@@ -1168,7 +1168,7 @@ void maxigin_drawSetAlpha( unsigned char  inAlpha );
       
   [jumpMaxiginDraw]
 */
-void maxigin_drawRestColor( void );
+void maxigin_drawResetColor( void );
 
 
 
@@ -4325,7 +4325,7 @@ void maxigin_drawSetAlpha( unsigned char  inAlpha ) {
 
 
 
-void maxigin_drawRestColor( void ) {
+void maxigin_drawResetColor( void ) {
     mx_drawColor.comp.red    =  255;
     mx_drawColor.comp.green  =  255;
     mx_drawColor.comp.blue   =  255;
@@ -14291,6 +14291,12 @@ void maxigin_drawText( int           inFontHandle,
             /* fixed width for all chars */
             charCenterOffsetFromPrev[ numSprites ] = f->fixedWidth;
             totalPixWidth += f->fixedWidth;
+
+            if( numSprites > 0 ) {
+                /* not first sprite */
+                charCenterOffsetFromPrev[ numSprites ] += f->spacing;
+                totalPixWidth += f->spacing;
+                } 
             }
 
         

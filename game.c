@@ -179,7 +179,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                               140,
                               MAXIGIN_LEFT );
         
-        maxigin_drawSetColor( 255, 255, 255, 255 );
+        maxigin_drawResetColor();
         maxigin_drawLangText( 2,
                               20,
                               160,
@@ -318,7 +318,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                       lineTip.x,
                       lineTip.y );
 
-    maxigin_drawSetColor( 255, 255, 255, 255 );
+    maxigin_drawResetColor();
 
     maxigin_drawGUI( &gameGUI );
     }

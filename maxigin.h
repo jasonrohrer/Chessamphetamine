@@ -1122,8 +1122,8 @@ void maxigin_drawLangText( int           inPhraseKey,
   
   Defaults to opaque white (255, 255, 255, 255).
 
-  The color components affect geometric shapes and do not change the colors
-  of sprites.
+  The color components affect geometric shapes and changes the colors of
+  sprites multiplicatively.
 
   The alpha value changes the transparency of both geometric shapes and sprites.
 
@@ -1160,6 +1160,15 @@ void maxigin_drawSetColor( unsigned char  inRed,
   [jumpMaxiginDraw]
 */
 void maxigin_drawSetAlpha( unsigned char  inAlpha );
+
+
+
+/*
+  Resets the draw color back to the default, pure white, fully opaque alpha.
+      
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawRestColor( void );
 
 
 
@@ -4312,6 +4321,15 @@ void maxigin_drawSetAlpha( unsigned char  inAlpha ) {
     
     mx_drawColor.comp.alpha  =  inAlpha;
 
+    }
+
+
+
+void maxigin_drawRestColor( void ) {
+    mx_drawColor.comp.red    =  255;
+    mx_drawColor.comp.green  =  255;
+    mx_drawColor.comp.blue   =  255;
+    mx_drawColor.comp.alpha  =  255;
     }
 
 

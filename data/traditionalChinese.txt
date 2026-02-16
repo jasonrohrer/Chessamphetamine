@@ -1,8 +1,10 @@
 "繁體中文"
 
+
+traditionalChineseFont.tga  16  2  8  12
+
 traditionalChineseFont.txt
 
-traditionalChineseFont.tga
 
 
 

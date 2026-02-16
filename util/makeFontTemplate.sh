@@ -2,15 +2,11 @@
 
 
 
-#fontFile="/home/jasonrohrer/Downloads/fusionPixelFont/fusion-pixel-12px-proportional-zh_hant.pcf"
+fontFile="sourceFonts/fusionPixel/fusion-pixel-12px-proportional-zh_hant.pcf"
 
-#fontFile="/home/jasonrohrer/Downloads/fusionPixelFont/fusion-pixel-10px-proportional-latin.pcf"
-
-fontFile="/home/jasonrohrer/Downloads/fusionPixelFont/fusion-pixel-12px-proportional-latin.pcf"
 
 fontSize=12
 
-#fontFile="/usr/share/fonts/X11/misc/unifont.pcf.gz"
 
 
 if [ $# -ne 3 ]

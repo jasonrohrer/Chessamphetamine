@@ -919,6 +919,46 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
 
 
 /*
+  Sets TGA-formatted sprites to customize maxigin_guiStartPanel appearance.
+
+  All parameters are names of TGA resource name in platform's bulk data
+  store.
+
+  Parameters:
+  
+      inTopLeftSpriteResource       top left corner.
+
+      inTopRightSpriteResource      top right corner.
+
+      inBottomLeftSpriteResource    bottom left corner.
+
+      inBottomRightSpriteResource   bottom right corner.
+
+      inLeftEdgeSpriteResource      left edge
+
+      inRightEdgeSpriteResource     right edge
+
+      inTopEdgeSpriteResource       top edge
+
+      inBottomEdgeSpriteResource    bottom edge
+
+      inFillSpriteResource          center fill
+
+  [jumpMaxiginInit]      
+*/ 
+void maxigin_initPanelSprites( const char  *inTopLeftSpriteResource,
+                               const char  *inTopRightSpriteResource,
+                               const char  *inBottomLeftSpriteResource,
+                               const char  *inBottomRightSpriteResource,
+                               const char  *inLeftEdgeSpriteResource,
+                               const char  *inRightEdgeSpriteResource,
+                               const char  *inTopEdgeSpriteResource,
+                               const char  *inBottomEdgeSpriteResource,
+                               const char  *inFillSpriteResource );
+
+
+
+/*
   Initializes the music loop that will play as background music in the game.
 
   Parameters:
@@ -1416,6 +1456,43 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                         int          inThumbHeight,
                         int          inThumbWidth,
                         char         inForceMoving );
+
+
+/*
+  Starts a sub-panel in an immediate-mode GUI, which will elastically contain
+  all GUI items created by calls up to maxigin_guiEndPanel.
+
+  Parameters:
+    
+      inGUI   pointer to the structure representing the GUI instance
+
+  Return:
+
+      panel parameter   that must be passed to maxigin_guiEndPanel
+
+      -1                on failure
+
+  [jumpMaxiginGeneral]
+*/
+int maxigin_guiStartPanel( MaxiginGUI  *inGUI );
+
+
+
+/*
+  Ends a sub-panel in an immediate-mode GUI, which will elastically contain
+  all GUI items created since maxigin_guiStartPanel.
+
+  Parameters:
+    
+      inGUI          pointer to the structure representing the GUI instance
+
+      inPanelParam   the panel parameter returned by maxigin_guiStartPanel
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_guiEndPanel( MaxiginGUI  *inGUI,
+                          int          inPanelParam );
+
 
 
 
@@ -2082,6 +2159,7 @@ struct MaxiginGUI {
         int    numDrawComponents;  
 
         struct {
+                char           skipDrawing;
                 char           additiveBlend;
                 unsigned char  red;
                 unsigned char  green;
@@ -2089,6 +2167,7 @@ struct MaxiginGUI {
                 unsigned char  alpha;
 
                 enum {
+                    MX_GUI_JUMP_LATER,
                     MX_GUI_DRAW_LINE,
                     MX_GUI_DRAW_RECT,
                     MX_GUI_FILL_RECT,
@@ -2097,6 +2176,21 @@ struct MaxiginGUI {
                     } drawType;
 
                 union {
+                        /* this is used to jump later in the sequence
+                           and draw some number of compoents from that
+                           spot (while marking them with skip so that
+                           they are skipped when encountered later
+                           in the sequence)
+
+                           For example, a panel that needs to be drawn
+                           behind a batch of components that come
+                           after the panel.
+                        */
+                        struct {
+                                int  jumpToIndex;
+                                int  numToDraw;
+                            } jump;
+                        
                         struct {
                                 int  startX;
                                 int  startY;
@@ -3747,7 +3841,7 @@ typedef struct MaxiginSliderSprites {
         /* index 0 for empty, 1 for full */
         int  left  [2];
         int  right [2];
-        int  bar[2];
+        int  bar   [2];
         int  sliver[2];
 
         /* index 0 for cold, 1 for hot, 2 for active */
@@ -3812,28 +3906,105 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
         maxigin_initSprite( inThumbActiveSpriteResource );
 
     mx_sliderSpritesSet =
-        ( mx_sliderSprites.left[ 0 ] > 0 )
+        ( mx_sliderSprites.left[ 0 ]   >= 0 )
         &&
-        ( mx_sliderSprites.left[ 1 ] > 0 )
+        ( mx_sliderSprites.left[ 1 ]   >= 0 )
         &&
-        ( mx_sliderSprites.right[ 0 ] > 0 )
+        ( mx_sliderSprites.right[ 0 ]  >= 0 )
         &&
-        ( mx_sliderSprites.right[ 1 ] > 0 )
+        ( mx_sliderSprites.right[ 1 ]  >= 0 )
         &&
-        ( mx_sliderSprites.bar[ 0 ] > 0 )
+        ( mx_sliderSprites.bar[ 0 ]    >= 0 )
         &&
-        ( mx_sliderSprites.bar[ 1 ] > 0 )
+        ( mx_sliderSprites.bar[ 1 ]    >= 0 )
         &&
-        ( mx_sliderSprites.sliver[ 0 ] > 0 )
+        ( mx_sliderSprites.sliver[ 0 ] >= 0 )
         &&
-        ( mx_sliderSprites.sliver[ 1 ] > 0 )
+        ( mx_sliderSprites.sliver[ 1 ] >= 0 )
         &&
-        ( mx_sliderSprites.thumb[ 0 ] > 0 )
+        ( mx_sliderSprites.thumb[ 0 ]  >= 0 )
         &&
-        ( mx_sliderSprites.thumb[ 1 ] > 0 )
+        ( mx_sliderSprites.thumb[ 1 ]  >= 0 )
         &&
-        ( mx_sliderSprites.thumb[ 2 ] > 0 );
+        ( mx_sliderSprites.thumb[ 2 ]  >= 0 );
     }
+
+
+
+typedef struct MaxiginPanelSprites {
+
+        /* tl, tr, bl, br */
+        int  corners[4];
+        
+        /* l, r, t, b */
+        int  sides  [4];
+        
+        int  fill;
+        
+    } MaxiginPanelSprites;
+
+
+char                   mx_panelSpritesSet  =  0;
+MaxiginPanelSprites    mx_panelSprites;
+
+
+
+void maxigin_initPanelSprites( const char  *inTopLeftSpriteResource,
+                               const char  *inTopRightSpriteResource,
+                               const char  *inBottomLeftSpriteResource,
+                               const char  *inBottomRightSpriteResource,
+                               const char  *inLeftEdgeSpriteResource,
+                               const char  *inRightEdgeSpriteResource,
+                               const char  *inTopEdgeSpriteResource,
+                               const char  *inBottomEdgeSpriteResource,
+                               const char  *inFillSpriteResource ) {
+    mx_panelSprites.corners[0] =
+        maxigin_initSprite( inTopLeftSpriteResource );
+    
+    mx_panelSprites.corners[1] =
+        maxigin_initSprite( inTopRightSpriteResource );
+    
+    mx_panelSprites.corners[2] =
+        maxigin_initSprite( inBottomLeftSpriteResource );
+    
+    mx_panelSprites.corners[2] =
+        maxigin_initSprite( inBottomRightSpriteResource );
+
+    mx_panelSprites.sides[0] =
+        maxigin_initSprite( inLeftEdgeSpriteResource );
+    
+    mx_panelSprites.sides[1] =
+        maxigin_initSprite( inRightEdgeSpriteResource );
+    
+    mx_panelSprites.sides[2] =
+        maxigin_initSprite( inTopEdgeSpriteResource );
+    
+    mx_panelSprites.sides[3] =
+        maxigin_initSprite( inBottomEdgeSpriteResource );
+
+    mx_panelSprites.fill =
+        maxigin_initSprite( inFillSpriteResource );
+
+    mx_panelSpritesSet =
+        ( mx_panelSprites.corners[0] >= 0 )
+        &&
+        ( mx_panelSprites.corners[1] >= 0 )
+        &&
+        ( mx_panelSprites.corners[2] >= 0 )
+        &&
+        ( mx_panelSprites.corners[3] >= 0 )
+        &&
+        ( mx_panelSprites.sides[0]   >= 0 )
+        &&
+        ( mx_panelSprites.sides[1]   >= 0 )
+        &&
+        ( mx_panelSprites.sides[2]   >= 0 )
+        &&
+        ( mx_panelSprites.sides[3]   >= 0 )
+        &&
+        ( mx_panelSprites.fill       >= 0 );
+    }
+
 
 
 /* strip handle is -1 to make a new strip
@@ -5744,98 +5915,135 @@ void maxigin_initGUI( MaxiginGUI *inGUI ) {
 
 
 
+
+static void mx_drawGUIComponent( MaxiginGUI  *inGUI,
+                                 int          inIndex ) {
+
+    int  i          =  inIndex;
+    int  drawType;
+    
+    if( inGUI->drawComponents[i].skipDrawing ) {
+            return;
+            }
+        
+    drawType = inGUI->drawComponents[i].drawType;
+
+    if( drawType == MX_GUI_JUMP_LATER ) {
+            
+        int  start  =  inGUI->drawComponents[i].drawParams.jump.jumpToIndex;
+        int  num    =  inGUI->drawComponents[i].drawParams.jump.numToDraw;
+        int  j;
+
+        for( j = start;
+             j < start + num;
+             j ++ ) {
+
+            mx_drawGUIComponent( inGUI,
+                                 j );
+            
+            /* skip it when we encounter in natural order later */
+            inGUI->drawComponents[j].skipDrawing = 1;
+            }
+
+        /* done drawing jump sequence */
+        return;
+        }
+
+    
+    maxigin_drawToggleAdditive( inGUI->drawComponents[i].additiveBlend );
+
+    if( drawType == MX_GUI_DRAW_LINE
+        ||
+        drawType == MX_GUI_DRAW_RECT
+        ||
+        drawType == MX_GUI_FILL_RECT ) {
+
+        maxigin_drawSetColor( inGUI->drawComponents[i].red,
+                              inGUI->drawComponents[i].green,
+                              inGUI->drawComponents[i].blue,
+                              inGUI->drawComponents[i].alpha );
+        }
+    else if( drawType == MX_GUI_DRAW_SPRITE
+             ||
+             drawType == MX_GUI_DRAW_SPRITE_SEQUENCE ) {
+
+        maxigin_drawSetAlpha( inGUI->drawComponents[i].alpha );
+        }
+
+    switch( drawType ) {
+            
+        case MX_GUI_DRAW_LINE:
+            maxigin_drawLine(
+                inGUI->drawComponents[i].drawParams.line.startX,
+                inGUI->drawComponents[i].drawParams.line.startY,
+                inGUI->drawComponents[i].drawParams.line.endX,
+                inGUI->drawComponents[i].drawParams.line.endY );
+            break;
+                
+        case MX_GUI_DRAW_RECT:
+            maxigin_drawRect(
+                inGUI->drawComponents[i].drawParams.rect.startX,
+                inGUI->drawComponents[i].drawParams.rect.startY,
+                inGUI->drawComponents[i].drawParams.rect.endX,
+                inGUI->drawComponents[i].drawParams.rect.endY );
+            break;
+                
+        case MX_GUI_FILL_RECT:
+            maxigin_drawFillRect(
+                inGUI->drawComponents[i].drawParams.rect.startX,
+                inGUI->drawComponents[i].drawParams.rect.startY,
+                inGUI->drawComponents[i].drawParams.rect.endX,
+                inGUI->drawComponents[i].drawParams.rect.endY );
+            break;
+                
+        case MX_GUI_DRAW_SPRITE:
+            maxigin_drawSprite(
+                inGUI->drawComponents[i].drawParams.sprite.spriteHandle,
+                inGUI->drawComponents[i].drawParams.sprite.centerX,
+                inGUI->drawComponents[i].drawParams.sprite.centerY );
+            break;
+        case MX_GUI_DRAW_SPRITE_SEQUENCE: {
+
+            int  s;
+            int  x   =  inGUI->drawComponents[i].
+                drawParams.spriteSequence.startCenterX;
+            int  y   =  inGUI->drawComponents[i].
+                drawParams.spriteSequence.startCenterY;
+                
+            for( s = 0;
+                 s < inGUI->drawComponents[i].
+                     drawParams.spriteSequence.count;
+                 s ++ ) {
+
+                maxigin_drawSprite(
+                    inGUI->drawComponents[i].
+                    drawParams.spriteSequence.spriteHandle,
+                    x,
+                    y );
+                
+                x += inGUI->drawComponents[i].
+                    drawParams.spriteSequence.offsetX;
+                y += inGUI->drawComponents[i].
+                    drawParams.spriteSequence.offsetY;
+                }
+                
+            }
+            break;            
+        }
+    }
+
+
+
 void maxigin_drawGUI( MaxiginGUI *inGUI ) {
 
     int  i;
-    int  drawType;
-    
 
     for( i = 0;
          i < inGUI->numDrawComponents;
          i ++ ) {
 
-        drawType = inGUI->drawComponents[i].drawType;
-        
-        maxigin_drawToggleAdditive( inGUI->drawComponents[i].additiveBlend );
-
-        if( drawType == MX_GUI_DRAW_LINE
-            ||
-            drawType == MX_GUI_DRAW_RECT
-            ||
-            drawType == MX_GUI_FILL_RECT ) {
-
-            maxigin_drawSetColor( inGUI->drawComponents[i].red,
-                                  inGUI->drawComponents[i].green,
-                                  inGUI->drawComponents[i].blue,
-                                  inGUI->drawComponents[i].alpha );
-            }
-        else if( drawType == MX_GUI_DRAW_SPRITE
-                 ||
-                 drawType == MX_GUI_DRAW_SPRITE_SEQUENCE ) {
-
-            maxigin_drawSetAlpha( inGUI->drawComponents[i].alpha );
-            }
-
-        switch( drawType ) {
-            
-            case MX_GUI_DRAW_LINE:
-                maxigin_drawLine(
-                    inGUI->drawComponents[i].drawParams.line.startX,
-                    inGUI->drawComponents[i].drawParams.line.startY,
-                    inGUI->drawComponents[i].drawParams.line.endX,
-                    inGUI->drawComponents[i].drawParams.line.endY );
-                break;
-                
-            case MX_GUI_DRAW_RECT:
-                maxigin_drawRect(
-                    inGUI->drawComponents[i].drawParams.rect.startX,
-                    inGUI->drawComponents[i].drawParams.rect.startY,
-                    inGUI->drawComponents[i].drawParams.rect.endX,
-                    inGUI->drawComponents[i].drawParams.rect.endY );
-                break;
-                
-            case MX_GUI_FILL_RECT:
-                maxigin_drawFillRect(
-                    inGUI->drawComponents[i].drawParams.rect.startX,
-                    inGUI->drawComponents[i].drawParams.rect.startY,
-                    inGUI->drawComponents[i].drawParams.rect.endX,
-                    inGUI->drawComponents[i].drawParams.rect.endY );
-                break;
-                
-            case MX_GUI_DRAW_SPRITE:
-                maxigin_drawSprite(
-                    inGUI->drawComponents[i].drawParams.sprite.spriteHandle,
-                    inGUI->drawComponents[i].drawParams.sprite.centerX,
-                    inGUI->drawComponents[i].drawParams.sprite.centerY );
-                break;
-            case MX_GUI_DRAW_SPRITE_SEQUENCE: {
-
-                int  s;
-                int  x   =  inGUI->drawComponents[i].
-                                drawParams.spriteSequence.startCenterX;
-                int  y   =  inGUI->drawComponents[i].
-                                drawParams.spriteSequence.startCenterY;
-                
-                for( s = 0;
-                     s < inGUI->drawComponents[i].
-                         drawParams.spriteSequence.count;
-                     s ++ ) {
-
-                    maxigin_drawSprite(
-                        inGUI->drawComponents[i].
-                            drawParams.spriteSequence.spriteHandle,
-                        x,
-                        y );
-                
-                    x += inGUI->drawComponents[i].
-                        drawParams.spriteSequence.offsetX;
-                    y += inGUI->drawComponents[i].
-                        drawParams.spriteSequence.offsetY;
-                    }
-                
-                }
-                break;            
-            }
+        mx_drawGUIComponent( inGUI,
+                             i );
         }
     }
 
@@ -5920,6 +6128,8 @@ static void mx_guiAddLine( MaxiginGUI    *inGUI,
                     inAdditiveBlend,
                     inColor );
 
+    inGUI->drawComponents[i].skipDrawing = 0;
+
     inGUI->drawComponents[i].drawType = MX_GUI_DRAW_LINE;
     
     inGUI->drawComponents[i].drawParams.line.startX = inStartX;
@@ -5954,6 +6164,8 @@ static void mx_guiAddRect( MaxiginGUI    *inGUI,
                     inAdditiveBlend,
                     inColor );
 
+    inGUI->drawComponents[i].skipDrawing = 0;
+    
     inGUI->drawComponents[i].drawType = inDrawType;
     
     inGUI->drawComponents[i].drawParams.rect.startX = inStartX;
@@ -6030,6 +6242,8 @@ static void mx_guiAddSprite( MaxiginGUI    *inGUI,
                     inAdditiveBlend,
                     &c );
 
+    inGUI->drawComponents[i].skipDrawing = 0;
+    
     inGUI->drawComponents[i].drawType = MX_GUI_DRAW_SPRITE;
     
     inGUI->drawComponents[i].drawParams.sprite.spriteHandle = inSpriteHandle;
@@ -6070,6 +6284,8 @@ static void mx_guiAddSpriteSequence( MaxiginGUI    *inGUI,
                     inAdditiveBlend,
                     &c );
 
+    inGUI->drawComponents[i].skipDrawing = 0;
+    
     inGUI->drawComponents[i].drawType = MX_GUI_DRAW_SPRITE_SEQUENCE;
     
     inGUI->drawComponents[i].drawParams.spriteSequence.spriteHandle
@@ -6656,6 +6872,70 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
     return ( inGUI->active == inCurrentValue );
     }
 
+
+
+int maxigin_guiStartPanel(MaxiginGUI  *inGUI ) {
+
+    int  i  =  inGUI->numDrawComponents;
+
+    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
+        mingin_log( "Error:  trying to add a panel to a full "
+                    "MaxiginGUI instance.\n" );
+        return -1;
+        }
+    
+    inGUI->drawComponents[i].drawType = MX_GUI_JUMP_LATER;
+
+    inGUI->drawComponents[i].drawParams.jump.jumpToIndex = -1;
+
+    inGUI->numDrawComponents ++;
+    
+    
+    /* starting point, everthing before is drawn outside the panel */
+    return i;
+    }
+
+
+
+void maxigin_guiEndPanel( MaxiginGUI  *inGUI,
+                          int          inPanelParam ) {
+
+    int  startOfPanel  =  inGUI->numDrawComponents;
+    int  panelParts    =  0;
+    
+    if( inPanelParam == -1 ) {
+        /* failed to start it */
+        return;
+        }
+    
+    if( startOfPanel >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
+        mingin_log( "Error:  trying to end a panel in a full "
+                    "MaxiginGUI instance.\n" );
+        return;
+        }
+
+    inGUI->drawComponents[inPanelParam].drawParams.jump.jumpToIndex =
+        startOfPanel;
+
+    /* fixme:
+       --find full x/y extent of components added since panel was started
+
+       --Find minimum panel dimensions to contain these, based on size
+         of corners, sides, and fill.
+
+       --Center that panel on the x/y extent of the components.
+
+       --Add those panel components (corners, sides, fill )
+
+       --OR simply draw a rectangle of the appropriate size (if sprites
+         not defined  )
+
+       --Update our jump draw component for the panel */
+
+    inGUI->drawComponents[inPanelParam].drawParams.jump.numToDraw =
+        panelParts;
+
+    }
 
 
 

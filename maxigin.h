@@ -6475,7 +6475,7 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
             else {
                 /* in between min and max */
 
-                v = ( x - inStartX  + 1 ) * ( inMaxValue - inMinValue )
+                v = ( x - inStartX ) * ( inMaxValue - inMinValue )
                     /
                     ( inEndX - inStartX )
                     + inMinValue;

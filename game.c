@@ -71,6 +71,7 @@ static int          stripC        =   0;
 static MaxiginGUI   gameGUI;
 static int          sliderValue   =   7;
 static int          sliderValueB  =   7;
+static int          sliderValueC  =   7;
 
 static int          plunkSound    =  -1;
 
@@ -363,6 +364,7 @@ void maxiginGame_step( void ) {
     char  pointerLive;
     int   pointerX;
     int   pointerY;
+    int   panel;
     
     char  stickLive;
 
@@ -550,6 +552,11 @@ void maxiginGame_step( void ) {
 
     maxigin_startGUI( &gameGUI );
 
+    panel = maxigin_guiStartPanel( &gameGUI,
+                                   sliderValueC,
+                                   50,
+                                   120,
+                                   100 );
     
     maxigin_guiSlider( &gameGUI,
                        &sliderValue,
@@ -557,7 +564,7 @@ void maxiginGame_step( void ) {
                        10,
                        -50,
                        50,
-                       80,
+                       25,
                        10,
                        20,
                        10,
@@ -576,6 +583,22 @@ void maxiginGame_step( void ) {
                        10,
                        0 );
 
+    maxigin_guiEndPanel( &gameGUI,
+                         panel );
+                         
+
+    maxigin_guiSlider( &gameGUI,
+                       &sliderValueC,
+                       0,
+                       200,
+                       -50,
+                       50,
+                       0,
+                       10,
+                       20,
+                       10,
+                       0 );
+    
     maxigin_endGUI( &gameGUI );
     
     }
@@ -723,6 +746,7 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( sliderValue );
     REGISTER_VAL_MEM( sliderValueB );
+    REGISTER_VAL_MEM( sliderValueC );
 
     REGISTER_VAL_MEM( gameGUI );
     

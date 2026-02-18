@@ -2194,6 +2194,7 @@ struct MaxiginGUI {
                 unsigned char  alpha;
 
                 enum {
+                    MX_GUI_ADD_OFFSET,
                     MX_GUI_DRAW_LINE,
                     MX_GUI_DRAW_RECT,
                     MX_GUI_FILL_RECT,
@@ -2202,6 +2203,11 @@ struct MaxiginGUI {
                     } drawType;
 
                 union {
+                        struct {
+                                int  plusX;
+                                int  plusY;
+                            } offset;
+                        
                         struct {
                                 int  startX;
                                 int  startY;
@@ -5948,22 +5954,25 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
             ||
             drawType == MX_GUI_DRAW_RECT
             ||
-            drawType == MX_GUI_FILL_RECT ) {
+            drawType == MX_GUI_FILL_RECT
+            ||
+            drawType == MX_GUI_DRAW_SPRITE
+            ||
+            drawType == MX_GUI_DRAW_SPRITE_SEQUENCE ) {
 
             maxigin_drawSetColor( inGUI->drawComponents[i].red,
                                   inGUI->drawComponents[i].green,
                                   inGUI->drawComponents[i].blue,
                                   inGUI->drawComponents[i].alpha );
             }
-        else if( drawType == MX_GUI_DRAW_SPRITE
-                 ||
-                 drawType == MX_GUI_DRAW_SPRITE_SEQUENCE ) {
-
-            maxigin_drawSetAlpha( inGUI->drawComponents[i].alpha );
-            }
 
         switch( drawType ) {
-            
+
+            case MX_GUI_ADD_OFFSET:
+                xO += inGUI->drawComponents[i].drawParams.offset.plusX;
+                yO += inGUI->drawComponents[i].drawParams.offset.plusY;
+                break;
+                
             case MX_GUI_DRAW_LINE:
                 maxigin_drawLine(
                     inGUI->drawComponents[i].drawParams.line.startX + xO,
@@ -6856,22 +6865,90 @@ int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
                            int          inWidth,
                            int          inHeight  ) {
 
-    /* temp fix warning */
-    if( inGUI ||
-        inCenterX || inCenterY || inWidth || inHeight ) {
+    int           i  =  inGUI->numDrawComponents;
+    MaxiginColor  c;
+
+    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
+        mingin_log( "Error:  trying to add a panel to a full "
+                    "MaxiginGUI instance.\n" );
         return -1;
         }
-
-    return -1;
     
+    inGUI->zeroOffsetX += inCenterX;
+    inGUI->zeroOffsetY += inCenterY;
+
+    inGUI->drawComponents[i].drawType = MX_GUI_ADD_OFFSET;
+    
+    inGUI->drawComponents[i].drawParams.offset.plusX = inCenterX;
+    inGUI->drawComponents[i].drawParams.offset.plusY = inCenterY;
+
+    inGUI->numDrawComponents ++;
+
+
+    /* fixme:  this is a place-holder panel when we have no panel
+       sprites...
+
+       --need to spruce this up
+
+       --need to add alternative drawing code for sprite version
+    */
+    
+    mx_makeColorGray( &c,
+                      64 );
+
+    c.comp.alpha = 128;
+    
+    mx_guiAddFillRect( inGUI,
+                       0,
+                       &c,
+                       -inWidth / 2,
+                       -inHeight / 2,
+                       inWidth / 2,
+                       inHeight / 2 );
+
+    return i;
     }
 
 
 void maxigin_guiEndPanel( MaxiginGUI  *inGUI,
                           int          inPanelHandle ) {
-    if( inGUI || inPanelHandle ) {
+
+    int  i    =  inPanelHandle;
+    int  cX;
+    int  cY;
+    
+    if( i < 0 ) {
         return;
         }
+
+    if( inGUI->drawComponents[i].drawType != MX_GUI_ADD_OFFSET ) {
+        mingin_log( "Error:  panel handle mismatch in "
+                    "MaxiginGUI instance.\n" );
+        return;
+        }
+
+    /* undo the offset setup when our panel was created */
+    cX = inGUI->drawComponents[i].drawParams.offset.plusX;
+    cY = inGUI->drawComponents[i].drawParams.offset.plusY;
+    
+    inGUI->zeroOffsetX -= cX;
+    inGUI->zeroOffsetY -= cY;
+
+    /* add a draw component that undoes the offset in our draw sequence */
+    i  =  inGUI->numDrawComponents;
+
+    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
+        mingin_log( "Error:  trying to end a panel in a full "
+                    "MaxiginGUI instance.\n" );
+        return;
+        }
+
+    inGUI->drawComponents[i].drawType = MX_GUI_ADD_OFFSET;
+    
+    inGUI->drawComponents[i].drawParams.offset.plusX = -cX;
+    inGUI->drawComponents[i].drawParams.offset.plusY = -cY;
+
+    inGUI->numDrawComponents ++;
     }
 
 

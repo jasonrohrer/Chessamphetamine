@@ -1407,7 +1407,7 @@ void maxigin_endGUI( MaxiginGUI *inGUI );
 /*
   Adds a slider to a GUI instance in immediate mode.
 
-  X and Y coordinates are relative to center of containing panel or window.
+  X,Y parameters are relative to the containing GUI (or super-panel) center.
 
   Parameters:
     
@@ -1466,6 +1466,8 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
 
   All GUI items created by calls up to maxigin_guiEndPanel will relative
   to the center of this panel.
+
+  X,Y parameters for this panel are relative to the GUI (or super-panel) center.
 
   Parameters:
     
@@ -2154,6 +2156,13 @@ void maxigin_flexHashFinish( MaxiginFlexHashState  *inState );
 */
 struct MaxiginGUI {
 
+
+        /* the absolute position of GUI 0,0 in the game native screen
+           starts in the center of the window for a new GUI,
+           but changes as sub-panels are opened and closed */
+        int  zeroOffsetX;
+        int  zeroOffsetY;
+        
         /* Track ID of hot/active component across steps.
            Hot means mouse is over.
            Active means mouse was clicked on component in past and is
@@ -5906,6 +5915,9 @@ void maxigin_drawFillRect( int  inStartX,
 
 
 void maxigin_initGUI( MaxiginGUI *inGUI ) {
+
+    inGUI->zeroOffsetX        = MAXIGIN_GAME_NATIVE_W / 2;
+    inGUI->zeroOffsetY        = MAXIGIN_GAME_NATIVE_H / 2;
     
     inGUI->hot                = 0;
     inGUI->active             = 0;
@@ -5921,7 +5933,8 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
 
     int  i;
     int  drawType;
-    
+    int  xO         =  inGUI->zeroOffsetX;
+    int  yO         =  inGUI->zeroOffsetY;
 
     for( i = 0;
          i < inGUI->numDrawComponents;
@@ -5953,41 +5966,41 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
             
             case MX_GUI_DRAW_LINE:
                 maxigin_drawLine(
-                    inGUI->drawComponents[i].drawParams.line.startX,
-                    inGUI->drawComponents[i].drawParams.line.startY,
-                    inGUI->drawComponents[i].drawParams.line.endX,
-                    inGUI->drawComponents[i].drawParams.line.endY );
+                    inGUI->drawComponents[i].drawParams.line.startX + xO,
+                    inGUI->drawComponents[i].drawParams.line.startY + yO,
+                    inGUI->drawComponents[i].drawParams.line.endX + xO,
+                    inGUI->drawComponents[i].drawParams.line.endY + yO );
                 break;
                 
             case MX_GUI_DRAW_RECT:
                 maxigin_drawRect(
-                    inGUI->drawComponents[i].drawParams.rect.startX,
-                    inGUI->drawComponents[i].drawParams.rect.startY,
-                    inGUI->drawComponents[i].drawParams.rect.endX,
-                    inGUI->drawComponents[i].drawParams.rect.endY );
+                    inGUI->drawComponents[i].drawParams.rect.startX + xO,
+                    inGUI->drawComponents[i].drawParams.rect.startY + yO,
+                    inGUI->drawComponents[i].drawParams.rect.endX + xO,
+                    inGUI->drawComponents[i].drawParams.rect.endY + yO );
                 break;
                 
             case MX_GUI_FILL_RECT:
                 maxigin_drawFillRect(
-                    inGUI->drawComponents[i].drawParams.rect.startX,
-                    inGUI->drawComponents[i].drawParams.rect.startY,
-                    inGUI->drawComponents[i].drawParams.rect.endX,
-                    inGUI->drawComponents[i].drawParams.rect.endY );
+                    inGUI->drawComponents[i].drawParams.rect.startX + xO,
+                    inGUI->drawComponents[i].drawParams.rect.startY + yO,
+                    inGUI->drawComponents[i].drawParams.rect.endX + xO,
+                    inGUI->drawComponents[i].drawParams.rect.endY + yO );
                 break;
                 
             case MX_GUI_DRAW_SPRITE:
                 maxigin_drawSprite(
                     inGUI->drawComponents[i].drawParams.sprite.spriteHandle,
-                    inGUI->drawComponents[i].drawParams.sprite.centerX,
-                    inGUI->drawComponents[i].drawParams.sprite.centerY );
+                    inGUI->drawComponents[i].drawParams.sprite.centerX + xO,
+                    inGUI->drawComponents[i].drawParams.sprite.centerY + yO );
                 break;
             case MX_GUI_DRAW_SPRITE_SEQUENCE: {
 
                 int  s;
                 int  x   =  inGUI->drawComponents[i].
-                                drawParams.spriteSequence.startCenterX;
+                                drawParams.spriteSequence.startCenterX + xO;
                 int  y   =  inGUI->drawComponents[i].
-                                drawParams.spriteSequence.startCenterY;
+                                drawParams.spriteSequence.startCenterY + yO;
                 
                 for( s = 0;
                      s < inGUI->drawComponents[i].
@@ -6355,6 +6368,9 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
         avail = maxigin_getPointerLocation( &x,
                                             &y );
 
+        x -= inGUI->zeroOffsetX;
+        y -= inGUI->zeroOffsetY;
+
         if( avail ) {
             char  over  =  0;
 
@@ -6437,6 +6453,9 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
             
         avail = maxigin_getPointerLocation( &x,
                                             &y );
+
+        x -= inGUI->zeroOffsetX;
+        y -= inGUI->zeroOffsetY;
 
         if( avail ) {
 

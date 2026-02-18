@@ -197,10 +197,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                           20,
                           220,
                           MAXIGIN_LEFT );
-                       
-
-
-    return;
     
     
     for( i = 0;
@@ -559,9 +555,9 @@ void maxiginGame_step( void ) {
                        &sliderValue,
                        0,
                        10,
-                       30,
-                       MAXIGIN_GAME_NATIVE_W - 30,
-                       30,
+                       -50,
+                       50,
+                       80,
                        10,
                        20,
                        10,
@@ -572,9 +568,9 @@ void maxiginGame_step( void ) {
                        &sliderValueB,
                        0,
                        200,
-                       30,
-                       MAXIGIN_GAME_NATIVE_W - 30,
+                       -50,
                        50,
+                       0,
                        10,
                        20,
                        10,

@@ -365,6 +365,7 @@ void maxiginGame_step( void ) {
     int   pointerX;
     int   pointerY;
     int   panel;
+    int   subPanel;
     
     char  stickLive;
 
@@ -570,6 +571,11 @@ void maxiginGame_step( void ) {
                        10,
                        0 );
 
+    subPanel = maxigin_guiStartPanel( &gameGUI,
+                                      0,
+                                      -30 + sliderValueC / 10,
+                                      110,
+                                      30 );
 
     maxigin_guiSlider( &gameGUI,
                        &sliderValueB,
@@ -582,11 +588,19 @@ void maxiginGame_step( void ) {
                        20,
                        10,
                        0 );
+    
+    maxigin_guiEndPanel( &gameGUI,
+                         subPanel );
 
     maxigin_guiEndPanel( &gameGUI,
                          panel );
                          
 
+    panel = maxigin_guiStartPanel( &gameGUI,
+                                   -50,
+                                   -50,
+                                   120,
+                                   100 );
     maxigin_guiSlider( &gameGUI,
                        &sliderValueC,
                        0,
@@ -598,6 +612,9 @@ void maxiginGame_step( void ) {
                        20,
                        10,
                        0 );
+    
+    maxigin_guiEndPanel( &gameGUI,
+                         panel );
     
     maxigin_endGUI( &gameGUI );
     

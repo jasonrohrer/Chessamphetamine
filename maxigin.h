@@ -247,7 +247,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS
-#define  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS  64
+#define  MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS  256
 #endif
 
 
@@ -926,23 +926,24 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
 
   Parameters:
   
-      inTopLeftSpriteResource       top left corner.
+      inTopLeftSpriteResource       top left corner at center of sprite
 
-      inTopRightSpriteResource      top right corner.
+      inTopRightSpriteResource      top right corner at center of sprite
 
-      inBottomLeftSpriteResource    bottom left corner.
+      inBottomLeftSpriteResource    bottom left corner at center of sprite
 
-      inBottomRightSpriteResource   bottom right corner.
+      inBottomRightSpriteResource   bottom right corner at center of sprite
 
-      inLeftEdgeSpriteResource      left edge
+      inLeftEdgeSpriteResource      left edge at center of sprite
 
-      inRightEdgeSpriteResource     right edge
+      inRightEdgeSpriteResource     right edge at center of sprite
 
-      inTopEdgeSpriteResource       top edge
+      inTopEdgeSpriteResource       top edge at center of sprite
 
-      inBottomEdgeSpriteResource    bottom edge
+      inBottomEdgeSpriteResource    bottom edge at center of sprite
 
-      inFillSpriteResource          center fill
+      inFillSpriteResource          center fill, edge-to-edge in sprite
+                                    with no transparency around.
 
   [jumpMaxiginInit]      
 */ 
@@ -1409,6 +1410,9 @@ void maxigin_endGUI( MaxiginGUI *inGUI );
 
   X,Y parameters are relative to the containing GUI (or super-panel) center.
 
+  Some of these visual dimensions have no effect if maxigin_initSliderSprites
+  has been called (sprite-based sliders are drawn instead).
+
   Parameters:
     
       inGUI            pointer to the structure representing the GUI instance
@@ -1469,6 +1473,10 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
 
   X,Y parameters for this panel are relative to the GUI (or super-panel) center.
 
+  Note that inWidth and inHeight are the *minimum* width and height, since
+  if sprites are set with maxigin_initPanelSprites, then the panel will
+  be whole multiples of the fill sprite dimensions.
+  
   Parameters:
     
       inGUI       pointer to the structure representing the GUI instance
@@ -3984,7 +3992,7 @@ void maxigin_initPanelSprites( const char  *inTopLeftSpriteResource,
     mx_panelSprites.corners[2] =
         maxigin_initSprite( inBottomLeftSpriteResource );
     
-    mx_panelSprites.corners[2] =
+    mx_panelSprites.corners[3] =
         maxigin_initSprite( inBottomRightSpriteResource );
 
     mx_panelSprites.sides[0] =
@@ -6896,46 +6904,149 @@ int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
        --need to add alternative drawing code for sprite version
     */
 
-    /* shadow */
-    mx_makeColorGray( &c,
-                      0 );
+    if( mx_panelSpritesSet ) {
 
-    c.comp.alpha = 64;
+        int             fill          =  mx_panelSprites.fill;
+        MaxiginSprite  *fillS         =  &( mx_sprites[ fill ] );
+        int             fillW         =  fillS->w;
+        int             fillH         =  fillS->h;
+        int             numFillRows;
+        int             numFillCols;
+        int             totalFillW;
+        int             totalFillH;
+        int             fillStartX;
+        int             fillStartY;
+        int             fillEndX;
+        int             fillEndY;
+        int             r;
+        
+        numFillCols = inWidth / fillW;
+
+        if( numFillCols * fillW < inWidth ) {
+            /* round up */
+            numFillCols ++;
+            }
+        
+        numFillRows = inHeight / fillH;
+
+        if( numFillRows * fillH < inHeight ) {
+            /* round up */
+            numFillRows ++;
+            }
+
+        totalFillW = numFillCols * fillW;
+        totalFillH = numFillRows * fillH;
+
+        fillStartX = ( - totalFillW / 2 ) + fillW / 2;
+        fillStartY = ( - totalFillH / 2 ) + fillH / 2;
+
+        fillEndX = fillStartX + ( numFillCols - 1 ) * fillW;
+        fillEndY = fillStartY + ( numFillRows - 1 ) * fillH;
+
+        /*
+          typedef struct MaxiginPanelSprites {
+
+        tl, tr, bl, br 
+        int  corners[4];
+        
+         l, r, t, b 
+        int  sides  [4];
+        
+        int  fill;
+        
+    } MaxiginPanelSprites;
+        */
+        /* lay down fill first */
+        for( r = 0;
+             r < numFillRows;
+             r ++ ) {
+            
+            mx_guiAddSpriteSequence( inGUI,
+                                     0,
+                                     255,
+                                     fill,
+                                     fillStartX,
+                                     fillStartY + r * fillH,
+                                     fillW,
+                                     0,
+                                     numFillCols );
+            }
+
+        /* corners on top */
+        mx_guiAddSprite( inGUI,
+                         0,
+                         255,
+                         mx_panelSprites.corners[0],
+                         fillStartX - fillW / 2,
+                         fillStartY - fillH / 2 );
+
+        mx_guiAddSprite( inGUI,
+                         0,
+                         255,
+                         mx_panelSprites.corners[1],
+                         fillEndX   + fillW / 2,
+                         fillStartY - fillH / 2 );
+
+        mx_guiAddSprite( inGUI,
+                         0,
+                         255,
+                         mx_panelSprites.corners[2],
+                         fillStartX - fillW / 2,
+                         fillEndY   + fillH / 2 );
+
+        mx_guiAddSprite( inGUI,
+                         0,
+                         255,
+                         mx_panelSprites.corners[3],
+                         fillEndX   + fillW / 2,
+                         fillEndY   + fillH / 2 );
+
+        }
+    else {
+        /* no sprites, draw with rectangles */
+
+        /* shadow */
+        mx_makeColorGray( &c,
+                          0 );
+
+        c.comp.alpha = 64;
     
-    mx_guiAddFillRect( inGUI,
-                       0,
-                       &c,
-                       -inWidth  / 2 - 2,
-                       -inHeight / 2 + 2,
-                        inWidth  / 2 - 2,
-                        inHeight / 2 + 2 );
+        mx_guiAddFillRect( inGUI,
+                           0,
+                           &c,
+                           -inWidth  / 2 - 2,
+                           -inHeight / 2 + 2,
+                           inWidth   / 2 - 2 - 1,
+                           inHeight  / 2 + 2 - 1 );
 
     
-    mx_makeColorGray( &c,
-                      64 );
+        mx_makeColorGray( &c,
+                          64 );
 
-    c.comp.alpha = 255;
+        c.comp.alpha = 64;
     
-    mx_guiAddFillRect( inGUI,
-                       0,
-                       &c,
-                       -inWidth / 2,
-                       -inHeight / 2,
-                       inWidth / 2,
-                       inHeight / 2 );
+        mx_guiAddFillRect( inGUI,
+                           0,
+                           &c,
+                           -inWidth  / 2,
+                           -inHeight / 2,
+                           inWidth   / 2 - 1,
+                           inHeight  / 2 - 1 );
 
-    mx_makeColorGray( &c,
-                      128 );
+        mx_makeColorGray( &c,
+                          128 );
 
-    c.comp.alpha = 255;
+        c.comp.alpha = 64;
     
-    mx_guiAddDrawRect( inGUI,
-                       0,
-                       &c,
-                       -inWidth / 2,
-                       -inHeight / 2,
-                       inWidth / 2,
-                       inHeight / 2 );
+        mx_guiAddDrawRect( inGUI,
+                           0,
+                           &c,
+                           -inWidth  / 2,
+                           -inHeight / 2,
+                           inWidth   / 2 - 1,
+                           inHeight  / 2 - 1 );
+        }
+    
 
     return i;
     }

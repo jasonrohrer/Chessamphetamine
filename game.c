@@ -557,7 +557,7 @@ void maxiginGame_step( void ) {
                                    sliderValueC,
                                    40,
                                    120,
-                                   100 );
+                                   104 );
     
     maxigin_guiSlider( &gameGUI,
                        &sliderValue,
@@ -574,8 +574,8 @@ void maxiginGame_step( void ) {
     subPanel = maxigin_guiStartPanel( &gameGUI,
                                       0,
                                       -30 + sliderValueC / 10,
-                                      110,
-                                      30 );
+                                      108,
+                                      32 );
 
     maxigin_guiSlider( &gameGUI,
                        &sliderValueB,
@@ -600,7 +600,7 @@ void maxiginGame_step( void ) {
                                    -50,
                                    -50,
                                    120,
-                                   100 );
+                                   104 );
     maxigin_guiSlider( &gameGUI,
                        &sliderValueC,
                        0,
@@ -707,7 +707,7 @@ void maxiginGame_init( void ) {
 
     mingin_registerStickAxis( BOX_THICK,  thickMapping );
 
-
+    
     maxigin_initSliderSprites( "sliderLeftEndEmpty.tga",
                                "sliderLeftEndFull.tga",
                                "sliderRightEndEmpty.tga",
@@ -719,7 +719,27 @@ void maxiginGame_init( void ) {
                                "sliderThumbPassive.tga",
                                "sliderThumbHot.tga",
                                "sliderThumbActive.tga" );
-    
+
+    /*
+    maxigin_initPanelSprites( "panelTopLeft.tga",
+                              "panelTopRight.tga",
+                              "panelBottomLeft.tga",
+                              "panelBottomRight.tga",
+                              "panelLeftEdge.tga",
+                              "panelRightEdge.tga",
+                              "panelTopEdge.tga",
+                              "panelBottomEdge.tga",
+                              "panelFill.tga" );
+    */
+    maxigin_initPanelSprites( "panelTopLeft.tga",
+                              "panelTopRight.tga",
+                              "panelBottomLeft.tga",
+                              "panelBottomRight.tga",
+                              "panelTopLeft.tga",
+                              "panelTopLeft.tga",
+                              "panelTopLeft.tga",
+                              "panelTopLeft.tga",
+                              "panelFill.tga" );
 
     maxigin_initGUI( &gameGUI );
 

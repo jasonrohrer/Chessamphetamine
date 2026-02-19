@@ -6037,6 +6037,9 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
 
 
 void maxigin_startGUI( MaxiginGUI *inGUI ) {
+    inGUI->zeroOffsetX        = MAXIGIN_GAME_NATIVE_W / 2;
+    inGUI->zeroOffsetY        = MAXIGIN_GAME_NATIVE_H / 2;
+    
     inGUI->hot               = 0;
     inGUI->numDrawComponents = 0;
     }
@@ -6892,13 +6895,41 @@ int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
 
        --need to add alternative drawing code for sprite version
     */
+
+    /* shadow */
+    mx_makeColorGray( &c,
+                      0 );
+
+    c.comp.alpha = 64;
+    
+    mx_guiAddFillRect( inGUI,
+                       0,
+                       &c,
+                       -inWidth  / 2 - 2,
+                       -inHeight / 2 + 2,
+                        inWidth  / 2 - 2,
+                        inHeight / 2 + 2 );
+
     
     mx_makeColorGray( &c,
                       64 );
 
-    c.comp.alpha = 128;
+    c.comp.alpha = 255;
     
     mx_guiAddFillRect( inGUI,
+                       0,
+                       &c,
+                       -inWidth / 2,
+                       -inHeight / 2,
+                       inWidth / 2,
+                       inHeight / 2 );
+
+    mx_makeColorGray( &c,
+                      128 );
+
+    c.comp.alpha = 255;
+    
+    mx_guiAddDrawRect( inGUI,
                        0,
                        &c,
                        -inWidth / 2,

@@ -555,7 +555,7 @@ void maxiginGame_step( void ) {
 
     panel = maxigin_guiStartPanel( &gameGUI,
                                    sliderValueC,
-                                   50,
+                                   40,
                                    120,
                                    100 );
     

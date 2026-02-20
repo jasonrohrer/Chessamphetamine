@@ -921,6 +921,24 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
 
 
 /*
+  Turns slider sprites into glowing sprites.
+
+  Must be called after maxigin_initSliderSprites
+
+  Parameters:
+  
+      inBlurRadius       the blur radius for the glow, in pixels
+
+      inBlurIterations   the number of iterations of the blur to apply
+
+  [jumpMaxiginInit]  
+*/
+void maxigin_initMakeSliderSpritesGlow( int  inBlurRadius,
+                                        int  inBlurIterations );
+
+
+
+/*
   Sets TGA-formatted sprites to customize maxigin_guiStartPanel appearance.
 
   All parameters are names of TGA resource name in platform's bulk data
@@ -3732,15 +3750,23 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
         /* generate glow from scratch
            cache it to file for future */
 
-        int  glowSpriteHandle;
-        int  neededGlowBytes;
-        int  glowCacheDataWriteHandle;
-        int  glowStartByte;
-        int  mainStartByte;
-        int  x;
-        int  y;
-        int  mainW;
-        int  mainH;
+        int   glowSpriteHandle;
+        int   neededGlowBytes;
+        int   glowCacheDataWriteHandle;  
+        int   glowStartByte;
+        int   mainStartByte;
+        int   x;
+        int   y;
+        int   mainW;
+        int   mainH;
+        int   topMainStart;
+        int   bottomMainStart;
+        char  trimTop                    =  0;
+        char  trimBottom                 =  0;
+        char  trimLeft                   =  0;
+        char  trimRight                  =  0;
+
+        MaxiginSprite *glowSprite;
         
         glowSpriteHandle = mainSprite->glowSpriteHandle;
 
@@ -3776,6 +3802,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
             return;
             }
 
+        glowSprite = &( mx_sprites[ glowSpriteHandle ] );
         
         mainSprite->glowSpriteHandle = glowSpriteHandle;
         mainSprite->glowRadius       = inBlurRadius;
@@ -3844,10 +3871,336 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                 }
             }
 
+        /* if our sprite has opaque pixels along the edge, assume it is part
+           of a tile system.
+
+           Blur needs to go "right to the edge" to connect nicely with the blurs
+           of other tiles and not overlap them.
+
+           What we do is extend the edge pixels to the edge of the expanded
+           blur sprite, then blur with those extended pixels in place,
+           and then trim off those expanded pixels afterward, to make a sharp
+           transparent edge for our blur that lines up with the tile edge */
+
+        /* first, we check if any of those "opaqe edge cases" are true */
+        
+        /* look at top and bottom row to see if there are any opaque
+           pixels touching the edge */
+        topMainStart = 0;
+        bottomMainStart = (mainH - 1) * mainW * 4;
+        
+        for( x = 0;
+             x < mainW;
+             x ++ ) {
+
+            int  pixStart      =  topMainStart + x * 4 + mainStartByte;
+
+            if( mx_spriteBytes[ pixStart + 3 ] == 255 ) {
+                trimTop = 1;
+                break;
+                }
+            }
+
+        for( x = 0;
+             x < mainW;
+             x ++ ) {
+
+            int  pixStart      =  bottomMainStart + x * 4 + mainStartByte;
+
+            if( mx_spriteBytes[ pixStart + 3 ] == 255 ) {
+                trimBottom = 1;
+                break;
+                }
+            }
+
+        
+        /* now look for opaque edge pixels on left/right columns */
+        
+        for( y = 0;
+             y < mainH;
+             y ++ ) {
+
+            int  mainRowStart  =  y * mainW * 4;
+            
+            int  pixStart      =  mainRowStart + mainStartByte;
+
+            if( mx_spriteBytes[ pixStart + 3 ] == 255 ) {
+                trimLeft = 1;
+                break;
+                }
+            }
+        
+        for( y = 0;
+             y < mainH;
+             y ++ ) {
+
+            int  mainRowStart  =  y * mainW * 4;
+            
+            int  pixStart      =
+                               mainRowStart + ( mainW - 1 ) * 4 + mainStartByte;
+
+            if( mx_spriteBytes[ pixStart + 3 ] == 255 ) {
+                trimRight = 1;
+                break;
+                }
+            }
+
+        if( glowSprite ) {
+            }
+
+        /* now that we've detected any opaque edges, we do the extension
+           of those edge pixels to the edge of our working glow sprite */
+
+        
+        if( trimTop ) {
+            /* copy top row of pixels from sprite to fill top glow border */
+            
+            for( y = 0;
+                 y < glowBorder;
+                 y ++ ) {
+
+                int  mainRowStart  =  0;
+                int  glowRowStart  =  y * glowW * 4;
+            
+                for( x = 0;
+                     x < mainW;
+                     x ++ ) {
+                
+                    int  pixStart      =  mainRowStart + x * 4 + mainStartByte;
+                    int  glowX         =  x + glowBorder;
+                    int  glowPixStart  =
+                        glowRowStart + glowX * 4 + glowStartByte;
+
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart         ++ ];
+                
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart         ++ ];
+                
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart         ++ ];
+                
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart         ++ ];
+                    }
+                }
+            }
+
+        if( trimBottom ) {
+            /* copy bottom row of pixels from sprite to fill
+               bottom glow border */
+            
+            for( y = glowH - glowBorder;
+                 y < glowH;
+                 y ++ ) {
+
+                int  mainRowStart  =  (mainH - 1) * mainW * 4;
+                int  glowRowStart  =  y * glowW * 4;
+            
+                for( x = 0;
+                     x < mainW;
+                     x ++ ) {
+                
+                    int  pixStart      =  mainRowStart + x * 4 + mainStartByte;
+                    int  glowX         =  x + glowBorder;
+                    int  glowPixStart  =
+                        glowRowStart + glowX * 4 + glowStartByte;
+
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart         ++ ];
+                
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart         ++ ];
+                
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart         ++ ];
+                
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart         ++ ];
+                    }
+                }
+            }
+
+        if( trimLeft ) {
+            /* copy left column of sprite pixels to fill left glow border */
+
+            for( y = 0;
+                 y < mainH;
+                 y ++ ) {
+
+                int  mainRowStart  =  y * mainW * 4;
+                int  glowY         =  y + glowBorder;
+                int  glowRowStart  =  glowY * glowW * 4;
+
+                int  mainX         =  0;
+
+                int  pixStart      =  mainRowStart + mainX * 4 + mainStartByte;
+                
+                for( x = 0;
+                     x < glowBorder;
+                     x ++ ) {
+                
+                    int  glowPixStart  =
+                        glowRowStart + x * 4 + glowStartByte;
+
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart            ];
+                
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart         +1 ];
+                
+                    mx_spriteBytes    [ glowPixStart     ++  ] =
+                        mx_spriteBytes[ pixStart         +2  ];
+                
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart         +3 ];
+                    }
+                }
+            }
+
+        if( trimRight ) {
+            /* copy right column of sprite pixels to fill right glow border */
+
+            for( y = 0;
+                 y < mainH;
+                 y ++ ) {
+
+                int  mainRowStart  =  y * mainW * 4;
+                int  glowY         =  y + glowBorder;
+                int  glowRowStart  =  glowY * glowW * 4;
+
+                int  mainX         =  mainW - 1;
+
+                int  pixStart      =  mainRowStart + mainX * 4 + mainStartByte;
+                
+                for( x = glowW - glowBorder;
+                     x < glowW;
+                     x ++ ) {
+                
+                    int  glowPixStart  =
+                        glowRowStart + x * 4 + glowStartByte;
+
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart            ];
+                
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart         +1 ];
+                
+                    mx_spriteBytes    [ glowPixStart     ++  ] =
+                        mx_spriteBytes[ pixStart         +2  ];
+                
+                    mx_spriteBytes    [ glowPixStart     ++ ] =
+                        mx_spriteBytes[ pixStart         +3 ];
+                    }
+                }
+            }
+
+
+        /* now we apply the blur, whether or not we've extended edge pixels */
         
         mx_blurSprite( glowSpriteHandle,
                        inBlurRadius,
                        inBlurIterations );
+
+
+        /* now if our blur contains extended edge pixels, trim them off
+           and replace with transparent */
+        
+        if( trimTop ) {
+            /* fill top glow border with transparent */
+            
+            for( y = 0;
+                 y < glowBorder;
+                 y ++ ) {
+
+                int  glowRowStart  =  y * glowW * 4;
+            
+                for( x = 0;
+                     x < glowW;
+                     x ++ ) {
+                    
+                    int  glowPixStart  =
+                        glowRowStart + x * 4 + glowStartByte;
+
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;  
+                    }
+                }
+            }
+
+        if( trimBottom ) {
+            /* fill bottom glow border with transparent */
+            
+            for( y = glowH - glowBorder;
+                 y < glowH;
+                 y ++ ) {
+
+                int  glowRowStart  =  y * glowW * 4;
+            
+                for( x = 0;
+                     x < glowW;
+                     x ++ ) {
+                    
+                    int  glowPixStart  =
+                        glowRowStart + x * 4 + glowStartByte;
+
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;  
+                    }
+                }
+            }
+
+        if( trimLeft ) {
+            /* fill left glow border with transparent */
+
+            for( y = 0;
+                 y < glowH;
+                 y ++ ) {
+
+                int  glowRowStart  =  y * glowW * 4;
+
+                for( x = 0;
+                     x < glowBorder;
+                     x ++ ) {
+                
+                    int  glowPixStart  =
+                        glowRowStart + x * 4 + glowStartByte;
+
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    }
+                }
+            }
+
+        if( trimRight ) {
+            /* fill right glow border with transparent */
+
+            for( y = 0;
+                 y < glowH;
+                 y ++ ) {
+
+                int  glowRowStart  =  y * glowW * 4;
+
+                for( x = glowW - glowBorder;
+                     x < glowW;
+                     x ++ ) {
+                
+                    int  glowPixStart  =
+                        glowRowStart + x * 4 + glowStartByte;
+
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    mx_spriteBytes[ glowPixStart ++ ] = 0;
+                    }
+                }
+            }
         
 
         glowCacheDataWriteHandle =
@@ -3997,6 +4350,45 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
         ( mx_sliderSprites.thumb[ 1 ]  >= 0 )
         &&
         ( mx_sliderSprites.thumb[ 2 ]  >= 0 );
+    }
+
+
+
+void maxigin_initMakeSliderSpritesGlow( int  inBlurRadius,
+                                        int  inBlurIterations ) {
+
+    int  i;
+    
+    if( ! mx_sliderSpritesSet ) {
+        return;
+        }
+
+    for( i = 0;
+         i < 2;
+         i ++ ) {
+
+        maxigin_initMakeGlowSprite( mx_sliderSprites.left[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        maxigin_initMakeGlowSprite( mx_sliderSprites.right[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        maxigin_initMakeGlowSprite( mx_sliderSprites.bar[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        maxigin_initMakeGlowSprite( mx_sliderSprites.sliver[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        }
+    
+    for( i = 0;
+         i < 3;
+         i ++ ) {
+        
+        maxigin_initMakeGlowSprite( mx_sliderSprites.thumb[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        }
     }
 
 
@@ -6805,7 +7197,7 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                          0,
                          255,
                          rightEndHandle,
-                         inEndX,
+                         inEndX + mx_sprites[rightEndHandle].w / 2,
                          inY );
 
         if( inGUI->active == inCurrentValue ) {

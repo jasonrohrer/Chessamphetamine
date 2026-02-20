@@ -139,7 +139,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES
-#define  MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES  4096
+#define  MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES  16384
 #endif
 
 
@@ -1494,6 +1494,8 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
 
       inHeight    panel height
 
+      inFade      the alpha fade of the panel
+
   Return:
 
       panel handle   that must be passed to maxigin_guiEndPanel
@@ -1502,11 +1504,12 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
 
   [jumpMaxiginGeneral]
 */
-int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
-                           int          inCenterX,
-                           int          inCenterY,
-                           int          inWidth,
-                           int          inHeight );
+int maxigin_guiStartPanel( MaxiginGUI    *inGUI,
+                           int            inCenterX,
+                           int            inCenterY,
+                           int            inWidth,
+                           int            inHeight,
+                           unsigned char  inFade );
 
 
 
@@ -2195,20 +2198,23 @@ struct MaxiginGUI {
         /* the absolute position of GUI 0,0 in the game native screen
            starts in the center of the window for a new GUI,
            but changes as sub-panels are opened and closed */
-        int  zeroOffsetX;
-        int  zeroOffsetY;
+        int            zeroOffsetX;
+        int            zeroOffsetY;
+
+        unsigned char  fade;
+        
         
         /* Track ID of hot/active component across steps.
            Hot means mouse is over.
            Active means mouse was clicked on component in past and is
            still being actively dragged. */
-        void  *hot;
-        void  *active;
+        void          *hot;
+        void          *active;
 
         /* true if any active gui component has detected
            that the mouse is held down (even if it's not over any gui
            component  */
-        char   mouseDown;
+        char           mouseDown;
         
 
         /* These offsets are for when mouse is first clicked on a "handle"
@@ -2216,10 +2222,10 @@ struct MaxiginGUI {
            to that handle should be maintained as the mouse moves.
            For example, a scroll bar thumb shouldn't jump to center on the
            mouse when it is clicked slightly off-center.*/
-        int    activeMouseOffsetX;
-        int    activeMouseOffsetY;
+        int            activeMouseOffsetX;
+        int            activeMouseOffsetY;
         
-        int    numDrawComponents;  
+        int            numDrawComponents;  
 
         struct {
                 char           additiveBlend;
@@ -2229,7 +2235,8 @@ struct MaxiginGUI {
                 unsigned char  alpha;
 
                 enum {
-                    MX_GUI_ADD_OFFSET,
+                    MX_GUI_SUB_PANEL_START,
+                    MX_GUI_SUB_PANEL_END,
                     MX_GUI_DRAW_LINE,
                     MX_GUI_DRAW_RECT,
                     MX_GUI_FILL_RECT,
@@ -2239,9 +2246,17 @@ struct MaxiginGUI {
 
                 union {
                         struct {
-                                int  plusX;
-                                int  plusY;
-                            } offset;
+                                int            plusX;
+                                int            plusY;
+                                unsigned char  oldFade;
+                                unsigned char  newFade;
+                            } panelStart;
+                        
+                        struct {
+                                int            plusX;
+                                int            plusY;
+                                unsigned char  oldFade;
+                            } panelEnd;
                         
                         struct {
                                 int  startX;
@@ -2330,6 +2345,7 @@ static void mx_dumpRGBAPixels( unsigned char  *inStartByte,
 /* all of the button actions that Maxigin registers internally */
 typedef enum MaxiginUserAction {
     QUIT,
+    MENU,
     FULLSCREEN_TOGGLE,
     LANG_SWITCH,
     SOUND_TOGGLE,
@@ -5959,7 +5975,7 @@ void maxigin_initGUI( MaxiginGUI *inGUI ) {
 
     inGUI->zeroOffsetX        = MAXIGIN_GAME_NATIVE_W / 2;
     inGUI->zeroOffsetY        = MAXIGIN_GAME_NATIVE_H / 2;
-    
+    inGUI->fade               = 255;
     inGUI->hot                = 0;
     inGUI->active             = 0;
     inGUI->mouseDown          = 0;
@@ -5972,11 +5988,12 @@ void maxigin_initGUI( MaxiginGUI *inGUI ) {
 
 void maxigin_drawGUI( MaxiginGUI *inGUI ) {
 
-    int  i;
-    int  drawType;
-    int  xO         =  inGUI->zeroOffsetX;
-    int  yO         =  inGUI->zeroOffsetY;
-
+    int            i;
+    int            drawType;
+    int            xO         =  inGUI->zeroOffsetX;
+    int            yO         =  inGUI->zeroOffsetY;
+    unsigned char  fade       =  inGUI->fade;
+    
     for( i = 0;
          i < inGUI->numDrawComponents;
          i ++ ) {
@@ -5995,17 +6012,26 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
             ||
             drawType == MX_GUI_DRAW_SPRITE_SEQUENCE ) {
 
-            maxigin_drawSetColor( inGUI->drawComponents[i].red,
-                                  inGUI->drawComponents[i].green,
-                                  inGUI->drawComponents[i].blue,
-                                  inGUI->drawComponents[i].alpha );
+            maxigin_drawSetColor(
+                inGUI->drawComponents[i].red,
+                inGUI->drawComponents[i].green,
+                inGUI->drawComponents[i].blue,
+                (unsigned char)(
+                    ( inGUI->drawComponents[i].alpha * fade ) / 255 ) );
             }
 
         switch( drawType ) {
 
-            case MX_GUI_ADD_OFFSET:
-                xO += inGUI->drawComponents[i].drawParams.offset.plusX;
-                yO += inGUI->drawComponents[i].drawParams.offset.plusY;
+            case MX_GUI_SUB_PANEL_START:
+                xO  += inGUI->drawComponents[i].drawParams.panelStart.plusX;
+                yO  += inGUI->drawComponents[i].drawParams.panelStart.plusY;
+                fade = inGUI->drawComponents[i].drawParams.panelStart.newFade;
+                break;
+                
+            case MX_GUI_SUB_PANEL_END:
+                xO  += inGUI->drawComponents[i].drawParams.panelEnd.plusX;
+                yO  += inGUI->drawComponents[i].drawParams.panelEnd.plusY;
+                fade = inGUI->drawComponents[i].drawParams.panelEnd.oldFade;
                 break;
                 
             case MX_GUI_DRAW_LINE:
@@ -6074,7 +6100,7 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
 void maxigin_startGUI( MaxiginGUI *inGUI ) {
     inGUI->zeroOffsetX        = MAXIGIN_GAME_NATIVE_W / 2;
     inGUI->zeroOffsetY        = MAXIGIN_GAME_NATIVE_H / 2;
-    
+    inGUI->fade               = 255;
     inGUI->hot               = 0;
     inGUI->numDrawComponents = 0;
     }
@@ -6897,14 +6923,14 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
 
 
 
-int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
-                           int          inCenterX,
-                           int          inCenterY,
-                           int          inWidth,
-                           int          inHeight  ) {
+int maxigin_guiStartPanel( MaxiginGUI    *inGUI,
+                           int            inCenterX,
+                           int            inCenterY,
+                           int            inWidth,
+                           int            inHeight,
+                           unsigned char  inFade ) {
 
     int           i  =  inGUI->numDrawComponents;
-    MaxiginColor  c;
 
     if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
         mingin_log( "Error:  trying to add a panel to a full "
@@ -6915,11 +6941,20 @@ int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
     inGUI->zeroOffsetX += inCenterX;
     inGUI->zeroOffsetY += inCenterY;
 
-    inGUI->drawComponents[i].drawType = MX_GUI_ADD_OFFSET;
+    inGUI->drawComponents[i].drawType = MX_GUI_SUB_PANEL_START;
     
-    inGUI->drawComponents[i].drawParams.offset.plusX = inCenterX;
-    inGUI->drawComponents[i].drawParams.offset.plusY = inCenterY;
+    inGUI->drawComponents[i].drawParams.panelStart.plusX = inCenterX;
+    inGUI->drawComponents[i].drawParams.panelStart.plusY = inCenterY;
 
+    inGUI->drawComponents[i].drawParams.panelStart.oldFade = inGUI->fade;
+        
+    /* compound the fades,
+       so fading subpanels in fading panels get doubly faded */
+    inGUI->fade = (unsigned char)( ( inGUI->fade * inFade ) / 255 );
+
+    inGUI->drawComponents[i].drawParams.panelStart.newFade = inGUI->fade;
+    
+    
     inGUI->numDrawComponents ++;
 
 
@@ -7069,6 +7104,9 @@ int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
             }
         }
     else {
+        
+        MaxiginColor  c;
+        
         /* no sprites, draw with rectangles */
 
         /* shadow */
@@ -7121,24 +7159,26 @@ int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
 void maxigin_guiEndPanel( MaxiginGUI  *inGUI,
                           int          inPanelHandle ) {
 
-    int  i    =  inPanelHandle;
-    int  cX;
-    int  cY;
+    int            i    =  inPanelHandle;
+    int            cX;
+    int            cY;
+    unsigned char  oldFade;
     
     if( i < 0 ) {
         return;
         }
 
-    if( inGUI->drawComponents[i].drawType != MX_GUI_ADD_OFFSET ) {
+    if( inGUI->drawComponents[i].drawType != MX_GUI_SUB_PANEL_START ) {
         mingin_log( "Error:  panel handle mismatch in "
                     "MaxiginGUI instance.\n" );
         return;
         }
 
     /* undo the offset setup when our panel was created */
-    cX = inGUI->drawComponents[i].drawParams.offset.plusX;
-    cY = inGUI->drawComponents[i].drawParams.offset.plusY;
-    
+    cX      = inGUI->drawComponents[i].drawParams.panelStart.plusX;
+    cY      = inGUI->drawComponents[i].drawParams.panelStart.plusY;
+    oldFade = inGUI->drawComponents[i].drawParams.panelStart.oldFade;
+        
     inGUI->zeroOffsetX -= cX;
     inGUI->zeroOffsetY -= cY;
 
@@ -7151,10 +7191,11 @@ void maxigin_guiEndPanel( MaxiginGUI  *inGUI,
         return;
         }
 
-    inGUI->drawComponents[i].drawType = MX_GUI_ADD_OFFSET;
+    inGUI->drawComponents[i].drawType = MX_GUI_SUB_PANEL_END;
     
-    inGUI->drawComponents[i].drawParams.offset.plusX = -cX;
-    inGUI->drawComponents[i].drawParams.offset.plusY = -cY;
+    inGUI->drawComponents[i].drawParams.panelEnd.plusX   = -cX;
+    inGUI->drawComponents[i].drawParams.panelEnd.plusY   = -cY;
+    inGUI->drawComponents[i].drawParams.panelEnd.oldFade = oldFade;
 
     inGUI->numDrawComponents ++;
     }
@@ -7297,14 +7338,15 @@ static char mx_isActionFreshPressed( MaxiginUserAction  inAction ) {
 
 
 
-static  char  mx_playbackInterruptedRecording     =  0;
-static  char  mx_playbackInstantReverseRecording  =  0;
-static  char  mx_soundLocked                      =  0;
-static  char  mx_enableAutoQuit                   =  0;
-static  char  mx_quitting                         =  0;
-static  char  mx_quittingReady                    =  0;
-static  char  mx_playbackSliderActive             =  0;
-static  char  mx_playbackBlockForwardSounds       =  0;
+static  char           mx_playbackInterruptedRecording     =  0;
+static  char           mx_playbackInstantReverseRecording  =  0;
+static  char           mx_enableAutoQuit                   =  0;
+static  char           mx_quitting                         =  0;
+static  char           mx_quittingReady                    =  0;
+static  char           mx_playbackSliderActive             =  0;
+static  char           mx_playbackBlockForwardSounds       =  0;
+static  char           mx_menuShowing                      =  0;
+static  unsigned char  mx_menuFade                         =  0;
 
 
 /* initiates and steps sound fade out, returning 1 when finally done
@@ -7435,7 +7477,12 @@ void minginGame_step( char  inFinalStep ) {
 
         return;
         }
-        
+
+
+    if( mx_isActionFreshPressed( MENU ) ) {
+        mx_menuShowing = ! mx_menuShowing;
+        }
+    
     
 
     maxigin_startGUI( &mx_internalGUI );
@@ -7449,20 +7496,10 @@ void minginGame_step( char  inFinalStep ) {
         }
     
 
-    if( mx_isActionFreshPressed( SOUND_LOCK ) ) {
-        if( mx_soundLocked ) {
-            mx_soundLocked = 0;
-            mingin_unlockAudio();
-            }
-        else {
-            mx_soundLocked = 1;
-            mingin_lockAudio();
-            }
-        }
     
-
-    
-    if( mx_isActionFreshPressed( PLAYBACK_START_STOP ) ) {
+    if( ! mx_menuShowing
+        &&
+        mx_isActionFreshPressed( PLAYBACK_START_STOP ) ) {
         
         mx_playbackInstantReverseRecording = 0;
         
@@ -7480,7 +7517,9 @@ void minginGame_step( char  inFinalStep ) {
             }
         }
 
-    if( mx_playbackRunning ) {
+    if( ! mx_menuShowing
+        &&
+        mx_playbackRunning ) {
 
         int   oldPlaybackFrame;
         int   newPlaybackFrame;
@@ -7624,7 +7663,7 @@ void minginGame_step( char  inFinalStep ) {
             mx_playbackJumpToStep( newPlaybackFrame );
             }
         }
-    else {
+    else if( ! mx_menuShowing ) {
         /* playback not running
            watch for "reverse playback button"
            to insta-rewind the current live game from this point back */
@@ -7737,7 +7776,9 @@ void minginGame_step( char  inFinalStep ) {
     
     mx_processDoneSoundEffects();
 
-    if( ! mx_playbackSpeedStep() ) {
+    if( ! mx_menuShowing
+        &&
+        ! mx_playbackSpeedStep() ) {
 
         if( mx_playbackInterruptedRecording ) {
             /* playback has ended, resume recording */
@@ -7771,6 +7812,48 @@ void minginGame_step( char  inFinalStep ) {
         mx_playbackPaused = 0;
         }
     
+
+
+    if( mx_menuShowing ) {
+
+        int  menuPanel;
+        int  newFade;
+
+        static  int  dummySliderValue = 5;
+        
+        menuPanel = maxigin_guiStartPanel( &mx_internalGUI,
+                                           0,
+                                           0,
+                                           MAXIGIN_GAME_NATIVE_W - 32,
+                                           MAXIGIN_GAME_NATIVE_H - 32,
+                                           mx_menuFade );
+
+        /* stick a slider in there as a dummy component for now */
+        maxigin_guiSlider( &mx_internalGUI,
+                           &dummySliderValue,
+                           0,
+                           10,
+                           -50,
+                           50,
+                           0,
+                           10,
+                           20,
+                           10,
+                           0 );
+        
+        maxigin_guiEndPanel( &mx_internalGUI,
+                             menuPanel );
+        
+        newFade = mx_menuFade + 4;
+
+        if( newFade > 255 ) {
+            newFade = 255;
+            }
+        mx_menuFade = (unsigned char)newFade;
+        }
+    else{
+        mx_menuFade = 0;
+        }
     
     
     maxigin_endGUI( &mx_internalGUI );
@@ -7780,7 +7863,9 @@ void minginGame_step( char  inFinalStep ) {
 
 
 static  MinginButton  mx_quitMapping[] = { MGN_KEY_Q,
-                                           MGN_KEY_ESCAPE,
+                                           MGN_MAP_END };
+
+static  MinginButton  mx_menuMapping[] = { MGN_KEY_ESCAPE,
                                            MGN_MAP_END };
 
 static  MinginButton  mx_fullscreenMapping[] = { MGN_KEY_F,
@@ -7788,12 +7873,6 @@ static  MinginButton  mx_fullscreenMapping[] = { MGN_KEY_F,
 
 static  MinginButton  mx_langSwitchMapping[] = { MGN_KEY_L,
                                                  MGN_MAP_END };
-
-static  MinginButton  mx_soundToggleMapping[] = { MGN_KEY_S,
-                                                  MGN_MAP_END };
-
-static  MinginButton  mx_soundLockMapping[] = { MGN_KEY_D,
-                                                MGN_MAP_END };
 
 static  MinginButton  mx_mouseButtonMapping[] = { MGN_BUTTON_MOUSE_LEFT,
                                                   MGN_MAP_END };
@@ -7832,21 +7911,18 @@ static void mx_gameInit( void ) {
     int  p;
 
     mx_enableAutoQuit = maxigin_readFlagSetting( "maxigin_enableAutoQuit.ini" );
-    
+
     mingin_registerButtonMapping( QUIT,
                                   mx_quitMapping );
+    
+    mingin_registerButtonMapping( MENU,
+                                  mx_menuMapping );
     
     mingin_registerButtonMapping( FULLSCREEN_TOGGLE,
                                   mx_fullscreenMapping );
     
     mingin_registerButtonMapping( LANG_SWITCH,
                                   mx_langSwitchMapping );
-
-    mingin_registerButtonMapping( SOUND_TOGGLE,
-                                  mx_soundToggleMapping );
-
-    mingin_registerButtonMapping( SOUND_LOCK,
-                                  mx_soundLockMapping );
 
     mingin_registerButtonMapping( MAXIGIN_MOUSE_BUTTON,
                                   mx_mouseButtonMapping );

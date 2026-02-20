@@ -557,7 +557,8 @@ void maxiginGame_step( void ) {
                                    sliderValueC,
                                    40,
                                    120,
-                                   104 );
+                                   104,
+                                   255 );
     
     maxigin_guiSlider( &gameGUI,
                        &sliderValue,
@@ -575,7 +576,8 @@ void maxiginGame_step( void ) {
                                       0,
                                       -30 + sliderValueC / 10,
                                       104,
-                                      32 );
+                                      32,
+                                      255 );
 
     maxigin_guiSlider( &gameGUI,
                        &sliderValueB,
@@ -600,7 +602,8 @@ void maxiginGame_step( void ) {
                                    -50,
                                    -50,
                                    120,
-                                   104 );
+                                   104,
+                                   255 );
     maxigin_guiSlider( &gameGUI,
                        &sliderValueC,
                        0,

@@ -6923,14 +6923,6 @@ int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
     inGUI->numDrawComponents ++;
 
 
-    /* fixme:  this is a place-holder panel when we have no panel
-       sprites...
-
-       --need to spruce this up
-
-       --need to add alternative drawing code for sprite version
-    */
-
     if( mx_panelSpritesSet ) {
 
         int             fill          =  mx_panelSprites.fill;
@@ -6943,8 +6935,6 @@ int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
         int             totalFillH;
         int             fillStartX;
         int             fillStartY;
-        int             fillEndX;
-        int             fillEndY;
         int             r;
         
         numFillCols = inWidth / fillW;
@@ -6967,23 +6957,6 @@ int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
         fillStartX = ( - totalFillW / 2 ) + fillW / 2;
         fillStartY = ( - totalFillH / 2 ) + fillH / 2;
 
-        fillEndX = fillStartX + ( numFillCols - 1 ) * fillW;
-        fillEndY = fillStartY + ( numFillRows - 1 ) * fillH;
-
-        /*
-          typedef struct MaxiginPanelSprites {
-
-        tl, tr, bl, br 
-        int  corners[4];
-        
-         l, r, t, b 
-        int  sides  [4];
-        
-        int  fill;
-        
-    } MaxiginPanelSprites;
-        */
-        /* lay down fill first */
         for( r = 0;
              r < numFillRows;
              r ++ ) {

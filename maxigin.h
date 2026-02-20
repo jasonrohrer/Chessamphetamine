@@ -730,6 +730,24 @@ void maxigin_initMakeGlowSpriteStrip( int  inSpriteStripHandle,
 
 
 /*
+  Sets glow parameters for internally-loaded language fonts.
+
+  Defaults to (0, 0), which disables glow.
+  
+  Parameters:
+
+      inBlurRadius          the blur radius for the glow, in pixels
+
+      inBlurIterations      the number of iterations of the blur to apply
+
+  [jumpMaxiginInit]  
+*/
+void maxigin_initSetLanguageFontGLow( int  inBlurRadius,
+                                      int  inBlurIterations );
+
+
+
+/*
   Initializes a UTF-8 font.
 
   The idea here is that translators will supply their font in a sprite strip
@@ -15112,8 +15130,10 @@ typedef struct MaxiginLanguage {
 
 
 static  MaxiginLanguage  mx_languages[ MAXIGIN_MAX_NUM_LANGUAGES ];
-static  int              mx_numLanguages     =  0;
-static  int              mx_currentLanguage  =  0;
+static  int              mx_numLanguages            =  0;
+static  int              mx_currentLanguage         =  0;
+static  int              mx_languageBlurRadius      =  0;
+static  int              mx_languageBlurIterations  =  0;
 
 
 static void mx_nextLang( void ) {
@@ -15127,6 +15147,22 @@ static void mx_nextLang( void ) {
         mx_currentLanguage = 0;
         }
     }
+
+
+
+void maxigin_initSetLanguageFontGLow( int  inBlurRadius,
+                                      int  inBlurIterations ) {
+
+    if( ! mx_areWeInMaxiginGameInitFunction ) {
+        mingin_log( "Error:  called maxigin_initSetLanguageFontGLow from "
+                    "outside maxiginGame_init function\n" );
+        return;
+        }
+    
+    mx_languageBlurRadius     = inBlurRadius;
+    mx_languageBlurIterations = inBlurIterations;
+    }
+
 
 
 static void mx_clearTranslationKeys( void ) {
@@ -15545,7 +15581,15 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
             mingin_endReadBulkData( languageReadHandle );
             return;
             }
-        
+
+        if( mx_languageBlurRadius > 0
+            &&
+            mx_languageBlurIterations > 0 ) {
+
+            maxigin_initMakeGlowSpriteStrip( stripHandle,
+                                             mx_languageBlurRadius,
+                                             mx_languageBlurIterations );
+            }
         
         fontHandle = maxigin_initFont( stripHandle,
                                        langFontTextName,

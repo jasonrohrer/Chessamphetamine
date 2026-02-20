@@ -758,6 +758,8 @@ void maxiginGame_init( void ) {
     maxigin_initTranslationKey( 5,
                                 "fullscreen" );
 
+    maxigin_initSetLanguageFontGLow( 2,
+                                     2 );
     
     /* init position in image center */
     boxPosX = MAXIGIN_GAME_NATIVE_W / 2;

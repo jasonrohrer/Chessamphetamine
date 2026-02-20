@@ -4,10 +4,11 @@ quitFileName="settings/maxigin_autoQuitDone.ini"
 
 echo "1" > $enableSetting
 echo "0" > $autoSetting
-rm -f $quitFileName
+echo "0" > $quitFileName
 
-fileList="settings/ Chessamphetamine game.c maxigin.h mingin.h"
+fileList="$quitFileName Chessamphetamine game.c maxigin.h mingin.h"
 
+oldQuitModTime=$(stat -c %Y "$quitFileName")
 
 ./Chessamphetamine &
 pid=$!
@@ -15,7 +16,9 @@ pid=$!
 while inotifywait -e modify,create,delete $fileList; do
     echo "Watched files changed"
 
-	if [[ -e $quitFileName ]]; then
+	newQuitModTime=$(stat -c %Y "$quitFileName")
+
+	if (( newQuitModTime != oldQuitModTime )); then
 		echo "Game itself quit, stopping hot-reload loop"
 		wait "$pid"
 
@@ -41,8 +44,10 @@ while inotifywait -e modify,create,delete $fileList; do
 		
 		# rest quit flags for next run
 		echo "0" > $autoSetting
-		rm -f $quitFileName
+		echo "0" > $quitFileName
 
+		oldQuitModTime=$(stat -c %Y "$quitFileName")	
+		
 		./Chessamphetamine &
 		pid=$!
 	fi

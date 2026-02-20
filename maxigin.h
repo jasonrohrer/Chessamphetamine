@@ -900,6 +900,8 @@ void maxigin_initKeyAndButtonHintSprites( int           inSpriteStripHandle,
                                           
       inThumbSpriteResource               slider thumb (part that moves)
       
+      inThumbHotSpriteResource            slider thumb when mouse hovering
+
       inThumbActiveSpriteResource         slider thumb when clicked/active
 
   [jumpMaxiginInit]      

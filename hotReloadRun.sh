@@ -30,7 +30,7 @@ while inotifywait -e modify,create,delete $fileList; do
 		echo "compilation output:"
 		echo ""
 		echo "$compOutput"
-		ehco ""
+		echo ""
 	else
 		# tell it to quit
 		echo "1" > $autoSetting

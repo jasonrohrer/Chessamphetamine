@@ -1728,6 +1728,28 @@ int maxigin_readIntSetting( const char  *inSettingName,
                             int          inDefaultValue );
 
 
+/*
+  Reads an flag (1 or 0) from a persistent setting.
+
+  Defaults to 0 if flag setting not found.
+
+  Parameters:
+
+      inSettingName    the name of the setting to read
+
+  Returns:
+
+      1                if found and setting is not 0
+
+      0                if found and 0
+                          or if not found
+                          or if reading fails
+      
+   [jumpMaxiginGeneral]
+*/     
+char maxigin_readFlagSetting( const char  *inSettingName );
+
+
 
 /*
   Writes an integer value to a persistent setting.
@@ -7234,6 +7256,7 @@ static char mx_isActionFreshPressed( MaxiginUserAction  inAction ) {
 static  char  mx_playbackInterruptedRecording     =  0;
 static  char  mx_playbackInstantReverseRecording  =  0;
 static  char  mx_soundLocked                      =  0;
+static  char  mx_enableAutoQuit                   =  0;
 static  char  mx_quitting                         =  0;
 static  char  mx_quittingReady                    =  0;
 static  char  mx_playbackSliderActive             =  0;
@@ -7323,8 +7346,20 @@ void minginGame_step( char  inFinalStep ) {
 
         mingin_log( "Got quit key, starting sound fade out\n" );
         
-        mx_quitting  = 1;
+        mx_quitting      = 1;
         mx_quittingReady = 0;
+        }
+
+    if( ! mx_quitting
+        && mx_enableAutoQuit ) {
+        
+        mx_quitting = maxigin_readFlagSetting( "maxigin_autoQuit.ini" );
+
+        if( mx_quitting ) {
+            mingin_log( "Found auto-quit in persistent data settings\n" );
+
+            mx_quittingReady = 0;
+            }
         }
 
     if( mx_quitting
@@ -7346,6 +7381,11 @@ void minginGame_step( char  inFinalStep ) {
         mx_finalizeRecording();
 
         mx_stopPlayingMusic();
+
+        if( mx_enableAutoQuit ) {
+            maxigin_writeIntSetting( "maxigin_autoQuitDone.ini",
+                                     1 );
+            }
         
         mingin_quit();
 
@@ -7746,6 +7786,8 @@ static  void mx_initLanguages( void );
 static void mx_gameInit( void ) {
 
     int  p;
+
+    mx_enableAutoQuit = maxigin_readFlagSetting( "maxigin_enableAutoQuit.ini" );
     
     mingin_registerButtonMapping( QUIT,
                                   mx_quitMapping );
@@ -11274,7 +11316,9 @@ int maxigin_stringToInt( const char  *inString ) {
         /* starts with non-digit */
         return 0;
         }
-    
+
+    /* stop after we've consumed all digits, even if there are non-digit
+       characters (like spaces) afterward */
     while( inString[i] >= '0' && inString[i] <= '9' ) {
         val = val * 10 + ( inString[i] - '0' );
         i++;
@@ -11696,7 +11740,21 @@ int maxigin_readIntSetting( const char  *inSettingName,
     }
 
 
-  
+
+char maxigin_readFlagSetting( const char  *inSettingName ) {
+
+    int  val  =  maxigin_readIntSetting( inSettingName,
+                                         0 );
+
+    if( val != 0 ) {
+        return 1;
+        }
+    
+    return 0;
+    }
+
+
+
 void maxigin_writeIntSetting( const char  *inSettingName,
                               int          inValue ) {
     

@@ -924,23 +924,28 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
   All parameters are names of TGA resource name in platform's bulk data
   store.
 
+  All files must be tiles of the same dimensions that will be tiled edge-to-edge
+  to make the panel.
+
+  Corners and edge tiles can have transparency.
+
   Parameters:
   
-      inTopLeftSpriteResource       top left corner at center of sprite
+      inTopLeftSpriteResource       top left corner
 
-      inTopRightSpriteResource      top right corner at center of sprite
+      inTopRightSpriteResource      top right corner
 
-      inBottomLeftSpriteResource    bottom left corner at center of sprite
+      inBottomLeftSpriteResource    bottom left corner
 
-      inBottomRightSpriteResource   bottom right corner at center of sprite
+      inBottomRightSpriteResource   bottom right corner
 
-      inLeftEdgeSpriteResource      left edge at center of sprite
+      inLeftEdgeSpriteResource      left edge
 
-      inRightEdgeSpriteResource     right edge at center of sprite
+      inRightEdgeSpriteResource     right edge
 
-      inTopEdgeSpriteResource       top edge at center of sprite
+      inTopEdgeSpriteResource       top edge
 
-      inBottomEdgeSpriteResource    bottom edge at center of sprite
+      inBottomEdgeSpriteResource    bottom edge
 
       inFillSpriteResource          center fill, edge-to-edge in sprite
                                     with no transparency around.
@@ -6982,47 +6987,106 @@ int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
         for( r = 0;
              r < numFillRows;
              r ++ ) {
+
+            int  rowStartY  =  fillStartY + r * fillH;
             
-            mx_guiAddSpriteSequence( inGUI,
+            if( r == 0 ) {
+                /* tl corner */
+                mx_guiAddSprite( inGUI,
+                                 0,
+                                 255,
+                                 mx_panelSprites.corners[0],
+                                 fillStartX,
+                                 rowStartY );
+                }
+            else if( r == numFillRows - 1 ) {
+                /* bl corner */
+                mx_guiAddSprite( inGUI,
+                                 0,
+                                 255,
+                                 mx_panelSprites.corners[2],
+                                 fillStartX,
+                                 rowStartY );
+                }
+            else {
+                /* left edge */
+                mx_guiAddSprite( inGUI,
+                                 0,
+                                 255,
+                                 mx_panelSprites.sides[0],
+                                 fillStartX,
+                                 rowStartY );
+                }
+            
+            if( r == 0 ) {
+                /* fill with top edge */
+
+                 mx_guiAddSpriteSequence( inGUI,
                                      0,
                                      255,
-                                     fill,
-                                     fillStartX,
+                                     mx_panelSprites.sides[2],
+                                     fillStartX + fillW,
                                      fillStartY + r * fillH,
                                      fillW,
                                      0,
-                                     numFillCols );
+                                     numFillCols - 2 );
+                }
+            else if( r == numFillRows - 1 ) {
+                /* fill with bottom edge */
+
+                mx_guiAddSpriteSequence( inGUI,
+                                         0,
+                                         255,
+                                         mx_panelSprites.sides[3],
+                                         fillStartX + fillW,
+                                         fillStartY + r * fillH,
+                                         fillW,
+                                         0,
+                                         numFillCols - 2 );
+                }
+            else {
+                /* fill with fill */
+            
+                mx_guiAddSpriteSequence( inGUI,
+                                         0,
+                                         255,
+                                         fill,
+                                         fillStartX + fillW,
+                                         fillStartY + r * fillH,
+                                         fillW,
+                                         0,
+                                         numFillCols - 2 );
+                }
+
+
+            if( r == 0 ) {
+                /* tr corner */
+                mx_guiAddSprite( inGUI,
+                                 0,
+                                 255,
+                                 mx_panelSprites.corners[1],
+                                 fillStartX + fillW * ( numFillCols - 1 ),
+                                 rowStartY );
+                }
+            else if( r == numFillRows - 1 ) {
+                /* bl corner */
+                mx_guiAddSprite( inGUI,
+                                 0,
+                                 255,
+                                 mx_panelSprites.corners[3],
+                                 fillStartX + fillW * ( numFillCols - 1 ),
+                                 rowStartY );
+                }
+            else {
+                /* left edge */
+                mx_guiAddSprite( inGUI,
+                                 0,
+                                 255,
+                                 mx_panelSprites.sides[1],
+                                 fillStartX + fillW * ( numFillCols - 1 ),
+                                 rowStartY );
+                }
             }
-
-        /* corners on top */
-        mx_guiAddSprite( inGUI,
-                         0,
-                         255,
-                         mx_panelSprites.corners[0],
-                         fillStartX - fillW / 2,
-                         fillStartY - fillH / 2 );
-
-        mx_guiAddSprite( inGUI,
-                         0,
-                         255,
-                         mx_panelSprites.corners[1],
-                         fillEndX   + fillW / 2,
-                         fillStartY - fillH / 2 );
-
-        mx_guiAddSprite( inGUI,
-                         0,
-                         255,
-                         mx_panelSprites.corners[2],
-                         fillStartX - fillW / 2,
-                         fillEndY   + fillH / 2 );
-
-        mx_guiAddSprite( inGUI,
-                         0,
-                         255,
-                         mx_panelSprites.corners[3],
-                         fillEndX   + fillW / 2,
-                         fillEndY   + fillH / 2 );
-
         }
     else {
         /* no sprites, draw with rectangles */

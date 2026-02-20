@@ -719,8 +719,7 @@ void maxiginGame_init( void ) {
                                "sliderThumbPassive.tga",
                                "sliderThumbHot.tga",
                                "sliderThumbActive.tga" );
-
-    /*
+    
     maxigin_initPanelSprites( "panelTopLeft.tga",
                               "panelTopRight.tga",
                               "panelBottomLeft.tga",
@@ -729,16 +728,6 @@ void maxiginGame_init( void ) {
                               "panelRightEdge.tga",
                               "panelTopEdge.tga",
                               "panelBottomEdge.tga",
-                              "panelFill.tga" );
-    */
-    maxigin_initPanelSprites( "panelTopLeft.tga",
-                              "panelTopRight.tga",
-                              "panelBottomLeft.tga",
-                              "panelBottomRight.tga",
-                              "panelTopLeft.tga",
-                              "panelTopLeft.tga",
-                              "panelTopLeft.tga",
-                              "panelTopLeft.tga",
                               "panelFill.tga" );
 
     maxigin_initGUI( &gameGUI );

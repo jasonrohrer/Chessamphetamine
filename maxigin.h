@@ -6951,6 +6951,13 @@ int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
             numFillRows ++;
             }
 
+        /* add extra rows/columns for edges, which might have transparent
+           pixels and not "fill" in the desired area completely
+           We want to guarantee that opaque fill of panel is at least as
+           big as the requested size */
+        numFillCols += 2;
+        numFillRows += 2;
+
         totalFillW = numFillCols * fillW;
         totalFillH = numFillRows * fillH;
 
@@ -7082,7 +7089,7 @@ int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
         mx_makeColorGray( &c,
                           64 );
 
-        c.comp.alpha = 64;
+        c.comp.alpha = 255;
     
         mx_guiAddFillRect( inGUI,
                            0,
@@ -7095,7 +7102,7 @@ int maxigin_guiStartPanel( MaxiginGUI  *inGUI,
         mx_makeColorGray( &c,
                           128 );
 
-        c.comp.alpha = 64;
+        c.comp.alpha = 255;
     
         mx_guiAddDrawRect( inGUI,
                            0,

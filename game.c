@@ -574,7 +574,7 @@ void maxiginGame_step( void ) {
     subPanel = maxigin_guiStartPanel( &gameGUI,
                                       0,
                                       -30 + sliderValueC / 10,
-                                      108,
+                                      104,
                                       32 );
 
     maxigin_guiSlider( &gameGUI,

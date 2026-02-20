@@ -1474,7 +1474,7 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
   Starts a sub-panel in an immediate-mode GUI.
 
   All GUI items created by calls up to maxigin_guiEndPanel will relative
-  to the center of this panel.
+  to the center of this panel, and fade with the panel when it fades.
 
   X,Y parameters for this panel are relative to the GUI (or super-panel) center.
 

@@ -4182,26 +4182,9 @@ void maxigin_initSliderSpritesStatic(
 void maxigin_initMakeSliderGlow( int  inBlurRadius,
                                  int  inBlurIterations ) {
     int  i;
-    
-    for( i = 0;
-         i < 2;
-         i ++ ) {
-        maxigin_initMakeGlowSprite( mx_sliderSprites.left[i],
-                                    inBlurRadius,
-                                    inBlurIterations );
-        
-        maxigin_initMakeGlowSprite( mx_sliderSprites.right[i],
-                                    inBlurRadius,
-                                    inBlurIterations );
-        
-        maxigin_initMakeGlowSprite( mx_sliderSprites.bar[i],
-                                    inBlurRadius,
-                                    inBlurIterations );
-        
-        maxigin_initMakeGlowSprite( mx_sliderSprites.sliver[i],
-                                    inBlurRadius,
-                                    inBlurIterations );
-        }
+
+    /* don't apply glow to bar parts and slivers, because glow
+       doesn't tile nicely */
 
     for( i = 0;
          i < mx_sliderSprites.numFullBars;

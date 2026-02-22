@@ -714,24 +714,29 @@ void maxiginGame_init( void ) {
 
     mingin_registerStickAxis( BOX_THICK,  thickMapping );
 
-    /*
-    maxigin_initSliderSprites( "sliderLeftEndEmpty.tga",
-                               "sliderLeftEndFull.tga",
-                               "sliderRightEndEmpty.tga",
-                               "sliderRightEndFull.tga",
-                               "sliderBarEmpty.tga",
-                               "sliderBarFull.tga",
-                               "sliderSliverEmpty.tga",
-                               "sliderSliverFull.tga",
-                               "sliderThumbPassive.tga",
-                               "sliderThumbHot.tga",
-                               "sliderThumbActive.tga" );
-    */
-    maxigin_initSliderSpritesStatic( 2,
-                                     sliderBarSprites,
-                                     "sliderThumbPassive.tga",
-                                     "sliderThumbHot.tga",
-                                     "sliderThumbActive.tga" );
+
+    if( 0 ) {
+        
+        maxigin_initSliderSprites( "sliderLeftEndEmpty.tga",
+                                   "sliderLeftEndFull.tga",
+                                   "sliderRightEndEmpty.tga",
+                                   "sliderRightEndFull.tga",
+                                   "sliderBarEmpty.tga",
+                                   "sliderBarFull.tga",
+                                   "sliderSliverEmpty.tga",
+                                   "sliderSliverFull.tga",
+                                   "sliderThumbPassive.tga",
+                                   "sliderThumbHot.tga",
+                                   "sliderThumbActive.tga" );
+        }
+    else {
+        maxigin_initSliderSpritesStatic( 2,
+                                         sliderBarSprites,
+                                         "sliderThumbPassive.tga",
+                                         "sliderThumbHot.tga",
+                                         "sliderThumbActive.tga" );
+        }
+    
 
     maxigin_initMakeSliderGlow( 2,
                                 2 );

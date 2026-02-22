@@ -875,7 +875,8 @@ void maxigin_initKeyAndButtonHintSprites( int           inSpriteStripHandle,
 
 
 /*
-  Sets TGA-formatted sprites to customize maxigin_guiSlider appearance.
+  Sets TGA-formatted sprites to customize maxigin_guiSlider appearance,
+  for dyamically-sized sliders.
 
   All parameters are names of TGA resource name in platform's bulk data
   store.
@@ -939,7 +940,58 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
 
 
 /*
-  Sets TGA-formatted sprites to customize maxigin_guiStartPanel appearance.
+  Sets TGA-formatted sprites to customize maxigin_guiSlider appearance,
+  for statically-sized sliders.
+
+  When creating a slider, the smallest bar length that's equal to or larger
+  than the requested bar length will be used.
+
+  All parameters are names of TGA resource name in platform's bulk data
+  store.
+
+  Parameters:
+  
+      inNumBarSprites               the number of static-length bar sprites
+                                    must be <= 10
+
+      inBarSprites                  array of resource names for bar sprites
+                                          
+      inThumbSpriteResource         slider thumb (part that moves)
+      
+      inThumbHotSpriteResource      slider thumb when mouse hovering
+
+      inThumbActiveSpriteResource   slider thumb when clicked/active
+
+  [jumpMaxiginInit]      
+*/ 
+void maxigin_initSliderSpritesStatic(
+    int           inNumBarSprites,
+    const char  **inBarSprites,
+    const char   *inThumbSpriteResource,
+    const char   *inThumbHotSpriteResource,
+    const char   *inThumbActiveSpriteResource );
+
+
+
+/*
+  Creates glow sprites for previously setup slider sprites.
+
+  Parameters:
+
+      inBlurRadius       the blur radius for the glow, in pixels
+
+      inBlurIterations   the number of iterations of the blur to apply
+
+  [jumpMaxiginInit]  
+*/
+void maxigin_initMakeSliderGlow( int  inBlurRadius,
+                                 int  inBlurIterations );
+
+
+
+/*
+  Sets TGA-formatted sprites to customize maxigin_guiStartPanel appearance,
+  for dynamically-sized panels
 
   All parameters are names of TGA resource name in platform's bulk data
   store.
@@ -981,6 +1033,30 @@ void maxigin_initPanelSprites( const char  *inTopLeftSpriteResource,
                                const char  *inTopEdgeSpriteResource,
                                const char  *inBottomEdgeSpriteResource,
                                const char  *inFillSpriteResource );
+
+
+
+/*
+  Sets TGA-formatted sprites to customize maxigin_guiStartPanel appearance,
+  for statically-sized panels.
+
+  When a panel is created, the smallest panel that's equal to or larger that
+  the requested panel size will be used.
+
+  All parameters are names of TGA resource name in platform's bulk data
+  store.
+
+  Parameters:
+  
+      inNumFullPanelSprites   number of full panel sprites
+                              must be <= 10
+
+      inFullPanelSprites      array of resource names for full panel sprites.
+
+  [jumpMaxiginInit]      
+*/ 
+void maxigin_initPanelSpritesStatic( int           inNumFullPanelSprites,
+                                     const char  **inFullPanelSprites );
 
 
 
@@ -3923,6 +3999,7 @@ void maxigin_initMakeGlowSprite( int  inSpriteHandle,
     }
 
 
+#define  MAXIGIN_NUM_STATIC_SLIDER_BARS  10
 
 typedef struct MaxiginSliderSprites {
 
@@ -3932,6 +4009,9 @@ typedef struct MaxiginSliderSprites {
         int  bar   [2];
         int  sliver[2];
 
+        int  numFullBars;
+        int  fullBars[ MAXIGIN_NUM_STATIC_SLIDER_BARS ];
+        
         /* index 0 for cold, 1 for hot, 2 for active */
         int  thumb [3];
         
@@ -3941,7 +4021,28 @@ typedef struct MaxiginSliderSprites {
 char                   mx_sliderSpritesSet  =  0;
 MaxiginSliderSprites   mx_sliderSprites;
 
+
+static void mx_clearSliderSprites( void ) {
+    int  i;
+
+    mx_sliderSprites.numFullBars = 0;
     
+    for( i = 0;
+         i < 2;
+         i ++ ) {
+        mx_sliderSprites.left[i] = -1;
+        mx_sliderSprites.right[i] = -1;
+        mx_sliderSprites.bar[i] = -1;
+        mx_sliderSprites.sliver[i] = -1;
+        }
+    
+    for( i = 0;
+         i < 3;
+         i ++ ) {
+        mx_sliderSprites.thumb[i] = -1;
+        }
+    }
+
 
 
 void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
@@ -3955,6 +4056,8 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
                                 const char  *inThumbSpriteResource,
                                 const char  *inThumbHotSpriteResource,
                                 const char  *inThumbActiveSpriteResource ) {
+
+    mx_clearSliderSprites();
     
     mx_sliderSprites.left[ 0 ] =
         maxigin_initSprite( inLeftEndEmptySpriteResource );
@@ -4016,6 +4119,109 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
         &&
         ( mx_sliderSprites.thumb[ 2 ]  >= 0 );
     }
+
+
+void maxigin_initSliderSpritesStatic(
+    int           inNumBarSprites,
+    const char  **inBarSprites,
+    const char   *inThumbSpriteResource,
+    const char   *inThumbHotSpriteResource,
+    const char   *inThumbActiveSpriteResource ) {
+
+    int   i;
+    char  success;
+
+    mx_clearSliderSprites();
+    
+    if( inNumBarSprites > MAXIGIN_NUM_STATIC_SLIDER_BARS ) {
+        maxigin_logInt( "Error:  maxigin_initSliderSpritesStatic called with "
+                        "too many bar sprites; ",
+                        inNumBarSprites );
+        inNumBarSprites = MAXIGIN_NUM_STATIC_SLIDER_BARS;
+        }
+
+    mx_sliderSprites.numFullBars = inNumBarSprites;
+
+    success = 1;
+    
+    for( i = 0;
+         i < inNumBarSprites;
+         i ++ ) {
+
+        mx_sliderSprites.fullBars[i] =
+            maxigin_initSprite( inBarSprites[i] );
+        
+        success =
+            success
+            &&
+            ( mx_sliderSprites.fullBars[i] >= 0 );
+        }
+    
+
+    mx_sliderSprites.thumb[ 0 ] =
+        maxigin_initSprite( inThumbSpriteResource );
+
+    mx_sliderSprites.thumb[ 1 ] =
+        maxigin_initSprite( inThumbHotSpriteResource );
+
+    mx_sliderSprites.thumb[ 2 ] =
+        maxigin_initSprite( inThumbActiveSpriteResource );
+
+    mx_sliderSpritesSet =
+        success
+        &&
+        ( mx_sliderSprites.thumb[ 0 ]  >= 0 )
+        &&
+        ( mx_sliderSprites.thumb[ 1 ]  >= 0 )
+        &&
+        ( mx_sliderSprites.thumb[ 2 ]  >= 0 );
+    }
+
+
+
+void maxigin_initMakeSliderGlow( int  inBlurRadius,
+                                 int  inBlurIterations ) {
+    int  i;
+    
+    for( i = 0;
+         i < 2;
+         i ++ ) {
+        maxigin_initMakeGlowSprite( mx_sliderSprites.left[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        
+        maxigin_initMakeGlowSprite( mx_sliderSprites.right[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        
+        maxigin_initMakeGlowSprite( mx_sliderSprites.bar[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        
+        maxigin_initMakeGlowSprite( mx_sliderSprites.sliver[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        }
+
+    for( i = 0;
+         i < mx_sliderSprites.numFullBars;
+         i ++ ) {
+
+        maxigin_initMakeGlowSprite( mx_sliderSprites.fullBars[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        }
+    
+    for( i = 0;
+         i < 3;
+         i ++ ) {
+        
+        maxigin_initMakeGlowSprite( mx_sliderSprites.thumb[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        }
+    }
+
 
 
 
@@ -6420,10 +6626,71 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
     int           tenPercent              =   fullRange / 10;
     int           thumbLeftR;
     int           thumbRightR;
+    int           centerX;
+    int           staticBarI;
     
     if( tenPercent < 1 ) {
         tenPercent = 1;
         }
+
+    centerX = ( inStartX + inEndX ) / 2;
+
+    if( mx_sliderSpritesSet
+        &&
+        mx_sliderSprites.numFullBars > 0 ) {
+
+        /* find smallest available bar that fits requested span
+           and center it on requested span */
+
+        int  i;
+        int  w             =  inEndX - inStartX;
+        int  smallestBarW  =  30000;
+        int  smallestI     =  -1;
+        int  largestBarW   =   0;
+        int  largestBarI   =  -1;
+        
+        for( i = 0;
+             i < mx_sliderSprites.numFullBars;
+             i ++ ) {
+
+            int  barW  =
+                   mx_sprites[ mx_sliderSprites.fullBars[i] ].rightVisibleRadius
+                   +
+                   mx_sprites[ mx_sliderSprites.fullBars[i] ].leftVisibleRadius;
+
+            if( barW >= w
+                &&
+                barW < smallestBarW ) {
+
+                smallestBarW = barW;
+                smallestI    = i;
+                }
+
+            if( barW > largestBarW ) {
+                largestBarW = barW;
+                largestBarI = i;
+                }
+            }
+
+        if( smallestI == -1 ) {
+            /* no bar big enough */
+            
+            /* just pick largest bar in this case */
+            smallestI    = largestBarI;
+            }
+
+        staticBarI = smallestI;
+        i          = smallestI;
+
+        inStartX =
+            centerX -
+            mx_sprites[ mx_sliderSprites.fullBars[i] ].leftVisibleRadius;
+        
+        inEndX =
+            centerX +
+            mx_sprites[ mx_sliderSprites.fullBars[i] ].rightVisibleRadius;
+        }
+    
     
     c.comp.red   = 255;
     c.comp.green = 255;
@@ -6699,132 +6966,154 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
 
     /* now draw slider */
 
-
+    
     if( mx_sliderSpritesSet ) {
-        /* use sprites */
-        
-        int  leftEndHandle;
-        int  rightEndHandle;
+        /* use sprites  */
+
         int  thumbHandle;
+
+
+        if( mx_sliderSprites.numFullBars == 0 ) {
+            /* dynamically-sized bar */
+
+                    
+            int  leftEndHandle;
+            int  rightEndHandle;
         
-        if( v > inMinValue ) {
-            leftEndHandle = mx_sliderSprites.left[1];
+            if( v > inMinValue ) {
+                leftEndHandle = mx_sliderSprites.left[1];
+                }
+            else {
+                /* completely empty, show empty left end */
+                leftEndHandle = mx_sliderSprites.left[0];
+                }
+
+        
+            mx_guiAddSprite( inGUI,
+                             0,
+                             255,
+                             leftEndHandle,
+                             inStartX,
+                             inY );
+
+            if( thumbPixelCenter > inStartX ) {
+                /* full bar to left of thumb */
+
+                int  consumedWidth   =  0;
+                int  barSprite       =  mx_sliderSprites.bar[1];
+                int  barSpriteLeftR  =  mx_sprites[ barSprite ].leftVisibleRadius;
+            
+                int  barSpriteW      =  barSpriteLeftR +
+                    mx_sprites[ barSprite ].rightVisibleRadius;
+            
+                int  numBars         =  ( thumbPixelCenter - inStartX ) / barSpriteW;
+
+            
+                if( numBars > 0 ) {
+                    consumedWidth = numBars * barSpriteW;
+                
+                    mx_guiAddSpriteSequence( inGUI,
+                                             0,
+                                             255,
+                                             mx_sliderSprites.bar[1],
+                                             inStartX + barSpriteLeftR,
+                                             inY,
+                                             barSpriteW,
+                                             0,
+                                             numBars );
+                    }
+
+                if( consumedWidth < ( thumbPixelCenter - inStartX ) ) {
+
+                    /* fill rest with slivers */
+                    mx_guiAddSpriteSequence( inGUI,
+                                             0,
+                                             255,
+                                             mx_sliderSprites.sliver[1],
+                                             inStartX + consumedWidth,
+                                             inY,
+                                             1,
+                                             0,
+                                             thumbPixelCenter - inStartX
+                                             - consumedWidth );
+                    }
+                }
+
+            if( thumbPixelCenter < inEndX ) {
+                /* empty bar to right of thumb */
+            
+                int  consumedWidth   =  0;
+                int  barSprite       =  mx_sliderSprites.bar[0];
+                int  barSpriteLeftR  =  mx_sprites[ barSprite ].leftVisibleRadius;
+            
+                int  barSpriteW      =  barSpriteLeftR +
+                    mx_sprites[ barSprite ].rightVisibleRadius;
+            
+                int  numBars         =  ( inEndX - thumbPixelCenter ) / barSpriteW;
+
+            
+                if( numBars > 0 ) {
+                    consumedWidth = numBars * barSpriteW;
+                
+                    mx_guiAddSpriteSequence( inGUI,
+                                             0,
+                                             255,
+                                             mx_sliderSprites.bar[0],
+                                             thumbPixelCenter + barSpriteLeftR,
+                                             inY,
+                                             barSpriteW,
+                                             0,
+                                             numBars );
+                    }
+            
+                if( consumedWidth < ( inEndX - thumbPixelCenter ) ) {
+
+                    /* fill rest with slivers */
+                    mx_guiAddSpriteSequence( inGUI,
+                                             0,
+                                             255,
+                                             mx_sliderSprites.sliver[0],
+                                             thumbPixelCenter + consumedWidth,
+                                             inY,
+                                             1,
+                                             0,
+                                             inEndX - thumbPixelCenter
+                                             - consumedWidth );
+                    }
+                }
+        
+
+            if( v < inMaxValue ) {
+                rightEndHandle = mx_sliderSprites.right[0];
+                }
+            else {
+                /* completely fully, show full right end */
+                rightEndHandle = mx_sliderSprites.right[1];
+                }
+
+        
+            mx_guiAddSprite( inGUI,
+                             0,
+                             255,
+                             rightEndHandle,
+                             inEndX,
+                             inY );
             }
         else {
-            /* completely empty, show empty left end */
-            leftEndHandle = mx_sliderSprites.left[0];
+            /* statically sized bar */
+
+            int  barHandle  =
+                mx_sliderSprites.fullBars[ staticBarI ];
+
+            mx_guiAddSprite( inGUI,
+                             0,
+                             255,
+                             barHandle,
+                             centerX,
+                             inY );
             }
 
-        
-        mx_guiAddSprite( inGUI,
-                         0,
-                         255,
-                         leftEndHandle,
-                         inStartX,
-                         inY );
-
-        if( thumbPixelCenter > inStartX ) {
-            /* full bar to left of thumb */
-
-            int  consumedWidth   =  0;
-            int  barSprite       =  mx_sliderSprites.bar[1];
-            int  barSpriteLeftR  =  mx_sprites[ barSprite ].leftVisibleRadius;
-            
-            int  barSpriteW      =  barSpriteLeftR +
-                                    mx_sprites[ barSprite ].rightVisibleRadius;
-            
-            int  numBars         =  ( thumbPixelCenter - inStartX ) / barSpriteW;
-
-            
-            if( numBars > 0 ) {
-                consumedWidth = numBars * barSpriteW;
-                
-                mx_guiAddSpriteSequence( inGUI,
-                                         0,
-                                         255,
-                                         mx_sliderSprites.bar[1],
-                                         inStartX + barSpriteLeftR,
-                                         inY,
-                                         barSpriteW,
-                                         0,
-                                         numBars );
-                }
-
-            if( consumedWidth < ( thumbPixelCenter - inStartX ) ) {
-
-                /* fill rest with slivers */
-                mx_guiAddSpriteSequence( inGUI,
-                                         0,
-                                         255,
-                                         mx_sliderSprites.sliver[1],
-                                         inStartX + consumedWidth,
-                                         inY,
-                                         1,
-                                         0,
-                                         thumbPixelCenter - inStartX
-                                                          - consumedWidth );
-                }
-            }
-
-        if( thumbPixelCenter < inEndX ) {
-            /* empty bar to right of thumb */
-            
-            int  consumedWidth   =  0;
-            int  barSprite       =  mx_sliderSprites.bar[0];
-            int  barSpriteLeftR  =  mx_sprites[ barSprite ].leftVisibleRadius;
-            
-            int  barSpriteW      =  barSpriteLeftR +
-                                    mx_sprites[ barSprite ].rightVisibleRadius;
-            
-            int  numBars         =  ( inEndX - thumbPixelCenter ) / barSpriteW;
-
-            
-            if( numBars > 0 ) {
-                consumedWidth = numBars * barSpriteW;
-                
-                mx_guiAddSpriteSequence( inGUI,
-                                         0,
-                                         255,
-                                         mx_sliderSprites.bar[0],
-                                         thumbPixelCenter + barSpriteLeftR,
-                                         inY,
-                                         barSpriteW,
-                                         0,
-                                         numBars );
-                }
-            
-            if( consumedWidth < ( inEndX - thumbPixelCenter ) ) {
-
-                /* fill rest with slivers */
-                mx_guiAddSpriteSequence( inGUI,
-                                         0,
-                                         255,
-                                         mx_sliderSprites.sliver[0],
-                                         thumbPixelCenter + consumedWidth,
-                                         inY,
-                                         1,
-                                         0,
-                                         inEndX - thumbPixelCenter
-                                                - consumedWidth );
-                }
-            }
-        
-
-        if( v < inMaxValue ) {
-            rightEndHandle = mx_sliderSprites.right[0];
-            }
-        else {
-            /* completely fully, show full right end */
-            rightEndHandle = mx_sliderSprites.right[1];
-            }
-
-        
-        mx_guiAddSprite( inGUI,
-                         0,
-                         255,
-                         rightEndHandle,
-                         inEndX,
-                         inY );
+        /* thumb drawn the same for both static and dynamic bars */
 
         if( inGUI->active == inCurrentValue ) {
             thumbHandle = mx_sliderSprites.thumb[2];

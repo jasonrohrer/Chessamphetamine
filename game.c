@@ -640,6 +640,10 @@ static MinginButton crashMapping[]  =  { MGN_KEY_M,         MGN_MAP_END };
 static MinginStick  thickMapping[]  =  { MGN_STICK_LEFT_Y,  MGN_MAP_END };
 
 
+static const char  *sliderBarSprites[]  =  { "sliderFullBar100.tga",
+                                             "sliderFullBar200.tga", };
+
+
 #define REGISTER_VAL_MEM( x )  \
     maxigin_initRegisterStaticMemory( &x, sizeof(x), #x )
 
@@ -710,7 +714,7 @@ void maxiginGame_init( void ) {
 
     mingin_registerStickAxis( BOX_THICK,  thickMapping );
 
-    
+    /*
     maxigin_initSliderSprites( "sliderLeftEndEmpty.tga",
                                "sliderLeftEndFull.tga",
                                "sliderRightEndEmpty.tga",
@@ -722,6 +726,15 @@ void maxiginGame_init( void ) {
                                "sliderThumbPassive.tga",
                                "sliderThumbHot.tga",
                                "sliderThumbActive.tga" );
+    */
+    maxigin_initSliderSpritesStatic( 2,
+                                     sliderBarSprites,
+                                     "sliderThumbPassive.tga",
+                                     "sliderThumbHot.tga",
+                                     "sliderThumbActive.tga" );
+
+    maxigin_initMakeSliderGlow( 2,
+                                2 );
     
     maxigin_initPanelSprites( "panelTopLeft.tga",
                               "panelTopRight.tga",

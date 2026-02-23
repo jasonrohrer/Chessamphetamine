@@ -76,6 +76,15 @@ static int          sliderValueC  =   7;
 static int          plunkSound    =  -1;
 
 
+static int          lang_settings;
+static int          lang_newGame;
+static int          lang_quit;
+static int          lang_musicVolume;
+static int          lang_effectsVolume;
+static int          lang_fullscreen;
+
+
+
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
@@ -167,34 +176,34 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
     maxigin_drawSetColor( 255, 255, 0, 255 );
-    maxigin_drawLangText( 0,
+    maxigin_drawLangText( lang_settings,
                           20,
                           120,
                           MAXIGIN_LEFT );
 
     maxigin_drawSetColor( 0, 255, 255, 255 );
-    maxigin_drawLangText( 1,
+    maxigin_drawLangText( lang_newGame,
                           20,
                           140,
                           MAXIGIN_LEFT );
         
     maxigin_drawResetColor();
-    maxigin_drawLangText( 2,
+    maxigin_drawLangText( lang_quit,
                           20,
                           160,
                           MAXIGIN_LEFT);
 
-    maxigin_drawLangText( 3,
+    maxigin_drawLangText( lang_musicVolume,
                           20,
                           180,
                           MAXIGIN_LEFT );
         
-    maxigin_drawLangText( 4,
+    maxigin_drawLangText( lang_effectsVolume,
                           20,
                           200,
                           MAXIGIN_LEFT );
                 
-    maxigin_drawLangText( 5,
+    maxigin_drawLangText( lang_fullscreen,
                           20,
                           220,
                           MAXIGIN_LEFT );
@@ -776,18 +785,12 @@ void maxiginGame_init( void ) {
     maxigin_initSoundEffect( "test_long.wav" );
 
 
-    maxigin_initTranslationKey( 0,
-                                "settings" );
-    maxigin_initTranslationKey( 1,
-                                "newGame" );
-    maxigin_initTranslationKey( 2,
-                                "quit" );
-    maxigin_initTranslationKey( 3,
-                                "musicVolume" );
-    maxigin_initTranslationKey( 4,
-                                "effectsVolume" );
-    maxigin_initTranslationKey( 5,
-                                "fullscreen" );
+    lang_settings      = maxigin_initTranslationKey( "settings" );
+    lang_newGame       = maxigin_initTranslationKey( "newGame"  );
+    lang_quit          = maxigin_initTranslationKey( "quit" );
+    lang_musicVolume   = maxigin_initTranslationKey( "musicVolume" );
+    lang_effectsVolume = maxigin_initTranslationKey( "effectsVolume" );
+    lang_fullscreen    = maxigin_initTranslationKey( "fullscreen" );
 
     maxigin_initSetLanguageFontGLow( 2,
                                      2 );

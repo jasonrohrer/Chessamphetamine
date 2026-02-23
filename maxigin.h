@@ -795,33 +795,11 @@ int maxigin_initFont( int          inSpriteStripHandle,
 
 
 /*
-  Registers a game-defined integer translation key that maps to a
-  key string in language translation files.  After registration, the
-  phrase key can be used in calls to maxigin_drawLangText().
-
-  The idea here is that the game can define intger phrase constants as-needed,
-  like lang_settings, lang_newGame, lang_quit, and so on, and then map them to
-  the key strings that actually appear in the language files.
-
-  For example, the game might do something like this:
-
-      enum LanguageKeys {
-          lang_settings,
-          lang_newGame,
-          lang_quit };
-
-  And then make these calls:
-
-      maxigin_initTranslationKey( lang_settings,
-                                  "settings" );
-
-      maxigin_initTranslationKey( lang_newGame,
-                                  "newGame" );
+  Registers a translation key string from in language translation files.
+  After registration, the phrase key can be used in calls to
+  maxigin_drawLangText().
 
   Parameters:
-
-    inPhraseKey         game-defined integer phrase key.  Must be >= 0
-                        and  < MAXIGIN_MAX_NUM_TRANSLATION_KEYS
 
     inPhraseKeyString   a \0-terminated phrase key string that occurs in the
                         language bulk data resources.  At most 32
@@ -829,14 +807,13 @@ int maxigin_initFont( int          inSpriteStripHandle,
 
   Returns:
 
-    1   on success
+    phraseKey   on success
 
-    0   on failure
+    -1          on failure
 
   [jumpMaxiginInit]      
 */
-char maxigin_initTranslationKey( int          inPhraseKey,
-                                 const char  *inPhraseKeyString );
+int maxigin_initTranslationKey( const char  *inPhraseKeyString );
 
 
 
@@ -8405,8 +8382,8 @@ void minginGame_step( char  inFinalStep ) {
                  mx_menuFade > 0 ) {
 
             fadeStep = ( mx_menuFadeMax - mx_menuFade ) / 3;
-            if( fadeStep < 1 ) {
-                fadeStep = 1;
+            if( fadeStep < 30 ) {
+                fadeStep = 30;
                 }
 
             if( fadeStep > mx_menuFade ) {
@@ -8468,6 +8445,13 @@ static void mx_clearTranslationKeys( void );
 
 static  void mx_initLanguages( void );
 
+static int          mx_lang_settings;
+static int          mx_lang_newGame;
+static int          mx_lang_quit;
+static int          mx_lang_musicVolume;
+static int          mx_lang_effectsVolume;
+static int          mx_lang_fullscreen;
+
 
 static void mx_gameInit( void ) {
 
@@ -8527,6 +8511,14 @@ static void mx_gameInit( void ) {
     maxigin_initGUI( &mx_internalGUI );
     
     maxiginGame_init();
+
+    /* our own internal translation keys */
+    mx_lang_settings      = maxigin_initTranslationKey( "settings" );
+    mx_lang_newGame       = maxigin_initTranslationKey( "newGame"  );
+    mx_lang_quit          = maxigin_initTranslationKey( "quit" );
+    mx_lang_musicVolume   = maxigin_initTranslationKey( "musicVolume" );
+    mx_lang_effectsVolume = maxigin_initTranslationKey( "effectsVolume" );
+    mx_lang_fullscreen    = maxigin_initTranslationKey( "fullscreen" );
 
     /* game set any translation keys during init, now we can load languages
        based on those keys */
@@ -15644,7 +15636,7 @@ static   char          mx_translationKeys
                            [ MAXIGIN_MAX_NUM_TRANSLATION_KEYS ]
                            [ MAXIGIN_MAX_TRANSLATION_KEY_LENGTH + 1 ];
 
-static   char          mx_anyTranslationKeysSet  = 0;
+static   int           mx_numTranslationKeys = 0;
 
 
 static   char          mx_translationStringBytes
@@ -15718,6 +15710,8 @@ static void mx_clearTranslationKeys( void ) {
         
         mx_translationKeys[ t ][ 0 ] = '\0';
         }
+
+    mx_numTranslationKeys = 0;
     }
 
 
@@ -15749,7 +15743,7 @@ static void mx_removeTranslationString( int  inStartByte ) {
         int               i;
 
         for( i = 0;
-             i < MAXIGIN_MAX_NUM_TRANSLATION_KEYS;
+             i < mx_numTranslationKeys;
              i ++ ) {
 
             if( lang->stringStartBytes[ i ] > inStartByte ) {
@@ -15786,55 +15780,13 @@ static int mx_findLanguageFont( const char  *inBulkResourceName ) {
 
 
 
-
-char maxigin_initTranslationKey( int          inPhraseKey,
-                                 const char  *inPhraseKeyString ) {
-
-    if( ! mx_areWeInMaxiginGameInitFunction ) {
-        mingin_log( "Game tried to call "
-                    "maxigin_initTranslationKey "
-                    "from outside of maxiginGame_init\n" );
-        return 0;
-        }
-    
-    if( inPhraseKey < 0
-        ||
-        inPhraseKey >= MAXIGIN_MAX_NUM_TRANSLATION_KEYS ) {
-
-        maxigin_logInt( "Translation key out of range: ",
-                        inPhraseKey );
-        
-        maxigin_logString( "  Corresponding key string = ",
-                           inPhraseKeyString );
-        return 0;
-        }
-
-    if( maxigin_stringLength( inPhraseKeyString )
-        >
-        MAXIGIN_MAX_TRANSLATION_KEY_LENGTH ) {
-        
-        maxigin_logString( "Translation key too long, skipping: ",
-                           inPhraseKeyString );
-        return 0;
-        }
-
-    maxigin_stringCopy( inPhraseKeyString,
-                        mx_translationKeys[ inPhraseKey ] );
-
-    mx_anyTranslationKeysSet = 1;
-
-    return 1;
-    }
-
-
-
 /* returns index into mx_translationKeys or -1 if not found */
 static int mx_findTranslationKey( const char *inPhraseKeyString ) {
 
     int  i;
 
     for( i = 0;
-         i < MAXIGIN_MAX_NUM_TRANSLATION_KEYS;
+         i < mx_numTranslationKeys;
          i ++ ) {
 
         if( maxigin_stringsEqual( inPhraseKeyString,
@@ -15844,6 +15796,53 @@ static int mx_findTranslationKey( const char *inPhraseKeyString ) {
         }
     
     return -1;
+    }
+
+
+
+int maxigin_initTranslationKey( const char  *inPhraseKeyString ) {
+
+    int  key;
+    
+    if( ! mx_areWeInMaxiginGameInitFunction ) {
+        mingin_log( "Game tried to call "
+                    "maxigin_initTranslationKey "
+                    "from outside of maxiginGame_init\n" );
+        return -1;
+        }
+
+    key = mx_findTranslationKey( inPhraseKeyString );
+
+    if( key != -1 ) {
+        /* found existing */
+        return key;
+        }
+
+    
+    key = mx_numTranslationKeys;
+    
+    if( mx_numTranslationKeys >= MAXIGIN_MAX_NUM_TRANSLATION_KEYS ) {
+
+        maxigin_logString( "Failed to add translation key, already full: ",
+                           inPhraseKeyString );
+        return -1;
+        }
+
+    if( maxigin_stringLength( inPhraseKeyString )
+        >
+        MAXIGIN_MAX_TRANSLATION_KEY_LENGTH ) {
+        
+        maxigin_logString( "Translation key too long, skipping: ",
+                           inPhraseKeyString );
+        return -1;
+        }
+
+    maxigin_stringCopy( inPhraseKeyString,
+                        mx_translationKeys[ key ] );
+
+    mx_numTranslationKeys ++;
+    
+    return key;
     }
 
 
@@ -16253,7 +16252,7 @@ static void mx_initLanguages( void ) {
     const char  *token;
 
     
-    if( ! mx_anyTranslationKeysSet ) {
+    if( mx_numTranslationKeys == 0 ) {
         mingin_log( "No translation keys set by game, so skipping loading "
                     "languages" );
         return;
@@ -16306,7 +16305,7 @@ void maxigin_drawLangText( int           inPhraseKey,
 
     if( inPhraseKey < 0
         ||
-        inPhraseKey >= MAXIGIN_MAX_NUM_TRANSLATION_KEYS ) {
+        inPhraseKey >= mx_numTranslationKeys ) {
 
         if( ! mx_drawLangFailureShown ) {
             maxigin_logInt( "maxigin_drawLangText called with phrase key "
@@ -16359,7 +16358,7 @@ static void mx_checkLangNeedsReload( void ) {
                                 bulkName );
             
             for( k = 0;
-                 k < MAXIGIN_MAX_NUM_TRANSLATION_KEYS;
+                 k < mx_numTranslationKeys;
                  k ++ ) {
 
                 if( lang->stringStartBytes[ k ] != -1 ) {
@@ -16381,22 +16380,43 @@ static void mx_checkLangNeedsReload( void ) {
 
 void mx_populateMenuPanel( void ) {
     
-    static  int  dummySliderValue = 5;
+    static  int  dummySliderValueA = 5;
+    static  int  dummySliderValueB = 5;
 
     maxigin_guiLabel( &mx_internalGUI,
-                      3,
+                      mx_lang_musicVolume,
                       0,
-                      -20,
+                      -15,
                       MAXIGIN_CENTER );
     
     /* stick a slider in there as a dummy component for now */
     maxigin_guiSlider( &mx_internalGUI,
-                       &dummySliderValue,
+                       &dummySliderValueA,
                        0,
                        10,
                        -50,
                        50,
                        0,
+                       10,
+                       20,
+                       10,
+                       0 );
+
+    maxigin_guiLabel( &mx_internalGUI,
+                      mx_lang_effectsVolume,
+                      0,
+                      25,
+                      MAXIGIN_CENTER );
+
+    
+    /* stick a slider in there as a dummy component for now */
+    maxigin_guiSlider( &mx_internalGUI,
+                       &dummySliderValueB,
+                       0,
+                       10,
+                       -50,
+                       50,
+                       40,
                        10,
                        20,
                        10,

@@ -7643,7 +7643,8 @@ void maxigin_guiEndPanel( MaxiginGUI  *inGUI,
         
     inGUI->zeroOffsetX -= cX;
     inGUI->zeroOffsetY -= cY;
-
+    inGUI->fade = oldFade;
+    
     /* add a draw component that undoes the offset in our draw sequence */
     i  =  inGUI->numDrawComponents;
 
@@ -7808,7 +7809,8 @@ static  char           mx_quittingReady                    =  0;
 static  char           mx_playbackSliderActive             =  0;
 static  char           mx_playbackBlockForwardSounds       =  0;
 static  char           mx_menuShowing                      =  0;
-static  unsigned char  mx_menuFade                         =  0;
+static  int            mx_menuFade                         =  0;
+static  int            mx_menuFadeMax                      =  2550;
 
 
 /* initiates and steps sound fade out, returning 1 when finally done
@@ -8281,21 +8283,21 @@ void minginGame_step( char  inFinalStep ) {
         mx_menuFade > 0 ) {
 
         int            menuPanel;
-        unsigned char  fadeStep;
+        int            fadeStep;
         int            ySlideInPos;
         
         static  int  dummySliderValue = 5;
 
         ySlideInPos =
-            - MAXIGIN_GAME_NATIVE_H * ( 255 - mx_menuFade )
-            / 255;
+            - MAXIGIN_GAME_NATIVE_H * ( mx_menuFadeMax - mx_menuFade )
+            / mx_menuFadeMax;
             
         menuPanel = maxigin_guiStartPanel( &mx_internalGUI,
                                            0,
                                            ySlideInPos,
                                            MAXIGIN_GAME_NATIVE_W - 32,
                                            MAXIGIN_GAME_NATIVE_H - 32,
-                                           mx_menuFade );
+                                           (unsigned char)( mx_menuFade / 10 ) );
 
         /* stick a slider in there as a dummy component for now */
         maxigin_guiSlider( &mx_internalGUI,
@@ -8315,9 +8317,9 @@ void minginGame_step( char  inFinalStep ) {
 
         if( mx_menuShowing
             &&
-            mx_menuFade < 255 ) {
+            mx_menuFade < mx_menuFadeMax ) {
             /* Purho easing function, go 20% of remaining distance */
-            fadeStep = (unsigned char)( ( 255 - mx_menuFade ) / 5 );
+            fadeStep = ( mx_menuFadeMax - mx_menuFade ) / 5;
             if( fadeStep < 1 ) {
                 fadeStep = 1;
                 }
@@ -8328,7 +8330,7 @@ void minginGame_step( char  inFinalStep ) {
                  &&
                  mx_menuFade > 0 ) {
 
-            fadeStep = (unsigned char)( ( 255 - mx_menuFade ) / 8 );
+            fadeStep = ( mx_menuFadeMax - mx_menuFade ) / 3;
             if( fadeStep < 1 ) {
                 fadeStep = 1;
                 }

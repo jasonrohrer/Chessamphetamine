@@ -8276,16 +8276,23 @@ void minginGame_step( char  inFinalStep ) {
     
 
 
-    if( mx_menuShowing ) {
+    if( mx_menuShowing
+        ||
+        mx_menuFade > 0 ) {
 
-        int  menuPanel;
-        int  newFade;
-
-        static  int  dummySliderValue = 5;
+        int            menuPanel;
+        unsigned char  fadeStep;
+        int            ySlideInPos;
         
+        static  int  dummySliderValue = 5;
+
+        ySlideInPos =
+            - MAXIGIN_GAME_NATIVE_H * ( 255 - mx_menuFade )
+            / 255;
+            
         menuPanel = maxigin_guiStartPanel( &mx_internalGUI,
                                            0,
-                                           0,
+                                           ySlideInPos,
                                            MAXIGIN_GAME_NATIVE_W - 32,
                                            MAXIGIN_GAME_NATIVE_H - 32,
                                            mx_menuFade );
@@ -8305,16 +8312,34 @@ void minginGame_step( char  inFinalStep ) {
         
         maxigin_guiEndPanel( &mx_internalGUI,
                              menuPanel );
-        
-        newFade = mx_menuFade + 4;
 
-        if( newFade > 255 ) {
-            newFade = 255;
+        if( mx_menuShowing
+            &&
+            mx_menuFade < 255 ) {
+            /* Purho easing function, go 20% of remaining distance */
+            fadeStep = (unsigned char)( ( 255 - mx_menuFade ) / 5 );
+            if( fadeStep < 1 ) {
+                fadeStep = 1;
+                }
+            
+            mx_menuFade += fadeStep;
             }
-        mx_menuFade = (unsigned char)newFade;
-        }
-    else{
-        mx_menuFade = 0;
+        else if( ! mx_menuShowing
+                 &&
+                 mx_menuFade > 0 ) {
+
+            fadeStep = (unsigned char)( ( 255 - mx_menuFade ) / 8 );
+            if( fadeStep < 1 ) {
+                fadeStep = 1;
+                }
+
+            if( fadeStep > mx_menuFade ) {
+                mx_menuFade = 0;
+                }
+            else {
+                mx_menuFade -= fadeStep;
+                }
+            } 
         }
     
     

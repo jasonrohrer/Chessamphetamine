@@ -1590,6 +1590,35 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                         char         inForceMoving );
 
 
+/*
+  Adds a translated language label to a GUI instance in immediate mode.
+
+  Parameters:
+
+      inGUI          pointer to the structure representing the GUI instance
+        
+      inPhraseKey    a phrase key previously registered with
+                     maxigin_initTranslationKey()
+
+      inLocationX    the x position in pixels of the label anchor
+ 
+      inLocationY    the y position in pixels of the label anchor
+                     
+      inAlign        the horizontal alignment of the label around the point
+                     (inLocationX, inLocationY).
+                     The label is always vertically centered on this point
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_guiLabel( MaxiginGUI  *inGUI,
+                       int           inPhraseKey,
+                       int           inLocationX,
+                       int           inLocationY,
+                       MaxiginAlign  inAlign );
+
+                       
+                       
+
 
 /*
   Starts a sub-panel in an immediate-mode GUI.
@@ -2365,7 +2394,8 @@ struct MaxiginGUI {
                     MX_GUI_DRAW_RECT,
                     MX_GUI_FILL_RECT,
                     MX_GUI_DRAW_SPRITE,
-                    MX_GUI_DRAW_SPRITE_SEQUENCE
+                    MX_GUI_DRAW_SPRITE_SEQUENCE,
+                    MX_GUI_DRAW_LANG_TEXT
                     } drawType;
 
                 union {
@@ -2414,6 +2444,13 @@ struct MaxiginGUI {
                                 int  offsetY;
                                 int  count;
                             } spriteSequence;
+                        
+                        struct {
+                                int           phraseKey;
+                                int           anchorX;
+                                int           anchorY;
+                                MaxiginAlign  align;
+                            } langText;
                         
                     } drawParams;
                 
@@ -6327,7 +6364,9 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
             ||
             drawType == MX_GUI_DRAW_SPRITE
             ||
-            drawType == MX_GUI_DRAW_SPRITE_SEQUENCE ) {
+            drawType == MX_GUI_DRAW_SPRITE_SEQUENCE
+            ||
+            drawType == MX_GUI_DRAW_LANG_TEXT ) {
 
             maxigin_drawSetColor(
                 inGUI->drawComponents[i].red,
@@ -6407,7 +6446,14 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
                     }
                 
                 }
-                break;            
+                break;
+            case MX_GUI_DRAW_LANG_TEXT:
+                maxigin_drawLangText(
+                    inGUI->drawComponents[i].drawParams.langText.phraseKey,
+                    inGUI->drawComponents[i].drawParams.langText.anchorX + xO,
+                    inGUI->drawComponents[i].drawParams.langText.anchorY + yO,
+                    inGUI->drawComponents[i].drawParams.langText.align );
+                break;
             }
         }
     }
@@ -7665,6 +7711,44 @@ void maxigin_guiEndPanel( MaxiginGUI  *inGUI,
 
 
 
+void maxigin_guiLabel( MaxiginGUI  *inGUI,
+                       int           inPhraseKey,
+                       int           inLocationX,
+                       int           inLocationY,
+                       MaxiginAlign  inAlign ) {
+    
+    int           i  =  inGUI->numDrawComponents;
+    MaxiginColor  c;
+    
+    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
+        mingin_log( "Error:  trying to add label to a full "
+                    "MaxiginGUI instance.\n" );
+        return;
+        }
+
+    c.val[0] = 255;
+    c.val[1] = 255;
+    c.val[2] = 255;
+    c.val[3] = 255;
+    
+    mx_guiSetColor( inGUI,
+                    i,
+                    0,
+                    &c );
+
+    inGUI->drawComponents[i].drawType = MX_GUI_DRAW_LANG_TEXT;
+    
+    inGUI->drawComponents[i].drawParams.langText.phraseKey = inPhraseKey;
+    inGUI->drawComponents[i].drawParams.langText.anchorX   = inLocationX;
+    inGUI->drawComponents[i].drawParams.langText.anchorY   = inLocationY;
+    inGUI->drawComponents[i].drawParams.langText.align     = inAlign;
+    
+
+    inGUI->numDrawComponents ++;
+    }
+
+
+
 
 
 /*
@@ -7860,6 +7944,9 @@ static void mx_nextLang( void );
 
 
 static void mx_checkLangNeedsReload( void );
+
+
+static void mx_populateMenuPanel( void );
 
 
 
@@ -8285,8 +8372,6 @@ void minginGame_step( char  inFinalStep ) {
         int            menuPanel;
         int            fadeStep;
         int            ySlideInPos;
-        
-        static  int  dummySliderValue = 5;
 
         ySlideInPos =
             - MAXIGIN_GAME_NATIVE_H * ( mx_menuFadeMax - mx_menuFade )
@@ -8299,18 +8384,7 @@ void minginGame_step( char  inFinalStep ) {
                                            MAXIGIN_GAME_NATIVE_H - 32,
                                            (unsigned char)( mx_menuFade / 10 ) );
 
-        /* stick a slider in there as a dummy component for now */
-        maxigin_guiSlider( &mx_internalGUI,
-                           &dummySliderValue,
-                           0,
-                           10,
-                           -50,
-                           50,
-                           0,
-                           10,
-                           20,
-                           10,
-                           0 );
+        mx_populateMenuPanel();
         
         maxigin_guiEndPanel( &mx_internalGUI,
                              menuPanel );
@@ -16303,6 +16377,31 @@ static void mx_checkLangNeedsReload( void ) {
         }
     }
 
+
+
+void mx_populateMenuPanel( void ) {
+    
+    static  int  dummySliderValue = 5;
+
+    maxigin_guiLabel( &mx_internalGUI,
+                      3,
+                      0,
+                      -20,
+                      MAXIGIN_CENTER );
+    
+    /* stick a slider in there as a dummy component for now */
+    maxigin_guiSlider( &mx_internalGUI,
+                       &dummySliderValue,
+                       0,
+                       10,
+                       -50,
+                       50,
+                       0,
+                       10,
+                       20,
+                       10,
+                       0 );
+    }
 
 
 

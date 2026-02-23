@@ -190,7 +190,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_TOTAL_SPRITE_BYTES
-#define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  655360
+#define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  1310720
 #endif
 
 
@@ -976,6 +976,10 @@ void maxigin_initSliderSpritesStatic(
 /*
   Creates glow sprites for previously setup slider sprites.
 
+  Only works for thumb and statically-sized slider bars.
+
+  (Can't work for dynamically-sized slider bars, because blurs don't tile.)
+
   Parameters:
 
       inBlurRadius       the blur radius for the glow, in pixels
@@ -986,6 +990,27 @@ void maxigin_initSliderSpritesStatic(
 */
 void maxigin_initMakeSliderGlow( int  inBlurRadius,
                                  int  inBlurIterations );
+
+
+
+/*
+  Creates glow sprites for previously setup panel sprites.
+
+  
+  Only works for thumb and statically-sized panels.
+
+  (Can't work for dynamically-sized panels, because blurs don't tile.)
+  
+  Parameters:
+
+      inBlurRadius       the blur radius for the glow, in pixels
+
+      inBlurIterations   the number of iterations of the blur to apply
+
+  [jumpMaxiginInit]  
+*/
+void maxigin_initMakePanelGlow( int  inBlurRadius,
+                                int  inBlurIterations );
 
 
 
@@ -1577,6 +1602,9 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
   Note that inWidth and inHeight are the *minimum* width and height, since
   if sprites are set with maxigin_initPanelSprites, then the panel will
   be whole multiples of the fill sprite dimensions.
+
+  Similarly, if sprites are set with maxigin_initPanelSpritesStatic,
+  then the smallest static panel that fits the requested size is used.
   
   Parameters:
     
@@ -2701,6 +2729,10 @@ typedef struct MaxiginSprite {
         int            leftVisibleRadius;
         int            rightVisibleRadius;
 
+        /* how far visible pixels (alpha > 0) extend above and
+           below sprite center */
+        int            upperVisibleRadius;
+        int            lowerVisibleRadius;
         
         /*
           Index for this sprite into font kerning table.
@@ -2893,9 +2925,12 @@ static void mx_recomputeSpriteAttributes( int  inSpriteHandle ) {
     
     int             leftRadius      =  0;
     int             rightRadius     =  0;
+    int             upperRadius     =  0;
+    int             lowerRadius     =  0;
     int             w               =  s->w;
     int             h               =  s->h;
     int             xCenter         =  w / 2;
+    int             yCenter         =  h / 2;
     int             y;
     int             startByte       =  s->startByte;
     int             numSpriteBytes  =  w * h * 4;
@@ -2906,8 +2941,10 @@ static void mx_recomputeSpriteAttributes( int  inSpriteHandle ) {
          y < h;
          y ++ ) {
 
-        int  curByte  =  startByte + y * w * 4;
-        int  x;
+        int   curByte  =  startByte + y * w * 4;
+        int   x;
+        char  someVis  =  0;
+        
         
         for( x = 0;
              x < w;
@@ -2923,20 +2960,32 @@ static void mx_recomputeSpriteAttributes( int  inSpriteHandle ) {
                 else if( xCenter - x > leftRadius ) {
                     leftRadius = xCenter - x;
                     }
+                someVis = 1;
                 }
             
             /* on to next pixel */
             curByte += 4;
             }
+
+        if( someVis ) {
+            /* some pixels in this row are visible */  
+            if( y - yCenter > lowerRadius ) {
+                lowerRadius =  y - yCenter;
+                }
+            else if( yCenter - y > upperRadius ) {
+                upperRadius = yCenter - y;
+                }
+            }       
         }
 
     s->leftVisibleRadius  = leftRadius;
 
     /* center position is actually off by 1 in favor of left radius */
     s->rightVisibleRadius = rightRadius + 1;
-    
-    
 
+    s->upperVisibleRadius = upperRadius;
+    s->lowerVisibleRadius = lowerRadius + 1;
+    
 
     /* hash bytes after origin flip and BGRA conversion */
 
@@ -4207,6 +4256,8 @@ void maxigin_initMakeSliderGlow( int  inBlurRadius,
 
 
 
+#define  MAXIGIN_NUM_STATIC_PANELS  10
+
 
 typedef struct MaxiginPanelSprites {
 
@@ -4217,6 +4268,10 @@ typedef struct MaxiginPanelSprites {
         int  sides  [4];
         
         int  fill;
+
+        int  numFullPanels;
+        int  fullPanels[ MAXIGIN_NUM_STATIC_PANELS ];
+
         
     } MaxiginPanelSprites;
 
@@ -4280,6 +4335,59 @@ void maxigin_initPanelSprites( const char  *inTopLeftSpriteResource,
         ( mx_panelSprites.sides[3]   >= 0 )
         &&
         ( mx_panelSprites.fill       >= 0 );
+    }
+
+
+
+void maxigin_initPanelSpritesStatic( int           inNumFullPanelSprites,
+                                     const char  **inFullPanelSprites ) {
+    int   i;
+    char  success;
+
+    
+    if( inNumFullPanelSprites > MAXIGIN_NUM_STATIC_PANELS ) {
+        maxigin_logInt( "Error:  maxigin_initPanelSpritesStatic called with "
+                        "too many panel sprites; ",
+                        inNumFullPanelSprites );
+        inNumFullPanelSprites = MAXIGIN_NUM_STATIC_PANELS;
+        }
+
+    mx_panelSprites.numFullPanels = inNumFullPanelSprites;
+
+    success = 1;
+    
+    for( i = 0;
+         i < inNumFullPanelSprites;
+         i ++ ) {
+
+        mx_panelSprites.fullPanels[i] =
+            maxigin_initSprite( inFullPanelSprites[i] );
+        
+        success =
+            success
+            &&
+            ( mx_panelSprites.fullPanels[i] >= 0 );
+        }
+
+    mx_panelSpritesSet = success;
+    }
+
+
+
+void maxigin_initMakePanelGlow( int  inBlurRadius,
+                                int  inBlurIterations ) {
+    int  i;
+
+    /* only apply to static panels, not dynamic panel tiles */
+    
+    for( i = 0;
+         i < mx_panelSprites.numFullPanels;
+         i ++ ) {
+
+        maxigin_initMakeGlowSprite( mx_panelSprites.fullPanels[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        }
     }
 
 
@@ -6572,6 +6680,7 @@ static void mx_makeColorGray( MaxiginColor   *inC,
     }
 
 
+
 static void mx_getSliderThumbRadius( int   inThumbWidth,
                                      int  *outLeftRadius,
                                      int  *outRightRadius ) {
@@ -6984,12 +7093,14 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
 
                 int  consumedWidth   =  0;
                 int  barSprite       =  mx_sliderSprites.bar[1];
-                int  barSpriteLeftR  =  mx_sprites[ barSprite ].leftVisibleRadius;
+                int  barSpriteLeftR  =
+                         mx_sprites[ barSprite ].leftVisibleRadius;
             
                 int  barSpriteW      =  barSpriteLeftR +
-                    mx_sprites[ barSprite ].rightVisibleRadius;
+                         mx_sprites[ barSprite ].rightVisibleRadius;
             
-                int  numBars         =  ( thumbPixelCenter - inStartX ) / barSpriteW;
+                int  numBars         =
+                         ( thumbPixelCenter - inStartX ) / barSpriteW;
 
             
                 if( numBars > 0 ) {
@@ -7027,12 +7138,14 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
             
                 int  consumedWidth   =  0;
                 int  barSprite       =  mx_sliderSprites.bar[0];
-                int  barSpriteLeftR  =  mx_sprites[ barSprite ].leftVisibleRadius;
+                int  barSpriteLeftR  =
+                         mx_sprites[ barSprite ].leftVisibleRadius;
             
                 int  barSpriteW      =  barSpriteLeftR +
                     mx_sprites[ barSprite ].rightVisibleRadius;
             
-                int  numBars         =  ( inEndX - thumbPixelCenter ) / barSpriteW;
+                int  numBars         =
+                        ( inEndX - thumbPixelCenter ) / barSpriteW;
 
             
                 if( numBars > 0 ) {
@@ -7252,146 +7365,202 @@ int maxigin_guiStartPanel( MaxiginGUI    *inGUI,
 
     if( mx_panelSpritesSet ) {
 
-        int             fill          =  mx_panelSprites.fill;
-        MaxiginSprite  *fillS         =  &( mx_sprites[ fill ] );
-        int             fillW         =  fillS->w;
-        int             fillH         =  fillS->h;
-        int             numFillRows;
-        int             numFillCols;
-        int             totalFillW;
-        int             totalFillH;
-        int             fillStartX;
-        int             fillStartY;
-        int             r;
-        
-        numFillCols = inWidth / fillW;
+        if( mx_panelSprites.numFullPanels > 0 ) {
+            /* statically-sized panels */
 
-        if( numFillCols * fillW < inWidth ) {
-            /* round up */
-            numFillCols ++;
-            }
-        
-        numFillRows = inHeight / fillH;
-
-        if( numFillRows * fillH < inHeight ) {
-            /* round up */
-            numFillRows ++;
-            }
-
-        /* add extra rows/columns for edges, which might have transparent
-           pixels and not "fill" in the desired area completely
-           We want to guarantee that opaque fill of panel is at least as
-           big as the requested size */
-        numFillCols += 2;
-        numFillRows += 2;
-
-        totalFillW = numFillCols * fillW;
-        totalFillH = numFillRows * fillH;
-
-        fillStartX = ( - totalFillW / 2 ) + fillW / 2;
-        fillStartY = ( - totalFillH / 2 ) + fillH / 2;
-
-        for( r = 0;
-             r < numFillRows;
-             r ++ ) {
-
-            int  rowStartY  =  fillStartY + r * fillH;
+            int  smallestP  =  -1;
+            int  smallestW  =  30000;
             
-            if( r == 0 ) {
-                /* tl corner */
-                mx_guiAddSprite( inGUI,
-                                 0,
-                                 255,
-                                 mx_panelSprites.corners[0],
-                                 fillStartX,
-                                 rowStartY );
-                }
-            else if( r == numFillRows - 1 ) {
-                /* bl corner */
-                mx_guiAddSprite( inGUI,
-                                 0,
-                                 255,
-                                 mx_panelSprites.corners[2],
-                                 fillStartX,
-                                 rowStartY );
-                }
-            else {
-                /* left edge */
-                mx_guiAddSprite( inGUI,
-                                 0,
-                                 255,
-                                 mx_panelSprites.sides[0],
-                                 fillStartX,
-                                 rowStartY );
-                }
+            int  largestP   =  -1;
+            int  largestW   =   0;
+            int  p;
             
-            if( r == 0 ) {
-                /* fill with top edge */
+            for( p = 0;
+                 p < mx_panelSprites.numFullPanels;
+                 p ++ ) {
 
-                 mx_guiAddSpriteSequence( inGUI,
+                MaxiginSprite  *s  =
+                    &( mx_sprites[ mx_panelSprites.fullPanels[p] ] );
+                int             w  =  s->leftVisibleRadius +
+                                      s->rightVisibleRadius;
+                int             h  =  s->upperVisibleRadius +
+                                      s->lowerVisibleRadius;
+
+                if( w >= inWidth
+                    &&
+                    w < smallestW
+                    &&
+                    h >= inHeight ) {
+                    smallestP = p;
+                    smallestW = w;
+                    }
+                
+                if( w > largestW ) {
+                    largestP = p;
+                    largestW = w;
+                    }
+                }
+
+            if( smallestP == -1 ) {
+                /* found no panel that was big enough
+                   use largest one instead */
+                smallestP = largestP;
+                }
+
+            if( smallestP != -1 ) {
+                
+                mx_guiAddSprite( inGUI,
+                                 0,
+                                 255,
+                                 mx_panelSprites.fullPanels[ smallestP ],
+                                 0,
+                                 0 );
+                }
+            }
+        else {
+            /* dynamically-sized panels */
+
+            int             fill          =  mx_panelSprites.fill;
+            MaxiginSprite  *fillS         =  &( mx_sprites[ fill ] );
+            int             fillW         =  fillS->w;
+            int             fillH         =  fillS->h;
+            int             numFillRows;
+            int             numFillCols;
+            int             totalFillW;
+            int             totalFillH;
+            int             fillStartX;
+            int             fillStartY;
+            int             r;
+        
+            numFillCols = inWidth / fillW;
+
+            if( numFillCols * fillW < inWidth ) {
+                /* round up */
+                numFillCols ++;
+                }
+        
+            numFillRows = inHeight / fillH;
+
+            if( numFillRows * fillH < inHeight ) {
+                /* round up */
+                numFillRows ++;
+                }
+
+            /* add extra rows/columns for edges, which might have transparent
+               pixels and not "fill" in the desired area completely
+               We want to guarantee that opaque fill of panel is at least as
+               big as the requested size */
+            numFillCols += 2;
+            numFillRows += 2;
+
+            totalFillW = numFillCols * fillW;
+            totalFillH = numFillRows * fillH;
+
+            fillStartX = ( - totalFillW / 2 ) + fillW / 2;
+            fillStartY = ( - totalFillH / 2 ) + fillH / 2;
+
+            for( r = 0;
+                 r < numFillRows;
+                 r ++ ) {
+
+                int  rowStartY  =  fillStartY + r * fillH;
+            
+                if( r == 0 ) {
+                    /* tl corner */
+                    mx_guiAddSprite( inGUI,
                                      0,
                                      255,
-                                     mx_panelSprites.sides[2],
-                                     fillStartX + fillW,
-                                     fillStartY + r * fillH,
-                                     fillW,
+                                     mx_panelSprites.corners[0],
+                                     fillStartX,
+                                     rowStartY );
+                    }
+                else if( r == numFillRows - 1 ) {
+                    /* bl corner */
+                    mx_guiAddSprite( inGUI,
                                      0,
-                                     numFillCols - 2 );
-                }
-            else if( r == numFillRows - 1 ) {
-                /* fill with bottom edge */
-
-                mx_guiAddSpriteSequence( inGUI,
-                                         0,
-                                         255,
-                                         mx_panelSprites.sides[3],
-                                         fillStartX + fillW,
-                                         fillStartY + r * fillH,
-                                         fillW,
-                                         0,
-                                         numFillCols - 2 );
-                }
-            else {
-                /* fill with fill */
+                                     255,
+                                     mx_panelSprites.corners[2],
+                                     fillStartX,
+                                     rowStartY );
+                    }
+                else {
+                    /* left edge */
+                    mx_guiAddSprite( inGUI,
+                                     0,
+                                     255,
+                                     mx_panelSprites.sides[0],
+                                     fillStartX,
+                                     rowStartY );
+                    }
             
-                mx_guiAddSpriteSequence( inGUI,
-                                         0,
-                                         255,
-                                         fill,
-                                         fillStartX + fillW,
-                                         fillStartY + r * fillH,
-                                         fillW,
-                                         0,
-                                         numFillCols - 2 );
-                }
+                if( r == 0 ) {
+                    /* fill with top edge */
+
+                    mx_guiAddSpriteSequence( inGUI,
+                                             0,
+                                             255,
+                                             mx_panelSprites.sides[2],
+                                             fillStartX + fillW,
+                                             fillStartY + r * fillH,
+                                             fillW,
+                                             0,
+                                             numFillCols - 2 );
+                    }
+                else if( r == numFillRows - 1 ) {
+                    /* fill with bottom edge */
+
+                    mx_guiAddSpriteSequence( inGUI,
+                                             0,
+                                             255,
+                                             mx_panelSprites.sides[3],
+                                             fillStartX + fillW,
+                                             fillStartY + r * fillH,
+                                             fillW,
+                                             0,
+                                             numFillCols - 2 );
+                    }
+                else {
+                    /* fill with fill */
+            
+                    mx_guiAddSpriteSequence( inGUI,
+                                             0,
+                                             255,
+                                             fill,
+                                             fillStartX + fillW,
+                                             fillStartY + r * fillH,
+                                             fillW,
+                                             0,
+                                             numFillCols - 2 );
+                    }
 
 
-            if( r == 0 ) {
-                /* tr corner */
-                mx_guiAddSprite( inGUI,
-                                 0,
-                                 255,
-                                 mx_panelSprites.corners[1],
-                                 fillStartX + fillW * ( numFillCols - 1 ),
-                                 rowStartY );
-                }
-            else if( r == numFillRows - 1 ) {
-                /* bl corner */
-                mx_guiAddSprite( inGUI,
-                                 0,
-                                 255,
-                                 mx_panelSprites.corners[3],
-                                 fillStartX + fillW * ( numFillCols - 1 ),
-                                 rowStartY );
-                }
-            else {
-                /* left edge */
-                mx_guiAddSprite( inGUI,
-                                 0,
-                                 255,
-                                 mx_panelSprites.sides[1],
-                                 fillStartX + fillW * ( numFillCols - 1 ),
-                                 rowStartY );
+                if( r == 0 ) {
+                    /* tr corner */
+                    mx_guiAddSprite( inGUI,
+                                     0,
+                                     255,
+                                     mx_panelSprites.corners[1],
+                                     fillStartX + fillW * ( numFillCols - 1 ),
+                                     rowStartY );
+                    }
+                else if( r == numFillRows - 1 ) {
+                    /* bl corner */
+                    mx_guiAddSprite( inGUI,
+                                     0,
+                                     255,
+                                     mx_panelSprites.corners[3],
+                                     fillStartX + fillW * ( numFillCols - 1 ),
+                                     rowStartY );
+                    }
+                else {
+                    /* left edge */
+                    mx_guiAddSprite( inGUI,
+                                     0,
+                                     255,
+                                     mx_panelSprites.sides[1],
+                                     fillStartX + fillW * ( numFillCols - 1 ),
+                                     rowStartY );
+                    }
                 }
             }
         }
@@ -7446,6 +7615,7 @@ int maxigin_guiStartPanel( MaxiginGUI    *inGUI,
 
     return i;
     }
+
 
 
 void maxigin_guiEndPanel( MaxiginGUI  *inGUI,

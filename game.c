@@ -643,6 +643,8 @@ static MinginStick  thickMapping[]  =  { MGN_STICK_LEFT_Y,  MGN_MAP_END };
 static const char  *sliderBarSprites[]  =  { "sliderFullBar100.tga",
                                              "sliderFullBar200.tga", };
 
+static const char  *panelFullSprites[]  =  { "panelFull200_100.tga" };
+
 
 #define REGISTER_VAL_MEM( x )  \
     maxigin_initRegisterStaticMemory( &x, sizeof(x), #x )
@@ -740,16 +742,26 @@ void maxiginGame_init( void ) {
 
     maxigin_initMakeSliderGlow( 2,
                                 2 );
+
+    if( 0 ) {
+        maxigin_initPanelSprites( "panelTopLeft.tga",
+                                  "panelTopRight.tga",
+                                  "panelBottomLeft.tga",
+                                  "panelBottomRight.tga",
+                                  "panelLeftEdge.tga",
+                                  "panelRightEdge.tga",
+                                  "panelTopEdge.tga",
+                                  "panelBottomEdge.tga",
+                                  "panelFill.tga" );
+        }
+    else {
+        maxigin_initPanelSpritesStatic( 1,
+                                        panelFullSprites );
+        }
+
+    maxigin_initMakePanelGlow( 2,
+                               2 );
     
-    maxigin_initPanelSprites( "panelTopLeft.tga",
-                              "panelTopRight.tga",
-                              "panelBottomLeft.tga",
-                              "panelBottomRight.tga",
-                              "panelLeftEdge.tga",
-                              "panelRightEdge.tga",
-                              "panelTopEdge.tga",
-                              "panelBottomEdge.tga",
-                              "panelFill.tga" );
 
     maxigin_initGUI( &gameGUI );
 

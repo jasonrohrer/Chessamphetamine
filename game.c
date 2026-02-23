@@ -643,7 +643,8 @@ static MinginStick  thickMapping[]  =  { MGN_STICK_LEFT_Y,  MGN_MAP_END };
 static const char  *sliderBarSprites[]  =  { "sliderFullBar100.tga",
                                              "sliderFullBar200.tga", };
 
-static const char  *panelFullSprites[]  =  { "panelFull200_100.tga" };
+static const char  *panelFullSprites[]  =  { "panelFull200_100.tga",
+                                             "panelFull300_200.tga" };
 
 
 #define REGISTER_VAL_MEM( x )  \
@@ -755,7 +756,7 @@ void maxiginGame_init( void ) {
                                   "panelFill.tga" );
         }
     else {
-        maxigin_initPanelSpritesStatic( 1,
+        maxigin_initPanelSpritesStatic( 2,
                                         panelFullSprites );
         }
 

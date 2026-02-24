@@ -1593,8 +1593,29 @@ void maxigin_guiLabel( MaxiginGUI  *inGUI,
                        int           inLocationY,
                        MaxiginAlign  inAlign );
 
-                       
-                       
+
+
+/*
+  Adds a checkbox to a GUI instance in immediate mode.
+
+  Parameters:
+
+      inGUI          pointer to the structure representing the GUI instance
+        
+      inChecked      pointer to the checked status
+
+      inLocationX    the x position in pixels of the checkbox center
+ 
+      inLocationY    the y position in pixels of the checkbox center
+                     
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
+                          char        *inChecked,
+                          int           inLocationX,
+                          int           inLocationY );
+
 
 
 /*
@@ -7722,6 +7743,53 @@ void maxigin_guiLabel( MaxiginGUI  *inGUI,
     
 
     inGUI->numDrawComponents ++;
+    }
+
+
+
+void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
+                          char        *inChecked,
+                          int           inLocationX,
+                          int           inLocationY ) {
+
+    MaxiginColor  c;
+    int           r  =  3;
+    
+    /* fixme:
+       add sprite implementation */
+
+    /* fixme:
+       listen to mouse clicks */
+
+    mx_makeColorGray( &c,
+                      128 );
+
+    c.comp.alpha = 255;
+    
+    mx_guiAddDrawRect( inGUI,
+                       0,
+                       &c,
+                       inLocationX - r,
+                       inLocationY - r,
+                       inLocationX + r,
+                       inLocationY + r );
+
+    if( *inChecked ) {
+        mx_guiAddLine( inGUI,
+                       0,
+                       &c,
+                       inLocationX - r,
+                       inLocationY - r,
+                       inLocationX + r,
+                       inLocationY + r );
+        mx_guiAddLine( inGUI,
+                       0,
+                       &c,
+                       inLocationX + r,
+                       inLocationY - r,
+                       inLocationX - r,
+                       inLocationY + r );
+        }
     }
 
 
@@ -16400,9 +16468,23 @@ static void mx_checkLangNeedsReload( void ) {
 
 void mx_populateMenuPanel( void ) {
     
-    static  int  dummySliderValueA = 5;
-    static  int  dummySliderValueB = 5;
+    static  int   dummySliderValueA  =  5;
+    static  int   dummySliderValueB  =  5;
+    static  char  checked            =  0;
+    
 
+    maxigin_guiLabel( &mx_internalGUI,
+                      mx_lang_fullscreen,
+                      30,
+                      -60,
+                      MAXIGIN_RIGHT );
+
+    maxigin_guiCheckbox( &mx_internalGUI,
+                         &checked,
+                         40,
+                         -59 );
+                         
+    
     maxigin_guiLabel( &mx_internalGUI,
                       mx_lang_musicVolume,
                       0,

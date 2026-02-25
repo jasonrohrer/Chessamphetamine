@@ -1971,6 +1971,69 @@ static void mn_getMonitorSize( Display  *inXDisplay,
 
 
 
+/* saves a 1 or 0 flag to persistent storage */
+static void mn_saveFlagSetting( const char  *inFlagName,
+                                char         inValue ) {
+
+    int          handle  =  mingin_startWritePersistData( inFlagName );
+    const char  *s;
+    
+    if( handle == -1 ) {
+        return;
+        }
+
+    
+    if( inValue ) {
+        s = "1";
+        }
+    else {
+        s = "0";
+        }
+    
+    mingin_writePersistData( handle,
+                             1,
+                             (unsigned char*)s );
+
+    mingin_endWritePersistData( handle );                        
+    }
+
+
+
+/* reads a 0 or 1 flag from peristent storage */
+static char mn_getFlagSetting( const char  *inFlagName,
+                               char         inDefault ) {
+
+    int            numBytes;
+    int            handle  =  mingin_startReadPersistData( inFlagName,
+                                                           &numBytes );
+    unsigned char  s[1];
+
+    if( handle == -1
+        ||
+        numBytes < 1 ) {
+        
+        return inDefault;
+        }
+
+    numBytes = mingin_readPersistData( handle,
+                                       1,
+                                       s );
+
+    if( numBytes != 1 ) {
+        return inDefault;
+        }
+
+    mingin_endReadPersistData( handle );
+
+    if( s[0] == '1' ) {
+        return 1;
+        }
+    
+    return 0;
+    }
+
+
+
 int mingin_getStepsPerSecond( void ) {
     return mn_screenRefreshRate;
     }
@@ -2015,6 +2078,10 @@ void mingin_quit( void ) {
 
 
 
+static  const char  *fullscreenSetting  =  "mingin_fullscreen.ini";
+
+
+
 char mingin_toggleFullscreen( char  inFullscreen ) {
     if( ! mn_areWeInStepFunction ) {
         mingin_log( "Error:  calling mingin_toggleFullscreen from "
@@ -2022,6 +2089,10 @@ char mingin_toggleFullscreen( char  inFullscreen ) {
         return 1;
         }
     mn_xFullscreen = inFullscreen;
+
+    mn_saveFlagSetting( fullscreenSetting,
+                        inFullscreen );
+    
     return 1;
     }
 
@@ -3270,6 +3341,8 @@ int main( void ) {
 
     struct timespec  nextFrameTime;
 
+    currentlyFullscreen = mn_getFlagSetting( fullscreenSetting,
+                                             0 );
     
     mn_xFullscreen = currentlyFullscreen;
 

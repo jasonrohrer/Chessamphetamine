@@ -363,6 +363,8 @@ static void fireBullet( int  inX,
 
 static char remappingJump = 0;
 
+static int  loudnessToggle = 512;
+
 
 void maxiginGame_step( void ) {
     
@@ -456,7 +458,15 @@ void maxiginGame_step( void ) {
 
             fireBullet( boxPosX, boxPosY );
 
-            maxigin_playSoundEffect( plunkSound );
+            maxigin_playSoundEffect( plunkSound,
+                                     loudnessToggle );
+
+            if( loudnessToggle == 512 ) {
+                loudnessToggle = 128;
+                }
+            else {
+                loudnessToggle = 512;
+                }
             }
         }
     

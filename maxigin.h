@@ -1531,9 +1531,12 @@ int maxigin_getSpriteFromStrip( int  inSpriteStripHandle,
     
       inSoundEffectHandle   handle to a loaded sound effect
 
+      inLoudness            loudness in range [0..512]
+
   [jumpMaxiginGeneral]
 */
-void maxigin_playSoundEffect( int inSoundEffectHandle );
+void maxigin_playSoundEffect( int  inSoundEffectHandle,
+                              int  inLoudness );
 
 
 
@@ -8218,8 +8221,8 @@ static int mx_getNumJustEndedSoundEffects( void );
    list.
 
    returns -1 if none left */
-static int mx_getNextJustStartedSoundEffect( void );
-static int mx_getNextJustEndedSoundEffect( void );
+static int mx_getNextJustStartedSoundEffect( int  *outLoudness );
+static int mx_getNextJustEndedSoundEffect( int  *outLoudness );
 
 
 static void mx_processDoneSoundEffects( void );
@@ -8230,6 +8233,7 @@ static void mx_endAllSoundEffectsNow( void );
 
 /* passed-in buffers must have room for MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS */
 static int mx_getLiveSoundEffects( int *outHandleBuffer,
+                                   int *outLoudnessBuffer,
                                    int *outDataPosBuffer );
 
 
@@ -9867,11 +9871,12 @@ static void mx_closeRecordingDataStores( void ) {
 
 /* returns 1 on success, 0 on error */
 static char mx_recordSoundEffectsTriggers( int (*inCountFunction)( void ),
-                                           int (*inGetNextFunction)( void ) ) {
+                                           int (*inGetNextFunction)( int* ) ) {
 
     int   numSoundEffects;
     char  success;
     int   s;
+    int   loudness;
     
     /* write number of sound effects */
 
@@ -9889,7 +9894,7 @@ static char mx_recordSoundEffectsTriggers( int (*inCountFunction)( void ),
 
     /* write handle of each just-started (or ended) sound effect, and clear it
        from list */
-    s = inGetNextFunction();
+    s = inGetNextFunction( &loudness );
     
     while( s != -1 ) {
         success = mx_writeIntToPeristentData( mx_recordingDataStoreHandle,
@@ -9901,7 +9906,16 @@ static char mx_recordSoundEffectsTriggers( int (*inCountFunction)( void ),
             return 0;
             }
         
-        s = inGetNextFunction();
+        success = mx_writeIntToPeristentData( mx_recordingDataStoreHandle,
+                                              loudness );
+
+        if( ! success ) {
+            mingin_log( "Failed to write sound effect loudness "
+                        "in recording\n" );
+            return 0;
+            }
+        
+        s = inGetNextFunction( &loudness );
         }
 
     return 1;
@@ -9935,12 +9949,14 @@ static char mx_recordLiveSoundEffects( void ) {
     int   s;
 
     static  int  handles[ MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ];
+    static  int  loudness[ MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ];
     static  int  dataPositions[ MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ];
     
     
     /* write number of sound effects */
 
     numSoundEffects = mx_getLiveSoundEffects( handles,
+                                              loudness,
                                               dataPositions );
 
     success = mx_writeIntToPeristentData( mx_recordingDataStoreHandle,
@@ -9964,6 +9980,15 @@ static char mx_recordLiveSoundEffects( void ) {
 
         if( ! success ) {
             mingin_log( "Failed to write live sound effect handle "
+                        "in recording\n" );
+            return 0;
+            }
+
+        success = mx_writeIntToPeristentData( mx_recordingDataStoreHandle,
+                                              loudness[ s ] );
+
+        if( ! success ) {
+            mingin_log( "Failed to write live sound effect loudness "
                         "in recording\n" );
             return 0;
             }
@@ -10176,6 +10201,7 @@ static char mx_restoreSoundEffectsTriggers( int   inStoreReadHandle,
                                             char  inStartingOrEnding ) {
 
     int   readInt;
+    int   readIntB;
     char  success;
     int   s;
     
@@ -10203,6 +10229,13 @@ static char mx_restoreSoundEffectsTriggers( int   inStoreReadHandle,
                 return 0;
                 }
             
+            success = mx_readIntFromPersistData( inStoreReadHandle,
+                                                 &readIntB );
+            if( ! success ) {
+                /* failed to read next sound effect loudness */
+                return 0;
+                }
+            
             /* only play them if we're not paused */
             if( ! mx_playbackPaused ) {
 
@@ -10215,14 +10248,16 @@ static char mx_restoreSoundEffectsTriggers( int   inStoreReadHandle,
                     ! mx_playbackBlockForwardSounds ) {
 
                     /* starting sounds only if we're playing forward */
-                    maxigin_playSoundEffect( readInt );
+                    maxigin_playSoundEffect( readInt,
+                                             readIntB );
                     }
                 else if( ! inStartingOrEnding
                          &&
                          mx_playbackDirection == -1 ) {
 
                     /* ending sounds only if we're playing backward */
-                    maxigin_playSoundEffect( readInt );
+                    maxigin_playSoundEffect( readInt,
+                                             readIntB );
                     }
                 }
             }
@@ -10235,6 +10270,7 @@ static char mx_restoreSoundEffectsTriggers( int   inStoreReadHandle,
 /* plays a sound effect
    but jumps instantly to inDataPos in that sound effect if inDataPos != -1 */
 static void mx_playSoundEffectWithPos( int inSoundEffectHandle,
+                                       int inLoudness,
                                        int inDataPos );
 
 
@@ -10281,12 +10317,20 @@ static char mx_restoreLiveSoundEffects( int   inStoreReadHandle ) {
              s ++ ) {
 
             int  handle;
+            int  loudness;
             int  dataPos;
             
             success = mx_readIntFromPersistData( inStoreReadHandle,
                                                  &handle );
             if( ! success ) {
                 /* failed to read next sound effect handle */
+                return 0;
+                }
+
+            success = mx_readIntFromPersistData( inStoreReadHandle,
+                                                 &loudness );
+            if( ! success ) {
+                /* failed to read next sound effect loudness */
                 return 0;
                 }
 
@@ -10303,6 +10347,7 @@ static char mx_restoreLiveSoundEffects( int   inStoreReadHandle ) {
                 mx_playbackJumping ) {
                 
                 mx_playSoundEffectWithPos( handle,
+                                           loudness,
                                            dataPos );
                 }
             }
@@ -12930,7 +12975,7 @@ static  int               mx_soundDirection  =     1;
 #define  MAXIGIN_AUDIO_MIXING_NUM_SAMPLES        256
 #define  MAXIGIN_WAV_READING_BYTES              1024
 
-static  int  mx_audioMixingBuffers[2][ MAXIGIN_AUDIO_MIXING_NUM_SAMPLES ];
+static  long  mx_audioMixingBuffers[2][ MAXIGIN_AUDIO_MIXING_NUM_SAMPLES ];
 
 static  unsigned char  mx_wavReadingBuffer[ MAXIGIN_WAV_READING_BYTES ];
 
@@ -13040,10 +13085,15 @@ int maxigin_initSoundEffect( const char  *inBulkResourceName ) {
 
 
 
+#define  MAXIGIN_MAX_SOUND_LOUDNESS  512
+
+
 
 typedef struct MaxiginPlayingSoundEffect {
     
         int   soundHandle;
+
+        int   loudness;
 
         int   dataPos;
 
@@ -13062,10 +13112,16 @@ static  int                        mx_numPlayingSoundEffects      =  0;
 static  int                        mx_justStartedSoundEffects[
                                        MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ];
 
+static  int                        mx_justStartedSoundEffectsLoudness[
+                                       MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ];
+
 static  int                        mx_numJustStartedSoundEffects  =  0;
 
 
 static  int                        mx_justEndedSoundEffects[
+                                       MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ];
+
+static  int                        mx_justEndedSoundEffectsLoudness[
                                        MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ];
 
 static  int                        mx_numJustEndedSoundEffects  =  0;
@@ -13098,7 +13154,7 @@ static int mx_getNumJustEndedSoundEffects( void ) {
 
 
 
-static int mx_getNextJustStartedSoundEffect( void ) {
+static int mx_getNextJustStartedSoundEffect( int  *outLoudness ) {
 
     int  returnVal;
 
@@ -13108,13 +13164,17 @@ static int mx_getNextJustStartedSoundEffect( void ) {
 
     returnVal = mx_justStartedSoundEffects[ mx_numJustStartedSoundEffects - 1 ];
 
+    *outLoudness =
+        mx_justStartedSoundEffectsLoudness[ mx_numJustStartedSoundEffects - 1 ];
+
     mx_numJustStartedSoundEffects--;
 
     return returnVal;
     }
 
 
-static int mx_getNextJustEndedSoundEffect( void ) {
+
+static int mx_getNextJustEndedSoundEffect( int  *outLoudness ) {
 
     int  returnVal;
 
@@ -13124,6 +13184,9 @@ static int mx_getNextJustEndedSoundEffect( void ) {
 
     returnVal = mx_justEndedSoundEffects[ mx_numJustEndedSoundEffects - 1 ];
 
+    *outLoudness =
+        mx_justEndedSoundEffectsLoudness[ mx_numJustEndedSoundEffects - 1 ];
+
     mx_numJustEndedSoundEffects--;
 
     return returnVal;
@@ -13132,6 +13195,7 @@ static int mx_getNextJustEndedSoundEffect( void ) {
 
 
 static int mx_getLiveSoundEffects( int *outHandleBuffer,
+                                   int *outLoudnessBuffer,
                                    int *outDataPosBuffer ) {
     int  num;
     int  i;
@@ -13146,6 +13210,7 @@ static int mx_getLiveSoundEffects( int *outHandleBuffer,
 
         if( ! mx_playingSoundEffects[i].done ) {
             outHandleBuffer[i] = mx_playingSoundEffects[i].soundHandle;
+            outLoudnessBuffer[i] = mx_playingSoundEffects[i].loudness;
             outDataPosBuffer[i] = mx_playingSoundEffects[i].dataPos;
 
             num ++;
@@ -13172,7 +13237,8 @@ static void mx_processDoneSoundEffects( void ) {
 
         if( mx_playingSoundEffects[ i ].done ) {
 
-            int  handle  =  mx_playingSoundEffects[ i ].soundHandle;
+            int  handle    =  mx_playingSoundEffects[ i ].soundHandle;
+            int  loudness  =  mx_playingSoundEffects[ i ].loudness;
             
             /* swap last into this spot and shrink */
 
@@ -13191,6 +13257,8 @@ static void mx_processDoneSoundEffects( void ) {
         
                 mx_justEndedSoundEffects[ mx_numJustEndedSoundEffects ] =
                     handle;
+                mx_justEndedSoundEffectsLoudness[ mx_numJustEndedSoundEffects ] =
+                    loudness;
                 
                 mx_numJustEndedSoundEffects++;
                 }
@@ -13203,16 +13271,21 @@ static void mx_processDoneSoundEffects( void ) {
 
 
 
-void maxigin_playSoundEffect( int inSoundEffectHandle ) {
+
+
+void maxigin_playSoundEffect( int  inSoundEffectHandle,
+                              int  inLoudness ) {
 
     mx_playSoundEffectWithPos( inSoundEffectHandle,
+                               inLoudness,
                                -1 );
     }
 
 
 
-void mx_playSoundEffectWithPos( int inSoundEffectHandle,
-                                int inDataPos ) {
+void mx_playSoundEffectWithPos( int  inSoundEffectHandle,
+                                int  inLoudness,
+                                int  inDataPos ) {
     
     if( inSoundEffectHandle == -1 ) {
         return;
@@ -13234,6 +13307,9 @@ void mx_playSoundEffectWithPos( int inSoundEffectHandle,
     mx_playingSoundEffects[ mx_numPlayingSoundEffects ].soundHandle =
                                                             inSoundEffectHandle;
 
+    mx_playingSoundEffects[ mx_numPlayingSoundEffects ].loudness =
+                                                            inLoudness;
+    
     mx_playingSoundEffects[ mx_numPlayingSoundEffects ].dataPos =
         mx_soundEffects[ inSoundEffectHandle ].startByte;
 
@@ -13276,6 +13352,8 @@ void mx_playSoundEffectWithPos( int inSoundEffectHandle,
         
         mx_justStartedSoundEffects[ mx_numJustStartedSoundEffects ] =
             inSoundEffectHandle;
+        mx_justStartedSoundEffectsLoudness[ mx_numJustStartedSoundEffects ] =
+            inLoudness;
         mx_numJustStartedSoundEffects++;
         }
     }
@@ -13293,7 +13371,8 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
     int                  numFramesUsed;
     int                  numFramesLeft;
     int                  dataPosJump;
-
+    long                 loudness;
+    char                 tweakLoudness        =  0;
         
     if( mx_playingSoundEffects[ inPlayingSoundIndex ].done ) {
         return;
@@ -13348,7 +13427,13 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
             }
         dataPosJump = -4;
         }
- 
+
+    loudness = mx_playingSoundEffects[ inPlayingSoundIndex ].loudness;
+
+    if( loudness < MAXIGIN_MAX_SOUND_LOUDNESS ) {
+        tweakLoudness = 1;
+        }
+    
     while( f < numFramesToMix ) {
                             
         unsigned short  uL;
@@ -13363,9 +13448,17 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
             mx_soundBytes[ dataPos + 3 ] << 8 );
 
         dataPos += dataPosJump;
-        
-        mx_audioMixingBuffers[0][ f ] += (short)uL;
-        mx_audioMixingBuffers[1][ f ] += (short)uR;
+
+        if( tweakLoudness ) {
+            mx_audioMixingBuffers[0][ f ] +=
+                (short)( ( (short)uL * loudness ) / MAXIGIN_MAX_SOUND_LOUDNESS );
+            mx_audioMixingBuffers[1][ f ] +=
+                (short)( ( (short)uR * loudness ) / MAXIGIN_MAX_SOUND_LOUDNESS );
+            }
+        else {
+            mx_audioMixingBuffers[0][ f ] += (short)uL;
+            mx_audioMixingBuffers[1][ f ] += (short)uR;
+            }
                             
         f++;
         }
@@ -14172,8 +14265,8 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
             /* save the last sample played, in case we pause sound later */
             f = numFramesToMix - 1;
             
-            mx_lastSamplesPlayed[0] = mx_audioMixingBuffers[0][ f ];
-            mx_lastSamplesPlayed[1] = mx_audioMixingBuffers[1][ f ];
+            mx_lastSamplesPlayed[0] = (int)( mx_audioMixingBuffers[0][ f ] );
+            mx_lastSamplesPlayed[1] = (int)( mx_audioMixingBuffers[1][ f ] );
 
             mx_lastSamplesPlayedGlobalVolume = mx_globalVolume;
             }    

@@ -750,9 +750,6 @@ void maxiginGame_init( void ) {
         }
     
 
-    maxigin_initMakeSliderGlow( 2,
-                                2 );
-
     if( 0 ) {
         maxigin_initPanelSprites( "panelTopLeft.tga",
                                   "panelTopRight.tga",
@@ -769,9 +766,13 @@ void maxiginGame_init( void ) {
                                         panelFullSprites );
         }
 
-    maxigin_initMakePanelGlow( 2,
-                               2 );
-    
+    maxigin_initCheckboxSprites( "checkboxCoolUnchecked.tga",
+                                 "checkboxCoolChecked.tga",
+                                 "checkboxHotUnchecked.tga",
+                                 "checkboxHotChecked.tga" );
+
+    maxigin_initMakeGuiGlow( 2,
+                             2 );
 
     maxigin_initGUI( &gameGUI );
 

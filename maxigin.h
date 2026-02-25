@@ -992,6 +992,39 @@ void maxigin_initMakePanelGlow( int  inBlurRadius,
 
 
 /*
+  Creates glow sprites for previously setup checkbox sprites.
+
+  Parameters:
+
+      inBlurRadius       the blur radius for the glow, in pixels
+
+      inBlurIterations   the number of iterations of the blur to apply
+
+  [jumpMaxiginInit]  
+*/
+void maxigin_initMakeCheckboxGlow( int  inBlurRadius,
+                                   int  inBlurIterations );
+
+
+
+/*
+  Creates glow sprites for previously setup gui sprites
+  (slider, panel, checkbox, etc.)
+
+  Parameters:
+
+      inBlurRadius       the blur radius for the glow, in pixels
+
+      inBlurIterations   the number of iterations of the blur to apply
+
+  [jumpMaxiginInit]  
+*/
+void maxigin_initMakeGuiGlow( int  inBlurRadius,
+                              int  inBlurIterations );
+
+
+
+/*
   Sets TGA-formatted sprites to customize maxigin_guiStartPanel appearance,
   for dynamically-sized panels
 
@@ -1059,6 +1092,32 @@ void maxigin_initPanelSprites( const char  *inTopLeftSpriteResource,
 */ 
 void maxigin_initPanelSpritesStatic( int           inNumFullPanelSprites,
                                      const char  **inFullPanelSprites );
+
+
+
+/*
+  Sets TGA-formatted sprites to customize maxigin_guiCheckbox appearance.
+
+  All parameters are names of TGA resource name in platform's bulk data
+  store.
+
+  Parameters:
+  
+      inCoolUncheckedResource   unchecked sprite when mouse not over
+
+      inCoolCheckedResource     checked sprite when mouse not over
+
+      inHotUncheckedResource    unchecked sprite when mouse over
+
+      inHotCheckedResource      checked sprite when mouse over
+
+  [jumpMaxiginInit]      
+*/ 
+void maxigin_initCheckboxSprites( const char  *inCoolUncheckedResource,
+                                  const char  *inCoolCheckedResource,
+                                  const char  *inHotUncheckedResource,
+                                  const char  *inHotCheckedResource );
+
 
 
 
@@ -4431,6 +4490,77 @@ void maxigin_initMakePanelGlow( int  inBlurRadius,
 
 
 
+typedef struct MaxiginCheckboxSprites {
+
+        /* [0] for unchecked, [1] for checked */
+        int  cool[2];
+        int  hot [2];
+        
+    } MaxiginCheckboxSprites;
+
+
+char                     mx_checkboxSpritesSet  =  0;
+MaxiginCheckboxSprites   mx_checkboxSprites;
+
+
+void maxigin_initCheckboxSprites( const char  *inCoolUncheckedResource,
+                                  const char  *inCoolCheckedResource,
+                                  const char  *inHotUncheckedResource,
+                                  const char  *inHotCheckedResource ) {
+
+    mx_checkboxSprites.cool[0] = maxigin_initSprite( inCoolUncheckedResource );
+    mx_checkboxSprites.cool[1] = maxigin_initSprite( inCoolCheckedResource   );
+    
+    mx_checkboxSprites.hot [0] = maxigin_initSprite( inHotUncheckedResource  );
+    mx_checkboxSprites.hot [1] = maxigin_initSprite( inHotCheckedResource    );
+
+    mx_checkboxSpritesSet =
+        ( mx_checkboxSprites.cool[0] != -1 )
+        &&
+        ( mx_checkboxSprites.cool[1] != -1 )
+        &&
+        ( mx_checkboxSprites.hot [0] != -1 )
+        &&
+        ( mx_checkboxSprites.hot [1] != -1 );   
+    }
+
+
+void maxigin_initMakeCheckboxGlow( int  inBlurRadius,
+                                   int  inBlurIterations ) {
+
+    int  i;
+    
+    for( i = 0;
+         i < 2;
+         i ++ ) {
+
+        maxigin_initMakeGlowSprite( mx_checkboxSprites.cool[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        
+        maxigin_initMakeGlowSprite( mx_checkboxSprites.hot[i],
+                                    inBlurRadius,
+                                    inBlurIterations );
+        }
+    }
+
+
+
+void maxigin_initMakeGuiGlow( int  inBlurRadius,
+                              int  inBlurIterations ) {
+
+    maxigin_initMakeSliderGlow( inBlurRadius,
+                                inBlurIterations );
+    
+    maxigin_initMakePanelGlow( inBlurRadius,
+                               inBlurIterations );
+    
+    maxigin_initMakeCheckboxGlow( inBlurRadius,
+                                  inBlurIterations );
+    }
+
+
+
 /* strip handle is -1 to make a new strip
    
    if inStripHandle is an existing strip, inHeightPerSprite should be -1,
@@ -7758,14 +7888,26 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
                           int          inRadius ) {
 
     MaxiginColor   c;
-    int            r          =  inRadius;
-    char           mouseDown  =  mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON );
+    int            r          =   inRadius;
+    int            rLeft      =  -inRadius;
+    int            rRight     =   inRadius;
+    int            rTop       =  -inRadius;
+    int            rBot       =   inRadius;
+    char           mouseDown  =   mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON );
     int            x;
     int            y;
-    char           avail      =  maxigin_getPointerLocation( &x,
-                                                            &y );
+    char           avail      =   maxigin_getPointerLocation( &x,
+                                                              &y );
     unsigned char  frameV;
-    
+
+    if( mx_checkboxSpritesSet ) {
+        MaxiginSprite  *s  = &( mx_sprites[ mx_checkboxSprites.cool[0] ] );
+
+        rLeft  =  - s->leftVisibleRadius;
+        rRight =    s->rightVisibleRadius;
+        rTop   =  - s->upperVisibleRadius;
+        rBot   =    s->lowerVisibleRadius;
+        }
 
     x -= inGUI->zeroOffsetX;
     y -= inGUI->zeroOffsetY;
@@ -7780,9 +7922,13 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
     /* if mouse is over us, check for new press */
     if( avail
         &&
-        mx_abs( x ) <= r
+        x >= rLeft
         &&
-        mx_abs( y ) <= r ) {
+        x <= rRight
+        &&
+        y >= rTop
+        &&
+        y <= rBot ) {
 
         if( inGUI->active == 0 ) {
             /* don't become hot if mouse pressed on other component */
@@ -7829,48 +7975,68 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
             }
         }
     
-    
-    
-    /* fixme:
-       add sprite implementation */
 
-    /* fixme:
-       listen to mouse clicks */
+    if( mx_checkboxSpritesSet ) {
 
-    frameV = 128;
+        int  s;
+        int  i   =  0;
 
-    if( inGUI->hot == inChecked ) {
-        frameV = 255;
+        if( *inChecked ) {
+            i = 1;
+            }
+        
+        if( inGUI->hot == inChecked ) {
+            s = mx_checkboxSprites.hot[i];
+            }
+        else {
+            s = mx_checkboxSprites.cool[i];
+            }
+
+        mx_guiAddSprite( inGUI,
+                         0,
+                         255,
+                         s,
+                         inLocationX,
+                         inLocationY);
         }
+    else {
+        /* no sprites, draw with shapes */
 
-    mx_makeColorGray( &c,
-                      frameV );
+        frameV = 128;
 
-    c.comp.alpha = 255;
+        if( inGUI->hot == inChecked ) {
+            frameV = 255;
+            }
+
+        mx_makeColorGray( &c,
+                          frameV );
+
+        c.comp.alpha = 255;
     
-    mx_guiAddDrawRect( inGUI,
-                       0,
-                       &c,
-                       inLocationX - r,
-                       inLocationY - r,
-                       inLocationX + r,
-                       inLocationY + r );
+        mx_guiAddDrawRect( inGUI,
+                           0,
+                           &c,
+                           inLocationX - r,
+                           inLocationY - r,
+                           inLocationX + r,
+                           inLocationY + r );
 
-    if( *inChecked ) {
-        mx_guiAddLine( inGUI,
-                       0,
-                       &c,
-                       inLocationX - r,
-                       inLocationY - r,
-                       inLocationX + r,
-                       inLocationY + r );
-        mx_guiAddLine( inGUI,
-                       0,
-                       &c,
-                       inLocationX + r,
-                       inLocationY - r,
-                       inLocationX - r,
-                       inLocationY + r );
+        if( *inChecked ) {
+            mx_guiAddLine( inGUI,
+                           0,
+                           &c,
+                           inLocationX - r,
+                           inLocationY - r,
+                           inLocationX + r,
+                           inLocationY + r );
+            mx_guiAddLine( inGUI,
+                           0,
+                           &c,
+                           inLocationX + r,
+                           inLocationY - r,
+                           inLocationX - r,
+                           inLocationY + r );
+            }
         }
     }
 

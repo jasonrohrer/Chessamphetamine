@@ -1607,6 +1607,9 @@ void maxigin_guiLabel( MaxiginGUI  *inGUI,
       inLocationX    the x position in pixels of the checkbox center
  
       inLocationY    the y position in pixels of the checkbox center
+
+      inRadius       the radius of the checkbox
+                     ignored if checkbox has sprites defined
                      
 
   [jumpMaxiginGeneral]
@@ -1614,7 +1617,8 @@ void maxigin_guiLabel( MaxiginGUI  *inGUI,
 void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
                           char        *inChecked,
                           int           inLocationX,
-                          int           inLocationY );
+                          int           inLocationY,
+                          int           inRadius );
 
 
 
@@ -7749,11 +7753,83 @@ void maxigin_guiLabel( MaxiginGUI  *inGUI,
 
 void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
                           char        *inChecked,
-                          int           inLocationX,
-                          int           inLocationY ) {
+                          int          inLocationX,
+                          int          inLocationY,
+                          int          inRadius ) {
 
-    MaxiginColor  c;
-    int           r  =  3;
+    MaxiginColor   c;
+    int            r          =  inRadius;
+    char           mouseDown  =  mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON );
+    int            x;
+    int            y;
+    char           avail      =  maxigin_getPointerLocation( &x,
+                                                            &y );
+    unsigned char  frameV;
+    
+
+    x -= inGUI->zeroOffsetX;
+    y -= inGUI->zeroOffsetY;
+
+    x -= inLocationX;
+    y -= inLocationY;
+
+    if( mouseDown ) {
+        mingin_log( "Mouse down!\n" );
+        }
+
+    /* if mouse is over us, check for new press */
+    if( avail
+        &&
+        mx_abs( x ) <= r
+        &&
+        mx_abs( y ) <= r ) {
+
+        if( inGUI->active == 0 ) {
+            /* don't become hot if mouse pressed on other component */
+            inGUI->hot = inChecked;
+            }
+        
+        if( ! inGUI->mouseDown
+            &&
+            mouseDown ) {
+            
+            inGUI->mouseDown = 0;
+            inGUI->active = inChecked;
+            }
+        else if( inGUI->mouseDown
+                 &&
+                 inGUI->active == inChecked
+                 &&
+                 ! mouseDown ) {
+
+            /* mouse released on us when it was pressed on us before,
+               toggle checked */
+
+            *inChecked = ! ( *inChecked );
+
+            inGUI->mouseDown = 0;
+
+            inGUI->active = 0;
+            }
+        }
+    else {
+        /* mouse not over us
+           watch for release far away due to a press that started on us */
+
+        if( inGUI->mouseDown
+            &&
+            inGUI->active == inChecked
+            &&
+            ! mouseDown ) {
+
+            /* don't toggle checked if it was released away from us */
+            inGUI->mouseDown = 0;
+
+            inGUI->active = 0;
+            }
+        }
+    
+    
     
     /* fixme:
        add sprite implementation */
@@ -7761,8 +7837,14 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
     /* fixme:
        listen to mouse clicks */
 
+    frameV = 128;
+
+    if( inGUI->hot == inChecked ) {
+        frameV = 255;
+        }
+
     mx_makeColorGray( &c,
-                      128 );
+                      frameV );
 
     c.comp.alpha = 255;
     
@@ -16467,23 +16549,54 @@ static void mx_checkLangNeedsReload( void ) {
 
 
 void mx_populateMenuPanel( void ) {
-    
-    static  int   dummySliderValueA  =  5;
-    static  int   dummySliderValueB  =  5;
-    static  char  checked            =  0;
-    
 
-    maxigin_guiLabel( &mx_internalGUI,
-                      mx_lang_fullscreen,
-                      30,
-                      -60,
-                      MAXIGIN_RIGHT );
 
-    maxigin_guiCheckbox( &mx_internalGUI,
-                         &checked,
-                         40,
-                         -59 );
-                         
+    static  int   dummySliderValueA    =  5;
+    static  int   dummySliderValueB    =  5;
+    static  char  fullscreenChecked    =  0;
+    static  char  fullscreenQueried    =  0;
+    static  char  canToggleFullscreen  =  0;
+
+    
+    if( ! fullscreenQueried ) {
+
+        canToggleFullscreen =
+            mingin_toggleFullscreen( mingin_isFullscreen() );
+
+        if( canToggleFullscreen ) {
+            
+            /* init our checkbox with the actual fullscreen status */
+            fullscreenChecked = mingin_isFullscreen();
+            }
+            
+        fullscreenQueried = 1;
+        }
+
+    
+    if( canToggleFullscreen ) {
+
+        char  oldChecked;
+        
+        maxigin_guiLabel( &mx_internalGUI,
+                          mx_lang_fullscreen,
+                          30,
+                          -60,
+                          MAXIGIN_RIGHT );
+        
+        oldChecked = fullscreenChecked;
+    
+        maxigin_guiCheckbox( &mx_internalGUI,
+                             &fullscreenChecked,
+                             40,
+                             -59,
+                             3 );
+
+        if( oldChecked != fullscreenChecked ) {
+            /* checkbox just toggled */
+            mingin_toggleFullscreen( fullscreenChecked );
+            }
+        }
+    
     
     maxigin_guiLabel( &mx_internalGUI,
                       mx_lang_musicVolume,

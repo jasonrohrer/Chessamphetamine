@@ -74,6 +74,7 @@ static int          sliderValueB  =   7;
 static int          sliderValueC  =   7;
 
 static int          plunkSound    =  -1;
+static int          thunkSound    =  -1;
 
 
 static int          lang_settings;
@@ -792,9 +793,14 @@ void maxiginGame_init( void ) {
     maxigin_initSoundEffect( "hey1.wav" );
     maxigin_initSoundEffect( "hey2.wav" );
     plunkSound = maxigin_initSoundEffect( "plunk1.wav" );
+    thunkSound = maxigin_initSoundEffect( "thunk1.wav" );
 
     maxigin_initSoundEffect( "test_long.wav" );
 
+    maxigin_initSetMenuSounds( plunkSound,
+                               256,
+                               thunkSound,
+                               512 );
 
     lang_settings      = maxigin_initTranslationKey( "settings" );
     lang_newGame       = maxigin_initTranslationKey( "newGame"  );

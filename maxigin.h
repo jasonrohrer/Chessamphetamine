@@ -1209,6 +1209,32 @@ void maxigin_initGUI( MaxiginGUI *inGUI );
 
 
 /*
+  Sets sound effects for menu interactions.
+
+  All sounds are handles of sounds from maxigin_initSoundEffect
+
+  Loudnesses are in range [0..512]
+  
+  Parameters:
+
+      inHoverSound      sound when a component is hovered
+      
+      inHoverLoudness   loudness for hover sound
+
+      inDoSound         sound when a component is activated
+      
+      inDoLoudness      loudness for hover sound
+      
+  [jumpMaxiginInit]      
+*/
+void maxigin_initSetMenuSounds( int  inHoverSound,
+                                int  inHoverLoudness,
+                                int  inDoSound,
+                                int  inDoLoudness );
+
+
+
+/*
   Toggles additive blending for future maxigin_draw calls.
 
   Parameters:
@@ -2619,6 +2645,11 @@ static  char        mx_playbackJumping                 =  0;
 static  char        mx_buttonsDown[ LAST_MAXIGIN_USER_ACTION ];
 
 static  MaxiginGUI  mx_internalGUI;
+
+static  int         mx_menuHoverSound                   =  -1;
+static  int         mx_menuHoverLoudness;
+static  int         mx_menuDoSound                      =  -1;
+static  int         mx_menuDoLoudness;
 
 static  const char  *mx_playbackDataStoreName           =
                                                         "maxigin_playback.bin";
@@ -6599,7 +6630,6 @@ void maxigin_startGUI( MaxiginGUI *inGUI ) {
     inGUI->zeroOffsetX        = MAXIGIN_GAME_NATIVE_W / 2;
     inGUI->zeroOffsetY        = MAXIGIN_GAME_NATIVE_H / 2;
     inGUI->fade               = 255;
-    inGUI->hot               = 0;
     inGUI->numDrawComponents = 0;
     }
 
@@ -6986,7 +7016,6 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
         if( ! mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON ) ) {
 
             inGUI->active = 0;
-            inGUI->hot    = 0;
             }  
         }
     
@@ -7933,7 +7962,9 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
         &&
         y <= rBot ) {
 
-        if( inGUI->active == 0 ) {
+        if( inGUI->active == 0
+            ||
+            inGUI->active == inChecked ) {
             /* don't become hot if mouse pressed on other component */
             inGUI->hot = inChecked;
             }
@@ -7965,6 +7996,10 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
         /* mouse not over us
            watch for release far away due to a press that started on us */
 
+        if( inGUI->hot == inChecked ) {
+            inGUI->hot = 0;
+            }
+        
         if( inGUI->mouseDown
             &&
             inGUI->active == inChecked
@@ -8329,6 +8364,11 @@ void minginGame_step( char  inFinalStep ) {
 
     if( mx_isActionFreshPressed( MENU ) ) {
         mx_menuShowing = ! mx_menuShowing;
+        
+        if( mx_menuHoverSound != -1 ) {
+            maxigin_playSoundEffect( mx_menuHoverSound,
+                                     mx_menuHoverLoudness );
+            } 
         }
     
     
@@ -16809,6 +16849,7 @@ static void mx_checkLangNeedsReload( void ) {
 
 void mx_populateMenuPanel( void ) {
 
+    void  *oldHot  =  mx_internalGUI.hot;
 
     static  int   dummySliderValueA    =  5;
     static  int   dummySliderValueB    =  5;
@@ -16852,6 +16893,12 @@ void mx_populateMenuPanel( void ) {
 
         if( oldChecked != fullscreenChecked ) {
             /* checkbox just toggled */
+
+            if( mx_menuDoSound != -1 ) {
+                maxigin_playSoundEffect( mx_menuDoSound,
+                                         mx_menuDoLoudness );
+                }
+            
             mingin_toggleFullscreen( fullscreenChecked );
             }
         }
@@ -16895,8 +16942,52 @@ void mx_populateMenuPanel( void ) {
                        20,
                        10,
                        0 );
+
+    if( mx_internalGUI.hot != 0
+        &&
+        mx_internalGUI.hot != oldHot
+        &&
+        mx_menuShowing
+        &&
+        mx_menuFade >= ( mx_menuFadeMax * 9 ) / 10 ) {
+
+        /* don't play hover sound while menu still
+           moving into place, wait till 90% there */
+        
+        if( mx_menuHoverSound != -1 ) {
+            maxigin_playSoundEffect( mx_menuHoverSound,
+                                     mx_menuHoverLoudness );
+            }
+        }
+            
+    
     }
 
+
+
+void maxigin_initSetMenuSounds( int  inHoverSound,
+                                int  inHoverLoudness,
+                                int  inDoSound,
+                                int  inDoLoudness ) {
+
+    if( inHoverLoudness > 512 ) {
+        inHoverLoudness = 512;
+        }
+    if( inHoverLoudness < 0 ) {
+        inHoverLoudness = 0;
+        }
+    if( inDoLoudness > 512 ) {
+        inDoLoudness = 512;
+        }
+    if( inDoLoudness < 0 ) {
+        inDoLoudness = 0;
+        }
+    
+    mx_menuHoverSound    = inHoverSound;
+    mx_menuHoverLoudness = inHoverLoudness;
+    mx_menuDoSound       = inDoSound;
+    mx_menuDoLoudness    = inDoLoudness;
+    }
 
 
 

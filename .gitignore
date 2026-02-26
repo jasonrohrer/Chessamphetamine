@@ -5,7 +5,6 @@
 *.dep2
 *~
 *.orig
-Makefile*
 
 callgrind.out*
 leak.out*

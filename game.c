@@ -1,10 +1,7 @@
 
-#define MINGIN_IMPLEMENTATION
-
 #define MAXIGIN_GAME_NATIVE_W  320
 #define MAXIGIN_GAME_NATIVE_H  240
 
-#define MAXIGIN_IMPLEMENTATION
 
 #include "maxigin.h"
 

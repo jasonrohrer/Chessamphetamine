@@ -2,6 +2,9 @@
 # myself to stick to pure c89.
 #
 
+# This script does much faster conditional and parallel compilation.
+#
+
 compileFlags="-g -std=c89 -fno-builtin -pedantic -Wall -Wextra -Werror -Wconversion -Wshadow -Wstrict-prototypes -Wold-style-definition -Wmissing-prototypes -Wmissing-declarations -Wdeclaration-after-statement"
 
 pidA=0

@@ -797,7 +797,8 @@ void maxiginGame_init( void ) {
     maxigin_initSetMenuSounds( plunkSound,
                                256,
                                thunkSound,
-                               512 );
+                               512,
+                               plunkSound );
 
     lang_settings      = maxigin_initTranslationKey( "settings" );
     lang_newGame       = maxigin_initTranslationKey( "newGame"  );

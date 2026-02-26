@@ -1224,13 +1224,17 @@ void maxigin_initGUI( MaxiginGUI *inGUI );
       inDoSound         sound when a component is activated
       
       inDoLoudness      loudness for hover sound
+
+      inExampleSound    example sound effect to use, at full loudness
+                        when adjusting the sound effects loudness slider
       
   [jumpMaxiginInit]      
 */
 void maxigin_initSetMenuSounds( int  inHoverSound,
                                 int  inHoverLoudness,
                                 int  inDoSound,
-                                int  inDoLoudness );
+                                int  inDoLoudness,
+                                int  inExampleSound );
 
 
 
@@ -2650,6 +2654,7 @@ static  int         mx_menuHoverSound                   =  -1;
 static  int         mx_menuHoverLoudness;
 static  int         mx_menuDoSound                      =  -1;
 static  int         mx_menuDoLoudness;
+static  int         mx_menuExampleSound                 =  -1;
 
 static  const char  *mx_playbackDataStoreName           =
                                                         "maxigin_playback.bin";
@@ -6930,7 +6935,7 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
     int           thumbLeftR;
     int           thumbRightR;
     int           centerX;
-    int           staticBarI;
+    int           staticBarI              =   0;
     
     if( tenPercent < 1 ) {
         tenPercent = 1;
@@ -7024,8 +7029,8 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
         /* no other component active */
 
         char avail;
-        int  x;
-        int  y;
+        int  x       =  0;
+        int  y       =  0;
             
         avail = maxigin_getPointerLocation( &x,
                                             &y );
@@ -7110,8 +7115,8 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
         /* mouse controlling slider */
 
         char avail;
-        int  x;
-        int  y;
+        int  x       =  0;
+        int  y       =  0;
             
         avail = maxigin_getPointerLocation( &x,
                                             &y );
@@ -7926,8 +7931,8 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
     int            rTop       =  -inRadius;
     int            rBot       =   inRadius;
     char           mouseDown  =   mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON );
-    int            x;
-    int            y;
+    int            x          =   0;
+    int            y          =   0;
     char           avail      =   maxigin_getPointerLocation( &x,
                                                               &y );
     unsigned char  frameV;
@@ -7946,10 +7951,6 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
 
     x -= inLocationX;
     y -= inLocationY;
-
-    if( mouseDown ) {
-        mingin_log( "Mouse down!\n" );
-        }
 
     /* if mouse is over us, check for new press */
     if( avail
@@ -8813,12 +8814,22 @@ static int          mx_lang_effectsVolume;
 static int          mx_lang_fullscreen;
 
 
+static  int   mx_soundEffectsVolume             =  512;
+/* fixme */
+/*static  int   mx_musicVolume;*/
+
+
 static void mx_gameInit( void ) {
 
     int  p;
 
     mx_enableAutoQuit = maxigin_readFlagSetting( "maxigin_enableAutoQuit.ini" );
 
+
+    mx_soundEffectsVolume =
+        maxigin_readIntSetting( "maxigin_soundEffectsVolume.ini",
+                                512 );
+    
     mingin_registerButtonMapping( QUIT,
                                   mx_quitMapping );
     
@@ -13326,6 +13337,8 @@ void maxigin_playSoundEffect( int  inSoundEffectHandle,
 void mx_playSoundEffectWithPos( int  inSoundEffectHandle,
                                 int  inLoudness,
                                 int  inDataPos ) {
+
+    int  playingLoudness  =  inLoudness;
     
     if( inSoundEffectHandle == -1 ) {
         return;
@@ -13343,12 +13356,24 @@ void mx_playSoundEffectWithPos( int  inSoundEffectHandle,
         return;
         }
 
+    if( mx_soundEffectsVolume < MAXIGIN_MAX_SOUND_LOUDNESS ) {
+        /* scale playing loudness by global setting */
+
+        playingLoudness =
+            (int)(
+                ( (long)playingLoudness * (long)mx_soundEffectsVolume ) /
+                MAXIGIN_MAX_SOUND_LOUDNESS );
+        
+        /* however, do not *record* this loudness in
+           mx_justStartedSoundEffectsLoudness  */
+        }
+    
 
     mx_playingSoundEffects[ mx_numPlayingSoundEffects ].soundHandle =
                                                             inSoundEffectHandle;
 
     mx_playingSoundEffects[ mx_numPlayingSoundEffects ].loudness =
-                                                            inLoudness;
+                                                            playingLoudness;
     
     mx_playingSoundEffects[ mx_numPlayingSoundEffects ].dataPos =
         mx_soundEffects[ inSoundEffectHandle ].startByte;
@@ -16849,14 +16874,17 @@ static void mx_checkLangNeedsReload( void ) {
 
 void mx_populateMenuPanel( void ) {
 
-    void  *oldHot  =  mx_internalGUI.hot;
+    void  *oldHot           =  mx_internalGUI.hot;
+    void  *oldActive        =  mx_internalGUI.active;
+    int    oldEffectsVol    =  mx_soundEffectsVolume;
+    
+    static  int   musicSliderValue              =  5;
+    static  char  fullscreenChecked             =  0;
+    static  char  fullscreenQueried             =  0;
+    static  char  canToggleFullscreen           =  0;
+    static  int   stepsSinceLastEffectsExample  =  1000;
 
-    static  int   dummySliderValueA    =  5;
-    static  int   dummySliderValueB    =  5;
-    static  char  fullscreenChecked    =  0;
-    static  char  fullscreenQueried    =  0;
-    static  char  canToggleFullscreen  =  0;
-
+    stepsSinceLastEffectsExample ++;
     
     if( ! fullscreenQueried ) {
 
@@ -16912,7 +16940,7 @@ void mx_populateMenuPanel( void ) {
     
     /* stick a slider in there as a dummy component for now */
     maxigin_guiSlider( &mx_internalGUI,
-                       &dummySliderValueA,
+                       &musicSliderValue,
                        0,
                        10,
                        -50,
@@ -16932,9 +16960,9 @@ void mx_populateMenuPanel( void ) {
     
     /* stick a slider in there as a dummy component for now */
     maxigin_guiSlider( &mx_internalGUI,
-                       &dummySliderValueB,
+                       &mx_soundEffectsVolume,
                        0,
-                       10,
+                       MAXIGIN_MAX_SOUND_LOUDNESS,
                        -50,
                        50,
                        40,
@@ -16942,6 +16970,29 @@ void mx_populateMenuPanel( void ) {
                        20,
                        10,
                        0 );
+
+    if( oldActive != mx_internalGUI.active
+        &&
+        mx_internalGUI.active == &mx_soundEffectsVolume ) {
+        /* slider newly active, force sound to play now */
+        stepsSinceLastEffectsExample = 1000;
+        }
+
+
+    if( mx_internalGUI.active == &mx_soundEffectsVolume
+        &&
+        stepsSinceLastEffectsExample > mingin_getStepsPerSecond() / 3 ) {
+        stepsSinceLastEffectsExample = 0;
+        
+        maxigin_playSoundEffect( mx_menuExampleSound,
+                                 MAXIGIN_MAX_SOUND_LOUDNESS );
+        }
+
+    if( oldEffectsVol != mx_soundEffectsVolume ) {
+        maxigin_writeIntSetting( "maxigin_soundEffectsVolume.ini",
+                                 mx_soundEffectsVolume );
+        }
+    
 
     if( mx_internalGUI.hot != 0
         &&
@@ -16968,7 +17019,8 @@ void mx_populateMenuPanel( void ) {
 void maxigin_initSetMenuSounds( int  inHoverSound,
                                 int  inHoverLoudness,
                                 int  inDoSound,
-                                int  inDoLoudness ) {
+                                int  inDoLoudness,
+                                int  inExampleSound ) {
 
     if( inHoverLoudness > 512 ) {
         inHoverLoudness = 512;
@@ -16987,6 +17039,7 @@ void maxigin_initSetMenuSounds( int  inHoverSound,
     mx_menuHoverLoudness = inHoverLoudness;
     mx_menuDoSound       = inDoSound;
     mx_menuDoLoudness    = inDoLoudness;
+    mx_menuExampleSound  = inExampleSound;
     }
 
 

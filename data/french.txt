@@ -11,6 +11,8 @@ settings       "Paramètres"
 
 newGame        "Nouvelle partie"
 
+resume         "Reprendre"
+
 quit           "Quitter"
 
 
@@ -20,4 +22,9 @@ effectsVolume  "Volume effets"
 
 fullscreen     "Plein écran"
 
+languages      "Langues"
+
+controls       "Commandes"
+
+back           "Retour"
 

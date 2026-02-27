@@ -1008,6 +1008,22 @@ void maxigin_initMakeCheckboxGlow( int  inBlurRadius,
 
 
 /*
+  Creates glow sprites for previously setup button sprites.
+
+  Parameters:
+
+      inBlurRadius       the blur radius for the glow, in pixels
+
+      inBlurIterations   the number of iterations of the blur to apply
+
+  [jumpMaxiginInit]  
+*/
+void maxigin_initMakeButtonGlow( int  inBlurRadius,
+                                 int  inBlurIterations );
+
+
+
+/*
   Creates glow sprites for previously setup gui sprites
   (slider, panel, checkbox, etc.)
 
@@ -1118,6 +1134,27 @@ void maxigin_initCheckboxSprites( const char  *inCoolUncheckedResource,
                                   const char  *inHotUncheckedResource,
                                   const char  *inHotCheckedResource );
 
+
+
+/*
+  Sets TGA-formatted sprites to customize maxigin_guiButton appearance.
+
+  All parameters are names of TGA resource name in platform's bulk data
+  store.
+
+  Parameters:
+  
+      inCoolResource      sprite when mouse not over
+
+      inHotResource       sprite when mouse not over
+
+      inPressedResource   sprite when mouse pressed on button
+
+  [jumpMaxiginInit]      
+*/ 
+void maxigin_initButtonSprites( const char  *inCoolResource,
+                                const char  *inHotResource,
+                                const char  *inPressedResource );
 
 
 
@@ -1711,6 +1748,46 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
                           int           inLocationX,
                           int           inLocationY,
                           int           inRadius );
+
+
+/*
+  Adds a translated language button to a GUI instance in immediate mode.
+
+  Parameters:
+
+      inGUI          pointer to the structure representing the GUI instance
+
+      inHandle       pointer used as a handle for this button
+      
+      inPhraseKey    a phrase key previously registered with
+                     maxigin_initTranslationKey()
+
+      inLocationX    the x position in pixels of the button center
+ 
+      inLocationY    the y position in pixels of the button center
+ 
+      inRadiusX      the horizontal radius of the button
+                     ignored if button has sprites defined
+                     
+      inRadiusY      the vertical radius of the button
+                     ignored if button has sprites defined
+     
+
+  Returns:
+
+      1   if button just pressed
+      
+      0   if not
+      
+  [jumpMaxiginGeneral]
+*/
+char maxigin_guiButton( MaxiginGUI  *inGUI,
+                        int         *inHandle,
+                        int          inPhraseKey,
+                        int          inLocationX,
+                        int          inLocationY,
+                        int          inRadiusX,
+                        int          inRadiusY );
 
 
 
@@ -4585,6 +4662,56 @@ void maxigin_initMakeCheckboxGlow( int  inBlurRadius,
 
 
 
+typedef struct MaxiginButtonSprites {
+        
+        int  cool;
+        int  hot;
+        int  pressed;
+        
+    } MaxiginButtonSprites;
+
+
+char                  mx_buttonSpritesSet  =  0;
+MaxiginButtonSprites  mx_buttonSprites;
+
+
+void maxigin_initButtonSprites( const char  *inCoolResource,
+                                const char  *inHotResource,
+                                const char  *inPressedResource ) {
+
+    mx_buttonSprites.cool = maxigin_initSprite( inCoolResource );
+    mx_buttonSprites.hot = maxigin_initSprite( inHotResource  );
+    
+    mx_buttonSprites.pressed = maxigin_initSprite( inPressedResource  );
+    
+    mx_buttonSpritesSet =
+        ( mx_buttonSprites.cool    != -1 )
+        &&
+        ( mx_buttonSprites.hot     != -1 )
+        &&
+        ( mx_buttonSprites.pressed != -1 );   
+    }
+
+
+
+void maxigin_initMakeButtonGlow( int  inBlurRadius,
+                                 int  inBlurIterations ) {
+
+    maxigin_initMakeGlowSprite( mx_buttonSprites.cool,
+                                inBlurRadius,
+                                inBlurIterations );
+        
+    maxigin_initMakeGlowSprite( mx_buttonSprites.hot,
+                                inBlurRadius,
+                                inBlurIterations );
+
+    maxigin_initMakeGlowSprite( mx_buttonSprites.pressed,
+                                inBlurRadius,
+                                inBlurIterations );
+    }
+
+
+
 void maxigin_initMakeGuiGlow( int  inBlurRadius,
                               int  inBlurIterations ) {
 
@@ -4596,6 +4723,9 @@ void maxigin_initMakeGuiGlow( int  inBlurRadius,
     
     maxigin_initMakeCheckboxGlow( inBlurRadius,
                                   inBlurIterations );
+
+    maxigin_initMakeButtonGlow( inBlurRadius,
+                                inBlurIterations );
     }
 
 
@@ -7974,7 +8104,7 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
             &&
             mouseDown ) {
             
-            inGUI->mouseDown = 0;
+            inGUI->mouseDown = 1;
             inGUI->active = inChecked;
             }
         else if( inGUI->mouseDown
@@ -8079,6 +8209,206 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
         }
     }
 
+
+
+char maxigin_guiButton( MaxiginGUI  *inGUI,
+                        int         *inHandle,
+                        int          inPhraseKey,
+                        int          inLocationX,
+                        int          inLocationY,
+                        int          inRadiusX,
+                        int          inRadiusY ) {
+    
+    int           i;
+    MaxiginColor  c;
+    int           rLeft      =  -inRadiusX;
+    int           rRight     =   inRadiusX;
+    int           rTop       =  -inRadiusY;
+    int           rBot       =   inRadiusY;
+    char          mouseDown  =   mingin_isButtonDown( MAXIGIN_MOUSE_BUTTON );
+    int           x          =   0;
+    int           y          =   0;
+    char          avail      =   maxigin_getPointerLocation( &x,
+                                                             &y );
+    char          returnV    =   0;
+
+    if( mx_buttonSpritesSet ) {
+        MaxiginSprite  *s  = &( mx_sprites[ mx_buttonSprites.cool ] );
+
+        rLeft  =  - s->leftVisibleRadius;
+        rRight =    s->rightVisibleRadius;
+        rTop   =  - s->upperVisibleRadius;
+        rBot   =    s->lowerVisibleRadius;
+        }
+
+    x -= inGUI->zeroOffsetX;
+    y -= inGUI->zeroOffsetY;
+
+    x -= inLocationX;
+    y -= inLocationY;
+
+    /* if mouse is over us, check for new press */
+    if( avail
+        &&
+        x >= rLeft
+        &&
+        x <= rRight
+        &&
+        y >= rTop
+        &&
+        y <= rBot ) {
+
+        if( inGUI->active == 0
+            ||
+            inGUI->active == inHandle ) {
+            /* don't become hot if mouse pressed on other component */
+            inGUI->hot = inHandle;
+            }
+        
+        if( ! inGUI->mouseDown
+            &&
+            mouseDown ) {
+            
+            inGUI->mouseDown = 1;
+            inGUI->active = inHandle;
+            }
+        else if( inGUI->mouseDown
+                 &&
+                 inGUI->active == inHandle
+                 &&
+                 ! mouseDown ) {
+
+            /* mouse released on us when it was pressed on us before,
+               count as press */
+            returnV = 1;
+            
+            inGUI->mouseDown = 0;
+
+            inGUI->active = 0;
+            }
+        }
+    else {
+        /* mouse not over us
+           watch for release far away due to a press that started on us */
+
+        if( inGUI->hot == inHandle ) {
+            inGUI->hot = 0;
+            }
+        
+        if( inGUI->mouseDown
+            &&
+            inGUI->active == inHandle
+            &&
+            ! mouseDown ) {
+
+            /* don't count as press if it was released away from us */
+            inGUI->mouseDown = 0;
+
+            inGUI->active = 0;
+            }
+        }
+    
+
+    if( mx_buttonSpritesSet ) {
+
+        int  s;
+        
+        if( inGUI->hot == inHandle ) {
+            s = mx_buttonSprites.hot;
+            }
+        else {
+            s = mx_buttonSprites.cool;
+            }
+
+        if( inGUI->active == inHandle ) {
+            s = mx_buttonSprites.pressed;
+            }
+
+        mx_guiAddSprite( inGUI,
+                         0,
+                         255,
+                         s,
+                         inLocationX,
+                         inLocationY);
+        }
+    else {
+        /* no sprites, draw with shapes */
+        unsigned char  frameV  =  128;
+        unsigned char  fillV   =  64;
+        
+        
+        if( inGUI->hot == inHandle ) {
+            frameV = 255;
+            }
+        
+        if( inGUI->active == inHandle ) {
+            fillV = 0;
+            }
+
+
+        mx_makeColorGray( &c,
+                          fillV );
+
+        c.comp.alpha = 255;
+    
+        mx_guiAddFillRect( inGUI,
+                           0,
+                           &c,
+                           inLocationX - inRadiusX,
+                           inLocationY - inRadiusY,
+                           inLocationX + inRadiusX,
+                           inLocationY + inRadiusY );
+        
+
+        mx_makeColorGray( &c,
+                          frameV );
+
+        c.comp.alpha = 255;
+    
+        mx_guiAddDrawRect( inGUI,
+                           0,
+                           &c,
+                           inLocationX - inRadiusX,
+                           inLocationY - inRadiusY,
+                           inLocationX + inRadiusX,
+                           inLocationY + inRadiusY );
+
+        }    
+    
+
+
+    /* now draw button text on top */
+    
+    i  =  inGUI->numDrawComponents;
+
+    mx_makeColorGray( &c,
+                      255 );
+    c.comp.alpha = 255;
+
+
+    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
+        mingin_log( "Error:  trying to add button to a full "
+                    "MaxiginGUI instance.\n" );
+        return 0;
+        }
+    
+    mx_guiSetColor( inGUI,
+                    i,
+                    0,
+                    &c );
+
+    inGUI->drawComponents[i].drawType = MX_GUI_DRAW_LANG_TEXT;
+    
+    inGUI->drawComponents[i].drawParams.langText.phraseKey = inPhraseKey;
+    inGUI->drawComponents[i].drawParams.langText.anchorX   = inLocationX;
+    inGUI->drawComponents[i].drawParams.langText.anchorY   = inLocationY;
+    inGUI->drawComponents[i].drawParams.langText.align     = MAXIGIN_CENTER;
+    
+
+    inGUI->numDrawComponents ++;
+
+    return returnV;
+    }
 
 
 
@@ -8366,10 +8696,11 @@ void minginGame_step( char  inFinalStep ) {
     if( mx_isActionFreshPressed( MENU ) ) {
         mx_menuShowing = ! mx_menuShowing;
         
-        if( mx_menuHoverSound != -1 ) {
-            maxigin_playSoundEffect( mx_menuHoverSound,
-                                     mx_menuHoverLoudness );
-            } 
+        if( mx_menuDoSound != -1 ) {
+            
+            maxigin_playSoundEffect( mx_menuDoSound,
+                                     mx_menuDoLoudness );
+            }
         }
     
     
@@ -8718,8 +9049,8 @@ void minginGame_step( char  inFinalStep ) {
         menuPanel = maxigin_guiStartPanel( &mx_internalGUI,
                                            0,
                                            ySlideInPos,
-                                           MAXIGIN_GAME_NATIVE_W - 32,
-                                           MAXIGIN_GAME_NATIVE_H - 32,
+                                           MAXIGIN_GAME_NATIVE_W - 20,
+                                           MAXIGIN_GAME_NATIVE_H - 40,
                                            (unsigned char)( mx_menuFade / 10 ) );
 
         mx_populateMenuPanel();
@@ -8809,9 +9140,13 @@ static  void mx_initLanguages( void );
 static int          mx_lang_settings;
 static int          mx_lang_newGame;
 static int          mx_lang_quit;
+static int          mx_lang_resume;
 static int          mx_lang_musicVolume;
 static int          mx_lang_effectsVolume;
 static int          mx_lang_fullscreen;
+static int          mx_lang_languages;
+static int          mx_lang_controls;
+static int          mx_lang_back;
 
 
 /* smaller scale for sound effects, since the volume only applies
@@ -8901,9 +9236,13 @@ static void mx_gameInit( void ) {
     mx_lang_settings      = maxigin_initTranslationKey( "settings" );
     mx_lang_newGame       = maxigin_initTranslationKey( "newGame"  );
     mx_lang_quit          = maxigin_initTranslationKey( "quit" );
+    mx_lang_resume        = maxigin_initTranslationKey( "resume" );
     mx_lang_musicVolume   = maxigin_initTranslationKey( "musicVolume" );
     mx_lang_effectsVolume = maxigin_initTranslationKey( "effectsVolume" );
     mx_lang_fullscreen    = maxigin_initTranslationKey( "fullscreen" );
+    mx_lang_languages     = maxigin_initTranslationKey( "languages" );
+    mx_lang_controls      = maxigin_initTranslationKey( "controls" );
+    mx_lang_back          = maxigin_initTranslationKey( "back" );
 
     /* game set any translation keys during init, now we can load languages
        based on those keys */
@@ -16921,12 +17260,22 @@ void mx_populateMenuPanel( void ) {
     void  *oldActive        =  mx_internalGUI.active;
     int    oldEffectsVol    =  mx_soundEffectsVolume;
     int    oldMusicVol      =  mx_musicVolumeTarget;
+    char   resumePressed    =  0;
+    char   quitPressed      =  0;
+    char   controlsPressed  =  0;
+    char   langPressed      =  0;
+    
     
     static  char  fullscreenChecked             =  0;
     static  char  fullscreenQueried             =  0;
     static  char  canToggleFullscreen           =  0;
     static  int   stepsSinceLastEffectsExample  =  1000;
-
+    static  int   resumeButtonHandle            =  0;
+    static  int   quitButtonHandle              =  0;
+    static  int   controlsButtonHandle          =  0;
+    static  int   langButtonHandle              =  0;
+    
+    
     stepsSinceLastEffectsExample ++;
     
     if( ! fullscreenQueried ) {
@@ -16943,6 +17292,24 @@ void mx_populateMenuPanel( void ) {
         fullscreenQueried = 1;
         }
 
+
+    resumePressed = maxigin_guiButton( &mx_internalGUI,
+                                       &resumeButtonHandle,
+                                       mx_lang_resume,
+                                       0,
+                                       -80,
+                                       50,
+                                       10 );
+    
+    if( resumePressed ) {
+        if( mx_menuDoSound != -1 ) {
+            maxigin_playSoundEffect( mx_menuDoSound,
+                                     mx_menuDoLoudness );
+            }
+        mx_menuShowing = 0;
+        }
+
+    
     
     if( canToggleFullscreen ) {
 
@@ -16951,7 +17318,7 @@ void mx_populateMenuPanel( void ) {
         maxigin_guiLabel( &mx_internalGUI,
                           mx_lang_fullscreen,
                           30,
-                          -60,
+                          -57,
                           MAXIGIN_RIGHT );
         
         oldChecked = fullscreenChecked;
@@ -16959,7 +17326,7 @@ void mx_populateMenuPanel( void ) {
         maxigin_guiCheckbox( &mx_internalGUI,
                              &fullscreenChecked,
                              40,
-                             -59,
+                             -56,
                              3 );
 
         if( oldChecked != fullscreenChecked ) {
@@ -16978,7 +17345,7 @@ void mx_populateMenuPanel( void ) {
     maxigin_guiLabel( &mx_internalGUI,
                       mx_lang_musicVolume,
                       0,
-                      -15,
+                      -38,
                       MAXIGIN_CENTER );
     
     /* stick a slider in there as a dummy component for now */
@@ -16988,7 +17355,7 @@ void mx_populateMenuPanel( void ) {
                        MAXIGIN_MAX_MUSIC_LOUDNESS,
                        -50,
                        50,
-                       0,
+                       -25,
                        10,
                        20,
                        10,
@@ -16997,7 +17364,7 @@ void mx_populateMenuPanel( void ) {
     maxigin_guiLabel( &mx_internalGUI,
                       mx_lang_effectsVolume,
                       0,
-                      25,
+                      -8,
                       MAXIGIN_CENTER );
 
     
@@ -17008,7 +17375,7 @@ void mx_populateMenuPanel( void ) {
                        MAXIGIN_MAX_SOUND_LOUDNESS,
                        -50,
                        50,
-                       40,
+                       5,
                        10,
                        20,
                        10,
@@ -17040,6 +17407,60 @@ void mx_populateMenuPanel( void ) {
         maxigin_writeIntSetting( "maxigin_musicVolume.ini",
                                  mx_musicVolumeTarget );
         }
+
+
+    controlsPressed = maxigin_guiButton( &mx_internalGUI,
+                                       &controlsButtonHandle,
+                                       mx_lang_controls,
+                                       0,
+                                       30,
+                                       50,
+                                       10 );
+    
+    if( controlsPressed ) {
+        if( mx_menuDoSound != -1 ) {
+            maxigin_playSoundEffect( mx_menuDoSound,
+                                     mx_menuDoLoudness );
+            }
+        }
+
+    
+    langPressed = maxigin_guiButton( &mx_internalGUI,
+                                       &langButtonHandle,
+                                       mx_lang_languages,
+                                       0,
+                                       55,
+                                       50,
+                                       10 );
+    
+    if( langPressed ) {
+        if( mx_menuDoSound != -1 ) {
+            maxigin_playSoundEffect( mx_menuDoSound,
+                                     mx_menuDoLoudness );
+            }
+        }
+
+    
+    quitPressed = maxigin_guiButton( &mx_internalGUI,
+                                     &quitButtonHandle,
+                                     mx_lang_quit,
+                                     0,
+                                     80,
+                                     50,
+                                     10 );
+    
+    if( quitPressed ) {
+        if( mx_menuDoSound != -1 ) {
+            maxigin_playSoundEffect( mx_menuDoSound,
+                                     mx_menuDoLoudness );
+            }
+        
+        mingin_log( "Got quit button, starting sound fade out\n" );
+        
+        mx_quitting      = 1;
+        mx_quittingReady = 0;
+        }
+    
     
 
     if( mx_internalGUI.hot != 0

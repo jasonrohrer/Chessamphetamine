@@ -12,6 +12,8 @@ settings       "設定"
 
 newGame        "新遊戲"
 
+resume         "繼續"
+
 quit           "離開"
 
 
@@ -21,4 +23,9 @@ effectsVolume  "音效音量"
 
 fullscreen     "全螢幕"
 
+languages      "語言"
+
+controls       "控制"
+
+back           "返回"
 

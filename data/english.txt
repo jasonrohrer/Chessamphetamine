@@ -12,6 +12,8 @@ settings       "Settings"
 
 newGame        "New Game"
 
+resume         "Resume"
+
 quit           "Quit"
 
 
@@ -21,4 +23,8 @@ effectsVolume  "Effects Volume"
 
 fullscreen     "Fullscreen"
 
+languages      "Languages"
 
+controls       "Controls"
+
+back           "Back"

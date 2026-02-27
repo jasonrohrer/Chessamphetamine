@@ -8814,9 +8814,11 @@ static int          mx_lang_effectsVolume;
 static int          mx_lang_fullscreen;
 
 
-static  int   mx_soundEffectsVolume             =  512;
-/* fixme */
-/*static  int   mx_musicVolume;*/
+#define       MAXIGIN_MAX_SOUND_LOUDNESS           512
+
+static  int   mx_soundEffectsVolume             =  MAXIGIN_MAX_SOUND_LOUDNESS;
+static  int   mx_musicVolume                    =  MAXIGIN_MAX_SOUND_LOUDNESS;
+
 
 
 static void mx_gameInit( void ) {
@@ -8828,7 +8830,10 @@ static void mx_gameInit( void ) {
 
     mx_soundEffectsVolume =
         maxigin_readIntSetting( "maxigin_soundEffectsVolume.ini",
-                                512 );
+                                MAXIGIN_MAX_SOUND_LOUDNESS );
+    mx_musicVolume =
+        maxigin_readIntSetting( "maxigin_musicVolume.ini",
+                                MAXIGIN_MAX_SOUND_LOUDNESS );
     
     mingin_registerButtonMapping( QUIT,
                                   mx_quitMapping );
@@ -13136,7 +13141,7 @@ int maxigin_initSoundEffect( const char  *inBulkResourceName ) {
 
 
 
-#define  MAXIGIN_MAX_SOUND_LOUDNESS  512
+
 
 
 
@@ -13625,7 +13630,8 @@ static void mx_mixInMusicSamples( int  inNumSampleFrames ) {
         char  consumingFirstFrame     =  0;
         int   numBytesToRead;
         int   numBytesRead            =  0;
-
+        char  adjustVolume            =  0;
+        
         numFramesUsed =
             ( dataPos - mx_musicData.firstSampleLocation )
             /
@@ -13633,7 +13639,10 @@ static void mx_mixInMusicSamples( int  inNumSampleFrames ) {
     
         numFramesLeft = mx_musicData.numSampleFrames - numFramesUsed;
 
-        
+
+        if( mx_musicVolume < MAXIGIN_MAX_SOUND_LOUDNESS ) {
+            adjustVolume = 1;
+            }
 
         if( mx_soundDirection == 1 ) {
             if( numFramesToMixThisStep > numFramesLeft ) {
@@ -13743,7 +13752,16 @@ static void mx_mixInMusicSamples( int  inNumSampleFrames ) {
                     mx_wavReadingBuffer[ wavB + 1 ] << 8 );
 
                 wavB += 2;
-                            
+
+                if( adjustVolume ) {
+                    uL = (unsigned short)(
+                        ( (short)uL * (long)mx_musicVolume )
+                        / MAXIGIN_MAX_SOUND_LOUDNESS );
+                    uR = (unsigned short)(
+                        ( (short)uR * (long)mx_musicVolume )
+                        / MAXIGIN_MAX_SOUND_LOUDNESS );
+                    }
+                
                 mx_audioMixingBuffers[0][ f ] += (short)uL;
                 mx_audioMixingBuffers[1][ f ] += (short)uR;
                             
@@ -16877,8 +16895,8 @@ void mx_populateMenuPanel( void ) {
     void  *oldHot           =  mx_internalGUI.hot;
     void  *oldActive        =  mx_internalGUI.active;
     int    oldEffectsVol    =  mx_soundEffectsVolume;
+    int    oldMusicVol      =  mx_musicVolume;
     
-    static  int   musicSliderValue              =  5;
     static  char  fullscreenChecked             =  0;
     static  char  fullscreenQueried             =  0;
     static  char  canToggleFullscreen           =  0;
@@ -16940,9 +16958,9 @@ void mx_populateMenuPanel( void ) {
     
     /* stick a slider in there as a dummy component for now */
     maxigin_guiSlider( &mx_internalGUI,
-                       &musicSliderValue,
+                       &mx_musicVolume,
                        0,
-                       10,
+                       MAXIGIN_MAX_SOUND_LOUDNESS,
                        -50,
                        50,
                        0,
@@ -16991,6 +17009,11 @@ void mx_populateMenuPanel( void ) {
     if( oldEffectsVol != mx_soundEffectsVolume ) {
         maxigin_writeIntSetting( "maxigin_soundEffectsVolume.ini",
                                  mx_soundEffectsVolume );
+        }
+
+    if( oldMusicVol != mx_musicVolume ) {
+        maxigin_writeIntSetting( "maxigin_musicVolume.ini",
+                                 mx_musicVolume );
         }
     
 

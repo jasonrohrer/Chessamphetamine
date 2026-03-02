@@ -17667,6 +17667,13 @@ static void mx_populateControlsPanel( void ) {
 
             /* fixme:  display icon for control */
 
+            /* can't use this directly here, since we're not in draw
+               function
+               Need way to get sprite instead of just drawing it
+
+               maxigin_drawButtonHintSprite
+            */
+
             if( buttonPressed ) {
                 /* fixme:
                    enable live poke of new control */

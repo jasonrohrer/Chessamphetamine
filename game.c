@@ -779,6 +779,10 @@ void maxiginGame_init( void ) {
                                  "checkboxHotUnchecked.tga",
                                  "checkboxHotChecked.tga" );
 
+    maxigin_initButtonSprites( "buttonCool.tga",
+                               "buttonHot.tga",
+                               "buttonPressed.tga" );
+    
     maxigin_initMakeGuiGlow( 2,
                              2 );
 

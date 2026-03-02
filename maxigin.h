@@ -8428,7 +8428,7 @@ char maxigin_guiButton( MaxiginGUI  *inGUI,
     
     inGUI->drawComponents[i].drawParams.langText.phraseKey = inPhraseKey;
     inGUI->drawComponents[i].drawParams.langText.anchorX   = inLocationX;
-    inGUI->drawComponents[i].drawParams.langText.anchorY   = inLocationY;
+    inGUI->drawComponents[i].drawParams.langText.anchorY   = inLocationY - 1;
     inGUI->drawComponents[i].drawParams.langText.align     = MAXIGIN_CENTER;
     
 

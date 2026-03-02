@@ -661,7 +661,7 @@ static const char  *sliderBarSprites[]  =  { "sliderFullBar100.tga",
                                              "sliderFullBar200.tga", };
 
 static const char  *panelFullSprites[]  =  { "panelFull200_100.tga",
-                                             "panelFull300_200.tga" };
+                                             "panelFull300_220.tga" };
 
 
 #define REGISTER_VAL_MEM( x )  \

@@ -1347,15 +1347,19 @@ typedef enum{ MAXIGIN_LEFT    =  -1,
                      
       inAlign        the horizontal alignment of the text around the point
                      (inLocationX, inLocationY).
-                     The text is always vertically centered on this point
+                     The text is always vertically centered on this point.
+
+  Return:
+
+      the horizontal extent of the text, in pixels, or -1 on failure
 
   [jumpMaxiginDraw]
 */
-void maxigin_drawText( int           inFontHandle,
-                       const char   *inText,
-                       int           inLocationX,
-                       int           inLocationY,
-                       MaxiginAlign  inAlign );
+int maxigin_drawText( int           inFontHandle,
+                      const char   *inText,
+                      int           inLocationX,
+                      int           inLocationY,
+                      MaxiginAlign  inAlign );
 
 
 
@@ -1376,14 +1380,18 @@ void maxigin_drawText( int           inFontHandle,
                      
       inAlign        the horizontal alignment of the text around the point
                      (inLocationX, inLocationY).
-                     The text is always vertically centered on this point
+                     The text is always vertically centered on this point.
+
+  Return:
+
+      the horizontal extent of the text, in pixels, or -1 on failure
 
   [jumpMaxiginDraw]
 */
-void maxigin_drawLangText( int           inPhraseKey,
-                           int           inLocationX,
-                           int           inLocationY,
-                           MaxiginAlign  inAlign );
+int maxigin_drawLangText( int           inPhraseKey,
+                          int           inLocationX,
+                          int           inLocationY,
+                          MaxiginAlign  inAlign );
 
 
 
@@ -1550,6 +1558,25 @@ void maxigin_drawGUI( MaxiginGUI *inGUI );
 void maxigin_drawButtonHintSprite( int  inButtonHandle,
                                    int  inCenterX,
                                    int  inCenterY );
+
+
+
+/*
+  Measures language text using the active language and corresponding font.
+
+  Parameters:
+
+      inPhraseKey    a phrase key previously registered with
+                     maxigin_initTranslationKey()
+
+  Return:
+
+      the horizontal extent of the text, in pixels, or -1 on failure
+
+  [jumpMaxiginDraw]
+*/
+int maxigin_measureLangText( int  inPhraseKey );
+
 
 
 /*
@@ -16150,11 +16177,16 @@ static void mx_kerningCacheInsert( int  inPrevSpriteHandle,
 
 
 
-void maxigin_drawText( int           inFontHandle,
-                       const char   *inText,
-                       int           inLocationX,
-                       int           inLocationY,
-                       MaxiginAlign  inAlign ) {
+#define  MAXIGIN_SKIP_DRAW_AND_MEASURE  -99
+
+
+/* special behavior on inAlign = MAXIGIN_SKIP_DRAW_AND_MEASURE:
+   Don't draw anything, return total pixel width of text */
+int maxigin_drawText( int           inFontHandle,
+                      const char   *inText,
+                      int           inLocationX,
+                      int           inLocationY,
+                      MaxiginAlign  inAlign ) {
 
     MaxiginFont  *f               =  &( mx_fonts[ inFontHandle ] );
     char         *nextText        =  (char*)inText;
@@ -16360,9 +16392,14 @@ void maxigin_drawText( int           inFontHandle,
         ||
         totalPixWidth == 0 ) {
         
-        return;
+        return 0;
         }
 
+    
+    if( inAlign == MAXIGIN_SKIP_DRAW_AND_MEASURE ) {
+        return totalPixWidth;
+        }
+    
     
     switch( inAlign ) {
         case MAXIGIN_LEFT:
@@ -16390,6 +16427,8 @@ void maxigin_drawText( int           inFontHandle,
             }
                           
         }
+
+    return totalPixWidth;
     }
 
 
@@ -17158,11 +17197,12 @@ static void mx_initLanguages( void ) {
 
 static  char  mx_drawLangFailureShown  =  0;
 
-
-void maxigin_drawLangText( int           inPhraseKey,
-                           int           inLocationX,
-                           int           inLocationY,
-                           MaxiginAlign  inAlign ) {
+/* special behavior on inAlign = MAXIGIN_SKIP_DRAW_AND_MEASURE:
+   Don't draw anything, return total pixel width of translated text */
+int maxigin_drawLangText( int           inPhraseKey,
+                          int           inLocationX,
+                          int           inLocationY,
+                          MaxiginAlign  inAlign ) {
 
     MaxiginLanguage  *lang;
     char             *langString;
@@ -17174,7 +17214,7 @@ void maxigin_drawLangText( int           inPhraseKey,
                         "languages loaded\n" );
             mx_drawLangFailureShown = 1;
             }
-        return;
+        return -1;
         }
 
     lang = &( mx_languages[ mx_currentLanguage ] );
@@ -17189,7 +17229,7 @@ void maxigin_drawLangText( int           inPhraseKey,
                             inPhraseKey );
             mx_drawLangFailureShown = 1;
             }
-        return;
+        return -1;
         }
 
 
@@ -17203,14 +17243,23 @@ void maxigin_drawLangText( int           inPhraseKey,
                                mx_translationKeys[ inPhraseKey ] );
             mx_drawLangFailureShown = 1;
             }
-        return;
+        return -1;
         }
         
-    maxigin_drawText( lang->fontHandle,
-                      langString,
-                      inLocationX,
-                      inLocationY,
-                      inAlign ); 
+    return maxigin_drawText( lang->fontHandle,
+                             langString,
+                             inLocationX,
+                             inLocationY,
+                             inAlign ); 
+    }
+
+
+
+int maxigin_measureLangText( int  inPhraseKey ) {
+    return maxigin_drawLangText( inPhraseKey,
+                                 0,
+                                 0,
+                                 MAXIGIN_SKIP_DRAW_AND_MEASURE );
     }
 
 
@@ -17297,7 +17346,7 @@ void mx_populateMenuPanel( void ) {
                                        &resumeButtonHandle,
                                        mx_lang_resume,
                                        0,
-                                       -80,
+                                       -90,
                                        50,
                                        10 );
     
@@ -17314,19 +17363,28 @@ void mx_populateMenuPanel( void ) {
     if( canToggleFullscreen ) {
 
         char  oldChecked;
+
+        int   labelW       =   maxigin_measureLangText( mx_lang_fullscreen );
+        int   offset       =   10;
+        int   yPos         =  -65;
+        if( mx_checkboxSpritesSet ) {
+            MaxiginSprite *s = &( mx_sprites[ mx_checkboxSprites.cool[0] ] );
+            
+            offset = s->leftVisibleRadius + 7;
+            }
         
         maxigin_guiLabel( &mx_internalGUI,
                           mx_lang_fullscreen,
-                          30,
-                          -57,
-                          MAXIGIN_RIGHT );
+                          0,
+                          yPos,
+                          MAXIGIN_CENTER );
         
         oldChecked = fullscreenChecked;
     
         maxigin_guiCheckbox( &mx_internalGUI,
                              &fullscreenChecked,
-                             40,
-                             -56,
+                             labelW / 2 + offset,
+                             yPos + 1,
                              3 );
 
         if( oldChecked != fullscreenChecked ) {
@@ -17345,7 +17403,7 @@ void mx_populateMenuPanel( void ) {
     maxigin_guiLabel( &mx_internalGUI,
                       mx_lang_musicVolume,
                       0,
-                      -38,
+                      -40,
                       MAXIGIN_CENTER );
     
     /* stick a slider in there as a dummy component for now */
@@ -17364,7 +17422,7 @@ void mx_populateMenuPanel( void ) {
     maxigin_guiLabel( &mx_internalGUI,
                       mx_lang_effectsVolume,
                       0,
-                      -8,
+                      -5,
                       MAXIGIN_CENTER );
 
     
@@ -17375,7 +17433,7 @@ void mx_populateMenuPanel( void ) {
                        MAXIGIN_MAX_SOUND_LOUDNESS,
                        -50,
                        50,
-                       5,
+                       10,
                        10,
                        20,
                        10,
@@ -17413,7 +17471,7 @@ void mx_populateMenuPanel( void ) {
                                        &controlsButtonHandle,
                                        mx_lang_controls,
                                        0,
-                                       30,
+                                       38,
                                        50,
                                        10 );
     
@@ -17429,7 +17487,7 @@ void mx_populateMenuPanel( void ) {
                                        &langButtonHandle,
                                        mx_lang_languages,
                                        0,
-                                       55,
+                                       63,
                                        50,
                                        10 );
     
@@ -17445,7 +17503,7 @@ void mx_populateMenuPanel( void ) {
                                      &quitButtonHandle,
                                      mx_lang_quit,
                                      0,
-                                     80,
+                                     88,
                                      50,
                                      10 );
     

@@ -1943,6 +1943,38 @@ char maxigin_registerButtonMapping( int                 inButtonHandle,
 
 
 /*
+  Registers button mapping that can be remapped in Maxigin's controls menu
+  (with remapping saved across runs).
+  
+  Parameters:
+
+      inButtonHandle   the game-defined button action to map
+
+      inMapping        an array of MinginButton values, ending with MGN_MAP_END,
+                       that should trigger this game-defined action
+
+      inPhraseKey      translation key for description of this action
+                       (will appear in Maxigin remapping menu)
+                       
+      inSettingName    name of the persistent data resource where
+                       changes to this mapping should be stored
+                       
+  Returns:
+
+      1   on success
+      
+      0   on failure (if inButtonHandle is out of the supported range)  
+
+  [jumpMaxiginGeneral]
+*/
+char maxigin_registerDynamicButtonMapping( int                 inButtonHandle,
+                                           const MinginButton  inMapping[],
+                                           int                 inPhraseKey,
+                                           const char         *inSettingName );
+
+
+
+/*
   Check whether a previously-mapped button handle is currently held down.
 
   Note that Maxigin might block reporting of certain buttons being down
@@ -9311,11 +9343,19 @@ static  int   mx_musicVolume                    =  MAXIGIN_MAX_MUSIC_LOUDNESS;
 static  int   mx_musicVolumeTarget              =  MAXIGIN_MAX_MUSIC_LOUDNESS;
 
 
+#define MAXIGIN_NUM_BUTTON_MAPPINGS                256
+
+static  int          mx_buttonPhraseKeys[ MAXIGIN_NUM_BUTTON_MAPPINGS ];
+
+static  const char  *mx_buttonSettingNames[ MAXIGIN_NUM_BUTTON_MAPPINGS ];
+
+
 
 static void mx_gameInit( void ) {
 
     int  p;
-
+    int  i;
+    
     mx_enableAutoQuit = maxigin_readFlagSetting( "maxigin_enableAutoQuit.ini" );
 
 
@@ -9328,6 +9368,15 @@ static void mx_gameInit( void ) {
 
     mx_musicVolumeTarget = mx_musicVolume;
 
+    for( i = 0;
+         i < MAXIGIN_NUM_BUTTON_MAPPINGS;
+         i ++ ) {
+
+        mx_buttonPhraseKeys  [i] = -1;
+        mx_buttonSettingNames[i] =  0;
+        
+        }
+    
     
     mingin_registerButtonMapping( QUIT,
                                   mx_quitMapping );
@@ -9422,11 +9471,61 @@ static void mx_gameInit( void ) {
 char maxigin_registerButtonMapping( int                 inButtonHandle,
                                     const MinginButton  inMapping[] ) {
 
+    char  returnV;
+    
     /* push it up so it doesn't interfere with our mappings */
     inButtonHandle += LAST_MAXIGIN_USER_ACTION;
 
-    return mingin_registerButtonMapping( inButtonHandle,
-                                         inMapping );
+    returnV = mingin_registerButtonMapping( inButtonHandle,
+                                            inMapping );
+    if( returnV ) {
+        mx_buttonPhraseKeys  [ inButtonHandle ] = -1;
+        mx_buttonSettingNames[ inButtonHandle ] =  0;
+        }
+
+    return returnV;
+    }
+
+
+
+char maxigin_registerDynamicButtonMapping( int                 inButtonHandle,
+                                           const MinginButton  inMapping[],
+                                           int                 inPhraseKey,
+                                           const char         *inSettingName ) {
+
+    char  returnV;
+    
+    /* push it up so it doesn't interfere with our mappings */
+    inButtonHandle += LAST_MAXIGIN_USER_ACTION;
+
+    returnV = mingin_registerButtonMapping( inButtonHandle,
+                                            inMapping );
+    if( returnV ) {
+
+        int  savedMapping;
+        
+        mx_buttonPhraseKeys  [ inButtonHandle ] = inPhraseKey;
+        mx_buttonSettingNames[ inButtonHandle ] = inSettingName;
+
+        /* overwrite the mapping if we have one saved */
+        
+        savedMapping = maxigin_readIntSetting( inSettingName,
+                                               -1 );
+
+        if( savedMapping != -1 ) {
+            
+            MinginButton  tempMapping[2];
+            
+            tempMapping[0] = savedMapping;
+            tempMapping[1] = MGN_MAP_END;
+
+            returnV = mingin_registerButtonMapping( inButtonHandle,
+                                                    tempMapping );
+            }
+        }
+
+
+    return returnV;
     }
 
 
@@ -17516,6 +17615,89 @@ static void mx_populateLangPanel( void ) {
     }
 
 
+static  char  mx_controlsPanelShowing  =  0;
+
+
+static void mx_populateControlsPanel( void ) {
+
+    char   backPressed  =    0;
+    int    i;
+    int    buttonY      =  -90;
+    int   *oldHot       =  mx_internalGUI.hot;
+    
+    static  int   backButtonHandle  =  0;
+    static  int   controlButtonHandles[ MAXIGIN_NUM_BUTTON_MAPPINGS ];
+    
+    backPressed = maxigin_guiLangButton( &mx_internalGUI,
+                                         &backButtonHandle,
+                                         mx_lang_back,
+                                         0,
+                                         buttonY,
+                                         50,
+                                         10 );
+    
+    if( backPressed ) {
+        if( mx_menuDoSound != -1 ) {
+            maxigin_playSoundEffect( mx_menuDoSound,
+                                     mx_menuDoLoudness );
+            }
+
+        mx_controlsPanelShowing = 0;
+        }
+
+    buttonY += 5;
+
+    for( i = 0;
+         i < MAXIGIN_NUM_BUTTON_MAPPINGS;
+         i ++ ) {
+
+        if( mx_buttonPhraseKeys[ i ] != -1 ) {
+
+            char  buttonPressed  =  0;
+            
+            buttonY += 25;
+
+            buttonPressed = maxigin_guiLangButton( &mx_internalGUI,
+                                                   &( controlButtonHandles[i] ),
+                                                   mx_buttonPhraseKeys[i],
+                                                   0,
+                                                   buttonY,
+                                                   50,
+                                                   10 );
+
+            /* fixme:  display icon for control */
+
+            if( buttonPressed ) {
+                /* fixme:
+                   enable live poke of new control */
+                
+                if( mx_menuDoSound != -1 ) {
+                    maxigin_playSoundEffect( mx_menuDoSound,
+                                             mx_menuDoLoudness );
+                    }
+                }
+            }
+        }
+
+    if( mx_internalGUI.hot != 0
+        &&
+        mx_internalGUI.hot != oldHot
+        &&
+        mx_menuShowing
+        &&
+        mx_menuFade >= ( mx_menuFadeMax * 9 ) / 10 ) {
+
+        /* don't play hover sound while menu still
+           moving into place, wait till 90% there */
+        
+        if( mx_menuHoverSound != -1 ) {
+            maxigin_playSoundEffect( mx_menuHoverSound,
+                                     mx_menuHoverLoudness );
+            }
+        }
+    }
+
+
 
 void mx_populateMenuPanel( void ) {
 
@@ -17541,6 +17723,11 @@ void mx_populateMenuPanel( void ) {
 
     if( mx_langPanelShowing ) {
         mx_populateLangPanel();
+        return;
+        }
+
+    if( mx_controlsPanelShowing ) {
+        mx_populateControlsPanel();
         return;
         }
     
@@ -17699,6 +17886,7 @@ void mx_populateMenuPanel( void ) {
             maxigin_playSoundEffect( mx_menuDoSound,
                                      mx_menuDoLoudness );
             }
+        mx_controlsPanelShowing = 1;
         }
 
     

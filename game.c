@@ -725,7 +725,13 @@ void maxiginGame_init( void ) {
 
     
     maxigin_registerButtonMapping( JUMP,   jumpMapping );
-    maxigin_registerButtonMapping( SHOOT,  shootMapping );
+    
+    maxigin_registerDynamicButtonMapping(
+        SHOOT,
+        shootMapping,
+        maxigin_initTranslationKey( "shootDesc" ),
+        "shootButtonMapping.ini" );
+    
     maxigin_registerButtonMapping( REMAP,  remapMapping );
     maxigin_registerButtonMapping( CRASH,  crashMapping );
 

@@ -29,3 +29,5 @@ controls       "控制"
 
 back           "返回"
 
+
+shootDesc      "射擊"

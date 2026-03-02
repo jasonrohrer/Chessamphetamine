@@ -28,3 +28,6 @@ languages      "Languages"
 controls       "Controls"
 
 back           "Back"
+
+
+shootDesc      "Shoot"

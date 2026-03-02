@@ -8722,6 +8722,15 @@ void minginGame_step( char  inFinalStep ) {
 
     if( mx_isActionFreshPressed( MENU ) ) {
         mx_menuShowing = ! mx_menuShowing;
+
+        /* end playback when menu opened */
+        if( mx_menuShowing
+            &&
+            mx_playbackRunning ) {
+            mx_playbackEnd();
+            mx_initRecording();
+            mx_playbackInterruptedRecording = 0;
+            }
         
         if( mx_menuDoSound != -1 ) {
             

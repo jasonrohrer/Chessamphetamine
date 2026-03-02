@@ -1786,8 +1786,9 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
 
       inHandle       pointer used as a handle for this button
       
-      inPhraseKey    a phrase key previously registered with
-                     maxigin_initTranslationKey()
+      inFontHandle   the font to use when drawing the display text
+      
+      inString       the text to display on the button
 
       inLocationX    the x position in pixels of the button center
  
@@ -1810,11 +1811,32 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
 */
 char maxigin_guiButton( MaxiginGUI  *inGUI,
                         int         *inHandle,
-                        int          inPhraseKey,
+                        int          inFontHandle,
+                        char        *inString,
                         int          inLocationX,
                         int          inLocationY,
                         int          inRadiusX,
                         int          inRadiusY );
+
+
+
+/*
+  Same as guiButton, but takes a translation phrase key instead of a string.
+
+  Different Parameters:
+
+      inPhraseKey    a phrase key previously registered with
+                     maxigin_initTranslationKey()
+        
+  [jumpMaxiginGeneral]
+*/
+char maxigin_guiLangButton( MaxiginGUI  *inGUI,
+                            int         *inHandle,
+                            int          inPhraseKey,
+                            int          inLocationX,
+                            int          inLocationY,
+                            int          inRadiusX,
+                            int          inRadiusY );
 
 
 
@@ -2593,6 +2615,7 @@ struct MaxiginGUI {
                     MX_GUI_FILL_RECT,
                     MX_GUI_DRAW_SPRITE,
                     MX_GUI_DRAW_SPRITE_SEQUENCE,
+                    MX_GUI_DRAW_TEXT,
                     MX_GUI_DRAW_LANG_TEXT
                     } drawType;
 
@@ -2642,6 +2665,14 @@ struct MaxiginGUI {
                                 int  offsetY;
                                 int  count;
                             } spriteSequence;
+
+                        struct {
+                                int           fontHandle;
+                                char         *textString;
+                                int           anchorX;
+                                int           anchorY;
+                                MaxiginAlign  align;
+                            } text;
                         
                         struct {
                                 int           phraseKey;
@@ -6694,6 +6725,8 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
             ||
             drawType == MX_GUI_DRAW_SPRITE_SEQUENCE
             ||
+            drawType == MX_GUI_DRAW_TEXT
+            ||
             drawType == MX_GUI_DRAW_LANG_TEXT ) {
 
             maxigin_drawSetColor(
@@ -6775,6 +6808,14 @@ void maxigin_drawGUI( MaxiginGUI *inGUI ) {
                 
                 }
                 break;
+            case MX_GUI_DRAW_TEXT:
+                maxigin_drawText(
+                    inGUI->drawComponents[i].drawParams.text.fontHandle,
+                    inGUI->drawComponents[i].drawParams.text.textString,
+                    inGUI->drawComponents[i].drawParams.text.anchorX + xO,
+                    inGUI->drawComponents[i].drawParams.text.anchorY + yO,
+                    inGUI->drawComponents[i].drawParams.text.align );
+                break;    
             case MX_GUI_DRAW_LANG_TEXT:
                 maxigin_drawLangText(
                     inGUI->drawComponents[i].drawParams.langText.phraseKey,
@@ -8238,15 +8279,13 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
 
 
 
-char maxigin_guiButton( MaxiginGUI  *inGUI,
-                        int         *inHandle,
-                        int          inPhraseKey,
-                        int          inLocationX,
-                        int          inLocationY,
-                        int          inRadiusX,
-                        int          inRadiusY ) {
-    
-    int           i;
+static char mx_guiButtonBody( MaxiginGUI  *inGUI,
+                              int         *inHandle,
+                              int          inLocationX,
+                              int          inLocationY,
+                              int          inRadiusX,
+                              int          inRadiusY ) {
+
     MaxiginColor  c;
     int           rLeft      =  -inRadiusX;
     int           rRight     =   inRadiusX;
@@ -8406,6 +8445,29 @@ char maxigin_guiButton( MaxiginGUI  *inGUI,
 
     /* now draw button text on top */
     
+    
+
+    return returnV;
+    }
+
+
+
+char maxigin_guiLangButton( MaxiginGUI  *inGUI,
+                            int         *inHandle,
+                            int          inPhraseKey,
+                            int          inLocationX,
+                            int          inLocationY,
+                            int          inRadiusX,
+                            int          inRadiusY ) {
+    
+    int           i;
+    MaxiginColor  c;
+    char          returnV  =  mx_guiButtonBody( inGUI,
+                                                inHandle,
+                                                inLocationX,
+                                                inLocationY,
+                                                inRadiusX,
+                                                inRadiusY );
     i  =  inGUI->numDrawComponents;
 
     mx_makeColorGray( &c,
@@ -8414,9 +8476,9 @@ char maxigin_guiButton( MaxiginGUI  *inGUI,
 
 
     if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
-        mingin_log( "Error:  trying to add button to a full "
+        mingin_log( "Error:  trying to add button text to a full "
                     "MaxiginGUI instance.\n" );
-        return 0;
+        return returnV;
         }
     
     mx_guiSetColor( inGUI,
@@ -8436,6 +8498,58 @@ char maxigin_guiButton( MaxiginGUI  *inGUI,
 
     return returnV;
     }
+
+
+
+char maxigin_guiButton( MaxiginGUI  *inGUI,
+                        int         *inHandle,
+                        int          inFontHandle,
+                        char        *inString,
+                        int          inLocationX,
+                        int          inLocationY,
+                        int          inRadiusX,
+                        int          inRadiusY ) {
+    
+    int           i;
+    MaxiginColor  c;
+    char          returnV  =  mx_guiButtonBody( inGUI,
+                                                inHandle,
+                                                inLocationX,
+                                                inLocationY,
+                                                inRadiusX,
+                                                inRadiusY );
+    i  =  inGUI->numDrawComponents;
+
+    mx_makeColorGray( &c,
+                      255 );
+    c.comp.alpha = 255;
+
+
+    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
+        mingin_log( "Error:  trying to add button text to a full "
+                    "MaxiginGUI instance.\n" );
+        return returnV;
+        }
+    
+    mx_guiSetColor( inGUI,
+                    i,
+                    0,
+                    &c );
+
+    inGUI->drawComponents[i].drawType = MX_GUI_DRAW_TEXT;
+    
+    inGUI->drawComponents[i].drawParams.text.fontHandle = inFontHandle;
+    inGUI->drawComponents[i].drawParams.text.textString = inString;
+    inGUI->drawComponents[i].drawParams.text.anchorX    = inLocationX;
+    inGUI->drawComponents[i].drawParams.text.anchorY    = inLocationY - 1;
+    inGUI->drawComponents[i].drawParams.text.align      = MAXIGIN_CENTER;
+    
+
+    inGUI->numDrawComponents ++;
+
+    return returnV;
+    }
+
 
 
 
@@ -17200,6 +17314,13 @@ static void mx_initLanguages( void ) {
 
         token = mx_readShortTokenFromBulkData( bulkHandle );
         }
+
+    mx_currentLanguage = maxigin_readIntSetting( "languageIndex.ini",
+                                                 0 );
+
+    if( mx_currentLanguage >= mx_numLanguages ) {
+        mx_currentLanguage = 0;
+        }
     }
 
 
@@ -17312,6 +17433,90 @@ static void mx_checkLangNeedsReload( void ) {
 
 
 
+static  char  mx_langPanelShowing  =  0;
+
+
+
+static void mx_populateLangPanel( void ) {
+
+    char   backPressed  =    0;
+    int    i;
+    int    buttonY      =  -90;
+    int   *oldHot       =  mx_internalGUI.hot;
+    
+    static  int   backButtonHandle  =  0;
+    static  int   langButtonHandles[ MAXIGIN_MAX_NUM_LANGUAGES ];
+    
+    backPressed = maxigin_guiLangButton( &mx_internalGUI,
+                                         &backButtonHandle,
+                                         mx_lang_back,
+                                         0,
+                                         buttonY,
+                                         50,
+                                         10 );
+    
+    if( backPressed ) {
+        if( mx_menuDoSound != -1 ) {
+            maxigin_playSoundEffect( mx_menuDoSound,
+                                     mx_menuDoLoudness );
+            }
+
+        mx_langPanelShowing = 0;
+        }
+
+    buttonY += 5;
+
+    for( i = 0;
+         i < mx_numLanguages;
+         i ++ ) {
+
+        char  buttonPressed  =  0;
+        
+        buttonY += 25;
+
+        buttonPressed = maxigin_guiButton( &mx_internalGUI,
+                                           &( langButtonHandles[i] ),
+                                           mx_languages[i].fontHandle,
+                                           mx_languages[i].displayName,
+                                           0,
+                                           buttonY,
+                                           50,
+                                           10 );
+
+        if( buttonPressed ) {
+            mx_currentLanguage = i;
+            
+            if( mx_menuDoSound != -1 ) {
+                maxigin_playSoundEffect( mx_menuDoSound,
+                                         mx_menuDoLoudness );
+                }
+
+            maxigin_writeIntSetting( "languageIndex.ini",
+                                     mx_currentLanguage );
+            }
+        
+        }
+
+    if( mx_internalGUI.hot != 0
+        &&
+        mx_internalGUI.hot != oldHot
+        &&
+        mx_menuShowing
+        &&
+        mx_menuFade >= ( mx_menuFadeMax * 9 ) / 10 ) {
+
+        /* don't play hover sound while menu still
+           moving into place, wait till 90% there */
+        
+        if( mx_menuHoverSound != -1 ) {
+            maxigin_playSoundEffect( mx_menuHoverSound,
+                                     mx_menuHoverLoudness );
+            }
+        }
+    }
+
+
+
 void mx_populateMenuPanel( void ) {
 
     void  *oldHot           =  mx_internalGUI.hot;
@@ -17332,7 +17537,12 @@ void mx_populateMenuPanel( void ) {
     static  int   quitButtonHandle              =  0;
     static  int   controlsButtonHandle          =  0;
     static  int   langButtonHandle              =  0;
-    
+
+
+    if( mx_langPanelShowing ) {
+        mx_populateLangPanel();
+        return;
+        }
     
     stepsSinceLastEffectsExample ++;
     
@@ -17351,13 +17561,13 @@ void mx_populateMenuPanel( void ) {
         }
 
 
-    resumePressed = maxigin_guiButton( &mx_internalGUI,
-                                       &resumeButtonHandle,
-                                       mx_lang_resume,
-                                       0,
-                                       -90,
-                                       50,
-                                       10 );
+    resumePressed = maxigin_guiLangButton( &mx_internalGUI,
+                                           &resumeButtonHandle,
+                                           mx_lang_resume,
+                                           0,
+                                           -90,
+                                           50,
+                                           10 );
     
     if( resumePressed ) {
         if( mx_menuDoSound != -1 ) {
@@ -17476,13 +17686,13 @@ void mx_populateMenuPanel( void ) {
         }
 
 
-    controlsPressed = maxigin_guiButton( &mx_internalGUI,
-                                       &controlsButtonHandle,
-                                       mx_lang_controls,
-                                       0,
-                                       38,
-                                       50,
-                                       10 );
+    controlsPressed = maxigin_guiLangButton( &mx_internalGUI,
+                                             &controlsButtonHandle,
+                                             mx_lang_controls,
+                                             0,
+                                             38,
+                                             50,
+                                             10 );
     
     if( controlsPressed ) {
         if( mx_menuDoSound != -1 ) {
@@ -17492,29 +17702,30 @@ void mx_populateMenuPanel( void ) {
         }
 
     
-    langPressed = maxigin_guiButton( &mx_internalGUI,
-                                       &langButtonHandle,
-                                       mx_lang_languages,
-                                       0,
-                                       63,
-                                       50,
-                                       10 );
+    langPressed = maxigin_guiLangButton( &mx_internalGUI,
+                                         &langButtonHandle,
+                                         mx_lang_languages,
+                                         0,
+                                         63,
+                                         50,
+                                         10 );
     
     if( langPressed ) {
         if( mx_menuDoSound != -1 ) {
             maxigin_playSoundEffect( mx_menuDoSound,
                                      mx_menuDoLoudness );
             }
+        mx_langPanelShowing = 1;
         }
 
     
-    quitPressed = maxigin_guiButton( &mx_internalGUI,
-                                     &quitButtonHandle,
-                                     mx_lang_quit,
-                                     0,
-                                     88,
-                                     50,
-                                     10 );
+    quitPressed = maxigin_guiLangButton( &mx_internalGUI,
+                                         &quitButtonHandle,
+                                         mx_lang_quit,
+                                         0,
+                                         88,
+                                         50,
+                                         10 );
     
     if( quitPressed ) {
         if( mx_menuDoSound != -1 ) {

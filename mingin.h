@@ -1954,6 +1954,8 @@ static  int             mn_screenRefreshRate    =  0;
 static  struct timeval  mn_lastRedrawTime;
 static  const char     *mn_settingsDirName      =  "settings";
 static  const char     *mn_bulkDataDirName      =  "data";
+static  char            mn_steamDeck            =  0;
+
 
 
 static void mn_getMonitorSize( Display  *inXDisplay,
@@ -1968,6 +1970,10 @@ static void mn_getMonitorSize( Display  *inXDisplay,
     *outW = winAttr.width;
     *outH = winAttr.height;
     }
+
+
+
+static char mn_isRunningOnSteamDeck( void );
 
 
 
@@ -2088,6 +2094,12 @@ char mingin_toggleFullscreen( char  inFullscreen ) {
                     "outside minginGame_step function\n" );
         return 1;
         }
+
+    if( mn_steamDeck ) {
+        /* don't allow fullscreen toggle on Steam Deck */
+        return 0;
+        }
+    
     mn_xFullscreen = inFullscreen;
 
     mn_saveFlagSetting( fullscreenSetting,
@@ -3242,6 +3254,10 @@ char mingin_getPointerLocation( int  *outX,
     if( ! mn_XSetupLive ) {
         return 0;
         }
+
+    if( mn_steamDeck ) {
+        return 0;
+        }
     
     result = XQueryPointer( mn_XSetup.xDisplay,
                             mn_XSetup.xWindow,
@@ -3341,12 +3357,22 @@ int main( void ) {
 
     struct timespec  nextFrameTime;
 
-    currentlyFullscreen = mn_getFlagSetting( fullscreenSetting,
-                                             0 );
-    
-    mn_xFullscreen = currentlyFullscreen;
-
     mingin_log( "Linux mingin platform starting up\n" );
+    
+    mn_steamDeck = mn_isRunningOnSteamDeck();
+    
+    currentlyFullscreen = mn_getFlagSetting( fullscreenSetting,
+                                             -1 );
+
+    if( currentlyFullscreen != -1 ) {
+        mn_xFullscreen = currentlyFullscreen;
+        }
+    else {
+        /* default to fullscreen on all linux platforms */
+        currentlyFullscreen = 1;
+        mn_xFullscreen      = currentlyFullscreen;
+        }
+    
     
     minginInternal_init();
 
@@ -4316,7 +4342,7 @@ static int mn_linuxFileRead(           int    inFD,
             }
         else if( numReadThisTime == -1 ) {
             /* error on read */
-            return 0;
+            return -1;
             }
         numRead += (int)numReadThisTime;
         }
@@ -6012,6 +6038,158 @@ static void mn_closeSound( void ) {
 
 
 
+
+
+extern char **environ;
+
+/* checks if inVarName is an env variable set to 1 */
+static char mn_checkEnv( const char  *inVarName ) {
+
+    int  i = 0;
+
+    char  *env  =  environ[i];
+
+    while( env != 0 ) {
+
+        int   c      =  0;
+
+        while( inVarName[c] == env[c]
+               &&
+               inVarName[c] != '\0'
+               &&
+               env[c]       != '\0' ) {
+            c++;
+            }
+
+        
+        if( env[c] == '=' ) {
+            /* our name matched! */
+            
+            if( env[ c + 1 ] == '1' ) {
+                return 1;
+                }
+            return 0;
+            } 
+
+        /* no match yet, go on to next env variable */
+        i++;
+        env  =  environ[i];
+        }
+
+    /* got to end of env list with no match */
+    
+    return 0;
+    }
+
+
+
+static const char  *mn_readShortSysFile( const char  *inFullPath ) {
+
+    int    fd;
+    int    numRead;
+    enum{  buffLen   =  64 };
+    int    i;
+    
+    static  char  buffer[ buffLen ];
+
+    fd = open( inFullPath,
+               O_RDONLY );
+
+    if( fd == -1 ) {
+        return 0;
+        }
+    
+    numRead = mn_linuxFileRead( fd,
+                                buffLen,
+                                (unsigned char*)buffer );
+    close( fd );
+
+    if( numRead == -1 ) {
+        return 0;
+        }
+
+    if( numRead == buffLen ) {
+        /* too long */
+        return 0;
+        }
+    buffer[numRead] = '\0';
+
+    /* terminate string at any newlines */
+    for( i = 0;
+         i < numRead;
+         i ++ ) {
+        if( buffer[i] == '\n' ) {
+            buffer[i] = '\0';
+            }
+        }
+
+    return buffer;
+    }
+
+
+
+static char mn_isRunningOnSteamDeck( void ) {
+
+    const char  *buffer;
+
+    
+    /* try multiple ways */
+
+    if( mn_checkEnv( "SteamDeck" ) ) {
+        mingin_log( "Found 'SteamDeck' env variable, running on Steam Deck\n" );
+        return 1;
+        }
+    if( mn_checkEnv( "SteamGamepadUI" ) ) {
+        mingin_log( "Found 'SteamGamepadUI' env variable, "
+                    "running on Steam Deck\n" );
+        return 1;
+        }
+
+    
+    buffer = mn_readShortSysFile( "/sys/devices/virtual/dmi/id/board_vendor" );
+
+    if( buffer == 0 ) {
+        return 0;
+        }
+
+    if( ! mn_stringsEqual( buffer,
+                           "Valve" ) ) {
+
+        mingin_log( "Board vendor NOT 'Valve', not running on Steam Deck: '" );
+        mingin_log( buffer );
+        mingin_log( "'\n" );
+        
+        return 0;
+        }
+
+    
+    buffer = mn_readShortSysFile( "/sys/devices/virtual/dmi/id/board_name" );
+
+    if( buffer == 0 ) {
+        return 0;
+        }
+
+    
+    if( mn_stringsEqual( buffer,
+                         "Jupiter" ) ) {
+        mingin_log( "Found 'Jupiter' board_name, running on Steam Deck\n" );
+        return 1;
+        }
+
+    if( mn_stringsEqual( buffer,
+                         "Galileo" ) ) {
+        mingin_log( "Found 'Galileo' board_name, running on Steam Deck\n" );
+        return 1;
+        }
+
+    /* unexpected case */
+
+    mingin_log( "See 'Valve' board_vendor but unexpected board_name: " );
+    mingin_log( buffer );
+    mingin_log( "\n" );
+    
+    return 0;
+    }
 
 
 

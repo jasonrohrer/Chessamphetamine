@@ -31,3 +31,6 @@ back           "Back"
 
 
 shootDesc      "Shoot"
+
+
+press          "[press]"

@@ -644,9 +644,17 @@ void maxiginGame_step( void ) {
 
 static MinginButton jumpMapping[]   =  { MGN_KEY_SPACE,     MGN_MAP_END };
 
-static MinginButton shootMapping[]  =  { MGN_BUTTON_MOUSE_LEFT,
+static MinginButton shootMapping[]  =  { MGN_KEY_V,
+                                         MGN_BUTTON_MOUSE_LEFT,
                                          MGN_BUTTON_PS_X,
                                          MGN_BUTTON_XBOX_A,
+                                         MGN_MAP_END };
+
+static MinginButton hintMapping[]   =  { MGN_BUTTON_MOUSE_LEFT,
+                                         MGN_BUTTON_PS_X,
+                                         MGN_BUTTON_XBOX_A,
+                                         MGN_BUTTON_XBOX_B,
+                                         MGN_ANY_KEY,
                                          MGN_MAP_END };
 
 static MinginButton remapMapping[]  =  { MGN_KEY_P,         MGN_MAP_END };
@@ -697,8 +705,12 @@ void maxiginGame_init( void ) {
     buttonHintStrip = maxigin_initSpriteStrip( "buttonHintStrip.tga",
                                                16 );
 
+    maxigin_initMakeGlowSpriteStrip( buttonHintStrip,
+                                     2,
+                                     2 );
+    
     maxigin_initKeyAndButtonHintSprites( buttonHintStrip,
-                                         shootMapping );
+                                         hintMapping );
 
     for( i = 0;
          i < NUM_BULK_FILES;

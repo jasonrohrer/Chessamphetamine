@@ -190,7 +190,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_TOTAL_SPRITE_BYTES
-#define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  1310720
+#define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  2000000
 #endif
 
 
@@ -1543,6 +1543,12 @@ void maxigin_drawGUI( MaxiginGUI *inGUI );
 
 /*
   Draws the hint sprite associated with a given registered button mapping.
+
+  Some of these hints are compound sprite + text renderings for single-character
+  keyboard keys, and others are text labels (for keys like "Space").  For
+  the text-based rendering to work, at least one language needs to be defined
+  in the bulk data resource "language.txt".  If multiple languages are used,
+  then the first one is used.
 
   Parameters:
 
@@ -7127,6 +7133,76 @@ static void mx_makeColorGray( MaxiginColor   *inC,
 
 
 
+static void mx_guiAddText( MaxiginGUI    *inGUI,
+                           MaxiginColor  *inC,
+                           int            inFontHandle,
+                           char          *inString,
+                           int            inAnchorX,
+                           int            inAnchorY,
+                           MaxiginAlign   inAlign ) {
+    
+    int  i  =  inGUI->numDrawComponents;
+
+
+    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
+        mingin_log( "Error:  trying to add text to a full "
+                    "MaxiginGUI instance.\n" );
+        return;
+        }
+    
+    mx_guiSetColor( inGUI,
+                    i,
+                    0,
+                    inC );
+
+    inGUI->drawComponents[i].drawType = MX_GUI_DRAW_TEXT;
+    
+    inGUI->drawComponents[i].drawParams.text.fontHandle = inFontHandle;
+    inGUI->drawComponents[i].drawParams.text.textString = inString;
+    inGUI->drawComponents[i].drawParams.text.anchorX    = inAnchorX;
+    inGUI->drawComponents[i].drawParams.text.anchorY    = inAnchorY;
+    inGUI->drawComponents[i].drawParams.text.align      = inAlign;
+    
+
+    inGUI->numDrawComponents ++;
+    }
+
+
+
+static void mx_guiAddLangText( MaxiginGUI    *inGUI,
+                               MaxiginColor  *inC,
+                               int            inPhraseKey,
+                               int            inAnchorX,
+                               int            inAnchorY,
+                               MaxiginAlign   inAlign ) {
+    
+    int  i  =  inGUI->numDrawComponents;
+
+
+    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
+        mingin_log( "Error:  trying to add language text to a full "
+                    "MaxiginGUI instance.\n" );
+        return;
+        }
+    
+    mx_guiSetColor( inGUI,
+                    i,
+                    0,
+                    inC );
+
+    inGUI->drawComponents[i].drawType = MX_GUI_DRAW_LANG_TEXT;
+    
+    inGUI->drawComponents[i].drawParams.langText.phraseKey  = inPhraseKey;
+    inGUI->drawComponents[i].drawParams.langText.anchorX    = inAnchorX;
+    inGUI->drawComponents[i].drawParams.langText.anchorY    = inAnchorY;
+    inGUI->drawComponents[i].drawParams.langText.align      = inAlign;
+    
+
+    inGUI->numDrawComponents ++;
+    }
+
+
+
 static void mx_getSliderThumbRadius( int   inThumbWidth,
                                      int  *outLeftRadius,
                                      int  *outRightRadius ) {
@@ -8116,34 +8192,18 @@ void maxigin_guiLabel( MaxiginGUI  *inGUI,
                        int           inLocationY,
                        MaxiginAlign  inAlign ) {
     
-    int           i  =  inGUI->numDrawComponents;
     MaxiginColor  c;
-    
-    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
-        mingin_log( "Error:  trying to add label to a full "
-                    "MaxiginGUI instance.\n" );
-        return;
-        }
 
-    c.val[0] = 255;
-    c.val[1] = 255;
-    c.val[2] = 255;
-    c.val[3] = 255;
+    mx_makeColorGray( &c,
+                      255 );
+    c.comp.alpha = 255;
     
-    mx_guiSetColor( inGUI,
-                    i,
-                    0,
-                    &c );
-
-    inGUI->drawComponents[i].drawType = MX_GUI_DRAW_LANG_TEXT;
-    
-    inGUI->drawComponents[i].drawParams.langText.phraseKey = inPhraseKey;
-    inGUI->drawComponents[i].drawParams.langText.anchorX   = inLocationX;
-    inGUI->drawComponents[i].drawParams.langText.anchorY   = inLocationY;
-    inGUI->drawComponents[i].drawParams.langText.align     = inAlign;
-    
-
-    inGUI->numDrawComponents ++;
+    mx_guiAddLangText( inGUI,
+                       &c,
+                       inPhraseKey,
+                       inLocationX,
+                       inLocationY,
+                       inAlign );
     }
 
 
@@ -8492,7 +8552,6 @@ char maxigin_guiLangButton( MaxiginGUI  *inGUI,
                             int          inRadiusX,
                             int          inRadiusY ) {
     
-    int           i;
     MaxiginColor  c;
     char          returnV  =  mx_guiButtonBody( inGUI,
                                                 inHandle,
@@ -8500,33 +8559,18 @@ char maxigin_guiLangButton( MaxiginGUI  *inGUI,
                                                 inLocationY,
                                                 inRadiusX,
                                                 inRadiusY );
-    i  =  inGUI->numDrawComponents;
 
     mx_makeColorGray( &c,
                       255 );
     c.comp.alpha = 255;
-
-
-    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
-        mingin_log( "Error:  trying to add button text to a full "
-                    "MaxiginGUI instance.\n" );
-        return returnV;
-        }
     
-    mx_guiSetColor( inGUI,
-                    i,
-                    0,
-                    &c );
+    mx_guiAddLangText( inGUI,
+                   &c,
+                   inPhraseKey,
+                   inLocationX,
+                   inLocationY - 1,
+                   MAXIGIN_CENTER );
 
-    inGUI->drawComponents[i].drawType = MX_GUI_DRAW_LANG_TEXT;
-    
-    inGUI->drawComponents[i].drawParams.langText.phraseKey = inPhraseKey;
-    inGUI->drawComponents[i].drawParams.langText.anchorX   = inLocationX;
-    inGUI->drawComponents[i].drawParams.langText.anchorY   = inLocationY - 1;
-    inGUI->drawComponents[i].drawParams.langText.align     = MAXIGIN_CENTER;
-    
-
-    inGUI->numDrawComponents ++;
 
     return returnV;
     }
@@ -8542,7 +8586,6 @@ char maxigin_guiButton( MaxiginGUI  *inGUI,
                         int          inRadiusX,
                         int          inRadiusY ) {
     
-    int           i;
     MaxiginColor  c;
     char          returnV  =  mx_guiButtonBody( inGUI,
                                                 inHandle,
@@ -8550,35 +8593,18 @@ char maxigin_guiButton( MaxiginGUI  *inGUI,
                                                 inLocationY,
                                                 inRadiusX,
                                                 inRadiusY );
-    i  =  inGUI->numDrawComponents;
-
     mx_makeColorGray( &c,
                       255 );
     c.comp.alpha = 255;
-
-
-    if( i >= MAXIGIN_MAX_TOTAL_GUI_DRAW_COMPONENTS ) {
-        mingin_log( "Error:  trying to add button text to a full "
-                    "MaxiginGUI instance.\n" );
-        return returnV;
-        }
     
-    mx_guiSetColor( inGUI,
-                    i,
-                    0,
-                    &c );
-
-    inGUI->drawComponents[i].drawType = MX_GUI_DRAW_TEXT;
+    mx_guiAddText( inGUI,
+                   &c,
+                   inFontHandle,
+                   inString,
+                   inLocationX,
+                   inLocationY - 1,
+                   MAXIGIN_CENTER );
     
-    inGUI->drawComponents[i].drawParams.text.fontHandle = inFontHandle;
-    inGUI->drawComponents[i].drawParams.text.textString = inString;
-    inGUI->drawComponents[i].drawParams.text.anchorX    = inLocationX;
-    inGUI->drawComponents[i].drawParams.text.anchorY    = inLocationY - 1;
-    inGUI->drawComponents[i].drawParams.text.align      = MAXIGIN_CENTER;
-    
-
-    inGUI->numDrawComponents ++;
-
     return returnV;
     }
 
@@ -8730,7 +8756,8 @@ static  char           mx_playbackBlockForwardSounds       =  0;
 static  char           mx_menuShowing                      =  0;
 static  int            mx_menuFade                         =  0;
 static  int            mx_menuFadeMax                      =  2550;
-
+static  char           mx_langPanelShowing                 =  0;
+static  char           mx_controlsPanelShowing             =  0;
 
 /* initiates and steps sound fade out, returning 1 when finally done
    returns 0 while still in-progress */
@@ -9266,6 +9293,11 @@ void minginGame_step( char  inFinalStep ) {
             else {
                 mx_menuFade -= fadeStep;
                 }
+
+            if( mx_menuFade == 0 ) {
+                mx_langPanelShowing     = 0;
+                mx_controlsPanelShowing = 0;
+                }
             } 
         }
     
@@ -9329,6 +9361,7 @@ static int          mx_lang_fullscreen;
 static int          mx_lang_languages;
 static int          mx_lang_controls;
 static int          mx_lang_back;
+static int          mx_lang_press;
 
 
 /* smaller scale for sound effects, since the volume only applies
@@ -9442,6 +9475,7 @@ static void mx_gameInit( void ) {
     mx_lang_languages     = maxigin_initTranslationKey( "languages" );
     mx_lang_controls      = maxigin_initTranslationKey( "controls" );
     mx_lang_back          = maxigin_initTranslationKey( "back" );
+    mx_lang_press         = maxigin_initTranslationKey( "press" );
 
     /* game set any translation keys during init, now we can load languages
        based on those keys */
@@ -15639,25 +15673,32 @@ static void mx_setupButtonToNameMap( void ) {
 
 
 
-void maxigin_drawButtonHintSprite( int  inButtonHandle,
-                                   int  inCenterX,
-                                   int  inCenterY ) {
+/* returns sprite handle, or -1 if no sprite (label string might be set in
+   this case)
 
+   outLabelString  set to 0 or English-language key name string, if needed
+
+   Note that if outLabelString is a single character, sprite handle might
+   be set to a blank key-cap sprite to draw under this character
+
+   inButtonHandle is in maxigin-remapped button space
+*/
+static int mx_getButtonHintSprite( int           inButtonHandle,
+                                   const char  **outLabelString ) {
+    
     MinginButton  primaryButton;
     int           spriteHandle    =  -1;
     int           i;
-    const char   *spelledOut      =   0;
+
+    *outLabelString = 0;
     
     if( mx_buttonHintStripHandle == -1 ) {
-        return;
+        return -1;
         }
 
     if( ! mx_buttonToNameMapReady ) {
         mx_setupButtonToNameMap();
         }
-
-    /* push out beyond maxigin internal button mappings */
-    inButtonHandle += LAST_MAXIGIN_USER_ACTION;
     
     
     primaryButton = mingin_getPlatformPrimaryButton( inButtonHandle );
@@ -15680,10 +15721,7 @@ void maxigin_drawButtonHintSprite( int  inButtonHandle,
 
     if( spriteHandle != -1 ) {
 
-        maxigin_drawSprite( spriteHandle,
-                            inCenterX,
-                            inCenterY );
-        return;
+        return spriteHandle;
         }
     
     if( primaryButton >= MGN_FIRST_PRINTABLE_KEY
@@ -15704,25 +15742,74 @@ void maxigin_drawButtonHintSprite( int  inButtonHandle,
 
             spriteHandle = maxigin_getSpriteFromStrip( mx_buttonHintStripHandle,
                                                        i );
+            if( spriteHandle != -1 ) {
+                /* single character label */
+                *outLabelString = mx_buttonToNameMap[ primaryButton ];
 
-            maxigin_drawSprite( spriteHandle,
-                                inCenterX,
-                                inCenterY );
-
-            /* fixme:  use font to draw printable character on key cap */
-            return;
+                if( (*outLabelString)[0] == '\0' ) {
+        
+                    /* no label found */
+                    *outLabelString = 0;
+                    }
+                
+                return spriteHandle;
+                }
             }
+        return -1;
         }
 
-    spelledOut = mx_buttonToNameMap[ primaryButton ];
+    /* a non-printable key label */
+    *outLabelString = mx_buttonToNameMap[ primaryButton ];
 
-    if( spelledOut[0] != '\0' ) {
-        /* we have a name for this key */
-
-        /* fixme:  draw the name with a font */
-
+    if( (*outLabelString)[0] == '\0' ) {
+        
+        /* no label found */
+        *outLabelString = 0;
         }
+
+    return -1;
+    }
+
+
+
+static int mx_getButtonHintFont( void );
+
+
+
+void maxigin_drawButtonHintSprite( int  inButtonHandle,
+                                   int  inCenterX,
+                                   int  inCenterY ) {
+
+    int          spriteHandle;
+    const char  *labelString;
+    int          fontHandle;
     
+    /* push out beyond maxigin internal button mappings */
+    inButtonHandle += LAST_MAXIGIN_USER_ACTION;
+    
+    spriteHandle = mx_getButtonHintSprite( inButtonHandle,
+                                           &labelString );
+    
+    if( spriteHandle != -1 ) {
+        maxigin_drawSprite( spriteHandle,
+                            inCenterX,
+                            inCenterY );
+        }
+
+    fontHandle = mx_getButtonHintFont();
+
+    if( fontHandle == -1 ) {
+        /* no label font available */
+        return;
+        }
+
+    if( labelString != 0 ) {
+        maxigin_drawText( fontHandle,
+                          labelString,
+                          inCenterX,
+                          inCenterY,
+                          MAXIGIN_CENTER );
+        }
     }
 
 
@@ -17424,6 +17511,17 @@ static void mx_initLanguages( void ) {
 
 
 
+static int mx_getButtonHintFont( void ) {
+
+    if( mx_numLanguages == 0 ) {
+        return -1;
+        }
+    
+    return mx_languages[ 0 ].fontHandle;
+    }
+
+
+
 static  char  mx_drawLangFailureShown  =  0;
 
 /* special behavior on inAlign = MAXIGIN_SKIP_DRAW_AND_MEASURE:
@@ -17532,7 +17630,7 @@ static void mx_checkLangNeedsReload( void ) {
 
 
 
-static  char  mx_langPanelShowing  =  0;
+
 
 
 
@@ -17615,18 +17713,16 @@ static void mx_populateLangPanel( void ) {
     }
 
 
-static  char  mx_controlsPanelShowing  =  0;
-
-
 static void mx_populateControlsPanel( void ) {
 
     char   backPressed  =    0;
     int    i;
     int    buttonY      =  -90;
     int   *oldHot       =  mx_internalGUI.hot;
-    
-    static  int   backButtonHandle  =  0;
-    static  int   controlButtonHandles[ MAXIGIN_NUM_BUTTON_MAPPINGS ];
+
+    static  int  livePokeI         =  -1;
+    static  int  backButtonHandle  =   0;
+    static  int  controlButtonHandles[ MAXIGIN_NUM_BUTTON_MAPPINGS ];
     
     backPressed = maxigin_guiLangButton( &mx_internalGUI,
                                          &backButtonHandle,
@@ -17643,6 +17739,7 @@ static void mx_populateControlsPanel( void ) {
             }
 
         mx_controlsPanelShowing = 0;
+        livePokeI = -1;
         }
 
     buttonY += 5;
@@ -17653,7 +17750,11 @@ static void mx_populateControlsPanel( void ) {
 
         if( mx_buttonPhraseKeys[ i ] != -1 ) {
 
-            char  buttonPressed  =  0;
+            char         buttonPressed  =  0;
+            int          buttonRadX     =  50;
+            int          controlX       =   0;
+            int          spriteHandle;
+            const char  *labelString;
             
             buttonY += 25;
 
@@ -17662,10 +17763,15 @@ static void mx_populateControlsPanel( void ) {
                                                    mx_buttonPhraseKeys[i],
                                                    0,
                                                    buttonY,
-                                                   50,
+                                                   buttonRadX,
                                                    10 );
 
-            /* fixme:  display icon for control */
+            if( mx_buttonSpritesSet ) {
+                buttonRadX =
+                    mx_sprites[ mx_buttonSprites.cool ].rightVisibleRadius;
+                }
+
+            /* fixme.:  display icon for control */
 
             /* can't use this directly here, since we're not in draw
                function
@@ -17674,9 +17780,111 @@ static void mx_populateControlsPanel( void ) {
                maxigin_drawButtonHintSprite
             */
 
+            
+
+            controlX = buttonRadX + 40;
+
+            if( livePokeI == i ) {
+                MinginButton  lastPressed  =  mingin_getLastButtonPressed();
+
+                if( lastPressed == MGN_BUTTON_NONE ) {
+                    /* show press prompt */
+                    MaxiginColor  c;
+
+                    mx_makeColorGray( &c,
+                                      255 );
+                    c.comp.alpha = 255;
+                
+                    mx_guiAddLangText( &mx_internalGUI,
+                                       &c,
+                                       mx_lang_press,
+                                       controlX - 1,
+                                       buttonY  - 1,
+                                       MAXIGIN_CENTER );
+                    }
+                else {
+                    /* map the new button */
+
+                    MinginButton  mapping[2];
+
+                    mapping[ 0 ] = lastPressed;
+                    mapping[ 1 ] = MGN_MAP_END;
+
+                    mingin_registerButtonMapping( i,
+                                                  mapping );
+
+                    livePokeI = -1;
+                    
+                    /* fixme save it to settings */
+                    }
+                }
+            else {
+                /* show set control sprite */
+                
+                spriteHandle = mx_getButtonHintSprite( i,
+                                                       &labelString );
+            
+                if( spriteHandle != -1 ) {
+                    mx_guiAddSprite( &mx_internalGUI,
+                                     0,
+                                     255,
+                                     spriteHandle,
+                                     controlX,
+                                     buttonY );
+                    }
+                if( labelString != 0 ) {
+
+                    int  fontHandle  =  mx_getButtonHintFont();
+
+                    if( fontHandle != -1 ) {
+                    
+                        MaxiginColor  c;
+                        int           spriteLeftR;
+
+                        
+                        
+                        mx_makeColorGray( &c,
+                                          255 );
+                        c.comp.alpha = 255;
+
+                        if( spriteHandle != -1 ) {
+                            
+                            /* put label on key cap */
+                            
+                            spriteLeftR =
+                                mx_sprites[ spriteHandle ].leftVisibleRadius;
+                            
+                            mx_guiAddText( &mx_internalGUI,
+                                           &c,
+                                           fontHandle,
+                                           (char*)labelString,
+                                           controlX - spriteLeftR + 3,
+                                           buttonY  - 1,
+                                           MAXIGIN_LEFT );
+                            }
+                        else {
+                            /* no key cap, just a label, center it */
+                            mx_guiAddText( &mx_internalGUI,
+                                           &c,
+                                           fontHandle,
+                                           (char*)labelString,
+                                           controlX,
+                                           buttonY  - 1,
+                                           MAXIGIN_CENTER );
+                            }
+                        }
+                    }
+                }
+            
+            
+
             if( buttonPressed ) {
-                /* fixme:
-                   enable live poke of new control */
+                /* enable live poke of new control */
+
+                livePokeI = i;
+
+                /* clear last-pressed memory to prepare for a live poke*/
+                mingin_getLastButtonPressed();
                 
                 if( mx_menuDoSound != -1 ) {
                     maxigin_playSoundEffect( mx_menuDoSound,

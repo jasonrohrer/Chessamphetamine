@@ -1879,6 +1879,7 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 
 
 
+/* returns 1 on succes, 0 on failure */
 static char mn_writeIntTokenToStore( int  inStoreHandle,
                                      int  inInt ) {
     
@@ -1905,7 +1906,71 @@ static char mn_writeIntTokenToStore( int  inStoreHandle,
     return 1;
     }
 
+
+
+/* returns 1 on succes, 0 on failure */
+static char mn_readIntTokenFromStore( int   inStoreHandle,
+                                      int  *outInt ) {
+
+    unsigned char  c;
+    int            numRead;
+    int            intAccume  =  0;
+    int            sign       =  1;
     
+    numRead = mingin_readPersistData( inStoreHandle,
+                                      1,
+                                      &c );
+
+    /* skip non-int chars */
+    while( numRead == 1
+           &&
+           ( c < '0'
+             ||
+             c > '9' )
+           &&
+           c != '-' ) {
+
+        numRead = mingin_readPersistData( inStoreHandle,
+                                          1,
+                                          &c );
+        }
+
+    if( numRead != 1 ) {
+        return 0;
+        }
+
+    /* process int chars and - sign */
+    while( numRead == 1
+           &&
+           ( ( c >= '0'
+               &&
+               c <= '9' )
+             ||
+             c == '-' ) ) {
+
+        if( c == '-' ) {
+            sign = -1;
+            }
+        else {
+            intAccume *= 10;
+            intAccume += (c - '0');
+            }
+        
+        numRead = mingin_readPersistData( inStoreHandle,
+                                          1,
+                                          &c );
+        }
+
+    if( numRead == -1 ) {
+        return 0;
+        }
+
+    *outInt = sign * intAccume;
+
+    return 1;
+    }
+
+
 
 void mingin_saveButtonMapping( const char  *inStoreName ) {
 
@@ -1966,6 +2031,7 @@ void mingin_saveButtonMapping( const char  *inStoreName ) {
                 }
             }
         }
+    
     mingin_endWritePersistData( store );
     }
 
@@ -1973,13 +2039,61 @@ void mingin_saveButtonMapping( const char  *inStoreName ) {
 
 void mingin_loadButtonMapping( const char  *inStoreName ) {
 
-    /* fixme */
+    int  numBytes;
+    int  store      =  mingin_startReadPersistData( inStoreName,
+                                                    &numBytes );
+    int  i;
     
-    if( inStoreName[0] ) {
+    if( store == -1 ) {
+        return;
+        }
+
+    for( i = 0;
+         i < MINGIN_NUM_BUTTON_MAPPINGS;
+         i ++ ) {
+
+        int    j;
+        int    readInt  =  -1;
+        
+        if( ! mn_readIntTokenFromStore( store,
+                                        &readInt )
+            ||
+            readInt != i ) {
+            
+            mingin_log( "Failed to read button mapping from "
+                        "persistent data store\n" );
+            
+            mingin_endReadPersistData( store );
+            return;
+            }
+        
+
+        for( j = 0;
+             j < MINGIN_MAX_BUTTON_MAPPING_ELEMENTS;
+             j ++ ) {
+            
+            readInt  =  -1;
+        
+            if( ! mn_readIntTokenFromStore( store,
+                                            &readInt ) ) {
+            
+                mingin_log( "Failed to read button mapping from "
+                            "persistent data store\n" );
+            
+                mingin_endReadPersistData( store );
+                return;
+                }
+        
+            minginButtonMappings[ i ][ j ] = readInt;
+
+            if( readInt == MGN_MAP_END ) {
+                break;
+                }
+            }
         }
     
+    mingin_endReadPersistData( store );
     }
-
 
 
 

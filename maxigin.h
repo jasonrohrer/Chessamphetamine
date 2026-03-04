@@ -9464,7 +9464,12 @@ static void mx_gameInit( void ) {
     
     maxiginGame_init();
 
+    /* we save the default that the game has asked for */
     mingin_saveButtonMapping( "maxigin_defaultButtons.ini" );
+
+    /* now we load any overwritten settings that were saved through
+       our menu in the past */
+    mingin_loadButtonMapping( "maxigin_savedButtons.ini" );
     
 
     /* our own internal translation keys */
@@ -17842,7 +17847,9 @@ static void mx_populateControlsPanel( void ) {
 
                     livePokeI = -1;
                     
-                    /* fixme save it to settings */
+                    /* save it to settings */
+
+                    mingin_saveButtonMapping( "maxigin_savedButtons.ini" );
                     }
                 }
             else {

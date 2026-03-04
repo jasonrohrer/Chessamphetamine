@@ -32,4 +32,4 @@ back           "Retour"
 shootDesc      "Tirer"
 
 
-press          "[appuyez]"
+press          "appuyez"

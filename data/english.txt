@@ -33,4 +33,4 @@ back           "Back"
 shootDesc      "Shoot"
 
 
-press          "[press]"
+press          "press"

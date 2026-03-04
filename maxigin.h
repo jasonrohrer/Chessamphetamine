@@ -17715,14 +17715,16 @@ static void mx_populateLangPanel( void ) {
 
 static void mx_populateControlsPanel( void ) {
 
-    char   backPressed  =    0;
     int    i;
-    int    buttonY      =  -90;
+    char   backPressed  =                   0;
+    int    buttonY      =                 -90;
     int   *oldHot       =  mx_internalGUI.hot;
 
-    static  int  livePokeI         =  -1;
-    static  int  backButtonHandle  =   0;
-    static  int  controlButtonHandles[ MAXIGIN_NUM_BUTTON_MAPPINGS ];
+    static  int            livePokeI         =   -1;
+    static  int            backButtonHandle  =    0;
+    static  unsigned char  pressFade         =  255;
+    static  int            pressFadeDir      =   -1;
+    static  int            controlButtonHandles[ MAXIGIN_NUM_BUTTON_MAPPINGS ];
     
     backPressed = maxigin_guiLangButton( &mx_internalGUI,
                                          &backButtonHandle,
@@ -17791,9 +17793,31 @@ static void mx_populateControlsPanel( void ) {
                     /* show press prompt */
                     MaxiginColor  c;
 
+                    int           fadeJump  =
+                                      ( 10 * 60 ) / mingin_getStepsPerSecond();
+
+                    if( pressFadeDir == 1 ) {
+                        if( pressFade + fadeJump >= 255 ) {
+                            pressFade = 255;
+                            pressFadeDir = -1;
+                            }
+                        else {
+                            pressFade = (unsigned char)( pressFade + fadeJump );
+                            }
+                        }
+                    else {
+                        if( pressFade - fadeJump <= 64 ) {
+                            pressFade = 64;
+                            pressFadeDir = 1;
+                            }
+                        else {
+                            pressFade = (unsigned char)( pressFade - fadeJump );
+                            }
+                        }
+
                     mx_makeColorGray( &c,
                                       255 );
-                    c.comp.alpha = 255;
+                    c.comp.alpha = pressFade;
                 
                     mx_guiAddLangText( &mx_internalGUI,
                                        &c,
@@ -17883,6 +17907,9 @@ static void mx_populateControlsPanel( void ) {
 
                 livePokeI = i;
 
+                pressFade    = 255;
+                pressFadeDir =  -1;
+                
                 /* clear last-pressed memory to prepare for a live poke*/
                 mingin_getLastButtonPressed();
                 

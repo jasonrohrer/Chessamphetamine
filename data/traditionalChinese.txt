@@ -32,4 +32,4 @@ back           "返回"
 
 shootDesc      "射擊"
 
-press          "[按下]"
+press          "按下"

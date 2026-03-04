@@ -1788,23 +1788,26 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
 
   Parameters:
 
-      inGUI          pointer to the structure representing the GUI instance
+      inGUI                pointer to the structure representing the GUI instance
 
-      inHandle       pointer used as a handle for this button
+      inHandle             pointer used as a handle for this button
       
-      inFontHandle   the font to use when drawing the display text
+      inFontHandle         the font to use when drawing the display text
       
-      inString       the text to display on the button
+      inString             the text to display on the button
 
-      inLocationX    the x position in pixels of the button center
+      inHintButtonHandle   the button handle for the control hint to display
+                           on this button, or -1 for no hint
+
+      inLocationX          the x position in pixels of the button center
  
-      inLocationY    the y position in pixels of the button center
+      inLocationY          the y position in pixels of the button center
  
-      inRadiusX      the horizontal radius of the button
-                     ignored if button has sprites defined
+      inRadiusX            the horizontal radius of the button
+                           ignored if button has sprites defined
                      
-      inRadiusY      the vertical radius of the button
-                     ignored if button has sprites defined
+      inRadiusY            the vertical radius of the button
+                           ignored if button has sprites defined
      
 
   Returns:
@@ -1819,6 +1822,7 @@ char maxigin_guiButton( MaxiginGUI  *inGUI,
                         int         *inHandle,
                         int          inFontHandle,
                         char        *inString,
+                        int          inHintButtonHandle,
                         int          inLocationX,
                         int          inLocationY,
                         int          inRadiusX,
@@ -1839,6 +1843,7 @@ char maxigin_guiButton( MaxiginGUI  *inGUI,
 char maxigin_guiLangButton( MaxiginGUI  *inGUI,
                             int         *inHandle,
                             int          inPhraseKey,
+                            int          inHintButtonHandle,
                             int          inLocationX,
                             int          inLocationY,
                             int          inRadiusX,
@@ -2774,6 +2779,7 @@ static void mx_dumpRGBAPixels( unsigned char  *inStartByte,
 typedef enum MaxiginUserAction {
     QUIT,
     MENU,
+    MENU_BACK,
     FULLSCREEN_TOGGLE,
     LANG_SWITCH,
     SOUND_TOGGLE,
@@ -8371,8 +8377,27 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
 
 
 
+/* returns sprite handle, or -1 if no sprite (label string might be set in
+   this case)
+
+   outLabelString  set to 0 or English-language key name string, if needed
+
+   Note that if outLabelString is a single character, sprite handle might
+   be set to a blank key-cap sprite to draw under this character
+
+   inButtonHandle is in maxigin-remapped button space
+*/
+static int mx_getButtonHintSprite( int           inButtonHandle,
+                                   const char  **outLabelString );
+
+
+static int mx_getButtonHintFont( void );
+
+
+
 static char mx_guiButtonBody( MaxiginGUI  *inGUI,
                               int         *inHandle,
+                              int          inHintButtonHandle,
                               int          inLocationX,
                               int          inLocationY,
                               int          inRadiusX,
@@ -8536,7 +8561,67 @@ static char mx_guiButtonBody( MaxiginGUI  *inGUI,
 
 
     /* now draw button text on top */
-    
+
+
+    if( inHintButtonHandle != -1 ) {
+
+        const char  *s;
+        int          hintSprite  =  mx_getButtonHintSprite( inHintButtonHandle,
+                                                            &s );
+        
+        /* skip drawing any that are just text labels with no sprite */
+        if( hintSprite != -1 ) {
+            
+            int          hintX  =  inLocationX;
+
+            if( mx_buttonSpritesSet ) {
+                hintX -= mx_sprites[ mx_buttonSprites.cool ].leftVisibleRadius;
+                }
+            else {
+                hintX -= inRadiusX;
+                }
+
+            hintX -= mx_sprites[ hintSprite ].rightVisibleRadius;
+
+            hintX -= 3;
+            
+                
+            mx_guiAddSprite( inGUI,
+                             0,
+                             255,
+                             hintSprite,
+                             hintX,
+                             inLocationY );
+            
+            if( s != 0 ) {
+
+                int  fontHandle  =  mx_getButtonHintFont();
+
+                if( fontHandle != -1 ) {
+                    
+                    MaxiginColor  fc;
+                    int           spriteLeftR;
+                    
+                    mx_makeColorGray( &fc,
+                                      255 );
+                    fc.comp.alpha = 255;
+
+                    /* put label on key cap */
+                            
+                    spriteLeftR =
+                        mx_sprites[ hintSprite ].leftVisibleRadius;
+                            
+                    mx_guiAddText( &mx_internalGUI,
+                                   &fc,
+                                   fontHandle,
+                                   (char*)s,
+                                   hintX - spriteLeftR + 3,
+                                   inLocationY  - 1,
+                                   MAXIGIN_LEFT );
+                    }
+                }
+            }
+        }
     
 
     return returnV;
@@ -8547,6 +8632,7 @@ static char mx_guiButtonBody( MaxiginGUI  *inGUI,
 char maxigin_guiLangButton( MaxiginGUI  *inGUI,
                             int         *inHandle,
                             int          inPhraseKey,
+                            int          inHintButtonHandle,
                             int          inLocationX,
                             int          inLocationY,
                             int          inRadiusX,
@@ -8555,6 +8641,7 @@ char maxigin_guiLangButton( MaxiginGUI  *inGUI,
     MaxiginColor  c;
     char          returnV  =  mx_guiButtonBody( inGUI,
                                                 inHandle,
+                                                inHintButtonHandle,
                                                 inLocationX,
                                                 inLocationY,
                                                 inRadiusX,
@@ -8581,6 +8668,7 @@ char maxigin_guiButton( MaxiginGUI  *inGUI,
                         int         *inHandle,
                         int          inFontHandle,
                         char        *inString,
+                        int          inHintButtonHandle,
                         int          inLocationX,
                         int          inLocationY,
                         int          inRadiusX,
@@ -8589,6 +8677,7 @@ char maxigin_guiButton( MaxiginGUI  *inGUI,
     MaxiginColor  c;
     char          returnV  =  mx_guiButtonBody( inGUI,
                                                 inHandle,
+                                                inHintButtonHandle,
                                                 inLocationX,
                                                 inLocationY,
                                                 inRadiusX,
@@ -9312,7 +9401,16 @@ static  MinginButton  mx_quitMapping[] = { MGN_KEY_Q,
                                            MGN_MAP_END };
 
 static  MinginButton  mx_menuMapping[] = { MGN_KEY_ESCAPE,
+                                           MGN_BUTTON_XBOX_GUIDE,
+                                           MGN_BUTTON_XBOX_START,
+                                           MGN_BUTTON_PS_PS,
+                                           MGN_BUTTON_PS_OPTIONS,
                                            MGN_MAP_END };
+
+static  MinginButton  mx_menuBackMapping[] = { MGN_BUTTON_XBOX_B,
+                                               MGN_BUTTON_PS_CIRCLE,
+                                               MGN_BUTTON_XBOX_BACK,
+                                               MGN_MAP_END };
 
 static  MinginButton  mx_fullscreenMapping[] = { MGN_KEY_F,
                                                  MGN_MAP_END };
@@ -9417,6 +9515,9 @@ static void mx_gameInit( void ) {
     
     mingin_registerButtonMapping( MENU,
                                   mx_menuMapping );
+    
+    mingin_registerButtonMapping( MENU_BACK,
+                                  mx_menuBackMapping );
     
     mingin_registerButtonMapping( FULLSCREEN_TOGGLE,
                                   mx_fullscreenMapping );
@@ -15683,16 +15784,6 @@ static void mx_setupButtonToNameMap( void ) {
 
 
 
-/* returns sprite handle, or -1 if no sprite (label string might be set in
-   this case)
-
-   outLabelString  set to 0 or English-language key name string, if needed
-
-   Note that if outLabelString is a single character, sprite handle might
-   be set to a blank key-cap sprite to draw under this character
-
-   inButtonHandle is in maxigin-remapped button space
-*/
 static int mx_getButtonHintSprite( int           inButtonHandle,
                                    const char  **outLabelString ) {
     
@@ -15713,6 +15804,10 @@ static int mx_getButtonHintSprite( int           inButtonHandle,
     
     primaryButton = mingin_getPlatformPrimaryButton( inButtonHandle );
 
+    if( primaryButton == MGN_BUTTON_NONE ) {
+        return -1;
+        }
+    
     i = 0;
 
     while( mx_buttonHintMapping[i] != primaryButton
@@ -15779,10 +15874,6 @@ static int mx_getButtonHintSprite( int           inButtonHandle,
 
     return -1;
     }
-
-
-
-static int mx_getButtonHintFont( void );
 
 
 
@@ -17657,12 +17748,16 @@ static void mx_populateLangPanel( void ) {
     backPressed = maxigin_guiLangButton( &mx_internalGUI,
                                          &backButtonHandle,
                                          mx_lang_back,
+                                         MENU_BACK,
                                          0,
                                          buttonY,
                                          50,
                                          10 );
     
-    if( backPressed ) {
+    if( backPressed
+        ||
+        mx_isActionFreshPressed( MENU_BACK) ) {
+        
         if( mx_menuDoSound != -1 ) {
             maxigin_playSoundEffect( mx_menuDoSound,
                                      mx_menuDoLoudness );
@@ -17685,6 +17780,7 @@ static void mx_populateLangPanel( void ) {
                                            &( langButtonHandles[i] ),
                                            mx_languages[i].fontHandle,
                                            mx_languages[i].displayName,
+                                           -1,
                                            0,
                                            buttonY,
                                            50,
@@ -17741,12 +17837,16 @@ static void mx_populateControlsPanel( void ) {
     backPressed = maxigin_guiLangButton( &mx_internalGUI,
                                          &backButtonHandle,
                                          mx_lang_back,
+                                         MENU_BACK,
                                          0,
                                          buttonY,
                                          50,
                                          10 );
     
-    if( backPressed ) {
+    if( backPressed
+        ||
+        mx_isActionFreshPressed( MENU_BACK) ) {
+        
         if( mx_menuDoSound != -1 ) {
             maxigin_playSoundEffect( mx_menuDoSound,
                                      mx_menuDoLoudness );
@@ -17775,6 +17875,7 @@ static void mx_populateControlsPanel( void ) {
             buttonPressed = maxigin_guiLangButton( &mx_internalGUI,
                                                    &( controlButtonHandles[i] ),
                                                    mx_buttonPhraseKeys[i],
+                                                   -1,
                                                    0,
                                                    buttonY,
                                                    buttonRadX,
@@ -17939,6 +18040,7 @@ static void mx_populateControlsPanel( void ) {
     defaultPressed = maxigin_guiLangButton( &mx_internalGUI,
                                             &defaultButtonHandle,
                                             mx_lang_defaults,
+                                            -1,
                                             0,
                                             88,
                                             50,
@@ -18030,12 +18132,16 @@ void mx_populateMenuPanel( void ) {
     resumePressed = maxigin_guiLangButton( &mx_internalGUI,
                                            &resumeButtonHandle,
                                            mx_lang_resume,
+                                           MENU_BACK,
                                            0,
                                            -90,
                                            50,
                                            10 );
     
-    if( resumePressed ) {
+    if( resumePressed
+        ||
+        mx_isActionFreshPressed( MENU_BACK) ) {
+        
         if( mx_menuDoSound != -1 ) {
             maxigin_playSoundEffect( mx_menuDoSound,
                                      mx_menuDoLoudness );
@@ -18155,6 +18261,7 @@ void mx_populateMenuPanel( void ) {
     controlsPressed = maxigin_guiLangButton( &mx_internalGUI,
                                              &controlsButtonHandle,
                                              mx_lang_controls,
+                                             -1,
                                              0,
                                              38,
                                              50,
@@ -18172,6 +18279,7 @@ void mx_populateMenuPanel( void ) {
     langPressed = maxigin_guiLangButton( &mx_internalGUI,
                                          &langButtonHandle,
                                          mx_lang_languages,
+                                         -1,
                                          0,
                                          63,
                                          50,
@@ -18189,6 +18297,7 @@ void mx_populateMenuPanel( void ) {
     quitPressed = maxigin_guiLangButton( &mx_internalGUI,
                                          &quitButtonHandle,
                                          mx_lang_quit,
+                                         QUIT,
                                          0,
                                          88,
                                          50,

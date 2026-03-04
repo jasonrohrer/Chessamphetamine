@@ -1436,6 +1436,33 @@ char mingin_getBulkDataChanged( const char  *inBulkName );
 
 
 /*
+  Saves current button mapping into persistent data store.
+
+  Parameters:
+
+      inStoreName   the name of the peristent data store.
+
+  [jumpMinginProvides]
+*/
+void mingin_saveButtonMapping( const char  *inStoreName );
+
+
+
+/*
+  Loads button mapping from persistent data store and overwrites
+  current button mapping.
+
+  Parameters:
+
+      inStoreName   the name of the peristent data store.
+
+  [jumpMinginProvides]
+*/
+void mingin_loadButtonMapping( const char  *inStoreName );
+
+
+
+/*
   This is the end of Mingin functions that a game can call.
 
   [jumpMinginProvides]
@@ -1483,7 +1510,8 @@ char mingin_getBulkDataChanged( const char  *inBulkName );
       These are tagged below with      [jumpPlatformRequired]
 
       
-  4.  Implementing all but two of the mingin_ functions above.
+  4.  Implementing almost all of the mingin_ functions above
+      (a few are implemented in a platform-independent way).
 
       Explanation tagged below with   [jumpPlatformRequired]
 
@@ -1602,6 +1630,10 @@ char minginPlatform_getStickPosition( MinginStick   inStick,
     mingin_registerStickAxis
     
     mingin_getStickPosition
+
+    mingin_saveButtonMapping
+
+    mingin_loadButtonMapping
     
   [jumpPlatformRequired]
 */
@@ -1654,6 +1686,12 @@ static MinginStick minginStickMappings
 
 
 
+static const char *mn_intToString( int  inInt );
+
+static int mn_stringLength( const char  *inString );
+
+
+    
 static void minginInternal_init( void ) {
 
     int i = 0;
@@ -1838,6 +1876,111 @@ char mingin_getStickPosition( int   inStickAxisHandle,
     
     return 1;
     }
+
+
+
+static char mn_writeIntTokenToStore( int  inStoreHandle,
+                                     int  inInt ) {
+    
+    const char  *iString      =  mn_intToString( inInt );
+    int          iLen         =  mn_stringLength( iString );
+    char         success;
+        
+    success = mingin_writePersistData( inStoreHandle,
+                                       iLen,
+                                       (unsigned char*)iString );
+
+    if( ! success ) {
+        return 0;
+        }
+
+    success = mingin_writePersistData( inStoreHandle,
+                                       1,
+                                       (unsigned char *)" " );
+    
+    if( ! success ) {
+        return 0;
+        }
+    
+    return 1;
+    }
+
+    
+
+void mingin_saveButtonMapping( const char  *inStoreName ) {
+
+    int  store  =  mingin_startWritePersistData( inStoreName );
+    int  i;
+    
+    if( store == -1 ) {
+        return;
+        }
+
+    for( i = 0;
+         i < MINGIN_NUM_BUTTON_MAPPINGS;
+         i ++ ) {
+
+        int    j;
+        
+        if( ! mn_writeIntTokenToStore( store,
+                                       i ) ) {
+            mingin_log( "Failed to write button mapping to "
+                        "persistent data store\n" );
+            
+            mingin_endWritePersistData( store );
+            return;
+            }
+        
+
+        for( j = 0;
+             j < MINGIN_MAX_BUTTON_MAPPING_ELEMENTS;
+             j ++ ) {
+
+            MinginButton  b  =  minginButtonMappings[ i ][ j ];
+
+            if( ! mn_writeIntTokenToStore( store,
+                                           b ) ) {
+                mingin_log(
+                    "Failed to write button mapping to "
+                    "persistent data store\n" );
+            
+                mingin_endWritePersistData( store );
+                return;
+                }
+
+            if( b == MGN_MAP_END ) {
+                int  numWritten =
+                         mingin_writePersistData( store,
+                                                  1,
+                                                  (unsigned char *)"\n" );
+                if( numWritten != 1 ) {
+                    mingin_log(
+                        "Failed to write button mapping to "
+                        "persistent data store\n" );
+            
+                    mingin_endWritePersistData( store );
+                    return;
+                    }
+                
+                break;
+                }
+            }
+        }
+    mingin_endWritePersistData( store );
+    }
+
+
+
+void mingin_loadButtonMapping( const char  *inStoreName ) {
+
+    /* fixme */
+    
+    if( inStoreName[0] ) {
+        }
+    
+    }
+
+
 
 
 /*

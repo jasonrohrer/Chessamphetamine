@@ -9464,6 +9464,9 @@ static void mx_gameInit( void ) {
     
     maxiginGame_init();
 
+    mingin_saveButtonMapping( "maxigin_defaultButtons.ini" );
+    
+
     /* our own internal translation keys */
     mx_lang_settings      = maxigin_initTranslationKey( "settings" );
     mx_lang_newGame       = maxigin_initTranslationKey( "newGame"  );

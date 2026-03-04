@@ -33,3 +33,5 @@ shootDesc      "Tirer"
 
 
 press          "appuyez"
+
+defaults       "Par défaut"

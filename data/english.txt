@@ -34,3 +34,5 @@ shootDesc      "Shoot"
 
 
 press          "press"
+
+defaults       "Defaults"

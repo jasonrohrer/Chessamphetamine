@@ -9362,6 +9362,7 @@ static int          mx_lang_languages;
 static int          mx_lang_controls;
 static int          mx_lang_back;
 static int          mx_lang_press;
+static int          mx_lang_defaults;
 
 
 /* smaller scale for sound effects, since the volume only applies
@@ -9484,6 +9485,7 @@ static void mx_gameInit( void ) {
     mx_lang_controls      = maxigin_initTranslationKey( "controls" );
     mx_lang_back          = maxigin_initTranslationKey( "back" );
     mx_lang_press         = maxigin_initTranslationKey( "press" );
+    mx_lang_defaults      = maxigin_initTranslationKey( "defaults" );
 
     /* game set any translation keys during init, now we can load languages
        based on those keys */
@@ -17724,14 +17726,16 @@ static void mx_populateLangPanel( void ) {
 static void mx_populateControlsPanel( void ) {
 
     int    i;
-    char   backPressed  =                   0;
-    int    buttonY      =                 -90;
-    int   *oldHot       =  mx_internalGUI.hot;
+    char   backPressed     =                   0;
+    char   defaultPressed  =                   0;
+    int    buttonY         =                 -90;
+    int   *oldHot          =  mx_internalGUI.hot;
 
-    static  int            livePokeI         =   -1;
-    static  int            backButtonHandle  =    0;
-    static  unsigned char  pressFade         =  255;
-    static  int            pressFadeDir      =   -1;
+    static  int            livePokeI            =   -1;
+    static  int            backButtonHandle     =    0;
+    static  int            defaultButtonHandle  =    0;
+    static  unsigned char  pressFade            =  255;
+    static  int            pressFadeDir         =   -1;
     static  int            controlButtonHandles[ MAXIGIN_NUM_BUTTON_MAPPINGS ];
     
     backPressed = maxigin_guiLangButton( &mx_internalGUI,
@@ -17931,6 +17935,29 @@ static void mx_populateControlsPanel( void ) {
             }
         }
 
+    
+    defaultPressed = maxigin_guiLangButton( &mx_internalGUI,
+                                            &defaultButtonHandle,
+                                            mx_lang_defaults,
+                                            0,
+                                            88,
+                                            50,
+                                            10 );
+    
+    if( defaultPressed ) {
+        if( mx_menuDoSound != -1 ) {
+            maxigin_playSoundEffect( mx_menuDoSound,
+                                     mx_menuDoLoudness );
+            }
+
+        mingin_loadButtonMapping( "maxigin_defaultButtons.ini" );
+
+        mingin_deletePersistData( "maxigin_savedButtons.ini" );
+        
+        livePokeI = -1;
+        }
+
+    
     if( mx_internalGUI.hot != 0
         &&
         mx_internalGUI.hot != oldHot

@@ -33,3 +33,5 @@ back           "返回"
 shootDesc      "射擊"
 
 press          "按下"
+
+defaults       "恢復預設"

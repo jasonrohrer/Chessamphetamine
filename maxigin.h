@@ -18320,6 +18320,7 @@ void mx_populateMenuPanel( void ) {
                 }
             else if( mx_internalGUI.forceHot == &controlsButtonHandle ) {
                 mx_internalGUI.forceHot = &mx_soundEffectsVolume;
+                stepsSinceLastEffectsExample = 1000;
                 }
             else if( mx_internalGUI.forceHot == &mx_soundEffectsVolume ) {
                 mx_internalGUI.forceHot = &mx_musicVolumeTarget;
@@ -18353,6 +18354,7 @@ void mx_populateMenuPanel( void ) {
                 }
             else if( mx_internalGUI.forceHot == &mx_musicVolumeTarget ) {
                 mx_internalGUI.forceHot = &mx_soundEffectsVolume;
+                stepsSinceLastEffectsExample = 1000;
                 }
             else if( mx_internalGUI.forceHot == &fullscreenChecked ) {
                 mx_internalGUI.forceHot = &mx_musicVolumeTarget;
@@ -18375,6 +18377,7 @@ void mx_populateMenuPanel( void ) {
 
             if( mx_internalGUI.forceHot == &resumeButtonHandle ) {
                 mx_menuShowing = 0;
+                mx_internalGUI.forceHot = 0;
                 actionTaken    = 1;
                 }
             else if( mx_internalGUI.forceHot == &quitButtonHandle ) {
@@ -18437,6 +18440,7 @@ void mx_populateMenuPanel( void ) {
                                      mx_menuDoLoudness );
             }
         mx_menuShowing = 0;
+        mx_internalGUI.forceHot = 0;
         }
 
     
@@ -18525,7 +18529,7 @@ void mx_populateMenuPanel( void ) {
         }
 
 
-    if( mx_internalGUI.active == &mx_soundEffectsVolume
+    if( oldEffectsVol != mx_soundEffectsVolume
         &&
         stepsSinceLastEffectsExample > mingin_getStepsPerSecond() / 3 ) {
         stepsSinceLastEffectsExample = 0;

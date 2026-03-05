@@ -2627,6 +2627,11 @@ struct MaxiginGUI {
         void          *hot;
         void          *active;
 
+        /* Can also force hot, even if mouse not over, in case of
+           controller navigation */
+        void          *forceHot;
+        
+
         /* true if any active gui component has detected
            that the mouse is held down (even if it's not over any gui
            component  */
@@ -2780,6 +2785,10 @@ typedef enum MaxiginUserAction {
     QUIT,
     MENU,
     MENU_BACK,
+    MENU_UP,
+    MENU_DOWN,
+    MENU_STICK_NAV,
+    MENU_PICK,
     FULLSCREEN_TOGGLE,
     LANG_SWITCH,
     SOUND_TOGGLE,
@@ -6735,6 +6744,7 @@ void maxigin_initGUI( MaxiginGUI *inGUI ) {
     inGUI->fade               = 255;
     inGUI->hot                = 0;
     inGUI->active             = 0;
+    inGUI->forceHot           = 0;
     inGUI->mouseDown          = 0;
     inGUI->activeMouseOffsetX = 0;
     inGUI->activeMouseOffsetY = 0;
@@ -8496,7 +8506,10 @@ static char mx_guiButtonBody( MaxiginGUI  *inGUI,
 
         int  s;
         
-        if( inGUI->hot == inHandle ) {
+        if( inGUI->hot      == inHandle
+            ||
+            inGUI->forceHot == inHandle ) {
+            
             s = mx_buttonSprites.hot;
             }
         else {
@@ -9412,6 +9425,28 @@ static  MinginButton  mx_menuBackMapping[] = { MGN_BUTTON_XBOX_B,
                                                MGN_BUTTON_XBOX_BACK,
                                                MGN_MAP_END };
 
+static  MinginButton  mx_menuUpMapping[] = { MGN_BUTTON_DPAD_UP,
+                                             MGN_MAP_END };
+
+static  MinginButton  mx_menuDownMapping[] = { MGN_BUTTON_DPAD_DOWN,
+                                               MGN_MAP_END };
+
+static  MinginStick  mx_menuStickNavMapping[] = { MGN_STICK_LEFT_Y,
+                                                  MGN_STICK_RIGHT_Y,
+                                                  MGN_MAP_END };
+
+static  MinginButton  mx_menuPickMapping[] = { MGN_BUTTON_XBOX_A,
+                                               MGN_BUTTON_XBOX_X,
+                                               MGN_BUTTON_XBOX_Y,
+                                               MGN_BUTTON_L1,
+                                               MGN_BUTTON_R1,
+                                               MGN_BUTTON_L2,
+                                               MGN_BUTTON_R2,
+                                               MGN_BUTTON_PS_SQUARE,
+                                               MGN_BUTTON_PS_TRIANGLE,
+                                               MGN_BUTTON_PS_X,
+                                               MGN_MAP_END };
+
 static  MinginButton  mx_fullscreenMapping[] = { MGN_KEY_F,
                                                  MGN_MAP_END };
 
@@ -9518,6 +9553,18 @@ static void mx_gameInit( void ) {
     
     mingin_registerButtonMapping( MENU_BACK,
                                   mx_menuBackMapping );
+
+    mingin_registerButtonMapping( MENU_UP,
+                                  mx_menuUpMapping );
+
+    mingin_registerButtonMapping( MENU_DOWN,
+                                  mx_menuDownMapping );
+
+    mingin_registerStickAxis( MENU_STICK_NAV,
+                              mx_menuStickNavMapping );
+
+    mingin_registerButtonMapping( MENU_PICK,
+                                  mx_menuPickMapping );
     
     mingin_registerButtonMapping( FULLSCREEN_TOGGLE,
                                   mx_fullscreenMapping );
@@ -17731,7 +17778,121 @@ static void mx_checkLangNeedsReload( void ) {
 
 
 
+static char mx_pointerAvailable( void ) {
 
+    int  x;
+    int  y;
+    int  maxX;
+    int  maxY;
+    
+    return mingin_getPointerLocation( &x,
+                                      &y,
+                                      &maxX,
+                                      &maxY );
+    }
+
+
+static char mx_useGamepadMenuNav( void ) {
+    
+    if( ! mx_pointerAvailable() ) {
+        /* no pointer, gamepad is only option */
+        return 1;
+        }
+
+    if( mingin_hasAnyGamepadBeenTouched() ) {
+        /* pointer available, but the user has been manipulating the game pad */
+        return 1;
+        }
+
+    /* pointer available, and they've never touched the game pad */
+    return 0;
+    }
+
+
+static char mx_getMenuUp( void ) {
+
+    if( mx_isActionFreshPressed( MENU_UP ) ) {
+        return 1;
+        }
+    else {
+        int   pos;
+        int   min;
+        int   max;
+        char  avail  =  mingin_getStickPosition( MENU_STICK_NAV,
+                                                 &pos,
+                                                 &min,
+                                                 &max );
+
+        if( ! avail ) {
+            return 0;
+            }
+        else {
+            /* up is negative on sticks */
+            int   mid     =  ( max - min ) / 2 + min;
+            int   thresh  =  ( min - mid ) / 4 + mid;
+        
+            static  char  wasUnderThresh  =  0;
+
+            if( ! wasUnderThresh ) {
+                if( pos > thresh ) {
+                    wasUnderThresh = 1;
+                    }
+                return 0;
+                }
+            else {
+                if( pos <= thresh ) {
+                    wasUnderThresh = 0;
+                    return 1;
+                    }
+                }
+            }
+        }
+    
+    return 0;
+    }
+
+
+static char mx_getMenuDown( void ) {
+
+    if( mx_isActionFreshPressed( MENU_DOWN ) ) {
+        return 1;
+        }
+    else {
+        int   pos;
+        int   min;
+        int   max;
+        char  avail  =  mingin_getStickPosition( MENU_STICK_NAV,
+                                                 &pos,
+                                                 &min,
+                                                 &max );
+
+        if( ! avail ) {
+            return 0;
+            }
+        else {
+            /* down is positive on sticks */
+            int   mid     =  ( max - min ) / 2 + min;
+            int   thresh  =  ( max - mid ) / 4 + mid;
+        
+            static  char  wasUnderThresh  =  0;
+
+            if( ! wasUnderThresh ) {
+                if( pos < thresh ) {
+                    wasUnderThresh = 1;
+                    }
+                return 0;
+                }
+            else {
+                if( pos >= thresh ) {
+                    wasUnderThresh = 0;
+                    return 1;
+                    }
+                }
+            }
+        }
+    
+    return 0;
+    }
 
 
 
@@ -17756,7 +17917,7 @@ static void mx_populateLangPanel( void ) {
     
     if( backPressed
         ||
-        mx_isActionFreshPressed( MENU_BACK) ) {
+        mx_isActionFreshPressed( MENU_BACK ) ) {
         
         if( mx_menuDoSound != -1 ) {
             maxigin_playSoundEffect( mx_menuDoSound,
@@ -18128,6 +18289,128 @@ void mx_populateMenuPanel( void ) {
         fullscreenQueried = 1;
         }
 
+    if( mx_useGamepadMenuNav() ) {
+        
+        void  *oldForceHot  =  0;
+        
+        if( mx_internalGUI.forceHot == 0 ) {
+            /* start with resume hot */
+            mx_internalGUI.forceHot = &resumeButtonHandle;
+            }
+
+        oldForceHot = mx_internalGUI.forceHot;
+
+        if( mx_getMenuUp() ) {
+
+            if( mx_internalGUI.forceHot == &resumeButtonHandle ) {
+                mx_internalGUI.forceHot = &quitButtonHandle;
+                }
+            else if( mx_internalGUI.forceHot == &quitButtonHandle ) {
+                mx_internalGUI.forceHot = &langButtonHandle;
+                }
+            else if( mx_internalGUI.forceHot == &langButtonHandle ) {
+                mx_internalGUI.forceHot = &controlsButtonHandle;
+                }
+            else if( mx_internalGUI.forceHot == &controlsButtonHandle ) {
+                mx_internalGUI.forceHot = &mx_soundEffectsVolume;
+                }
+            else if( mx_internalGUI.forceHot == &mx_soundEffectsVolume ) {
+                mx_internalGUI.forceHot = &mx_musicVolumeTarget;
+                }
+            else if( mx_internalGUI.forceHot == &mx_musicVolumeTarget ) {
+                mx_internalGUI.forceHot = &fullscreenChecked;
+                }
+            else if( mx_internalGUI.forceHot == &fullscreenChecked ) {
+                mx_internalGUI.forceHot = &resumeButtonHandle;
+                }
+            else {
+                mx_internalGUI.forceHot = &resumeButtonHandle;
+                }
+            }
+        else if( mx_getMenuDown() ) {
+
+            if( mx_internalGUI.forceHot == &resumeButtonHandle ) {
+                mx_internalGUI.forceHot = &fullscreenChecked;
+                }
+            else if( mx_internalGUI.forceHot == &quitButtonHandle ) {
+                mx_internalGUI.forceHot = &resumeButtonHandle;
+                }
+            else if( mx_internalGUI.forceHot == &langButtonHandle ) {
+                mx_internalGUI.forceHot = &quitButtonHandle;
+                }
+            else if( mx_internalGUI.forceHot == &controlsButtonHandle ) {
+                mx_internalGUI.forceHot = &langButtonHandle;
+                }
+            else if( mx_internalGUI.forceHot == &mx_soundEffectsVolume ) {
+                mx_internalGUI.forceHot = &controlsButtonHandle;
+                }
+            else if( mx_internalGUI.forceHot == &mx_musicVolumeTarget ) {
+                mx_internalGUI.forceHot = &mx_soundEffectsVolume;
+                }
+            else if( mx_internalGUI.forceHot == &fullscreenChecked ) {
+                mx_internalGUI.forceHot = &mx_musicVolumeTarget;
+                }
+            else {
+                mx_internalGUI.forceHot = &resumeButtonHandle;
+                }
+            }
+
+        if( oldForceHot != mx_internalGUI.forceHot ) {
+            if( mx_menuHoverSound != -1 ) {
+                maxigin_playSoundEffect( mx_menuHoverSound,
+                                         mx_menuHoverLoudness );
+                }
+            }
+
+        if( mx_isActionFreshPressed( MENU_PICK ) ) {
+
+            char  actionTaken  =  0;
+
+            if( mx_internalGUI.forceHot == &resumeButtonHandle ) {
+                mx_menuShowing = 0;
+                actionTaken    = 1;
+                }
+            else if( mx_internalGUI.forceHot == &quitButtonHandle ) {
+                mingin_log( "Got quit button, starting sound fade out\n" );
+        
+                mx_quitting      = 1;
+                mx_quittingReady = 0;
+                actionTaken      = 1;
+                }
+            else if( mx_internalGUI.forceHot == &langButtonHandle ) {
+                mx_langPanelShowing = 1;
+                actionTaken = 1;
+                }
+            else if( mx_internalGUI.forceHot == &controlsButtonHandle ) {
+                mx_controlsPanelShowing = 1;
+                actionTaken = 1;
+                }
+            else if( mx_internalGUI.forceHot == &fullscreenChecked ) {
+                fullscreenChecked = ! fullscreenChecked;
+                mingin_toggleFullscreen( fullscreenChecked );
+                
+                actionTaken = 1;
+                }
+            
+
+            if( actionTaken ) {
+                if( mx_menuDoSound != -1 ) {
+                    maxigin_playSoundEffect( mx_menuDoSound,
+                                             mx_menuDoLoudness );
+                    }
+                }
+            }
+        }
+
+    if( mx_internalGUI.forceHot != 0
+        &&
+        mx_internalGUI.hot      != 0 ) {
+
+        /* active hot, with mouse, overrides forceHot */
+
+        mx_internalGUI.forceHot = 0;
+        }
+    
 
     resumePressed = maxigin_guiLangButton( &mx_internalGUI,
                                            &resumeButtonHandle,
@@ -18140,7 +18423,7 @@ void mx_populateMenuPanel( void ) {
     
     if( resumePressed
         ||
-        mx_isActionFreshPressed( MENU_BACK) ) {
+        mx_isActionFreshPressed( MENU_BACK ) ) {
         
         if( mx_menuDoSound != -1 ) {
             maxigin_playSoundEffect( mx_menuDoSound,

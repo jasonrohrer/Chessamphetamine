@@ -17909,9 +17909,109 @@ static void mx_populateLangPanel( void ) {
     int    i;
     int    buttonY      =  -90;
     int   *oldHot       =  mx_internalGUI.hot;
+    int   *oldForceHot  =    0;
+    int    pressI       =   -1;
     
     static  int   backButtonHandle  =  0;
     static  int   langButtonHandles[ MAXIGIN_MAX_NUM_LANGUAGES ];
+
+    if( mx_useGamepadMenuNav() ) {
+ 
+        if( mx_internalGUI.forceHot == 0 ) {
+            /* start with back hot */
+            mx_internalGUI.forceHot = &backButtonHandle;
+            }
+
+        oldForceHot = mx_internalGUI.forceHot;
+
+        if( mx_getMenuUp() ) {
+
+            if( mx_internalGUI.forceHot == &backButtonHandle ) {
+                mx_internalGUI.forceHot =
+                    &( langButtonHandles[ mx_numLanguages - 1 ] );
+                }
+            else if( mx_internalGUI.forceHot == &( langButtonHandles[ 0 ] ) ) {
+                mx_internalGUI.forceHot = &backButtonHandle;
+                }
+            else {
+                for( i = 1;
+                     i < mx_numLanguages;
+                     i ++ ) {
+                    if( mx_internalGUI.forceHot ==
+                        &( langButtonHandles[ i ] ) ) {
+                        mx_internalGUI.forceHot =
+                            &( langButtonHandles[ i - 1 ] );
+                        }
+                    }
+                }
+            }
+        else if( mx_getMenuDown() ) {
+            if( mx_internalGUI.forceHot == &backButtonHandle ) {
+                mx_internalGUI.forceHot = &( langButtonHandles[ 0 ] );
+                }
+            else if( mx_internalGUI.forceHot ==
+                     &( langButtonHandles[ mx_numLanguages - 1 ] ) ) {
+                mx_internalGUI.forceHot = &backButtonHandle;
+                }
+            else {
+                for( i = 0;
+                     i < mx_numLanguages - 1;
+                     i ++ ) {
+                    if( mx_internalGUI.forceHot ==
+                        &( langButtonHandles[ i ] ) ) {
+                        mx_internalGUI.forceHot =
+                            &( langButtonHandles[ i + 1 ] );
+                        break;
+                        }
+                    }
+                }
+            }
+
+        if( oldForceHot != mx_internalGUI.forceHot ) {
+            if( mx_menuHoverSound != -1 ) {
+                maxigin_playSoundEffect( mx_menuHoverSound,
+                                         mx_menuHoverLoudness );
+                }
+            }
+
+        if( mx_isActionFreshPressed( MENU_PICK ) ) {
+            char  actionTaken  =  0;
+
+            if( mx_internalGUI.forceHot == &backButtonHandle ) {
+                actionTaken = 1;
+                mx_langPanelShowing = 0;
+                }
+            else {
+                
+                for( i = 0;
+                     i < mx_numLanguages;
+                     i ++ ) {
+                    
+                    if( mx_internalGUI.forceHot == &
+                        ( langButtonHandles[ i ] ) ) {
+
+                        actionTaken = 1;
+                        pressI = i;
+                        }
+                    }
+                }       
+
+            if( actionTaken && mx_menuDoSound != -1 ) {
+                maxigin_playSoundEffect( mx_menuDoSound,
+                                         mx_menuDoLoudness );
+                }
+            }
+        }
+
+    
+    if( mx_internalGUI.forceHot != 0
+        &&
+        mx_internalGUI.hot      != 0 ) {
+
+        /* active hot, with mouse, overrides forceHot */
+
+        mx_internalGUI.forceHot = 0;
+        }
     
     backPressed = maxigin_guiLangButton( &mx_internalGUI,
                                          &backButtonHandle,
@@ -17954,7 +18054,9 @@ static void mx_populateLangPanel( void ) {
                                            50,
                                            10 );
 
-        if( buttonPressed ) {
+        if( buttonPressed
+            ||
+            pressI == i ) {
             mx_currentLanguage = i;
             
             if( mx_menuDoSound != -1 ) {
@@ -18016,7 +18118,7 @@ static void mx_populateControlsPanel( void ) {
     if( mx_useGamepadMenuNav() ) {
  
         if( mx_internalGUI.forceHot == 0 ) {
-            /* start with resume hot */
+            /* start with back hot */
             mx_internalGUI.forceHot = &backButtonHandle;
             }
 
@@ -18315,12 +18417,18 @@ static void mx_populateControlsPanel( void ) {
             }
         }
 
-    if( oldForceHot != mx_internalGUI.forceHot ) {
-        if( mx_menuHoverSound != -1 ) {
-            maxigin_playSoundEffect( mx_menuHoverSound,
-                                     mx_menuHoverLoudness );
+    if( upPressed
+        ||
+        downPressed ) {
+        
+        if( oldForceHot != mx_internalGUI.forceHot ) {
+            if( mx_menuHoverSound != -1 ) {
+                maxigin_playSoundEffect( mx_menuHoverSound,
+                                         mx_menuHoverLoudness );
+                }
             }
         }
+    
     
     defaultPressed = maxigin_guiLangButton( &mx_internalGUI,
                                             &defaultButtonHandle,

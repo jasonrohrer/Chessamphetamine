@@ -17994,13 +17994,58 @@ static void mx_populateControlsPanel( void ) {
     char   defaultPressed  =                   0;
     int    buttonY         =                 -90;
     int   *oldHot          =  mx_internalGUI.hot;
-
+    int    upPressed       =                   0;
+    int    downPressed     =                   0;
+    int    pickPressed     =                   0;
+    void  *oldForceHot     =                   0;
+    void  *prev            =                   0;
+    void  *next            =                   0;
+    void  *first           =                   0;
+    void  *last            =                   0;
+    char   setNext         =                   0;
+    char   setPrev         =                   1;
+    
     static  int            livePokeI            =   -1;
     static  int            backButtonHandle     =    0;
     static  int            defaultButtonHandle  =    0;
     static  unsigned char  pressFade            =  255;
     static  int            pressFadeDir         =   -1;
     static  int            controlButtonHandles[ MAXIGIN_NUM_BUTTON_MAPPINGS ];
+
+
+    if( mx_useGamepadMenuNav() ) {
+ 
+        if( mx_internalGUI.forceHot == 0 ) {
+            /* start with resume hot */
+            mx_internalGUI.forceHot = &backButtonHandle;
+            }
+
+        oldForceHot = mx_internalGUI.forceHot;
+
+        if( mx_getMenuUp() ) {
+            upPressed = 1;
+            }
+        else if( mx_getMenuDown() ) {
+            downPressed = 1;
+            }
+
+        if( livePokeI == -1
+            &&
+            mx_isActionFreshPressed( MENU_PICK ) ) {
+            
+            pickPressed = 1;
+            }
+        }
+
+    
+    if( mx_internalGUI.forceHot != 0
+        &&
+        mx_internalGUI.hot      != 0 ) {
+
+        /* active hot, with mouse, overrides forceHot */
+
+        mx_internalGUI.forceHot = 0;
+        }
     
     backPressed = maxigin_guiLangButton( &mx_internalGUI,
                                          &backButtonHandle,
@@ -18013,7 +18058,11 @@ static void mx_populateControlsPanel( void ) {
     
     if( backPressed
         ||
-        mx_isActionFreshPressed( MENU_BACK) ) {
+        mx_isActionFreshPressed( MENU_BACK )
+        ||
+        ( mx_internalGUI.forceHot == &backButtonHandle
+          &&
+          pickPressed ) ) {
         
         if( mx_menuDoSound != -1 ) {
             maxigin_playSoundEffect( mx_menuDoSound,
@@ -18040,6 +18089,29 @@ static void mx_populateControlsPanel( void ) {
             
             buttonY += 25;
 
+            if( mx_internalGUI.forceHot != &( controlButtonHandles[i] )
+                &&
+                setPrev ) {
+                prev = &( controlButtonHandles[i] );
+                }
+            else {
+                setPrev = 0;
+                }
+            if( setNext ) {
+                next = &( controlButtonHandles[i] );
+                setNext = 0;
+                }
+            else if( mx_internalGUI.forceHot == &( controlButtonHandles[i] ) ) {
+                setNext = 1;
+                }
+
+            if( first == 0 ) {
+                first = &( controlButtonHandles[i] );
+                }
+            
+            last = &( controlButtonHandles[i] );
+
+            
             buttonPressed = maxigin_guiLangButton( &mx_internalGUI,
                                                    &( controlButtonHandles[i] ),
                                                    mx_buttonPhraseKeys[i],
@@ -18123,6 +18195,11 @@ static void mx_populateControlsPanel( void ) {
                     /* save it to settings */
 
                     mingin_saveButtonMapping( "maxigin_savedButtons.ini" );
+
+                    if( mx_menuDoSound != -1 ) {
+                        maxigin_playSoundEffect( mx_menuDoSound,
+                                                 mx_menuDoLoudness );
+                        }
                     }
                 }
             else {
@@ -18185,7 +18262,11 @@ static void mx_populateControlsPanel( void ) {
             
             
 
-            if( buttonPressed ) {
+            if( buttonPressed
+                ||
+                ( ( mx_internalGUI.forceHot == &( controlButtonHandles[i] ) )
+                  &&
+                  pickPressed ) ) {
                 /* enable live poke of new control */
 
                 livePokeI = i;
@@ -18204,6 +18285,42 @@ static void mx_populateControlsPanel( void ) {
             }
         }
 
+    if( upPressed ) {
+
+        if( mx_internalGUI.forceHot == &backButtonHandle ) {
+            mx_internalGUI.forceHot = &defaultButtonHandle;
+            }
+        else if( mx_internalGUI.forceHot == &defaultButtonHandle ) {
+            mx_internalGUI.forceHot = last;
+            }
+        else if( mx_internalGUI.forceHot == first ) {
+            mx_internalGUI.forceHot = &backButtonHandle;
+            }
+        else {
+            mx_internalGUI.forceHot = prev;
+            }
+        }
+    else if( downPressed ) {
+        if( mx_internalGUI.forceHot == &defaultButtonHandle ) {
+            mx_internalGUI.forceHot = &backButtonHandle;
+            }
+        else if( mx_internalGUI.forceHot == &backButtonHandle ) {
+            mx_internalGUI.forceHot = first;
+            }
+        else if( mx_internalGUI.forceHot == last ) {
+            mx_internalGUI.forceHot = &defaultButtonHandle;
+            }
+        else {
+            mx_internalGUI.forceHot = next;
+            }
+        }
+
+    if( oldForceHot != mx_internalGUI.forceHot ) {
+        if( mx_menuHoverSound != -1 ) {
+            maxigin_playSoundEffect( mx_menuHoverSound,
+                                     mx_menuHoverLoudness );
+            }
+        }
     
     defaultPressed = maxigin_guiLangButton( &mx_internalGUI,
                                             &defaultButtonHandle,
@@ -18214,7 +18331,12 @@ static void mx_populateControlsPanel( void ) {
                                             50,
                                             10 );
     
-    if( defaultPressed ) {
+    if( defaultPressed
+        ||
+        ( mx_internalGUI.forceHot == &defaultButtonHandle
+          &&
+          pickPressed ) ) {
+        
         if( mx_menuDoSound != -1 ) {
             maxigin_playSoundEffect( mx_menuDoSound,
                                      mx_menuDoLoudness );
@@ -18260,15 +18382,16 @@ void mx_populateMenuPanel( void ) {
     char   langPressed      =  0;
     
     
-    static  char  fullscreenChecked             =  0;
-    static  char  fullscreenQueried             =  0;
-    static  char  canToggleFullscreen           =  0;
-    static  int   stepsSinceLastEffectsExample  =  1000;
-    static  int   resumeButtonHandle            =  0;
-    static  int   quitButtonHandle              =  0;
-    static  int   controlsButtonHandle          =  0;
-    static  int   langButtonHandle              =  0;
-
+    static  char   fullscreenChecked             =  0;
+    static  char   fullscreenQueried             =  0;
+    static  char   canToggleFullscreen           =  0;
+    static  int    stepsSinceLastEffectsExample  =  1000;
+    static  int    resumeButtonHandle            =  0;
+    static  int    quitButtonHandle              =  0;
+    static  int    controlsButtonHandle          =  0;
+    static  int    langButtonHandle              =  0;
+    static  void  *returnForceHot                =  0;
+    
 
     if( mx_langPanelShowing ) {
         mx_populateLangPanel();
@@ -18299,7 +18422,12 @@ void mx_populateMenuPanel( void ) {
     if( mx_useGamepadMenuNav() ) {
         
         void  *oldForceHot  =  0;
-        
+
+        if( returnForceHot != 0 ) {
+            mx_internalGUI.forceHot = returnForceHot;
+            returnForceHot = 0;
+            }
+            
         if( mx_internalGUI.forceHot == 0 ) {
             /* start with resume hot */
             mx_internalGUI.forceHot = &resumeButtonHandle;
@@ -18389,10 +18517,14 @@ void mx_populateMenuPanel( void ) {
                 }
             else if( mx_internalGUI.forceHot == &langButtonHandle ) {
                 mx_langPanelShowing = 1;
+                returnForceHot = &langButtonHandle;
+                mx_internalGUI.forceHot = 0;
                 actionTaken = 1;
                 }
             else if( mx_internalGUI.forceHot == &controlsButtonHandle ) {
                 mx_controlsPanelShowing = 1;
+                returnForceHot = &controlsButtonHandle;
+                mx_internalGUI.forceHot = 0;
                 actionTaken = 1;
                 }
             else if( mx_internalGUI.forceHot == &fullscreenChecked ) {
@@ -18564,6 +18696,7 @@ void mx_populateMenuPanel( void ) {
                                      mx_menuDoLoudness );
             }
         mx_controlsPanelShowing = 1;
+        mx_internalGUI.forceHot = 0;
         }
 
     
@@ -18582,6 +18715,7 @@ void mx_populateMenuPanel( void ) {
                                      mx_menuDoLoudness );
             }
         mx_langPanelShowing = 1;
+        mx_internalGUI.forceHot = 0;
         }
 
     

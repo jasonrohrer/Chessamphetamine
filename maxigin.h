@@ -18123,20 +18123,23 @@ static void mx_populateControlsPanel( void ) {
             }
 
         oldForceHot = mx_internalGUI.forceHot;
-
+        
         if( mx_getMenuUp() ) {
-            upPressed = 1;
+            if( livePokeI == -1 ) {
+                upPressed = 1;
+                }
             }
         else if( mx_getMenuDown() ) {
-            downPressed = 1;
+            if( livePokeI == -1 ) {
+                downPressed = 1;
+                }
             }
 
-        if( livePokeI == -1
-            &&
-            mx_isActionFreshPressed( MENU_PICK ) ) {
-            
-            pickPressed = 1;
-            }
+        if( mx_isActionFreshPressed( MENU_PICK ) ) {
+            if( livePokeI == -1 ) {
+                pickPressed = 1;
+                }
+            }  
         }
 
     
@@ -18165,14 +18168,17 @@ static void mx_populateControlsPanel( void ) {
         ( mx_internalGUI.forceHot == &backButtonHandle
           &&
           pickPressed ) ) {
-        
-        if( mx_menuDoSound != -1 ) {
-            maxigin_playSoundEffect( mx_menuDoSound,
-                                     mx_menuDoLoudness );
-            }
 
-        mx_controlsPanelShowing = 0;
-        livePokeI = -1;
+        if( livePokeI == -1 ) {
+        
+            if( mx_menuDoSound != -1 ) {
+                maxigin_playSoundEffect( mx_menuDoSound,
+                                         mx_menuDoLoudness );
+                }
+
+            mx_controlsPanelShowing = 0;
+            livePokeI = -1;
+            }
         }
 
     buttonY += 5;

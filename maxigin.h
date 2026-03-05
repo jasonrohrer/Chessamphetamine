@@ -1703,10 +1703,6 @@ void maxigin_endGUI( MaxiginGUI *inGUI );
 
       inThumbWidth     width of slider thumb (the moving part) in pixels.
                        has no effect if thumb sprite is defined.
-                        
-      inForceMoving    1 to force the slider to listen to arrow keys, controller
-                         etc. and force it to be in the moving state
-                       0 to not force it to move
                    
   Returns:
 
@@ -1725,8 +1721,7 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                         int          inY,
                         int          inBarHeight,
                         int          inThumbHeight,
-                        int          inThumbWidth,
-                        char         inForceMoving );
+                        int          inThumbWidth );
 
 
 /*
@@ -7246,8 +7241,7 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                         int          inY,
                         int          inBarHeight,
                         int          inThumbHeight,
-                        int          inThumbWidth,
-                        char         inForceMoving  ) {
+                        int          inThumbWidth ) {
 
     MaxiginColor  c;
     int           thumbPixelCenter;
@@ -7481,7 +7475,7 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
     
     
 
-    if( inForceMoving ) {
+    if( inGUI->forceHot == inCurrentValue ) {
         inGUI->active = inCurrentValue;
 
         /* we're in force moving mode, which means the game has this slider
@@ -8330,7 +8324,10 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
             i = 1;
             }
         
-        if( inGUI->hot == inChecked ) {
+        if( inGUI->hot      == inChecked
+            ||
+            inGUI->forceHot == inChecked ) {
+            
             s = mx_checkboxSprites.hot[i];
             }
         else {
@@ -8349,7 +8346,10 @@ void maxigin_guiCheckbox( MaxiginGUI  *inGUI,
 
         frameV = 128;
 
-        if( inGUI->hot == inChecked ) {
+        if( inGUI->hot      == inChecked
+            ||
+            inGUI->forceHot == inChecked ) {
+            
             frameV = 255;
             }
 
@@ -8533,7 +8533,10 @@ static char mx_guiButtonBody( MaxiginGUI  *inGUI,
         unsigned char  fillV   =  64;
         
         
-        if( inGUI->hot == inHandle ) {
+        if( inGUI->hot      == inHandle
+            ||
+            inGUI->forceHot == inHandle ) {
+            
             frameV = 255;
             }
         
@@ -9150,8 +9153,7 @@ void minginGame_step( char  inFinalStep ) {
                                MAXIGIN_GAME_NATIVE_H / 2 - 30,
                                10,
                                20,
-                               10,
-                               0 );
+                               10 );
 
         if( ! mx_playbackPaused
             &&
@@ -18490,8 +18492,7 @@ void mx_populateMenuPanel( void ) {
                        -25,
                        10,
                        20,
-                       10,
-                       0 );
+                       10 );
 
     maxigin_guiLabel( &mx_internalGUI,
                       mx_lang_effectsVolume,
@@ -18510,8 +18511,7 @@ void mx_populateMenuPanel( void ) {
                        10,
                        10,
                        20,
-                       10,
-                       0 );
+                       10 );
 
     if( oldActive != mx_internalGUI.active
         &&

@@ -586,8 +586,7 @@ void maxiginGame_step( void ) {
                        25,
                        10,
                        20,
-                       10,
-                       0 );
+                       10 );
 
     subPanel = maxigin_guiStartPanel( &gameGUI,
                                       0,
@@ -605,8 +604,7 @@ void maxiginGame_step( void ) {
                        0,
                        10,
                        20,
-                       10,
-                       0 );
+                       10 );
     
     maxigin_guiEndPanel( &gameGUI,
                          subPanel );
@@ -630,8 +628,7 @@ void maxiginGame_step( void ) {
                        0,
                        10,
                        20,
-                       10,
-                       0 );
+                       10 );
     
     maxigin_guiEndPanel( &gameGUI,
                          panel );

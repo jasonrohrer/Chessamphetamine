@@ -1017,6 +1017,23 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 
 
 /*
+  Checks if any gamepad has ever been manipulated by player during this run.
+  Only button presses count (since there might be some stick noise from
+  an idle gamepad sitting on the user's desk).
+  
+  Returns:
+
+      1   if any gamepad has been touched
+
+      0   if no gamepad has been touched
+
+  [jumpMinginProvides]
+*/
+char mingin_hasAnyGamepadBeenTouched( void );
+
+
+
+/*
   Toggle between fullscreen and windowed mode on platforms that support
   this.
 
@@ -2516,6 +2533,13 @@ static  int                 mn_stickPosition
 
 
 /*
+  Set the first time any gamepad event happens.
+*/
+static char  mn_gamepadTouched  =  0;
+
+
+
+/*
   Looks through  /dev/input/js  devices for the first gamepad that matches
   one of our mn_gamepadIDStrings.
 
@@ -2724,6 +2748,12 @@ MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
         }
 
     return MGN_BUTTON_NONE;
+    }
+
+
+
+char mingin_hasAnyGamepadBeenTouched( void ) {
+    return mn_gamepadTouched;
     }
 
 
@@ -3739,8 +3769,10 @@ int main( void ) {
                     MinginButton  buttonMinus;
                     MinginButton  buttonPlus;
                     
-                    switch (e.type) {
+                    switch( e.type ) {
                         case JS_EVENT_BUTTON:
+                            mn_gamepadTouched = 1;
+                            
                             button = mn_mapJSButtonToButton( e.number );
 
                             if( button > MGN_BUTTON_NONE ) {
@@ -3764,10 +3796,12 @@ int main( void ) {
                                                                      -1 );
 
                                 if( buttonPlus > MGN_BUTTON_NONE ) {
+                                    mn_gamepadTouched = 1;
                                     /* release */
                                     mn_setButtonState( buttonPlus, 0 );
                                     }
                                 if( buttonMinus > MGN_BUTTON_NONE ) {
+                                    mn_gamepadTouched = 1;
                                     /* release */
                                     mn_setButtonState( buttonMinus, 0 );
                                     }
@@ -3782,10 +3816,12 @@ int main( void ) {
                                                                      -e.value );
 
                                 if( button > MGN_BUTTON_NONE ) {
+                                    mn_gamepadTouched = 1;
                                     /* press */
                                     mn_setButtonState( button, 1 );
                                     }
                                 if( buttonMinus > MGN_BUTTON_NONE ) {
+                                    mn_gamepadTouched = 1;
                                     /* release opposite side */
                                     mn_setButtonState( buttonMinus, 0 );
                                     }
@@ -3796,7 +3832,7 @@ int main( void ) {
                                                                      e.value,
                                                                      & pressed );
                             if( button > MGN_BUTTON_NONE ) {
-
+                                mn_gamepadTouched = 1;
                                 mn_setButtonState( button, pressed );
                                 }
 

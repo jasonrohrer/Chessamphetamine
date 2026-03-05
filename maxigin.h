@@ -7476,7 +7476,6 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
     
 
     if( inGUI->forceHot == inCurrentValue ) {
-        inGUI->active = inCurrentValue;
 
         /* we're in force moving mode, which means the game has this slider
            active or selected, currently */
@@ -7742,7 +7741,10 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
 
         /* thumb drawn the same for both static and dynamic bars */
 
-        if( inGUI->active == inCurrentValue ) {
+        if( inGUI->active   == inCurrentValue
+            ||
+            inGUI->forceHot == inCurrentValue ) {
+            
             thumbHandle = mx_sliderSprites.thumb[2];
             }
         else if( inGUI->hot == inCurrentValue ) {
@@ -7806,7 +7808,10 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
 
         c.comp.alpha = 255;
     
-        if( inGUI->active == inCurrentValue ) {
+        if( inGUI->active   == inCurrentValue
+            ||
+            inGUI->forceHot == inCurrentValue ) {
+            
             /* darker when moving */
             mx_makeColorGray( &c,
                               64 );
@@ -18482,7 +18487,6 @@ void mx_populateMenuPanel( void ) {
                       -40,
                       MAXIGIN_CENTER );
     
-    /* stick a slider in there as a dummy component for now */
     maxigin_guiSlider( &mx_internalGUI,
                        &mx_musicVolumeTarget,
                        0,
@@ -18493,15 +18497,14 @@ void mx_populateMenuPanel( void ) {
                        10,
                        20,
                        10 );
+    
 
     maxigin_guiLabel( &mx_internalGUI,
                       mx_lang_effectsVolume,
                       0,
                       -5,
                       MAXIGIN_CENTER );
-
     
-    /* stick a slider in there as a dummy component for now */
     maxigin_guiSlider( &mx_internalGUI,
                        &mx_soundEffectsVolume,
                        0,
@@ -18513,6 +18516,7 @@ void mx_populateMenuPanel( void ) {
                        20,
                        10 );
 
+    
     if( oldActive != mx_internalGUI.active
         &&
         mx_internalGUI.active == &mx_soundEffectsVolume ) {

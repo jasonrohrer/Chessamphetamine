@@ -17839,9 +17839,10 @@ static char mx_useGamepadMenuNav( void ) {
     }
 
 
-static char mx_getMenuUp( void ) {
 
-    if( mx_isActionFreshPressed( MENU_UP ) ) {
+static char mx_getMenuUpHeld( void ) {
+
+    if( mingin_isButtonDown( MENU_UP ) ) {
         return 1;
         }
     else {
@@ -17852,7 +17853,6 @@ static char mx_getMenuUp( void ) {
                                                  &pos,
                                                  &min,
                                                  &max );
-
         if( ! avail ) {
             return 0;
             }
@@ -17861,19 +17861,8 @@ static char mx_getMenuUp( void ) {
             int   mid     =  ( max - min ) / 2 + min;
             int   thresh  =  ( min - mid ) / 3 + mid;
         
-            static  char  wasUnderThresh  =  0;
-
-            if( ! wasUnderThresh ) {
-                if( pos > thresh ) {
-                    wasUnderThresh = 1;
-                    }
-                return 0;
-                }
-            else {
-                if( pos <= thresh ) {
-                    wasUnderThresh = 0;
-                    return 1;
-                    }
+            if( pos <= thresh ) {
+                return 1;
                 }
             }
         }
@@ -17882,9 +17871,10 @@ static char mx_getMenuUp( void ) {
     }
 
 
-static char mx_getMenuDown( void ) {
 
-    if( mx_isActionFreshPressed( MENU_DOWN ) ) {
+static char mx_getMenuDownHeld( void ) {
+
+    if( mingin_isButtonDown( MENU_DOWN ) ) {
         return 1;
         }
     else {
@@ -17895,7 +17885,6 @@ static char mx_getMenuDown( void ) {
                                                  &pos,
                                                  &min,
                                                  &max );
-
         if( ! avail ) {
             return 0;
             }
@@ -17904,24 +17893,81 @@ static char mx_getMenuDown( void ) {
             int   mid     =  ( max - min ) / 2 + min;
             int   thresh  =  ( max - mid ) / 3 + mid;
         
-            static  char  wasUnderThresh  =  0;
-
-            if( ! wasUnderThresh ) {
-                if( pos < thresh ) {
-                    wasUnderThresh = 1;
-                    }
-                return 0;
-                }
-            else {
-                if( pos >= thresh ) {
-                    wasUnderThresh = 0;
-                    return 1;
-                    }
+            if( pos >= thresh ) {
+                return 1;
                 }
             }
         }
     
     return 0;
+    }
+
+
+
+static char mx_getMenuNavAction( int  inIndex ) {
+
+    char  held;
+    int   i      =  inIndex;
+
+    static  int   heldCount[2]  =  { 0, 0 };
+    static  char  stillHeld[2]  =  { 0, 0 };
+
+    if( inIndex == 0 ) {
+        held = mx_getMenuUpHeld();
+        }
+    else {
+        held = mx_getMenuDownHeld();
+        }
+
+    if( held ) {
+        
+        if( ! stillHeld[i]
+            &&
+            heldCount[i] == 0 ) {
+            /* fresh press */
+            
+            heldCount[i] ++;
+            stillHeld[i] = 0;
+            return 1;
+            }
+
+        if( stillHeld[i]
+            &&
+            heldCount[i] > mingin_getStepsPerSecond() / 15 ) {
+            /* short delay before repeat-repeat */
+            
+            heldCount[i] = 0;
+            return 1;
+            }
+        else if( heldCount[i] > mingin_getStepsPerSecond() / 3 ) {
+            /* long delay before first repeat */
+            
+            heldCount[i] = 0;
+            stillHeld[i] = 1;
+            return 1;  
+            }
+        else {
+            heldCount[i] ++;
+            }
+        }
+    else {
+        heldCount[i] = 0;
+        stillHeld[i] = 0;
+        }
+    
+    return 0;
+    }
+
+
+
+static char mx_getMenuUp( void ) {
+    return mx_getMenuNavAction( 0 );
+    }
+
+
+
+static char mx_getMenuDown( void ) {
+    return mx_getMenuNavAction( 1 );
     }
 
 

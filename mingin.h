@@ -3543,12 +3543,22 @@ char mingin_getPointerLocation( int  *outX,
     int           winY;
     unsigned int  mask;
     Bool          result;
+    Window        focusedWindow;
+    int           revertTo;
     
     if( ! mn_XSetupLive ) {
         return 0;
         }
 
     if( mn_steamDeck ) {
+        return 0;
+        }
+
+    XGetInputFocus( mn_XSetup.xDisplay,
+                    &focusedWindow,
+                    &revertTo );
+
+    if( focusedWindow != mn_XSetup.xWindow ) {
         return 0;
         }
     

@@ -8891,6 +8891,8 @@ static  int            mx_menuFade                         =  0;
 static  int            mx_menuFadeMax                      =  2550;
 static  char           mx_langPanelShowing                 =  0;
 static  char           mx_controlsPanelShowing             =  0;
+static  void          *mx_menuReturnForceHot               =  0;
+
 
 /* initiates and steps sound fade out, returning 1 when finally done
    returns 0 while still in-progress */
@@ -9429,6 +9431,8 @@ void minginGame_step( char  inFinalStep ) {
             if( mx_menuFade == 0 ) {
                 mx_langPanelShowing     = 0;
                 mx_controlsPanelShowing = 0;
+                mx_menuReturnForceHot   = 0;
+                mx_internalGUI.forceHot = 0;
                 }
             } 
         }
@@ -18573,8 +18577,6 @@ void mx_populateMenuPanel( void ) {
     static  int    quitButtonHandle              =  0;
     static  int    controlsButtonHandle          =  0;
     static  int    langButtonHandle              =  0;
-    static  void  *returnForceHot                =  0;
-    
 
     if( mx_langPanelShowing ) {
         mx_populateLangPanel();
@@ -18606,9 +18608,9 @@ void mx_populateMenuPanel( void ) {
         
         void  *oldForceHot  =  0;
 
-        if( returnForceHot != 0 ) {
-            mx_internalGUI.forceHot = returnForceHot;
-            returnForceHot = 0;
+        if( mx_menuReturnForceHot != 0 ) {
+            mx_internalGUI.forceHot = mx_menuReturnForceHot;
+            mx_menuReturnForceHot = 0;
             }
             
         if( mx_internalGUI.forceHot == 0 ) {
@@ -18712,13 +18714,13 @@ void mx_populateMenuPanel( void ) {
                 }
             else if( mx_internalGUI.forceHot == &langButtonHandle ) {
                 mx_langPanelShowing = 1;
-                returnForceHot = &langButtonHandle;
+                mx_menuReturnForceHot = &langButtonHandle;
                 mx_internalGUI.forceHot = 0;
                 actionTaken = 1;
                 }
             else if( mx_internalGUI.forceHot == &controlsButtonHandle ) {
                 mx_controlsPanelShowing = 1;
-                returnForceHot = &controlsButtonHandle;
+                mx_menuReturnForceHot = &controlsButtonHandle;
                 mx_internalGUI.forceHot = 0;
                 actionTaken = 1;
                 }

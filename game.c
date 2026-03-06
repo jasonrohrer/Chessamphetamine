@@ -649,8 +649,13 @@ static MinginButton shootMapping[]  =  { MGN_KEY_V,
 
 static MinginButton hintMapping[]   =  { MGN_BUTTON_MOUSE_LEFT,
                                          MGN_BUTTON_PS_X,
+                                         MGN_BUTTON_PS_TRIANGLE,
+                                         MGN_BUTTON_PS_CIRCLE,
+                                         MGN_BUTTON_PS_SQUARE,
                                          MGN_BUTTON_XBOX_A,
                                          MGN_BUTTON_XBOX_B,
+                                         MGN_BUTTON_XBOX_X,
+                                         MGN_BUTTON_XBOX_Y,
                                          MGN_ANY_KEY,
                                          MGN_MAP_END };
 

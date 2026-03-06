@@ -7458,10 +7458,33 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
             else {
                 /* in between min and max */
 
-                v = ( x - inStartX ) * ( inMaxValue - inMinValue )
-                    /
-                    ( inEndX - inStartX )
-                    + inMinValue;
+                if( ( inEndX - inStartX )
+                    <=
+                    2 * ( inMaxValue - inMinValue ) ) {
+                    
+                    /* lots of values per pixel */
+                    v = ( x - inStartX ) * ( inMaxValue - inMinValue )
+                        /
+                        ( inEndX - inStartX )
+                        + inMinValue;
+
+                    /* tweak v so that when mouse released, slider
+                       doesn't jump weirdly */
+                    v += 1;
+                    }
+                else {
+                    /* not very many values per pixel of slider */
+
+                    /* snap to closest value */
+
+                    int  numBins       =  inMaxValue - inMinValue;
+                    int  binSize       =  ( inEndX - inStartX ) / numBins;
+                    int  startBinSize  =  binSize /  2;
+                    int  xOffset       =  x - inStartX;
+
+                    v = ( xOffset + startBinSize ) / binSize;
+                    }
+                
 
                 if( v > inMaxValue ) {
                     v = inMaxValue;

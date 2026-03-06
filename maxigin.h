@@ -7509,7 +7509,7 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                 int  range           =  ( upper - lower );
                 int  half            =  range / 2;
                 int  mid             =  half + lower;
-                int  dead            =  range / 1000;
+                int  dead            =  range / 10;
                 int  stepsPerSecond  =  mingin_getStepsPerSecond();
                 int  jump            =  0;
 
@@ -17836,7 +17836,7 @@ static char mx_getMenuUp( void ) {
         else {
             /* up is negative on sticks */
             int   mid     =  ( max - min ) / 2 + min;
-            int   thresh  =  ( min - mid ) / 4 + mid;
+            int   thresh  =  ( min - mid ) / 3 + mid;
         
             static  char  wasUnderThresh  =  0;
 
@@ -17879,7 +17879,7 @@ static char mx_getMenuDown( void ) {
         else {
             /* down is positive on sticks */
             int   mid     =  ( max - min ) / 2 + min;
-            int   thresh  =  ( max - mid ) / 4 + mid;
+            int   thresh  =  ( max - mid ) / 3 + mid;
         
             static  char  wasUnderThresh  =  0;
 
@@ -18568,7 +18568,13 @@ void mx_populateMenuPanel( void ) {
                 mx_internalGUI.forceHot = &mx_musicVolumeTarget;
                 }
             else if( mx_internalGUI.forceHot == &mx_musicVolumeTarget ) {
-                mx_internalGUI.forceHot = &fullscreenChecked;
+                if( canToggleFullscreen ) {
+                    mx_internalGUI.forceHot = &fullscreenChecked;
+                    }
+                else {
+                    /* skip full screen toggle */
+                    mx_internalGUI.forceHot = &resumeButtonHandle;
+                    }
                 }
             else if( mx_internalGUI.forceHot == &fullscreenChecked ) {
                 mx_internalGUI.forceHot = &resumeButtonHandle;
@@ -18580,7 +18586,13 @@ void mx_populateMenuPanel( void ) {
         else if( mx_getMenuDown() ) {
 
             if( mx_internalGUI.forceHot == &resumeButtonHandle ) {
-                mx_internalGUI.forceHot = &fullscreenChecked;
+                if( canToggleFullscreen ) {
+                    mx_internalGUI.forceHot = &fullscreenChecked;
+                    }
+                else {
+                    /* skip full screen toggle */
+                    mx_internalGUI.forceHot = &mx_musicVolumeTarget;
+                    }
                 }
             else if( mx_internalGUI.forceHot == &quitButtonHandle ) {
                 mx_internalGUI.forceHot = &resumeButtonHandle;

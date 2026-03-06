@@ -2721,6 +2721,12 @@ MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
     /* didn't find a mapped gamepad button, or gamepad not active
        consider keyboard */
 
+    /* but never keyboard on steamdeck */
+
+    if( mn_steamDeck ) {
+        return MGN_BUTTON_NONE;
+        }
+
     i = 0;
 
     while( minginButtonMappings[ inButtonHandle ][ i ]

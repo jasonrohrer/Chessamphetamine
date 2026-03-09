@@ -10,6 +10,7 @@
 enum GameUserAction {
     JUMP,
     SHOOT,
+    BOMB,
     REMAP,
     CRASH,
     BOX_THICK
@@ -646,6 +647,11 @@ static MinginButton shootMapping[]  =  { MGN_KEY_V,
                                          MGN_BUTTON_PS_X,
                                          MGN_BUTTON_XBOX_A,
                                          MGN_MAP_END };
+static MinginButton bombMapping[]  =  { MGN_KEY_B,
+                                        MGN_BUTTON_MOUSE_RIGHT,
+                                        MGN_BUTTON_PS_TRIANGLE,
+                                        MGN_BUTTON_XBOX_Y,
+                                        MGN_MAP_END };
 
 static MinginButton hintMapping[]   =  { MGN_BUTTON_MOUSE_LEFT,
                                          MGN_BUTTON_MOUSE_RIGHT,
@@ -760,6 +766,12 @@ void maxiginGame_init( void ) {
         shootMapping,
         maxigin_initTranslationKey( "shootDesc" ),
         "shootButtonMapping.ini" );
+
+    maxigin_registerDynamicButtonMapping(
+        BOMB,
+        bombMapping,
+        maxigin_initTranslationKey( "bombDesc" ),
+        "bombButtonMapping.ini" );
     
     maxigin_registerButtonMapping( REMAP,  remapMapping );
     maxigin_registerButtonMapping( CRASH,  crashMapping );

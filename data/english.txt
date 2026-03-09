@@ -31,6 +31,7 @@ back           "Back"
 
 
 shootDesc      "Shoot"
+bombDesc       "Bomb"
 
 
 press          "press"

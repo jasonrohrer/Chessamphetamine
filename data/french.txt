@@ -30,6 +30,7 @@ back           "Retour"
 
 
 shootDesc      "Tirer"
+bombDesc       "Bombe"
 
 
 press          "appuyez"

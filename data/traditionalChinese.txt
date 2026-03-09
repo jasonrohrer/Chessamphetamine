@@ -31,6 +31,7 @@ back           "返回"
 
 
 shootDesc      "射擊"
+bombDesc       "炸彈"
 
 press          "按下"
 

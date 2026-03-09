@@ -486,7 +486,7 @@ char mingin_isSoundPlaying( void );
 
   [jumpMinginProvides]
 */  
-#define  MGN_MAP_END  0
+#define  MGN_MAP_END  -1
 
 
 
@@ -527,7 +527,8 @@ char mingin_isSoundPlaying( void );
   [jumpMinginProvides]
 */
 typedef enum MinginButton {
-    MGN_BUTTON_NONE = MGN_MAP_END,
+    MGN_BUTTON_MAP_END = MGN_MAP_END,
+    MGN_BUTTON_NONE    = 0,
     MGN_ANY_KEY_OR_BUTTON,   /* maps to any and every key or button pressed */
     MGN_ANY_KEY,             /* maps to any keyboard key pressed */
     MGN_KEY_BACKSPACE,
@@ -913,7 +914,8 @@ char mingin_getPointerLocation( int  *outX,
   [jumpMinginProvides]
 */
 typedef enum MinginStick {
-    MGN_STICK_NONE = MGN_MAP_END,
+    MGN_STICK_MAP_END = MGN_MAP_END,
+    MGN_STICK_NONE    = 0,
     MGN_STICK_LEFT_X,
     MGN_STICK_LEFT_Y,
     MGN_STICK_RIGHT_X,
@@ -2434,7 +2436,9 @@ static  const char   *mn_gamepadIDStrings[ MGN_NUM_GAMEPADS ] = {
   Maps /dev/input/js  button numbers (0, 1, 2, etc.) to MGN_BUTTON_ symbols
   for a specific gamepad.
    
-  Each list of buttons is padded with MGN_MAP_END
+  Any js buttons that are unmapped map to MGN_BUTTON_NONE.
+  
+  The list for a given gamepad is terminated and padded with MGN_MAP_END.
 */
 static  MinginButton        mn_jsButtonToButtonMap
                                 [ MGN_NUM_GAMEPADS ]
@@ -2448,8 +2452,11 @@ static  MinginButton        mn_jsButtonToButtonMap
 
   2 indices at end are 0 for negative direction and 1 for positive direction
   on the stick that maps to binary button presses
+
+  Sticks that don't map to buttons map to MGN_BUTTON_NONE
    
-  Each list of buttons is padded with MGN_MAP_END
+  Each the list for each game pad is terminated and padded with
+    { MGN_MAP_END, MGN_MAP_END }
 */
 static  MinginButton        mn_jsStickToButtonMap
                                 [ MGN_NUM_GAMEPADS ]
@@ -2678,6 +2685,20 @@ static char mn_doesActiveGamepadHaveButton( MinginButton inButton ) {
            MGN_MAP_END ) {
 
         if( mn_jsStickToButtonMap[ mn_activeGamepad ][ i ][ 1 ] == inButton ) {
+            return 1;
+            }
+        i ++;
+        }
+
+    i = 0;
+    
+    while( mn_jsStickThresholdToButtonMap[ mn_activeGamepad ][ i ]
+           !=
+           MGN_MAP_END ) {
+
+        if( mn_jsStickThresholdToButtonMap[ mn_activeGamepad ][ i ]
+            == inButton ) {
+            
             return 1;
             }
         i ++;
@@ -4257,6 +4278,11 @@ static void mn_setupLinuxGamepadMaps( void ) {
         for( j = 0;
              j < MINGIN_MAX_NUM_GAMEPAD_STICKS;
              j ++ ) {
+
+            /* all stick maps are padded and terminated with MGN_MAP_END
+               so we fill them with that to start.  Then active values,
+               for the few buttons/sticks that a controller actually has,
+               will create non-MGN_MAP_END values at the starts of these lists */
             
             mn_jsStickToButtonMap[ i ][ j ][0]               =  MGN_MAP_END;
             mn_jsStickToButtonMap[ i ][ j ][1]               =  MGN_MAP_END;
@@ -4301,6 +4327,15 @@ static void mn_setupLinuxGamepadMaps( void ) {
     mn_jsButtonToButtonMap[ ps4Gamepad ][ 11 ]  =  MGN_BUTTON_STICK_LEFT_PRESS;
     mn_jsButtonToButtonMap[ ps4Gamepad ][ 12 ]  =  MGN_BUTTON_STICK_RIGHT_PRESS;
 
+    /* thumb sticks and triggers don't map to buttons (L2 and R2 are already
+       reported as buttons by PS controller) */
+    for( j = 0;
+         j < 6;
+         j ++ ) {
+        mn_jsStickToButtonMap[ ps4Gamepad ][ j ][ 0 ]  =  MGN_BUTTON_NONE;
+        mn_jsStickToButtonMap[ ps4Gamepad ][ j ][ 1 ]  =  MGN_BUTTON_NONE;
+        }
+    
     /* map d-pad "stick" positive/negative directions to Mingin d-pad buttons */
     mn_jsStickToButtonMap[ ps4Gamepad ][ 6 ][ 0 ]  =  MGN_BUTTON_DPAD_LEFT;
     mn_jsStickToButtonMap[ ps4Gamepad ][ 6 ][ 1 ]  =  MGN_BUTTON_DPAD_RIGHT;
@@ -4344,12 +4379,28 @@ static void mn_setupLinuxGamepadMaps( void ) {
     mn_jsButtonToButtonMap[ xboxGamepad ][  9 ]  =  MGN_BUTTON_STICK_LEFT_PRESS;
     mn_jsButtonToButtonMap[ xboxGamepad ][ 10 ]  =  MGN_BUTTON_STICK_RIGHT_PRESS;
 
+    /* thumb sticks and triggers don't map to buttons (L2 and R2 are already
+       reported as buttons by PS controller) */
+    for( j = 0;
+         j < 6;
+         j ++ ) {
+        mn_jsStickToButtonMap[ xboxGamepad ][ j ][ 0 ]  =  MGN_BUTTON_NONE;
+        mn_jsStickToButtonMap[ xboxGamepad ][ j ][ 1 ]  =  MGN_BUTTON_NONE;
+        }
+    
     /* map d-pad "stick" positive/negative directions to Mingin d-pad buttons */
     mn_jsStickToButtonMap[ xboxGamepad ][ 6 ][ 0 ]  =  MGN_BUTTON_DPAD_LEFT;
     mn_jsStickToButtonMap[ xboxGamepad ][ 6 ][ 1 ]  =  MGN_BUTTON_DPAD_RIGHT;
     mn_jsStickToButtonMap[ xboxGamepad ][ 7 ][ 0 ]  =  MGN_BUTTON_DPAD_UP;
     mn_jsStickToButtonMap[ xboxGamepad ][ 7 ][ 1 ]  =  MGN_BUTTON_DPAD_DOWN;
 
+    /* clear all stick threshold maps to MGN_BUTTON_NONE
+       We re-map the triggers as a special case below */
+    for( j =  0;
+         j <= 7;
+         j ++ ) {
+        mn_jsStickThresholdToButtonMap[ xboxGamepad ][ j ] = MGN_BUTTON_NONE;
+        }
     
     /* map LT/RT trigger "sticks" to button presses */
     mn_jsStickThresholdToButtonMap[ xboxGamepad ][ 2 ]  =  MGN_BUTTON_L2;

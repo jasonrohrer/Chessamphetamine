@@ -8892,6 +8892,7 @@ static  int            mx_menuFadeMax                      =  2550;
 static  char           mx_langPanelShowing                 =  0;
 static  char           mx_controlsPanelShowing             =  0;
 static  void          *mx_menuReturnForceHot               =  0;
+static  char           mx_blockMenuClose                   =  0;
 
 
 /* initiates and steps sound fade out, returning 1 when finally done
@@ -9029,21 +9030,29 @@ void minginGame_step( char  inFinalStep ) {
 
 
     if( mx_isActionFreshPressed( MENU ) ) {
-        mx_menuShowing = ! mx_menuShowing;
 
-        /* end playback when menu opened */
-        if( mx_menuShowing
-            &&
-            mx_playbackRunning ) {
-            mx_playbackEnd();
-            mx_initRecording();
-            mx_playbackInterruptedRecording = 0;
-            }
-        
-        if( mx_menuDoSound != -1 ) {
+        if( ! mx_menuShowing
+            ||
+            ( mx_menuShowing
+              &&
+              ! mx_blockMenuClose ) ) {
             
-            maxigin_playSoundEffect( mx_menuDoSound,
-                                     mx_menuDoLoudness );
+            mx_menuShowing = ! mx_menuShowing;
+
+            /* end playback when menu opened */
+            if( mx_menuShowing
+                &&
+                mx_playbackRunning ) {
+                mx_playbackEnd();
+                mx_initRecording();
+                mx_playbackInterruptedRecording = 0;
+                }
+        
+            if( mx_menuDoSound != -1 ) {
+            
+                maxigin_playSoundEffect( mx_menuDoSound,
+                                         mx_menuDoLoudness );
+                }
             }
         }
     
@@ -18250,7 +18259,6 @@ static void mx_populateControlsPanel( void ) {
                 }
 
             mx_controlsPanelShowing = 0;
-            livePokeI = -1;
             }
         }
 
@@ -18371,7 +18379,8 @@ static void mx_populateControlsPanel( void ) {
                     mingin_registerButtonMapping( i,
                                                   mapping );
 
-                    livePokeI = -1;
+                    livePokeI         = -1;
+                    mx_blockMenuClose =  0;
                     
                     /* save it to settings */
 
@@ -18450,8 +18459,9 @@ static void mx_populateControlsPanel( void ) {
                   pickPressed ) ) {
                 /* enable live poke of new control */
 
-                livePokeI = i;
-
+                livePokeI         = i;
+                mx_blockMenuClose = 1;
+                
                 pressFade    = 255;
                 pressFadeDir =  -1;
                 
@@ -18532,8 +18542,6 @@ static void mx_populateControlsPanel( void ) {
         mingin_loadButtonMapping( "maxigin_defaultButtons.ini" );
 
         mingin_deletePersistData( "maxigin_savedButtons.ini" );
-        
-        livePokeI = -1;
         }
 
     

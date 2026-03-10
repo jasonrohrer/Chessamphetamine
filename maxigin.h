@@ -9032,8 +9032,30 @@ void minginGame_step( char  inFinalStep ) {
             ( mx_menuShowing
               &&
               ! mx_blockMenuClose ) ) {
+
+            char menuWasShowing = mx_menuShowing;
+
+            if( menuWasShowing ) {
+                /* play thte do sound BEFORE closing the menu,
+                   so it won't be included in recording */
+                if( mx_menuDoSound != -1 ) {
+            
+                    maxigin_playSoundEffect( mx_menuDoSound,
+                                             mx_menuDoLoudness );
+                    }
+                }
             
             mx_menuShowing = ! mx_menuShowing;
+
+            if( ! menuWasShowing ) {
+                /* play thte do sound AFTER we start opening the menu,
+                   so it won't be included in recording */
+                if( mx_menuDoSound != -1 ) {
+            
+                    maxigin_playSoundEffect( mx_menuDoSound,
+                                             mx_menuDoLoudness );
+                    }
+                }
 
             /* end playback when menu opened */
             if( mx_menuShowing
@@ -9044,11 +9066,7 @@ void minginGame_step( char  inFinalStep ) {
                 mx_playbackInterruptedRecording = 0;
                 }
         
-            if( mx_menuDoSound != -1 ) {
             
-                maxigin_playSoundEffect( mx_menuDoSound,
-                                         mx_menuDoLoudness );
-                }
             }
         }
     
@@ -13960,6 +13978,8 @@ typedef struct MaxiginPlayingSoundEffect {
         int   dataPos;
 
         char  done;
+
+        char  recordable;
         
     } MaxiginPlayingSoundEffect;
 
@@ -14099,8 +14119,9 @@ static void mx_processDoneSoundEffects( void ) {
 
         if( mx_playingSoundEffects[ i ].done ) {
 
-            int  handle    =  mx_playingSoundEffects[ i ].soundHandle;
-            int  loudness  =  mx_playingSoundEffects[ i ].loudness;
+            int  handle      =  mx_playingSoundEffects[ i ].soundHandle;
+            int  loudness    =  mx_playingSoundEffects[ i ].loudness;
+            char recordable  =  mx_playingSoundEffects[ i ].recordable;
             
             /* swap last into this spot and shrink */
 
@@ -14113,8 +14134,9 @@ static void mx_processDoneSoundEffects( void ) {
             mx_numPlayingSoundEffects --;
 
             /* now log it in our just done list */
-            
-            if( mx_numJustEndedSoundEffects <
+            if( recordable
+                &&
+                mx_numJustEndedSoundEffects <
                 MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ) {
         
                 mx_justEndedSoundEffects[ mx_numJustEndedSoundEffects ] =
@@ -14189,6 +14211,9 @@ void mx_playSoundEffectWithPos( int  inSoundEffectHandle,
     mx_playingSoundEffects[ mx_numPlayingSoundEffects ].dataPos =
         mx_soundEffects[ inSoundEffectHandle ].startByte;
 
+    mx_playingSoundEffects[ mx_numPlayingSoundEffects ].recordable =
+        ! mx_menuShowing;
+
     if( mx_soundDirection == -1 ) {
         /* play sound backward, data pos points to first byte in last
            sample frame */
@@ -14223,14 +14248,19 @@ void mx_playSoundEffectWithPos( int  inSoundEffectHandle,
     
     mingin_unlockAudio();
 
-    if( mx_numJustStartedSoundEffects <
-        MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ) {
+    if( ! mx_menuShowing ) {
+        /* don't include menu sound effects in recorded sound effects
+           lists, because recording is paused while menu is open */
         
-        mx_justStartedSoundEffects[ mx_numJustStartedSoundEffects ] =
-            inSoundEffectHandle;
-        mx_justStartedSoundEffectsLoudness[ mx_numJustStartedSoundEffects ] =
-            inLoudness;
-        mx_numJustStartedSoundEffects++;
+        if( mx_numJustStartedSoundEffects <
+            MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ) {
+        
+            mx_justStartedSoundEffects[ mx_numJustStartedSoundEffects ] =
+                inSoundEffectHandle;
+            mx_justStartedSoundEffectsLoudness[ mx_numJustStartedSoundEffects ] =
+                inLoudness;
+            mx_numJustStartedSoundEffects++;
+            }
         }
     }
 

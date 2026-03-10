@@ -764,14 +764,12 @@ void maxiginGame_init( void ) {
     maxigin_registerDynamicButtonMapping(
         SHOOT,
         shootMapping,
-        maxigin_initTranslationKey( "shootDesc" ),
-        "shootButtonMapping.ini" );
+        maxigin_initTranslationKey( "shootDesc" )  );
 
     maxigin_registerDynamicButtonMapping(
         BOMB,
         bombMapping,
-        maxigin_initTranslationKey( "bombDesc" ),
-        "bombButtonMapping.ini" );
+        maxigin_initTranslationKey( "bombDesc" ) );
     
     maxigin_registerButtonMapping( REMAP,  remapMapping );
     maxigin_registerButtonMapping( CRASH,  crashMapping );

@@ -1962,9 +1962,6 @@ char maxigin_registerButtonMapping( int                 inButtonHandle,
       inPhraseKey      translation key for description of this action
                        (will appear in Maxigin remapping menu)
                        
-      inSettingName    name of the persistent data resource where
-                       changes to this mapping should be stored
-                       
   Returns:
 
       1   on success
@@ -1975,8 +1972,7 @@ char maxigin_registerButtonMapping( int                 inButtonHandle,
 */
 char maxigin_registerDynamicButtonMapping( int                 inButtonHandle,
                                            const MinginButton  inMapping[],
-                                           int                 inPhraseKey,
-                                           const char         *inSettingName );
+                                           int                 inPhraseKey );
 
 
 
@@ -9555,8 +9551,6 @@ static  int   mx_musicVolumeTarget              =  MAXIGIN_MAX_MUSIC_LOUDNESS;
 
 static  int          mx_buttonPhraseKeys[ MINGIN_NUM_BUTTON_MAPPINGS ];
 
-static  const char  *mx_buttonSettingNames[ MINGIN_NUM_BUTTON_MAPPINGS ];
-
 
 static void mx_loadButtonMapping( const char  *inStoreName );
 
@@ -9585,8 +9579,7 @@ static void mx_gameInit( void ) {
          i < MINGIN_NUM_BUTTON_MAPPINGS;
          i ++ ) {
 
-        mx_buttonPhraseKeys  [i] = -1;
-        mx_buttonSettingNames[i] =  0;
+        mx_buttonPhraseKeys[i] = -1;
         
         }
     
@@ -9718,8 +9711,7 @@ char maxigin_registerButtonMapping( int                 inButtonHandle,
     returnV = mingin_registerButtonMapping( inButtonHandle,
                                             inMapping );
     if( returnV ) {
-        mx_buttonPhraseKeys  [ inButtonHandle ] = -1;
-        mx_buttonSettingNames[ inButtonHandle ] =  0;
+        mx_buttonPhraseKeys[ inButtonHandle ] = -1;
         }
 
     return returnV;
@@ -9729,8 +9721,7 @@ char maxigin_registerButtonMapping( int                 inButtonHandle,
 
 char maxigin_registerDynamicButtonMapping( int                 inButtonHandle,
                                            const MinginButton  inMapping[],
-                                           int                 inPhraseKey,
-                                           const char         *inSettingName ) {
+                                           int                 inPhraseKey ) {
 
     char  returnV;
     
@@ -9740,29 +9731,8 @@ char maxigin_registerDynamicButtonMapping( int                 inButtonHandle,
     returnV = mingin_registerButtonMapping( inButtonHandle,
                                             inMapping );
     if( returnV ) {
-
-        int  savedMapping;
-        
-        mx_buttonPhraseKeys  [ inButtonHandle ] = inPhraseKey;
-        mx_buttonSettingNames[ inButtonHandle ] = inSettingName;
-
-        /* overwrite the mapping if we have one saved */
-        
-        savedMapping = maxigin_readIntSetting( inSettingName,
-                                               -1 );
-
-        if( savedMapping != -1 ) {
-            
-            MinginButton  tempMapping[2];
-            
-            tempMapping[0] = savedMapping;
-            tempMapping[1] = MGN_MAP_END;
-
-            returnV = mingin_registerButtonMapping( inButtonHandle,
-                                                    tempMapping );
-            }
+        mx_buttonPhraseKeys[ inButtonHandle ] = inPhraseKey;
         }
-
 
     return returnV;
     }

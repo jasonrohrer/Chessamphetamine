@@ -18031,10 +18031,13 @@ static void mx_populateLangPanel( void ) {
             }
 
         if( mx_isActionFreshPressed( MENU_PICK ) ) {
-            char  actionTaken  =  0;
-
+            
             if( mx_internalGUI.forceHot == &backButtonHandle ) {
-                actionTaken = 1;
+                
+                if(  mx_menuDoSound != -1 ) {
+                    maxigin_playSoundEffect( mx_menuDoSound,
+                                             mx_menuDoLoudness );
+                    }
                 mx_langPanelShowing = 0;
                 }
             else {
@@ -18046,15 +18049,9 @@ static void mx_populateLangPanel( void ) {
                     if( mx_internalGUI.forceHot == &
                         ( langButtonHandles[ i ] ) ) {
 
-                        actionTaken = 1;
                         pressI = i;
                         }
                     }
-                }       
-
-            if( actionTaken && mx_menuDoSound != -1 ) {
-                maxigin_playSoundEffect( mx_menuDoSound,
-                                         mx_menuDoLoudness );
                 }
             }
         }

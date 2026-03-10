@@ -5698,7 +5698,7 @@ char mingin_getBulkDataChanged( const char  *inBulkName ) {
 static  char                mn_soundOpen                =      0;
 static  snd_pcm_t          *mn_alsaPCMHandle            =      0;
 static  unsigned int        mn_sampleRate               =  44100;
-static  unsigned int        mn_startupSilentFrames      =  10000;
+static  unsigned int        mn_startupSilentFrames      =   1536;
 static  unsigned int        mn_startupSilentFramesLeft  =      0;
 static  snd_pcm_uframes_t   mn_sampleFramesInPeriod     =
                                              MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES;
@@ -6136,10 +6136,15 @@ static void mn_stepSound( void ) {
         framesNeededResult = snd_pcm_avail_update( mn_alsaPCMHandle );
 
         if( framesNeededResult == -EPIPE ) {
-            mingin_log( "ALSA sound buffer underun!\n" );
-            snd_pcm_recover( mn_alsaPCMHandle,
-                             (int)result,
-                             1 );
+
+            /* -EPIPE can happen when alsa needs 0 frames, since
+               it is completely satisfied
+               snd_pcm_avail_update returns a POSITIVE number of frames
+               OR a NEGATIVE error code.  It can never return 0
+            */
+
+            /* don't need to do snd_pcm_recover in this case,
+               since it's part of normal operations */
             return;
             }
         else if( framesNeededResult == -ESTRPIPE ) {

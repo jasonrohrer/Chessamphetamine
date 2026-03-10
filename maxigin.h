@@ -8943,6 +8943,10 @@ static void mx_checkLangNeedsReload( void );
 
 static void mx_populateMenuPanel( void );
 
+static void mx_pauseAllPlayingSoundEffects( void );
+
+static void mx_unpauseAllPlayingSoundEffects( void );
+
 
 
 void minginGame_step( char  inFinalStep ) {
@@ -9048,6 +9052,13 @@ void minginGame_step( char  inFinalStep ) {
             mx_menuShowing = ! mx_menuShowing;
 
             if( ! menuWasShowing ) {
+
+                /* recording paused during menu, don't want all
+                   active sound effects to pile up their ending events
+                   in one frame */
+                
+                mx_pauseAllPlayingSoundEffects();
+                
                 /* play thte do sound AFTER we start opening the menu,
                    so it won't be included in recording */
                 if( mx_menuDoSound != -1 ) {
@@ -9056,6 +9067,14 @@ void minginGame_step( char  inFinalStep ) {
                                              mx_menuDoLoudness );
                     }
                 }
+            else {
+                /* menu just closed, unpause in-process sound effects
+                   that were playing when menu was opened, allowing
+                   their ending events to get recorded properly */
+                
+                mx_unpauseAllPlayingSoundEffects();
+                }
+            
 
             /* end playback when menu opened */
             if( mx_menuShowing
@@ -13980,6 +13999,12 @@ typedef struct MaxiginPlayingSoundEffect {
         char  done;
 
         char  recordable;
+
+        char  paused;
+
+        char  pausedRampDone;
+
+        char  unpausedRampDone;
         
     } MaxiginPlayingSoundEffect;
 
@@ -14105,6 +14130,50 @@ static int mx_getLiveSoundEffects( int *outHandleBuffer,
 
 
 
+static void mx_pauseAllPlayingSoundEffects( void ) {
+    
+    int i;
+                
+    mingin_lockAudio();
+                
+    for( i = 0;
+         i < mx_numPlayingSoundEffects;
+         i ++ ) {
+
+        if( ! mx_playingSoundEffects[ i ].paused ) {
+            mx_playingSoundEffects[ i ].paused = 1;
+            mx_playingSoundEffects[ i ].pausedRampDone = 0;
+            mx_playingSoundEffects[ i ].unpausedRampDone = 0;
+            }
+        }
+
+    mingin_unlockAudio();
+    }
+
+
+
+static void mx_unpauseAllPlayingSoundEffects( void ) {
+    
+    int i;
+                
+    mingin_lockAudio();
+                
+    for( i = 0;
+         i < mx_numPlayingSoundEffects;
+         i ++ ) {
+
+        if( mx_playingSoundEffects[ i ].paused ) {
+            mx_playingSoundEffects[ i ].paused = 0;
+            mx_playingSoundEffects[ i ].pausedRampDone = 1;
+            mx_playingSoundEffects[ i ].unpausedRampDone = 0;
+            }
+        }
+
+    mingin_unlockAudio();
+    }
+
+
+
 static void mx_processDoneSoundEffects( void ) {
 
     int  i;
@@ -14214,6 +14283,10 @@ void mx_playSoundEffectWithPos( int  inSoundEffectHandle,
     mx_playingSoundEffects[ mx_numPlayingSoundEffects ].recordable =
         ! mx_menuShowing;
 
+    mx_playingSoundEffects[ mx_numPlayingSoundEffects ].paused           = 0;
+    mx_playingSoundEffects[ mx_numPlayingSoundEffects ].pausedRampDone   = 1;
+    mx_playingSoundEffects[ mx_numPlayingSoundEffects ].unpausedRampDone = 1;
+
     if( mx_soundDirection == -1 ) {
         /* play sound backward, data pos points to first byte in last
            sample frame */
@@ -14278,12 +14351,24 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
     int                  numFramesLeft;
     int                  dataPosJump;
     long                 loudness;
+    long                 baseLoudness;
     char                 tweakLoudness        =  0;
-        
+    char                 rampLoudnessIn       =  0;
+    char                 rampLoudnessOut      =  0;
+    
     if( mx_playingSoundEffects[ inPlayingSoundIndex ].done ) {
         return;
         }
-       
+
+    if( mx_playingSoundEffects[ inPlayingSoundIndex ].paused
+        &&
+        mx_playingSoundEffects[ inPlayingSoundIndex ].pausedRampDone ) {
+        
+        /* sound faded out nicely, can skip playing it now */
+        return;
+        }
+
+    
     /* f is frame index in our mixing buffer */
     f = 0;
 
@@ -14340,6 +14425,30 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
         tweakLoudness = 1;
         }
     
+    if( mx_playingSoundEffects[ inPlayingSoundIndex ].paused
+        &&
+        ! consumingLastFrame
+        &&
+        ! consumingFirstFrame ) {
+
+        baseLoudness     = loudness;
+        tweakLoudness    = 1;
+        rampLoudnessOut  = 1;
+        }
+    else if( ! mx_playingSoundEffects[ inPlayingSoundIndex ].paused
+             &&
+             ! mx_playingSoundEffects[ inPlayingSoundIndex ].unpausedRampDone
+             &&
+             ! consumingLastFrame
+             &&
+             ! consumingFirstFrame ) {
+
+        baseLoudness     = loudness;
+        tweakLoudness    = 1;
+        rampLoudnessIn   = 1;
+        }
+    
+    
     while( f < numFramesToMix ) {
                             
         unsigned short  uL;
@@ -14356,6 +14465,16 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
         dataPos += dataPosJump;
 
         if( tweakLoudness ) {
+
+            if( rampLoudnessOut) {
+                loudness =
+                    ( baseLoudness * (numFramesToMix - f ) ) / numFramesToMix;
+                }
+            else if( rampLoudnessIn ) {
+                loudness =
+                    ( baseLoudness * f ) / numFramesToMix;
+                }
+            
             mx_audioMixingBuffers[0][ f ] +=
                 (short)( ( (short)uL * loudness ) / MAXIGIN_MAX_SOUND_LOUDNESS );
             mx_audioMixingBuffers[1][ f ] +=
@@ -14380,6 +14499,13 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
 
         mx_playingSoundEffects[ inPlayingSoundIndex ].done = 1;
         return;
+        }
+
+    if( rampLoudnessOut ) {
+        mx_playingSoundEffects[ inPlayingSoundIndex ].pausedRampDone = 1;
+        }
+    else if( rampLoudnessIn ) {
+        mx_playingSoundEffects[ inPlayingSoundIndex ].unpausedRampDone = 1;
         }
 
     mx_playingSoundEffects[ inPlayingSoundIndex ].dataPos = dataPos;
@@ -18710,9 +18836,16 @@ void mx_populateMenuPanel( void ) {
             char  actionTaken  =  0;
 
             if( mx_internalGUI.forceHot == &resumeButtonHandle ) {
+                /* special case, closing menu,
+                   play sound BEFORE menu closes so it's not recorded */
+                if( mx_menuDoSound != -1 ) {
+                    maxigin_playSoundEffect( mx_menuDoSound,
+                                             mx_menuDoLoudness );
+                    }
                 mx_menuShowing = 0;
                 mx_internalGUI.forceHot = 0;
-                actionTaken    = 1;
+
+                mx_unpauseAllPlayingSoundEffects();
                 }
             else if( mx_internalGUI.forceHot == &quitButtonHandle ) {
                 mingin_log( "Got quit button, starting sound fade out\n" );
@@ -18779,6 +18912,8 @@ void mx_populateMenuPanel( void ) {
             }
         mx_menuShowing = 0;
         mx_internalGUI.forceHot = 0;
+
+        mx_unpauseAllPlayingSoundEffects();
         }
 
     

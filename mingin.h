@@ -708,6 +708,9 @@ typedef enum MinginButton {
 #define  MGN_FIRST_PRINTABLE_KEY  MGN_KEY_EXCLAMATION
 #define  MGN_LAST_PRINTABLE_KEY   MGN_KEY_TILDE
 
+#define MINGIN_NUM_BUTTON_MAPPINGS          256
+#define MINGIN_MAX_BUTTON_MAPPING_ELEMENTS   32
+
 
 
 /*
@@ -785,6 +788,29 @@ typedef enum MinginButton {
 */
 char mingin_registerButtonMapping( int                 inButtonHandle,
                                    const MinginButton  inMapping[] );
+
+
+
+/*
+  Gets button mapping.
+  
+  Parameters:
+
+      inButtonHandle   the game-defined button action to get
+
+      inMapping        an array of MinginButton values, ending with MGN_MAP_END,
+                       that should trigger this game-defined action
+                       
+  Returns:
+
+      an array of MinginButton values, ending with MGN_MAP_END,
+      that trigger this game-defined action
+      
+      0   on failure (if inButtonHandle is out of the supported range)
+
+  [jumpMinginProvides]
+*/
+MinginButton *mingin_getButtonMapping( int  inButtonHandle );
 
 
 
@@ -928,6 +954,9 @@ typedef enum MinginStick {
     } MinginStick;
 
 #define MGN_NUM_STICKS  MGN_DUMMY_LAST_STICK
+
+#define MINGIN_NUM_STICK_MAPPINGS           256
+#define MINGIN_MAX_STICK_MAPPING_ELEMENTS    32
 
 
 
@@ -1643,6 +1672,8 @@ char minginPlatform_getStickPosition( MinginStick   inStick,
   which Mingin implements internally:
 
     mingin_registerButtonMapping
+
+    mingin_getButtonMapping
     
     mingin_isButtonDown
 
@@ -1688,16 +1719,14 @@ char minginPlatform_getStickPosition( MinginStick   inStick,
 
 
 
-#define MINGIN_NUM_BUTTON_MAPPINGS          256
-#define MINGIN_MAX_BUTTON_MAPPING_ELEMENTS   32
+
 
 static MinginButton minginButtonMappings
                         [ MINGIN_NUM_BUTTON_MAPPINGS         ]
                         [ MINGIN_MAX_BUTTON_MAPPING_ELEMENTS ];
 
 
-#define MINGIN_NUM_STICK_MAPPINGS           256
-#define MINGIN_MAX_STICK_MAPPING_ELEMENTS    32
+
 
 static MinginStick minginStickMappings
                         [ MINGIN_NUM_STICK_MAPPINGS         ]
@@ -1764,6 +1793,19 @@ char mingin_registerButtonMapping( int                 inButtonHandle,
     minginButtonMappings[ inButtonHandle ][i] = MGN_MAP_END;
     
     return 1;
+    }
+
+
+
+MinginButton *mingin_getButtonMapping( int  inButtonHandle ) {
+    if( inButtonHandle < 0
+        ||
+        inButtonHandle >= MINGIN_NUM_BUTTON_MAPPINGS ) {
+        
+        return 0;
+        }
+
+    return minginButtonMappings[ inButtonHandle ];
     }
 
 

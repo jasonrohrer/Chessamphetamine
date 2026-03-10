@@ -9553,11 +9553,14 @@ static  int   mx_musicVolume                    =  MAXIGIN_MAX_MUSIC_LOUDNESS;
 static  int   mx_musicVolumeTarget              =  MAXIGIN_MAX_MUSIC_LOUDNESS;
 
 
-#define MAXIGIN_NUM_BUTTON_MAPPINGS                256
+static  int          mx_buttonPhraseKeys[ MINGIN_NUM_BUTTON_MAPPINGS ];
 
-static  int          mx_buttonPhraseKeys[ MAXIGIN_NUM_BUTTON_MAPPINGS ];
+static  const char  *mx_buttonSettingNames[ MINGIN_NUM_BUTTON_MAPPINGS ];
 
-static  const char  *mx_buttonSettingNames[ MAXIGIN_NUM_BUTTON_MAPPINGS ];
+
+static void mx_loadButtonMapping( const char  *inStoreName );
+
+static void mx_saveButtonMapping( const char  *inStoreName );
 
 
 
@@ -9579,7 +9582,7 @@ static void mx_gameInit( void ) {
     mx_musicVolumeTarget = mx_musicVolume;
 
     for( i = 0;
-         i < MAXIGIN_NUM_BUTTON_MAPPINGS;
+         i < MINGIN_NUM_BUTTON_MAPPINGS;
          i ++ ) {
 
         mx_buttonPhraseKeys  [i] = -1;
@@ -9656,12 +9659,13 @@ static void mx_gameInit( void ) {
     
     maxiginGame_init();
 
-    /* we save the default that the game has asked for */
-    mingin_saveButtonMapping( "maxigin_defaultButtons.ini" );
+    /* we save the default dynamic buttons that the game has asked for */
+    mx_saveButtonMapping( "maxigin_defaultButtons.ini" );
 
-    /* now we load any overwritten settings that were saved through
+    /* now we load any overwritten dynamic button
+       settings that were saved through
        our menu in the past */
-    mingin_loadButtonMapping( "maxigin_savedButtons.ini" );
+    mx_loadButtonMapping( "maxigin_savedButtons.ini" );
     
 
     /* our own internal translation keys */
@@ -18194,7 +18198,7 @@ static void mx_populateControlsPanel( void ) {
     static  int            defaultButtonHandle  =    0;
     static  unsigned char  pressFade            =  255;
     static  int            pressFadeDir         =   -1;
-    static  int            controlButtonHandles[ MAXIGIN_NUM_BUTTON_MAPPINGS ];
+    static  int            controlButtonHandles[ MINGIN_NUM_BUTTON_MAPPINGS ];
 
 
     if( mx_useGamepadMenuNav() ) {
@@ -18265,7 +18269,7 @@ static void mx_populateControlsPanel( void ) {
     buttonY += 5;
 
     for( i = 0;
-         i < MAXIGIN_NUM_BUTTON_MAPPINGS;
+         i < MINGIN_NUM_BUTTON_MAPPINGS;
          i ++ ) {
 
         if( mx_buttonPhraseKeys[ i ] != -1 ) {
@@ -18384,7 +18388,7 @@ static void mx_populateControlsPanel( void ) {
                     
                     /* save it to settings */
 
-                    mingin_saveButtonMapping( "maxigin_savedButtons.ini" );
+                    mx_saveButtonMapping( "maxigin_savedButtons.ini" );
 
                     if( mx_menuDoSound != -1 ) {
                         maxigin_playSoundEffect( mx_menuDoSound,
@@ -18539,7 +18543,7 @@ static void mx_populateControlsPanel( void ) {
                                      mx_menuDoLoudness );
             }
 
-        mingin_loadButtonMapping( "maxigin_defaultButtons.ini" );
+        mx_loadButtonMapping( "maxigin_defaultButtons.ini" );
 
         mingin_deletePersistData( "maxigin_savedButtons.ini" );
         }
@@ -18995,6 +18999,233 @@ void maxigin_initSetMenuSounds( int  inHoverSound,
     mx_menuExampleSound  = inExampleSound;
     }
 
+
+
+/* returns 1 on succes, 0 on failure */
+static char mx_writeIntTokenToStore( int  inStoreHandle,
+                                     int  inInt ) {
+    
+    const char  *iString      =  maxigin_intToString( inInt );
+    int          iLen         =  maxigin_stringLength( iString );
+    char         success;
+        
+    success = mingin_writePersistData( inStoreHandle,
+                                       iLen,
+                                       (unsigned char*)iString );
+
+    if( ! success ) {
+        return 0;
+        }
+
+    success = mingin_writePersistData( inStoreHandle,
+                                       1,
+                                       (unsigned char *)" " );
+    
+    if( ! success ) {
+        return 0;
+        }
+    
+    return 1;
+    }
+
+
+
+/* returns 1 on succes, 0 on failure */
+static char mx_readIntTokenFromStore( int   inStoreHandle,
+                                      int  *outInt ) {
+
+    unsigned char  c;
+    int            numRead;
+    int            intAccume  =  0;
+    int            sign       =  1;
+    
+    numRead = mingin_readPersistData( inStoreHandle,
+                                      1,
+                                      &c );
+
+    /* skip non-int chars */
+    while( numRead == 1
+           &&
+           ( c < '0'
+             ||
+             c > '9' )
+           &&
+           c != '-' ) {
+
+        numRead = mingin_readPersistData( inStoreHandle,
+                                          1,
+                                          &c );
+        }
+
+    if( numRead != 1 ) {
+        return 0;
+        }
+
+    /* process int chars and - sign */
+    while( numRead == 1
+           &&
+           ( ( c >= '0'
+               &&
+               c <= '9' )
+             ||
+             c == '-' ) ) {
+
+        if( c == '-' ) {
+            sign = -1;
+            }
+        else {
+            intAccume *= 10;
+            intAccume += (c - '0');
+            }
+        
+        numRead = mingin_readPersistData( inStoreHandle,
+                                          1,
+                                          &c );
+        }
+
+    if( numRead == -1 ) {
+        return 0;
+        }
+
+    *outInt = sign * intAccume;
+
+    return 1;
+    }
+
+
+
+static void mx_loadButtonMapping( const char  *inStoreName ) {
+    
+    int  numBytes;
+    int  store      =  mingin_startReadPersistData( inStoreName,
+                                                    &numBytes );
+    int  i;
+    char success;
+    int  readInt;
+    
+    if( store == -1 ) {
+        return;
+        }
+
+    success = mx_readIntTokenFromStore( store,
+                                        &i );
+
+    while( success ) {
+        
+        int    j;
+
+        MinginButton mapping[ MINGIN_MAX_BUTTON_MAPPING_ELEMENTS ];
+
+        mapping[0] = MGN_MAP_END;
+        
+        for( j = 0;
+             j < MINGIN_MAX_BUTTON_MAPPING_ELEMENTS;
+             j ++ ) {
+            
+            readInt  =  -1;
+        
+            if( ! mx_readIntTokenFromStore( store,
+                                            &readInt ) ) {
+            
+                mingin_log( "Failed to read button mapping from "
+                            "persistent data store\n" );
+            
+                mingin_endReadPersistData( store );
+                return;
+                }
+        
+            mapping[ j ] = readInt;
+
+            if( readInt == MGN_MAP_END ) {
+                break;
+                }
+            }
+
+
+        mingin_registerButtonMapping( i,
+                                      mapping );
+        
+        /* start reading next mapping */
+        
+        success = mx_readIntTokenFromStore( store,
+                                            &i );
+        }
+    
+    mingin_endReadPersistData( store );
+    }
+
+
+
+static void mx_saveButtonMapping( const char  *inStoreName ) {
+
+    int  store  =  mingin_startWritePersistData( inStoreName );
+    int  i;
+    
+    if( store == -1 ) {
+        return;
+        }
+
+    /* fixme */
+    for( i = 0;
+         i < MINGIN_NUM_BUTTON_MAPPINGS;
+         i ++ ) {
+
+        if( mx_buttonPhraseKeys[i] != -1 ) {
+
+            MinginButton *mapping = mingin_getButtonMapping( i );
+
+            if( mapping != 0 ) {
+                
+                int    j;
+        
+                if( ! mx_writeIntTokenToStore( store,
+                                               i ) ) {
+                    mingin_log( "Failed to write button mapping to "
+                                "persistent data store\n" );
+            
+                    mingin_endWritePersistData( store );
+                    return;
+                    }
+
+                for( j = 0;
+                     j < MINGIN_MAX_BUTTON_MAPPING_ELEMENTS;
+                     j ++ ) {
+
+                    MinginButton  b  =  mapping[ j ];
+
+                    if( ! mx_writeIntTokenToStore( store,
+                                                   b ) ) {
+                        mingin_log(
+                            "Failed to write button mapping to "
+                            "persistent data store\n" );
+            
+                        mingin_endWritePersistData( store );
+                        return;
+                        }
+
+                    if( b == MGN_MAP_END ) {
+                        int  numWritten =
+                            mingin_writePersistData( store,
+                                                     1,
+                                                     (unsigned char *)"\n" );
+                        if( numWritten != 1 ) {
+                            mingin_log(
+                                "Failed to write button mapping to "
+                                "persistent data store\n" );
+            
+                            mingin_endWritePersistData( store );
+                            return;
+                            }
+                
+                        break;
+                        }
+                    }
+                }
+            }
+        }
+    
+    mingin_endWritePersistData( store );
+    }
 
 
 

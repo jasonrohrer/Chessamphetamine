@@ -677,6 +677,8 @@ static MinginButton hintMapping[]   =  { MGN_BUTTON_MOUSE_LEFT,
                                          MGN_BUTTON_DPAD_DOWN,
                                          MGN_BUTTON_DPAD_LEFT,
                                          MGN_BUTTON_DPAD_RIGHT,
+                                         MGN_BUTTON_STICK_LEFT_PRESS,
+                                         MGN_BUTTON_STICK_RIGHT_PRESS,
                                          MGN_ANY_KEY,
                                          MGN_MAP_END };
 

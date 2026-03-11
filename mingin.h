@@ -14,6 +14,8 @@
 
   -- How to compile                    [jumpCompile]
 
+  -- Static settings                   [jumpSettings]
+
   -- Why Mingin?                       [jumpWhy]
 
   -- How to make a Mingin game         [jumpGame]
@@ -51,6 +53,56 @@
       #include "mingin.h"
 
 */
+
+
+
+#ifndef MINGIN_H_INCLUDED
+#define MINGIN_H_INCLUDED
+
+
+
+/*
+  ===================================================
+  Static settings                      [jumpSettings]
+  ===================================================
+
+  The following compile-time settings can be changed for each game that
+  is built against Mingin.
+
+  If these are defined in your C file before #include "mingin.h"
+  your settings will be used instead.
+
+  Each setting is tagged below with   [jumpSettings]
+*/
+
+
+
+/*
+  On platforms with variable screen sizes, what is the maximum size supported?
+
+  This is used to allocate static pixel buffers, so it affects the static
+  memory footprint of the game.
+
+  Note that on platforms that do not support variable screen sizes, this
+  setting might not be used, and thus might not affect the static memory
+  footprint.
+
+  To set the max screen size to 1280x720, do this:
+
+      #define  MINGIN_MAX_SCREEN_W  1280
+      #define  MINGIN_MAX_SCREEN_H  720
+
+  [jumpSettings]
+*/
+#ifndef  MINGIN_MAX_SCREEN_W
+#define  MINGIN_MAX_SCREEN_W  4096
+#endif
+
+#ifndef  MINGIN_MAX_SCREEN_H
+#define  MINGIN_MAX_SCREEN_H  2160
+#endif
+
+
 
 
 
@@ -202,8 +254,6 @@
 
 
 
-#ifndef MINGIN_H_INCLUDED
-#define MINGIN_H_INCLUDED
 
 
 /*
@@ -1939,8 +1989,8 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 
 
 
-#define  MINGIN_LINUX_MAX_WIN_W              4096
-#define  MINGIN_LINUX_MAX_WIN_H              2160
+#define  MINGIN_LINUX_MAX_WIN_W              MINGIN_MAX_SCREEN_W
+#define  MINGIN_LINUX_MAX_WIN_H              MINGIN_MAX_SCREEN_H
 
 /* this should be set to be larger than the total number of bulk resource
    files the game will read.  If this is too small, tracking of bulk resource

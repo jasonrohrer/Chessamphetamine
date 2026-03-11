@@ -605,6 +605,16 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer );
 
 
 
+/*
+  Enables CRT-style visual effects overlay for pixels in the game.
+
+  Off by default.
+  
+  [jumpMaxiginInit]
+*/
+void maxigin_initEnableCRTOverlay( void );
+
+
 
 /*
   Registers an area of static memory to be managed by Maxigin's hot-reloading
@@ -2152,17 +2162,20 @@ int maxigin_readIntSetting( const char  *inSettingName,
 
       inSettingName    the name of the setting to read
 
+      inDefaultValue   the default value to return of setting not found
+
   Returns:
 
-      1                if found and setting is not 0
+      1                if found and setting is 1
 
       0                if found and 0
-                          or if not found
-                          or if reading fails
+
+      inDefaultValue   if not found
       
    [jumpMaxiginGeneral]
 */     
-char maxigin_readFlagSetting( const char  *inSettingName );
+char maxigin_readFlagSetting( const char  *inSettingName,
+                              char         inDefaultValue );
 
 
 
@@ -2924,6 +2937,25 @@ static  unsigned char  mx_gameImageBuffer[ MAXIGIN_GAME_NATIVE_W *
                                            MAXIGIN_GAME_NATIVE_H * 3 ];
 
 
+/* Grayscale pixels for CRT overlay, big enough to cover
+   all possible screen sizes */
+static  unsigned char  mx_crtOverlayPixelBuffer[ MINGIN_MAX_SCREEN_W *
+                                                 MINGIN_MAX_SCREEN_H ];
+
+
+static  int            mx_crtOverlayW         =  0;
+static  int            mx_crtOverlayH         =  0;
+static  char           mx_crtOverlayLive      =  0;
+static  char           mx_crtOverlayOn        =  0;
+
+
+
+/* generates or loads cached overlay from disk */
+static void mx_generateCRTOverlay( int  inW,
+                                   int  inH );
+
+
+
 void minginGame_getScreenPixels( int             inWide,
                                  int             inHigh,
                                  unsigned char  *inRGBBuffer ) {
@@ -3026,7 +3058,109 @@ void minginGame_getScreenPixels( int             inWide,
             xDestFillCount ++;
             }
         }
+
+    if( mx_crtOverlayLive
+        &&
+        ( mx_crtOverlayW != inWide
+          ||
+          mx_crtOverlayH != inHigh ) ) {
+
+        /* always generate during first screen drawn, if needed,
+           even if CRT overlay is currently off, so we don't have a
+           framerate hitch if we toggle it on later */
+
+        /* This will also re-generate it on the first screen drawn after
+           a resolution change */
+
+        mx_generateCRTOverlay( inWide,
+                               inHigh );
+        }
+    
+    if( mx_crtOverlayOn
+        &&
+        mx_crtOverlayW == inWide
+        &&
+        mx_crtOverlayH == inHigh ) {
+
+        int  crtI;
+        int  destI  =  0;
+
+        int  r;
+        
+        for( crtI = 0;
+             crtI < numPixels;
+             crtI ++ ) {
+
+            unsigned int  v  =  mx_crtOverlayPixelBuffer[ crtI ];
+            unsigned int  c;
+
+            /* r, g, and b */
+            
+            c  =  inRGBBuffer[ destI ];
+            inRGBBuffer[ destI++ ] = (unsigned char)( (c * v) >> 8 );
+
+            c  =  inRGBBuffer[ destI ];
+            inRGBBuffer[ destI++ ] = (unsigned char)( (c * v) >> 8 );
+
+            c  =  inRGBBuffer[ destI ];
+            inRGBBuffer[ destI++ ] = (unsigned char)( (c * v) >> 8 );
+            }
+        }
     }
+
+
+
+void maxigin_initEnableCRTOverlay( void ) {
+    mx_crtOverlayLive = 1;
+    mx_crtOverlayOn       =  maxigin_readFlagSetting( "maxigin_crtOverlayOn.ini",
+                                                      1 );
+    }
+
+
+
+static void mx_generateCRTOverlay( int  inW,
+                                   int  inH ) {
+
+    int  y;
+    int  x;
+
+    if( inW == mx_crtOverlayW
+        &&
+        inH == mx_crtOverlayH ) {
+        /* existing overlay already matches */
+        return;
+        }
+
+    /* fixme:
+       check for cached version */
+
+    /* fixme:
+       for now, just do a gradation that gets darker toward bottom */
+
+    for( y = 0;
+         y < inH;
+         y ++ ) {
+
+        int  rowStart  =  y * inW;
+        
+        unsigned char  v;
+        v = (unsigned char)( ( 255 * (long)y ) / (long)inH );
+        
+        for( x = 0;
+             x < inW;
+             x ++ ) {
+
+            int  i  =  rowStart + x;
+
+            mx_crtOverlayPixelBuffer[i] = v;
+            }
+        }
+
+    mx_crtOverlayW = inW;
+    mx_crtOverlayH = inH;
+    }
+
+
 
 
 
@@ -8989,7 +9123,8 @@ void minginGame_step( char  inFinalStep ) {
     if( ! mx_quitting
         && mx_enableAutoQuit ) {
         
-        mx_quitting = maxigin_readFlagSetting( "maxigin_autoQuit.ini" );
+        mx_quitting = maxigin_readFlagSetting( "maxigin_autoQuit.ini",
+                                               0 );
 
         if( mx_quitting ) {
             mingin_log( "Found auto-quit in persistent data settings\n" );
@@ -9600,7 +9735,8 @@ static void mx_gameInit( void ) {
     int  p;
     int  i;
     
-    mx_enableAutoQuit = maxigin_readFlagSetting( "maxigin_enableAutoQuit.ini" );
+    mx_enableAutoQuit = maxigin_readFlagSetting( "maxigin_enableAutoQuit.ini",
+                                                 0 );
 
 
     mx_soundEffectsVolume =
@@ -11731,7 +11867,8 @@ static void mx_initRecording( void ) {
     if( ! MAXIGIN_ENABLE_RECORDING ) {
         return;
         }
-    if( maxigin_readFlagSetting( "maxigin_disableRecording.ini" ) ) {
+    if( maxigin_readFlagSetting( "maxigin_disableRecording.ini",
+                                 0 ) ) {
         return;
         }
     if( mx_numMemRecords == 0 ) {
@@ -13679,10 +13816,11 @@ int maxigin_readIntSetting( const char  *inSettingName,
 
 
 
-char maxigin_readFlagSetting( const char  *inSettingName ) {
+char maxigin_readFlagSetting( const char  *inSettingName,
+                              char         inDefaultValue ) {
 
     int  val  =  maxigin_readIntSetting( inSettingName,
-                                         0 );
+                                         inDefaultValue );
 
     if( val != 0 ) {
         return 1;
@@ -14427,14 +14565,15 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
     if( loudness < MAXIGIN_MAX_SOUND_LOUDNESS ) {
         tweakLoudness = 1;
         }
+
+    baseLoudness = loudness;
     
     if( mx_playingSoundEffects[ inPlayingSoundIndex ].paused
         &&
         ! consumingLastFrame
         &&
         ! consumingFirstFrame ) {
-
-        baseLoudness     = loudness;
+        
         tweakLoudness    = 1;
         rampLoudnessOut  = 1;
         }
@@ -14446,7 +14585,6 @@ static void mx_mixInOneSoundEffectSamples( int  inPlayingSoundIndex,
              &&
              ! consumingFirstFrame ) {
 
-        baseLoudness     = loudness;
         tweakLoudness    = 1;
         rampLoudnessIn   = 1;
         }

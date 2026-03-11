@@ -719,6 +719,7 @@ void maxiginGame_init( void ) {
         bulletSpeed[ i ].y = 0;
         }
 
+    maxigin_initEnableCRTOverlay();
     
     spriteStrip = maxigin_initSpriteStrip( "stripTest.tga",
                                            16 );

@@ -11731,6 +11731,9 @@ static void mx_initRecording( void ) {
     if( ! MAXIGIN_ENABLE_RECORDING ) {
         return;
         }
+    if( maxigin_readFlagSetting( "maxigin_disableRecording.ini" ) ) {
+        return;
+        }
     if( mx_numMemRecords == 0 ) {
         return;
         }

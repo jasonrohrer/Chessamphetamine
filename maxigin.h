@@ -2794,6 +2794,7 @@ typedef enum MaxiginUserAction {
     MENU_STICK_NAV,
     MENU_PICK,
     FULLSCREEN_TOGGLE,
+    CRT_TOGGLE,
     LANG_SWITCH,
     SOUND_TOGGLE,
     SOUND_LOCK,
@@ -2981,6 +2982,20 @@ void minginGame_getScreenPixels( int             inWide,
     maxiginGame_getNativePixels( mx_gameImageBuffer );
 
     maxigin_drawGUI( &mx_internalGUI );
+
+    maxigin_drawSetColor( 255,
+                          255,
+                          255,
+                          255 );
+
+    /* fixme:
+       use this for testing CRT overlay on a white screen to see
+       all aspects clearly */
+    if(0) maxigin_drawFillRect( 0,
+                      0,
+                      MAXIGIN_GAME_NATIVE_W,
+                      MAXIGIN_GAME_NATIVE_H );
+    
     
     mx_areWeInMaxiginGameDrawFunction = 0;
 
@@ -3072,6 +3087,9 @@ void minginGame_getScreenPixels( int             inWide,
         /* This will also re-generate it on the first screen drawn after
            a resolution change */
 
+        /* fixme:
+           don't generate for whole screen... only image area
+           scaledGameW, scaledGameH */
         mx_generateCRTOverlay( inWide,
                                inHigh );
         }
@@ -3085,7 +3103,9 @@ void minginGame_getScreenPixels( int             inWide,
         int  crtI;
         int  destI  =  0;
 
-        int  r;
+        /* fixme:
+           this applies to whole screen
+           instead, only apply to game image area, and offset it */
         
         for( crtI = 0;
              crtI < numPixels;
@@ -3121,9 +3141,15 @@ void maxigin_initEnableCRTOverlay( void ) {
 static void mx_generateCRTOverlay( int  inW,
                                    int  inH ) {
 
-    int  y;
-    int  x;
+    int   y;
+    int   x;
+    int   halfW  =  inW / 2;
+    int   halfH  =  inH / 2;
+    long  r2Max  =  (long)( 255 * 255 ) + (long)( 255 * 255 );
 
+    long  cube255  =  (long)255 * (long)255 * (long)255;
+    
+    
     if( inW == mx_crtOverlayW
         &&
         inH == mx_crtOverlayH ) {
@@ -3135,24 +3161,51 @@ static void mx_generateCRTOverlay( int  inW,
        check for cached version */
 
     /* fixme:
-       for now, just do a gradation that gets darker toward bottom */
+       corner vignette working, need scan lines and noise */
 
     for( y = 0;
          y < inH;
          y ++ ) {
 
-        int  rowStart  =  y * inW;
+        int  rowStart   =  y * inW;
+        long  dY        =  y - halfH;
+        long  dY2;
         
-        unsigned char  v;
-        v = (unsigned char)( ( 255 * (long)y ) / (long)inH );
+        /* normalize to 255 range before squaring
+           this makes an oval vignette that matches our screen aspect ratio */
+        dY = ( dY * 256 ) / halfH;
+        
+        dY2 = dY * dY;
         
         for( x = 0;
              x < inW;
              x ++ ) {
 
-            int  i  =  rowStart + x;
+            int   i      =  rowStart + x;
+            long  dX  =  x - halfW;
+            long  r2;
 
-            mx_crtOverlayPixelBuffer[i] = v;
+            /* again, normalize to 255 range before squaring, for
+               the oval vignette */
+            dX = ( dX * 255 ) / halfW;
+
+            r2 = dY2 + dX * dX;
+
+            /* normalize r2 to 255 max, so we can cube it below to
+               make a smoother vignette without an abrupt start */
+            r2 = r2 * 255 / r2Max;
+
+            /* push it back from center, so there's a center region
+               with no vignetting at all */
+            r2 -= 10;
+
+            if( r2 < 0 ) {
+                r2 = 0;
+                }
+            
+            mx_crtOverlayPixelBuffer[i] =
+                (unsigned char)(
+                    ( ( cube255 - r2 * r2 * r2 ) * 255 ) / cube255 );
             }
         }
 
@@ -9232,6 +9285,10 @@ void minginGame_step( char  inFinalStep ) {
         mingin_toggleFullscreen( ! mingin_isFullscreen() );
         }
 
+    if( mx_isActionFreshPressed( CRT_TOGGLE ) ) {
+        mx_crtOverlayOn = ! mx_crtOverlayOn;
+        }
+
     if( mx_isActionFreshPressed( LANG_SWITCH ) ) {
         mx_nextLang();
         }
@@ -9661,6 +9718,9 @@ static  MinginButton  mx_menuPickMapping[] = { MGN_BUTTON_XBOX_A,
 static  MinginButton  mx_fullscreenMapping[] = { MGN_KEY_F,
                                                  MGN_MAP_END };
 
+static  MinginButton  mx_crtMapping[] = { MGN_KEY_C,
+                                          MGN_MAP_END };
+
 static  MinginButton  mx_langSwitchMapping[] = { MGN_KEY_L,
                                                  MGN_MAP_END };
 
@@ -9780,6 +9840,9 @@ static void mx_gameInit( void ) {
     
     mingin_registerButtonMapping( FULLSCREEN_TOGGLE,
                                   mx_fullscreenMapping );
+
+    mingin_registerButtonMapping( CRT_TOGGLE,
+                                  mx_crtMapping );
     
     mingin_registerButtonMapping( LANG_SWITCH,
                                   mx_langSwitchMapping );
@@ -19438,7 +19501,6 @@ static void mx_saveButtonMapping( const char  *inStoreName ) {
         return;
         }
 
-    /* fixme */
     for( i = 0;
          i < MINGIN_NUM_BUTTON_MAPPINGS;
          i ++ ) {

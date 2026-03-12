@@ -3283,9 +3283,6 @@ static void mx_generateCRTOverlay( int  inW,
     /* fixme:
        check for cached version */
 
-    /* fixme:
-       corner vignette working, need scan lines and noise */
-
     for( y = 0;
          y < inH;
          y ++ ) {

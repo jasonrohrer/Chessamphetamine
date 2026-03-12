@@ -1,4 +1,6 @@
 
+/* NOTE:
+   These MUST match defines in maxigin_imp.c */
 #define MAXIGIN_GAME_NATIVE_W  320
 #define MAXIGIN_GAME_NATIVE_H  240
 
@@ -101,7 +103,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     for( p = 0; p<numPixels; p++ ) {
         int pix = p * 3;
 
-        inRGBBuffer[pix] = 0;
+        inRGBBuffer[pix] = 255;
         inRGBBuffer[pix + 1] = 0;
         inRGBBuffer[pix + 2] = 0;
         }

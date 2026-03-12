@@ -13400,14 +13400,24 @@ const char *maxigin_intToString( int  inInt ) {
     if( inInt < 0 ) {
         buffer[c] = '-';
         c++;
+        /* we can't safely do this here for the negative-most value
+           instead, do it for each q below */
+        /*
         inInt *= -1;
+        */
         }
     while( divisor >= 1 ) {
         
         int  q  =  inInt / divisor;
 
-        if( q >= qLowerLimit ) {
-            if( q > 9 ) {
+        int absQ = q;
+
+        if( absQ < 0 ) {
+            absQ = -absQ;
+            }
+        
+        if( absQ >= qLowerLimit ) {
+            if( absQ > 9 ) {
                 return formatError;
                 }
             if( c >= BUFFER_LEN - 1 ) {
@@ -13415,7 +13425,7 @@ const char *maxigin_intToString( int  inInt ) {
                 return formatError;
                 }
             
-            buffer[c] = (char)( '0' + q );
+            buffer[c] = (char)( '0' + absQ );
             c++;
             /* we've seen at least one non-zero digit,
                so start allowing zeros now */

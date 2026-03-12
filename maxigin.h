@@ -2590,6 +2590,76 @@ void maxigin_flexHashFinish( MaxiginFlexHashState  *inState );
 
 
 
+typedef struct MaxiginRand {
+        unsigned long  a;
+        unsigned long  b;
+        unsigned long  c;
+        unsigned long  d;
+        
+    } MaxiginRand;
+
+
+
+/*
+  Seeds a random source.
+
+  Parameters:
+
+      inRand   the rand source to seed
+  
+      inSeed   the seed value, only the lowest 32-bits are used
+  
+  [jumpMaxiginGeneral]
+*/
+void maxigin_randSeed( MaxiginRand    *inRand,
+                       unsigned long   inSeed );
+
+
+
+/*
+  Gets the next 32-bit value from a random source.
+
+  Parameters:
+
+      inRand   the rand source to get the value from and update
+  
+  Returns:
+
+      a random value.  Only the lowest 32 bits can be non-zero.
+  
+  [jumpMaxiginGeneral]
+*/
+unsigned long maxigin_rand32( MaxiginRand  *inRand );
+
+
+
+/*
+  Gets the next value from a random source, uniformly distributed over
+  a range.
+
+  NOTE:  this function assumes the total range requires less than 32
+         bits to represent.
+
+  Parameters:
+
+      inRand    the rand source to get the value from and update
+
+      inStart   the start of the range (inclusive)
+      
+      inEnd     the end of the range (inclusive)
+  
+  Returns:
+
+      a random value in the specified range
+
+      0   if the total range 
+  
+  [jumpMaxiginGeneral]
+*/
+int maxigin_randRange( MaxiginRand  *inRand,
+                       int           inStart,
+                       int           inEnd );
+
 
 
 
@@ -19560,6 +19630,103 @@ static void mx_saveButtonMapping( const char  *inStoreName ) {
         }
     
     mingin_endWritePersistData( store );
+    }
+
+
+
+/*
+ * Implementation of random source based on Bob Jenkins smallprng:
+ *
+ * http://burtleburtle.net/bob/rand/smallprng.html
+ *
+ * The algorithm has been modified to account for varying sizes of long.
+ *
+ */
+
+
+#define MX_MASK32( x )  ( (x) & 0xFFFFFFFFUL )
+
+void maxigin_randSeed( MaxiginRand    *inRand,
+                       unsigned long   inSeed ) {
+    int  i;
+    
+    inRand->a = 0xF1EA5EEDUL;
+    inRand->b = MX_MASK32( inSeed );
+    inRand->c = inRand->b;
+    inRand->d = inRand->b;
+    
+    for( i = 0;
+         i < 20;
+         i ++ ) {
+        maxigin_rand32( inRand );
+        }
+    }
+
+
+
+/* the results of MX_ROT are not necessarily 32-bits
+   must mask after */
+#define MX_ROT( x, k ) ( ( (x) << (k) )  |  ( (x) >> ( 32 - (k) ) ) )
+
+
+
+unsigned long maxigin_rand32( MaxiginRand  *inRand ) {
+
+    unsigned long  e;
+
+    e         = MX_MASK32( inRand->a - MX_ROT( inRand->b, 27 ) );
+    
+    inRand->a = MX_MASK32( inRand->b ^ MX_ROT( inRand->c, 17 ) );
+    inRand->b = MX_MASK32( inRand->c + inRand->d );
+    inRand->c = MX_MASK32( inRand->d + e );
+    inRand->d = MX_MASK32( e         + inRand->a );
+    
+    return inRand->d;
+    }
+
+
+
+int maxigin_randRange( MaxiginRand  *inRand,
+                       int           inStart,
+                       int           inEnd ) {
+
+    unsigned long  span;
+    unsigned long  rejectAbove;
+    unsigned long  offset;
+    unsigned long  pick;
+
+    /* use rejection sampling */
+
+    span = (unsigned long)inEnd - (unsigned long)inStart;
+
+    if( span >= 0xFFFFFFFFUL ) {
+        /* only possible if the entire 32-bit range is requested, which
+           is not supported, since adding 1 below (to get full span) would
+           overflow */
+        
+        maxigin_logInt2( "maxigin_randRange called with range that can "
+                         "only be represented by a full 32 bits (or more): ",
+                         inStart,
+                         ", ",
+                         inEnd,
+                         "" );
+        return 0;
+        }
+    
+    
+    span = MX_MASK32( span + 1UL );
+
+    rejectAbove = 0xFFFFFFFFUL - ( 0xFFFFFFFFUL % span );
+
+    pick = maxigin_rand32( inRand );
+
+    while( pick >= rejectAbove ) {
+        pick = maxigin_rand32( inRand );
+        }
+
+    offset = pick % span;
+
+    return inStart + (int)offset;
     }
 
 

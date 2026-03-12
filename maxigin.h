@@ -3229,6 +3229,8 @@ static void mx_generateCRTOverlay( int  inW,
     int            startIncV       =  15;
     int            endIncV         =  20;
     
+    static  unsigned char  vertScanV[ MINGIN_MAX_SCREEN_W ];
+    
     if( inW == mx_crtOverlayW
         &&
         inH == mx_crtOverlayH ) {
@@ -3239,6 +3241,38 @@ static void mx_generateCRTOverlay( int  inW,
     maxigin_randSeed( &rand,
                       2139349 );
 
+    
+
+    scanlineV = (unsigned char)( maxigin_randRange( &rand,
+                                                    startV,
+                                                    endV ) );
+
+    for( x = 0;
+         x < inW;
+         x ++ ) {
+
+        /* make it more faint for the vertical scanlines */
+        vertScanV[x] = scanlineV / 3;
+
+        scanlineI ++;
+
+        if( scanlineI == scanlineH ) {
+            /* start next line */
+            scanlineV = (unsigned char)( maxigin_randRange( &rand,
+                                                            startV,
+                                                            endV ) );
+            scanlineI = 0;
+            }
+        else {
+            /* continue this scan line */
+            scanlineV += (unsigned char)( maxigin_randRange( &rand,
+                                                             startIncV,
+                                                             endIncV ) );
+            }
+        }
+
+    /* reset for horizontal scan lines */
+    scanlineI = 0;
     scanlineV = (unsigned char)( maxigin_randRange( &rand,
                                                     startV,
                                                     endV ) );
@@ -3307,6 +3341,13 @@ static void mx_generateCRTOverlay( int  inW,
 
             if( mx_crtOverlayPixelBuffer[i] > vTweak ) {
                 mx_crtOverlayPixelBuffer[i] -= vTweak;
+                }
+            else {
+                mx_crtOverlayPixelBuffer[i] = 0;
+                }
+
+            if( mx_crtOverlayPixelBuffer[i] > vertScanV[x] ) {
+                mx_crtOverlayPixelBuffer[i] -= vertScanV[x];
                 }
             else {
                 mx_crtOverlayPixelBuffer[i] = 0;

@@ -3224,10 +3224,13 @@ static void mx_generateCRTOverlay( int  inW,
     int            scanlineH       =  inH / MAXIGIN_GAME_NATIVE_H;
     int            scanlineI       =  0;
     unsigned char  scanlineV;
+    /* scale these params by how many pixels per scanline
+       so even at way higher target resolutions, our scanlines
+       traverse roughly the same darkness range */
     int            startV          =  0;
-    int            endV            =  4;
-    int            startIncV       =  15;
-    int            endIncV         =  20;
+    int            endV            =  12 / scanlineH;
+    int            startIncV       =  45 / scanlineH;
+    int            endIncV         =  60 / scanlineH;
     
     static  unsigned char  vertScanV[ MINGIN_MAX_SCREEN_W ];
     
@@ -3252,7 +3255,7 @@ static void mx_generateCRTOverlay( int  inW,
          x ++ ) {
 
         /* make it more faint for the vertical scanlines */
-        vertScanV[x] = scanlineV / 3;
+        vertScanV[x] = scanlineV / 4;
 
         scanlineI ++;
 

@@ -3211,23 +3211,23 @@ void maxigin_initEnableCRTOverlay( void ) {
 static void mx_generateCRTOverlay( int  inW,
                                    int  inH ) {
 
-    int          y;
-    int          x;
-    int          halfW    =  inW / 2;
-    int          halfH    =  inH / 2;
-    long         r2Max    =  (long)( 255 * 255 ) + (long)( 255 * 255 );
+    int            y;
+    int            x;
+    int            halfW           =  inW / 2;
+    int            halfH           =  inH / 2;
+    long           r2Max           =  (long)( 255 * 255 ) + (long)( 255 * 255 );
 
-    long         cube255  =  (long)255 * (long)255 * (long)255;
+    long           cube255         =  (long)255 * (long)255 * (long)255;
 
-    MaxiginRand  rand;
+    MaxiginRand    rand;
     
-    int   scanlineH       =  inH / MAXIGIN_GAME_NATIVE_H;
-    int   scanlineI       =  0;
-    int   scanlineV;
-    int   startV          =  0;
-    int   endV            =  4;
-    int   startIncV       =  15;
-    int   endIncV         =  20;
+    int            scanlineH       =  inH / MAXIGIN_GAME_NATIVE_H;
+    int            scanlineI       =  0;
+    unsigned char  scanlineV;
+    int            startV          =  0;
+    int            endV            =  4;
+    int            startIncV       =  15;
+    int            endIncV         =  20;
     
     if( inW == mx_crtOverlayW
         &&
@@ -3239,9 +3239,9 @@ static void mx_generateCRTOverlay( int  inW,
     maxigin_randSeed( &rand,
                       2139349 );
 
-    scanlineV = maxigin_randRange( &rand,
-                                   startV,
-                                   endV );
+    scanlineV = (unsigned char)( maxigin_randRange( &rand,
+                                                    startV,
+                                                    endV ) );
     
     /* fixme:
        check for cached version */
@@ -3267,9 +3267,10 @@ static void mx_generateCRTOverlay( int  inW,
              x < inW;
              x ++ ) {
 
-            int   i      =  rowStart + x;
-            long  dX  =  x - halfW;
-            long  r2;
+            int            i        =  rowStart + x;
+            long           dX       =  x - halfW;
+            long           r2;
+            unsigned char  vTweak;
 
             /* again, normalize to 255 range before squaring, for
                the oval vignette */
@@ -3294,8 +3295,18 @@ static void mx_generateCRTOverlay( int  inW,
                     ( ( cube255 - r2 * r2 * r2 ) * 255 ) / cube255 );
 
             if( mx_crtOverlayPixelBuffer[i] > scanlineV ) {
-                mx_crtOverlayPixelBuffer[i] =
-                    (unsigned char)( mx_crtOverlayPixelBuffer[i] - scanlineV );
+                mx_crtOverlayPixelBuffer[i] -= scanlineV;
+                }
+            else {
+                mx_crtOverlayPixelBuffer[i] = 0;
+                }
+
+            vTweak = (unsigned char)( maxigin_randRange( &rand,
+                                                         0,
+                                                         20 ) );
+
+            if( mx_crtOverlayPixelBuffer[i] > vTweak ) {
+                mx_crtOverlayPixelBuffer[i] -= vTweak;
                 }
             else {
                 mx_crtOverlayPixelBuffer[i] = 0;
@@ -3306,16 +3317,16 @@ static void mx_generateCRTOverlay( int  inW,
 
         if( scanlineI == scanlineH ) {
             /* start next line */
-            scanlineV = maxigin_randRange( &rand,
-                                           startV,
-                                           endV );
+            scanlineV = (unsigned char)( maxigin_randRange( &rand,
+                                                            startV,
+                                                            endV ) );
             scanlineI = 0;
             }
         else {
             /* continue this scan line */
-            scanlineV += maxigin_randRange( &rand,
-                                            startIncV,
-                                            endIncV );
+            scanlineV += (unsigned char)( maxigin_randRange( &rand,
+                                                             startIncV,
+                                                             endIncV ) );
             }
         }
 

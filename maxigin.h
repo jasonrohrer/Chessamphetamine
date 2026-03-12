@@ -18645,16 +18645,6 @@ static void mx_populateControlsPanel( void ) {
                 buttonRadX =
                     mx_sprites[ mx_buttonSprites.cool ].rightVisibleRadius;
                 }
-
-            /* fixme.:  display icon for control */
-
-            /* can't use this directly here, since we're not in draw
-               function
-               Need way to get sprite instead of just drawing it
-
-               maxigin_drawButtonHintSprite
-            */
-
             
 
             controlX = buttonRadX + 40;

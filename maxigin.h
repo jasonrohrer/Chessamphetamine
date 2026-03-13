@@ -2815,7 +2815,7 @@ struct MaxiginGUI {
 
 
 
-/* temporarily dumps pixels to out.raw */
+/* temporarily dumps pixels to outRGBA.raw */
 static void mx_dumpRGBAPixels( unsigned char  *inStartByte,
                                int             inW,
                                int             inH ) {
@@ -2825,10 +2825,10 @@ static void mx_dumpRGBAPixels( unsigned char  *inStartByte,
     char success;
     
 
-    outHandle = mingin_startWritePersistData( "out.raw" );
+    outHandle = mingin_startWritePersistData( "outRGBA.raw" );
 
     if( outHandle == -1 ) {
-        mingin_log( "Failed to open 'out.raw' persistent data for writing "
+        mingin_log( "Failed to open 'outRGBA.raw' persistent data for writing "
                     "when trying to dump pixels.\n" );
         return;
         }
@@ -2848,6 +2848,55 @@ static void mx_dumpRGBAPixels( unsigned char  *inStartByte,
                      ", h = ",
                      inH,
                      "" );
+    
+    maxigin_logInt2( "  Can display with:  display -size ",
+                     inW,
+                     "x",
+                     inH,
+                     " -depth 8 rgba:settings/outRGBA.raw" );
+    }
+
+
+
+/* temporarily dumps pixels to out.raw */
+static void mx_dumpRGBPixels( unsigned char  *inStartByte,
+                              int             inW,
+                              int             inH ) {
+
+    int  numBytes     =  inW * inH * 3;
+    int  outHandle;
+    char success;
+    
+
+    outHandle = mingin_startWritePersistData( "outRGB.raw" );
+
+    if( outHandle == -1 ) {
+        mingin_log( "Failed to open 'outRGB.raw' persistent data for writing "
+                    "when trying to dump pixels.\n" );
+        return;
+        }
+
+    success = mingin_writePersistData( outHandle,
+                                       numBytes,
+                                       inStartByte );
+
+    if( ! success ) {
+        mingin_log( "Failed to dump raw pixels to persistent data\n" );
+        }
+
+    mingin_endWritePersistData( outHandle );
+
+    maxigin_logInt2( "Dumped RGB pixels to outRGB.raw with w = ",
+                     inW,
+                     ", h = ",
+                     inH,
+                     "" );
+    
+    maxigin_logInt2( "  Can display with:  display -size ",
+                     inW,
+                     "x",
+                     inH,
+                     " -depth 8 rgb:settings/outRGB.raw" );
     }
 
     
@@ -10149,6 +10198,10 @@ static void mx_gameInit( void ) {
        this function generally only called when debugging */
     if( 0 ) {
         mx_dumpSpriteRGBA( 0 );
+
+        mx_dumpRGBPixels( 0,
+                          0,
+                          0 );
         }
     }
 

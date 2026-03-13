@@ -3821,7 +3821,9 @@ int main( void ) {
             int scaleFactorW;
             int scaleFactorH;
             int scaleFactor;
-
+            int offsetX;
+            int offsetY;
+            
             scaleFactorW = mn_realWindowW / mn_windowW;
             scaleFactorH = mn_realWindowH / mn_windowH;
 
@@ -3831,7 +3833,11 @@ int main( void ) {
                 scaleFactor = scaleFactorH;
                 }
 
-            glRasterPos2f( -1, 1 );
+            offsetX = ( mn_realWindowW - mn_windowW * scaleFactor );
+            offsetY = ( mn_realWindowH - mn_windowH * scaleFactor );
+
+            glRasterPos2f( -1 + (GLfloat)offsetX / (GLfloat)mn_realWindowW,
+                            1 - (GLfloat)offsetY / (GLfloat)mn_realWindowH );
             
             glPixelZoom(   (GLfloat)scaleFactor,
                          - (GLfloat)scaleFactor );

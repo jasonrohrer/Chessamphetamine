@@ -3314,19 +3314,21 @@ static void mx_generateCRTOverlay( int  inW,
 
             /* normalize r2 to 255 max, so we can cube it below to
                make a smoother vignette without an abrupt start */
-            r2 = r2 * 255 / r2Max;
+            r2 = ( r2 * 255 ) / r2Max;
 
             /* push it back from center, so there's a center region
                with no vignetting at all */
             r2 -= 10;
 
-            if( r2 < 0 ) {
-                r2 = 0;
+            if( r2 <= 0 ) {
+                mx_crtOverlayPixelBuffer[i] = 255;
                 }
-            
-            mx_crtOverlayPixelBuffer[i] =
-                (unsigned char)(
-                    ( ( cube255 - r2 * r2 * r2 ) * 255 ) / cube255 );
+            else {
+                mx_crtOverlayPixelBuffer[i] =
+                    (unsigned char)(
+                        ( ( cube255 - r2 * r2 * r2 ) * 255 ) / cube255 );
+                }
+
 
             if( mx_crtOverlayPixelBuffer[i] > scanlineV ) {
                 mx_crtOverlayPixelBuffer[i] -= scanlineV;

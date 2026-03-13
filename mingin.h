@@ -95,11 +95,11 @@
   [jumpSettings]
 */
 #ifndef  MINGIN_MAX_SCREEN_W
-#define  MINGIN_MAX_SCREEN_W  4096
+#define  MINGIN_MAX_SCREEN_W  1920
 #endif
 
 #ifndef  MINGIN_MAX_SCREEN_H
-#define  MINGIN_MAX_SCREEN_H  2160
+#define  MINGIN_MAX_SCREEN_H  1080
 #endif
 
 

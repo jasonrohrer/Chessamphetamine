@@ -19829,8 +19829,6 @@ int maxigin_randRange( MaxiginRand  *inRand,
     while( pick - offset
            >
            0xFFFFFFFFUL - span + 1 ) {
-
-        rejB ++;
         
         pick = maxigin_rand32( inRand );
         

@@ -3215,6 +3215,11 @@ static void mx_generateCRTOverlay( int  inW,
     int            x;
     int            halfW           =  inW / 2;
     int            halfH           =  inH / 2;
+    int            numBytes        =  inW * inH;
+    int            storageHandle;
+    int            storeLen;
+    const char    *resName;
+    
     long           r2Max           =  (long)( 255 * 255 ) + (long)( 255 * 255 );
 
     long           cube255         =  (long)255 * (long)255 * (long)255;
@@ -3241,6 +3246,44 @@ static void mx_generateCRTOverlay( int  inW,
         return;
         }
 
+    /* check for cached version */
+
+    resName = maxigin_stringConcat5( "maxigin_crtOverlay_",
+                                     maxigin_intToString( inW ),
+                                     "x",
+                                     maxigin_intToString( inH ),
+                                     ".bin" );
+    
+    storageHandle = mingin_startReadPersistData( resName,
+                                                 &storeLen );
+
+    if( storageHandle != -1 ) {
+
+        if( storeLen == numBytes ) {
+            int  numRead  =  mingin_readPersistData( storageHandle,
+                                                     numBytes,
+                                                     mx_crtOverlayPixelBuffer );
+
+            if( numRead == numBytes ) {
+                
+                mingin_endReadPersistData( storageHandle );
+                
+                mx_crtOverlayW = inW;
+                mx_crtOverlayH = inH;
+
+                return;
+                }
+            }
+
+        maxigin_logString( "Failed to read expected number of bytes from "
+                           "crtOverlay cache:  ",
+                           resName );
+        
+        mingin_endReadPersistData( storageHandle );
+        }
+
+    
+    
     maxigin_randSeed( &rand,
                       2139349 );
 
@@ -3279,9 +3322,6 @@ static void mx_generateCRTOverlay( int  inW,
     scanlineV = (unsigned char)( maxigin_randRange( &rand,
                                                     startV,
                                                     endV ) );
-    
-    /* fixme:
-       check for cached version */
 
     for( y = 0;
          y < inH;
@@ -3375,6 +3415,27 @@ static void mx_generateCRTOverlay( int  inW,
 
     mx_crtOverlayW = inW;
     mx_crtOverlayH = inH;
+
+    /* now cache result */
+
+    storageHandle = mingin_startWritePersistData( resName );
+
+    if( storageHandle != -1 ) {
+
+        char  success  =  mingin_writePersistData( storageHandle,
+                                                   numBytes,
+                                                   mx_crtOverlayPixelBuffer );
+
+        if( ! success ) {
+            maxigin_logString( "Failed to write out crtOverlay: ",
+                               resName );
+            }
+        mingin_endWritePersistData( storageHandle );
+        }
+    else {
+        maxigin_logString( "Failed to open crtOverlay for writing: ",
+                           resName );
+        }
     }
 
 

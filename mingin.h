@@ -2058,8 +2058,16 @@ static unsigned char mn_gameScreenBuffer[ MINGIN_LINUX_MAX_WIN_W *
                                           MINGIN_LINUX_MAX_WIN_H * 3 ];
 
 static  char            mn_shouldQuit           =  0;
+
+/* these are w/h we are actually using, constrained by our static buffer
+   size */
 static  int             mn_windowW              =  0;
 static  int             mn_windowH              =  0;
+
+/* these are the true w/h we'd want to have if buffer size wasn't an issue */
+static  int             mn_realWindowW          =  0;
+static  int             mn_realWindowH          =  0;
+
 static  char            mn_areWeInStepFunction  =  0;
 static  char            mn_xFullscreen          =  0;
 static  int             mn_screenRefreshRate    =  0;
@@ -3016,10 +3024,15 @@ static void mn_xSetFullscreen( Display  *inXDisplay,
 */
 static void mn_reconfigureWindowSize( Display  *inXDisplay ) {
     
+    mn_realWindowW = 0;
+    mn_realWindowH = 0;
+    
     if( mn_xFullscreen ) {
         mn_getMonitorSize( inXDisplay,
-                           &mn_windowW,
-                           &mn_windowH );
+                           &mn_realWindowW,
+                           &mn_realWindowH );
+        mn_windowW = mn_realWindowW;
+        mn_windowH = mn_realWindowH;
         }
     else {
         
@@ -3081,6 +3094,15 @@ static void mn_reconfigureWindowSize( Display  *inXDisplay ) {
     if( mn_windowH > MINGIN_LINUX_MAX_WIN_H ) {
         mn_windowH = MINGIN_LINUX_MAX_WIN_H;
         }
+
+    if( mn_realWindowW == 0 ) {
+        /* real only set above if we're in fullscreen mode
+           if we're in windowed mode, our "real" size matches our
+           actual window size */
+        mn_realWindowW = mn_windowW;
+        mn_realWindowH = mn_windowH;
+        }
+    
     mingin_log( "Window = " );
     mingin_log( mn_intToString( mn_windowW ) );
     mingin_log( "," );
@@ -3155,8 +3177,8 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
         s->xDisplay,
         s->xRoot,
         0, 0,
-        (unsigned int)mn_windowW,
-        (unsigned int)mn_windowH,
+        (unsigned int)mn_realWindowW,
+        (unsigned int)mn_realWindowH,
         0,
         xBlackColor,
         xBlackColor );
@@ -3357,8 +3379,8 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
 
     glViewport( 0,
                 0,
-                (GLsizei)mn_windowW,
-                (GLsizei)mn_windowH );
+                (GLsizei)mn_realWindowW,
+                (GLsizei)mn_realWindowH );
 
     return 1;
     }
@@ -3777,9 +3799,47 @@ int main( void ) {
                                     mn_windowH,
                                     mn_gameScreenBuffer );
 
-        glRasterPos2f( -1, 1 );
         
-        glPixelZoom( 1, -1 );
+
+        if( (mn_realWindowW == mn_windowW
+            &&
+             mn_realWindowH == mn_windowH )) {
+
+            glRasterPos2f( -1,
+                            1 );
+            
+            glPixelZoom(  1,
+                         -1 );
+            }
+        else {
+            /* we must be in fullscreen mode, and fullscreen size
+               is too big for our static buffer... scale up the
+               best we can */
+
+            /* use smallest scale factor to keep game image
+               entirely on screen */
+            int scaleFactorW;
+            int scaleFactorH;
+            int scaleFactor;
+
+            scaleFactorW = mn_realWindowW / mn_windowW;
+            scaleFactorH = mn_realWindowH / mn_windowH;
+
+            scaleFactor = scaleFactorW;
+
+            if( scaleFactorH < scaleFactor ) {
+                scaleFactor = scaleFactorH;
+                }
+
+            glRasterPos2f( -1, 1 );
+            
+            glPixelZoom(   (GLfloat)scaleFactor,
+                         - (GLfloat)scaleFactor );
+            }
+
+        glClearColor( 0, 0, 0, 1 );
+        
+        glClear( GL_COLOR_BUFFER_BIT );
 
         glPixelStorei( GL_UNPACK_ALIGNMENT,
                        1 );
@@ -3814,8 +3874,8 @@ int main( void ) {
         
         if( currentlyFullscreen != mn_xFullscreen ) {
             
-            int  oldW  =  mn_windowW;
-            int  oldH  =  mn_windowH;
+            int  oldW  =  mn_realWindowW;
+            int  oldH  =  mn_realWindowH;
 
             /* when toggling fullscreen, we tend to miss button
                release events that happen during toggle, which
@@ -3825,15 +3885,15 @@ int main( void ) {
 
             mn_reconfigureWindowSize( mn_XSetup.xDisplay );
 
-            if( oldW != mn_windowW
+            if( oldW != mn_realWindowW
                 ||
-                oldH != mn_windowH ) {
+                oldH != mn_realWindowH ) {
                 /* need to destroy and re-make window */
 
                 mingin_log( "Calling resize window with " );
-                mingin_log( mn_intToString( mn_windowW ) );
+                mingin_log( mn_intToString( mn_realWindowW ) );
                 mingin_log( "," );
-                mingin_log( mn_intToString( mn_windowH ) );
+                mingin_log( mn_intToString( mn_realWindowH ) );
                 mingin_log( "\n" );
 
                 mn_closeXWindow( & mn_XSetup );

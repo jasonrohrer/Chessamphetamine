@@ -3780,6 +3780,9 @@ int main( void ) {
         glRasterPos2f( -1, 1 );
         
         glPixelZoom( 1, -1 );
+
+        glPixelStorei( GL_UNPACK_ALIGNMENT,
+                       1 );
  
         glDrawPixels( (GLsizei)mn_windowW,
                       (GLsizei)mn_windowH,

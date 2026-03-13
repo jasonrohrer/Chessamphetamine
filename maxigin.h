@@ -3051,21 +3051,7 @@ void minginGame_getScreenPixels( int             inWide,
     
     maxiginGame_getNativePixels( mx_gameImageBuffer );
 
-    maxigin_drawGUI( &mx_internalGUI );
-
-    maxigin_drawSetColor( 255,
-                          255,
-                          255,
-                          255 );
-
-    /* fixme:
-       use this for testing CRT overlay on a white screen to see
-       all aspects clearly */
-    if(0) maxigin_drawFillRect( 0,
-                      0,
-                      MAXIGIN_GAME_NATIVE_W,
-                      MAXIGIN_GAME_NATIVE_H );
-    
+    maxigin_drawGUI( &mx_internalGUI );    
     
     mx_areWeInMaxiginGameDrawFunction = 0;
 
@@ -3146,9 +3132,9 @@ void minginGame_getScreenPixels( int             inWide,
 
     if( mx_crtOverlayLive
         &&
-        ( mx_crtOverlayW != inWide
+        ( mx_crtOverlayW != scaledGameW
           ||
-          mx_crtOverlayH != inHigh ) ) {
+          mx_crtOverlayH != scaledGameH ) ) {
 
         /* always generate during first screen drawn, if needed,
            even if CRT overlay is currently off, so we don't have a
@@ -3157,43 +3143,53 @@ void minginGame_getScreenPixels( int             inWide,
         /* This will also re-generate it on the first screen drawn after
            a resolution change */
 
-        /* fixme:
-           don't generate for whole screen... only image area
+        /* don't generate for whole screen... only image area
            scaledGameW, scaledGameH */
-        mx_generateCRTOverlay( inWide,
-                               inHigh );
+        mx_generateCRTOverlay( scaledGameW,
+                               scaledGameH );
         }
     
     if( mx_crtOverlayOn
         &&
-        mx_crtOverlayW == inWide
+        mx_crtOverlayW == scaledGameW
         &&
-        mx_crtOverlayH == inHigh ) {
-
-        int  crtI;
-        int  destI  =  0;
-
-        /* fixme:
-           this applies to whole screen
-           instead, only apply to game image area, and offset it */
+        mx_crtOverlayH == scaledGameH ) {
         
-        for( crtI = 0;
-             crtI < numPixels;
-             crtI ++ ) {
+        /* only apply to game image area, and offset it */
+        
+        int  crtI   =  0;
+        int  destI  =  ( offsetY * inWide + offsetX ) * 3;
 
-            unsigned int  v  =  mx_crtOverlayPixelBuffer[ crtI ];
-            unsigned int  c;
+        
 
-            /* r, g, and b */
+        for( y = 0;
+             y < scaledGameH;
+             y ++ ) {
+
+            int  startDestI = destI;
+
+            for( x = 0;
+                 x < scaledGameW;
+                 x ++ ) {
             
-            c  =  inRGBBuffer[ destI ];
-            inRGBBuffer[ destI++ ] = (unsigned char)( (c * v) >> 8 );
+                unsigned int  v  =  mx_crtOverlayPixelBuffer[ crtI++ ];
+                unsigned int  c;
 
-            c  =  inRGBBuffer[ destI ];
-            inRGBBuffer[ destI++ ] = (unsigned char)( (c * v) >> 8 );
+                /* r, g, and b */
+            
+                c  =  inRGBBuffer[ destI ];
+                inRGBBuffer[ destI++ ] = (unsigned char)( (c * v) >> 8 );
 
-            c  =  inRGBBuffer[ destI ];
-            inRGBBuffer[ destI++ ] = (unsigned char)( (c * v) >> 8 );
+                c  =  inRGBBuffer[ destI ];
+                inRGBBuffer[ destI++ ] = (unsigned char)( (c * v) >> 8 );
+
+                c  =  inRGBBuffer[ destI ];
+                inRGBBuffer[ destI++ ] = (unsigned char)( (c * v) >> 8 );
+                }
+
+            /* jump to next row on screen image, which might be wider
+               than CRT overlay */
+            destI = startDestI + inWide * 3;
             }
         }
     }

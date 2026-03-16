@@ -35,6 +35,19 @@ static  Vector         bulletSpeed[ MAX_NUM_BULLETS ];
 
 static  unsigned char  bulletFade[ MAX_NUM_BULLETS ];
 
+
+static  char           bombOn[ MAX_NUM_BULLETS ];
+
+static  Vector         bombPos[ MAX_NUM_BULLETS ];
+
+static  Vector         bombSpeed[ MAX_NUM_BULLETS ];
+
+static  int            bombStripIndex[ MAX_NUM_BULLETS ];
+static  int            bombProgress[ MAX_NUM_BULLETS ];
+static  int            bombBurstProgress[ MAX_NUM_BULLETS ];
+static  unsigned char  bombBurstFade[ MAX_NUM_BULLETS ];
+
+
 static  int            stepsSinceLastBullet  =    0;
 static  int            msBetweenBullets      =  100;
 
@@ -49,16 +62,25 @@ static  int            boxDir                =    1;
 static  Vector         lineTip               =  { MAXIGIN_GAME_NATIVE_W / 2,
                                                   MAXIGIN_GAME_NATIVE_H / 2 };
 
+static MaxiginRand     rand;
+
+
+static int  burstVX[8] = { 0, 2, 3,  2,  0, -2, -3, -2 };
+static int  burstVY[8] = { 3, 2, 0, -2, -3, -2,  0,  2 };
+
+    
     
 
-#define  NUM_BULK_FILES  6
+#define  NUM_BULK_FILES  8
 
 static const char  *fileNames[ NUM_BULK_FILES ] = { "bullet.tga",
                                                     "bulletGlow.tga",
                                                     "bigPointer.tga",
                                                     "bigPointer2.tga",
                                                     "vertLine.tga",
-                                                    "horLine.tga" };
+                                                    "horLine.tga",
+                                                    "ship.tga",
+                                                    "bombParticle.tga" };
 
 static int          spriteHandles[ NUM_BULK_FILES ];
 
@@ -84,6 +106,10 @@ static int          lang_musicVolume;
 static int          lang_effectsVolume;
 static int          lang_fullscreen;
 
+static int          lang_shoot;
+
+static int          lang_bomb;
+
 
 
 
@@ -103,12 +129,13 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     for( p = 0; p<numPixels; p++ ) {
         int pix = p * 3;
 
-        inRGBBuffer[pix] = 255;
+        inRGBBuffer[pix]     = 0;
         inRGBBuffer[pix + 1] = 0;
         inRGBBuffer[pix + 2] = 0;
         }
 
     /* now draw black box */
+    if( 0 )
     for( y = boxStartY;
          y < boxStartY + boxH;
          y ++ ) {
@@ -138,7 +165,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
     /* green dot at center of box for sanity check */
-    if( 1 ) {
+    if( 0 ) {
         if( boxPosY >= 0
             &&
             boxPosY < MAXIGIN_GAME_NATIVE_H
@@ -155,19 +182,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             }
         }
     
-    
-    /* put yellow square in top left corner as sanity check */
-    
-    for( y = 0; y < 10; y++ ) {
-        int rowStart = y * MAXIGIN_GAME_NATIVE_W * 3;
-        
-        for( x = 0; x < 10; x ++ ) {
-            int pix = rowStart + x * 3;
-            inRGBBuffer[pix] = 255;
-            inRGBBuffer[pix + 1] = 255;
-            inRGBBuffer[pix + 2] = 0;
-            }
-        }
 
     /* hint test */
 
@@ -176,39 +190,23 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                   20 );
 
 
-    maxigin_drawSetColor( 255, 255, 0, 255 );
-    maxigin_drawLangText( lang_settings,
+    maxigin_drawSetColor( 255, 255, 255, 255 );
+    maxigin_drawLangText( lang_shoot,
+                          30,
                           20,
-                          120,
                           MAXIGIN_LEFT );
 
-    maxigin_drawSetColor( 0, 255, 255, 255 );
-    maxigin_drawLangText( lang_newGame,
-                          20,
-                          140,
-                          MAXIGIN_LEFT );
-        
-    maxigin_drawResetColor();
-    maxigin_drawLangText( lang_quit,
-                          20,
-                          160,
-                          MAXIGIN_LEFT);
+    maxigin_drawButtonHintSprite( BOMB,
+                                  MAXIGIN_GAME_NATIVE_W - 20,
+                                  20 );
 
-    maxigin_drawLangText( lang_musicVolume,
+    maxigin_drawLangText( lang_bomb,
+                          MAXIGIN_GAME_NATIVE_W - 30,
                           20,
-                          180,
-                          MAXIGIN_LEFT );
-        
-    maxigin_drawLangText( lang_effectsVolume,
-                          20,
-                          200,
-                          MAXIGIN_LEFT );
-                
-    maxigin_drawLangText( lang_fullscreen,
-                          20,
-                          220,
-                          MAXIGIN_LEFT );
+                          MAXIGIN_RIGHT );
+
     
+        
     
     for( i = 0;
          i < 9;
@@ -216,12 +214,12 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         /* vert line */
         maxigin_drawSprite( spriteHandles[4],
-                            i * 20 + 19,
+                            i * 20 + 79,
                             MAXIGIN_GAME_NATIVE_H /  2);
         /* hor line */
         maxigin_drawSprite( spriteHandles[5],
                             MAXIGIN_GAME_NATIVE_W /  2,
-                            i * 20 + 44 );
+                            i * 20 + 39 );
         }
 
     maxigin_drawToggleAdditive( 1 );
@@ -232,73 +230,48 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         
         if( bulletOn[ i ] ) {
             
-            int  startX  =  bulletPos[ i ].x - 2;
-            int  startY  =  bulletPos[ i ].y - 2;
-            int  endX    =  bulletPos[ i ].x + 2;
-            int  endY    =  bulletPos[ i ].y + 2;
-
             maxigin_drawSetAlpha( bulletFade[ i ] );
-            
-            if( i % 4 == 0 ) {
-                
-                maxigin_drawSprite( spriteHandles[ 0 ],
-                                    bulletPos[ i ].x,
-                                    bulletPos[ i ].y );
-                /* double glow */
-                maxigin_drawSprite( spriteHandles[ 1 ],
-                                    bulletPos[ i ].x,
-                                    bulletPos[ i ].y );
-                maxigin_drawSprite( spriteHandles[ 1 ],
-                                    bulletPos[ i ].x,
-                                    bulletPos[ i ].y );
-                }
-            else if( i % 4 == 1 ) {
-                maxigin_drawSprite( spriteHandles[2],
-                                    bulletPos[ i ].x,
-                                    bulletPos[ i ].y );
-                }
-            else if( i % 4 == 2 ) {
-                maxigin_drawSprite( spriteHandles[3],
-                                    bulletPos[ i ].x,
-                                    bulletPos[ i ].y );
-                }
-            else if( 1 || i % 4 == 3) {
-                maxigin_drawSprite( maxigin_getSpriteFromStrip( spriteStrip,
-                                                                stripIndex ),
-                                    bulletPos[ i ].x,
-                                    bulletPos[ i ].y );
-                }
-            
-            if( 0 )
-            for( y = startY;
-                 y < endY;
-                 y ++ ) {
 
-                if( y >= 0
-                    &&
-                    y < MAXIGIN_GAME_NATIVE_H ) {
-                    
-                    int rowStart = y * MAXIGIN_GAME_NATIVE_W * 3;
+            maxigin_drawSprite( spriteHandles[ 0 ],
+                                bulletPos[ i ].x,
+                                bulletPos[ i ].y );
+            }
+        }
+
+    for( i = 0;
+         i < MAX_NUM_BULLETS;
+         i ++ ) {
         
-                    for( x = startX;
-                         x < endX;
-                         x ++ ) {
+        if( bombOn[ i ] ) {
+            
+            maxigin_drawSetAlpha( 255 );
 
-                        if( x >= 0
-                            &&
-                            x < MAXIGIN_GAME_NATIVE_W ) {
+            if( bombProgress[i] > 0 ) {
+                
+                maxigin_drawSprite(
+                    maxigin_getSpriteFromStrip( spriteStrip,
+                                                bombStripIndex[ i ] ),
+                    bombPos[ i ].x,
+                    bombPos[ i ].y );
+                }
+            else {
+                int  b;
+
+                for( b = 0;
+                     b < 8;
+                     b ++ ) {
+
+                    maxigin_drawSetAlpha( bombBurstFade[i] );
                     
-                            int pix = rowStart + x * 3;
-                            inRGBBuffer[pix] = 0;
-                            inRGBBuffer[pix + 1] = 0;
-                            inRGBBuffer[pix + 2] = 255;
-                            }
-                        }
+                    maxigin_drawSprite(
+                        spriteHandles[7],
+                        bombPos[ i ].x + burstVX[b] * bombBurstProgress[i],
+                        bombPos[ i ].y + burstVY[b] * bombBurstProgress[i] );
                     }
                 }
             }
         }
-
+    
     maxigin_drawToggleAdditive( 1 );
 
     maxigin_drawSetColor( 255, 255, 255, 64 );
@@ -308,7 +281,13 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                       lineTip.x,
                       lineTip.y );
 
-    
+    maxigin_drawToggleAdditive( 0 );
+    maxigin_drawSetColor( 255, 255, 255, 255 );
+    maxigin_drawSprite( spriteHandles[6],
+                        lineTip.x,
+                        lineTip.y );
+
+    if( 0)
     maxigin_drawFillRect( MAXIGIN_GAME_NATIVE_W / 2,
                           MAXIGIN_GAME_NATIVE_H / 2,
                           lineTip.x,
@@ -318,7 +297,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
     maxigin_drawSetColor( 255, 0, 0, 255 );
 
-    
+    if( 0 )
     maxigin_drawRect( MAXIGIN_GAME_NATIVE_W / 2,
                       MAXIGIN_GAME_NATIVE_H / 2,
                       lineTip.x,
@@ -361,6 +340,43 @@ static void fireBullet( int  inX,
     }
 
 
+static void fireBomb( int  inX,
+                      int  inY ) {
+
+    int  i;
+
+    for( i = 0;
+         i < MAX_NUM_BULLETS;
+         i ++ ) {
+
+        if( ! bombOn[ i ] ) {
+            /* found empty bullet slot */
+
+            bombOn[ i ] = 1;
+
+            bombPos[ i ].x = inX;
+            bombPos[ i ].y = inY;
+
+            bombSpeed[ i ].x = 0;
+            bombSpeed[ i ].y = -2;
+
+            bombStripIndex[ i ] = 0;
+
+            bombProgress[ i ] = maxigin_randRange( &rand,
+                                                   4,
+                                                   8 );
+
+            bombBurstProgress[ i ] = 0;
+
+            bombBurstFade[ i ] = 255;
+            break;
+            }
+        }
+    
+    
+    }
+
+
 
 static char remappingJump = 0;
 
@@ -376,8 +392,10 @@ void maxiginGame_step( void ) {
     char  pointerLive;
     int   pointerX;
     int   pointerY;
+    /*
     int   panel;
     int   subPanel;
+    */
     
     char  stickLive;
 
@@ -397,7 +415,52 @@ void maxiginGame_step( void ) {
         if( stripIndex >= maxigin_getNumSpritesInStrip( spriteStrip ) ) {
             stripIndex = 0;
             }
+
+        for( i = 0;
+             i < MAX_NUM_BULLETS;
+             i ++ ) {
+        
+            if( bombOn[ i ] ) {
+
+                bombStripIndex[ i ] ++;
+                
+                if( bombStripIndex[i] >=
+                    maxigin_getNumSpritesInStrip( spriteStrip ) ) {
+                    bombStripIndex[i] = 0;
+                    }
+
+                if( bombProgress[ i ] > 0 ) {
+                    bombProgress[ i ] --;
+
+                    if( bombProgress[ i ] == 0 ) {
+                        maxigin_playSoundEffect( thunkSound,
+                                                 512 );
+                        }
+                    }
+                }
+            }          
         }
+
+    for( i = 0;
+         i < MAX_NUM_BULLETS;
+         i ++ ) {
+        
+        if( bombOn[ i ]
+            &&
+            bombProgress[ i ] == 0 ) {
+
+            bombBurstProgress[i] ++;
+
+            if( bombBurstFade[i] > 4 ) {
+                bombBurstFade[i] -= 4;
+                }
+            else {
+                bombOn[i] = 0;
+                }
+            }
+        }
+    
+        
         
 
     for( i = 0;
@@ -468,6 +531,19 @@ void maxiginGame_step( void ) {
             else {
                 loudnessToggle = 512;
                 }
+            }
+        }
+
+    if( maxigin_isButtonDown( BOMB ) ) {
+        int  msSinceLastBullet  =  (stepsSinceLastBullet * 1000 ) / r;
+
+        if( msSinceLastBullet > msBetweenBullets ) {
+            stepsSinceLastBullet = 0;
+
+            fireBomb( boxPosX, boxPosY );
+
+            maxigin_playSoundEffect( thunkSound,
+                                     64 );
             }
         }
     
@@ -571,6 +647,21 @@ void maxiginGame_step( void ) {
         }
 
 
+    /* move bombs */
+    for( i = 0;
+         i < MAX_NUM_BULLETS;
+         i ++ ) {
+
+        if( bombOn[ i ] ) {
+            
+            bombPos[ i ].x += bombSpeed[ i ].x;
+            bombPos[ i ].y += bombSpeed[ i ].y;
+
+            /* ignore out of bounds, fade will handle destruction */
+            }
+        }
+
+    /*
     maxigin_startGUI( &gameGUI );
 
     panel = maxigin_guiStartPanel( &gameGUI,
@@ -637,7 +728,7 @@ void maxiginGame_step( void ) {
                          panel );
     
     maxigin_endGUI( &gameGUI );
-    
+    */
     }
 
 
@@ -715,12 +806,14 @@ void maxiginGame_init( void ) {
          i ++ ) {
 
         bulletOn[ i ] = 0;
-        bulletPos[ i ].x = 0;
-        bulletPos[ i ].y = 0;
-        bulletSpeed[ i ].x = 0;
-        bulletSpeed[ i ].y = 0;
+
+        bombOn[ i ] = 0;
         }
 
+    maxigin_randSeed( &rand,
+                      1234859 );
+
+    
     maxigin_initEnableCRTOverlay();
     
     spriteStrip = maxigin_initSpriteStrip( "stripTest.tga",
@@ -744,16 +837,12 @@ void maxiginGame_init( void ) {
          i < NUM_BULK_FILES;
          i ++ ) {
 
-        if( i == 3 || i == 4 || i == 5 ) {
-            spriteHandles[ i ] = maxigin_initSprite( fileNames[ i ] );
+        spriteHandles[ i ] = maxigin_initSprite( fileNames[ i ] );
 
-            maxigin_initMakeGlowSprite( spriteHandles[ i ],
-                                        4,
-                                        2 );
-            }
-        else {
-            spriteHandles[ i ] = maxigin_initSprite( fileNames[ i ] );
-            }
+        maxigin_initMakeGlowSprite( spriteHandles[ i ],
+                                    4,
+                                    2 );
+
         
 
         if( spriteHandles[ i]  == -1 ) {
@@ -763,18 +852,28 @@ void maxiginGame_init( void ) {
             }
         }
 
+    lang_settings      = maxigin_initTranslationKey( "settings" );
+    lang_newGame       = maxigin_initTranslationKey( "newGame"  );
+    lang_quit          = maxigin_initTranslationKey( "quit" );
+    lang_musicVolume   = maxigin_initTranslationKey( "musicVolume" );
+    lang_effectsVolume = maxigin_initTranslationKey( "effectsVolume" );
+    lang_fullscreen    = maxigin_initTranslationKey( "fullscreen" );
+
+    lang_shoot         = maxigin_initTranslationKey( "shootDesc" );
+    lang_bomb          = maxigin_initTranslationKey( "bombDesc" );
+    
     
     maxigin_registerButtonMapping( JUMP,   jumpMapping );
     
     maxigin_registerDynamicButtonMapping(
         SHOOT,
         shootMapping,
-        maxigin_initTranslationKey( "shootDesc" )  );
+        lang_shoot  );
 
     maxigin_registerDynamicButtonMapping(
         BOMB,
         bombMapping,
-        maxigin_initTranslationKey( "bombDesc" ) );
+        lang_bomb );
     
     maxigin_registerButtonMapping( REMAP,  remapMapping );
     maxigin_registerButtonMapping( CRASH,  crashMapping );
@@ -854,12 +953,7 @@ void maxiginGame_init( void ) {
                                512,
                                plunkSound );
 
-    lang_settings      = maxigin_initTranslationKey( "settings" );
-    lang_newGame       = maxigin_initTranslationKey( "newGame"  );
-    lang_quit          = maxigin_initTranslationKey( "quit" );
-    lang_musicVolume   = maxigin_initTranslationKey( "musicVolume" );
-    lang_effectsVolume = maxigin_initTranslationKey( "effectsVolume" );
-    lang_fullscreen    = maxigin_initTranslationKey( "fullscreen" );
+    
 
     maxigin_initSetLanguageFontGLow( 2,
                                      2 );
@@ -889,6 +983,14 @@ void maxiginGame_init( void ) {
     REGISTER_ARRAY_MEM( bulletPos );
     REGISTER_ARRAY_MEM( bulletSpeed );
     REGISTER_ARRAY_MEM( bulletFade );
+
+    REGISTER_ARRAY_MEM( bombOn );
+    REGISTER_ARRAY_MEM( bombPos );
+    REGISTER_ARRAY_MEM( bombSpeed );
+    REGISTER_ARRAY_MEM( bombStripIndex );
+    REGISTER_ARRAY_MEM( bombProgress );
+    REGISTER_ARRAY_MEM( bombBurstProgress );
+    REGISTER_ARRAY_MEM( bombBurstFade ); 
     
     REGISTER_VAL_MEM( stepsSinceLastBullet );
 

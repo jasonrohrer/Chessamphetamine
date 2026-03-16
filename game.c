@@ -585,6 +585,9 @@ void maxiginGame_step( void ) {
         else if( boxDir < 0 && boxPosX <= 0 ) {
             boxDir = 1;
             }
+
+        lineTip.x = boxPosX;
+        lineTip.y = boxPosY;
         }
 
     stickLive = mingin_getStickPosition( BOX_THICK,

@@ -1,0 +1,25 @@
+"appbuild"
+{
+	"appid"	"4109570"
+
+	"desc" "Replaced On Command Line" // description for this build
+
+	"buildoutput" "/home/jasonrohrer/cpp/Chessamphetamine/build/steamBuildOutput" // build output folder for .log, .csm & .csd files, relative to location of this file
+
+	"contentroot" "/home/jasonrohrer/cpp/Chessamphetamine/build/steamLinuxLatest" // root content folder, relative to location of this file
+
+	// NOT auto-setting this build to live with setlive public
+	// we need to make sure that all other platforms are built and ready
+	// to deploy, so we have to make this build live manually
+	
+	"setlive"	"" // branch to set live after successful build, non if empty
+
+	"preview" "0" // to enable preview builds
+
+	"local"	""	// set to flie path of local content server 
+	
+	"depots"
+	{
+		"4109572" "depot_build_linux_4109572.vdf"
+	}
+}

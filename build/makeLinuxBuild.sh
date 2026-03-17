@@ -21,6 +21,11 @@ then
    exit
 fi
 
+echo "Logging into steamcmd as a sanity check..."
+
+steamcmd +login "jasonrohrergames" +quit
+
+
 folderName="Chessamphetamine_v${1}_linux"
 zipName=${folderName}.zip
 
@@ -55,4 +60,17 @@ cp -r tempCheckout/settings $folderName
 echo "Zipping..."
 
 zip -r $zipName $folderName
+
+
+echo "Gathering files for Steam build..."
+
+rm -rf steamLinuxLatest
+
+mkdir steamLinuxLatest
+
+cp -r $folderName/* steamLinuxLatest
+
+echo "Pushing build with steamcmd..."
+
+steamcmd +login "jasonrohrergames" +run_app_build -desc Chessamphetamine_linux_v$1 /home/jasonrohrer/cpp/Chessamphetamine/build/app_build_linux_4109570.vdf +quit
 

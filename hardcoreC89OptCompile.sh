@@ -1,0 +1,6 @@
+# This is the compilation command that I used during development to force
+# myself to stick to pure c89.
+# 
+
+gcc -O3 -g -std=c89 -fno-builtin -pedantic -Wall -Wextra -Werror -Wconversion -Wshadow -Wstrict-prototypes -Wold-style-definition -Wmissing-prototypes -Wmissing-declarations -Wdeclaration-after-statement -o Chessamphetamine game.c maxigin_imp.c mingin_imp.c -lX11 -lXrandr -lGLX -lGL -lasound -lpthread
+

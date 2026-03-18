@@ -6614,6 +6614,11 @@ char minginPlatform_getStickPosition( MinginStick   inStick,
 
 
 
+char mingin_hasAnyGamepadBeenTouched( void ) {
+    return 0;
+    }
+
+
 
 void mingin_log( const char  *inString ) {
     /* suppress compiler warning */

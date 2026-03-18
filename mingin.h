@@ -6467,7 +6467,7 @@ static char mn_isRunningOnSteamDeck( void ) {
 
 
 /* end #ifdef __linux__ */
-#elif defined(WIN32)
+#elif defined(_WIN32)
 
 /*
   ==================================================
@@ -6475,7 +6475,361 @@ static char mn_isRunningOnSteamDeck( void ) {
   ==================================================
 */
 
-/* empty for now */
+
+#include <windows.h>
+
+
+
+static  unsigned char  mn_gameScreenBuffer[ MINGIN_MAX_SCREEN_W *
+                                            MINGIN_MAX_SCREEN_H * 3 ];
+
+/* windows D3D textures must be 32-bit */
+static  unsigned char  mn_windowsScreenTextureBuffer[ MINGIN_MAX_SCREEN_W *
+                                                      MINGIN_MAX_SCREEN_H * 4 ];
+
+static  int            mn_gotQuit  =  0;
+
+
+
+
+int APIENTRY WinMain( HINSTANCE  hInst,
+                      HINSTANCE  hInstPrev,
+                      PSTR       cmdline,
+                      int        cmdshow ) {
+    
+    MessageBox( NULL, "hello, world", "caption", 0 );
+
+    minginInternal_init();
+    
+    while( ! mn_gotQuit ) {
+        
+        /* don't ask about the minimum screen size */
+        
+        minginGame_step( 0 );
+        
+        /* ask for screen pixels and do nothing with them */
+        minginGame_getScreenPixels( MINGIN_MAX_SCREEN_W,
+                                    MINGIN_MAX_SCREEN_H,
+                                    mn_gameScreenBuffer );
+
+        /* don't even bother asking for game audio samples */
+        }
+
+    /* game asked to quit ! */
+    return 0;
+    }
+
+
+
+int mingin_getStepsPerSecond( void ) {
+    /* dummy value */
+    return 1;
+    }
+
+
+
+int mingin_getMillisecondsLeftInStep( void ) {
+    return -1;
+    }
+
+
+
+void mingin_lockAudio( void ) {
+    }
+
+
+
+void mingin_unlockAudio( void ) {
+    }
+
+
+
+char mingin_isSoundPlaying( void ) {
+    return 0;
+    }
+
+
+
+void mingin_quit( void ) {
+    mn_gotQuit = 1;
+    }
+
+
+
+
+static char minginPlatform_isButtonDown( MinginButton  inButton ) {
+    /* suppress warning */
+    if( inButton == MGN_BUTTON_NONE ) {
+        }
+    return 0;
+    }
+
+
+MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
+    /* suppress warning */
+    if( inButtonHandle ) {
+        }
+    return MGN_BUTTON_NONE;
+    }
+
+
+
+char mingin_getPointerLocation( int  *outX,
+                                int  *outY,
+                                int  *outMaxX,
+                                int  *outMaxY ) {
+    /* suppress warning */
+    *outX = 0;
+    *outY = 0;
+    *outMaxX = 0;
+    *outMaxY = 0;
+    
+    return 0;
+    }
+
+
+
+char minginPlatform_getStickPosition( MinginStick   inStick,
+                                      int          *outPosition,
+                                      int          *outLowerLimit,
+                                      int          *outUpperLimit ) {
+    /* suppress warning */
+    if( inStick ||
+        *outPosition ||
+        *outUpperLimit ||
+        *outLowerLimit ) {
+        return 0;
+        }
+    return 0;
+    }
+
+
+
+char mingin_hasAnyGamepadBeenTouched( void ) {
+    return 0;
+    }
+
+
+
+void mingin_log( const char  *inString ) {
+    /* suppress compiler warning */
+    if( inString[0] == '\0' ) {
+        }
+    return;
+    }
+
+
+
+
+char mingin_toggleFullscreen( char  inFullscreen ) {
+    /* suppress warning */
+    if( inFullscreen ) {
+        }
+    return 0;
+    }
+
+
+
+char mingin_isFullscreen( void ) {
+    return 0;
+    }
+
+
+
+MinginButton mingin_getLastButtonPressed( void ) {
+    return MGN_BUTTON_NONE;
+    }
+
+
+
+int mingin_startWritePersistData( const char  *inStoreName ) {
+    /* suppress  warning */
+    if( inStoreName[0] == '\0' ) {
+        }
+    return -1;
+    }
+
+
+
+int mingin_startReadPersistData( const char  *inStoreName,
+                                 int         *outTotalBytes ) {
+    /* suppress  warning */
+    if( inStoreName[0] == '\0' ) {
+        }
+    *outTotalBytes = 0;
+    
+    return -1;
+    }
+
+
+
+char mingin_writePersistData( int                   inStoreWriteHandle,
+                              int                   inNumBytesToWrite,
+                              const unsigned char  *inByteBuffer ) {
+    /* suppress warning */
+    if( inStoreWriteHandle > 0
+        ||
+        inNumBytesToWrite > 0
+        ||
+        inByteBuffer != 0 ) {
+        }
+    return 0;
+    }
+
+
+
+int mingin_readPersistData( int             inStoreReadHandle,
+                            int             inNumBytesToRead,
+                            unsigned char  *inByteBuffer ) {
+    /* suppress warning */
+    if( inStoreReadHandle > 0
+        ||
+        inNumBytesToRead > 0
+        ||
+        inByteBuffer != 0 ) {
+        }
+    return -1;
+    }
+
+
+
+char mingin_seekPersistData( int  inStoreReadHandle,
+                             int  inAbsoluteBytePosition ) {
+    /* suppress warning */
+    if( inStoreReadHandle > 0
+        ||
+        inAbsoluteBytePosition > 0 ) {
+        }
+    return 0;
+    }
+
+
+int mingin_getPersistDataPosition( int  inStoreReadHandle ) {
+    /* suppress warning */
+    if( inStoreReadHandle > 0 ) {
+        }
+    return 0;
+    }
+
+
+
+
+void mingin_endWritePersistData( int  inStoreWriteHandle ) {
+    /* suppress warning */
+    if( inStoreWriteHandle > 0 ) {
+        }
+    }
+
+
+
+void mingin_endReadPersistData( int  inStoreReadHandle ) {
+    /* suppress warning */
+    if( inStoreReadHandle > 0 ) {
+        }
+    }
+
+
+
+int mingin_startReadBulkData( const char  *inBulkName,
+                              int         *outTotalBytes ) {
+    /* suppress warning */
+    if( inBulkName[0] != '\0' ) {
+        }
+    *outTotalBytes = 0;
+    return -1;
+    }
+
+
+
+void mingin_setBulkDataReadBuffer( int             inBulkDataHandle,
+                                   int             inBufferSize,
+                                   unsigned char  *inBuffer ) {
+    /* suppress warning */
+    if( inBulkDataHandle > 0
+        ||
+        inBufferSize > 0
+        ||
+        inBuffer != 0 ) {
+        }
+    }
+
+
+
+int mingin_readBulkData( int             inBulkDataHandle,
+                         int             inNumBytesToRead,
+                         unsigned char  *inByteBuffer ) {
+    /* suppress warning */
+    if( inBulkDataHandle > 0
+        ||
+        inNumBytesToRead > 0
+        ||
+        inByteBuffer != 0 ) {
+        }
+    return -1;
+    }
+
+
+
+
+char mingin_seekBulkData( int  inBulkDataHandle,
+                          int  inAbsoluteBytePosition ) {
+    /* suppress warning */
+    if( inBulkDataHandle > 0
+        ||
+        inAbsoluteBytePosition > 0 ) {
+        }
+    return 0;
+    }
+
+
+
+int mingin_getBulkDataPosition( int  inBulkDataHandle ) {
+    /* suppress warning */
+    if( inBulkDataHandle > 0 ) {
+        }
+    return 0;
+    }
+
+
+
+void mingin_endReadBulkData( int  inBulkDataHandle ) {
+    /* suppress warning */
+    if( inBulkDataHandle > 0 ) {
+        }
+    }
+
+
+
+char mingin_getBulkDataChanged( const char  *inBulkName ) {
+    /* suppress warning */
+    if( inBulkName[0] != '\0' ) {
+        }
+    return 0;
+    }
+
+
+
+void mingin_deletePersistData( const char  *inStoreName ) {
+    /* suppress warning */
+    if( inStoreName[0] != '\0' ) {
+        }
+    }
+
+
+
+char mingin_renamePersistData( const char  *inStoreName,
+                               const char  *inStoreNewName ) {
+    /* suppress warning */
+    if( inStoreName[0] != '\0'
+        ||
+        inStoreNewName[0] != '\0' ) {
+        }
+
+    return 0;
+    }
+
+
+
 
 
 

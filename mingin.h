@@ -6473,6 +6473,16 @@ static char mn_isRunningOnSteamDeck( void ) {
   ==================================================
   Windows implementation               [jumpWindows]
   ==================================================
+
+  Uses Direct3D 11 to swap pixels to window as a textured quad.
+*/
+
+
+
+/*
+  This tutorial was very useful:
+
+  http://www.directxtutorial.com/LessonList.aspx?listid=11
 */
 
 #ifndef UNICODE
@@ -6487,11 +6497,13 @@ static char mn_isRunningOnSteamDeck( void ) {
 #define CINTERFACE
 #define COBJMACROS
 #include <windows.h>
+#include <initguid.h>
 #include <d3d11.h>
 
-static  IDXGISwapChain       *mn_dxSwapChain;
-static  ID3D11Device         *mn_d3dDevice;
-static  ID3D11DeviceContext  *mn_d3dDeviceContext;
+static  IDXGISwapChain          *mn_dxSwapChain;
+static  ID3D11Device            *mn_d3dDevice;
+static  ID3D11DeviceContext     *mn_d3dDeviceContext;
+static  ID3D11RenderTargetView  *mn_d3dBackBuffer;
 
 
 static  unsigned char  mn_gameScreenBuffer[ MINGIN_MAX_SCREEN_W *
@@ -6507,19 +6519,21 @@ static  int            mn_gotQuit  =  0;
 
 static void mn_d3dInit( HWND  hWnd ) {
 
-    DXGI_SWAP_CHAIN_DESC  scd;
+    DXGI_SWAP_CHAIN_DESC   swapChainDesc;
+    ID3D11Texture2D       *backBuffer;
+    D3D11_VIEWPORT         viewport;
 
-    ZeroMemory( &scd,
+    ZeroMemory( &swapChainDesc,
                 sizeof( DXGI_SWAP_CHAIN_DESC ) );
     
-    scd.BufferCount        = 1;
-    scd.BufferDesc.Format  = DXGI_FORMAT_R8G8B8A8_UNORM;
-    scd.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    scd.OutputWindow       = hWnd;
+    swapChainDesc.BufferCount        = 1;
+    swapChainDesc.BufferDesc.Format  = DXGI_FORMAT_R8G8B8A8_UNORM;
+    swapChainDesc.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.OutputWindow       = hWnd;
     /* multi-sampling off */
-    scd.SampleDesc.Count   = 1;
-    scd.SampleDesc.Quality = 0;
-    scd.Windowed = TRUE;
+    swapChainDesc.SampleDesc.Count   = 1;
+    swapChainDesc.SampleDesc.Quality = 0;
+    swapChainDesc.Windowed = TRUE;
 
     D3D11CreateDeviceAndSwapChain( NULL,
                                    D3D_DRIVER_TYPE_HARDWARE,
@@ -6528,16 +6542,48 @@ static void mn_d3dInit( HWND  hWnd ) {
                                    NULL,
                                    0,
                                    D3D11_SDK_VERSION,
-                                   &scd,
+                                   &swapChainDesc,
                                    &mn_dxSwapChain,
                                    &mn_d3dDevice,
                                    NULL,
-                                   &mn_d3dDeviceContext);
+                                   &mn_d3dDeviceContext );
+
+    /* setup back-buffer stuff */
+    IDXGISwapChain_GetBuffer( mn_dxSwapChain,
+                              0,
+                              &IID_ID3D11Texture2D,
+                              (LPVOID*)&backBuffer );
+
+    ID3D11Device_CreateRenderTargetView( mn_d3dDevice,
+                                         (ID3D11Resource *)backBuffer,
+                                         NULL,
+                                         &mn_d3dBackBuffer );
+    ID3D11Texture2D_Release( backBuffer );
+
+    ID3D11DeviceContext_OMSetRenderTargets( mn_d3dDeviceContext,
+                                            1,
+                                            &mn_d3dBackBuffer,
+                                            NULL );
+
+
+    // Set the viewport
+    ZeroMemory( &viewport,
+                sizeof( D3D11_VIEWPORT ) );
+
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.Width    = 800;
+    viewport.Height   = 600;
+
+    ID3D11DeviceContext_RSSetViewports( mn_d3dDeviceContext,
+                                        1,
+                                        &viewport );
     }
 
 
 static void mn_d3dCleanup( void ) {
     IDXGISwapChain_Release( mn_dxSwapChain );
+    ID3D11RenderTargetView_Release( mn_d3dBackBuffer );
     ID3D11Device_Release( mn_d3dDevice );
     ID3D11DeviceContext_Release( mn_d3dDeviceContext );
     }
@@ -6569,8 +6615,12 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
 
     HWND        hWnd;
     WNDCLASSEX  wc;
-    RECT        windRect  =  { 0, 0, 800, 600 };
+    RECT        windRect        =  { 0, 0, 800, 600 };
     MSG         msg;
+    float       blueColor  [4]  =  { 0.0f, 0.2f, 0.4f, 1.0f };
+    float       yellowColor[4]  =  { 1.0f, 1.0f, 0.0f, 1.0f };
+    float      *currColor       =  blueColor;
+    int         stepCount       =  0;
     
     ZeroMemory( &wc,
                 sizeof( WNDCLASSEX ) );
@@ -6581,7 +6631,7 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     wc.hInstance     = hInstance;
     wc.hCursor       = LoadCursor( NULL,
                                    IDC_ARROW );
-    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+    wc.hbrBackground = (HBRUSH)GetStockObject( BLACK_BRUSH );
     wc.lpszClassName = L"MinginWindowClass";
 
     RegisterClassEx( &wc );
@@ -6627,17 +6677,40 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
             }
         else {
             /* game code ? */
-
+            
             if( mn_gotQuit ) {
                 break;
                 }
 
             minginGame_step( 0 );
 
-             /* ask for screen pixels and do nothing with them */
+            ID3D11DeviceContext_ClearRenderTargetView( mn_d3dDeviceContext,
+                                                       mn_d3dBackBuffer,
+                                                       currColor );
+            stepCount ++;
+
+            if( stepCount == 60 ) {
+                
+                if( currColor == blueColor ) {
+                    currColor = yellowColor;
+                    }
+                else {
+                    currColor = blueColor;
+                    }
+                stepCount = 0;
+                }
+            
+            
+            IDXGISwapChain_Present( mn_dxSwapChain,
+                                    1,
+                                    0 );
+            
+            /* ask for screen pixels and do nothing with them
+               skip for now */
+            /*
             minginGame_getScreenPixels( MINGIN_MAX_SCREEN_W,
                                         MINGIN_MAX_SCREEN_H,
-                                        mn_gameScreenBuffer );
+                                        mn_gameScreenBuffer );*/
             }
         }
 

@@ -6475,6 +6475,14 @@ static char mn_isRunningOnSteamDeck( void ) {
   ==================================================
 */
 
+#ifndef UNICODE
+#define UNICODE
+#endif
+
+#ifndef _UNICODE
+#define _UNICODE
+#endif
+
 
 #define CINTERFACE
 #define COBJMACROS
@@ -6535,32 +6543,117 @@ static void mn_d3dCleanup( void ) {
     }
 
 
-
-int APIENTRY WinMain( HINSTANCE  hInst,
-                      HINSTANCE  hInstPrev,
-                      PSTR       cmdline,
-                      int        cmdshow ) {
-    
-    MessageBox( NULL, "hello, world", "caption", 0 );
-
-    minginInternal_init();
-    
-    while( ! mn_gotQuit ) {
-        
-        /* don't ask about the minimum screen size */
-        
-        minginGame_step( 0 );
-        
-        /* ask for screen pixels and do nothing with them */
-        minginGame_getScreenPixels( MINGIN_MAX_SCREEN_W,
-                                    MINGIN_MAX_SCREEN_H,
-                                    mn_gameScreenBuffer );
-
-        /* don't even bother asking for game audio samples */
+// this is the main message handler for the program
+static LRESULT CALLBACK mn_windowProc( HWND hWnd,
+                                       UINT message,
+                                       WPARAM wParam,
+                                       LPARAM lParam ) {
+    switch( message ){
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            return 0;
+            break;
         }
 
+    return DefWindowProc( hWnd,
+                          message,
+                          wParam, lParam );
+    }
+
+
+int APIENTRY WinMain( HINSTANCE  hInstance,
+                      HINSTANCE  hInstancePrev,
+                      PSTR       cmdline,
+                      int        cmdshow ) {
+
+
+    HWND        hWnd;
+    WNDCLASSEX  wc;
+    RECT        windRect  =  { 0, 0, 800, 600 };
+    MSG         msg;
+    
+    ZeroMemory( &wc,
+                sizeof( WNDCLASSEX ) );
+
+    wc.cbSize        = sizeof( WNDCLASSEX );
+    wc.style         = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc   = mn_windowProc;
+    wc.hInstance     = hInstance;
+    wc.hCursor       = LoadCursor( NULL,
+                                   IDC_ARROW );
+    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+    wc.lpszClassName = L"MinginWindowClass";
+
+    RegisterClassEx( &wc );
+
+    AdjustWindowRect( &windRect,
+                      WS_OVERLAPPEDWINDOW,
+                      FALSE );
+
+    hWnd = CreateWindowEx( WS_EX_APPWINDOW,
+                           L"MinginWindowClass",
+                           L"Our First Direct3D Program",
+                           WS_OVERLAPPEDWINDOW,
+                           CW_USEDEFAULT,
+                           CW_USEDEFAULT,
+                           windRect.right - windRect.left,
+                           windRect.bottom - windRect.top,
+                           NULL,
+                           NULL,
+                           hInstance,
+                           NULL );
+    
+    ShowWindow( hWnd,
+                cmdshow );
+
+    mn_d3dInit( hWnd );
+
+    minginInternal_init();
+
+
+    while( 1 ) {
+        if( PeekMessage( &msg,
+                         NULL,
+                         0,
+                         0,
+                         PM_REMOVE ) ) {
+
+            TranslateMessage( &msg );
+            DispatchMessage ( &msg );
+
+            if( msg.message == WM_QUIT ) {
+                break;
+                }
+            }
+        else {
+            /* game code ? */
+
+            if( mn_gotQuit ) {
+                break;
+                }
+
+            minginGame_step( 0 );
+
+             /* ask for screen pixels and do nothing with them */
+            minginGame_getScreenPixels( MINGIN_MAX_SCREEN_W,
+                                        MINGIN_MAX_SCREEN_H,
+                                        mn_gameScreenBuffer );
+            }
+        }
+
+    /* final step */
+    minginGame_step( 1 );
+    
+    mn_d3dCleanup();
+    
+    
+    MessageBox( NULL,
+                L"Quitting",
+                L"Quitting...",
+                0 );
+
     /* game asked to quit ! */
-    return 0;
+    return (int)( msg.wParam );
     }
 
 

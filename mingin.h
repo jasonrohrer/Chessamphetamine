@@ -6476,8 +6476,14 @@ static char mn_isRunningOnSteamDeck( void ) {
 */
 
 
+#define CINTERFACE
+#define COBJMACROS
 #include <windows.h>
+#include <d3d11.h>
 
+static  IDXGISwapChain       *mn_dxSwapChain;
+static  ID3D11Device         *mn_d3dDevice;
+static  ID3D11DeviceContext  *mn_d3dDeviceContext;
 
 
 static  unsigned char  mn_gameScreenBuffer[ MINGIN_MAX_SCREEN_W *
@@ -6489,6 +6495,44 @@ static  unsigned char  mn_windowsScreenTextureBuffer[ MINGIN_MAX_SCREEN_W *
 
 static  int            mn_gotQuit  =  0;
 
+
+
+static void mn_d3dInit( HWND  hWnd ) {
+
+    DXGI_SWAP_CHAIN_DESC  scd;
+
+    ZeroMemory( &scd,
+                sizeof( DXGI_SWAP_CHAIN_DESC ) );
+    
+    scd.BufferCount        = 1;
+    scd.BufferDesc.Format  = DXGI_FORMAT_R8G8B8A8_UNORM;
+    scd.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    scd.OutputWindow       = hWnd;
+    /* multi-sampling off */
+    scd.SampleDesc.Count   = 1;
+    scd.SampleDesc.Quality = 0;
+    scd.Windowed = TRUE;
+
+    D3D11CreateDeviceAndSwapChain( NULL,
+                                   D3D_DRIVER_TYPE_HARDWARE,
+                                   NULL,
+                                   0,
+                                   NULL,
+                                   0,
+                                   D3D11_SDK_VERSION,
+                                   &scd,
+                                   &mn_dxSwapChain,
+                                   &mn_d3dDevice,
+                                   NULL,
+                                   &mn_d3dDeviceContext);
+    }
+
+
+static void mn_d3dCleanup( void ) {
+    IDXGISwapChain_Release( mn_dxSwapChain );
+    ID3D11Device_Release( mn_d3dDevice );
+    ID3D11DeviceContext_Release( mn_d3dDeviceContext );
+    }
 
 
 

@@ -1953,6 +1953,55 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 
 
 /*
+  Returns a static buffer that must be used before next call to mn_intToString
+*/
+static const char *mn_intToString( int  inInt ) {
+    
+    static  char           buffer[20];
+            const char    *formatError  =  "[int_format_error]";
+            unsigned int   c            =  0;         
+            int            divisor      =  1000000000;  /* start w/ billions */
+            int            qLowerLimit  =  1;           /* skip 0 digits until
+                                                           our first non-zero
+                                                           digit */
+    if( inInt == 0 ) {
+        return "0";
+        }
+    if( inInt < 0 ) {
+        buffer[c] = '-';
+        c++;
+        inInt *= -1;
+        }
+    while( divisor >= 1 ) {
+        
+        int q = inInt / divisor;
+        
+        if( q >= qLowerLimit ) {
+            if( q > 9 ) {
+                return formatError;
+                }
+            if( c >= sizeof( buffer ) - 1 ) {
+                /* out of room? */
+                return formatError;
+                }
+            buffer[c] = (char)( '0' + q );
+            c++;
+            /* we've seen at least one non-zero digit,
+               so start allowing zeros now */
+            qLowerLimit = 0;
+            }
+        inInt -= q * divisor;
+        divisor /= 10;
+        }
+    
+    /* terminate */
+    buffer[c] = '\0';
+    
+    return buffer;  
+    }
+
+
+/*
   This is the end of Mingin's internal code.
 
   [jumpInternal]
@@ -2914,53 +2963,7 @@ void mingin_log( const char  *inString ) {
 
 
 
-/*
-  Returns a static buffer that must be used before next call to mn_intToString
-*/
-static const char *mn_intToString( int  inInt ) {
-    
-    static  char           buffer[20];
-            const char    *formatError  =  "[int_format_error]";
-            unsigned int   c            =  0;         
-            int            divisor      =  1000000000;  /* start w/ billions */
-            int            qLowerLimit  =  1;           /* skip 0 digits until
-                                                           our first non-zero
-                                                           digit */
-    if( inInt == 0 ) {
-        return "0";
-        }
-    if( inInt < 0 ) {
-        buffer[c] = '-';
-        c++;
-        inInt *= -1;
-        }
-    while( divisor >= 1 ) {
-        
-        int q = inInt / divisor;
-        
-        if( q >= qLowerLimit ) {
-            if( q > 9 ) {
-                return formatError;
-                }
-            if( c >= sizeof( buffer ) - 1 ) {
-                /* out of room? */
-                return formatError;
-                }
-            buffer[c] = (char)( '0' + q );
-            c++;
-            /* we've seen at least one non-zero digit,
-               so start allowing zeros now */
-            qLowerLimit = 0;
-            }
-        inInt -= q * divisor;
-        divisor /= 10;
-        }
-    
-    /* terminate */
-    buffer[c] = '\0';
-    
-    return buffer;  
-    }
+
 
 
 
@@ -6513,7 +6516,23 @@ static  unsigned char  mn_gameScreenBuffer[ MINGIN_MAX_SCREEN_W *
 static  unsigned char  mn_windowsScreenTextureBuffer[ MINGIN_MAX_SCREEN_W *
                                                       MINGIN_MAX_SCREEN_H * 4 ];
 
-static  int            mn_gotQuit  =  0;
+
+static  int            mn_gotQuit              =  0;
+
+/* these are w/h we are actually using, constrained by our static buffer
+   size */
+static  int            mn_windowW              =  0;
+static  int            mn_windowH              =  0;
+
+/* these are the true w/h we'd want to have if buffer size wasn't an issue */
+static  int            mn_realWindowW          =  0;
+static  int            mn_realWindowH          =  0;
+
+static  char           mn_areWeInStepFunction  =  0;
+static  char           mn_fullscreen           =  0;
+static  int            mn_screenRefreshRate    =  0;
+static  char           mn_ignoreWindowDestroy  =  0;
+
 
 
 
@@ -6595,9 +6614,12 @@ static LRESULT CALLBACK mn_windowProc( HWND hWnd,
                                        WPARAM wParam,
                                        LPARAM lParam ) {
     switch( message ){
+        
         case WM_DESTROY:
-            PostQuitMessage(0);
-            return 0;
+            if( ! mn_ignoreWindowDestroy ) {    
+                PostQuitMessage(0);
+                return 0;
+                }
             break;
         }
 
@@ -6607,20 +6629,156 @@ static LRESULT CALLBACK mn_windowProc( HWND hWnd,
     }
 
 
-int APIENTRY WinMain( HINSTANCE  hInstance,
-                      HINSTANCE  hInstancePrev,
-                      PSTR       cmdline,
-                      int        cmdshow ) {
+
+static void mn_getMonitorSpecs( int  *outW,
+                                int  *outH,
+                                int  *outHz ) {
+
+    DEVMODE devMode;
+
+    ZeroMemory( &devMode,
+                sizeof( devMode ) );
+    devMode.dmSize = sizeof( devMode );
+
+    if( EnumDisplaySettings( NULL,
+                             ENUM_CURRENT_SETTINGS,
+                             &devMode ) ) {
+        *outW  = devMode.dmPelsWidth;
+        *outH  = devMode.dmPelsHeight;
+        *outHz = devMode.dmDisplayFrequency;
+        }
+    else {
+        *outW  = -1;
+        *outH  = -1;
+        *outHz = -1;
+        }
+    }
 
 
-    HWND        hWnd;
+
+static void mn_setupWindowSize( void ) {
+
+    mn_realWindowW = 0;
+    mn_realWindowH = 0;
+    
+    if( mn_fullscreen ) {
+        mn_getMonitorSpecs( &mn_realWindowW,
+                            &mn_realWindowH,
+                            &mn_screenRefreshRate );
+        mn_windowW = mn_realWindowW;
+        mn_windowH = mn_realWindowH;
+        }
+    else {
+        
+        int  monW;
+        int  monH;
+        int  gameW;
+        int  gameH;
+        int  smallestMult;
+        
+        mn_getMonitorSpecs( &monW,
+                            &monH,
+                            &mn_screenRefreshRate );
+
+        if( monW == -1 ) {
+            mn_windowW = -1;
+            mn_windowH = -1;
+            return;
+            }
+        
+        minginGame_getMinimumViableScreenSize( &gameW,
+                                               &gameH );
+
+        if( monW < gameW
+            ||
+            monH < gameH ) {
+            /* physical monitor too small for game
+               have window fill monitor */
+            mn_windowW = monW;
+            mn_windowH = monH;
+            }
+        else {
+            /* monitor big enough for game */
+            int  wMult  =  monW / gameW;
+            int  hMult  =  monH / gameH;
+
+            smallestMult = wMult;
+            
+            if( hMult < smallestMult ) {
+                smallestMult = hMult;
+                }
+            
+            mn_windowW = smallestMult * gameW;
+            mn_windowH = smallestMult * gameH;
+
+            while( smallestMult > 1
+                   &&
+                   ( mn_windowW > ( 9 * monW ) / 10
+                     ||
+                     mn_windowH > ( 9 * monH ) / 10 ) ) {
+
+                /* window filling more than 90% of monitor, too big */
+                smallestMult --;
+                
+                mn_windowW = smallestMult * gameW;
+                mn_windowH = smallestMult * gameH;
+                }
+            }
+        }
+    
+    /* make sure we're never bigger than our statically allocated
+       framebuffer */
+    if( mn_windowW > MINGIN_MAX_SCREEN_W ) {
+        mn_windowW = MINGIN_MAX_SCREEN_W;
+        }
+    if( mn_windowH > MINGIN_MAX_SCREEN_H ) {
+        mn_windowH = MINGIN_MAX_SCREEN_H;
+        }
+
+    if( mn_realWindowW == 0 ) {
+        /* real only set above if we're in fullscreen mode
+           if we're in windowed mode, our "real" size matches our
+           actual window size */
+        mn_realWindowW = mn_windowW;
+        mn_realWindowH = mn_windowH;
+        }
+    
+    mingin_log( "Window = " );
+    mingin_log( mn_intToString( mn_windowW ) );
+    mingin_log( "," );
+    mingin_log( mn_intToString( mn_windowH ) );
+    mingin_log( "\n" );
+    }
+
+
+
+static  HWND    mn_windowHandle;
+static  LPWSTR  mn_windowClassName  =  L"MinginWindowClass";
+
+
+static char mn_createWindow( HINSTANCE  hInstance,
+                             int        cmdshow ) {
+    
     WNDCLASSEX  wc;
-    RECT        windRect        =  { 0, 0, 800, 600 };
-    MSG         msg;
-    float       blueColor  [4]  =  { 0.0f, 0.2f, 0.4f, 1.0f };
-    float       yellowColor[4]  =  { 1.0f, 1.0f, 0.0f, 1.0f };
-    float      *currColor       =  blueColor;
-    int         stepCount       =  0;
+    RECT        windRect   =  { 0, 0, 0, 0 };
+    DWORD       windStyle  =  WS_OVERLAPPEDWINDOW;
+
+    if( mn_fullscreen ) {
+        windStyle = WS_POPUP;
+        }
+    
+    mn_setupWindowSize();
+
+    if( mn_windowW == -1 ) {
+        MessageBox( NULL,
+                    L"Failed to get monitor size.",
+                    L"Error",
+                    MB_ICONERROR | MB_OK );
+        return 0;
+        }
+
+    windRect.right  = mn_windowW;
+    windRect.bottom = mn_windowH;
     
     ZeroMemory( &wc,
                 sizeof( WNDCLASSEX ) );
@@ -6632,32 +6790,70 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     wc.hCursor       = LoadCursor( NULL,
                                    IDC_ARROW );
     wc.hbrBackground = (HBRUSH)GetStockObject( BLACK_BRUSH );
-    wc.lpszClassName = L"MinginWindowClass";
+    wc.lpszClassName = mn_windowClassName;
 
     RegisterClassEx( &wc );
 
     AdjustWindowRect( &windRect,
-                      WS_OVERLAPPEDWINDOW,
+                      windStyle,
                       FALSE );
 
-    hWnd = CreateWindowEx( WS_EX_APPWINDOW,
-                           L"MinginWindowClass",
-                           L"Our First Direct3D Program",
-                           WS_OVERLAPPEDWINDOW,
-                           CW_USEDEFAULT,
-                           CW_USEDEFAULT,
-                           windRect.right - windRect.left,
-                           windRect.bottom - windRect.top,
-                           NULL,
-                           NULL,
-                           hInstance,
-                           NULL );
+    mn_windowHandle = CreateWindowEx( WS_EX_APPWINDOW,
+                                      mn_windowClassName,
+                                      L"Our First Direct3D Program",
+                                      windStyle,
+                                      CW_USEDEFAULT,
+                                      CW_USEDEFAULT,
+                                      windRect.right - windRect.left,
+                                      windRect.bottom - windRect.top,
+                                      NULL,
+                                      NULL,
+                                      hInstance,
+                                      NULL );
     
-    ShowWindow( hWnd,
+    ShowWindow( mn_windowHandle,
                 cmdshow );
 
-    mn_d3dInit( hWnd );
+    mn_d3dInit( mn_windowHandle );
 
+    return 1;
+    }
+
+
+static void mn_destroyWindow( HINSTANCE  hInstance ) {
+
+    mn_d3dCleanup();
+    
+    DestroyWindow( mn_windowHandle );
+
+    UnregisterClass( mn_windowClassName,
+                     hInstance );
+    }
+
+
+
+
+int APIENTRY WinMain( HINSTANCE  hInstance,
+                      HINSTANCE  hInstancePrev,
+                      PSTR       cmdline,
+                      int        cmdshow ) {
+
+    float       blueColor  [4]  =  { 0.0f, 0.2f, 0.4f, 1.0f };
+    float       yellowColor[4]  =  { 1.0f, 1.0f, 0.0f, 1.0f };
+    float      *currColor       =  blueColor;
+    int         stepCount       =  0;
+    MSG         msg;
+    char        success;
+    
+
+    success = mn_createWindow( hInstance,
+                               cmdshow );
+
+    if( ! success ) {
+        return 1;
+        }
+    
+    
     minginInternal_init();
 
 
@@ -6673,6 +6869,22 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
 
             if( msg.message == WM_QUIT ) {
                 break;
+                }
+            switch( msg.message ) {
+                case WM_KEYDOWN:
+
+                    mn_ignoreWindowDestroy = 1;
+                    
+                    mn_destroyWindow( hInstance );
+
+                    mn_fullscreen = ! mn_fullscreen;
+
+                    mn_createWindow( hInstance,
+                                     cmdshow );
+
+                    mn_ignoreWindowDestroy = 0;
+                    
+                    break;
                 }
             }
         else {
@@ -6707,22 +6919,22 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
             
             /* ask for screen pixels and do nothing with them
                skip for now */
-            /*
-            minginGame_getScreenPixels( MINGIN_MAX_SCREEN_W,
-                                        MINGIN_MAX_SCREEN_H,
-                                        mn_gameScreenBuffer );*/
+            
+            minginGame_getScreenPixels( mn_windowW,
+                                        mn_windowH,
+                                        mn_gameScreenBuffer );
             }
         }
 
     /* final step */
     minginGame_step( 1 );
     
-    mn_d3dCleanup();
+    mn_destroyWindow( hInstance );
     
     
     MessageBox( NULL,
-                L"Quitting",
                 L"Quitting...",
+                L"Quitting",
                 0 );
 
     /* game asked to quit ! */

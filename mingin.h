@@ -6502,6 +6502,27 @@ static char mn_isRunningOnSteamDeck( void ) {
 #include <windows.h>
 #include <initguid.h>
 #include <d3d11.h>
+#include <dxgi.h>
+#include <d2d1.h>
+
+
+/* d2d is missing a bunch of macros */
+
+#ifndef ID2D1Factory_CreateDxgiSurfaceRenderTarget
+#define ID2D1Factory_CreateDxgiSurfaceRenderTarget( obj, s, p, rt ) \
+    (obj)->lpVtbl->CreateDxgiSurfaceRenderTarget( obj, s, p, rt )
+#endif
+
+#ifndef ID2D1RenderTarget_BeginDraw
+#define ID2D1RenderTarget_BeginDraw( obj ) \
+    (obj)->lpVtbl->BeginDraw( obj )
+#endif
+
+#ifndef ID2D1RenderTarget_EndDraw
+#define ID2D1RenderTarget_EndDraw( obj, t1, t2 ) \
+    (obj)->lpVtbl->EndDraw( obj, t1, t2)
+#endif
+
 
 static  IDXGISwapChain          *mn_dxSwapChain;
 static  ID3D11Device            *mn_d3dDevice;
@@ -6539,7 +6560,7 @@ static  char           mn_ignoreWindowDestroy  =  0;
 static void mn_d3dInit( HWND  hWnd ) {
 
     DXGI_SWAP_CHAIN_DESC   swapChainDesc;
-    ID3D11Texture2D       *backBuffer;
+    ID3D11Texture2D       *backBufferTexture2D;
     D3D11_VIEWPORT         viewport;
 
     ZeroMemory( &swapChainDesc,
@@ -6557,7 +6578,7 @@ static void mn_d3dInit( HWND  hWnd ) {
     D3D11CreateDeviceAndSwapChain( NULL,
                                    D3D_DRIVER_TYPE_HARDWARE,
                                    NULL,
-                                   0,
+                                   D3D11_CREATE_DEVICE_BGRA_SUPPORT,
                                    NULL,
                                    0,
                                    D3D11_SDK_VERSION,
@@ -6571,14 +6592,15 @@ static void mn_d3dInit( HWND  hWnd ) {
     IDXGISwapChain_GetBuffer( mn_dxSwapChain,
                               0,
                               &IID_ID3D11Texture2D,
-                              (LPVOID*)&backBuffer );
+                              (LPVOID*)&backBufferTexture2D );
 
     ID3D11Device_CreateRenderTargetView( mn_d3dDevice,
-                                         (ID3D11Resource *)backBuffer,
+                                         (ID3D11Resource *)backBufferTexture2D,
                                          NULL,
                                          &mn_d3dBackBuffer );
-    ID3D11Texture2D_Release( backBuffer );
 
+    ID3D11Texture2D_Release( backBufferTexture2D );
+    
     ID3D11DeviceContext_OMSetRenderTargets( mn_d3dDeviceContext,
                                             1,
                                             &mn_d3dBackBuffer,
@@ -6591,12 +6613,62 @@ static void mn_d3dInit( HWND  hWnd ) {
 
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
-    viewport.Width    = 800;
-    viewport.Height   = 600;
+    viewport.Width    = (FLOAT)mn_realWindowW;
+    viewport.Height   = (FLOAT)mn_realWindowH;
 
     ID3D11DeviceContext_RSSetViewports( mn_d3dDeviceContext,
                                         1,
                                         &viewport );
+
+
+    if( 1 ){
+        
+    // create the D2D factory
+
+	ID2D1Factory *factory;
+    D2D1_FACTORY_OPTIONS options;
+	ID2D1RenderTarget *d2dRenderTarget;
+    D2D1_RENDER_TARGET_PROPERTIES props;
+    IDXGISurface *backBufferSurface;
+
+    IDXGISwapChain_GetBuffer( mn_dxSwapChain,
+                              0,
+                              &IID_IDXGISurface,
+                              (LPVOID*)&backBufferSurface );
+    
+	options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+
+	D2D1CreateFactory( D2D1_FACTORY_TYPE_SINGLE_THREADED,
+                       &IID_ID2D1Factory,
+                       &options,
+                       &factory );
+
+	// set up the D2D render target using the back buffer
+
+    props.type = D2D1_RENDER_TARGET_TYPE_DEFAULT;
+    props.pixelFormat.format = DXGI_FORMAT_UNKNOWN;
+    props.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
+    props.dpiX = 0.0f;
+    props.dpiY = 0.0f;
+    props.usage = D2D1_RENDER_TARGET_USAGE_NONE;
+    props.minLevel = D2D1_FEATURE_LEVEL_DEFAULT;
+	
+	ID2D1Factory_CreateDxgiSurfaceRenderTarget( factory,
+                                                backBufferSurface,
+                                                props,
+                                                &d2dRenderTarget );
+
+    IDXGISurface_Release( backBufferSurface );
+
+	// draw the text
+	
+	ID2D1RenderTarget_BeginDraw( d2dRenderTarget );
+
+	ID2D1RenderTarget_EndDraw( d2dRenderTarget,
+                               NULL,
+                               NULL );
+        }
+
     }
 
 

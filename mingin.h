@@ -6507,6 +6507,7 @@ static  IDXGISwapChain          *mn_dxSwapChain;
 static  ID3D11Device            *mn_d3dDevice;
 static  ID3D11DeviceContext     *mn_d3dDeviceContext;
 static  ID3D11RenderTargetView  *mn_d3dBackBuffer;
+static  ID3D11Texture2D         *mn_d3dGameImageTexture   =  NULL;
 
 
 static  unsigned char  mn_gameScreenBuffer[ MINGIN_MAX_SCREEN_W *
@@ -6541,7 +6542,9 @@ static void mn_d3dInit( HWND  hWnd ) {
     DXGI_SWAP_CHAIN_DESC   swapChainDesc;
     ID3D11Texture2D       *backBuffer;
     D3D11_VIEWPORT         viewport;
-
+    D3D11_TEXTURE2D_DESC   gameTextureDesc;
+    HRESULT                result;
+    
     ZeroMemory( &swapChainDesc,
                 sizeof( DXGI_SWAP_CHAIN_DESC ) );
     
@@ -6585,18 +6588,38 @@ static void mn_d3dInit( HWND  hWnd ) {
                                             NULL );
 
 
-    // Set the viewport
+    /* Set the viewport */
     ZeroMemory( &viewport,
                 sizeof( D3D11_VIEWPORT ) );
 
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
-    viewport.Width    = 800;
-    viewport.Height   = 600;
+    viewport.Width    = (FLOAT)mn_windowW;
+    viewport.Height   = (FLOAT)mn_windowH;
 
     ID3D11DeviceContext_RSSetViewports( mn_d3dDeviceContext,
                                         1,
                                         &viewport );
+
+
+    /* now create a texture for our game image */    
+    gameTextureDesc.Width = mn_windowW;
+    gameTextureDesc.Height = mn_windowH;
+    gameTextureDesc.MipLevels = 1;
+    gameTextureDesc.ArraySize = 1;
+    gameTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    gameTextureDesc.SampleDesc.Count = 1;
+    gameTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+    gameTextureDesc.BindFlags = 0;
+    gameTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    gameTextureDesc.MiscFlags = 0;
+
+    /* FIXME:
+       getting invalid arg result */
+    result = ID3D11Device_CreateTexture2D( mn_d3dDevice,
+                                           &gameTextureDesc,
+                                           NULL,
+                                           &mn_d3dGameImageTexture );
     }
 
 
@@ -6605,6 +6628,11 @@ static void mn_d3dCleanup( void ) {
     ID3D11RenderTargetView_Release( mn_d3dBackBuffer );
     ID3D11Device_Release( mn_d3dDevice );
     ID3D11DeviceContext_Release( mn_d3dDeviceContext );
+
+    if( mn_d3dGameImageTexture != NULL ) {
+        ID3D11Texture2D_Release( mn_d3dGameImageTexture );
+        mn_d3dGameImageTexture = NULL;
+        }
     }
 
 

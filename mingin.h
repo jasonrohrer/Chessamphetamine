@@ -2001,6 +2001,123 @@ static const char *mn_intToString( int  inInt ) {
     }
 
 
+
+/* saves a 1 or 0 flag to persistent storage */
+static void mn_saveFlagSetting( const char  *inFlagName,
+                                char         inValue ) {
+
+    int          handle  =  mingin_startWritePersistData( inFlagName );
+    const char  *s;
+    
+    if( handle == -1 ) {
+        return;
+        }
+
+    
+    if( inValue ) {
+        s = "1";
+        }
+    else {
+        s = "0";
+        }
+    
+    mingin_writePersistData( handle,
+                             1,
+                             (unsigned char*)s );
+
+    mingin_endWritePersistData( handle );                        
+    }
+
+
+
+/* reads a 0 or 1 flag from peristent storage */
+static char mn_getFlagSetting( const char  *inFlagName,
+                               char         inDefault ) {
+
+    int            numBytes;
+    int            handle  =  mingin_startReadPersistData( inFlagName,
+                                                           &numBytes );
+    unsigned char  s[1];
+
+    if( handle == -1
+        ||
+        numBytes < 1 ) {
+        
+        return inDefault;
+        }
+
+    numBytes = mingin_readPersistData( handle,
+                                       1,
+                                       s );
+
+    if( numBytes != 1 ) {
+        return inDefault;
+        }
+
+    mingin_endReadPersistData( handle );
+
+    if( s[0] == '1' ) {
+        return 1;
+        }
+    
+    return 0;
+    }
+
+
+
+/* reads a string setting from peristent storage into a static buffer */
+static const char *mn_getShortStringSetting( const char  *inFlagName,
+                                             const char  * inDefault ) {
+
+    enum{  bufferSize  =  128 };
+    int    numBytes;
+    int    numRead;
+    int    handle;
+
+    static  unsigned char  buffer[ bufferSize ];
+    
+    
+    handle = mingin_startReadPersistData( inFlagName,
+                                          &numBytes );
+
+    if( handle == -1
+        ||
+        numBytes < 1 ) {
+        
+        return inDefault;
+        }
+
+    if( numBytes > bufferSize - 1 ) {
+        numBytes = bufferSize - 1;
+        }
+
+    numRead = mingin_readPersistData( handle,
+                                      numBytes,
+                                      buffer );
+
+    if( numRead != numBytes ) {
+        return inDefault;
+        }
+
+    mingin_endReadPersistData( handle );
+
+    buffer[ numRead ] = '\0';
+    
+    return (char *)buffer;
+    }
+
+
+
+static const char *mn_getWindowTitle( void ) {
+
+    return mn_getShortStringSetting( "mingin_windowTitle.ini",
+                                     "Game Window" );
+    }
+
+
+
+
+
 /*
   This is the end of Mingin's internal code.
 
@@ -2146,66 +2263,6 @@ static char mn_isRunningOnSteamDeck( void );
 
 
 
-/* saves a 1 or 0 flag to persistent storage */
-static void mn_saveFlagSetting( const char  *inFlagName,
-                                char         inValue ) {
-
-    int          handle  =  mingin_startWritePersistData( inFlagName );
-    const char  *s;
-    
-    if( handle == -1 ) {
-        return;
-        }
-
-    
-    if( inValue ) {
-        s = "1";
-        }
-    else {
-        s = "0";
-        }
-    
-    mingin_writePersistData( handle,
-                             1,
-                             (unsigned char*)s );
-
-    mingin_endWritePersistData( handle );                        
-    }
-
-
-
-/* reads a 0 or 1 flag from peristent storage */
-static char mn_getFlagSetting( const char  *inFlagName,
-                               char         inDefault ) {
-
-    int            numBytes;
-    int            handle  =  mingin_startReadPersistData( inFlagName,
-                                                           &numBytes );
-    unsigned char  s[1];
-
-    if( handle == -1
-        ||
-        numBytes < 1 ) {
-        
-        return inDefault;
-        }
-
-    numBytes = mingin_readPersistData( handle,
-                                       1,
-                                       s );
-
-    if( numBytes != 1 ) {
-        return inDefault;
-        }
-
-    mingin_endReadPersistData( handle );
-
-    if( s[0] == '1' ) {
-        return 1;
-        }
-    
-    return 0;
-    }
 
 
 
@@ -3136,14 +3193,14 @@ static  MinginXWindowSetup   mn_XSetup;
 /* returns 1 on success, 0 on failure */
 static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
     
-    MinginXWindowSetup      *s                =  inSetup;
-    int                      glxAttributes[]  = { GLX_RGBA,
+    MinginXWindowSetup      *s                 =  inSetup;
+    int                      glxAttributes[]   = { GLX_RGBA,
                                                   GLX_DOUBLEBUFFER,
                                                   None };
     unsigned long            xBlackColor;
     XRRScreenResources      *xrrRes;
-    XRROutputInfo           *xrrOutput        =  0;
-    XRRCrtcInfo             *xrrCrtc          =  0;
+    XRROutputInfo           *xrrOutput         =  0;
+    XRRCrtcInfo             *xrrCrtc           =  0;
     int                      i;
     int                      winX;
     int                      winY;
@@ -3151,6 +3208,9 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
     unsigned int             winH;
     unsigned int             winBorderW;
     unsigned int             winDepth;
+    XTextProperty            winTitleProperty;
+    const char              *winTitle           =  mn_getWindowTitle();
+    Status                   returnCode;
     
     s->xDisplay = XOpenDisplay( NULL );
 
@@ -3186,6 +3246,17 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
         xBlackColor,
         xBlackColor );
 
+    returnCode = XStringListToTextProperty( (char**)( &winTitle ),
+                                            1,
+                                            &winTitleProperty);
+    if( returnCode != 0) {
+        XSetWMName(s->xDisplay,
+                   s->xWindow,
+                   &winTitleProperty );
+        
+        XFree( winTitleProperty.value );
+        }
+    
     
     XSelectInput( s->xDisplay,
                   s->xWindow,

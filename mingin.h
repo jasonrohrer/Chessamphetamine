@@ -6866,6 +6866,65 @@ static void mn_getRefreshRate( void ) {
 
 
 
+static void mn_testSwapScreen( void ) {
+    IDXGISwapChain_Present( mn_dxSwapChain,
+                            1,
+                            0 );
+    }
+
+
+
+static char mn_detectVsync( void ) {
+
+    int  numPixelBytes  =  mn_windowW * mn_windowH * 3;
+    int  i;
+    int  msPassed;
+    
+    LARGE_INTEGER  timeA;
+    LARGE_INTEGER  timeB;    
+    LARGE_INTEGER  freq;
+    
+    /* swap 5x to warm up */
+
+    for( i = 0;
+         i < 5;
+         i++ ) {
+        mn_testSwapScreen();
+        }
+    
+    /* now start timing before next swap */
+
+    QueryPerformanceFrequency( &freq );
+    QueryPerformanceCounter( &timeA );
+    
+    mn_testSwapScreen();
+
+    QueryPerformanceCounter( &timeB );
+    
+    msPassed =
+        (int)(
+            1000 * ( timeB.QuadPart - timeA.QuadPart )
+            / freq.QuadPart );
+    
+    mingin_log( "MS measured between frames = " );
+    mingin_log( mn_intToString( msPassed ) );
+    mingin_log( "\n" );
+    
+
+    if( msPassed <
+        1000 / mn_screenRefreshRate - 2 ) {
+        /* time between swaps substantially quicker than our swap interval */
+
+        mingin_log( "VSync is OFF\n" );
+        return 0;
+        }
+    else {
+        mingin_log( "VSync is ON\n" );
+        return 0;
+        }    
+    }
+
+
 static char mn_createWindow( HINSTANCE  hInstance,
                              int        cmdshow ) {
     
@@ -6928,6 +6987,8 @@ static char mn_createWindow( HINSTANCE  hInstance,
 
 
     mn_getRefreshRate();
+
+    mn_vsyncOn = mn_detectVsync();
     
     return 1;
     }
@@ -6950,25 +7011,41 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                       PSTR       cmdline,
                       int        cmdshow ) {
 
-    float       blueColor  [4]  =  { 0.0f, 0.2f, 0.4f, 1.0f };
-    float       yellowColor[4]  =  { 1.0f, 1.0f, 0.0f, 1.0f };
-    float      *currColor       =  blueColor;
-    int         stepCount       =  0;
-    MSG         msg;
-    char        success;
+    float          blueColor  [4]  =  { 0.0f, 0.2f, 0.4f, 1.0f };
+    float          yellowColor[4]  =  { 1.0f, 1.0f, 0.0f, 1.0f };
+    float         *currColor       =  blueColor;
+    int            stepCount       =  0;
+    MSG            msg;
+    char           success;
+    LARGE_INTEGER  freq;
+    LARGE_INTEGER  frameEndTarget;
+    LARGE_INTEGER  ticksPerFrame;
     
+    HANDLE         timer;
+    
+    QueryPerformanceFrequency( &freq );
 
+    timer = CreateWaitableTimer( NULL, FALSE, NULL );
+
+    
     success = mn_createWindow( hInstance,
                                cmdshow );
 
     if( ! success ) {
         return 1;
         }
-    
+
     
     minginInternal_init();
 
 
+    ticksPerFrame.QuadPart = freq.QuadPart / mn_screenRefreshRate;
+
+    QueryPerformanceCounter( &frameEndTarget );
+
+    frameEndTarget.QuadPart += ticksPerFrame.QuadPart;
+    
+    
     while( 1 ) {
         if( PeekMessage( &msg,
                          NULL,
@@ -7093,6 +7170,27 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
             IDXGISwapChain_Present( mn_dxSwapChain,
                                     1,
                                     0 );
+
+            if( ! mn_vsyncOn ) {
+                /* sleep to contol frame time */
+
+                LARGE_INTEGER  frameEnd;
+                LARGE_INTEGER  countDiff;
+                
+                QueryPerformanceCounter( &frameEnd );
+
+                countDiff.QuadPart = frameEndTarget.QuadPart - frameEnd.QuadPart;
+                
+                if( countDiff.QuadPart > 0 ) {
+                    /* we ended too soon */
+
+                    /* fixme */
+                    /* convert to 100ns chunks and wait */
+
+                    /* SetWaitableTimer   and WaitForSingleObject */
+                    }
+                }
+            frameEndTarget.QuadPart += ticksPerFrame.QuadPart;
             }
         }
 

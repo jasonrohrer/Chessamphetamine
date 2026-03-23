@@ -6554,6 +6554,8 @@ static void mn_d3dInit( HWND  hWnd ) {
                 sizeof( DXGI_SWAP_CHAIN_DESC ) );
     
     swapChainDesc.BufferCount        = 1;
+    swapChainDesc.BufferDesc.Width   = mn_windowW;
+    swapChainDesc.BufferDesc.Height  = mn_windowH;
     swapChainDesc.BufferDesc.Format  = DXGI_FORMAT_R8G8B8A8_UNORM;
     swapChainDesc.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.OutputWindow       = hWnd;
@@ -6820,8 +6822,8 @@ static char mn_createWindow( HINSTANCE  hInstance,
         return 0;
         }
 
-    windRect.right  = mn_windowW;
-    windRect.bottom = mn_windowH;
+    windRect.right  = mn_realWindowW;
+    windRect.bottom = mn_realWindowH;
     
     ZeroMemory( &wc,
                 sizeof( WNDCLASSEX ) );

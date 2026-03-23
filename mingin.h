@@ -6509,6 +6509,10 @@ static  ID3D11DeviceContext     *mn_d3dDeviceContext;
 static  ID3D11RenderTargetView  *mn_d3dBackBuffer;
 static  ID3D11Texture2D         *mn_d3dGameImageTexture   =  NULL;
 
+/* d3d textures are RGBA */
+static  unsigned char            mn_d3dGameImageTextureBytes
+                                     [ MINGIN_MAX_SCREEN_W *
+                                       MINGIN_MAX_SCREEN_H * 4 ];
 
 static  unsigned char  mn_gameScreenBuffer[ MINGIN_MAX_SCREEN_W *
                                             MINGIN_MAX_SCREEN_H * 3 ];
@@ -6539,11 +6543,12 @@ static  char           mn_ignoreWindowDestroy  =  0;
 
 static void mn_d3dInit( HWND  hWnd ) {
 
-    DXGI_SWAP_CHAIN_DESC   swapChainDesc;
-    ID3D11Texture2D       *backBuffer;
-    D3D11_VIEWPORT         viewport;
-    D3D11_TEXTURE2D_DESC   gameTextureDesc;
-    HRESULT                result;
+    DXGI_SWAP_CHAIN_DESC    swapChainDesc;
+    ID3D11Texture2D        *backBuffer;
+    D3D11_VIEWPORT          viewport;
+    D3D11_TEXTURE2D_DESC    gameTextureDesc;
+    D3D11_SUBRESOURCE_DATA  gameTextureData;
+    HRESULT                 result;
     
     ZeroMemory( &swapChainDesc,
                 sizeof( DXGI_SWAP_CHAIN_DESC ) );
@@ -6605,22 +6610,32 @@ static void mn_d3dInit( HWND  hWnd ) {
     /* now create a texture for our game image */
     ZeroMemory( &gameTextureDesc,
                 sizeof( gameTextureDesc ) );
-    gameTextureDesc.Width = mn_windowW;
-    gameTextureDesc.Height = mn_windowH;
-    gameTextureDesc.MipLevels = 1;
-    gameTextureDesc.ArraySize = 1;
-    gameTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    
+    gameTextureDesc.Width            = mn_windowW;
+    gameTextureDesc.Height           = mn_windowH;
+    gameTextureDesc.MipLevels        = 1;
+    gameTextureDesc.ArraySize        = 1;
+    gameTextureDesc.Format           = DXGI_FORMAT_R8G8B8A8_UNORM;
     gameTextureDesc.SampleDesc.Count = 1;
-    gameTextureDesc.Usage = D3D11_USAGE_DYNAMIC;
-    gameTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    gameTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    gameTextureDesc.MiscFlags = 0;
+    gameTextureDesc.Usage            = D3D11_USAGE_DEFAULT;
+    gameTextureDesc.BindFlags        = 0;
+    gameTextureDesc.CPUAccessFlags   = 0;
+    gameTextureDesc.MiscFlags        = 0;
+
+    ZeroMemory( &gameTextureData,
+                sizeof( gameTextureData ) );
+
+    gameTextureData.pSysMem          = mn_d3dGameImageTextureBytes;
+    gameTextureData.SysMemPitch      = mn_windowW * 4;
+    gameTextureData.SysMemSlicePitch = 0;
+    
 
     result = ID3D11Device_CreateTexture2D( mn_d3dDevice,
                                            &gameTextureDesc,
-                                           NULL,
+                                           &gameTextureData,
                                            &mn_d3dGameImageTexture );
     }
+
 
 
 static void mn_d3dCleanup( void ) {
@@ -6860,7 +6875,6 @@ static void mn_destroyWindow( HINSTANCE  hInstance ) {
 
 
 
-
 int APIENTRY WinMain( HINSTANCE  hInstance,
                       HINSTANCE  hInstancePrev,
                       PSTR       cmdline,
@@ -6916,6 +6930,14 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                 }
             }
         else {
+
+            int               numPixels;
+            int               p;
+            int               gameImageI;
+            int               d3dTextureI;
+            ID3D11Texture2D  *backBufferTexture;
+            HRESULT           result;
+            
             /* game code ? */
             
             if( mn_gotQuit ) {
@@ -6941,9 +6963,7 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                 }
             
             
-            IDXGISwapChain_Present( mn_dxSwapChain,
-                                    1,
-                                    0 );
+            
             
             /* ask for screen pixels and do nothing with them
                skip for now */
@@ -6951,6 +6971,58 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
             minginGame_getScreenPixels( mn_windowW,
                                         mn_windowH,
                                         mn_gameScreenBuffer );
+
+            /* now copy them into RGBA texture data */
+            numPixels   =  mn_windowW * mn_windowH;
+            gameImageI  = 0;
+            d3dTextureI = 0;
+            
+            for( p = 0;
+                 p < numPixels;
+                 p ++ ) {
+
+                /* copy rgb */
+                mn_d3dGameImageTextureBytes[ d3dTextureI ++ ] =
+                    mn_gameScreenBuffer[ gameImageI ++ ];
+
+                mn_d3dGameImageTextureBytes[ d3dTextureI ++ ] =
+                    mn_gameScreenBuffer[ gameImageI ++ ];
+
+                mn_d3dGameImageTextureBytes[ d3dTextureI ++ ] =
+                    mn_gameScreenBuffer[ gameImageI ++ ];
+
+                /* fixed opaque alpha */
+                mn_d3dGameImageTextureBytes[ d3dTextureI ++ ] = 255;
+                }
+
+            ID3D11DeviceContext_UpdateSubresource(
+                mn_d3dDeviceContext,
+                (ID3D11Resource*)mn_d3dGameImageTexture,
+                0,
+                NULL,
+                mn_d3dGameImageTextureBytes,
+                mn_windowW * 4,
+                0 );
+
+            result = IDXGISwapChain_GetBuffer( mn_dxSwapChain,
+                                               0,
+                                               &IID_ID3D11Texture2D,
+                                               (LPVOID*)&backBufferTexture );
+
+            if( SUCCEEDED( result ) ) {
+                ID3D11DeviceContext_CopyResource(
+                    mn_d3dDeviceContext,
+                    (ID3D11Resource*) backBufferTexture,
+                    (ID3D11Resource*) mn_d3dGameImageTexture );
+
+                ID3D11Texture2D_Release( backBufferTexture );
+                }
+            
+                    
+            
+            IDXGISwapChain_Present( mn_dxSwapChain,
+                                    1,
+                                    0 );
             }
         }
 

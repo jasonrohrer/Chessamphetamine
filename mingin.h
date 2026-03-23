@@ -6502,7 +6502,6 @@ static char mn_isRunningOnSteamDeck( void ) {
 #include <windows.h>
 #include <initguid.h>
 #include <d3d11.h>
-#include <dwmapi.h>
 
 static  IDXGISwapChain          *mn_dxSwapChain;
 static  ID3D11Device            *mn_d3dDevice;
@@ -6835,7 +6834,6 @@ static void mn_getRefreshRate( void ) {
     HMONITOR         monitor;
     MONITORINFOEXA   monitorInfo;
     DEVMODEA         devMode;
-    DWM_TIMING_INFO  timingInfo;
     
     mn_screenRefreshRate = 0;
     
@@ -6858,29 +6856,9 @@ static void mn_getRefreshRate( void ) {
             }
         }
 
-    if( mn_screenRefreshRate > 0 ) {
-        return;
-        }
-
-    /* else fallback on asking about compositing timing */
-
-    timingInfo.cbSize = sizeof( timingInfo );
-
-    if( DwmGetCompositionTimingInfo( NULL,
-                                     &timingInfo ) == S_OK ) {
-        
-        if( timingInfo.rateRefresh.uiDenominator != 0 ) {
-            /* round */
-            mn_screenRefreshRate =
-                (int)( ( timingInfo.rateRefresh.uiNumerator +
-                         timingInfo.rateRefresh.uiDenominator / 2 ) /
-                       timingInfo.rateRefresh.uiDenominator );
-            }
-        }
-
     if( mn_screenRefreshRate == 0 ) {
         mingin_log( "Failed to get Windows refresh rate from either "
-                    "GetMonitorInfoA or DwmGetCompositionTimingInfo, falling "
+                    "GetMonitorInfoA, falling "
                     "back to 60 Hz default." );
         mn_screenRefreshRate = 60;
         }

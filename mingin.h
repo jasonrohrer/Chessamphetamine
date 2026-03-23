@@ -6502,6 +6502,7 @@ static char mn_isRunningOnSteamDeck( void ) {
 #include <windows.h>
 #include <initguid.h>
 #include <d3d11.h>
+#include <dwmapi.h>
 
 static  IDXGISwapChain          *mn_dxSwapChain;
 static  ID3D11Device            *mn_d3dDevice;
@@ -6538,6 +6539,8 @@ static  char           mn_areWeInStepFunction  =  0;
 static  char           mn_fullscreen           =  0;
 static  int            mn_screenRefreshRate    =  0;
 static  char           mn_ignoreWindowDestroy  =  0;
+
+static  char           mn_vsyncOn              =  0;
 
 
 
@@ -6819,9 +6822,70 @@ static void mn_setupWindowSize( void ) {
     }
 
 
+    
+
 
 static  HWND    mn_windowHandle;
 static  LPWSTR  mn_windowClassName  =  L"MinginWindowClass";
+
+
+
+static void mn_getRefreshRate( void ) {
+
+    HMONITOR         monitor;
+    MONITORINFOEXA   monitorInfo;
+    DEVMODEA         devMode;
+    DWM_TIMING_INFO  timingInfo;
+    
+    mn_screenRefreshRate = 0;
+    
+    monitor = MonitorFromWindow( mn_windowHandle,
+                                 MONITOR_DEFAULTTONEAREST );
+
+    monitorInfo.cbSize = sizeof( monitorInfo );
+
+    if( GetMonitorInfoA( monitor,
+                         (MONITORINFO*)( &monitorInfo ) ) ) {
+
+        devMode.dmSize = sizeof( devMode );
+
+        if( EnumDisplaySettingsA( monitorInfo.szDevice,
+                                  ENUM_CURRENT_SETTINGS,
+                                  &devMode ) ) {
+            if( devMode.dmDisplayFrequency > 1 ) {
+                mn_screenRefreshRate = (int)( devMode.dmDisplayFrequency );
+                }
+            }
+        }
+
+    if( mn_screenRefreshRate > 0 ) {
+        return;
+        }
+
+    /* else fallback on asking about compositing timing */
+
+    timingInfo.cbSize = sizeof( timingInfo );
+
+    if( DwmGetCompositionTimingInfo( NULL,
+                                     &timingInfo ) == S_OK ) {
+        
+        if( timingInfo.rateRefresh.uiDenominator != 0 ) {
+            /* round */
+            mn_screenRefreshRate =
+                (int)( ( timingInfo.rateRefresh.uiNumerator +
+                         timingInfo.rateRefresh.uiDenominator / 2 ) /
+                       timingInfo.rateRefresh.uiDenominator );
+            }
+        }
+
+    if( mn_screenRefreshRate == 0 ) {
+        mingin_log( "Failed to get Windows refresh rate from either "
+                    "GetMonitorInfoA or DwmGetCompositionTimingInfo, falling "
+                    "back to 60 Hz default." );
+        mn_screenRefreshRate = 60;
+        }
+    }
+
 
 
 static char mn_createWindow( HINSTANCE  hInstance,
@@ -6884,6 +6948,9 @@ static char mn_createWindow( HINSTANCE  hInstance,
 
     mn_d3dInit( mn_windowHandle );
 
+
+    mn_getRefreshRate();
+    
     return 1;
     }
 
@@ -7069,8 +7136,7 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
 
 
 int mingin_getStepsPerSecond( void ) {
-    /* dummy value */
-    return 1;
+    return mn_screenRefreshRate;
     }
 
 

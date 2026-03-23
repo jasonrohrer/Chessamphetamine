@@ -3026,8 +3026,11 @@ static void mx_computeScaling( int   inTargetWide,
 
     if( scaleFactor < 1 ) {
         /* screen isn't big enough for our native size?
-           let it just get cut off for now */
-        scaleFactor = 1;
+           return 0 here */
+        *outScaleFactor = 0;
+        *outOffsetX     = 0;
+        *outOffsetY     = 0;
+        return;
         }
     
     scaledGameW = scaleFactor * MAXIGIN_GAME_NATIVE_W;
@@ -3110,6 +3113,40 @@ void minginGame_getScreenPixels( int             inWide,
                        & scaleFactor,
                        & offsetX,
                        & offsetY );
+
+    if( scaleFactor == 0 ) {
+        /* screen not big enough for our game image
+           draw it cut off */
+        int  yEnd  =  inHigh;
+        int  xEnd  =  inWide;
+
+        if( MAXIGIN_GAME_NATIVE_H < yEnd ) {
+            yEnd = MAXIGIN_GAME_NATIVE_H;
+            }
+        if( MAXIGIN_GAME_NATIVE_W < xEnd ) {
+            xEnd = MAXIGIN_GAME_NATIVE_W;
+            }
+        
+        for( y = 0;
+             y < yEnd;
+             y ++ ) {
+
+            int  destI = y * inWide * 3;
+            int  gameI = y * MAXIGIN_GAME_NATIVE_W * 3;
+            
+            for( x = 0;
+                 x < xEnd;
+                 x ++ ) {
+                
+                inRGBBuffer[ destI ++ ] = mx_gameImageBuffer[ gameI ++ ];
+                inRGBBuffer[ destI ++ ] = mx_gameImageBuffer[ gameI ++ ];
+                inRGBBuffer[ destI ++ ] = mx_gameImageBuffer[ gameI ++ ];
+                }
+            }
+
+        return;
+        }
+
     
     scaledGameW = scaleFactor * MAXIGIN_GAME_NATIVE_W;
     scaledGameH = scaleFactor * MAXIGIN_GAME_NATIVE_H;

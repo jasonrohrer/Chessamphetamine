@@ -6602,20 +6602,20 @@ static void mn_d3dInit( HWND  hWnd ) {
                                         &viewport );
 
 
-    /* now create a texture for our game image */    
+    /* now create a texture for our game image */
+    ZeroMemory( &gameTextureDesc,
+                sizeof( gameTextureDesc ) );
     gameTextureDesc.Width = mn_windowW;
     gameTextureDesc.Height = mn_windowH;
     gameTextureDesc.MipLevels = 1;
     gameTextureDesc.ArraySize = 1;
     gameTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     gameTextureDesc.SampleDesc.Count = 1;
-    gameTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-    gameTextureDesc.BindFlags = 0;
+    gameTextureDesc.Usage = D3D11_USAGE_DYNAMIC;
+    gameTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
     gameTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     gameTextureDesc.MiscFlags = 0;
 
-    /* FIXME:
-       getting invalid arg result */
     result = ID3D11Device_CreateTexture2D( mn_d3dDevice,
                                            &gameTextureDesc,
                                            NULL,

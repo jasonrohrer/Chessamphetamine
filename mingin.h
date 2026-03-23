@@ -6529,7 +6529,8 @@ static  int            mn_gotQuit              =  0;
 static  int            mn_windowW              =  0;
 static  int            mn_windowH              =  0;
 
-/* these are the true w/h we'd want to have if buffer size wasn't an issue */
+/* these are the true w/h we'd want to have if buffer size wasn't an issue
+   this is the size of the actual window on the screen */
 static  int            mn_realWindowW          =  0;
 static  int            mn_realWindowH          =  0;
 
@@ -6787,6 +6788,28 @@ static void mn_setupWindowSize( void ) {
         mn_realWindowW = mn_windowW;
         mn_realWindowH = mn_windowH;
         }
+
+    if( mn_realWindowW != mn_windowW
+        ||
+        mn_realWindowH != mn_windowH ) {
+
+        /* make sure aspect ratio of virtual window matches ratio of real window
+           potentially shrink one dimension of our virual window to
+           achieve this */
+        
+        long  rwTimesH  =  mn_realWindowW * mn_windowH;
+        long  rhTimesW  =  mn_realWindowH * mn_windowW;
+
+        if( rwTimesH > rhTimesW ) {
+            /* shrink virtual window h to preserve aspect ratio */
+            mn_windowH = rhTimesW / mn_realWindowW;
+            }
+        else if( rhTimesW > rwTimesH ) {
+            /* shrink virtual window w to preserve aspect ratio */
+            mn_windowW = rwTimesH / mn_realWindowH;
+            }
+        }
+    
     
     mingin_log( "Window = " );
     mingin_log( mn_intToString( mn_windowW ) );

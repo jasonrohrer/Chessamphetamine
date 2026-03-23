@@ -4025,7 +4025,7 @@ static char mn_detectVsync( void ) {
         }
     else {
         mingin_log( "VSync is ON\n" );
-        return 0;
+        return 1;
         }    
     }
 
@@ -6866,7 +6866,7 @@ static void mn_getRefreshRate( void ) {
 
 
 
-static void mn_testSwapScreen( void ) {
+static void mn_swapScreen( void ) {
     IDXGISwapChain_Present( mn_dxSwapChain,
                             1,
                             0 );
@@ -6889,7 +6889,7 @@ static char mn_detectVsync( void ) {
     for( i = 0;
          i < 5;
          i++ ) {
-        mn_testSwapScreen();
+        mn_swapScreen();
         }
     
     /* now start timing before next swap */
@@ -6897,7 +6897,7 @@ static char mn_detectVsync( void ) {
     QueryPerformanceFrequency( &freq );
     QueryPerformanceCounter( &timeA );
     
-    mn_testSwapScreen();
+    mn_swapScreen();
 
     QueryPerformanceCounter( &timeB );
     
@@ -6920,7 +6920,7 @@ static char mn_detectVsync( void ) {
         }
     else {
         mingin_log( "VSync is ON\n" );
-        return 0;
+        return 1;
         }    
     }
 
@@ -7017,21 +7017,22 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     int            stepCount       =  0;
     MSG            msg;
     char           success;
-    LARGE_INTEGER  freq;
+    LARGE_INTEGER  performanceCounterFreq;
     LARGE_INTEGER  frameEndTarget;
     LARGE_INTEGER  ticksPerFrame;
     
-    HANDLE         timer;
+    HANDLE         frameTimer;
     
-    QueryPerformanceFrequency( &freq );
+    QueryPerformanceFrequency( &performanceCounterFreq );
 
-    timer = CreateWaitableTimer( NULL, FALSE, NULL );
+    frameTimer = CreateWaitableTimer( NULL, FALSE, NULL );
 
     
     success = mn_createWindow( hInstance,
                                cmdshow );
 
     if( ! success ) {
+        CloseHandle( frameTimer );
         return 1;
         }
 
@@ -7039,7 +7040,8 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     minginInternal_init();
 
 
-    ticksPerFrame.QuadPart = freq.QuadPart / mn_screenRefreshRate;
+    ticksPerFrame.QuadPart =
+        performanceCounterFreq.QuadPart / mn_screenRefreshRate;
 
     QueryPerformanceCounter( &frameEndTarget );
 
@@ -7070,7 +7072,11 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
 
                     mn_createWindow( hInstance,
                                      cmdshow );
-
+                    
+                    /* recompute in case screen refresh rate has changed */
+                    ticksPerFrame.QuadPart =
+                        performanceCounterFreq.QuadPart / mn_screenRefreshRate;
+                    
                     mn_ignoreWindowDestroy = 0;
                     
                     break;
@@ -7084,6 +7090,7 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
             int               d3dTextureI;
             ID3D11Texture2D  *backBufferTexture;
             HRESULT           result;
+            LARGE_INTEGER     frameEndTime;
             
             /* game code ? */
             
@@ -7166,31 +7173,42 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                 }
             
                     
+            mn_swapScreen();
             
-            IDXGISwapChain_Present( mn_dxSwapChain,
-                                    1,
-                                    0 );
-
             if( ! mn_vsyncOn ) {
                 /* sleep to contol frame time */
-
-                LARGE_INTEGER  frameEnd;
+                
                 LARGE_INTEGER  countDiff;
                 
-                QueryPerformanceCounter( &frameEnd );
+                QueryPerformanceCounter( &frameEndTime );
 
-                countDiff.QuadPart = frameEndTarget.QuadPart - frameEnd.QuadPart;
+                countDiff.QuadPart =
+                    frameEndTarget.QuadPart - frameEndTime.QuadPart;
                 
                 if( countDiff.QuadPart > 0 ) {
                     /* we ended too soon */
+                    LARGE_INTEGER  dueTime;
 
-                    /* fixme */
-                    /* convert to 100ns chunks and wait */
-
-                    /* SetWaitableTimer   and WaitForSingleObject */
+                    /* convert to 100ns chunks */
+                    dueTime.QuadPart =
+                        - ( ( countDiff.QuadPart * 10000000LL )
+                            / performanceCounterFreq.QuadPart );
+                    
+                    SetWaitableTimer( frameTimer,
+                                      &dueTime,
+                                      0,
+                                      NULL,
+                                      NULL,
+                                      FALSE );
+                    WaitForSingleObject( frameTimer,
+                                         INFINITE );
                     }
                 }
-            frameEndTarget.QuadPart += ticksPerFrame.QuadPart;
+            
+            QueryPerformanceCounter( &frameEndTime );
+            
+            frameEndTarget.QuadPart =
+                frameEndTime.QuadPart + ticksPerFrame.QuadPart;
             }
         }
 
@@ -7198,7 +7216,8 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     minginGame_step( 1 );
     
     mn_destroyWindow( hInstance );
-    
+
+    CloseHandle( frameTimer );
     
     MessageBox( NULL,
                 L"Quitting...",

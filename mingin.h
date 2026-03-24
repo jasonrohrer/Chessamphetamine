@@ -6742,9 +6742,9 @@ static LRESULT CALLBACK mn_windowProc( HWND hWnd,
             break;
         }
 
-    return DefWindowProc( hWnd,
-                          message,
-                          wParam, lParam );
+    return DefWindowProcA( hWnd,
+                           message,
+                           wParam, lParam );
     }
 
 
@@ -6896,7 +6896,7 @@ static void mn_setupWindowSize( void ) {
 
 
 static  HWND    mn_windowHandle;
-static  LPWSTR  mn_windowClassName  =  L"MinginWindowClass";
+static  LPCSTR  mn_windowClassName  =  "MinginWindowClass";
 
 
 
@@ -6999,10 +6999,11 @@ static char mn_detectVsync( void ) {
 static char mn_createWindow( HINSTANCE  hInstance,
                              int        cmdshow ) {
     
-    WNDCLASSEX  wc;
-    RECT        windRect   =  { 0, 0, 0, 0 };
-    DWORD       windStyle  =  WS_OVERLAPPEDWINDOW;
-
+    WNDCLASSEXA   wc;
+    RECT          windRect     =  { 0, 0, 0, 0 };
+    DWORD         windStyle    =  WS_OVERLAPPEDWINDOW;
+    const char   *windowTitle  =  mn_getWindowTitle();
+    
     if( mn_fullscreen ) {
         windStyle = WS_POPUP;
         }
@@ -7021,7 +7022,7 @@ static char mn_createWindow( HINSTANCE  hInstance,
     windRect.bottom = mn_realWindowH;
     
     ZeroMemory( &wc,
-                sizeof( WNDCLASSEX ) );
+                sizeof( WNDCLASSEXA ) );
 
     wc.cbSize        = sizeof( WNDCLASSEX );
     wc.style         = CS_HREDRAW | CS_VREDRAW;
@@ -7032,24 +7033,24 @@ static char mn_createWindow( HINSTANCE  hInstance,
     wc.hbrBackground = (HBRUSH)GetStockObject( BLACK_BRUSH );
     wc.lpszClassName = mn_windowClassName;
 
-    RegisterClassEx( &wc );
+    RegisterClassExA( &wc );
 
     AdjustWindowRect( &windRect,
                       windStyle,
                       FALSE );
 
-    mn_windowHandle = CreateWindowEx( WS_EX_APPWINDOW,
-                                      mn_windowClassName,
-                                      L"Our First Direct3D Program",
-                                      windStyle,
-                                      CW_USEDEFAULT,
-                                      CW_USEDEFAULT,
-                                      windRect.right - windRect.left,
-                                      windRect.bottom - windRect.top,
-                                      NULL,
-                                      NULL,
-                                      hInstance,
-                                      NULL );
+    mn_windowHandle = CreateWindowExA( WS_EX_APPWINDOW,
+                                       mn_windowClassName,
+                                       windowTitle,
+                                       windStyle,
+                                       CW_USEDEFAULT,
+                                       CW_USEDEFAULT,
+                                       windRect.right - windRect.left,
+                                       windRect.bottom - windRect.top,
+                                       NULL,
+                                       NULL,
+                                       hInstance,
+                                       NULL );
     
     ShowWindow( mn_windowHandle,
                 cmdshow );

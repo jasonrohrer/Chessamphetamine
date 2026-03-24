@@ -4663,9 +4663,9 @@ static char mn_linuxFileWrite( int                   inFD,
 
 
 
-static int mn_linuxFileRead(           int    inFD,
-                                       int    inNumBytesToRead,
-                             unsigned  char  *inByteBuffer ) {
+static int mn_linuxFileRead( int             inFD,
+                             int             inNumBytesToRead,
+                             unsigned char  *inByteBuffer ) {
     int  numRead  =  0;
     
     while( numRead < inNumBytesToRead ) {
@@ -6552,6 +6552,11 @@ static char mn_isRunningOnSteamDeck( void ) {
 */
 
 
+/* the size of the file handle table for windows, which
+   limits how many files can be open at the same time */
+#define  MINGIN_WINDOWS_MAX_OPEN_FILES  512
+
+
 
 /*
   This tutorial was very useful:
@@ -6574,6 +6579,9 @@ static char mn_isRunningOnSteamDeck( void ) {
 #include <initguid.h>
 #include <d3d11.h>
 
+static  HINSTANCE                mn_hInstance;
+static  int                      mn_cmdshow;
+
 static  IDXGISwapChain          *mn_dxSwapChain;
 static  ID3D11Device            *mn_d3dDevice;
 static  ID3D11DeviceContext     *mn_d3dDeviceContext;
@@ -6593,25 +6601,40 @@ static  unsigned char  mn_windowsScreenTextureBuffer[ MINGIN_MAX_SCREEN_W *
                                                       MINGIN_MAX_SCREEN_H * 4 ];
 
 
-static  int            mn_gotQuit              =  0;
+static  int            mn_gotQuit                  =  0;
 
 /* these are w/h we are actually using, constrained by our static buffer
    size */
-static  int            mn_windowW              =  0;
-static  int            mn_windowH              =  0;
+static  int            mn_windowW                  =  0;
+static  int            mn_windowH                  =  0;
 
 /* these are the true w/h we'd want to have if buffer size wasn't an issue
    this is the size of the actual window on the screen */
-static  int            mn_realWindowW          =  0;
-static  int            mn_realWindowH          =  0;
+static  int            mn_realWindowW              =  0;
+static  int            mn_realWindowH              =  0;
 
-static  char           mn_areWeInStepFunction  =  0;
-static  char           mn_fullscreen           =  0;
-static  int            mn_screenRefreshRate    =  0;
-static  char           mn_ignoreWindowDestroy  =  0;
+static  char           mn_areWeInStepFunction      =  0;
+static  char           mn_fullscreen               =  0;
+static  int            mn_screenRefreshRate        =  0;
+static  char           mn_ignoreWindowDestroy      =  0;
 
-static  char           mn_vsyncOn              =  0;
+static  char           mn_vsyncOn                  =  0;
 
+static  LARGE_INTEGER  mn_performanceCounterFreq;
+static  LARGE_INTEGER  mn_ticksPerFrame;
+
+static  const char    *mn_settingsDirName          =  "settings";
+static  const char    *mn_bulkDataDirName          =  "data";
+
+
+typedef struct MinginFileHandle {
+
+        char    live;
+        HANDLE  h;
+        
+    } MinginFileHandle;
+
+static  MinginFileHandle  mn_fileHandles[ MINGIN_WINDOWS_MAX_OPEN_FILES ];
 
 
 
@@ -7072,8 +7095,8 @@ static void mn_destroyWindow( HINSTANCE  hInstance ) {
     
     DestroyWindow( mn_windowHandle );
 
-    UnregisterClass( mn_windowClassName,
-                     hInstance );
+    UnregisterClassA( mn_windowClassName,
+                      hInstance );
     }
 
 
@@ -7089,16 +7112,26 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     int            stepCount       =  0;
     MSG            msg;
     char           success;
-    LARGE_INTEGER  performanceCounterFreq;
     LARGE_INTEGER  frameEndTarget;
-    LARGE_INTEGER  ticksPerFrame;
     
     HANDLE         frameTimer;
-    
-    QueryPerformanceFrequency( &performanceCounterFreq );
+    int            i;
+
+    mn_hInstance = hInstance;
+    mn_cmdshow   = cmdshow;
+
+    QueryPerformanceFrequency( &mn_performanceCounterFreq );
 
     frameTimer = CreateWaitableTimer( NULL, FALSE, NULL );
 
+
+    for( i = 0;
+         i < MINGIN_WINDOWS_MAX_OPEN_FILES;
+         i ++ ) {
+        
+        mn_fileHandles[i].live = 0;
+        }
+    
     
     success = mn_createWindow( hInstance,
                                cmdshow );
@@ -7112,12 +7145,12 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     minginInternal_init();
 
 
-    ticksPerFrame.QuadPart =
-        performanceCounterFreq.QuadPart / mn_screenRefreshRate;
+    mn_ticksPerFrame.QuadPart =
+        mn_performanceCounterFreq.QuadPart / mn_screenRefreshRate;
 
     QueryPerformanceCounter( &frameEndTarget );
 
-    frameEndTarget.QuadPart += ticksPerFrame.QuadPart;
+    frameEndTarget.QuadPart += mn_ticksPerFrame.QuadPart;
     
     
     while( 1 ) {
@@ -7146,8 +7179,9 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                                      cmdshow );
                     
                     /* recompute in case screen refresh rate has changed */
-                    ticksPerFrame.QuadPart =
-                        performanceCounterFreq.QuadPart / mn_screenRefreshRate;
+                    mn_ticksPerFrame.QuadPart =
+                        mn_performanceCounterFreq.QuadPart /
+                        mn_screenRefreshRate;
                     
                     mn_ignoreWindowDestroy = 0;
                     
@@ -7264,7 +7298,7 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                     /* convert to 100ns chunks */
                     dueTime.QuadPart =
                         - ( ( countDiff.QuadPart * 10000000LL )
-                            / performanceCounterFreq.QuadPart );
+                            / mn_performanceCounterFreq.QuadPart );
                     
                     SetWaitableTimer( frameTimer,
                                       &dueTime,
@@ -7280,7 +7314,7 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
             QueryPerformanceCounter( &frameEndTime );
             
             frameEndTarget.QuadPart =
-                frameEndTime.QuadPart + ticksPerFrame.QuadPart;
+                frameEndTime.QuadPart + mn_ticksPerFrame.QuadPart;
             }
         }
 
@@ -7309,7 +7343,21 @@ int mingin_getStepsPerSecond( void ) {
 
 
 int mingin_getMillisecondsLeftInStep( void ) {
-    return -1;
+
+    LARGE_INTEGER  currCount;
+    LARGE_INTEGER  countDiff;
+    
+    QueryPerformanceCounter( &currCount );
+
+    countDiff.QuadPart =
+        currCount.QuadPart - currCount.QuadPart;
+
+    if( countDiff.QuadPart <= 0 ) {
+        return 0;
+        }
+
+    return (int)( ( countDiff.QuadPart * 1000 ) /
+                  mn_performanceCounterFreq.QuadPart );
     }
 
 
@@ -7402,16 +7450,34 @@ void mingin_log( const char  *inString ) {
 
 
 char mingin_toggleFullscreen( char  inFullscreen ) {
-    /* suppress warning */
-    if( inFullscreen ) {
+
+    if( inFullscreen == mn_fullscreen ) {
+        return 1;
         }
-    return 0;
+    
+    mn_ignoreWindowDestroy = 1;
+                    
+    mn_destroyWindow( mn_hInstance );
+    
+    mn_fullscreen = inFullscreen;
+
+    mn_createWindow( mn_hInstance,
+                     mn_cmdshow );
+    
+    /* recompute in case screen refresh rate has changed */
+    mn_ticksPerFrame.QuadPart =
+        mn_performanceCounterFreq.QuadPart /
+        mn_screenRefreshRate;
+    
+    mn_ignoreWindowDestroy = 0;
+
+    return 1;
     }
 
 
 
 char mingin_isFullscreen( void ) {
-    return 0;
+    return mn_fullscreen;
     }
 
 
@@ -7422,23 +7488,322 @@ MinginButton mingin_getLastButtonPressed( void ) {
 
 
 
-int mingin_startWritePersistData( const char  *inStoreName ) {
-    /* suppress  warning */
-    if( inStoreName[0] == '\0' ) {
+static char *mn_windowsGetFilePath( const char  *inFolderName,
+                                    const char  *inFileName ) {
+    
+    enum{  MAX_PATH_LEN  =  255,
+           NUM_BUFFERS   =    2   };
+
+    static  int   curBuffer  = 0;
+    
+    static  char  buffer[ NUM_BUFFERS ][ MAX_PATH_LEN + 1 ];
+
+    
+    int  i  =  0;
+    int  j  =  0;
+
+    
+    curBuffer ++;
+
+    if( curBuffer >= NUM_BUFFERS ) {
+        curBuffer = 0;
         }
-    return -1;
+    
+    while( i < MAX_PATH_LEN
+           &&
+           inFolderName[i] != '\0' ) {
+        
+        buffer[curBuffer][i] = inFolderName[i];
+        i++;
+        }
+    
+    /* now separator */
+    if( i < MAX_PATH_LEN ) {
+        buffer[curBuffer][i] = '\\';
+        i++;
+        }
+    
+    while( i < MAX_PATH_LEN
+           &&
+           inFileName[j] != '\0' ) {
+        
+        buffer[curBuffer][i] = inFileName[j];
+        i++;
+        j++;
+        }
+
+    /* now terminate */
+    if( i < MAX_PATH_LEN ) {
+        buffer[curBuffer][i] = '\0';
+        }
+    
+    return buffer[curBuffer];
+    }
+
+
+/* returns 0 if none found (full) */
+static MinginFileHandle *mn_findEmptyFileHandle( int  *outIndex ) {
+
+    int  i;
+
+    for( i = 0;
+         i < MINGIN_WINDOWS_MAX_OPEN_FILES;
+         i ++ ) {
+
+        if( mn_fileHandles[i].live == 0 ) {
+            *outIndex = i;
+            return &( mn_fileHandles[i] );
+            }
+        }
+
+    *outIndex = -1;
+    return 0;
+    }
+
+
+
+
+static int mn_windowsFileOpenRead( const char  *inFolderName,
+                                   const char  *inFileName,
+                                   int         *outTotalBytes ) {
+    
+    char              *path         =  mn_windowsGetFilePath( inFolderName,
+                                                              inFileName );
+    MinginFileHandle  *fileHandle;
+    int                fileIndex;
+    DWORD              fileSize;
+    
+    *outTotalBytes = 0;
+
+    fileHandle = mn_findEmptyFileHandle( &fileIndex );
+
+    if( fileHandle == 0 ) {
+        mingin_log( "Failed to open file for reading, "
+                    "too many open file handles on Windows.\n" );
+        return -1;
+        }
+
+    fileHandle->h = CreateFileA( path,
+                                 GENERIC_READ,
+                                 FILE_SHARE_READ,
+                                 NULL,
+                                 OPEN_EXISTING,
+                                 FILE_ATTRIBUTE_NORMAL,
+                                 NULL );
+
+    if( fileHandle->h == INVALID_HANDLE_VALUE ) {
+        return -1;
+        }
+
+    fileSize = GetFileSize( fileHandle->h,
+                            NULL );
+
+    if( fileSize == INVALID_FILE_SIZE ) {
+        /* failed to get size, OR file is bigger than 4 GB,
+           which is not supported */
+        return -1;
+        }
+
+    *outTotalBytes = (int)( fileSize );
+
+    fileHandle->live = 1;
+    
+    
+    return fileIndex;
+    }
+
+
+
+static int mn_windowsFileOpenWrite( const char  *inFolderName,
+                                    const char  *inFileName ) {
+
+    /* make sure folder exists */
+    char  folderExists   = 0;
+    DWORD attributes     = GetFileAttributesA( inFolderName );
+
+    if( attributes != INVALID_FILE_ATTRIBUTES ) {
+        if( attributes & FILE_ATTRIBUTE_DIRECTORY ) {
+            folderExists = 1;
+            }
+        }
+    
+    if( ! folderExists ) {
+        if( CreateDirectoryA( inFolderName,
+                              NULL ) ) {
+            folderExists = 1;
+            }
+        }
+    
+    if( folderExists ) {
+
+        char              *path         =  mn_windowsGetFilePath( inFolderName,
+                                                                  inFileName );
+        MinginFileHandle  *fileHandle;
+        int                fileIndex;
+
+        fileHandle = mn_findEmptyFileHandle( &fileIndex );
+
+        if( fileHandle == 0 ) {
+            mingin_log( "Failed to open file for writing, "
+                        "too many open file handles on Windows.\n" );
+            return -1;
+            }
+
+        fileHandle->h = CreateFileA( path,
+                                     GENERIC_WRITE,
+                                     0,
+                                     NULL,
+                                     CREATE_ALWAYS,
+                                     FILE_ATTRIBUTE_NORMAL,
+                                     NULL );
+
+        if( fileHandle->h == INVALID_HANDLE_VALUE ) {
+            return -1;
+            }
+        
+        fileHandle->live = 1;
+    
+    
+        return fileIndex;
+        }
+    else {
+        return -1;
+        }
+    }
+
+
+
+static char mn_windowsFileWrite( int                   inFD,
+                                 int                   inNumBytesToWrite,
+                                 const unsigned char  *inByteBuffer ) {
+    
+    int                numWritten  =  0;
+    MinginFileHandle  *fileHandle  =  &( mn_fileHandles[ inFD ] );
+
+    if( ! fileHandle->live ) {
+        return -0;
+        }
+    
+    while( numWritten < inNumBytesToWrite ) {
+        DWORD  numLeftToWrite      =  (DWORD)( inNumBytesToWrite -
+                                               numWritten );
+        DWORD  numWrittenThisTime;
+
+        if( ! WriteFile( fileHandle->h,
+                         &( inByteBuffer[ numWritten ] ),
+                         numLeftToWrite,
+                         &numWrittenThisTime,
+                         NULL ) ) {
+            return 0;
+            }
+        
+        numWritten += (int)numWrittenThisTime;
+        }
+
+    return 1;
+    }
+
+
+
+static int mn_windowsFileRead( int             inFD,
+                               int             inNumBytesToRead,
+                               unsigned char  *inByteBuffer ) {
+    
+    int                numRead     =  0;
+    MinginFileHandle  *fileHandle  =  &( mn_fileHandles[ inFD ] );
+    
+    if( ! fileHandle->live ) {
+        return -1;
+        }
+    
+    while( numRead < inNumBytesToRead ) {
+        
+        DWORD  numLeftToRead     =  (DWORD)( inNumBytesToRead - numRead );
+        DWORD  numReadThisTime;
+
+        if( ! ReadFile( fileHandle->h,
+                        &( inByteBuffer[ numRead ] ),
+                        numLeftToRead,
+                        &numReadThisTime,
+                        NULL ) ) {
+
+            /* read failed */
+            return -1;
+            }
+
+        if( numReadThisTime == 0 ) {
+            /* end of file condition */
+            return numRead;
+            }
+        
+        numRead += (int)numReadThisTime;
+        }
+
+    return numRead;
+    }
+
+
+
+static char mn_windowsFileSeek( int  inFD,
+                                int  inAbsoluteBytePosition ) {
+
+    MinginFileHandle  *fileHandle  =  &( mn_fileHandles[ inFD ] );
+    DWORD              result;
+    
+    if( ! fileHandle->live ) {
+        return 0;
+        }
+
+    result = SetFilePointer( fileHandle->h,
+                             inAbsoluteBytePosition,
+                             NULL,
+                             FILE_BEGIN );
+
+    if( result == INVALID_SET_FILE_POINTER ){
+        return 0;
+        }
+    return 1;
+    }
+
+
+
+static int mn_windowsFileGetPos( int  inFD ) {
+
+    MinginFileHandle  *fileHandle  =  &( mn_fileHandles[ inFD ] );
+    DWORD              result;
+    
+    if( ! fileHandle->live ) {
+        return 0;
+        }
+
+    result = SetFilePointer( fileHandle->h,
+                             0,
+                             NULL,
+                             FILE_CURRENT );
+
+    if( result == INVALID_SET_FILE_POINTER ){
+        return -1;
+        }
+    
+    return (int)result;
+    }
+
+
+
+int mingin_startWritePersistData( const char  *inStoreName ) {
+    
+    return mn_windowsFileOpenWrite( mn_settingsDirName,
+                                    inStoreName );
     }
 
 
 
 int mingin_startReadPersistData( const char  *inStoreName,
                                  int         *outTotalBytes ) {
-    /* suppress  warning */
-    if( inStoreName[0] == '\0' ) {
-        }
-    *outTotalBytes = 0;
     
-    return -1;
+    return mn_windowsFileOpenRead( mn_settingsDirName,
+                                   inStoreName,
+                                   outTotalBytes );
     }
 
 
@@ -7446,14 +7811,10 @@ int mingin_startReadPersistData( const char  *inStoreName,
 char mingin_writePersistData( int                   inStoreWriteHandle,
                               int                   inNumBytesToWrite,
                               const unsigned char  *inByteBuffer ) {
-    /* suppress warning */
-    if( inStoreWriteHandle > 0
-        ||
-        inNumBytesToWrite > 0
-        ||
-        inByteBuffer != 0 ) {
-        }
-    return 0;
+    
+    return mn_windowsFileWrite( inStoreWriteHandle,
+                                inNumBytesToWrite,
+                                inByteBuffer );
     }
 
 
@@ -7461,62 +7822,101 @@ char mingin_writePersistData( int                   inStoreWriteHandle,
 int mingin_readPersistData( int             inStoreReadHandle,
                             int             inNumBytesToRead,
                             unsigned char  *inByteBuffer ) {
-    /* suppress warning */
-    if( inStoreReadHandle > 0
-        ||
-        inNumBytesToRead > 0
-        ||
-        inByteBuffer != 0 ) {
-        }
-    return -1;
+
+    return mn_windowsFileRead( inStoreReadHandle,
+                               inNumBytesToRead,
+                               inByteBuffer );
     }
 
 
 
 char mingin_seekPersistData( int  inStoreReadHandle,
                              int  inAbsoluteBytePosition ) {
-    /* suppress warning */
-    if( inStoreReadHandle > 0
-        ||
-        inAbsoluteBytePosition > 0 ) {
-        }
-    return 0;
+    
+    return mn_windowsFileSeek( inStoreReadHandle,
+                               inAbsoluteBytePosition );
     }
 
 
-int mingin_getPersistDataPosition( int  inStoreReadHandle ) {
-    /* suppress warning */
-    if( inStoreReadHandle > 0 ) {
-        }
-    return 0;
-    }
 
+int mingin_getPersistDataPosition( int  inStoreReadHandle ) { 
+    return mn_windowsFileGetPos( inStoreReadHandle );
+   }
+
+
+static void mn_windowsCloseFile( int  inFD ) {
+    
+    MinginFileHandle  *fileHandle  =  &( mn_fileHandles[ inFD ] );
+
+    if( ! fileHandle->live ) {
+        return;
+        }
+    CloseHandle( fileHandle->h );
+    fileHandle->live = 0;
+    }
 
 
 
 void mingin_endWritePersistData( int  inStoreWriteHandle ) {
-    /* suppress warning */
-    if( inStoreWriteHandle > 0 ) {
-        }
+    mn_windowsCloseFile( inStoreWriteHandle );
     }
 
 
 
 void mingin_endReadPersistData( int  inStoreReadHandle ) {
-    /* suppress warning */
-    if( inStoreReadHandle > 0 ) {
+    mn_windowsCloseFile( inStoreReadHandle );
+    }
+
+
+
+void mingin_deletePersistData( const char  *inStoreName ) {
+    
+    char  *path  =  mn_windowsGetFilePath( mn_settingsDirName,
+                                           inStoreName );
+    
+    DeleteFileA( path );
+    }
+
+
+
+char mingin_renamePersistData( const char  *inStoreName,
+                               const char  *inStoreNewName ) {
+
+    char  *pathOld  =  mn_windowsGetFilePath( mn_settingsDirName,
+                                              inStoreName );
+    char  *pathNew  =  mn_windowsGetFilePath( mn_settingsDirName,
+                                              inStoreNewName );
+
+    int    result   =  MoveFileA( pathOld,
+                                  pathNew );
+
+    if( result == 0 ) {
+        return 0;
+        }
+    else {
+        return 1;
         }
     }
 
 
 
+
+
+/* FIXME:
+
+   probably need to implement threaded bulk reading, just like in
+   Linux...
+
+   This is the simple non-threaded version */
+
+
 int mingin_startReadBulkData( const char  *inBulkName,
                               int         *outTotalBytes ) {
-    /* suppress warning */
-    if( inBulkName[0] != '\0' ) {
-        }
-    *outTotalBytes = 0;
-    return -1;
+
+        
+    return mn_windowsFileOpenRead( mn_bulkDataDirName,
+                                   inBulkName,
+                                   outTotalBytes );
     }
 
 
@@ -7538,14 +7938,10 @@ void mingin_setBulkDataReadBuffer( int             inBulkDataHandle,
 int mingin_readBulkData( int             inBulkDataHandle,
                          int             inNumBytesToRead,
                          unsigned char  *inByteBuffer ) {
-    /* suppress warning */
-    if( inBulkDataHandle > 0
-        ||
-        inNumBytesToRead > 0
-        ||
-        inByteBuffer != 0 ) {
-        }
-    return -1;
+    
+    return mn_windowsFileRead( inBulkDataHandle,
+                               inNumBytesToRead,
+                               inByteBuffer );
     }
 
 
@@ -7553,29 +7949,21 @@ int mingin_readBulkData( int             inBulkDataHandle,
 
 char mingin_seekBulkData( int  inBulkDataHandle,
                           int  inAbsoluteBytePosition ) {
-    /* suppress warning */
-    if( inBulkDataHandle > 0
-        ||
-        inAbsoluteBytePosition > 0 ) {
-        }
-    return 0;
+        
+    return mn_windowsFileSeek( inBulkDataHandle,
+                               inAbsoluteBytePosition );
     }
 
 
 
 int mingin_getBulkDataPosition( int  inBulkDataHandle ) {
-    /* suppress warning */
-    if( inBulkDataHandle > 0 ) {
-        }
-    return 0;
+    return mn_windowsFileGetPos( inBulkDataHandle );
     }
 
 
 
 void mingin_endReadBulkData( int  inBulkDataHandle ) {
-    /* suppress warning */
-    if( inBulkDataHandle > 0 ) {
-        }
+    mn_windowsCloseFile( inBulkDataHandle );
     }
 
 
@@ -7584,27 +7972,6 @@ char mingin_getBulkDataChanged( const char  *inBulkName ) {
     /* suppress warning */
     if( inBulkName[0] != '\0' ) {
         }
-    return 0;
-    }
-
-
-
-void mingin_deletePersistData( const char  *inStoreName ) {
-    /* suppress warning */
-    if( inStoreName[0] != '\0' ) {
-        }
-    }
-
-
-
-char mingin_renamePersistData( const char  *inStoreName,
-                               const char  *inStoreNewName ) {
-    /* suppress warning */
-    if( inStoreName[0] != '\0'
-        ||
-        inStoreNewName[0] != '\0' ) {
-        }
-
     return 0;
     }
 

@@ -6578,6 +6578,7 @@ static char mn_isRunningOnSteamDeck( void ) {
 #include <windows.h>
 #include <initguid.h>
 #include <d3d11.h>
+#include <mmsystem.h>
 
 static  HINSTANCE                mn_hInstance;
 static  int                      mn_cmdshow;
@@ -6625,6 +6626,9 @@ static  LARGE_INTEGER  mn_ticksPerFrame;
 
 static  const char    *mn_settingsDirName          =  "settings";
 static  const char    *mn_bulkDataDirName          =  "data";
+
+static  char           mn_firstStepRun             =  0;
+
 
 
 typedef struct MinginFileHandle {
@@ -7089,6 +7093,7 @@ static char mn_createWindow( HINSTANCE  hInstance,
     }
 
 
+
 static void mn_destroyWindow( HINSTANCE  hInstance ) {
 
     mn_d3dCleanup();
@@ -7097,6 +7102,339 @@ static void mn_destroyWindow( HINSTANCE  hInstance ) {
 
     UnregisterClassA( mn_windowClassName,
                       hInstance );
+    }
+
+
+
+#define  MN_SOUND_NUM_CHANNELS                2
+#define  MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES  512
+#define  MN_SOUND_NUM_BUFFERS                 4
+
+static  unsigned int        mn_sampleRate               =  44100;
+static  unsigned int        mn_startupSilentFrames      =   1536;
+static  unsigned int        mn_startupSilentFramesLeft  =      0;
+
+/* 2 bytes per sample (S16 LE) */
+static  unsigned char  mn_audioBuffers[ MN_SOUND_NUM_BUFFERS]
+                                      [ MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES
+                                        * 2
+                                        * MN_SOUND_NUM_CHANNELS ];
+
+
+static  char      mn_soundOpen        =  0;
+static  HANDLE    mn_audioMutex       =  NULL;
+static  HANDLE    mn_audioThread      =  NULL;
+static  HANDLE    mn_audioEvent       =  NULL;
+static  HWAVEOUT  mn_waveOut          =  NULL;
+static  char      mn_audioThreadStop  =  0;
+
+static  WAVEHDR   mn_audioBufferHeaders[ MN_SOUND_NUM_BUFFERS ];
+
+
+
+
+/* returns 0 on failure */
+static int mn_stepSound( void ) {
+    
+    DWORD              waitResult;
+    int                i;
+    MMRESULT           result;
+    
+    if( !mn_soundOpen ) {
+        return 0;
+        }
+    
+    waitResult = WaitForSingleObject( mn_audioEvent,
+                                      INFINITE );
+    
+    if( waitResult != WAIT_OBJECT_0 ) {
+        /* failed to wait on event */
+        mingin_log( "Unrecoverable error when waiting for "
+                    "sound stream to be ready for more samples.  "
+                    "Stopping audio.\n" );
+        return 0;
+        }
+
+
+    for( i = 0;
+         i < MN_SOUND_NUM_BUFFERS;
+         i ++ ) {
+
+        if( mn_audioBufferHeaders[i].dwFlags & WHDR_DONE ) {
+
+            /* mark as NOT done */
+            mn_audioBufferHeaders[i].dwFlags &= ~WHDR_DONE;
+
+            mingin_lockAudio();
+            
+            minginGame_getAudioSamples( MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES,
+                                        (int)mn_sampleRate,
+                                        mn_audioBuffers[i] );
+            mingin_unlockAudio();
+
+
+            result = waveOutWrite( mn_waveOut,
+                                   &( mn_audioBufferHeaders[i] ),
+                                   sizeof( WAVEHDR ) );
+            if( result != MMSYSERR_NOERROR ) {
+                mingin_log( "waveOutWrite failed for Windows audio\n" );
+                return 0;
+                }
+            }
+        }
+
+    return 1;
+    }
+
+
+
+static DWORD WINAPI mn_audioThreadFunction( LPVOID inArg ) {
+
+    /* suppress warning */
+    if( inArg == 0 ) {
+        }
+    
+    while( 1 ) {
+
+        int  stepResult;
+        
+        mingin_lockAudio();
+        
+        if( mn_audioThreadStop ) {
+            
+            mingin_unlockAudio();
+            
+            return 0;
+            }
+
+        mingin_unlockAudio();
+
+        stepResult = mn_stepSound();
+        
+        if( stepResult == 0 ) {
+            return 0;
+            }
+        }
+    }
+
+
+
+static void mn_openSound( void ) {
+
+    WAVEFORMATEX  soundFormat;
+    MMRESULT      result;
+    int           i;
+    
+    mn_audioEvent = CreateEvent( NULL,
+                                 TRUE,
+                                 FALSE,
+                                 NULL );
+
+    if( mn_audioEvent == NULL ) {
+        mingin_log( "Failed to CreateEvent for Windows audio\n" );
+        return;
+        }
+
+    ZeroMemory( &soundFormat,
+                sizeof( soundFormat ) );
+
+    
+    soundFormat.wFormatTag      = WAVE_FORMAT_PCM;
+    soundFormat.nChannels       = MN_SOUND_NUM_CHANNELS;
+    soundFormat.nSamplesPerSec  = mn_sampleRate;
+    soundFormat.wBitsPerSample  = 16;
+    soundFormat.nBlockAlign     =
+        (WORD)( ( soundFormat.nChannels * soundFormat.wBitsPerSample ) / 8 );
+
+    soundFormat.nAvgBytesPerSec =
+        soundFormat.nSamplesPerSec * soundFormat.nBlockAlign;
+    soundFormat.cbSize          = 0;
+
+    result = waveOutOpen( &( mn_waveOut ),
+                          WAVE_MAPPER,
+                          &soundFormat,
+                          (DWORD_PTR)mn_audioEvent,
+                          0,
+                          CALLBACK_EVENT );
+
+    if( result != MMSYSERR_NOERROR ) {
+        mingin_log( "waveOutOpen failed for Windows audio\n" );
+        
+        CloseHandle( mn_audioEvent );
+        mn_audioEvent = NULL;
+
+        return;
+        }
+
+    for( i = 0;
+         i < MN_SOUND_NUM_BUFFERS;
+         i ++ ) {
+        
+        ZeroMemory( &( mn_audioBufferHeaders[i] ),
+                    sizeof( WAVEHDR ) );
+
+        mn_audioBufferHeaders[i].lpData =
+            (LPSTR)( mn_audioBuffers[i] );
+        
+        mn_audioBufferHeaders[i].dwBufferLength =
+            sizeof( mn_audioBuffers[i] );
+
+        result = waveOutPrepareHeader( mn_waveOut,
+                                       &( mn_audioBufferHeaders[i] ),
+                                       sizeof( WAVEHDR ) );
+        if( result != MMSYSERR_NOERROR ) {
+            mingin_log( "waveOutPrepareHeader failed for Windows audio\n" );
+
+            waveOutClose( mn_waveOut );
+            CloseHandle( mn_audioEvent );
+
+            return;
+            }
+        
+        /* first two buffers are silence */
+        ZeroMemory( &( mn_audioBuffers[i] ),
+                    sizeof( mn_audioBuffers[i] ) );
+
+        result = waveOutWrite( mn_waveOut,
+                               &( mn_audioBufferHeaders[i] ),
+                               sizeof( WAVEHDR ) );
+
+        if( result != MMSYSERR_NOERROR ) {
+            mingin_log( "Initial waveOutWrite failed for Windows audio\n" );
+
+            waveOutClose( mn_waveOut );
+            CloseHandle( mn_audioEvent );
+
+            return;
+            }
+        }
+
+    
+    mn_audioMutex = CreateMutexA( NULL,
+                                  FALSE,
+                                  NULL );
+    
+    if( mn_audioMutex == NULL ) {
+        mingin_log( "Failed to create mutex for Windows audio lock\n" );
+
+        waveOutClose( mn_waveOut );
+        CloseHandle( mn_audioEvent );
+        
+        return;
+        }
+    
+    
+    mn_soundOpen = 1;
+
+
+    mn_audioThread = CreateThread( NULL,
+                                   0,
+                                   mn_audioThreadFunction,
+                                   NULL,
+                                   0,
+                                   NULL );
+
+    if( mn_audioThread == NULL ) {
+        mingin_log( "Failed to start audio thread.\n" );
+
+        waveOutClose( mn_waveOut );
+        CloseHandle( mn_audioEvent );
+         
+        CloseHandle( mn_audioMutex );
+
+        return;
+        }
+    
+    
+    mingin_log( "Opened Windows sound output\n" );
+    }
+
+
+
+void mingin_lockAudio( void ) {
+
+    if( WaitForSingleObject( mn_audioMutex,
+                             INFINITE )      != WAIT_OBJECT_0 ) {
+        
+        mingin_log( "Failed to lock audio mutex\n" );
+        }
+    }
+
+
+
+void mingin_unlockAudio( void ) {
+
+    if( ReleaseMutex( mn_audioMutex ) == 0 ) {
+
+        mingin_log( "Failed to unlock audio mutex\n" );
+        }
+    }
+
+    
+
+char mingin_isSoundPlaying( void ) {
+
+    char  playing;
+    
+    mingin_lockAudio();
+
+    playing = mn_soundOpen;
+
+    mingin_unlockAudio();
+
+    return playing;
+    }
+
+
+
+
+
+static void mn_closeSound( void ) {
+    if( mn_soundOpen ) {
+
+        int    result;
+        int    i;
+        
+        waveOutReset( mn_waveOut );
+        
+        mingin_lockAudio();
+        mn_audioThreadStop = 1;
+        mingin_unlockAudio();
+
+        /* wake thread up if it's waiting for audio event */
+        SetEvent( mn_audioEvent );
+        
+        if( WaitForSingleObject( mn_audioThread,
+                                 INFINITE )       != WAIT_OBJECT_0 ) {
+
+            mingin_log( "Failed to join audio thread at exit\n" );
+            }
+
+        result = CloseHandle( mn_audioThread );
+
+        if( result == 0 ) {
+            mingin_log( "Failed to close audio thread at exit\n" );
+            }
+        
+        result = CloseHandle( mn_audioMutex );
+
+        if( result == 0 ) {
+            mingin_log( "Failed to close audio mutex at exit\n" );
+            }
+
+        for( i = 0;
+             i < MN_SOUND_NUM_BUFFERS;
+             i ++ ) {
+            waveOutUnprepareHeader( mn_waveOut,
+                                    &( mn_audioBufferHeaders[i] ),
+                                    sizeof( WAVEHDR ) );
+            }
+
+        waveOutClose( mn_waveOut );
+        mn_waveOut = NULL;
+        
+        mingin_log( "Closed Windows sound output.\n" );
+        }
     }
 
 
@@ -7205,6 +7543,14 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                 }
 
             minginGame_step( 0 );
+
+
+            if( ! mn_firstStepRun ) {
+                /* first step has been run now, can start sound thread */
+                mn_openSound();
+                
+                mn_firstStepRun = 1;
+                }
 
             ID3D11DeviceContext_ClearRenderTargetView( mn_d3dDeviceContext,
                                                        mn_d3dBackBuffer,
@@ -7320,6 +7666,8 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
 
     /* final step */
     minginGame_step( 1 );
+
+    mn_closeSound();
     
     mn_destroyWindow( hInstance );
 
@@ -7358,22 +7706,6 @@ int mingin_getMillisecondsLeftInStep( void ) {
 
     return (int)( ( countDiff.QuadPart * 1000 ) /
                   mn_performanceCounterFreq.QuadPart );
-    }
-
-
-
-void mingin_lockAudio( void ) {
-    }
-
-
-
-void mingin_unlockAudio( void ) {
-    }
-
-
-
-char mingin_isSoundPlaying( void ) {
-    return 0;
     }
 
 

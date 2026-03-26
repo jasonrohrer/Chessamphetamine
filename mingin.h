@@ -7133,6 +7133,8 @@ static  char      mn_audioThreadStop  =  0;
 
 static  WAVEHDR   mn_audioBufferHeaders[ MN_SOUND_NUM_BUFFERS ];
 
+static  int       mn_logFileHandle    =  -1;
+
 
 
 
@@ -7459,6 +7461,18 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     HANDLE         frameTimer;
     int            i;
 
+    for( i = 0;
+         i < MINGIN_WINDOWS_MAX_OPEN_FILES;
+         i ++ ) {
+        
+        mn_fileHandles[i].live = 0;
+        }
+
+    mn_logFileHandle = mingin_startWritePersistData( "mingin_log.txt" );
+
+    mingin_log( "Mingin starting up\n" );
+
+    
     mn_hInstance = hInstance;
     mn_cmdshow   = cmdshow;
 
@@ -7466,13 +7480,6 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
 
     frameTimer = CreateWaitableTimer( NULL, FALSE, NULL );
 
-
-    for( i = 0;
-         i < MINGIN_WINDOWS_MAX_OPEN_FILES;
-         i ++ ) {
-        
-        mn_fileHandles[i].live = 0;
-        }
     
     
     success = mn_createWindow( hInstance,
@@ -7684,6 +7691,10 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                 L"Quitting",
                 0 );
 
+    if( mn_logFileHandle != -1 ) {
+        mingin_endWritePersistData( mn_logFileHandle );
+        }
+
     /* game asked to quit ! */
     return (int)( msg.wParam );
     }
@@ -7778,8 +7789,11 @@ char mingin_hasAnyGamepadBeenTouched( void ) {
 
 
 void mingin_log( const char  *inString ) {
-    /* suppress compiler warning */
-    if( inString[0] == '\0' ) {
+    if( mn_logFileHandle != -1 ) {
+
+        mingin_writePersistData( mn_logFileHandle,
+                                 mn_stringLength( inString ),
+                                 (unsigned char *)inString );
         }
     return;
     }
@@ -8019,7 +8033,7 @@ static char mn_windowsFileWrite( int                   inFD,
     MinginFileHandle  *fileHandle  =  &( mn_fileHandles[ inFD ] );
 
     if( ! fileHandle->live ) {
-        return -0;
+        return 0;
         }
     
     while( numWritten < inNumBytesToWrite ) {

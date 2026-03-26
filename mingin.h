@@ -2002,6 +2002,58 @@ static const char *mn_intToString( int  inInt ) {
 
 
 
+static int mn_stringLength( const char  *inString ) {
+    
+    int i = 0;
+    
+    while( inString[i] != '\0' ) {
+        i++;
+        }
+    
+    return i;
+    }
+
+
+
+static char mn_stringsEqual( const char  *inStringA,
+                             const char  *inStringB ) {
+    
+    int i  =  0;
+    
+    while( inStringA[i] == inStringB[i] &&
+           inStringA[i] != '\0' ) {
+        i++;
+        }
+
+    if( inStringA[i] == inStringB[i] ) {
+        /* both terminated */
+        return 1;
+        }
+    return 0;
+    }
+
+
+
+static char mn_stringStartsWith( const char  *inString,
+                                 const char  *inPrefix ) {
+    
+    int i  =  0;
+    
+    while( inString[i] == inPrefix[i]
+           &&
+           inPrefix[i] != '\0' ) {
+        i++;
+        }
+
+    if( inPrefix[i] == '\0' ) {
+        /* reached end of prefix */
+        return 1;
+        }
+    return 0;
+    }
+
+
+
 /* saves a 1 or 0 flag to persistent storage */
 static void mn_saveFlagSetting( const char  *inFlagName,
                                 char         inValue ) {
@@ -2950,55 +3002,6 @@ MinginButton mingin_getLastButtonPressed( void ) {
 
 
 
-static int mn_stringLength( const char  *inString ) {
-    
-    int i = 0;
-    
-    while( inString[i] != '\0' ) {
-        i++;
-        }
-    
-    return i;
-    }
-
-
-
-static char mn_stringsEqual( const char  *inStringA,
-                             const char  *inStringB ) {
-    
-    int i  =  0;
-    
-    while( inStringA[i] == inStringB[i] &&
-           inStringA[i] != '\0' ) {
-        i++;
-        }
-
-    if( inStringA[i] == inStringB[i] ) {
-        /* both terminated */
-        return 1;
-        }
-    return 0;
-    }
-
-
-
-static char mn_stringStartsWith( const char  *inString,
-                                 const char  *inPrefix ) {
-    
-    int i  =  0;
-    
-    while( inString[i] == inPrefix[i]
-           &&
-           inPrefix[i] != '\0' ) {
-        i++;
-        }
-
-    if( inPrefix[i] == '\0' ) {
-        /* reached end of prefix */
-        return 1;
-        }
-    return 0;
-    }
 
 
 
@@ -7439,6 +7442,10 @@ static void mn_closeSound( void ) {
 
 
 
+static void mn_endBulkReadThread( void );
+
+
+
 int APIENTRY WinMain( HINSTANCE  hInstance,
                       HINSTANCE  hInstancePrev,
                       PSTR       cmdline,
@@ -7668,6 +7675,8 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     minginGame_step( 1 );
 
     mn_closeSound();
+
+    mn_endBulkReadThread();
     
     mn_destroyWindow( hInstance );
 
@@ -8234,12 +8243,13 @@ char mingin_renamePersistData( const char  *inStoreName,
 
 
 
-/* FIXME:
+/*#define MINGIN_WINDOWS_SIMPLE_BULK*/
 
-   probably need to implement threaded bulk reading, just like in
-   Linux...
 
-   This is the simple non-threaded version */
+#ifdef MINGIN_WINDOWS_SIMPLE_BULK
+
+
+/* This is the simple non-threaded, non-buffered version */
 
 
 int mingin_startReadBulkData( const char  *inBulkName,
@@ -8306,6 +8316,1077 @@ char mingin_getBulkDataChanged( const char  *inBulkName ) {
         }
     return 0;
     }
+
+
+static void mn_endBulkReadThread( void ) {
+    }
+
+
+
+/* end #ifdef MINGIN_WINDOWS_SIMPLE_BULK */
+#else
+
+
+/*FIXME*/
+
+/* more complex bulk reading implementation */
+
+
+#define  MINGIN_MAX_NUM_BULK_CHANGE_RECORDS   128
+
+
+/* including \0 termination */
+#define  MINGIN_BULK_NAME_MAX_LENGTH  128
+
+typedef struct MinginBulkChangeRecord {
+        
+        char            bulkName[ MINGIN_BULK_NAME_MAX_LENGTH ];
+        
+        ULARGE_INTEGER  modTime;
+        
+    } MinginBulkChangeRecord;
+
+
+
+static  MinginBulkChangeRecord  mn_bulkChangeRecords
+                                    [ MINGIN_MAX_NUM_BULK_CHANGE_RECORDS ];
+
+static  int                     mn_numBulkChangeRecords      =  0;
+static  ULARGE_INTEGER          mn_latestBulkChangeModTime   =  { { 0, 0 } };
+static  char                    mn_bulkChangeOverflowLogged  =  0;
+
+
+/* note that in many circumstances, mn_latestBulkChangeModTime is sufficient
+   to track when any bulk data file changes, since a file will become
+   newer than the latest file when it is updated.
+
+   If we're only updating one file at a time, and the game client is
+   checking modified status fast enough to not miss any of these changes,
+   mn_latestBulkChangeModTime will not miss anything.
+
+   However, in cases where multiple files are being updated before
+   the game client checks for file modifications, some files might be missed.
+
+   This is why keeping one record per file is ideal, if we can.  However,
+   we don't want to waste static memory space with a huge buffer of these
+   to cover all cases.
+*/
+
+
+static ULARGE_INTEGER mn_windowsGetModTime( const char  *inBulkName ) {
+    
+    const char  *path         =  mn_windowsGetFilePath( mn_bulkDataDirName,
+                                                        inBulkName );
+    HANDLE           fileHandle;
+    FILETIME         fileTime;
+    ULARGE_INTEGER   returnVal;
+
+    returnVal.QuadPart = 0;
+
+    fileHandle = CreateFileA( path,
+                              GENERIC_READ,
+                              FILE_SHARE_READ,
+                              NULL,
+                              OPEN_EXISTING,
+                              FILE_ATTRIBUTE_NORMAL,
+                              NULL );
+
+    if( fileHandle == INVALID_HANDLE_VALUE ) {
+        return returnVal;
+        }
+
+    
+    if( ! GetFileTime( fileHandle,
+                       NULL,
+                       NULL,
+                       &fileTime ) ) {
+
+        CloseHandle( fileHandle );
+        
+        return returnVal;
+        }
+
+    CloseHandle( fileHandle );
+
+    returnVal.u.LowPart = fileTime.dwLowDateTime;
+    returnVal.u.HighPart = fileTime.dwHighDateTime;
+    
+    return returnVal;
+    }
+
+
+
+static void mn_logModTime( const char  *inBulkName ) {
+
+    int              i;
+    int              foundI     =  -1;
+    ULARGE_INTEGER   modTime;
+
+    modTime = mn_windowsGetModTime( inBulkName );
+    
+    if( modTime.QuadPart == 0 ) {
+
+        mingin_log( "Failed to get mod time for bulk data file: " );
+        mingin_log( inBulkName );
+        mingin_log( "\n" );
+        
+        return;
+        }
+
+    
+    /* update our global latest mod time */
+    
+    if( modTime.QuadPart > mn_latestBulkChangeModTime.QuadPart ) {
+        mn_latestBulkChangeModTime.QuadPart = modTime.QuadPart;
+        }
+    
+    
+    for( i = 0;
+         i < mn_numBulkChangeRecords;
+         i ++ ) {
+
+        if( mn_stringsEqual(
+                inBulkName,
+                mn_bulkChangeRecords[ i ].bulkName ) ) {
+
+            foundI = i;
+            break;
+            }
+        }
+
+    if( foundI == -1 ) {
+        /* no existing record, try to make a new one */
+        
+        if( mn_numBulkChangeRecords == MINGIN_MAX_NUM_BULK_CHANGE_RECORDS ) {
+            /* no room for new record */
+
+            if( ! mn_bulkChangeOverflowLogged ) {
+                /* only log once, to avoid flooding log with tons
+                   of messages if a game opens lots of bulk data files */
+                mingin_log( "Mingin:  Ran out of room in static "
+                            "bulkChangeRecord array, "
+                            "rapid-fire changes to bulk data files may result "
+                            "in some changes being missed.\n" );
+                
+                mn_bulkChangeOverflowLogged = 1;
+                }
+            
+            return;
+            }
+
+        foundI = mn_numBulkChangeRecords;
+
+        mn_bulkChangeRecords[ foundI ].modTime.QuadPart = 0;
+
+        /* copy name into record */
+        i = 0;
+        while( i < MINGIN_BULK_NAME_MAX_LENGTH - 1
+               &&
+               inBulkName[i] != '\0' ) {
+            
+            mn_bulkChangeRecords[ foundI ].bulkName[i] = inBulkName[i];
+            i ++;
+            }
+
+        /* terminate */
+        mn_bulkChangeRecords[ foundI ].bulkName[i] = '\0';
+        
+        mn_numBulkChangeRecords ++;
+        }
+
+    if( foundI != -1 ) {
+        /* update found (or new) record with mod time */
+        mn_bulkChangeRecords[ foundI ].modTime.QuadPart = modTime.QuadPart;
+        }
+    }
+
+
+
+int mingin_startReadBulkData( const char  *inBulkName,
+                              int         *outTotalBytes ) {
+    
+    mn_logModTime( inBulkName );
+    
+    return mn_windowsFileOpenRead( mn_bulkDataDirName,
+                                   inBulkName,
+                                   outTotalBytes );
+    }
+
+
+
+typedef struct MinginBulkReadBuffer {
+        
+        int             bulkDataHandle;
+
+        int             bufferSize;
+
+        unsigned char  *buffer;
+
+        /* spot in the ring buffer where the next byte produced by the
+           producer will go */
+        int             producerPos;
+
+        /* spot in the ring buffer where the next byte read by the consumer
+           will come from */
+        int             consumerPos;
+
+        /* where the producer will read the next byte from in the bulk
+           data resource the next time it tries to read bytes */
+        int             nextProducerResourcePos;
+
+        /* when the consumer consumes the byte at consumerPos,
+           where did this byte come from in the bulk data resource? */
+        int             nextConsumerResourcePos;
+
+        char            endOfFileReached;
+        
+    } MinginBulkReadBuffer;
+
+
+
+#define  MINGIN_MAX_BULK_READ_BUFFERS  16
+
+static  MinginBulkReadBuffer  mn_bulkReadBuffers[ MINGIN_MAX_BULK_READ_BUFFERS ];
+
+static  int                   mn_numBulkReadBuffers    =  0;
+static  char                  mn_bulkReadThreadLive    =  0;
+static  char                  mn_bulkReadLocksLive     =  0;
+/* this critical section protects file operations on the underlying files */
+static  CRITICAL_SECTION      mn_bulkFileOpsCriticalSection;
+/* this critical section protects the bulk buffer data structure */
+static  CRITICAL_SECTION      mn_bulkBufferCriticalSection;
+static  CONDITION_VARIABLE    mn_bulkCanWriteCondition;
+static  HANDLE                mn_bulkReadThread;
+
+
+
+static void mn_lockBulkBuffers( void ) {
+    if( ! mn_bulkReadLocksLive ) {
+        return;
+        }
+    
+    EnterCriticalSection( &mn_bulkBufferCriticalSection );
+    }
+
+
+
+static void mn_unlockBulkBuffers( void ) {
+    if( ! mn_bulkReadLocksLive ) {
+        return;
+        }
+
+    LeaveCriticalSection( &mn_bulkBufferCriticalSection );
+    }
+
+
+
+static void mn_lockBulkFileOps( void ) {
+    if( ! mn_bulkReadLocksLive ) {
+        return;
+        }
+
+    EnterCriticalSection( &mn_bulkFileOpsCriticalSection );
+    }
+
+
+
+static void mn_unlockBulkFileOps( void ) {
+    if( ! mn_bulkReadLocksLive ) {
+        return;
+        }
+
+    LeaveCriticalSection( &mn_bulkFileOpsCriticalSection );
+    }
+
+
+
+/* returns 0 if no buffer exists for this handle */
+static MinginBulkReadBuffer *mn_getBulkReadBuffer( int  inBulkDataHandle ) {
+
+    int  i;
+    
+    for( i = 0;
+         i < mn_numBulkReadBuffers;
+         i ++ ) {
+
+        if( mn_bulkReadBuffers[ i ].bulkDataHandle == inBulkDataHandle ) {
+
+            return &( mn_bulkReadBuffers[ i ] );
+            }
+        }
+    
+    return 0;
+    }
+
+
+
+/*
+  must call mn_lockBulkBuffers() before calling
+
+  This call will unlock before returning.
+
+  returns
+     1  if something read
+     0  if the buffer was full OR there was nothing left to read in file */
+static char mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
+    
+    enum{  BUFFER_SIZE             =  512 };
+    int    ourDesiredResourcePos;
+    int    maxNumReadBytes;
+    int    truePos;
+    int    numRead;
+    int    i;
+    int    p;
+    int    bulkDataHandle;
+    
+    static  unsigned char  buffer[ BUFFER_SIZE ];
+
+    
+    if( inBuffer->producerPos    ==  inBuffer->consumerPos - 1
+        ||
+        ( inBuffer->consumerPos  ==  0
+          &&
+          inBuffer->producerPos  ==  inBuffer->bufferSize - 1 ) ) {
+
+        /* consumer is behind, producer is nipping at consumer's
+           heels, no room to read more */
+        mn_unlockBulkBuffers();
+        
+        return 0;
+        }
+
+    ourDesiredResourcePos = inBuffer->nextProducerResourcePos;
+
+    if( inBuffer->producerPos < inBuffer->consumerPos ) {
+        maxNumReadBytes = inBuffer->consumerPos - inBuffer->producerPos - 1;
+        }
+    else if( inBuffer->producerPos >= inBuffer->consumerPos ) {
+        /* include wrap-around in room left */
+        maxNumReadBytes = inBuffer->bufferSize - inBuffer->producerPos
+                          + inBuffer->consumerPos
+                          - 1;
+        }
+
+
+    if( maxNumReadBytes > BUFFER_SIZE ) {
+        maxNumReadBytes = BUFFER_SIZE;
+        }
+
+ 
+    bulkDataHandle = inBuffer->bulkDataHandle;
+    
+    mn_unlockBulkBuffers();
+
+
+    mn_lockBulkFileOps();
+    
+    truePos = mn_windowsFileGetPos( bulkDataHandle );
+
+    if( truePos == -1 ) {
+        mingin_log( "Failed to get position from buffered bulk resource.\n" );
+        mn_unlockBulkFileOps();
+        return 0;
+        }
+
+    if( truePos != ourDesiredResourcePos ) {
+        /* need to seek */
+
+        if( ! mn_windowsFileSeek( bulkDataHandle,
+                                  ourDesiredResourcePos ) ) {
+
+            mingin_log( "Failed to seek in buffered bulk resource.\n" );
+            mn_unlockBulkFileOps();
+            return 0;
+            }
+        }
+
+    numRead = mn_windowsFileRead( bulkDataHandle,
+                                  maxNumReadBytes,
+                                  buffer );
+
+    if( numRead == -1 ) {
+        mingin_log( "Failed to read from buffered bulk resource.\n" );
+        mn_unlockBulkFileOps();
+        return 0;
+        }
+
+    
+    mn_unlockBulkFileOps();
+    
+
+    /* now copy into shared buffer */
+
+    mn_lockBulkBuffers();
+
+    /* re-get our buffer, since we had buffer structure unlocked for a bit */
+
+    inBuffer = mn_getBulkReadBuffer( bulkDataHandle );
+
+    if( inBuffer == 0 ) {
+        /* our buffer has been destroyed while we were unlocked */
+        mn_unlockBulkBuffers();
+        return 0;
+        }
+    
+    
+    if( inBuffer->nextProducerResourcePos != ourDesiredResourcePos ) {
+        /* file has been seeked out from under us while
+           we were reading...
+           do NOT put this into the buffer
+           just return, and deal with this next iteration */
+
+        mn_unlockBulkBuffers();
+        return 1;
+        }
+
+    if( numRead < maxNumReadBytes ) {
+        inBuffer->endOfFileReached = 1;
+        }
+
+    /* p will never catch up to consumer pos,
+       because we limited our read size above to deal with this */
+    p = inBuffer->producerPos;
+    
+    for( i = 0;
+         i < numRead;
+         i ++ ) {
+
+        inBuffer->buffer[ p ] = buffer[ i ];
+
+        p ++;
+
+        /* wrap around */
+        if( p >= inBuffer->bufferSize ) {
+            p = 0;
+            }
+        }
+
+    inBuffer->producerPos = p;
+
+    inBuffer->nextProducerResourcePos = ourDesiredResourcePos + numRead;
+
+    mn_unlockBulkBuffers();
+
+    if( numRead > 0 ) {
+        return 1;
+        }
+    else {
+        return 0;
+        }
+    }
+    
+
+
+static DWORD WINAPI mn_bulkReadThreadFunction( LPVOID inArg ) {
+
+    int    i;
+
+    /* suppress warning, arg not needed */
+    if( inArg == 0 ) {
+
+        }
+    
+    mn_lockBulkBuffers();
+
+    while( 1 ) {
+
+        char  anyProgress = 0;
+
+        /* we always have the lock when we head into next iteration of
+           this while loop */
+        
+        if( ! mn_bulkReadThreadLive ) {
+            
+            mn_unlockBulkBuffers();
+            
+            return 0;
+            }
+
+        for( i = 0;
+             i < mn_numBulkReadBuffers;
+             i ++ ) {
+
+            /* we must hold lock when calling */
+            anyProgress =
+                anyProgress
+                ||
+                mn_processBulkReadBuffer( &( mn_bulkReadBuffers[ i ] ) );
+            /* it unlocks when it returns */
+
+            /* re-lock before we check mn_numBulkReadBuffers limit again */
+            mn_lockBulkBuffers();
+            }
+
+        /* when we come out of the loop, we have the lock */
+        
+        if( ! anyProgress ) {
+            /* all buffers are full, waiting for consumer to read more */
+
+            /* sleep until some consumer signals us */
+
+            if( ! mn_bulkReadThreadLive ) {
+                /* but not if our thread has ended */
+                mn_unlockBulkBuffers();
+            
+                return 0;
+                }
+            
+            /* this sleeps until signal happens and then auto
+               re-aquires the mutex */
+            SleepConditionVariableCS( &mn_bulkCanWriteCondition,
+                                      &mn_bulkBufferCriticalSection,
+                                      INFINITE );
+
+            /* when we wait up from wait, we have the critical section
+               locked again
+               keep it locked as we head into next iteration of while loop */
+            }
+        }
+    }
+
+
+static void mn_setupBulkReadThread( void ) {
+    
+    if( mn_bulkReadThreadLive ) {
+        return;
+        }
+
+    mn_bulkReadLocksLive = 0;
+
+    InitializeCriticalSection( &mn_bulkBufferCriticalSection );
+    InitializeCriticalSection( &mn_bulkFileOpsCriticalSection );
+    InitializeConditionVariable( &mn_bulkCanWriteCondition );
+    
+    mn_bulkReadLocksLive = 1;
+    
+    mn_bulkReadThreadLive = 1;
+
+
+
+    mn_bulkReadThread = CreateThread( NULL,
+                                      0,
+                                      mn_bulkReadThreadFunction,
+                                      NULL,
+                                      0,
+                                          NULL );
+
+    if( mn_bulkReadThread == NULL ) {
+        mingin_log( "Failed to start bulk read thread.\n" );
+        mn_bulkReadThreadLive = 0;
+        mn_bulkReadLocksLive = 0;
+
+        DeleteCriticalSection( &mn_bulkBufferCriticalSection );
+        DeleteCriticalSection( &mn_bulkFileOpsCriticalSection );
+        
+        return;
+        }
+
+    mingin_log( "Bulk data read thread started.\n" );
+    }
+
+
+
+static void mn_endBulkReadThread( void ) {
+    
+    if( ! mn_bulkReadThreadLive ) {
+        return;
+        }
+        
+    mn_lockBulkBuffers();
+    mn_bulkReadThreadLive = 0;
+
+    /* wake producer thread up if it's waiting */
+    WakeConditionVariable( &mn_bulkCanWriteCondition );
+    
+    mn_unlockBulkBuffers();
+
+
+    if( WaitForSingleObject( mn_bulkReadThread,
+                             INFINITE )       != WAIT_OBJECT_0 ) {
+        
+        mingin_log( "Failed to join bulk read thread at exit\n" );
+        }
+
+    mn_bulkReadLocksLive = 0;
+
+    DeleteCriticalSection( &mn_bulkBufferCriticalSection );
+    DeleteCriticalSection( &mn_bulkFileOpsCriticalSection );
+    
+    
+    mingin_log( "Ended bulk read thread.\n" );
+    }
+
+
+
+void mingin_setBulkDataReadBuffer( int             inBulkDataHandle,
+                                   int             inBufferSize,
+                                   unsigned char  *inBuffer ) {
+
+    MinginBulkReadBuffer  *b;
+    int                    numRead;
+
+    mn_setupBulkReadThread();
+
+    mn_lockBulkBuffers();
+
+    if( ! mn_bulkReadThreadLive ) {
+        /* buffer thread system not up and running */
+        mn_unlockBulkBuffers();
+        return;
+        }
+
+    if( mn_numBulkReadBuffers >= MINGIN_MAX_BULK_READ_BUFFERS ) {
+        /* full */
+        mn_unlockBulkBuffers();
+        return;
+        }
+    
+    if( mn_getBulkReadBuffer( inBulkDataHandle ) != 0 ) {
+        /* exists already */
+        mn_unlockBulkBuffers();
+        return;
+        }
+
+    b = &( mn_bulkReadBuffers[ mn_numBulkReadBuffers ] );
+
+    b->bulkDataHandle = inBulkDataHandle;
+
+    b->bufferSize = inBufferSize;
+
+    b->buffer = inBuffer;
+
+    b->producerPos = 0;
+    b->consumerPos = 0;
+
+    b->nextConsumerResourcePos = mn_windowsFileGetPos( inBulkDataHandle );
+
+    if( b->nextConsumerResourcePos == -1 ) {
+        /* failed to get pos */
+        mn_unlockBulkBuffers();
+        return;
+        }
+    
+    /* pre-fill buffer */
+    numRead = mn_windowsFileRead( inBulkDataHandle,
+                                  inBufferSize - 1,
+                                  inBuffer );
+
+    if( numRead == -1 ) {
+        mn_unlockBulkBuffers();
+        return;
+        }
+
+    b->producerPos += numRead;
+    
+    b->nextProducerResourcePos = mn_windowsFileGetPos( inBulkDataHandle );
+    
+    if( b->nextProducerResourcePos == -1 ) {
+        /* failed to get pos */
+        mn_unlockBulkBuffers();
+        return;
+        }
+    
+    b->endOfFileReached = 0;
+
+    if( numRead != inBufferSize - 1 ) {
+        
+        /* got to end of file on first read */
+        b->endOfFileReached = 1;
+        }
+    
+    mn_numBulkReadBuffers ++;
+
+    mn_unlockBulkBuffers();
+    }
+
+
+
+static void mn_removeBulkDataReadBuffer( int  inBulkDataHandle ) {
+
+    int  i;
+
+    mn_lockBulkBuffers();
+    
+    for( i = 0;
+         i < mn_numBulkReadBuffers;
+         i ++ ) {
+
+        if( mn_bulkReadBuffers[ i ].bulkDataHandle == inBulkDataHandle ) {
+
+            /* found */
+
+            /* swap last into this spot and shrink */
+            
+            if( i != mn_numBulkReadBuffers - 1 ) {
+                
+                mn_bulkReadBuffers[ i ] =
+                    mn_bulkReadBuffers[ mn_numBulkReadBuffers - 1 ];
+                }
+
+            mn_unlockBulkBuffers();
+            
+            mn_numBulkReadBuffers --;
+            return;
+            }
+        }
+
+    /* not found */
+    mn_unlockBulkBuffers();
+    }
+
+
+
+/* must call mn_lockBulkBuffers before calling
+   unlocks before returning */
+static int mn_bufferedBulkRead( int             inBulkDataHandle,
+                                int             inNumBytesToRead,
+                                unsigned char  *inByteBuffer ) {
+    
+    MinginBulkReadBuffer  *buffer;
+    int                    c;
+    int                    p;
+    int                    b;
+    
+    buffer = mn_getBulkReadBuffer( inBulkDataHandle );
+
+    if( buffer == 0 ) {
+        mn_unlockBulkBuffers();
+        return -1;
+        }
+
+    p = buffer->producerPos;
+    c = buffer->consumerPos;
+    b = 0;
+    
+    while( c != p
+           &&
+           b < inNumBytesToRead ) {
+
+        inByteBuffer[ b++ ] = buffer->buffer[ c++ ];
+
+        if( c >= buffer->bufferSize ) {
+            /* wrap around */
+            c = 0;
+            }
+        }
+
+    buffer->consumerPos = c;
+    buffer->nextConsumerResourcePos += b;
+    
+    if( b < inNumBytesToRead
+        &&
+        ! buffer->endOfFileReached ) {
+        
+        /* we read everything in ring buffer, and we still need more
+           in this case, read from the actual underlying file
+           keep lock while we do this, so that i/o thread doesn't
+           try to read while we're in here */
+
+        int  numExtra  = inNumBytesToRead - b;
+
+        int  numRead;
+        int  truePos;
+        
+        mn_lockBulkFileOps();
+
+        truePos = mn_windowsFileGetPos( inBulkDataHandle );
+
+        if( truePos == -1 ) {
+            mn_unlockBulkFileOps();
+            mn_unlockBulkBuffers();
+            return -1;
+            }
+        if( truePos != buffer->nextConsumerResourcePos ) {
+            /* io thread did some file reading that's not in the buffer
+               yet, and changed the file position
+
+               seek to where we actually want to be */
+            
+            if( ! mn_windowsFileSeek( inBulkDataHandle,
+                                      buffer->nextConsumerResourcePos ) ) {
+                mn_unlockBulkFileOps();
+                mn_unlockBulkBuffers();
+                return -1;
+                }
+            }
+        
+        numRead = mn_windowsFileRead( inBulkDataHandle,
+                                      numExtra,
+                                      &( inByteBuffer[ b ] ) );
+        mn_unlockBulkFileOps();
+        
+        if( numRead == -1 ) {
+            mn_unlockBulkBuffers();
+
+            return -1;
+            }
+        b += numRead;
+
+        /* keep track of where our consumer is at in the file now */
+        buffer->nextConsumerResourcePos += numRead;
+
+        /* tell io thread that it needs to read from a different
+           spot in the file next time */
+        buffer->nextProducerResourcePos = buffer->nextConsumerResourcePos;
+        }
+
+    if( b > 0
+        &&
+        ! buffer->endOfFileReached ){
+        /* tell producer that there's room to write more in the buffer
+           we must hold the lock while doing this */
+
+        /* note that we do NOT do this if producer has reached the
+           end of the file, since that will wake them up to do
+           nothing */
+        
+        WakeConditionVariable( & mn_bulkCanWriteCondition );
+        }
+
+    mn_unlockBulkBuffers();
+
+    return b;
+    }
+
+
+/* must call mn_lockBulkBuffers before calling
+   unlocks before returning */
+static char mn_bufferedBulkSeek( int  inBulkDataHandle,
+                                 int  inAbsoluteBytePosition ) {
+
+    MinginBulkReadBuffer  *buffer;
+
+    buffer = mn_getBulkReadBuffer( inBulkDataHandle );
+
+    if( buffer == 0 ) {
+        mn_unlockBulkBuffers();
+        return 0;
+        }
+
+    if( buffer->nextConsumerResourcePos == inAbsoluteBytePosition ) {
+        /* already there */
+        mn_unlockBulkBuffers();
+        return 1;
+        }
+    /* an actual seek
+       in this case, reset all the positions in the buffer,
+       starting over with an empty buffer */
+
+    buffer->producerPos = 0;
+    buffer->consumerPos = 0;
+
+    /* producer will seek here before its next read */
+    buffer->nextProducerResourcePos = inAbsoluteBytePosition;
+    buffer->nextConsumerResourcePos = inAbsoluteBytePosition;
+    buffer->endOfFileReached = 0;
+
+    /* tell producer that there's room to write more in the buffer
+       since all positions reset
+       we must hold the lock while doing this */
+    WakeConditionVariable( & mn_bulkCanWriteCondition );
+
+    mn_unlockBulkBuffers();
+        
+    return 1;
+    }
+
+
+
+/* must call mn_lockBulkBuffers before calling
+   unlocks before returning */
+static int mn_bufferedBulkTell( int  inBulkDataHandle ) {
+
+    int                    pos;
+    MinginBulkReadBuffer  *buffer;
+    
+    buffer = mn_getBulkReadBuffer( inBulkDataHandle );
+
+    if( buffer == 0 ) {
+        mn_unlockBulkBuffers();
+        return -1;
+        }
+
+    pos = buffer->nextConsumerResourcePos;
+
+    mn_unlockBulkBuffers();
+
+    return pos;
+    }
+
+
+
+int mingin_readBulkData( int             inBulkDataHandle,
+                         int             inNumBytesToRead,
+                         unsigned char  *inByteBuffer ) {
+    
+    /* call first without locking
+       if there are some buffered bulk resources,
+       we don't want to slow down ALL reads for non-buffered
+       resources with locking on every read */
+    
+    if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
+
+        /* we know it existed, but it might not exist still
+           lock and try again */
+
+        mn_lockBulkBuffers();
+
+        if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
+
+            /* this will unlock before returning */
+            return mn_bufferedBulkRead( inBulkDataHandle,
+                                        inNumBytesToRead,
+                                        inByteBuffer );
+            }
+        else {
+            mn_unlockBulkBuffers();
+            }
+        }
+
+    /* if we fell through without returning, we didn't read a
+       buffered resource */
+    
+    return mn_windowsFileRead( inBulkDataHandle,
+                               inNumBytesToRead,
+                               inByteBuffer );
+    }
+
+
+
+char mingin_seekBulkData( int  inBulkDataHandle,
+                          int  inAbsoluteBytePosition ) {
+
+    /* see comments inside
+           mingin_readBulkData
+       for explanation of why we do things in this order */
+    
+    if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
+        
+        mn_lockBulkBuffers();
+
+        if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
+            
+            return mn_bufferedBulkSeek( inBulkDataHandle,
+                                        inAbsoluteBytePosition );
+            }
+        else {
+            mn_unlockBulkBuffers();
+            }
+        }
+
+    return mn_windowsFileSeek( inBulkDataHandle,
+                               inAbsoluteBytePosition );
+    }
+
+
+
+int mingin_getBulkDataPosition( int  inBulkDataHandle ) {
+
+    /* see comments inside
+           mingin_readBulkData
+       for explanation of why we do things in this order */
+
+    if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
+        
+        mn_lockBulkBuffers();
+
+        if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
+            
+            return mn_bufferedBulkTell( inBulkDataHandle );
+            }
+        else {
+            mn_unlockBulkBuffers();
+            }
+        }
+    
+    return mn_windowsFileGetPos( inBulkDataHandle );
+    }
+
+
+
+void mingin_endReadBulkData( int  inBulkDataHandle ) {
+
+    if( mn_getBulkReadBuffer( inBulkDataHandle ) ) {
+
+        /* this is safe to do without locks around
+           checking for existence, since the remove
+           code locks and will just not find the buffer if it's
+           already been removed */
+        
+        mn_removeBulkDataReadBuffer( inBulkDataHandle );
+        }
+
+    mn_windowsCloseFile( inBulkDataHandle );
+    }
+
+
+
+char mingin_getBulkDataChanged( const char  *inBulkName ) {
+
+    int              i;
+    ULARGE_INTEGER   modTime;
+
+    modTime = mn_windowsGetModTime( inBulkName );
+    
+    if( modTime.QuadPart == 0 ) {
+
+        mingin_log( "Failed to get mod time for bulk data file: " );
+        mingin_log( inBulkName );
+        mingin_log( "\n" );
+        
+        return 0;
+        }
+
+    if( modTime.QuadPart > mn_latestBulkChangeModTime.QuadPart ) {
+        /* file is newer than our most recent global mod time
+           it definitely changed */
+
+        /* don't update our mod time until game client calls
+               mingin_startReadBulkData
+           since we're tracking whether data has changed since it was last
+           opened for reading
+        */
+        return 1;
+        }
+    
+    
+
+    for( i = 0;
+         i < mn_numBulkChangeRecords;
+         i ++ ) {
+
+        if( mn_stringsEqual(
+                inBulkName,
+                mn_bulkChangeRecords[ i ].bulkName ) ) {
+
+            /* found a match */
+            if( modTime.QuadPart > mn_bulkChangeRecords[ i ].modTime.QuadPart ) {
+                /* newer than our record */
+                return 1;
+                }
+            }
+        }
+
+    /* not newer than our record, or no record found.
+       if no record found, that means either file hasn't been openend
+       for reading before, or we have a mn_bulkChangeRecords overflow
+       and can't track this file.
+       In that case, we count the file as changed only if it's mod
+       time is greater than our mn_latestBulkChangeModTime global mod tim.
+    */
+    return 0;
+    }
+
+
+
+/* end of *else* case for #ifdef MINGIN_WINDOWS_SIMPLE_BULK */
+#endif
+
+
+
+
+
+
 
 
 

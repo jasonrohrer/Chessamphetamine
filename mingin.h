@@ -7118,8 +7118,8 @@ static void mn_destroyWindow( HINSTANCE  hInstance ) {
 
 
 #define  MN_SOUND_NUM_CHANNELS                2
-#define  MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES  512
-#define  MN_SOUND_NUM_BUFFERS                 2
+#define  MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES  256
+#define  MN_SOUND_NUM_BUFFERS                 6
 
 static  unsigned int        mn_sampleRate               =  44100;
 static  unsigned int        mn_startupSilentFrames      =   1536;
@@ -7175,14 +7175,23 @@ static int mn_stepSound( void ) {
          i ++ ) {
 
         if( mn_audioBufferHeaders[i].dwFlags & WHDR_DONE ) {
-            
-            mingin_lockAudio();
-            
-            minginGame_getAudioSamples( MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES,
-                                        (int)mn_sampleRate,
-                                        mn_audioBuffers[i] );
-            mingin_unlockAudio();
 
+            if( mn_startupSilentFramesLeft > 0 ) {
+                /* just pass out 0 samples still */
+                
+                ZeroMemory( &( mn_audioBuffers[i] ),
+                            sizeof( mn_audioBuffers[i] ) );
+
+                mn_startupSilentFramesLeft -= MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES;
+                }
+            else {
+                mingin_lockAudio();
+            
+                minginGame_getAudioSamples( MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES,
+                                            (int)mn_sampleRate,
+                                            mn_audioBuffers[i] );
+                mingin_unlockAudio();
+                }
 
             result = waveOutWrite( mn_waveOut,
                                    &( mn_audioBufferHeaders[i] ),
@@ -7194,6 +7203,8 @@ static int mn_stepSound( void ) {
             }
         }
 
+    ResetEvent( mn_audioEvent );
+    
     return 1;
     }
 
@@ -7235,9 +7246,11 @@ static void mn_openSound( void ) {
     WAVEFORMATEX  soundFormat;
     MMRESULT      result;
     int           i;
+
+    mn_startupSilentFramesLeft = mn_startupSilentFrames;
     
     mn_audioEvent = CreateEvent( NULL,
-                                 FALSE,
+                                 TRUE,
                                  FALSE,
                                  NULL );
 
@@ -7320,6 +7333,7 @@ static void mn_openSound( void ) {
             }
         }
 
+    ResetEvent( mn_audioEvent );
 
     InitializeCriticalSection( &mn_audioCriticalSection );
     

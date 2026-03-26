@@ -7111,7 +7111,7 @@ static void mn_destroyWindow( HINSTANCE  hInstance ) {
 
 #define  MN_SOUND_NUM_CHANNELS                2
 #define  MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES  512
-#define  MN_SOUND_NUM_BUFFERS                 4
+#define  MN_SOUND_NUM_BUFFERS                 2
 
 static  unsigned int        mn_sampleRate               =  44100;
 static  unsigned int        mn_startupSilentFrames      =   1536;
@@ -7164,10 +7164,7 @@ static int mn_stepSound( void ) {
          i ++ ) {
 
         if( mn_audioBufferHeaders[i].dwFlags & WHDR_DONE ) {
-
-            /* mark as NOT done */
-            mn_audioBufferHeaders[i].dwFlags &= ~WHDR_DONE;
-
+            
             mingin_lockAudio();
             
             minginGame_getAudioSamples( MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES,
@@ -7229,7 +7226,7 @@ static void mn_openSound( void ) {
     int           i;
     
     mn_audioEvent = CreateEvent( NULL,
-                                 TRUE,
+                                 FALSE,
                                  FALSE,
                                  NULL );
 

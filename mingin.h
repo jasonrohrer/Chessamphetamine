@@ -8241,97 +8241,6 @@ char mingin_renamePersistData( const char  *inStoreName,
 
 
 
-
-
-/*#define MINGIN_WINDOWS_SIMPLE_BULK*/
-
-
-#ifdef MINGIN_WINDOWS_SIMPLE_BULK
-
-
-/* This is the simple non-threaded, non-buffered version */
-
-
-int mingin_startReadBulkData( const char  *inBulkName,
-                              int         *outTotalBytes ) {
-
-        
-    return mn_windowsFileOpenRead( mn_bulkDataDirName,
-                                   inBulkName,
-                                   outTotalBytes );
-    }
-
-
-
-void mingin_setBulkDataReadBuffer( int             inBulkDataHandle,
-                                   int             inBufferSize,
-                                   unsigned char  *inBuffer ) {
-    /* suppress warning */
-    if( inBulkDataHandle > 0
-        ||
-        inBufferSize > 0
-        ||
-        inBuffer != 0 ) {
-        }
-    }
-
-
-
-int mingin_readBulkData( int             inBulkDataHandle,
-                         int             inNumBytesToRead,
-                         unsigned char  *inByteBuffer ) {
-    
-    return mn_windowsFileRead( inBulkDataHandle,
-                               inNumBytesToRead,
-                               inByteBuffer );
-    }
-
-
-
-
-char mingin_seekBulkData( int  inBulkDataHandle,
-                          int  inAbsoluteBytePosition ) {
-        
-    return mn_windowsFileSeek( inBulkDataHandle,
-                               inAbsoluteBytePosition );
-    }
-
-
-
-int mingin_getBulkDataPosition( int  inBulkDataHandle ) {
-    return mn_windowsFileGetPos( inBulkDataHandle );
-    }
-
-
-
-void mingin_endReadBulkData( int  inBulkDataHandle ) {
-    mn_windowsCloseFile( inBulkDataHandle );
-    }
-
-
-
-char mingin_getBulkDataChanged( const char  *inBulkName ) {
-    /* suppress warning */
-    if( inBulkName[0] != '\0' ) {
-        }
-    return 0;
-    }
-
-
-static void mn_endBulkReadThread( void ) {
-    }
-
-
-
-/* end #ifdef MINGIN_WINDOWS_SIMPLE_BULK */
-#else
-
-
-/*FIXME*/
-
-/* more complex bulk reading implementation */
-
-
 #define  MINGIN_MAX_NUM_BULK_CHANGE_RECORDS   128
 
 
@@ -9379,21 +9288,11 @@ char mingin_getBulkDataChanged( const char  *inBulkName ) {
 
 
 
-/* end of *else* case for #ifdef MINGIN_WINDOWS_SIMPLE_BULK */
-#endif
 
-
-
-
-
-
-
-
-
-
-
-
+/* end of _WIN32 case */
 #else
+
+
 
 /*
   ==================================================

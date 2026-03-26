@@ -7132,13 +7132,13 @@ static  unsigned char  mn_audioBuffers[ MN_SOUND_NUM_BUFFERS]
                                         * MN_SOUND_NUM_CHANNELS ];
 
 
-static  char      mn_soundOpen        =  0;
-static  HANDLE    mn_audioMutex       =  NULL;
-static  char      mn_audioMutexLive   =  0;
-static  HANDLE    mn_audioThread      =  NULL;
-static  HANDLE    mn_audioEvent       =  NULL;
-static  HWAVEOUT  mn_waveOut          =  NULL;
-static  char      mn_audioThreadStop  =  0;
+static  char                mn_soundOpen                 =  0;
+static  CRITICAL_SECTION    mn_audioCriticalSection;
+static  char                mn_audioCriticalSectionLive  =  0;
+static  HANDLE              mn_audioThread               =  NULL;
+static  HANDLE              mn_audioEvent                =  NULL;
+static  HWAVEOUT            mn_waveOut                   =  NULL;
+static  char                mn_audioThreadStop           =  0;
 
 static  WAVEHDR   mn_audioBufferHeaders[ MN_SOUND_NUM_BUFFERS ];
 
@@ -7320,21 +7320,10 @@ static void mn_openSound( void ) {
             }
         }
 
-    
-    mn_audioMutex = CreateMutexA( NULL,
-                                  FALSE,
-                                  NULL );
-    
-    if( mn_audioMutex == NULL ) {
-        mingin_log( "Failed to create mutex for Windows audio lock\n" );
 
-        waveOutClose( mn_waveOut );
-        CloseHandle( mn_audioEvent );
-        
-        return;
-        }
-
-    mn_audioMutexLive = 1;
+    InitializeCriticalSection( &mn_audioCriticalSection );
+    
+    mn_audioCriticalSectionLive = 1;
     
     mn_soundOpen = 1;
 
@@ -7352,10 +7341,10 @@ static void mn_openSound( void ) {
         waveOutClose( mn_waveOut );
         CloseHandle( mn_audioEvent );
 
-        mn_audioMutexLive = 0;
-        
-        CloseHandle( mn_audioMutex );
+        mn_audioCriticalSectionLive = 0;
 
+        DeleteCriticalSection( &mn_audioCriticalSection );
+        
         return;
         }
     
@@ -7366,25 +7355,18 @@ static void mn_openSound( void ) {
 
 
 void mingin_lockAudio( void ) {
-    if( mn_audioMutexLive ) {
-        
-        if( WaitForSingleObject( mn_audioMutex,
-                                 INFINITE )      != WAIT_OBJECT_0 ) {
-            
-            mingin_log( "Failed to lock audio mutex\n" );
-            }
+    if( mn_audioCriticalSectionLive ) {
+
+        EnterCriticalSection( &mn_audioCriticalSection );
         }
     }
 
 
 
 void mingin_unlockAudio( void ) {
-    if( mn_audioMutexLive ) {
-        
-        if( ReleaseMutex( mn_audioMutex ) == 0 ) {
-            
-            mingin_log( "Failed to unlock audio mutex\n" );
-            }
+    if( mn_audioCriticalSectionLive ) {
+
+        LeaveCriticalSection( &mn_audioCriticalSection );
         }
     }
 
@@ -7433,13 +7415,11 @@ static void mn_closeSound( void ) {
         if( result == 0 ) {
             mingin_log( "Failed to close audio thread at exit\n" );
             }
+
+        mn_audioCriticalSectionLive = 0;
+
+        DeleteCriticalSection( &mn_audioCriticalSection );
         
-        result = CloseHandle( mn_audioMutex );
-
-        if( result == 0 ) {
-            mingin_log( "Failed to close audio mutex at exit\n" );
-            }
-
         for( i = 0;
              i < MN_SOUND_NUM_BUFFERS;
              i ++ ) {

@@ -5900,6 +5900,7 @@ static  snd_pcm_uframes_t   mn_sampleFramesInPeriod     =
                                              MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES;
 static  pthread_t           mn_audioThread;
 static  pthread_mutex_t     mn_audioMutex;
+static  char                mn_audioMutexLive           =      0;
 
 /* 2 bytes per sample (S16 LE) */
 static  unsigned char  mn_sampleBuffer[ MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES
@@ -6069,7 +6070,8 @@ static void mn_openSound( void ) {
         mn_soundCleanup();
         return;
         }
-    
+
+    mn_audioMutexLive = 1;
     
     mn_soundOpen = 1;
 
@@ -6118,22 +6120,26 @@ static void *mn_audioThreadFunction( void *inArg ) {
 
 
 void mingin_lockAudio( void ) {
-    
-    int  result  =  pthread_mutex_lock( &mn_audioMutex );
+    if( mn_audioMutexLive ) {
+            
+        int  result  =  pthread_mutex_lock( &mn_audioMutex );
 
-    if( result != 0 ) {
-        mingin_log( "Failed to lock audio mutex\n" );
+        if( result != 0 ) {
+            mingin_log( "Failed to lock audio mutex\n" );
+            }
         }
     }
 
 
 
 void mingin_unlockAudio( void ) {
-    
-    int  result  =  pthread_mutex_unlock( &mn_audioMutex );
-
-    if( result != 0 ) {
-        mingin_log( "Failed to unlock audio mutex\n" );
+    if( mn_audioMutexLive ) {
+         
+        int  result  =  pthread_mutex_unlock( &mn_audioMutex );
+        
+        if( result != 0 ) {
+            mingin_log( "Failed to unlock audio mutex\n" );
+            }
         }
     }
 
@@ -6371,6 +6377,8 @@ static void mn_closeSound( void ) {
             mingin_log( "Failed to join audio thread at exit\n" );
             }
 
+        mn_audioMutexLive = 0;
+        
         result = pthread_mutex_destroy( &mn_audioMutex );
 
         if( result != 0 ) {
@@ -7126,6 +7134,7 @@ static  unsigned char  mn_audioBuffers[ MN_SOUND_NUM_BUFFERS]
 
 static  char      mn_soundOpen        =  0;
 static  HANDLE    mn_audioMutex       =  NULL;
+static  char      mn_audioMutexLive   =  0;
 static  HANDLE    mn_audioThread      =  NULL;
 static  HANDLE    mn_audioEvent       =  NULL;
 static  HWAVEOUT  mn_waveOut          =  NULL;
@@ -7324,7 +7333,8 @@ static void mn_openSound( void ) {
         
         return;
         }
-    
+
+    mn_audioMutexLive = 1;
     
     mn_soundOpen = 1;
 
@@ -7341,7 +7351,9 @@ static void mn_openSound( void ) {
 
         waveOutClose( mn_waveOut );
         CloseHandle( mn_audioEvent );
-         
+
+        mn_audioMutexLive = 0;
+        
         CloseHandle( mn_audioMutex );
 
         return;
@@ -7354,21 +7366,25 @@ static void mn_openSound( void ) {
 
 
 void mingin_lockAudio( void ) {
-
-    if( WaitForSingleObject( mn_audioMutex,
-                             INFINITE )      != WAIT_OBJECT_0 ) {
+    if( mn_audioMutexLive ) {
         
-        mingin_log( "Failed to lock audio mutex\n" );
+        if( WaitForSingleObject( mn_audioMutex,
+                                 INFINITE )      != WAIT_OBJECT_0 ) {
+            
+            mingin_log( "Failed to lock audio mutex\n" );
+            }
         }
     }
 
 
 
 void mingin_unlockAudio( void ) {
-
-    if( ReleaseMutex( mn_audioMutex ) == 0 ) {
-
-        mingin_log( "Failed to unlock audio mutex\n" );
+    if( mn_audioMutexLive ) {
+        
+        if( ReleaseMutex( mn_audioMutex ) == 0 ) {
+            
+            mingin_log( "Failed to unlock audio mutex\n" );
+            }
         }
     }
 

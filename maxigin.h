@@ -16393,7 +16393,7 @@ static void mx_setupButtonToNameMap( void ) {
         mx_buttonToNameMap[ i ] = "";
         }
     
-    mx_buttonToNameMap[ MGN_KEY_BACKSPACE ]     =  "Backspace";
+    mx_buttonToNameMap[ MGN_KEY_BACKSPACE ]     =  "Bckspce";
     mx_buttonToNameMap[ MGN_KEY_TAB ]           =  "Tab";
     mx_buttonToNameMap[ MGN_KEY_RETURN ]        =  "Return";
     mx_buttonToNameMap[ MGN_KEY_ESCAPE ]        =  "Escape";
@@ -16403,10 +16403,10 @@ static void mx_setupButtonToNameMap( void ) {
     mx_buttonToNameMap[ MGN_KEY_UP ]            =  "Up";
     mx_buttonToNameMap[ MGN_KEY_RIGHT ]         =  "Right";
     mx_buttonToNameMap[ MGN_KEY_DOWN ]          =  "Down";
-    mx_buttonToNameMap[ MGN_KEY_PAGE_UP ]       =  "Page Up";
-    mx_buttonToNameMap[ MGN_KEY_PAGE_DOWN ]     =  "Page Down";
+    mx_buttonToNameMap[ MGN_KEY_PAGE_UP ]       =  "Pg Up";
+    mx_buttonToNameMap[ MGN_KEY_PAGE_DOWN ]     =  "Pg Down";
     mx_buttonToNameMap[ MGN_KEY_END ]           =  "End";
-    mx_buttonToNameMap[ MGN_KEY_NUM_LOCK ]      =  "Num Lock";
+    mx_buttonToNameMap[ MGN_KEY_NUM_LOCK ]      =  "Num Lck";
     mx_buttonToNameMap[ MGN_KEY_F1 ]            =  "F1";
     mx_buttonToNameMap[ MGN_KEY_F2 ]            =  "F2";
     mx_buttonToNameMap[ MGN_KEY_F3 ]            =  "F3";
@@ -16444,9 +16444,9 @@ static void mx_setupButtonToNameMap( void ) {
     mx_buttonToNameMap[ MGN_KEY_F35 ]           =  "F35";
     mx_buttonToNameMap[ MGN_KEY_SHIFT_L ]       =  "Shift L";
     mx_buttonToNameMap[ MGN_KEY_SHIFT_R ]       =  "Shift R";
-    mx_buttonToNameMap[ MGN_KEY_CONTROL_L ]     =  "Control L";
-    mx_buttonToNameMap[ MGN_KEY_CONTROL_R ]     =  "Control R";
-    mx_buttonToNameMap[ MGN_KEY_CAPS_LOCK ]     =  "Caps Lock";
+    mx_buttonToNameMap[ MGN_KEY_CONTROL_L ]     =  "Ctrl L";
+    mx_buttonToNameMap[ MGN_KEY_CONTROL_R ]     =  "Ctrl R";
+    mx_buttonToNameMap[ MGN_KEY_CAPS_LOCK ]     =  "Cap Lck";
     mx_buttonToNameMap[ MGN_KEY_META_L ]        =  "Meta L";
     mx_buttonToNameMap[ MGN_KEY_META_R ]        =  "Meta R";
     mx_buttonToNameMap[ MGN_KEY_ALT_L ]         =  "Alt L";

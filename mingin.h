@@ -7668,10 +7668,6 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                       PSTR       cmdline,
                       int        cmdshow ) {
 
-    float          blueColor  [4]  =  { 0.0f, 0.2f, 0.4f, 1.0f };
-    float          yellowColor[4]  =  { 1.0f, 1.0f, 0.0f, 1.0f };
-    float         *currColor       =  blueColor;
-    int            stepCount       =  0;
     MSG            msg;
     char           success;
     LARGE_INTEGER  frameEndTarget;
@@ -7832,25 +7828,6 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                 
                 mn_firstStepRun = 1;
                 }
-
-            ID3D11DeviceContext_ClearRenderTargetView( mn_d3dDeviceContext,
-                                                       mn_d3dBackBuffer,
-                                                       currColor );
-            stepCount ++;
-
-            if( stepCount == 60 ) {
-                
-                if( currColor == blueColor ) {
-                    currColor = yellowColor;
-                    }
-                else {
-                    currColor = blueColor;
-                    }
-                stepCount = 0;
-                }
-            
-            
-            
             
             /* ask for screen pixels and do nothing with them
                skip for now */

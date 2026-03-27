@@ -6932,7 +6932,7 @@ static void mn_setupWindowSize( void ) {
 
     
 
-
+static  char    mn_windowSetup      =  0;
 static  HWND    mn_windowHandle;
 static  LPCSTR  mn_windowClassName  =  "MinginWindowClass";
 
@@ -7093,6 +7093,8 @@ static char mn_createWindow( HINSTANCE  hInstance,
     ShowWindow( mn_windowHandle,
                 cmdshow );
 
+    mn_windowSetup = 1;
+    
     mn_d3dInit( mn_windowHandle );
 
 
@@ -7752,7 +7754,8 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
 
                     if( button != MGN_BUTTON_NONE ) {
 
-                        mn_setButtonState( button, 1 );
+                        mn_setButtonState( button,
+                                           1 );
                         }
                     break;
                     }
@@ -7764,10 +7767,35 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
 
                     if( button != MGN_BUTTON_NONE ) {
 
-                        mn_setButtonState( button, 0 );
+                        mn_setButtonState( button,
+                                           0 );
                         }
                     break;
                     }
+                case WM_LBUTTONDOWN:
+                    mn_setButtonState( MGN_BUTTON_MOUSE_LEFT,
+                                       1 );
+                    break;
+                case WM_RBUTTONDOWN:
+                    mn_setButtonState( MGN_BUTTON_MOUSE_RIGHT,
+                                       1 );
+                    break;
+                case WM_MBUTTONDOWN:
+                    mn_setButtonState( MGN_BUTTON_MOUSE_MIDDLE,
+                                       1 );
+                    break;
+                case WM_LBUTTONUP:
+                    mn_setButtonState( MGN_BUTTON_MOUSE_LEFT,
+                                       0 );
+                    break;
+                case WM_RBUTTONUP:
+                    mn_setButtonState( MGN_BUTTON_MOUSE_RIGHT,
+                                       0 );
+                    break;
+                case WM_MBUTTONUP:
+                    mn_setButtonState( MGN_BUTTON_MOUSE_MIDDLE,
+                                       0 );
+                    break;
                 }
             }
         else {
@@ -7923,6 +7951,8 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     mn_closeSound();
 
     mn_endBulkReadThread();
+
+    mn_windowSetup = 0;
     
     mn_destroyWindow( hInstance );
 
@@ -8048,12 +8078,21 @@ char mingin_getPointerLocation( int  *outX,
                                 int  *outY,
                                 int  *outMaxX,
                                 int  *outMaxY ) {
-    /* suppress warning */
-    *outX = 0;
-    *outY = 0;
-    *outMaxX = 0;
-    *outMaxY = 0;
+    if( mn_windowSetup ) {
+        POINT p;
+        
+        if( GetCursorPos( &p ) ) {
+            ScreenToClient( mn_windowHandle, &p );
+            
+            *outX = p.x;
+            *outY = p.y;
+            
+            *outMaxX = mn_realWindowW;
+            *outMaxY = mn_realWindowH;
     
+            return 1;
+            }
+        }
     return 0;
     }
 

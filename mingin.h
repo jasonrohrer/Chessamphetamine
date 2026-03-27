@@ -7140,10 +7140,26 @@ static  HANDLE              mn_audioEvent                =  NULL;
 static  HWAVEOUT            mn_waveOut                   =  NULL;
 static  char                mn_audioThreadStop           =  0;
 
-static  WAVEHDR   mn_audioBufferHeaders[ MN_SOUND_NUM_BUFFERS ];
+static  WAVEHDR             mn_audioBufferHeaders[ MN_SOUND_NUM_BUFFERS ];
 
-static  int       mn_logFileHandle    =  -1;
+static  int                 mn_logFileHandle    =  -1;
 
+
+/* memory for getLastButtonPressed call */
+static  MinginButton        mn_lastButtonPressed  =  MGN_BUTTON_NONE;
+
+/* status tracking pressed/released state */
+static  char                mn_buttonDown[ MGN_NUM_BUTTONS ];
+
+/* tracking whether button was pressed down since last call
+   to minginGame_step
+   If so, we should report button as down for at least one potential call
+   to isButtonDown (during next minginGame_step call)
+*/
+static  char                mn_buttonWasDownSinceLastStep[ MGN_NUM_BUTTONS ];
+
+/* maps each Mingin key to an X11 VK_ keysym (or a raw char for A-Z, 0-9, etc. */
+static  int        mn_buttonToWindowsKeyMap[ MGN_NUM_BUTTONS ];
 
 
 
@@ -7455,6 +7471,196 @@ static void mn_endBulkReadThread( void );
 
 
 
+static void mn_setButtonState( MinginButton  inButton,
+                               char          inDown ) {
+
+    mn_buttonDown[ inButton ] = inDown;
+
+    if( inDown ) {
+        mn_buttonWasDownSinceLastStep[ inButton ] = 1;
+        mn_lastButtonPressed = inButton;
+        }
+    }
+
+
+
+static void mn_releaseAllButtons( void ) {
+
+    int  b;
+    
+    for( b = 0;
+         b < MGN_NUM_BUTTONS;
+         b ++ ) {
+        
+        mn_buttonDown[b] = 0;
+        mn_buttonWasDownSinceLastStep[b] = 0;
+        }
+    }
+
+
+
+#define  MN_NO_WIN_KEY  0
+
+static void mn_setupWindowsKeyMap( void ) {
+    mn_buttonToWindowsKeyMap[ MGN_KEY_BACKSPACE ]     =  VK_BACK;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_TAB ]           =  VK_TAB;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_RETURN ]        =  VK_RETURN;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_ESCAPE ]        =  VK_ESCAPE;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_DELETE ]        =  VK_DELETE;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_HOME ]          =  VK_HOME;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_LEFT ]          =  VK_LEFT;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_UP ]            =  VK_UP;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_RIGHT ]         =  VK_RIGHT;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_DOWN ]          =  VK_DOWN;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_PAGE_UP ]       =  VK_PRIOR;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_PAGE_DOWN ]     =  VK_NEXT;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_END ]           =  VK_END;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_NUM_LOCK ]      =  VK_NUMLOCK;
+    
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F1 ]            =  VK_F1;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F2 ]            =  VK_F2;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F3 ]            =  VK_F3;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F4 ]            =  VK_F4;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F5 ]            =  VK_F5;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F6 ]            =  VK_F6;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F7 ]            =  VK_F7;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F8 ]            =  VK_F8;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F9 ]            =  VK_F9;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F10 ]           =  VK_F10;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F11 ]           =  VK_F11;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F12 ]           =  VK_F12;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F13 ]           =  VK_F13;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F14 ]           =  VK_F14;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F15 ]           =  VK_F15;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F16 ]           =  VK_F16;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F17 ]           =  VK_F17;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F18 ]           =  VK_F18;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F19 ]           =  VK_F19;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F20 ]           =  VK_F20;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F21 ]           =  VK_F21;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F22 ]           =  VK_F22;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F23 ]           =  VK_F23;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F24 ]           =  VK_F24;
+
+    /* F25 to F35 don't exist on Windows */
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F25 ]           =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F26 ]           =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F27 ]           =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F28 ]           =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F29 ]           =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F31 ]           =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F32 ]           =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F33 ]           =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F34 ]           =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F35 ]           =  MN_NO_WIN_KEY;
+    
+    mn_buttonToWindowsKeyMap[ MGN_KEY_SHIFT_L ]       =  VK_LSHIFT;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_SHIFT_R ]       =  VK_RSHIFT;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_CONTROL_L ]     =  VK_LCONTROL;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_CONTROL_R ]     =  VK_RCONTROL;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_CAPS_LOCK ]     =  VK_CAPITAL;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_META_L ]        =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_META_R ]        =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_ALT_L ]         =  VK_LMENU;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_ALT_R ]         =  VK_RMENU;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_SUPER_L ]       =  VK_LWIN;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_SUPER_R ]       =  VK_RWIN;
+
+    mn_buttonToWindowsKeyMap[ MGN_KEY_SPACE ]         =  VK_SPACE;
+
+    mn_buttonToWindowsKeyMap[ MGN_KEY_EXCLAMATION ]   =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_NUMBER_SIGN ]   =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_DOLLAR ]        =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_PERCENT ]       =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_AMPERSAND ]     =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_APOSTROPHE ]    =  VK_OEM_7;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_PAREN_L ]       =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_PAREN_R ]       =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_ASTERISK ]      =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_PLUS ]          =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_COMMA ]         =  VK_OEM_COMMA;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_MINUS ]         =  VK_OEM_MINUS;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_PERIOD ]        =  VK_OEM_PERIOD;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_SLASH ]         =  VK_OEM_2;
+
+    mn_buttonToWindowsKeyMap[ MGN_KEY_0 ]             =  '0';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_1 ]             =  '1';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_2 ]             =  '2';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_3 ]             =  '3';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_4 ]             =  '4';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_5 ]             =  '5';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_6 ]             =  '6';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_7 ]             =  '7';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_8 ]             =  '8';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_9 ]             =  '9';
+
+    mn_buttonToWindowsKeyMap[ MGN_KEY_SEMICOLON ]     =  VK_OEM_1;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_LESS ]          =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_EQUAL ]         =  VK_OEM_PLUS;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_GREATER ]       =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_QUESTION ]      =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_AT_SIGN ]       =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_BRACKET_L ]     =  VK_OEM_4;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_BACKSLASH ]     =  VK_OEM_5;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_BRACKET_R ]     =  VK_OEM_6;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_CIRCUMFLEX ]    =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_UNDERSCORE ]    =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_BACK_TICK ]     =  VK_OEM_3;
+
+    mn_buttonToWindowsKeyMap[ MGN_KEY_A ]             =  'A';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_B ]             =  'B';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_C ]             =  'C';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_D ]             =  'D';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_E ]             =  'E';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_F ]             =  'F';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_G ]             =  'G';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_H ]             =  'H';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_I ]             =  'I';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_J ]             =  'J';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_K ]             =  'K';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_L ]             =  'L';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_M ]             =  'M';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_N ]             =  'N';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_O ]             =  'O';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_P ]             =  'P';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_Q ]             =  'Q';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_R ]             =  'R';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_S ]             =  'S';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_T ]             =  'T';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_U ]             =  'U';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_V ]             =  'V';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_W ]             =  'W';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_X ]             =  'X';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_Y ]             =  'Y';
+    mn_buttonToWindowsKeyMap[ MGN_KEY_Z ]             =  'Z';
+
+    mn_buttonToWindowsKeyMap[ MGN_KEY_BRACE_L ]       =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_VERTICAL_BAR ]  =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_BRACE_R ]       =  MN_NO_WIN_KEY;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_TILDE ]         =  MN_NO_WIN_KEY;
+    }
+
+
+
+static MinginButton mn_mapWindowsKeyToButton( int  inVK ) {
+
+    int i;
+
+    for( i = 0;
+         i < MGN_NUM_BUTTONS;
+         i ++ ) {
+        
+        if( mn_buttonToWindowsKeyMap[ i ] == inVK ) {
+            return i;
+            }
+        }
+    
+    return MGN_BUTTON_NONE;
+    }
+
+
+
+
 int APIENTRY WinMain( HINSTANCE  hInstance,
                       HINSTANCE  hInstancePrev,
                       PSTR       cmdline,
@@ -7470,7 +7676,8 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     
     HANDLE         frameTimer;
     int            i;
-
+    int            b;
+    
     for( i = 0;
          i < MINGIN_WINDOWS_MAX_OPEN_FILES;
          i ++ ) {
@@ -7503,6 +7710,17 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     
     minginInternal_init();
 
+    
+    for( b = 0;
+         b < MGN_NUM_BUTTONS;
+         b ++ ) {
+        
+        mn_buttonDown[b] = 0;
+        mn_buttonWasDownSinceLastStep[b] = 0;
+        }
+
+    mn_setupWindowsKeyMap();
+    
 
     mn_ticksPerFrame.QuadPart =
         mn_performanceCounterFreq.QuadPart / mn_screenRefreshRate;
@@ -7527,24 +7745,29 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                 }
             switch( msg.message ) {
                 case WM_KEYDOWN:
+                case WM_SYSKEYDOWN: {
+                    int           vkCode  =  (int)( msg.wParam );
+                    MinginButton  button  =  mn_mapWindowsKeyToButton( vkCode );
 
-                    mn_ignoreWindowDestroy = 1;
-                    
-                    mn_destroyWindow( hInstance );
 
-                    mn_fullscreen = ! mn_fullscreen;
+                    if( button != MGN_BUTTON_NONE ) {
 
-                    mn_createWindow( hInstance,
-                                     cmdshow );
-                    
-                    /* recompute in case screen refresh rate has changed */
-                    mn_ticksPerFrame.QuadPart =
-                        mn_performanceCounterFreq.QuadPart /
-                        mn_screenRefreshRate;
-                    
-                    mn_ignoreWindowDestroy = 0;
-                    
+                        mn_setButtonState( button, 1 );
+                        }
                     break;
+                    }
+                case WM_KEYUP:
+                case WM_SYSKEYUP: {
+                    int           vkCode  =  (int)( msg.wParam );
+                    MinginButton  button  =  mn_mapWindowsKeyToButton( vkCode );
+
+
+                    if( button != MGN_BUTTON_NONE ) {
+
+                        mn_setButtonState( button, 0 );
+                        }
+                    break;
+                    }
                 }
             }
         else {
@@ -7565,6 +7788,15 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
 
             minginGame_step( 0 );
 
+            
+            /* any "was pressed at all" flags have been consumed by step
+               clear them */
+            for( b = 0;
+                 b < MGN_NUM_BUTTONS;
+                 b ++ ) {
+                mn_buttonWasDownSinceLastStep[b] = 0;
+                }
+            
 
             if( ! mn_firstStepRun ) {
                 /* first step has been run now, can start sound thread */
@@ -7744,12 +7976,63 @@ void mingin_quit( void ) {
 
 
 
+
+
+
 static char minginPlatform_isButtonDown( MinginButton  inButton ) {
-    /* suppress warning */
-    if( inButton == MGN_BUTTON_NONE ) {
+        
+    if( inButton <= MGN_BUTTON_NONE
+        ||
+        inButton >= MGN_DUMMY_LAST_BUTTON ) {
+        return 0;
         }
+    
+    if( mn_buttonDown[ inButton ]
+        ||
+        mn_buttonWasDownSinceLastStep[ inButton ] ) {
+        
+        return 1;
+        }
+
+    if( inButton == MGN_ANY_KEY_OR_BUTTON ) {
+        /* loop through entire list and see if anything is currently down */
+
+        int i;
+
+        for( i = 0;
+             i < MGN_NUM_BUTTONS;
+             i ++ ) {
+            
+            if( mn_buttonDown[i]
+                ||
+                mn_buttonWasDownSinceLastStep[i] ) {
+                
+                return 1;
+                }
+            }
+        }
+    if( inButton == MGN_ANY_KEY ) {
+        /* loop through entire list of keys
+           and see if anything is currently down */
+
+        int i;
+
+        for( i = MGN_FIRST_KEYBOARD_KEY;
+             i <= MGN_LAST_KEYBOARD_KEY;
+             i ++ ) {
+            
+            if( mn_buttonDown[i]
+                ||
+                mn_buttonWasDownSinceLastStep[i] ) {
+                
+                return 1;
+                }
+            }
+        }
+    
     return 0;
     }
+
 
 
 MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
@@ -7848,6 +8131,8 @@ char mingin_toggleFullscreen( char  inFullscreen ) {
     if( inFullscreen == mn_fullscreen ) {
         return 1;
         }
+
+    mn_releaseAllButtons();
     
     mn_ignoreWindowDestroy = 1;
                     
@@ -7877,7 +8162,11 @@ char mingin_isFullscreen( void ) {
 
 
 MinginButton mingin_getLastButtonPressed( void ) {
-    return MGN_BUTTON_NONE;
+        
+    MinginButton last = mn_lastButtonPressed;
+    
+    mn_lastButtonPressed = MGN_BUTTON_NONE;
+    return last;
     }
 
 

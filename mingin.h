@@ -8066,9 +8066,41 @@ static char minginPlatform_isButtonDown( MinginButton  inButton ) {
 
 
 MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
-    /* suppress warning */
-    if( inButtonHandle ) {
+
+    int  i;
+    
+    i = 0;
+
+    while( minginButtonMappings[ inButtonHandle ][ i ]
+           !=
+           MGN_MAP_END ) {
+        
+        MinginButton  b  =  minginButtonMappings[ inButtonHandle ][ i ];
+
+        /* all keys are possible on windows keyboard, along with
+           all mouse buttons.
+           
+           return first mapped key or mouse button found */
+        
+        /* however, skip any keys that are unmapped on Windows */
+
+        if( ( b >= MGN_FIRST_KEYBOARD_KEY
+              &&
+              b <= MGN_LAST_KEYBOARD_KEY ) ) {
+            
+            if( mn_buttonToWindowsKeyMap[ b ] != MN_NO_WIN_KEY ) {
+                return b;
+                }
+            }
+        else if( ( b >= MGN_FIRST_MOUSE_BUTTON
+                   &&
+                   b <= MGN_LAST_MOUSE_BUTTON ) ) {
+
+            return b;
+            }
+        i++;
         }
+
     return MGN_BUTTON_NONE;
     }
 

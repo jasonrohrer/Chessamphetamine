@@ -7801,9 +7801,41 @@ char mingin_hasAnyGamepadBeenTouched( void ) {
 void mingin_log( const char  *inString ) {
     if( mn_logFileHandle != -1 ) {
 
+        /* on windows, we do \n -> \r\n conversion */
+        
+        /* leave room in buffer for double-char \r\n
+           do not need terminating \0 */
+
+        /* Note that this will truncate any log entries longer than 255 */
+        
+        enum{  bufferLength  =  255  };
+
+        static  char  buffer[ bufferLength + 1 ];
+
+        int  origLen  =  mn_stringLength( inString );
+        int  i;
+        int  newI  =  0;
+        
+        for( i = 0;
+             i < origLen
+             &&
+             newI < bufferLength;
+             i ++ ) {
+
+            char  c  =  inString[i];
+            
+            if( c == '\n' ) {
+                buffer[ newI++ ] = '\r';
+                buffer[ newI++ ] = '\n';
+                }
+            else {
+                buffer[ newI++ ] = c;
+                }
+            }
+        
         mingin_writePersistData( mn_logFileHandle,
-                                 mn_stringLength( inString ),
-                                 (unsigned char *)inString );
+                                 newI,
+                                 (unsigned char *)buffer );
         }
     return;
     }

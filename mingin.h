@@ -7166,6 +7166,7 @@ static  int                 mn_buttonToWindowsKeyMap[ MGN_NUM_BUTTONS ];
 
 
 static  char                mn_gamepadActive          =  0;
+static  char                mn_gamepadTouched         =  0;
 
 static  int                 mn_triggerMin             =  0;
 static  int                 mn_triggerMax             =  255;
@@ -7681,6 +7682,8 @@ static void mn_setButtonDown( MinginButton  inButton,
                               WORD          inDown ) {
 
     if( inDown ) {
+        mn_gamepadTouched = 1;
+        
         if( ! mn_buttonDown[ inButton ] ) {
             mn_lastButtonPressed = inButton;
             }
@@ -7804,10 +7807,13 @@ static void mn_pollControllers( void ) {
                Thus, if user plugs/unplugs controllers, we always take input
                from the lowest-index live controller */
                
-            break;
+            return;
             }
         }
-    
+
+    /* if all have been unplugged, revert back to gamepad being untouched
+       even if it was touched before */
+    mn_gamepadTouched = 0;
     }
 
 
@@ -8315,7 +8321,7 @@ char minginPlatform_getStickPosition( MinginStick   inStick,
 
 
 char mingin_hasAnyGamepadBeenTouched( void ) {
-    return 0;
+    return mn_gamepadTouched;
     }
 
 

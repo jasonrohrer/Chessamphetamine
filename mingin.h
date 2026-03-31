@@ -7802,7 +7802,31 @@ static void mn_pollControllers( void ) {
                               controllerState.Gamepad.wButtons
                               &
                               XINPUT_GAMEPAD_Y );
+
+            mn_triggerValues[0] = controllerState.Gamepad.bLeftTrigger;
+            mn_triggerValues[1] = controllerState.Gamepad.bRightTrigger;
+
+            /* map triggers to button presses when they are beyond threshold */
+            mn_setButtonDown( MGN_BUTTON_L2,
+                              mn_triggerValues[0]
+                              >=
+                              mn_triggerPressThreshold );
             
+            mn_setButtonDown( MGN_BUTTON_R2,
+                              mn_triggerValues[1]
+                              >=
+                              mn_triggerPressThreshold );
+
+            mn_stickXValues[0] = controllerState.Gamepad.sThumbLX;
+            mn_stickXValues[1] = controllerState.Gamepad.sThumbRX;
+
+
+            /* Windows y values are inverted compared to similar values
+               on Linux.... not sure why.  But invert them to match Linux
+               values */
+            mn_stickYValues[0] =  - controllerState.Gamepad.sThumbLY;
+            mn_stickYValues[1] =  - controllerState.Gamepad.sThumbRY;
+
             /* bail after getting info from first connected controller.
                Thus, if user plugs/unplugs controllers, we always take input
                from the lowest-index live controller */
@@ -8308,13 +8332,46 @@ char minginPlatform_getStickPosition( MinginStick   inStick,
                                       int          *outPosition,
                                       int          *outLowerLimit,
                                       int          *outUpperLimit ) {
-    /* suppress warning */
-    if( inStick ||
-        *outPosition ||
-        *outUpperLimit ||
-        *outLowerLimit ) {
-        return 0;
+
+    switch( inStick ) {
+        case MGN_STICK_LEFT_TRIGGER:
+            *outPosition   = mn_triggerValues[0];
+            *outLowerLimit = mn_triggerMin;
+            *outUpperLimit = mn_triggerMax;
+            return 1;
+            break;
+        case MGN_STICK_RIGHT_TRIGGER:
+            *outPosition   = mn_triggerValues[1];
+            *outLowerLimit = mn_triggerMin;
+            *outUpperLimit = mn_triggerMax;
+            return 1;
+            break;
+        case MGN_STICK_LEFT_X:
+            *outPosition   = mn_stickXValues[0];
+            *outLowerLimit = mn_stickMin;
+            *outUpperLimit = mn_stickMax;
+            return 1;
+            break;
+        case MGN_STICK_RIGHT_X:
+            *outPosition   = mn_stickXValues[1];
+            *outLowerLimit = mn_stickMin;
+            *outUpperLimit = mn_stickMax;
+            return 1;
+            break;
+        case MGN_STICK_LEFT_Y:
+            *outPosition   = mn_stickYValues[0];
+            *outLowerLimit = mn_stickMin;
+            *outUpperLimit = mn_stickMax;
+            return 1;
+            break;
+        case MGN_STICK_RIGHT_Y:
+            *outPosition   = mn_stickYValues[1];
+            *outLowerLimit = mn_stickMin;
+            *outUpperLimit = mn_stickMax;
+            return 1;
+            break;
         }
+
     return 0;
     }
 

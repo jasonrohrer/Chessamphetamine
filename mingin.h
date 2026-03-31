@@ -6590,6 +6590,7 @@ static char mn_isRunningOnSteamDeck( void ) {
 #include <initguid.h>
 #include <d3d11.h>
 #include <mmsystem.h>
+#include <xinput.h>
 
 static  HINSTANCE                mn_hInstance;
 static  int                      mn_cmdshow;
@@ -7161,7 +7162,21 @@ static  char                mn_buttonDown[ MGN_NUM_BUTTONS ];
 static  char                mn_buttonWasDownSinceLastStep[ MGN_NUM_BUTTONS ];
 
 /* maps each Mingin key to an X11 VK_ keysym (or a raw char for A-Z, 0-9, etc. */
-static  int        mn_buttonToWindowsKeyMap[ MGN_NUM_BUTTONS ];
+static  int                 mn_buttonToWindowsKeyMap[ MGN_NUM_BUTTONS ];
+
+
+static  char                mn_gamepadActive          =  0;
+
+static  int                 mn_triggerMin             =  0;
+static  int                 mn_triggerMax             =  255;
+static  int                 mn_triggerPressThreshold  =  10;
+static  int                 mn_stickMin               =  -32768;
+static  int                 mn_stickMax               =  32767;
+
+/* these are indexed as 0 => left, 1 => right */
+static  int                 mn_triggerValues[2]       =  { 0, 0 };
+static  int                 mn_stickXValues[2]        =  { 0, 0 };
+static  int                 mn_stickYValues[2]        =  { 0, 0 };
 
 
 
@@ -7662,6 +7677,141 @@ static MinginButton mn_mapWindowsKeyToButton( int  inVK ) {
 
 
 
+static void mn_setButtonDown( MinginButton  inButton,
+                              WORD          inDown ) {
+
+    if( inDown ) {
+        if( ! mn_buttonDown[ inButton ] ) {
+            mn_lastButtonPressed = inButton;
+            }
+        
+        mn_buttonDown                [ inButton ] = 1;
+        mn_buttonWasDownSinceLastStep[ inButton ] = 1;
+        }
+    else {
+        mn_buttonDown                [ inButton ] = 0;
+        }
+    }
+
+
+
+static void mn_pollControllers( void ) {
+
+    int  i;
+
+    mn_gamepadActive = 0;
+    
+    for( i = 0;
+         i < 4;
+         i ++ ) {
+
+        XINPUT_STATE  controllerState;
+        DWORD         result;
+
+        ZeroMemory( &controllerState,
+                    sizeof( XINPUT_STATE ) );
+
+        result = XInputGetState( i,
+                                 &controllerState );
+
+        if( result == ERROR_SUCCESS ) {
+            /* a connected controller */
+
+            mn_gamepadActive = 1;
+
+
+            if( controllerState.Gamepad.wButtons ) {
+
+                mn_gamepadActive = 1;
+                }
+            
+            
+            mn_setButtonDown( MGN_BUTTON_DPAD_UP,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_DPAD_UP );
+            
+            mn_setButtonDown( MGN_BUTTON_DPAD_DOWN,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_DPAD_DOWN );
+
+            mn_setButtonDown( MGN_BUTTON_DPAD_LEFT,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_DPAD_LEFT );
+
+            mn_setButtonDown( MGN_BUTTON_DPAD_RIGHT,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_DPAD_RIGHT );
+
+            
+            mn_setButtonDown( MGN_BUTTON_XBOX_START,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_START );
+
+            mn_setButtonDown( MGN_BUTTON_XBOX_BACK,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_BACK );
+
+
+            mn_setButtonDown( MGN_BUTTON_STICK_LEFT_PRESS,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_LEFT_THUMB );
+            
+            mn_setButtonDown( MGN_BUTTON_STICK_RIGHT_PRESS,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_RIGHT_THUMB );
+
+
+            mn_setButtonDown( MGN_BUTTON_L1,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_LEFT_SHOULDER );
+            
+            mn_setButtonDown( MGN_BUTTON_R1,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_RIGHT_SHOULDER );
+
+
+            mn_setButtonDown( MGN_BUTTON_XBOX_A,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_A );
+
+            mn_setButtonDown( MGN_BUTTON_XBOX_B,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_B );
+
+            mn_setButtonDown( MGN_BUTTON_XBOX_X,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_X );
+
+            mn_setButtonDown( MGN_BUTTON_XBOX_Y,
+                              controllerState.Gamepad.wButtons
+                              &
+                              XINPUT_GAMEPAD_Y );
+            
+            /* bail after getting info from first connected controller.
+               Thus, if user plugs/unplugs controllers, we always take input
+               from the lowest-index live controller */
+               
+            break;
+            }
+        }
+    
+    }
+
+
+
 
 int APIENTRY WinMain( HINSTANCE  hInstance,
                       HINSTANCE  hInstancePrev,
@@ -7810,6 +7960,8 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                 break;
                 }
 
+            mn_pollControllers();
+            
             minginGame_step( 0 );
 
             
@@ -8045,6 +8197,45 @@ static char minginPlatform_isButtonDown( MinginButton  inButton ) {
 MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
 
     int  i;
+
+    if( mn_gamepadActive ) {
+
+        i = 0;
+        
+        while( minginButtonMappings[ inButtonHandle ][ i ]
+               !=
+               MGN_MAP_END ) {
+            
+            MinginButton  b  =  minginButtonMappings[ inButtonHandle ][ i ];
+
+            switch( b ) {
+                case MGN_BUTTON_L1:
+                case MGN_BUTTON_R1:
+                case MGN_BUTTON_L2:
+                case MGN_BUTTON_R2:
+                case MGN_BUTTON_STICK_LEFT_PRESS:
+                case MGN_BUTTON_STICK_RIGHT_PRESS:
+                case MGN_BUTTON_DPAD_LEFT:
+                case MGN_BUTTON_DPAD_RIGHT:
+                case MGN_BUTTON_DPAD_UP:
+                case MGN_BUTTON_DPAD_DOWN:
+                case MGN_BUTTON_XBOX_A:
+                case MGN_BUTTON_XBOX_B:
+                case MGN_BUTTON_XBOX_X:
+                case MGN_BUTTON_XBOX_Y:
+                case MGN_BUTTON_XBOX_BACK:
+                case MGN_BUTTON_XBOX_START:
+                case MGN_BUTTON_XBOX_GUIDE:
+                    return b;
+                    break;
+                }
+            i++;
+            }
+        }
+    
+
+    /* didn't find gamepad button,
+       consider mouse and keyboard */
     
     i = 0;
 

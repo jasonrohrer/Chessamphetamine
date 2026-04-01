@@ -8,6 +8,9 @@
 #include "maxigin.h"
 
 
+#define BOARD_IMPLEMENTATION
+#include "board.h"
+
 
 enum GameUserAction {
     JUMP,
@@ -207,7 +210,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     
         
-    
+    if( 0 )
     for( i = 0;
          i < 9;
          i ++ ) {
@@ -304,6 +307,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                       lineTip.y );
 
     maxigin_drawResetColor();
+
+    boardDraw( MAXIGIN_GAME_NATIVE_W / 2,
+               MAXIGIN_GAME_NATIVE_H / 2 );
+    
 
     maxigin_drawGUI( &gameGUI );
     }
@@ -998,6 +1005,9 @@ void maxiginGame_init( void ) {
 
     maxigin_initSetLanguageFontGLow( 2,
                                      2 );
+
+    boardInit();
+    
     
     /* init position in image center */
     boxPosX = MAXIGIN_GAME_NATIVE_W / 2;

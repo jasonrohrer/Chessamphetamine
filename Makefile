@@ -18,6 +18,6 @@ maxigin_imp.o: maxigin.h mingin.h maxigin_imp.c
 
 mingin_imp.o: mingin.h mingin_imp.c
 
-game.o: maxigin.h mingin.h game.c
+game.o: maxigin.h mingin.h board.h game.c
 
 

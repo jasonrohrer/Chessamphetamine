@@ -69,7 +69,10 @@ void getStartBoard( BoardState  *outState ) {
             }
         }
     
-            
+
+    /* fixme:
+       fill out whole starting board
+       why aren't color bits working to toggle draw colors ?  */
     outState->squareStates[0][0] = rook | CHESS_BLACK;
     outState->squareStates[7][0] = rook | CHESS_WHITE;
     }

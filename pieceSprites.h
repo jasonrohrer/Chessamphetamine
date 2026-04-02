@@ -16,15 +16,7 @@
 
 
 
-typedef enum{
-    pawn = 0,
-    bishop,
-    knight,
-    rook,
-    queen,
-    king } ChessPiece;
-
-#define NUM_CHESS_PIECES  6
+#include "chess.h"
 
 
 
@@ -36,6 +28,11 @@ void drawPiece( ChessPiece  inPiece,
                 int  inBaseCenterY );
 
 
+void drawBoardState( BoardState  *inState,
+                     int          inBoardCenterX,
+                     int          inBoardCenterY );
+
+
 
 #ifdef PIECE_SPRITES_IMPLEMENTATION
 
@@ -44,7 +41,8 @@ static  int  pieceBottomHeight  =  5;
 
 static  int          pieceSpriteHandles[ NUM_CHESS_PIECES ];
 static  int          pieceOffsetY      [ NUM_CHESS_PIECES ];
-static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] = { "pawn.tga",
+static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] = { "",
+                                                                "pawn.tga",
                                                                 "bishop.tga",
                                                                 "knight.tga",
                                                                 "rook.tga",
@@ -56,7 +54,12 @@ void pieceSpritesInit( void ) {
     int  i;
 
 
-    for( i = 0;
+    maxigin_logInt( "Size of enum: ",
+                    sizeof( ChessPiece ) );
+
+    /* skip noPiece */
+    
+    for( i = pawn;
          i < NUM_CHESS_PIECES;
          i ++ ) {
         
@@ -88,18 +91,67 @@ void drawPiece( ChessPiece  inPiece,
                 int  inBaseCenterX,
                 int  inBaseCenterY ) {
 
-    /* fixme:  need to offset center */
-    maxigin_drawSetColor( 192,
-                          128,
-                          0,
-                          255 );
-    maxigin_drawSprite( pieceSpriteHandles[ inPiece ],
+    ChessPiece  rawP  =  inPiece & CHESS_PIECE_MASK;
+
+    if( inPiece & CHESS_COLOR_MASK == CHESS_BLACK ) {
+        maxigin_drawSetColor( 128,
+                              128,
+                              128,
+                              255 );
+        }
+    else {
+        maxigin_drawSetColor( 192,
+                              128,
+                              0,
+                              255 );
+        }
+    
+    maxigin_drawSprite( pieceSpriteHandles[ rawP ],
                         inBaseCenterX,
-                        inBaseCenterY + pieceOffsetY[ inPiece ] );
+                        inBaseCenterY + pieceOffsetY[ rawP ] );
 
     maxigin_drawResetColor();
     }
 
+
+
+void drawBoardState( BoardState  *inState,
+                     int          inBoardCenterX,
+                     int          inBoardCenterY ) {
+
+    int  x;
+    int  y;
+
+    for( y = 0;
+         y < 8;
+         y ++ ) {
+        
+        for( x = 0;
+             x < 8;
+             x ++ ) {
+
+            ChessPiece  p  =  inState->squareStates[y][x];
+            
+
+            if( p != noPiece ) {
+
+                int  pX;
+                int  pY;
+
+                boardGetSquareCenter( inBoardCenterX,
+                                      inBoardCenterY,
+                                      y,
+                                      x,
+                                      &pX,
+                                      &pY );
+                
+                drawPiece( p,
+                           pX,
+                           pY );
+                }
+            }
+        }
+    }
     
 
 #endif

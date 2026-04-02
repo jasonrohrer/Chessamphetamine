@@ -11,8 +11,14 @@
 #define BOARD_IMPLEMENTATION
 #include "board.h"
 
+
+#define CHESS_IMPLEMENTATION
+#include "chess.h"
+
 #define PIECE_SPRITES_IMPLEMENTATION
 #include "pieceSprites.h"
+
+
 
 enum GameUserAction {
     JUMP,
@@ -127,6 +133,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     int  x;
     int  y;
     int  i;
+
+    BoardState  state;
+    
 
     maxigin_drawSetAlpha( 255 );
     
@@ -314,8 +323,12 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                MAXIGIN_GAME_NATIVE_H / 2 );
 
 
+    getStartBoard( &state );
 
-
+    drawBoardState( &state,
+                    MAXIGIN_GAME_NATIVE_W / 2,
+                    MAXIGIN_GAME_NATIVE_H / 2 );
+    
     boardGetSquareCenter( MAXIGIN_GAME_NATIVE_W / 2,
                           MAXIGIN_GAME_NATIVE_H / 2,
                           5,
@@ -337,6 +350,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     drawPiece( queen,
                x,
                y );
+    
 
     maxigin_drawGUI( &gameGUI );
     }

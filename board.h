@@ -22,6 +22,14 @@ void boardDraw( int  inCenterX,
                 int  inCenterY );
 
 
+/* row and col are 0,0 at top left corner (a8) */
+void boardGetSquareCenter( int   inBoardCenterX,
+                           int   inBoardCenterY,
+                           int   inRow,
+                           int   inCol,
+                           int  *outSquareCenterX,
+                           int  *outSquareCenterY );
+
 
 #ifdef BOARD_IMPLEMENTATION
 
@@ -134,6 +142,22 @@ void boardDraw( int  inCenterX,
                         inCenterY );
 
     maxigin_drawResetColor();
+    }
+
+
+
+void boardGetSquareCenter( int   inBoardCenterX,
+                           int   inBoardCenterY,
+                           int   inRow,
+                           int   inCol,
+                           int  *outSquareCenterX,
+                           int  *outSquareCenterY ) {
+
+    *outSquareCenterY  =
+        inBoardCenterY - 100 + inRow * squareSize + squareSize / 2;
+
+    *outSquareCenterX  =
+        inBoardCenterX - 100 + inCol * squareSize + squareSize / 2;
     }
 
 

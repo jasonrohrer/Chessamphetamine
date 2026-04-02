@@ -11,6 +11,8 @@
 #define BOARD_IMPLEMENTATION
 #include "board.h"
 
+#define PIECE_SPRITES_IMPLEMENTATION
+#include "pieceSprites.h"
 
 enum GameUserAction {
     JUMP,
@@ -310,7 +312,31 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     boardDraw( MAXIGIN_GAME_NATIVE_W / 2,
                MAXIGIN_GAME_NATIVE_H / 2 );
-    
+
+
+
+
+    boardGetSquareCenter( MAXIGIN_GAME_NATIVE_W / 2,
+                          MAXIGIN_GAME_NATIVE_H / 2,
+                          5,
+                          0,
+                          &x,
+                          &y );
+
+    drawPiece( king,
+               x,
+               y );
+
+    boardGetSquareCenter( MAXIGIN_GAME_NATIVE_W / 2,
+                          MAXIGIN_GAME_NATIVE_H / 2,
+                          5,
+                          1,
+                          &x,
+                          &y );
+
+    drawPiece( queen,
+               x,
+               y );
 
     maxigin_drawGUI( &gameGUI );
     }
@@ -1007,7 +1033,7 @@ void maxiginGame_init( void ) {
                                      2 );
 
     boardInit();
-    
+    pieceSpritesInit();
     
     /* init position in image center */
     boxPosX = MAXIGIN_GAME_NATIVE_W / 2;

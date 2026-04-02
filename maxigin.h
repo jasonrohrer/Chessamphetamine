@@ -1635,6 +1635,25 @@ int maxigin_getSpriteFromStrip( int  inSpriteStripHandle,
 
 
 /*
+  Gets the dimensions of a sprite
+
+  Parameters:
+    
+      inSpriteHandle   handle to a loaded sprite
+
+      outWide          pointer to where the width in pixels should be returned
+
+      outHigh          pointer to where the heigh in pixels should be returned
+     
+  [jumpMaxiginGeneral]
+*/
+void maxigin_getSpriteDimensions( int   inSpriteHandle,
+                                  int  *outWide,
+                                  int  *outHigh );
+
+
+
+/*
   Plays a sound effect now.
 
   Parameters:
@@ -5720,6 +5739,18 @@ int maxigin_getSpriteFromStrip( int  inSpriteStripHandle,
                                 int  inSpriteIndex ) {
     return mx_stripSubSprites[
         mx_spriteStrips[ inSpriteStripHandle ].startIndex + inSpriteIndex ];
+    }
+
+
+
+void maxigin_getSpriteDimensions( int   inSpriteHandle,
+                                  int  *outWide,
+                                  int  *outHigh ) {
+    
+    MaxiginSprite *s  =  &( mx_sprites[ inSpriteHandle ] );
+
+    *outWide = s->w;
+    *outHigh = s->h;
     }
 
 

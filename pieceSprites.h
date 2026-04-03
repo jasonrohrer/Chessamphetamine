@@ -72,11 +72,24 @@ void pieceSpritesInit( void ) {
             int  w;
             int  h;
 
-            maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
-                                              2,
-                                              2,
-                                              255,
-                                              255 );
+            if( 1 ) {
+                /* sharper black borders */
+                maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
+                                                  1,
+                                                  2,
+                                                  0,
+                                                  255,
+                                                  700 );
+                }
+            else {
+                /* hazier black borders */
+                maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
+                                                  4,
+                                                  2,
+                                                  64,
+                                                  255,
+                                                  200 );
+                }
             
             maxigin_initMakeGlowSprite( pieceSpriteHandles[i],
                                         4,

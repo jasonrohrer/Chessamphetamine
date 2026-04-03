@@ -715,13 +715,22 @@ void maxigin_initMakeGlowSprite( int  inSpriteHandle,
 
       inTopAlpha         the alpha value of the top of the drop shadow
 
+      inDarkness         a darkness value applied to the
+                         shadow's alpha value after blurring, where
+                            0   leaves the darkess untouched
+                            100 doubles the darnkess
+                            200 triples the darnkess
+                           -100 cuts the darkness in half
+                           -200 cuts the darkness down to 1/3
+
   [jumpMaxiginInit]  
 */
 void maxigin_initMakeDropShadowSprite( int            inSpriteHandle,
                                        int            inBlurRadius,
                                        int            inBlurIterations,
                                        unsigned char  inBottomAlpha,
-                                       unsigned char  inTopAlpha );
+                                       unsigned char  inTopAlpha,
+                                       int            inDarkness );
 
 
 
@@ -787,13 +796,23 @@ void maxigin_initMakeGlowSpriteStrip( int  inSpriteStripHandle,
 
       inTopAlpha         the alpha value of the top of the drop shadow
 
+      
+      inDarkness         a darkness value applied to the
+                         shadow's alpha value after blurring, where
+                            0   leaves the darkess untouched
+                            100 doubles the darnkess
+                            200 triples the darnkess
+                           -100 cuts the darkness in half
+                           -200 cuts the darkness down to 1/3
+                         
   [jumpMaxiginInit]  
 */
 void maxigin_initMakeDropShadowSpriteStrip( int            inSpriteStripHandle,
                                             int            inBlurRadius,
                                             int            inBlurIterations,
                                             unsigned char  inBottomAlpha,
-                                            unsigned char  inTopAlpha  );
+                                            unsigned char  inTopAlpha,
+                                            int            inDarkness );
 
 
 
@@ -3653,6 +3672,7 @@ typedef struct MaxiginSprite {
         int            shadowIterations;
         unsigned char  shadowBottomAlpha;
         unsigned char  shadowTopAlpha;
+        int            shadowDarkness;
 
         /* handle of full sprite strip that this is a sub-sprite of, or -1
            if not part of a strip */
@@ -4955,7 +4975,8 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
                                            int            inBlurRadius,
                                            int            inBlurIterations,
                                            unsigned char  inBottomAlpha,
-                                           unsigned char  inTopAlpha  ) {
+                                           unsigned char  inTopAlpha,
+                                           int            inDarkness ) {
 
     MaxiginSprite  *mainSprite;
     const char     *shadowSpriteDataName;
@@ -5027,6 +5048,7 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
                 int   readIterations;
                 int   readBottomAlpha;
                 int   readTopAlpha;
+                int   readDarkness;
                 char  success          =  0;
                 int   headerLength;
                 
@@ -5066,6 +5088,12 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
                             persistReadHandle,
                             & readTopAlpha );
 
+                    success = success
+                        &&
+                        mx_readPaddedIntFromPeristentData(
+                            persistReadHandle,
+                            & readDarkness );
+                    
                     if( success
                         &&
                         ( readRadius != inBlurRadius
@@ -5074,7 +5102,9 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
                           ||
                           (unsigned char)readBottomAlpha != inBottomAlpha
                           ||
-                          (unsigned char)readTopAlpha != inTopAlpha ) ) {
+                          (unsigned char)readTopAlpha != inTopAlpha
+                          ||
+                          (unsigned char)readDarkness != inDarkness ) ) {
                         
                         success = 0;
                         }
@@ -5082,7 +5112,7 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
 
                 headerLength = MAXIGIN_SPRITE_HASH_LENGTH
                                +
-                               4 * MAXIGIN_PADDED_INT_LENGTH;
+                               5 * MAXIGIN_PADDED_INT_LENGTH;
                 
                 if( success ) {
                     if( mainSprite->shadowSpriteHandle ==
@@ -5116,6 +5146,7 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
                             mainSprite->shadowIterations  = inBlurIterations;
                             mainSprite->shadowBottomAlpha = inBottomAlpha;
                             mainSprite->shadowTopAlpha    = inTopAlpha;
+                            mainSprite->shadowDarkness    = inDarkness;
                             
                             maxigin_logString( "Successfully read cached shadow "
                                                "sprite from perisistent data "
@@ -5198,6 +5229,7 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
         mainSprite->shadowIterations   = inBlurIterations;
         mainSprite->shadowBottomAlpha  = inBottomAlpha;
         mainSprite->shadowTopAlpha     = inTopAlpha;
+        mainSprite->shadowDarkness     = inDarkness;
         
         shadowStartByte  =  mx_numSpriteBytesUsed;
         
@@ -5287,6 +5319,64 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
                        inBlurIterations );
 
 
+        
+
+
+        /* now apply darkness */
+        b = shadowStartByte;
+
+        if( inDarkness > 0 ) {
+            
+            long  factor  =  inDarkness + 100;
+            
+            for( p = 0;
+                 p < numShadowPixels;
+                 p ++ ) {
+
+                long  a;
+            
+                b += 3;
+                
+                a = mx_spriteBytes[ b ];
+                
+                if( a != 0 ) {
+
+                    a = ( a * factor ) /  100;
+
+                    if( a > 255 ) {
+                        a = 255;
+                        }
+                    
+                    mx_spriteBytes[ b ] = (unsigned char)a;
+                    }
+
+                b ++;
+                }
+            }
+        else if( inDarkness < 0 ) {
+
+            long  factor  =  - inDarkness + 100;
+            
+            for( p = 0;
+                 p < numShadowPixels;
+                 p ++ ) {
+
+                long  a;
+            
+                b += 3;
+            
+                a = mx_spriteBytes[ b ];
+
+                a = ( a * 100 ) / factor;
+
+                mx_spriteBytes[ b ] = (unsigned char)a;
+
+                b ++;
+                }
+            }
+
+
+        
         /* now apply bottom-to-top alpha ramp */
         opaqueFirstY = shadowH;
         opaqueLastY  = 0;
@@ -5377,6 +5467,9 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
 
         mx_writePaddedIntToPerisistentData( shadowCacheDataWriteHandle,
                                             inTopAlpha );
+
+        mx_writePaddedIntToPerisistentData( shadowCacheDataWriteHandle,
+                                            inDarkness );
         
         mx_writeSpriteToOpenData( shadowSpriteHandle,
                                   shadowCacheDataWriteHandle );
@@ -5393,7 +5486,8 @@ void maxigin_initMakeDropShadowSprite( int            inSpriteHandle,
                                        int            inBlurRadius,
                                        int            inBlurIterations,
                                        unsigned char  inBottomAlpha,
-                                       unsigned char  inTopAlpha ) {
+                                       unsigned char  inTopAlpha,
+                                       int            inDarkness ) {
 
     if( ! mx_areWeInMaxiginGameInitFunction ) {
         mingin_log( "Game tried to call maxigin_initMakeDropShadowSprite "
@@ -5409,7 +5503,8 @@ void maxigin_initMakeDropShadowSprite( int            inSpriteHandle,
                                    inBlurRadius,
                                    inBlurIterations,
                                    inBottomAlpha,
-                                   inTopAlpha );
+                                   inTopAlpha,
+                                   inDarkness );
     }
 
 
@@ -5922,7 +6017,8 @@ static void mx_postReloadStep( int  inSpriteHandle ) {
             s->shadowRadius,
             s->shadowIterations,
             s->shadowBottomAlpha,
-            s->shadowTopAlpha );
+            s->shadowTopAlpha,
+            s->shadowDarkness );
         }
 
     if( s->stripChildHandle != -1 ) {
@@ -6272,7 +6368,8 @@ static int mx_regenSpriteStripChildren( int  inMainSpriteHandle,
                 subSprite->shadowRadius,
                 subSprite->shadowIterations,
                 subSprite->shadowBottomAlpha,
-                subSprite->shadowTopAlpha );
+                subSprite->shadowTopAlpha,
+                subSprite->shadowDarkness );
             }
         if( subSprite->kerningTableIndex != -1 ) {
             mx_regenerateSpriteKerning( subHandle );
@@ -6346,7 +6443,8 @@ void maxigin_initMakeDropShadowSpriteStrip( int            inSpriteStripHandle,
                                             int            inBlurRadius,
                                             int            inBlurIterations,
                                             unsigned char  inBottomAlpha,
-                                            unsigned char  inTopAlpha  ) {
+                                            unsigned char  inTopAlpha,
+                                            int            inDarkness ) {
 
     int  numSubSprites;
     int  i;
@@ -6370,7 +6468,8 @@ void maxigin_initMakeDropShadowSpriteStrip( int            inSpriteStripHandle,
                                           inBlurRadius,
                                           inBlurIterations,
                                           inBottomAlpha,
-                                          inTopAlpha );
+                                          inTopAlpha,
+                                          inDarkness );
         }
     }
 

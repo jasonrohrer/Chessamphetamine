@@ -675,8 +675,8 @@ int maxigin_initSprite( const char  *inBulkResourceName );
 /*
   Generates a blurred additive glow sprite for a given sprite.
 
-  Calls to maxigin_drawSprite for the sprite handle will draw the underlying
-  sprite and additively blend in the glow sprite.
+  Calls to maxigin_drawSprite for the sprite handle will draw the main
+  sprite and additively blend in the glow sprite on top.
   
   Parameters:
 
@@ -691,6 +691,37 @@ int maxigin_initSprite( const char  *inBulkResourceName );
 void maxigin_initMakeGlowSprite( int  inSpriteHandle,
                                  int  inBlurRadius,
                                  int  inBlurIterations );
+
+
+
+/*
+  Generates a blurred drop-shadow sprite for a given sprite.
+
+  Calls to maxigin_drawSprite for the sprite handle will draw the drop shadow
+  sprite and draw the main sprite on top.
+
+  Alpha values for the drop shadow will be ramped smoothly from bottom
+  to top values across the non-transparent pixels of the blurred shadow.
+  
+  Parameters:
+
+      inSpriteHandle     the sprite to add a shadow to
+      
+      inBlurRadius       the blur radius for the shadow, in pixels
+
+      inBlurIterations   the number of iterations of the blur to apply
+
+      inBottomAlpha      the alpha value of the bottom of the drop shadow
+
+      inTopAlpha         the alpha value of the top of the drop shadow
+
+  [jumpMaxiginInit]  
+*/
+void maxigin_initMakeDropShadowSprite( int            inSpriteHandle,
+                                       int            inBlurRadius,
+                                       int            inBlurIterations,
+                                       unsigned char  inBottomAlpha,
+                                       unsigned char  inTopAlpha );
 
 
 
@@ -737,6 +768,33 @@ int maxigin_initSpriteStrip( const char  *inBulkResourceName,
 void maxigin_initMakeGlowSpriteStrip( int  inSpriteStripHandle,
                                       int  inBlurRadius,
                                       int  inBlurIterations );
+
+
+
+/*
+  Same as maxigin_initMakeDropShadowSprite, but for all sprites in a sprite
+  strip.
+  
+  Parameters:
+
+      inSpriteStripHandle   the sprite strip to add a drop shadows to
+
+      inBlurRadius       the blur radius for the shadow, in pixels
+
+      inBlurIterations   the number of iterations of the blur to apply
+
+      inBottomAlpha      the alpha value of the bottom of the drop shadow
+
+      inTopAlpha         the alpha value of the top of the drop shadow
+
+  [jumpMaxiginInit]  
+*/
+void maxigin_initMakeDropShadowSpriteStrip( int            inSpriteStripHandle,
+                                            int            inBlurRadius,
+                                            int            inBlurIterations,
+                                            unsigned char  inBottomAlpha,
+                                            unsigned char  inTopAlpha  );
+
 
 
 /*
@@ -3584,10 +3642,17 @@ typedef struct MaxiginSprite {
 
         int            stepsUntilNextRetry;
 
-        /* -1 if this is not a glow sprite */
+        /* -1 if this sprite has no glow sprite */
         int            glowSpriteHandle;
         int            glowRadius;
         int            glowIterations;
+
+        /* -1 if this sprite has no drop shadow sprite */
+        int            shadowSpriteHandle;
+        int            shadowRadius;
+        int            shadowIterations;
+        unsigned char  shadowBottomAlpha;
+        unsigned char  shadowTopAlpha;
 
         /* handle of full sprite strip that this is a sub-sprite of, or -1
            if not part of a strip */
@@ -4103,9 +4168,11 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
 
         /* leave old glow handle in place if this isn't a new sprite record */
         
-        mx_sprites[ newSpriteHandle ].glowSpriteHandle  = -1;
+        mx_sprites[ newSpriteHandle ].glowSpriteHandle   = -1;
 
-        mx_sprites[ newSpriteHandle ].kerningTableIndex = -1;
+        mx_sprites[ newSpriteHandle ].shadowSpriteHandle = -1;
+
+        mx_sprites[ newSpriteHandle ].kerningTableIndex  = -1;
         
             
         mx_numSprites ++;
@@ -4615,6 +4682,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                 int   readRadius;
                 int   readIterations;
                 char  success          =  0;
+                int   headerLength;
                 
                 for( b = 0;
                      b < MAXIGIN_SPRITE_HASH_LENGTH;
@@ -4648,7 +4716,10 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                         success = 0;
                         }
                     }
-                    
+
+                headerLength = MAXIGIN_SPRITE_HASH_LENGTH
+                               +
+                               2 * MAXIGIN_PADDED_INT_LENGTH;
                 
                 if( success ) {
                     if( mainSprite->glowSpriteHandle ==
@@ -4669,8 +4740,9 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                                 "",
                                 -1,
                                 & openData,
-                                /* TGA data comes right after hash bytes */
-                                numBytes - MAXIGIN_SPRITE_HASH_LENGTH );
+                                /* TGA data comes right after hash bytes
+                                   and int parameters */
+                                numBytes - headerLength );
 
                         if( mainSprite->glowSpriteHandle !=
                             -1 ) {
@@ -4759,10 +4831,11 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
         mainH          =  mainSprite->h;
         mainStartByte  =  mainSprite->startByte;
         
-        mx_sprites[ glowSpriteHandle ].w                = glowW;
-        mx_sprites[ glowSpriteHandle ].h                = glowH;
-        mx_sprites[ glowSpriteHandle ].startByte        = glowStartByte;
-        mx_sprites[ glowSpriteHandle ].glowSpriteHandle = -1;
+        mx_sprites[ glowSpriteHandle ].w                  = glowW;
+        mx_sprites[ glowSpriteHandle ].h                  = glowH;
+        mx_sprites[ glowSpriteHandle ].startByte          = glowStartByte;
+        mx_sprites[ glowSpriteHandle ].glowSpriteHandle   = -1;
+        mx_sprites[ glowSpriteHandle ].shadowSpriteHandle = -1;
 
         mx_sprites[ glowSpriteHandle ].bulkResourceName[0] = '\0';
 
@@ -4875,6 +4948,470 @@ void maxigin_initMakeGlowSprite( int  inSpriteHandle,
                              inBlurRadius,
                              inBlurIterations );
     }
+
+
+
+static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
+                                           int            inBlurRadius,
+                                           int            inBlurIterations,
+                                           unsigned char  inBottomAlpha,
+                                           unsigned char  inTopAlpha  ) {
+
+    MaxiginSprite  *mainSprite;
+    const char     *shadowSpriteDataName;
+    int             persistReadHandle;
+    int             numBytes;
+    int             numRead;
+    int             p;
+    int             b;
+    int             shadowW;
+    int             shadowH;
+    int             shadowBorder;
+    
+    char           readShadowFromFile;
+    unsigned char  hashBuffer[ MAXIGIN_SPRITE_HASH_LENGTH ];
+
+
+    mainSprite = &( mx_sprites[ inMainSpriteHandle ] );
+
+
+    shadowBorder = inBlurRadius * inBlurIterations * 2;
+    
+    shadowW = mainSprite->w
+              +
+              2 * shadowBorder;
+        
+    shadowH = mainSprite->h
+              +
+              2 * shadowBorder;
+
+    if( mainSprite->bulkResourceName[0] == '\0' ) {
+        /* empty source resource name, check if this is part of a strip */
+
+        if( mainSprite->stripParentHandle == -1 ) {
+            mingin_log( "Failed to make shadow sprite for non-strip sprite "
+                        "without bulk resource name.\n" );
+            return;
+            }
+
+        shadowSpriteDataName =
+            maxigin_stringConcat4(
+                mx_sprites[ mainSprite->stripParentHandle ].bulkResourceName,
+                "_strip_",
+                maxigin_intToString( mainSprite->stripIndex ),
+                ".shadow" );
+        }
+    else {
+        shadowSpriteDataName =
+            maxigin_stringConcat( mainSprite->bulkResourceName,
+                                  ".shadow" );
+        }
+
+    readShadowFromFile = 0;
+    
+    persistReadHandle = mingin_startReadPersistData( shadowSpriteDataName,
+                                                     & numBytes );
+    
+    if( persistReadHandle != -1 ) {
+
+        if( numBytes > MAXIGIN_SPRITE_HASH_LENGTH ) {
+
+            numRead = mingin_readPersistData( persistReadHandle,
+                                              MAXIGIN_SPRITE_HASH_LENGTH,
+                                              hashBuffer );
+            
+            if( numRead == MAXIGIN_SPRITE_HASH_LENGTH ) {
+
+                char  hashMatch        =  1;
+                int   readRadius;
+                int   readIterations;
+                int   readBottomAlpha;
+                int   readTopAlpha;
+                char  success          =  0;
+                int   headerLength;
+                
+                for( b = 0;
+                     b < MAXIGIN_SPRITE_HASH_LENGTH;
+                     b ++ ) {
+                    
+                    if( hashBuffer[ b ] !=
+                        mainSprite->hash[ b ] ) {
+                        
+                        hashMatch = 0;
+                        break;
+                        }
+                    }
+
+                if( hashMatch ) {
+                    success =
+                        mx_readPaddedIntFromPeristentData(
+                            persistReadHandle,
+                            & readRadius );
+                    
+                    success = success
+                        &&
+                        mx_readPaddedIntFromPeristentData(
+                            persistReadHandle,
+                            & readIterations );
+
+                    success = success
+                        &&
+                        mx_readPaddedIntFromPeristentData(
+                            persistReadHandle,
+                            & readBottomAlpha );
+
+                    success = success
+                        &&
+                        mx_readPaddedIntFromPeristentData(
+                            persistReadHandle,
+                            & readTopAlpha );
+
+                    if( success
+                        &&
+                        ( readRadius != inBlurRadius
+                          ||
+                          readIterations != inBlurIterations
+                          ||
+                          (unsigned char)readBottomAlpha != inBottomAlpha
+                          ||
+                          (unsigned char)readTopAlpha != inTopAlpha ) ) {
+                        
+                        success = 0;
+                        }
+                    }
+
+                headerLength = MAXIGIN_SPRITE_HASH_LENGTH
+                               +
+                               4 * MAXIGIN_PADDED_INT_LENGTH;
+                
+                if( success ) {
+                    if( mainSprite->shadowSpriteHandle ==
+                        -1 ) {
+
+                        MinginOpenData  openData;
+                        
+                        /* load from glow file */
+                        openData.readHandle = persistReadHandle;
+                        openData.isBulk = 0;
+
+                        /* set a non-file-name (blank string )
+                           as inBulkResourceName
+                           since this shadow sprite isn't actually in
+                           our bulk data store */
+                        mainSprite->shadowSpriteHandle =
+                            mx_reloadSpriteFromOpenData(
+                                "",
+                                -1,
+                                & openData,
+                                /* TGA data comes right after hash bytes
+                                   and parameter ints */
+                                numBytes - headerLength );
+
+                        if( mainSprite->shadowSpriteHandle !=
+                            -1 ) {
+                            /* successfully loaded from file */
+                            readShadowFromFile = 1;
+
+                            mainSprite->shadowRadius      = inBlurRadius;
+                            mainSprite->shadowIterations  = inBlurIterations;
+                            mainSprite->shadowBottomAlpha = inBottomAlpha;
+                            mainSprite->shadowTopAlpha    = inTopAlpha;
+                            
+                            maxigin_logString( "Successfully read cached shadow "
+                                               "sprite from perisistent data "
+                                               "store for ",
+                                               mainSprite->bulkResourceName );
+                            }
+                        }
+                    else {
+                        /* shadow sprite with hash and parameter
+                           match already loaded */
+
+                        readShadowFromFile = 1;
+                        }
+                    }  
+                }
+            }
+        
+        mingin_endReadPersistData( persistReadHandle );
+        }
+
+    if( ! readShadowFromFile ) {
+
+        /* generate shadow from scratch
+           cache it to file for future */
+
+        int  shadowSpriteHandle;
+        int  numShadowPixels;
+        int  neededShadowBytes;
+        int  shadowCacheDataWriteHandle;
+        int  shadowStartByte;
+        int  mainStartByte;
+        int  x;
+        int  y;
+        int  mainW;
+        int  mainH;
+
+        int   opaqueFirstY;
+        int   opaqueLastY;
+        long  opaqueSpan;
+        long  alphaSpan      =  inBottomAlpha - inTopAlpha;
+        
+        shadowSpriteHandle = mainSprite->shadowSpriteHandle;
+
+
+        if( shadowSpriteHandle != -1 ) {
+            mx_removeSpriteData( shadowSpriteHandle );
+            }
+        else {
+            /* stick new shadow sprite at end of sprite list */
+            shadowSpriteHandle = mx_numSprites;
+
+            if( mx_numSprites >= MAXIGIN_MAX_NUM_SPRITES ) {
+
+                maxigin_logString(
+                    "Already have too many sprites when trying "
+                    "to create shadow sprite for: ",
+                    mainSprite->bulkResourceName );
+                return;
+                }
+            }
+
+        numShadowPixels   = shadowW * shadowH;
+        neededShadowBytes = numShadowPixels * 4;
+
+        if( mx_numSpriteBytesUsed + neededShadowBytes
+            >
+            MAXIGIN_MAX_TOTAL_SPRITE_BYTES ) {
+
+            maxigin_logString(
+                "Already have too many sprite data bytes when trying "
+                "to create shadow sprite for: ",
+                mainSprite->bulkResourceName );
+            
+            return;
+            }
+
+        
+        mainSprite->shadowSpriteHandle = shadowSpriteHandle;
+        mainSprite->shadowRadius       = inBlurRadius;
+        mainSprite->shadowIterations   = inBlurIterations;
+        mainSprite->shadowBottomAlpha  = inBottomAlpha;
+        mainSprite->shadowTopAlpha     = inTopAlpha;
+        
+        shadowStartByte  =  mx_numSpriteBytesUsed;
+        
+        mainW          =  mainSprite->w;
+        mainH          =  mainSprite->h;
+        mainStartByte  =  mainSprite->startByte;
+        
+        mx_sprites[ shadowSpriteHandle ].w                   = shadowW;
+        mx_sprites[ shadowSpriteHandle ].h                   = shadowH;
+        mx_sprites[ shadowSpriteHandle ].startByte           = shadowStartByte;
+        mx_sprites[ shadowSpriteHandle ].glowSpriteHandle    = -1;
+        mx_sprites[ shadowSpriteHandle ].shadowSpriteHandle  = -1;
+
+        mx_sprites[ shadowSpriteHandle ].bulkResourceName[0] = '\0';
+
+        mx_sprites[ shadowSpriteHandle ].stripParentHandle   = -1;
+        mx_sprites[ shadowSpriteHandle ].stripIndex          = -1;
+        mx_sprites[ shadowSpriteHandle ].stripChildHandle    = -1;
+        
+        mx_numSprites ++;
+        mx_numSpriteBytesUsed += neededShadowBytes;
+
+
+        /* generate shadow sprite pixels */
+
+        for( b = 0;
+             b < neededShadowBytes;
+             b ++ ) {
+            /* zero out shadow sprite */
+            mx_spriteBytes[ b + shadowStartByte ] = 0;
+            }
+
+        /* copy sprite into center of shadow sprite, leaving border
+           of black transparent pixels */
+
+        for( y = 0;
+             y < mainH;
+             y ++ ) {
+
+            int  mainRowStart    =  y * mainW * 4;
+            int  shadowY         =  y + shadowBorder;
+            int  shadowRowStart  =  shadowY * shadowW * 4;
+            
+            for( x = 0;
+                 x < mainW;
+                 x ++ ) {
+                
+                int  pixStart        =  mainRowStart + x * 4 + mainStartByte;
+                int  shadowX         =  x + shadowBorder;
+                int  shadowPixStart  =  shadowRowStart + shadowX * 4
+                                        + shadowStartByte;
+
+                mx_spriteBytes    [ shadowPixStart     ++ ] =
+                    mx_spriteBytes[ pixStart           ++ ];
+                
+                mx_spriteBytes    [ shadowPixStart     ++ ] =
+                    mx_spriteBytes[ pixStart           ++ ];
+                
+                mx_spriteBytes    [ shadowPixStart     ++ ] =
+                    mx_spriteBytes[ pixStart           ++ ];
+                
+                mx_spriteBytes    [ shadowPixStart     ++ ] =
+                    mx_spriteBytes[ pixStart           ++ ];
+                }
+            }
+
+
+        /* now walk through pixels of copy, and make all pixels black
+           ( leave alpha alone )
+           This makes a black silhouette of the sprite */
+        b = shadowStartByte;
+
+        for( p = 0;
+             p < numShadowPixels;
+             p ++ ) {
+
+            mx_spriteBytes[ b ++ ] = 0;
+            mx_spriteBytes[ b ++ ] = 0;
+            mx_spriteBytes[ b ++ ] = 0;
+
+            /* leave alpha untouched */
+            b++;
+            }
+        
+        mx_blurSprite( shadowSpriteHandle,
+                       inBlurRadius,
+                       inBlurIterations );
+
+
+        /* now apply bottom-to-top alpha ramp */
+        opaqueFirstY = shadowH;
+        opaqueLastY  = 0;
+        
+        for( y = 0;
+             y < shadowH;
+             y ++ ) {
+
+            int  rowStart  =  y * shadowW * 4 + shadowStartByte;
+            
+            for( x = 0;
+                 x < shadowW;
+                 x ++ ) {
+
+                unsigned char  a  = mx_spriteBytes[ rowStart + x * 4 + 3 ];
+
+                if( a != 0 ) {
+                    if( y < opaqueFirstY ) {
+                        opaqueFirstY = y;
+                        }
+                    if( y > opaqueLastY ) {
+                        opaqueLastY = y;
+                        }
+                    }
+                }
+            }
+
+        opaqueSpan = opaqueLastY - opaqueFirstY;
+
+        
+        for( y = 0;
+             y < shadowH;
+             y ++ ) {
+
+            int  rowStart  =  y * shadowW * 4 + shadowStartByte;
+
+            /* using longs here prevents overflow */
+            long rowAlpha  =  ( alphaSpan * ( y - opaqueFirstY ) )
+                              /
+                              opaqueSpan
+                              +
+                              inTopAlpha;
+             
+            for( x = 0;
+                 x < shadowW;
+                 x ++ ) {
+
+                int            rowI  =  rowStart + x * 4 + 3;
+
+                unsigned char  a     =  mx_spriteBytes[ rowI ];
+
+                if( a != 0 ) {
+                    
+                    mx_spriteBytes[ rowI ]  =
+                        (unsigned char) ( ( a * rowAlpha ) / 255 );
+                    }
+                }
+            }
+
+        
+
+        shadowCacheDataWriteHandle =
+            mingin_startWritePersistData( shadowSpriteDataName );
+
+        if( shadowCacheDataWriteHandle == -1 ) {
+            maxigin_logString( "Failed to open persistent "
+                               "data cache file for writing: ",
+                               shadowSpriteDataName );
+            return;
+            }
+
+        
+        mingin_writePersistData( shadowCacheDataWriteHandle,
+                                 MAXIGIN_SPRITE_HASH_LENGTH,
+                                 mainSprite->hash );
+
+        /* next radius and iteration count as padded ints
+           also alpha parameters */
+        
+        mx_writePaddedIntToPerisistentData( shadowCacheDataWriteHandle,
+                                            inBlurRadius );
+        
+        mx_writePaddedIntToPerisistentData( shadowCacheDataWriteHandle,
+                                            inBlurIterations );
+        
+        mx_writePaddedIntToPerisistentData( shadowCacheDataWriteHandle,
+                                            inBottomAlpha );
+
+        mx_writePaddedIntToPerisistentData( shadowCacheDataWriteHandle,
+                                            inTopAlpha );
+        
+        mx_writeSpriteToOpenData( shadowSpriteHandle,
+                                  shadowCacheDataWriteHandle );
+
+
+        mingin_endWritePersistData( shadowCacheDataWriteHandle );
+        }
+    
+    }
+
+
+
+void maxigin_initMakeDropShadowSprite( int            inSpriteHandle,
+                                       int            inBlurRadius,
+                                       int            inBlurIterations,
+                                       unsigned char  inBottomAlpha,
+                                       unsigned char  inTopAlpha ) {
+
+    if( ! mx_areWeInMaxiginGameInitFunction ) {
+        mingin_log( "Game tried to call maxigin_initMakeDropShadowSprite "
+                    "from outside of maxiginGame_init\n" );
+        return;
+        }
+
+    if( inSpriteHandle < 0 ) {
+        return;
+        }
+
+    mx_regenerateDropShadowSprite( inSpriteHandle,
+                                   inBlurRadius,
+                                   inBlurIterations,
+                                   inBottomAlpha,
+                                   inTopAlpha );
+    }
+
 
 
 #define  MAXIGIN_NUM_STATIC_SLIDER_BARS  10
@@ -5378,6 +5915,16 @@ static void mx_postReloadStep( int  inSpriteHandle ) {
             s->glowIterations );
         }
 
+    if( s->shadowSpriteHandle != -1 ) {
+
+        mx_regenerateDropShadowSprite(
+            inSpriteHandle,
+            s->shadowRadius,
+            s->shadowIterations,
+            s->shadowBottomAlpha,
+            s->shadowTopAlpha );
+        }
+
     if( s->stripChildHandle != -1 ) {
         /* just reloaded a parent sprite of a strip
            need to make new pointers for child sprites */
@@ -5688,9 +6235,11 @@ static int mx_regenSpriteStripChildren( int  inMainSpriteHandle,
         mx_recomputeSpriteAttributes( subHandle );
 
         if( ! exists ) {
-            subSprite->glowSpriteHandle  = -1;
+            subSprite->glowSpriteHandle   = -1;
             
-            subSprite->kerningTableIndex = -1;
+            subSprite->shadowSpriteHandle = -1;
+            
+            subSprite->kerningTableIndex  = -1;
             }
         }
 
@@ -5716,6 +6265,14 @@ static int mx_regenSpriteStripChildren( int  inMainSpriteHandle,
                 subHandle,
                 subSprite->glowRadius,
                 subSprite->glowIterations );
+            }
+        if( subSprite->shadowSpriteHandle != -1 ) {
+            mx_regenerateDropShadowSprite(
+                subHandle,
+                subSprite->shadowRadius,
+                subSprite->shadowIterations,
+                subSprite->shadowBottomAlpha,
+                subSprite->shadowTopAlpha );
             }
         if( subSprite->kerningTableIndex != -1 ) {
             mx_regenerateSpriteKerning( subHandle );
@@ -5780,6 +6337,40 @@ void maxigin_initMakeGlowSpriteStrip( int  inSpriteStripHandle,
         maxigin_initMakeGlowSprite( subSpriteHandle,
                                     inBlurRadius,
                                     inBlurIterations );
+        }
+    }
+
+
+
+void maxigin_initMakeDropShadowSpriteStrip( int            inSpriteStripHandle,
+                                            int            inBlurRadius,
+                                            int            inBlurIterations,
+                                            unsigned char  inBottomAlpha,
+                                            unsigned char  inTopAlpha  ) {
+
+    int  numSubSprites;
+    int  i;
+
+    
+    if( inSpriteStripHandle < 0 ) {
+        return;
+        }
+    
+    numSubSprites = mx_spriteStrips[ inSpriteStripHandle ].numSubSprites;
+    
+    for( i = 0;
+         i < numSubSprites;
+         i ++ ) {
+        
+        int  subSpriteHandle  =
+            mx_stripSubSprites[
+                mx_spriteStrips[ inSpriteStripHandle ].startIndex + i ];
+
+        maxigin_initMakeDropShadowSprite( subSpriteHandle,
+                                          inBlurRadius,
+                                          inBlurIterations,
+                                          inBottomAlpha,
+                                          inTopAlpha );
         }
     }
 
@@ -6198,8 +6789,8 @@ static void mx_drawRegularSprite( int  inSpriteHandle,
 
 
 static void mx_drawGlowSprite( int  inSpriteHandle,
-                             int  inCenterX,
-                             int  inCenterY ) {
+                               int  inCenterX,
+                               int  inCenterY ) {
 
     char  oldAdditive  =  maxigin_drawGetAdditive();
     
@@ -6224,6 +6815,13 @@ static void mx_drawGlowSprite( int  inSpriteHandle,
 void maxigin_drawSprite( int  inSpriteHandle,
                          int  inCenterX,
                          int  inCenterY ) {
+
+    if( mx_sprites[ inSpriteHandle ].shadowSpriteHandle != -1 ) {
+        
+        mx_drawRegularSprite( mx_sprites[ inSpriteHandle ].shadowSpriteHandle,
+                              inCenterX,
+                              inCenterY );
+        }
     
     if( mx_sprites[ inSpriteHandle ].glowSpriteHandle != -1 ) {
 

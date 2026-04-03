@@ -71,6 +71,12 @@ void pieceSpritesInit( void ) {
 
             int  w;
             int  h;
+
+            maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
+                                              2,
+                                              2,
+                                              255,
+                                              255 );
             
             maxigin_initMakeGlowSprite( pieceSpriteHandles[i],
                                         4,

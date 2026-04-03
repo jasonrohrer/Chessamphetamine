@@ -93,7 +93,7 @@ void drawPiece( ChessPiece  inPiece,
 
     ChessPiece  rawP  =  inPiece & CHESS_PIECE_MASK;
 
-    if( inPiece & CHESS_COLOR_MASK == CHESS_BLACK ) {
+    if( ( inPiece & CHESS_COLOR_MASK ) == CHESS_BLACK ) {
         maxigin_drawSetColor( 128,
                               128,
                               128,

@@ -329,28 +329,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                     MAXIGIN_GAME_NATIVE_W / 2,
                     MAXIGIN_GAME_NATIVE_H / 2 );
     
-    boardGetSquareCenter( MAXIGIN_GAME_NATIVE_W / 2,
-                          MAXIGIN_GAME_NATIVE_H / 2,
-                          5,
-                          0,
-                          &x,
-                          &y );
-
-    drawPiece( king,
-               x,
-               y );
-
-    boardGetSquareCenter( MAXIGIN_GAME_NATIVE_W / 2,
-                          MAXIGIN_GAME_NATIVE_H / 2,
-                          5,
-                          1,
-                          &x,
-                          &y );
-
-    drawPiece( queen,
-               x,
-               y );
-    
 
     maxigin_drawGUI( &gameGUI );
     }

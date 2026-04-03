@@ -56,7 +56,8 @@ void getStartBoard( BoardState  *outState ) {
 
     int  x;
     int  y;
-
+    int  i;
+    
     for( y = 0;
          y < 8;
          y ++ ) {
@@ -73,8 +74,48 @@ void getStartBoard( BoardState  *outState ) {
     /* fixme:
        fill out whole starting board
        why aren't color bits working to toggle draw colors ?  */
-    outState->squareStates[0][0] = rook | CHESS_BLACK;
-    outState->squareStates[7][0] = rook | CHESS_WHITE;
+    outState->squareStates[0][0] = rook   | CHESS_BLACK;
+    outState->squareStates[0][1] = knight | CHESS_BLACK;
+    outState->squareStates[0][2] = bishop | CHESS_BLACK;
+    outState->squareStates[0][3] = queen  | CHESS_BLACK;
+    outState->squareStates[0][4] = king   | CHESS_BLACK;
+    outState->squareStates[0][5] = bishop | CHESS_BLACK;
+    outState->squareStates[0][6] = knight | CHESS_BLACK;
+    outState->squareStates[0][7] = rook   | CHESS_BLACK;
+
+    for( i = 0;
+         i < 8;
+         i ++ ) {
+        outState->squareStates[1][i] = pawn | CHESS_BLACK;
+        }
+
+    /* fixme:
+       overlapping extra row, just for testing visuals */
+    outState->squareStates[2][0] = rook   | CHESS_BLACK;
+    outState->squareStates[2][1] = knight | CHESS_BLACK;
+    outState->squareStates[2][2] = bishop | CHESS_BLACK;
+    outState->squareStates[2][3] = queen  | CHESS_BLACK;
+    outState->squareStates[2][4] = king   | CHESS_BLACK;
+    outState->squareStates[2][5] = bishop | CHESS_BLACK;
+    outState->squareStates[2][6] = knight | CHESS_BLACK;
+    outState->squareStates[2][7] = rook   | CHESS_BLACK;
+
+
+    outState->squareStates[7][0] = rook   | CHESS_WHITE;
+    outState->squareStates[7][1] = knight | CHESS_WHITE;
+    outState->squareStates[7][2] = bishop | CHESS_WHITE;
+    outState->squareStates[7][3] = queen  | CHESS_WHITE;
+    outState->squareStates[7][4] = king   | CHESS_WHITE;
+    outState->squareStates[7][5] = bishop | CHESS_WHITE;
+    outState->squareStates[7][6] = knight | CHESS_WHITE;
+    outState->squareStates[7][7] = rook   | CHESS_WHITE;
+
+    for( i = 0;
+         i < 8;
+         i ++ ) {
+        outState->squareStates[6][i] = pawn | CHESS_WHITE;
+        }
+
     }
 
 

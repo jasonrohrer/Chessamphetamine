@@ -199,6 +199,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     /* hint test */
 
+    /*
     maxigin_drawButtonHintSprite( SHOOT,
                                   20,
                                   20 );
@@ -218,6 +219,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                           MAXIGIN_GAME_NATIVE_W - 30,
                           20,
                           MAXIGIN_RIGHT );
+    */
 
     
         

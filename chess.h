@@ -91,6 +91,7 @@ void getStartBoard( BoardState  *outState ) {
 
     /* fixme:
        overlapping extra row, just for testing visuals */
+    /*
     outState->squareStates[2][0] = rook   | CHESS_BLACK;
     outState->squareStates[2][1] = knight | CHESS_BLACK;
     outState->squareStates[2][2] = bishop | CHESS_BLACK;
@@ -99,7 +100,7 @@ void getStartBoard( BoardState  *outState ) {
     outState->squareStates[2][5] = bishop | CHESS_BLACK;
     outState->squareStates[2][6] = knight | CHESS_BLACK;
     outState->squareStates[2][7] = rook   | CHESS_BLACK;
-
+    */
 
     outState->squareStates[7][0] = rook   | CHESS_WHITE;
     outState->squareStates[7][1] = knight | CHESS_WHITE;

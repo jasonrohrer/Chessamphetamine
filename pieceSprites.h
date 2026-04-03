@@ -77,7 +77,7 @@ void pieceSpritesInit( void ) {
                 maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
                                                   1,
                                                   2,
-                                                  0,
+                                                  32,
                                                   255,
                                                   700 );
                 }
@@ -114,7 +114,7 @@ void drawPiece( ChessPiece  inPiece,
 
     if( ( inPiece & CHESS_COLOR_MASK ) == CHESS_BLACK ) {
         maxigin_drawSetColor( 128,
-                              128,
+                              64,
                               128,
                               255 );
         }

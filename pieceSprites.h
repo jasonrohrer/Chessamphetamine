@@ -80,6 +80,14 @@ void pieceSpritesInit( void ) {
                                                   32,
                                                   255,
                                                   700 );
+
+                /* haze at bottom */
+                if(1)maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
+                                                  4,
+                                                  2,
+                                                  255,
+                                                  0,
+                                                  900 );
                 }
             else {
                 /* hazier black borders */

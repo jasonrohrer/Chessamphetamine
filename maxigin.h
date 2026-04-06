@@ -188,7 +188,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_NUM_DROP_SHADOWS
-#define  MAXIGIN_MAX_NUM_DROP_SHADOWS  2
+#define  MAXIGIN_MAX_NUM_DROP_SHADOWS  4
 #endif
 
 
@@ -5544,8 +5544,14 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
         if( bottomOffsetPixels < topOffsetPixels ) {
             bottomOffsetPixels = topOffsetPixels;
             }
+
+        if( bottomOffsetPixels == topOffsetPixels ) {
+            /* span of at least 1 to avoid divide by zero */
+            bottomOffsetPixels += 1;
+            }
+        
         opaqueLastY  = (int)( opaqueFirstY + bottomOffsetPixels );
-        opaqueFirstY = (int)topOffsetPixels;
+        opaqueFirstY = (int)( opaqueFirstY + topOffsetPixels );
 
         opaqueSpan = opaqueLastY - opaqueFirstY;
         

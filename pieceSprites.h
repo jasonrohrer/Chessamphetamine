@@ -85,7 +85,7 @@ void pieceSpritesInit( void ) {
                                                   3400,
                                                   255 );
                 /* sharper black borders */
-                maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
+                if(1)maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
                                                   1,
                                                   2,
                                                   255,
@@ -96,7 +96,16 @@ void pieceSpritesInit( void ) {
                                                   0 );
 
                 /* haze at bottom */
-                
+                if(0)maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
+                                                  4,
+                                                  3,
+                                                  255,
+                                                  0,
+                                                  70,
+                                                  50,
+                                                  100,
+                                                  0 );
+
                 }
             else {
                 /* hazier black borders */

@@ -37,7 +37,7 @@ void drawBoardState( BoardState  *inState,
 #ifdef PIECE_SPRITES_IMPLEMENTATION
 
 
-static  int  pieceBottomHeight  =  5;
+static  int  pieceBottomHeight  =  6;
 
 static  int          pieceSpriteHandles[ NUM_CHESS_PIECES ];
 static  int          pieceOffsetY      [ NUM_CHESS_PIECES ];

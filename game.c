@@ -122,6 +122,10 @@ static int          lang_shoot;
 static int          lang_bomb;
 
 
+static BoardState   boardState;
+
+static char         moveMade;
+static char         whiteMove = 1;
 
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
@@ -132,10 +136,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     int  p;
     int  x;
     int  y;
-    int  i;
-
-    BoardState  state;
-    
+    int  i;    
 
     maxigin_drawSetAlpha( 255 );
     
@@ -324,10 +325,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     boardDraw( MAXIGIN_GAME_NATIVE_W / 2,
                MAXIGIN_GAME_NATIVE_H / 2 );
 
-
-    getStartBoard( &state );
-
-    drawBoardState( &state,
+    drawBoardState( &boardState,
                     MAXIGIN_GAME_NATIVE_W / 2,
                     MAXIGIN_GAME_NATIVE_H / 2 );
     
@@ -532,9 +530,31 @@ void maxiginGame_step( void ) {
     
     
     if( maxigin_isButtonDown( JUMP ) ) {
-        boxPosY -= 1;
+
+        if( ! moveMade ) {
+
+            /* make a chess move */
+            Move  m;
+
+            mingin_log( "Jump\n" );
+        
+            if( getRandomMove( &boardState,
+                               &m,
+                               whiteMove ) ) {
+
+                whiteMove = ! whiteMove;
+
+                applyMove( &boardState,
+                           &m );
+                }
+            moveMade = 1;
+            }
+        }
+    else {
+        moveMade = 0;
         }
 
+        
     if( ! remappingJump && maxigin_isButtonDown( REMAP ) ) {
         /* clear last button memory */
         mingin_getLastButtonPressed();
@@ -1025,7 +1045,7 @@ void maxiginGame_init( void ) {
 
     maxigin_initSetLanguageFontGLow( 2,
                                      2 );
-
+    chessInit();
     boardInit();
     pieceSpritesInit();
     
@@ -1034,6 +1054,8 @@ void maxiginGame_init( void ) {
     boxPosY = MAXIGIN_GAME_NATIVE_H / 2;
 
     boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 12;
+
+    getStartBoard( &boardState );
 
 
     REGISTER_VAL_MEM( boxPosX );
@@ -1048,6 +1070,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( sliderValueC );
 
     REGISTER_VAL_MEM( gameGUI );
+
+    REGISTER_VAL_MEM( boardState );
     
 
     REGISTER_ARRAY_MEM( bulletOn );

@@ -41,6 +41,19 @@ typedef struct BoardState{
 
 
 
+typedef struct Move{
+
+        /* in row, col order */
+        unsigned char  startPos[2];
+        unsigned char  endPos  [2];
+        
+    } Move;
+
+
+
+void chessInit( void );
+
+
 
 
 /* fills outState with the starting board state */
@@ -48,8 +61,31 @@ void getStartBoard( BoardState  *outState );
 
 
 
+/* returns 1 if move possible, 0 if not */
+char getRandomMove( BoardState  *inState,
+                    Move        *outMove,
+                    char         inWhiteTurn );
+
+
+
+void applyMove( BoardState  *inState,
+                Move        *inMove );
+
+
+
+
 #ifdef CHESS_IMPLEMENTATION
 
+
+
+static  MaxiginRand  chessRand;
+
+
+void chessInit( void ) {
+    maxigin_randSeed( &chessRand,
+                      12453597 );
+    }
+     
 
 
 void getStartBoard( BoardState  *outState ) {
@@ -117,6 +153,115 @@ void getStartBoard( BoardState  *outState ) {
         outState->squareStates[6][i] = pawn | CHESS_WHITE;
         }
 
+    }
+
+
+
+char getRandomMove( BoardState  *inState,
+                    Move        *outMove,
+                    char         inWhiteTurn ) {
+
+    /* fixme:  pay attention to limits on where piece can actually move */
+
+    static  unsigned char  possiblePieceRow[64];
+    static  unsigned char  possiblePieceCol[64];
+
+    int            numPossiblePieces = 0;
+    int            movePick;
+    unsigned char  x;
+    unsigned char  y;
+    unsigned char  x2;
+    unsigned char  y2;
+    unsigned char  startPosFlag;
+    
+    
+    for( y = 0;
+         y < 8;
+         y ++ ) {
+        
+        for( x = 0;
+             x < 8;
+             x ++ ) {
+
+            if( inState->squareStates[y][x] != noPiece ) {
+
+                if( ( inWhiteTurn
+                      &&
+                      ( inState->squareStates[y][x] & 0x80 ) == CHESS_WHITE )
+                    ||
+                    ( ! inWhiteTurn
+                      &&
+                      ( inState->squareStates[y][x] & 0x80 ) == CHESS_BLACK ) ) {
+                    
+                    possiblePieceRow[numPossiblePieces] = y;
+                    possiblePieceCol[numPossiblePieces] = x;
+                    numPossiblePieces ++;
+                    }
+                }
+            }
+        }
+
+    if( numPossiblePieces == 0 ) {
+        return 0;
+        }
+
+
+    /* fixme:
+       this is just a truly random move for testing */
+
+
+    movePick = maxigin_randRange( &chessRand,
+                                  0,
+                                  numPossiblePieces - 1 );
+
+    y = possiblePieceRow[ movePick ];
+    x = possiblePieceCol[ movePick ];
+
+    startPosFlag = inState->squareStates[y][x] & 0x80;
+    
+    x2 = x;
+    y2 = y;
+        
+
+    /* re-roll until we move off of start pos
+       and until we land on empty spot or enemy piece */
+    while( ( x2 == x
+             &&
+             y2 == y )
+           ||
+           ( inState->squareStates[y2][x2] != noPiece
+             &&
+             ( inState->squareStates[y2][x2] & 0x80 ) == startPosFlag ) ) {
+        
+    
+        y2 = (unsigned char)( maxigin_randRange( &chessRand,
+                                                 0,
+                                                 7 ) );
+        x2 = (unsigned char)( maxigin_randRange( &chessRand,
+                                                 0,
+                                                 7 ) );
+        }
+
+    
+    outMove->startPos[0] = y;
+    outMove->startPos[1] = x;
+    
+    outMove->endPos  [0] = y2;
+    outMove->endPos  [1] = x2;
+    
+    return 1;
+    }
+
+
+
+void applyMove( BoardState  *inState,
+                Move        *inMove ) {
+    inState->squareStates[ inMove->endPos[0] ][ inMove->endPos[1] ]
+        = inState->squareStates[ inMove->startPos[0] ][ inMove->startPos[1] ];
+
+    /* leave empty square behind */
+    inState->squareStates[ inMove->startPos[0] ][ inMove->startPos[1] ] =
+        noPiece;
     }
 
 

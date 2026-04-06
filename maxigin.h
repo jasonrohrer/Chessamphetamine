@@ -730,6 +730,22 @@ void maxigin_initMakeGlowSprite( int  inSpriteHandle,
 
       inTopAlpha         the alpha value of the top of the drop shadow
 
+      inBottomPercent    the percentage of the full height of the sprite
+                         where the bottom of the bottom-to-top alpha
+                         ramp starts.  Below this point, the alpha value
+                         is clamped to inBottomAlpha.
+                            100  means at the very bottom of the sprite
+                             50  means in the middle of the sprite
+                              0  means at the very top of the sprite
+
+      inTopPercent       the percentage of the full height of the sprite
+                         where the top of the bottom-to-top alpha
+                         ramp starts.  Above this point, the alpha value
+                         is clamped to inTopAlpha.
+                              0  means at the very top of the sprite
+                             50  means in the middle of the sprite
+                            100  means at the very bottom of the sprite
+
       inDarkness         a darkness value applied to the
                          shadow's alpha value after blurring, where
                             0   leaves the darkess untouched
@@ -749,6 +765,8 @@ void maxigin_initMakeDropShadowSprite( int            inSpriteHandle,
                                        int            inBlurIterations,
                                        unsigned char  inBottomAlpha,
                                        unsigned char  inTopAlpha,
+                                       unsigned char  inBottomPercent,
+                                       unsigned char  inTopPercent,
                                        int            inDarkness,
                                        unsigned char  inGrayValue );
 
@@ -816,6 +834,21 @@ void maxigin_initMakeGlowSpriteStrip( int  inSpriteStripHandle,
 
       inTopAlpha         the alpha value of the top of the drop shadow
 
+      inBottomPercent    the percentage of the full height of the sprite
+                         where the bottom of the bottom-to-top alpha
+                         ramp starts.  Below this point, the alpha value
+                         is clamped to inBottomAlpha.
+                            100  means at the very bottom of the sprite
+                             50  means in the middle of the sprite
+                              0  means at the very top of the sprite
+
+      inTopPercent       the percentage of the full height of the sprite
+                         where the top of the bottom-to-top alpha
+                         ramp starts.  Above this point, the alpha value
+                         is clamped to inTopAlpha.
+                              0  means at the very top of the sprite
+                             50  means in the middle of the sprite
+                            100  means at the very bottom of the sprite
       
       inDarkness         a darkness value applied to the
                          shadow's alpha value after blurring, where
@@ -836,6 +869,8 @@ void maxigin_initMakeDropShadowSpriteStrip( int            inSpriteStripHandle,
                                             int            inBlurIterations,
                                             unsigned char  inBottomAlpha,
                                             unsigned char  inTopAlpha,
+                                            unsigned char  inBottomPercent,
+                                            unsigned char  inTopPercent,
                                             int            inDarkness,
                                             unsigned char  inGrayValue );
 
@@ -3698,6 +3733,8 @@ typedef struct MaxiginSprite {
         int            shadowIterations   [ MAXIGIN_MAX_NUM_DROP_SHADOWS ];
         unsigned char  shadowBottomAlpha  [ MAXIGIN_MAX_NUM_DROP_SHADOWS ];
         unsigned char  shadowTopAlpha     [ MAXIGIN_MAX_NUM_DROP_SHADOWS ];
+        unsigned char  shadowBottomPercent[ MAXIGIN_MAX_NUM_DROP_SHADOWS ];
+        unsigned char  shadowTopPercent   [ MAXIGIN_MAX_NUM_DROP_SHADOWS ];
         int            shadowDarkness     [ MAXIGIN_MAX_NUM_DROP_SHADOWS ];
         unsigned char  shadowGrayValue    [ MAXIGIN_MAX_NUM_DROP_SHADOWS ];
         
@@ -5022,6 +5059,8 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
                                            int            inBlurIterations,
                                            unsigned char  inBottomAlpha,
                                            unsigned char  inTopAlpha,
+                                           unsigned char  inBottomPercent,
+                                           unsigned char  inTopPercent,
                                            int            inDarkness,
                                            unsigned char  inGrayValue ) {
 
@@ -5099,6 +5138,8 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
                 int   readIterations;
                 int   readBottomAlpha;
                 int   readTopAlpha;
+                int   readBottomPercent;
+                int   readTopPercent;
                 int   readDarkness;
                 int   readGrayValue;
                 char  success          =  0;
@@ -5144,6 +5185,18 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
                         &&
                         mx_readPaddedIntFromPeristentData(
                             persistReadHandle,
+                            & readBottomPercent );
+
+                    success = success
+                        &&
+                        mx_readPaddedIntFromPeristentData(
+                            persistReadHandle,
+                            & readTopPercent );
+
+                    success = success
+                        &&
+                        mx_readPaddedIntFromPeristentData(
+                            persistReadHandle,
                             & readDarkness );
                     
                     success = success
@@ -5161,6 +5214,10 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
                           (unsigned char)readBottomAlpha != inBottomAlpha
                           ||
                           (unsigned char)readTopAlpha != inTopAlpha
+                          ||
+                          (unsigned char)readBottomPercent != inBottomPercent
+                          ||
+                          (unsigned char)readTopPercent != inTopPercent
                           ||
                           readDarkness != inDarkness
                           ||
@@ -5206,6 +5263,9 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
                             mainSprite->shadowIterations [si] = inBlurIterations;
                             mainSprite->shadowBottomAlpha[si] = inBottomAlpha;
                             mainSprite->shadowTopAlpha   [si] = inTopAlpha;
+                            mainSprite->shadowBottomPercent
+                                                         [si] = inBottomPercent;
+                            mainSprite->shadowTopPercent [si] = inTopPercent;
                             mainSprite->shadowDarkness   [si] = inDarkness;
                             mainSprite->shadowGrayValue  [si] = inGrayValue;
                             
@@ -5247,7 +5307,11 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
         int   opaqueFirstY;
         int   opaqueLastY;
         long  opaqueSpan;
-        long  alphaSpan      =  inBottomAlpha - inTopAlpha;
+        long  alphaSpan         =  inBottomAlpha - inTopAlpha;
+
+        long  topOffsetPixels;
+        long  bottomOffsetPixels;
+
         
         shadowSpriteHandle = mainSprite->shadowSpriteHandle[ si ];
 
@@ -5285,13 +5349,15 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
             }
 
         
-        mainSprite->shadowSpriteHandle[si] = shadowSpriteHandle;
-        mainSprite->shadowRadius      [si] = inBlurRadius;
-        mainSprite->shadowIterations  [si] = inBlurIterations;
-        mainSprite->shadowBottomAlpha [si] = inBottomAlpha;
-        mainSprite->shadowTopAlpha    [si] = inTopAlpha;
-        mainSprite->shadowDarkness    [si] = inDarkness;
-        mainSprite->shadowGrayValue   [si] = inGrayValue;
+        mainSprite->shadowSpriteHandle [si] = shadowSpriteHandle;
+        mainSprite->shadowRadius       [si] = inBlurRadius;
+        mainSprite->shadowIterations   [si] = inBlurIterations;
+        mainSprite->shadowBottomAlpha  [si] = inBottomAlpha;
+        mainSprite->shadowTopAlpha     [si] = inTopAlpha;
+        mainSprite->shadowBottomPercent[si] = inBottomPercent;
+        mainSprite->shadowTopPercent   [si] = inTopPercent;
+        mainSprite->shadowDarkness     [si] = inDarkness;
+        mainSprite->shadowGrayValue    [si] = inGrayValue;
         
         shadowStartByte  =  mx_numSpriteBytesUsed;
         
@@ -5468,8 +5534,21 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
                 }
             }
 
+        /* tweak these based on top/bottom percentages */
+
         opaqueSpan = opaqueLastY - opaqueFirstY;
 
+        topOffsetPixels    = ( inTopPercent    * opaqueSpan ) / 100;
+        bottomOffsetPixels = ( inBottomPercent * opaqueSpan ) / 100;
+
+        if( bottomOffsetPixels < topOffsetPixels ) {
+            bottomOffsetPixels = topOffsetPixels;
+            }
+        opaqueLastY  = (int)( opaqueFirstY + bottomOffsetPixels );
+        opaqueFirstY = (int)topOffsetPixels;
+
+        opaqueSpan = opaqueLastY - opaqueFirstY;
+        
         
         for( y = 0;
              y < shadowH;
@@ -5478,11 +5557,25 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
             int  rowStart  =  y * shadowW * 4 + shadowStartByte;
 
             /* using longs here prevents overflow */
-            long rowAlpha  =  ( alphaSpan * ( y - opaqueFirstY ) )
+            long rowAlpha;
+
+
+            if( y >= opaqueFirstY
+                &&
+                y <= opaqueLastY ) {
+
+                rowAlpha =  ( alphaSpan * ( y - opaqueFirstY ) )
                               /
                               opaqueSpan
                               +
                               inTopAlpha;
+                }
+            else if( y < opaqueFirstY ) {
+                rowAlpha = inTopAlpha;
+                }
+            else {
+                rowAlpha = inBottomAlpha;
+                }
              
             for( x = 0;
                  x < shadowW;
@@ -5531,6 +5624,12 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
 
         mx_writePaddedIntToPerisistentData( shadowCacheDataWriteHandle,
                                             inTopAlpha );
+        
+        mx_writePaddedIntToPerisistentData( shadowCacheDataWriteHandle,
+                                            inBottomPercent );
+
+        mx_writePaddedIntToPerisistentData( shadowCacheDataWriteHandle,
+                                            inTopPercent );
 
         mx_writePaddedIntToPerisistentData( shadowCacheDataWriteHandle,
                                             inDarkness );
@@ -5554,6 +5653,8 @@ void maxigin_initMakeDropShadowSprite( int            inSpriteHandle,
                                        int            inBlurIterations,
                                        unsigned char  inBottomAlpha,
                                        unsigned char  inTopAlpha,
+                                       unsigned char  inBottomPercent,
+                                       unsigned char  inTopPercent,
                                        int            inDarkness,
                                        unsigned char  inGrayValue ) {
 
@@ -5585,6 +5686,8 @@ void maxigin_initMakeDropShadowSprite( int            inSpriteHandle,
                                    inBlurIterations,
                                    inBottomAlpha,
                                    inTopAlpha,
+                                   inBottomPercent,
+                                   inTopPercent,
                                    inDarkness,
                                    inGrayValue );
 
@@ -6109,12 +6212,14 @@ static void mx_postReloadStep( int  inSpriteHandle ) {
             mx_regenerateDropShadowSprite(
                 inSpriteHandle,
                 i,
-                s->shadowRadius     [i],
-                s->shadowIterations [i],
-                s->shadowBottomAlpha[i],
-                s->shadowTopAlpha   [i],
-                s->shadowDarkness   [i],
-                s->shadowGrayValue  [i] );
+                s->shadowRadius       [i],
+                s->shadowIterations   [i],
+                s->shadowBottomAlpha  [i],
+                s->shadowTopAlpha     [i],
+                s->shadowBottomPercent[i],
+                s->shadowTopPercent   [i],
+                s->shadowDarkness     [i],
+                s->shadowGrayValue    [i] );
             }
         }
 
@@ -6470,12 +6575,14 @@ static int mx_regenSpriteStripChildren( int  inMainSpriteHandle,
                 mx_regenerateDropShadowSprite(
                     subHandle,
                     si,
-                    subSprite->shadowRadius     [si],
-                    subSprite->shadowIterations [si],
-                    subSprite->shadowBottomAlpha[si],
-                    subSprite->shadowTopAlpha   [si],
-                    subSprite->shadowDarkness   [si],
-                    subSprite->shadowGrayValue  [si] );
+                    subSprite->shadowRadius       [si],
+                    subSprite->shadowIterations   [si],
+                    subSprite->shadowBottomAlpha  [si],
+                    subSprite->shadowTopAlpha     [si],
+                    subSprite->shadowBottomPercent[si],
+                    subSprite->shadowTopPercent   [si],
+                    subSprite->shadowDarkness     [si],
+                    subSprite->shadowGrayValue    [si] );
                 }
             }
         if( subSprite->kerningTableIndex != -1 ) {
@@ -6551,6 +6658,8 @@ void maxigin_initMakeDropShadowSpriteStrip( int            inSpriteStripHandle,
                                             int            inBlurIterations,
                                             unsigned char  inBottomAlpha,
                                             unsigned char  inTopAlpha,
+                                            unsigned char  inBottomPercent,
+                                            unsigned char  inTopPercent,
                                             int            inDarkness,
                                             unsigned char  inGrayValue ) {
 
@@ -6577,6 +6686,8 @@ void maxigin_initMakeDropShadowSpriteStrip( int            inSpriteStripHandle,
                                           inBlurIterations,
                                           inBottomAlpha,
                                           inTopAlpha,
+                                          inBottomPercent,
+                                          inTopPercent,
                                           inDarkness,
                                           inGrayValue );
         }

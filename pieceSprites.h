@@ -73,21 +73,26 @@ void pieceSpritesInit( void ) {
             int  h;
 
             if( 1 ) {
+
+                /* light outline behind black border */
+                if(1)maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
+                                                  2,
+                                                  2,
+                                                  0,
+                                                  128,
+                                                  1400,
+                                                  255 );
                 /* sharper black borders */
                 maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
                                                   1,
                                                   2,
-                                                  32,
+                                                  128,
                                                   255,
-                                                  700 );
+                                                  700,
+                                                  0 );
 
                 /* haze at bottom */
-                if(1)maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
-                                                  4,
-                                                  2,
-                                                  255,
-                                                  0,
-                                                  900 );
+                
                 }
             else {
                 /* hazier black borders */
@@ -96,7 +101,8 @@ void pieceSpritesInit( void ) {
                                                   2,
                                                   64,
                                                   255,
-                                                  200 );
+                                                  200,
+                                                  0 );
                 }
             
             maxigin_initMakeGlowSprite( pieceSpriteHandles[i],

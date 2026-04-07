@@ -212,6 +212,17 @@ static int pawnMove( BoardState     *inState,
             
             /* fixme:
                promote to Queen in final row */
+
+            if( ( moveDir == 1
+                  &&
+                  newRow == BH - 1 )
+                ||
+                ( moveDir == -1
+                  &&
+                  newRow == 0 ) ) {
+
+                outStates[n].grid[ newRow ][ inPieceCol ] = inPieceColor | queen;
+                }
             
             n++;
             }
@@ -260,8 +271,18 @@ static int pawnMove( BoardState     *inState,
 
             outStates[n].nextToMove = otherColor;
 
-            /* fixme:
-               promote to Queen in final row */
+            /* promote to Queen in final row */
+
+            if( ( moveDir == 1
+                  &&
+                  newRow == BH - 1 )
+                ||
+                ( moveDir == -1
+                  &&
+                  newRow == 0 ) ) {
+
+                outStates[n].grid[ newRow ][ newCol ] = inPieceColor | queen;
+                }
             
             n++;
             }

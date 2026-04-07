@@ -29,7 +29,7 @@ enum{
     NUM_CHESS_PIECES };
 
 /* store color in 8th bit.  This gives us 127 unique pieces in both colors */
-#define  CHESS_PIECE_MASK   0x7F
+#define  CHESS_TYPE_MASK    0x7F
 #define  CHESS_COLOR_MASK   0x80
 #define  CHESS_WHITE        0x00
 #define  CHESS_BLACK        0x80
@@ -41,7 +41,9 @@ enum{
 
 typedef struct BoardState{
         
-        ChessPiece  squareStates[BH][BW];
+        ChessPiece  grid[BH][BW];
+
+        int         nextToMove;
 
     } BoardState;
 
@@ -111,6 +113,11 @@ typedef int (*PieceMoveFunction)( BoardState     *inState,
 
 
 
+static char isKingInCheck( BoardState  *inState,
+                           int          inVictimKingColor );
+
+
+
 
 static int noPieceMove( BoardState     *inState,
                         unsigned char   inPieceColor,
@@ -145,13 +152,13 @@ static int pawnMove( BoardState     *inState,
 
     int  moveDir       =  1;
     int  maxDist       =  1;
-    int  captureColor  =  CHESS_WHITE;
+    int  otherColor    =  CHESS_WHITE;
     int  n             =  0;
     int  i;
     
     if( inPieceColor == CHESS_WHITE ) {
         moveDir = -1;
-        captureColor = CHESS_BLACK;
+        otherColor = CHESS_BLACK;
 
         if( inPieceRow == BH - 2 ) {
             maxDist = 2;
@@ -163,7 +170,7 @@ static int pawnMove( BoardState     *inState,
         }
     else {
         moveDir = 1;
-        captureColor = CHESS_WHITE;
+        otherColor = CHESS_WHITE;
 
         if( inPieceRow == 1 ) {
             maxDist = 2;
@@ -185,9 +192,9 @@ static int pawnMove( BoardState     *inState,
         unsigned char  newRow  =  (unsigned char)( inPieceRow + (moveDir * i) );
         unsigned char  viaRow  =  (unsigned char)( inPieceRow +  moveDir      );
         
-        if( inState->squareStates[ newRow ][ inPieceCol ] == noPiece
+        if( inState->grid[ newRow ][ inPieceCol ] == noPiece
             &&
-            inState->squareStates[ viaRow ][ inPieceCol ] == noPiece ) {
+            inState->grid[ viaRow ][ inPieceCol ] == noPiece ) {
             
             outDestRows[n] = newRow;
             outDestCols[n] = (unsigned char)inPieceCol;
@@ -196,12 +203,14 @@ static int pawnMove( BoardState     *inState,
             outStates[n]   = *inState;
 
             /* copy piece into new spot */
-            outStates[n].squareStates    [ newRow     ][ inPieceCol ] =
-                outStates[n].squareStates[ inPieceRow ][ inPieceCol ];
+            outStates[n].grid    [ newRow     ][ inPieceCol ] =
+                outStates[n].grid[ inPieceRow ][ inPieceCol ];
 
             /* leave empty space behind */
-            outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
+            outStates[n].grid[ inPieceRow ][ inPieceCol ] = noPiece;
 
+            outStates[n].nextToMove = otherColor;
+            
             /* fixme:
                promote to Queen in final row */
             
@@ -226,13 +235,13 @@ static int pawnMove( BoardState     *inState,
             continue;
             }
 
-        targetP = inState->squareStates[ newRow ][ newCol ];
+        targetP = inState->grid[ newRow ][ newCol ];
 
         if( targetP == noPiece ) {
             continue;
             }
 
-        if( ( targetP & CHESS_COLOR_MASK ) == captureColor ) {
+        if( ( targetP & CHESS_COLOR_MASK ) == otherColor ) {
 
             /* can capture this piece diagonally */
             
@@ -244,12 +253,17 @@ static int pawnMove( BoardState     *inState,
 
             /* copy piece into new spot
                (overwrite captured piece) */
-            outStates[n].squareStates    [ newRow     ][ newCol     ] =
-                outStates[n].squareStates[ inPieceRow ][ inPieceCol ];
+            outStates[n].grid    [ newRow     ][ newCol     ] =
+                outStates[n].grid[ inPieceRow ][ inPieceCol ];
 
             /* leave empty space behind */
-            outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
+            outStates[n].grid[ inPieceRow ][ inPieceCol ] = noPiece;
 
+            outStates[n].nextToMove = otherColor;
+
+            /* fixme:
+               promote to Queen in final row */
+            
             n++;
             }
         
@@ -274,7 +288,7 @@ static int bishopMove( BoardState     *inState,
                                 {  1,  1 },
                                 { -1,  1 } };
 
-    int  captureColor  =  CHESS_WHITE;
+    int  otherColor    =  CHESS_WHITE;
     int  n             =  0;
     int  d;
     int  i;
@@ -283,7 +297,7 @@ static int bishopMove( BoardState     *inState,
     
         
     if( inPieceColor == CHESS_WHITE ) {
-        captureColor =  CHESS_BLACK;
+        otherColor =  CHESS_BLACK;
         }
 
     maxDiagDist = BH - 1;
@@ -322,12 +336,12 @@ static int bishopMove( BoardState     *inState,
                 break;
                 }
 
-            destP = inState->squareStates[ destY ][ destX ];
+            destP = inState->grid[ destY ][ destX ];
             
 
             if( destP == noPiece
                 ||
-                ( destP & CHESS_COLOR_MASK ) == captureColor ) {
+                ( destP & CHESS_COLOR_MASK ) == otherColor ) {
                 
                 /* empty spot, or capturable piece, bishop can move here */
 
@@ -338,11 +352,14 @@ static int bishopMove( BoardState     *inState,
                 outStates[n]   = *inState;
 
                 /* copy piece into new spot */
-                outStates[n].squareStates    [ destY      ][ destX      ] =
-                    outStates[n].squareStates[ inPieceRow ][ inPieceCol ];
+                outStates[n].grid    [ destY      ][ destX      ] =
+                    outStates[n].grid[ inPieceRow ][ inPieceCol ];
 
                 /* leave empty space behind */
-                outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
+                outStates[n].grid[ inPieceRow ][ inPieceCol ] = noPiece;
+
+                outStates[n].nextToMove = otherColor;
+
                 n++;
 
                 if( destP != noPiece ) {
@@ -382,12 +399,12 @@ static int knightMove( BoardState     *inState,
                                 {  2, -1 },
                                 {  1, -2 } };
 
-    int  captureColor  =  CHESS_WHITE;
-    int  n             =  0;
+    int  otherColor  =  CHESS_WHITE;
+    int  n           =  0;
     int  d;
         
     if( inPieceColor == CHESS_WHITE ) {
-        captureColor =  CHESS_BLACK;
+        otherColor =  CHESS_BLACK;
         }
 
     for( d = 0;
@@ -411,12 +428,12 @@ static int knightMove( BoardState     *inState,
             continue;
             }
 
-        destP = inState->squareStates[ destY ][ destX ];
+        destP = inState->grid[ destY ][ destX ];
             
 
         if( destP == noPiece
             ||
-            ( destP & CHESS_COLOR_MASK ) == captureColor ) {
+            ( destP & CHESS_COLOR_MASK ) == otherColor ) {
                 
             /* empty spot, or capturable piece, knight can move here */
 
@@ -427,11 +444,14 @@ static int knightMove( BoardState     *inState,
             outStates[n]   = *inState;
 
             /* copy piece into new spot */
-            outStates[n].squareStates    [ destY      ][ destX      ] =
-                outStates[n].squareStates[ inPieceRow ][ inPieceCol ];
+            outStates[n].grid    [ destY      ][ destX      ] =
+                outStates[n].grid[ inPieceRow ][ inPieceCol ];
 
             /* leave empty space behind */
-            outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
+            outStates[n].grid[ inPieceRow ][ inPieceCol ] = noPiece;
+
+            outStates[n].nextToMove = otherColor;
+
             n++;
             }
         }
@@ -455,8 +475,8 @@ static int rookMove( BoardState     *inState,
                                 {  0, -1 },
                                 {  0,  1 } };
 
-    int  captureColor  =  CHESS_WHITE;
-    int  n             =  0;
+    int  otherColor  =  CHESS_WHITE;
+    int  n           =  0;
     int  d;
     int  i;
     int  maxDist;
@@ -464,7 +484,7 @@ static int rookMove( BoardState     *inState,
     
         
     if( inPieceColor == CHESS_WHITE ) {
-        captureColor =  CHESS_BLACK;
+        otherColor =  CHESS_BLACK;
         }
 
     maxDist = BH - 1;
@@ -503,12 +523,12 @@ static int rookMove( BoardState     *inState,
                 break;
                 }
 
-            destP = inState->squareStates[ destY ][ destX ];
+            destP = inState->grid[ destY ][ destX ];
             
 
             if( destP == noPiece
                 ||
-                ( destP & CHESS_COLOR_MASK ) == captureColor ) {
+                ( destP & CHESS_COLOR_MASK ) == otherColor ) {
                 
                 /* empty spot, or capturable piece, rook can move here */
 
@@ -519,11 +539,14 @@ static int rookMove( BoardState     *inState,
                 outStates[n]   = *inState;
 
                 /* copy piece into new spot */
-                outStates[n].squareStates    [ destY      ][ destX      ] =
-                    outStates[n].squareStates[ inPieceRow ][ inPieceCol ];
+                outStates[n].grid    [ destY      ][ destX      ] =
+                    outStates[n].grid[ inPieceRow ][ inPieceCol ];
 
                 /* leave empty space behind */
-                outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
+                outStates[n].grid[ inPieceRow ][ inPieceCol ] = noPiece;
+
+                outStates[n].nextToMove = otherColor;
+                
                 n++;
 
                 if( destP != noPiece ) {
@@ -562,15 +585,15 @@ static int queenMove( BoardState     *inState,
                                 {  1,  1 },
                                 { -1,  1 }};
 
-    int  captureColor  =  CHESS_WHITE;
-    int  n             =  0;
+    int  otherColor  =  CHESS_WHITE;
+    int  n           =  0;
     int  d;
     int  i;
     int  maxDist;
     
         
     if( inPieceColor == CHESS_WHITE ) {
-        captureColor =  CHESS_BLACK;
+        otherColor =  CHESS_BLACK;
         }
 
     maxDist = BH - 1;
@@ -609,12 +632,12 @@ static int queenMove( BoardState     *inState,
                 break;
                 }
 
-            destP = inState->squareStates[ destY ][ destX ];
+            destP = inState->grid[ destY ][ destX ];
             
 
             if( destP == noPiece
                 ||
-                ( destP & CHESS_COLOR_MASK ) == captureColor ) {
+                ( destP & CHESS_COLOR_MASK ) == otherColor ) {
                 
                 /* empty spot, or capturable piece, queen can move here */
 
@@ -625,11 +648,14 @@ static int queenMove( BoardState     *inState,
                 outStates[n]   = *inState;
 
                 /* copy piece into new spot */
-                outStates[n].squareStates    [ destY      ][ destX      ] =
-                    outStates[n].squareStates[ inPieceRow ][ inPieceCol ];
+                outStates[n].grid    [ destY      ][ destX      ] =
+                    outStates[n].grid[ inPieceRow ][ inPieceCol ];
 
                 /* leave empty space behind */
-                outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
+                outStates[n].grid[ inPieceRow ][ inPieceCol ] = noPiece;
+
+                outStates[n].nextToMove = otherColor;
+
                 n++;
 
                 if( destP != noPiece ) {
@@ -669,12 +695,12 @@ static int kingMove( BoardState     *inState,
                                 {  1,  1 },
                                 { -1,  1 }};
 
-    int  captureColor  =  CHESS_WHITE;
-    int  n             =  0;
+    int  otherColor  =  CHESS_WHITE;
+    int  n           =  0;
     int  d;
         
     if( inPieceColor == CHESS_WHITE ) {
-        captureColor =  CHESS_BLACK;
+        otherColor =  CHESS_BLACK;
         }
 
     for( d = 0;
@@ -698,12 +724,12 @@ static int kingMove( BoardState     *inState,
             continue;
             }
 
-        destP = inState->squareStates[ destY ][ destX ];
+        destP = inState->grid[ destY ][ destX ];
             
 
         if( destP == noPiece
             ||
-            ( destP & CHESS_COLOR_MASK ) == captureColor ) {
+            ( destP & CHESS_COLOR_MASK ) == otherColor ) {
                 
             /* empty spot, or capturable piece, king can move here */
 
@@ -714,11 +740,14 @@ static int kingMove( BoardState     *inState,
             outStates[n]   = *inState;
 
             /* copy piece into new spot */
-            outStates[n].squareStates    [ destY      ][ destX      ] =
-                outStates[n].squareStates[ inPieceRow ][ inPieceCol ];
+            outStates[n].grid    [ destY      ][ destX      ] =
+                outStates[n].grid[ inPieceRow ][ inPieceCol ];
 
             /* leave empty space behind */
-            outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
+            outStates[n].grid[ inPieceRow ][ inPieceCol ] = noPiece;
+
+            outStates[n].nextToMove = otherColor;
+
             n++;
             }
         }
@@ -736,7 +765,104 @@ static PieceMoveFunction moveFunctions[ NUM_CHESS_PIECES ] = { noPieceMove,
                                                                queenMove,
                                                                kingMove };
 
+static char doesKingExist( BoardState  *inState,
+                           int          inKingColor ) {
+    int  y;
+    int  x;
 
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            ChessPiece  p  = inState->grid[ y ][ x ];
+
+            if( ( p & CHESS_TYPE_MASK ) == king
+                &&
+                ( p & CHESS_COLOR_MASK ) == inKingColor ) {
+                return 1;
+                }
+            }
+        }
+    return 0;
+    }
+
+
+
+static char isKingInCheck( BoardState  *inState,
+                           int          inVictimKingColor ) {
+    /* fixme */
+
+    int  y;
+    int  x;
+    
+    static  BoardState     resultStates[BN];
+    static  unsigned char  destRows    [BN];
+    static  unsigned char  destCols    [BN];
+
+
+    if( ! doesKingExist( inState,
+                         inVictimKingColor ) ) {
+        /* no victim king present at all, he can't be in check
+           this will usually only happen during recursive in-check
+           tests where we let a move play out to see if the king is taken */
+        return 0;
+        }
+
+    /* victim king is present
+
+       Now test all possible moves to see if any move captures him
+
+       If so, he's currently in check (one more move would capture him */
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+            
+    
+            ChessPiece  p       =  inState->grid[ y ][ x ];
+            ChessPiece  pType   =  p & CHESS_TYPE_MASK;
+            ChessPiece  pColor  =  p & CHESS_COLOR_MASK;
+            int         n;
+            int         i;
+
+            /* check if any resulting states of moving this piece
+               result in the king being captured */
+            
+            n = moveFunctions[ pType ]( inState,
+                                        pColor,
+                                        y,
+                                        x,
+                                        destRows,
+                                        destCols,
+                                        resultStates );
+            for( i = 0;
+                 i < n;
+                 i ++ ) {
+
+                if( ! doesKingExist( &( resultStates[i] ),
+                                     inVictimKingColor ) ) {
+                    /* king was present, but gone one move later
+                       he was in check */
+
+                    return 1;
+                    }
+                }
+            }
+        }
+
+    /* all possible single moves lead to states where victim
+       king is still present (not captured) */
+    
+    return 0;
+    }
 
 
     
@@ -766,42 +892,43 @@ void getStartBoard( BoardState  *outState ) {
              x < BW;
              x ++ ) {
 
-            outState->squareStates[y][x] = noPiece;
+            outState->grid[y][x] = noPiece;
             }
         }
     
 
     /* fill out whole starting board */
-    outState->squareStates[0][0] = rook   | CHESS_BLACK;
-    outState->squareStates[0][1] = knight | CHESS_BLACK;
-    outState->squareStates[0][2] = bishop | CHESS_BLACK;
-    outState->squareStates[0][3] = queen  | CHESS_BLACK;
-    outState->squareStates[0][4] = king   | CHESS_BLACK;
-    outState->squareStates[0][5] = bishop | CHESS_BLACK;
-    outState->squareStates[0][6] = knight | CHESS_BLACK;
-    outState->squareStates[0][7] = rook   | CHESS_BLACK;
+    outState->grid[0][0] = rook   | CHESS_BLACK;
+    outState->grid[0][1] = knight | CHESS_BLACK;
+    outState->grid[0][2] = bishop | CHESS_BLACK;
+    outState->grid[0][3] = queen  | CHESS_BLACK;
+    outState->grid[0][4] = king   | CHESS_BLACK;
+    outState->grid[0][5] = bishop | CHESS_BLACK;
+    outState->grid[0][6] = knight | CHESS_BLACK;
+    outState->grid[0][7] = rook   | CHESS_BLACK;
 
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->squareStates[1][i] = pawn | CHESS_BLACK;
+        outState->grid[1][i] = pawn | CHESS_BLACK;
         }
 
-    outState->squareStates[7][0] = rook   | CHESS_WHITE;
-    outState->squareStates[7][1] = knight | CHESS_WHITE;
-    outState->squareStates[7][2] = bishop | CHESS_WHITE;
-    outState->squareStates[7][3] = queen  | CHESS_WHITE;
-    outState->squareStates[7][4] = king   | CHESS_WHITE;
-    outState->squareStates[7][5] = bishop | CHESS_WHITE;
-    outState->squareStates[7][6] = knight | CHESS_WHITE;
-    outState->squareStates[7][7] = rook   | CHESS_WHITE;
+    outState->grid[7][0] = rook   | CHESS_WHITE;
+    outState->grid[7][1] = knight | CHESS_WHITE;
+    outState->grid[7][2] = bishop | CHESS_WHITE;
+    outState->grid[7][3] = queen  | CHESS_WHITE;
+    outState->grid[7][4] = king   | CHESS_WHITE;
+    outState->grid[7][5] = bishop | CHESS_WHITE;
+    outState->grid[7][6] = knight | CHESS_WHITE;
+    outState->grid[7][7] = rook   | CHESS_WHITE;
 
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->squareStates[6][i] = pawn | CHESS_WHITE;
+        outState->grid[6][i] = pawn | CHESS_WHITE;
         }
 
+    outState->nextToMove = CHESS_WHITE;
     }
 
 
@@ -814,19 +941,42 @@ static int getPiecePossibleMoves( BoardState     *inState,
 
     /* for now, we don't do anything with the result states *
        FIXME */
-    static  BoardState  resultStates[BN];
+    static  BoardState     resultStates[BN];
+    static  unsigned char  resultRows  [BN];
+    static  unsigned char  resultCols  [BN];
     
-    ChessPiece  p       =  inState->squareStates[ inPieceRow ][ inPieceCol ];
-    ChessPiece  pType   =  p & CHESS_PIECE_MASK;
-    ChessPiece  pColor  =  p & CHESS_COLOR_MASK;
+    ChessPiece  p             =  inState->grid[ inPieceRow ][ inPieceCol ];
+    ChessPiece  pType         =  p & CHESS_TYPE_MASK;
+    ChessPiece  pColor        =  p & CHESS_COLOR_MASK;
+    int         numMoves;
+    int         numGoodMoves  =  0;
+    int         m;
+    
+        
+    numMoves = moveFunctions[ pType ]( inState,
+                                       pColor,
+                                       inPieceRow,
+                                       inPieceCol,
+                                       resultRows,
+                                       resultCols,
+                                       resultStates );
 
-    return moveFunctions[ pType ]( inState,
-                                   pColor,
-                                   inPieceRow,
-                                   inPieceCol,
-                                   outRows,
-                                   outCols,
-                                   resultStates );
+    /* filter moves to remove illegal moves that put our king in check */
+    for( m = 0;
+         m < numMoves;
+         m ++ ) {
+
+        if( ! isKingInCheck( &( resultStates[m] ),
+                             pColor ) ) {
+
+            outRows[ numGoodMoves ] = resultRows[ m ];
+            outCols[ numGoodMoves ] = resultCols[ m ];
+
+            numGoodMoves ++;
+            }
+        }
+
+    return numGoodMoves;   
     }
 
 
@@ -858,15 +1008,15 @@ char getRandomMove( BoardState  *inState,
              x < BW;
              x ++ ) {
 
-            if( inState->squareStates[y][x] != noPiece ) {
+            if( inState->grid[y][x] != noPiece ) {
 
                 if( ( inWhiteTurn
                       &&
-                      ( inState->squareStates[y][x] & 0x80 ) == CHESS_WHITE )
+                      ( inState->grid[y][x] & 0x80 ) == CHESS_WHITE )
                     ||
                     ( ! inWhiteTurn
                       &&
-                      ( inState->squareStates[y][x] & 0x80 ) == CHESS_BLACK ) ) {
+                      ( inState->grid[y][x] & 0x80 ) == CHESS_BLACK ) ) {
                     
                     possiblePieceRow[numPossiblePieces] = y;
                     possiblePieceCol[numPossiblePieces] = x;
@@ -930,11 +1080,11 @@ char getRandomMove( BoardState  *inState,
 
 void applyMove( BoardState  *inState,
                 Move        *inMove ) {
-    inState->squareStates[ inMove->endPos[0] ][ inMove->endPos[1] ]
-        = inState->squareStates[ inMove->startPos[0] ][ inMove->startPos[1] ];
+    inState->grid[ inMove->endPos[0] ][ inMove->endPos[1] ]
+        = inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
 
     /* leave empty square behind */
-    inState->squareStates[ inMove->startPos[0] ][ inMove->startPos[1] ] =
+    inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ] =
         noPiece;
     }
 

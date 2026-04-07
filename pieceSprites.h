@@ -139,7 +139,7 @@ void drawPiece( ChessPiece  inPiece,
                 int  inBaseCenterX,
                 int  inBaseCenterY ) {
 
-    ChessPiece  rawP  =  inPiece & CHESS_PIECE_MASK;
+    ChessPiece  rawP  =  inPiece & CHESS_TYPE_MASK;
 
     if( ( inPiece & CHESS_COLOR_MASK ) == CHESS_BLACK ) {
         maxigin_drawSetColor( 128,
@@ -178,7 +178,7 @@ void drawBoardState( BoardState  *inState,
              x < 8;
              x ++ ) {
 
-            ChessPiece  p  =  inState->squareStates[y][x];
+            ChessPiece  p  =  inState->grid[y][x];
             
 
             if( p != noPiece ) {

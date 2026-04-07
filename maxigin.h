@@ -21003,11 +21003,19 @@ int maxigin_randRange( MaxiginRand  *inRand,
 void maxigin_shuffle( MaxiginRand  *inRand,
                       int           inNumElements,
                       int           inArray[] ) {
+    int  i;
 
-    /* fixme */
-    (void)inRand;
-    (void)inNumElements;
-    (void)inArray;
+    for( i = inNumElements - 1;
+         i > 0;
+         i -- ) {
+        
+        int temp  =  inArray[i];
+        int j     =  maxigin_randRange( inRand,
+                                        0,
+                                        i );
+        inArray[i] = inArray[j];
+        inArray[j] = temp;
+        }
     }
 
 

@@ -2817,6 +2817,50 @@ int maxigin_randRange( MaxiginRand  *inRand,
                        int           inEnd );
 
 
+/*
+  Performs a Fisher-Yates shuffle on an array of integers.
+
+  Parameters:
+
+      inRand          the rand source to get the value from and update
+
+      inNumElements   the size of the array
+      
+      inArray         the array to shuffle
+  
+  [jumpMaxiginGeneral]
+*/
+void maxigin_shuffle( MaxiginRand  *inRand,
+                      int           inNumElements,
+                      int           inArray[] );
+
+
+/*
+  Performs a Fisher-Yates shuffle on values in a range and returns
+  the result in a statically-allocated array.
+
+  Supports ranges with at most 256 values, inclusive.
+
+  Parameters:
+
+      inRand   the rand source to get the value from and update
+
+      inMin    the minimum value in the resulting array
+
+      inMax    the maximum value in the resulting array
+
+  Returns:
+
+      A statically-allocated array containing (inMax - inMin) + 1 elements,
+      or 0 if the range contains more than 256 values.
+  
+  [jumpMaxiginGeneral]
+*/
+int *maxigin_genShuffle( MaxiginRand  *inRand,
+                         int           inMin,
+                         int           inMax );
+                      
+
 
 
 
@@ -20952,6 +20996,53 @@ int maxigin_randRange( MaxiginRand  *inRand,
         }
 
     return inStart + (int)offset;
+    }
+
+
+
+void maxigin_shuffle( MaxiginRand  *inRand,
+                      int           inNumElements,
+                      int           inArray[] ) {
+
+    /* fixme */
+    (void)inRand;
+    (void)inNumElements;
+    (void)inArray;
+    }
+
+
+
+int *maxigin_genShuffle( MaxiginRand  *inRand,
+                         int           inMin,
+                         int           inMax ) {
+
+    enum{        arraySize                  =  256 };
+    
+    static  int  resultArray[ arraySize ];
+
+    
+    int  rangeSize  =  ( inMax - inMin ) + 1;
+    int  i          =  0;
+    int  r;
+    
+    if( rangeSize > arraySize ) {
+        return 0;
+        }
+
+    for( r = inMin;
+         r <= inMax;
+         r ++ ) {
+
+        resultArray[ i ] = r;
+
+        i ++;
+        }
+
+    maxigin_shuffle( inRand,
+                     rangeSize,
+                     resultArray );
+
+    return resultArray;
     }
 
 

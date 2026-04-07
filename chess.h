@@ -16,6 +16,8 @@
 
 typedef  unsigned char  ChessPiece;
 
+
+/* enum defining all possible chess piece types */
 enum{
     noPiece = 0,
     pawn,
@@ -32,10 +34,13 @@ enum{
 #define  CHESS_WHITE        0x00
 #define  CHESS_BLACK        0x80
 
+#define  BW                 8
+#define  BH                 8
+#define  BN                 ( BW * BH )
 
 typedef struct BoardState{
         
-        ChessPiece  squareStates[8][8];
+        ChessPiece  squareStates[BH][BW];
 
     } BoardState;
 
@@ -77,6 +82,162 @@ void applyMove( BoardState  *inState,
 #ifdef CHESS_IMPLEMENTATION
 
 
+/* the signature for a piece move function.
+   We define one of these for each piece type in the enum above.
+
+   These functions assume that a piece of the correct type is at inPieceRow
+   and inPieceCol (so the function doesn't have to check this.
+
+   These functions just look for legal moves for a given piece, in isolation,
+   without considering rules around a king in check.
+
+   Though the King function will never pick a move that moves into check.
+
+   Returns the number of moves.
+*/
+typedef int (*PieceMoveFunction)( BoardState     *inState,
+                                  /* color of the piece */
+                                  unsigned char   inPieceColor,
+                                  /* starting position of the piece */
+                                  int             inPieceRow,
+                                  int             inPieceCol,
+                                  /* possible move rows and cols */
+                                  unsigned char   outDestRows[BN],
+                                  unsigned char   outDestCols[BN],
+                                  /* resulting board states from possible
+                                     moves */
+                                  BoardState      outStates  [BN] );
+
+
+
+
+static int noPieceMove( BoardState     *inState,
+                        unsigned char   inPieceColor,
+                        int             inPieceRow,
+                        int             inPieceCol,
+                        unsigned char   outDestRows[BN],
+                        unsigned char   outDestCols[BN],
+                        BoardState      outStates  [BN] ) {
+    
+    /* suppress warnings for unused params */
+    (void)inState;
+    (void)inPieceColor;
+    (void)inPieceRow;
+    (void)inPieceCol;
+    (void)outDestRows;
+    (void)outDestCols;
+    (void)outStates;
+    
+    return 0;
+    }
+
+
+
+/* ignores en passant rules */
+static int pawnMove( BoardState     *inState,
+                     unsigned char   inPieceColor,
+                     int             inPieceRow,
+                     int             inPieceCol,
+                     unsigned char   outDestRows[BN],
+                     unsigned char   outDestCols[BN],
+                     BoardState      outStates  [BN] ) {
+
+    int  moveDir       =  1;
+    int  maxDist       =  1;
+    int  captureColor  =  CHESS_WHITE;
+    int  n             =  0;
+    int  i;
+    
+    if( inPieceColor == CHESS_WHITE ) {
+        moveDir = -1;
+        captureColor = CHESS_BLACK;
+
+        if( inPieceRow == BH - 2 ) {
+            maxDist = 2;
+            }
+        if( inPieceRow == 0 ) {
+            /* at end, no move */
+            return 0;
+            }
+        }
+    else {
+        moveDir = 1;
+        captureColor = CHESS_WHITE;
+
+        if( inPieceRow == 1 ) {
+            maxDist = 2;
+            }
+        if( inPieceRow == BH - 1 ) {
+            /* at end, no move */
+            return 0;
+            }
+        }
+
+    /* first, look at all forward moves, which can only go to empty squares
+       and can only pass through empty squares if doing a double-move */
+    for( i = 1;
+         i <= maxDist;
+         i ++ ) {
+
+        /* viaRow might be the same as newRow if we're considering 1-step
+           moves */
+        unsigned char  newRow  =  (unsigned char)( inPieceRow + (moveDir * i) );
+        unsigned char  viaRow  =  (unsigned char)( inPieceRow +  moveDir      );
+        
+        if( inState->squareStates[ newRow ][ inPieceCol ] == noPiece
+            &&
+            inState->squareStates[ viaRow ][ inPieceCol ] == noPiece ) {
+            
+            outDestRows[n] = newRow;
+            outDestCols[n] = (unsigned char)inPieceCol;
+
+            /* copy state to start with */
+            outStates[n]   = *inState;
+
+            /* copy piece into new spot */
+            outStates[n].squareStates    [ newRow     ][ inPieceCol ] =
+                outStates[n].squareStates[ inPieceRow ][ inPieceCol ];
+
+            /* leave empty space behind */
+            outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
+
+            n++;
+            }
+        }
+
+    /* fixme:
+       capture moves */
+
+    if( captureColor == CHESS_WHITE ) {
+
+        }
+    
+    return n;
+    }
+
+
+/* fixme
+   implement unique move functions for each one */
+#define bishopMove pawnMove
+#define knightMove pawnMove
+#define rookMove pawnMove
+#define queenMove pawnMove
+#define kingMove pawnMove
+
+
+static PieceMoveFunction moveFunctions[ NUM_CHESS_PIECES ] = { noPieceMove,
+                                                               pawnMove,
+                                                               bishopMove,
+                                                               knightMove,
+                                                               rookMove,
+                                                               queenMove,
+                                                               kingMove };
+
+
+
+
+    
+
 
 static  MaxiginRand  chessRand;
 
@@ -95,11 +256,11 @@ void getStartBoard( BoardState  *outState ) {
     int  i;
     
     for( y = 0;
-         y < 8;
+         y < BH;
          y ++ ) {
         
         for( x = 0;
-             x < 8;
+             x < BW;
              x ++ ) {
 
             outState->squareStates[y][x] = noPiece;
@@ -107,9 +268,7 @@ void getStartBoard( BoardState  *outState ) {
         }
     
 
-    /* fixme:
-       fill out whole starting board
-       why aren't color bits working to toggle draw colors ?  */
+    /* fill out whole starting board */
     outState->squareStates[0][0] = rook   | CHESS_BLACK;
     outState->squareStates[0][1] = knight | CHESS_BLACK;
     outState->squareStates[0][2] = bishop | CHESS_BLACK;
@@ -124,19 +283,6 @@ void getStartBoard( BoardState  *outState ) {
          i ++ ) {
         outState->squareStates[1][i] = pawn | CHESS_BLACK;
         }
-
-    /* fixme:
-       overlapping extra row, just for testing visuals */
-    /*
-    outState->squareStates[2][0] = rook   | CHESS_BLACK;
-    outState->squareStates[2][1] = knight | CHESS_BLACK;
-    outState->squareStates[2][2] = bishop | CHESS_BLACK;
-    outState->squareStates[2][3] = queen  | CHESS_BLACK;
-    outState->squareStates[2][4] = king   | CHESS_BLACK;
-    outState->squareStates[2][5] = bishop | CHESS_BLACK;
-    outState->squareStates[2][6] = knight | CHESS_BLACK;
-    outState->squareStates[2][7] = rook   | CHESS_BLACK;
-    */
 
     outState->squareStates[7][0] = rook   | CHESS_WHITE;
     outState->squareStates[7][1] = knight | CHESS_WHITE;
@@ -157,30 +303,56 @@ void getStartBoard( BoardState  *outState ) {
 
 
 
+static int getPiecePossibleMoves( BoardState     *inState,
+                                  int             inPieceRow,
+                                  int             inPieceCol,
+                                  unsigned char   outRows[BN],
+                                  unsigned char   outCols[BN] ) {
+
+    /* for now, we don't do anything with the result states *
+       FIXME */
+    static  BoardState  resultStates[BN];
+    
+    ChessPiece  p       =  inState->squareStates[ inPieceRow ][ inPieceCol ];
+    ChessPiece  pType   =  p & CHESS_PIECE_MASK;
+    ChessPiece  pColor  =  p & CHESS_COLOR_MASK;
+
+    return moveFunctions[ pType ]( inState,
+                                   pColor,
+                                   inPieceRow,
+                                   inPieceCol,
+                                   outRows,
+                                   outCols,
+                                   resultStates );
+    }
+
+
+
 char getRandomMove( BoardState  *inState,
                     Move        *outMove,
                     char         inWhiteTurn ) {
 
     /* fixme:  pay attention to limits on where piece can actually move */
 
-    static  unsigned char  possiblePieceRow[64];
-    static  unsigned char  possiblePieceCol[64];
+    static  unsigned char  possiblePieceRow[BN];
+    static  unsigned char  possiblePieceCol[BN];
+    static  unsigned char  possibleDestRow [BN];
+    static  unsigned char  possibleDestCol [BN];
 
-    int            numPossiblePieces = 0;
-    int            movePick;
-    unsigned char  x;
-    unsigned char  y;
-    unsigned char  x2;
-    unsigned char  y2;
-    unsigned char  startPosFlag;
+    int             numPossiblePieces = 0;
+    int             piecePick;
+    int             p;
+    unsigned char   x;
+    unsigned char   y;
+    int            *shuffle;
     
     
     for( y = 0;
-         y < 8;
+         y < BH;
          y ++ ) {
         
         for( x = 0;
-             x < 8;
+             x < BW;
              x ++ ) {
 
             if( inState->squareStates[y][x] != noPiece ) {
@@ -209,47 +381,46 @@ char getRandomMove( BoardState  *inState,
     /* fixme:
        this is just a truly random move for testing */
 
+    /* try picking a piece and try moving it 10 times before giving up */
 
-    movePick = maxigin_randRange( &chessRand,
+    shuffle = maxigin_genShuffle( &chessRand,
                                   0,
                                   numPossiblePieces - 1 );
+    for( p = 0;
+         p < numPossiblePieces;
+         p ++ ) {
 
-    y = possiblePieceRow[ movePick ];
-    x = possiblePieceCol[ movePick ];
-
-    startPosFlag = inState->squareStates[y][x] & 0x80;
-    
-    x2 = x;
-    y2 = y;
+        int  numMoves;
+        int  m;
         
-
-    /* re-roll until we move off of start pos
-       and until we land on empty spot or enemy piece */
-    while( ( x2 == x
-             &&
-             y2 == y )
-           ||
-           ( inState->squareStates[y2][x2] != noPiece
-             &&
-             ( inState->squareStates[y2][x2] & 0x80 ) == startPosFlag ) ) {
+        piecePick = shuffle[ p ];
         
+        y = possiblePieceRow[ piecePick ];
+        x = possiblePieceCol[ piecePick ];
+
+        numMoves = getPiecePossibleMoves( inState,
+                                          y,
+                                          x,
+                                          possibleDestRow,
+                                          possibleDestCol );
+
+        if( numMoves > 0 ) {
+            m = maxigin_randRange( &chessRand,
+                                   0,
+                                   numMoves - 1 );
+            outMove->startPos[0] = y;
+            outMove->startPos[1] = x;
     
-        y2 = (unsigned char)( maxigin_randRange( &chessRand,
-                                                 0,
-                                                 7 ) );
-        x2 = (unsigned char)( maxigin_randRange( &chessRand,
-                                                 0,
-                                                 7 ) );
+            outMove->endPos  [0] = possibleDestRow[m];
+            outMove->endPos  [1] = possibleDestCol[m];
+
+            return 1;
+            }
         }
-
+       
     
-    outMove->startPos[0] = y;
-    outMove->startPos[1] = x;
-    
-    outMove->endPos  [0] = y2;
-    outMove->endPos  [1] = x2;
-    
-    return 1;
+    /* tried all possible pieces, none could move*/
+    return 0;
     }
 
 

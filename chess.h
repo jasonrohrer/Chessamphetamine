@@ -441,10 +441,216 @@ static int knightMove( BoardState     *inState,
 
 
 
+static int rookMove( BoardState     *inState,
+                     unsigned char   inPieceColor,
+                     int             inPieceRow,
+                     int             inPieceCol,
+                     unsigned char   outDestRows[BN],
+                     unsigned char   outDestCols[BN],
+                     BoardState      outStates  [BN] ) {
+
+    
+    static  int  dirs[4][2] = { { -1,  0 },
+                                {  1,  0 },
+                                {  0, -1 },
+                                {  0,  1 } };
+
+    int  captureColor  =  CHESS_WHITE;
+    int  n             =  0;
+    int  d;
+    int  i;
+    int  maxDist;
+
+    
+        
+    if( inPieceColor == CHESS_WHITE ) {
+        captureColor =  CHESS_BLACK;
+        }
+
+    maxDist = BH - 1;
+
+    if( BW - 1 > maxDist ) {
+        /* non-square board, consider moves as long as longest side */
+        maxDist = BW - 1;
+        }
+
+
+    for( d = 0;
+         d < 4;
+         d ++ ) {
+
+        int  dY  =  dirs[d][0];
+        int  dX  =  dirs[d][1];
+        
+        for( i = 1;
+             i <= maxDist;
+             i ++ ) {
+
+            int         destY  = dY * i + inPieceRow;
+            int         destX  = dX * i + inPieceCol;
+            ChessPiece  destP;
+            
+            /* watch for out of bounds,
+               stop pushing in this diag direction */
+            if( destY < 0
+                ||
+                destY >= BH ) {
+                break;
+                }
+            if( destX < 0
+                ||
+                destX >= BW ) {
+                break;
+                }
+
+            destP = inState->squareStates[ destY ][ destX ];
+            
+
+            if( destP == noPiece
+                ||
+                ( destP & CHESS_COLOR_MASK ) == captureColor ) {
+                
+                /* empty spot, or capturable piece, rook can move here */
+
+                outDestRows[n] = (unsigned char)destY;
+                outDestCols[n] = (unsigned char)destX;
+
+                /* copy state to start with */
+                outStates[n]   = *inState;
+
+                /* copy piece into new spot */
+                outStates[n].squareStates    [ destY      ][ destX      ] =
+                    outStates[n].squareStates[ inPieceRow ][ inPieceCol ];
+
+                /* leave empty space behind */
+                outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
+                n++;
+
+                if( destP != noPiece ) {
+                    /* can't move to spots on this move dir
+                       beyond capturable piece */
+                    break;
+                    }
+                }
+            else {
+                /* a blocking piece on this move dir */
+                break;
+                }
+            }
+        }
+    
+    return n;
+    }
+
+
+
+static int queenMove( BoardState     *inState,
+                      unsigned char   inPieceColor,
+                      int             inPieceRow,
+                      int             inPieceCol,
+                      unsigned char   outDestRows[BN],
+                      unsigned char   outDestCols[BN],
+                      BoardState      outStates  [BN] ) {
+
+    
+    static  int  dirs[8][2] = { { -1,  0 },
+                                {  1,  0 },
+                                {  0, -1 },
+                                {  0,  1 },
+                                { -1, -1 },
+                                {  1, -1 },
+                                {  1,  1 },
+                                { -1,  1 }};
+
+    int  captureColor  =  CHESS_WHITE;
+    int  n             =  0;
+    int  d;
+    int  i;
+    int  maxDist;
+    
+        
+    if( inPieceColor == CHESS_WHITE ) {
+        captureColor =  CHESS_BLACK;
+        }
+
+    maxDist = BH - 1;
+
+    if( BW - 1 > maxDist ) {
+        /* non-square board, consider moves as long as longest side */
+        maxDist = BW - 1;
+        }
+
+
+    for( d = 0;
+         d < 8;
+         d ++ ) {
+
+        int  dY  =  dirs[d][0];
+        int  dX  =  dirs[d][1];
+        
+        for( i = 1;
+             i <= maxDist;
+             i ++ ) {
+
+            int         destY  = dY * i + inPieceRow;
+            int         destX  = dX * i + inPieceCol;
+            ChessPiece  destP;
+            
+            /* watch for out of bounds,
+               stop pushing in this diag direction */
+            if( destY < 0
+                ||
+                destY >= BH ) {
+                break;
+                }
+            if( destX < 0
+                ||
+                destX >= BW ) {
+                break;
+                }
+
+            destP = inState->squareStates[ destY ][ destX ];
+            
+
+            if( destP == noPiece
+                ||
+                ( destP & CHESS_COLOR_MASK ) == captureColor ) {
+                
+                /* empty spot, or capturable piece, queen can move here */
+
+                outDestRows[n] = (unsigned char)destY;
+                outDestCols[n] = (unsigned char)destX;
+
+                /* copy state to start with */
+                outStates[n]   = *inState;
+
+                /* copy piece into new spot */
+                outStates[n].squareStates    [ destY      ][ destX      ] =
+                    outStates[n].squareStates[ inPieceRow ][ inPieceCol ];
+
+                /* leave empty space behind */
+                outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
+                n++;
+
+                if( destP != noPiece ) {
+                    /* can't move to spots on this move dir
+                       beyond capturable piece */
+                    break;
+                    }
+                }
+            else {
+                /* a blocking piece on this move dir */
+                break;
+                }
+            }
+        }
+    
+    return n;
+    }
+
+
 /* fixme
    implement unique move functions for each one */
-#define rookMove pawnMove
-#define queenMove pawnMove
 #define kingMove pawnMove
 
 

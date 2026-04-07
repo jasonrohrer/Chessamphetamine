@@ -35,13 +35,13 @@ enum{
 #define  CHESS_BLACK        0x80
 
 /* rows, columns, and num square */
-#define  BR                 8
-#define  BC                 8
-#define  BN                 ( BR * BC )
+#define  BH                 8
+#define  BW                 8
+#define  BN                 ( BH * BW )
 
 typedef struct BoardState{
         
-        ChessPiece  squareStates[BR][BC];
+        ChessPiece  squareStates[BH][BW];
 
     } BoardState;
 
@@ -153,7 +153,7 @@ static int pawnMove( BoardState     *inState,
         moveDir = -1;
         captureColor = CHESS_BLACK;
 
-        if( inPieceRow == BR - 2 ) {
+        if( inPieceRow == BH - 2 ) {
             maxDist = 2;
             }
         if( inPieceRow == 0 ) {
@@ -168,7 +168,7 @@ static int pawnMove( BoardState     *inState,
         if( inPieceRow == 1 ) {
             maxDist = 2;
             }
-        if( inPieceRow == BR - 1 ) {
+        if( inPieceRow == BH - 1 ) {
             /* at end, no move */
             return 0;
             }
@@ -202,12 +202,14 @@ static int pawnMove( BoardState     *inState,
             /* leave empty space behind */
             outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
 
+            /* fixme:
+               promote to Queen in final row */
+            
             n++;
             }
         }
 
-    /* fixme:
-       capture moves */
+    /* capture moves */
 
     /* loop over left/right diagonal moves */
     for( i =  -1;
@@ -220,7 +222,7 @@ static int pawnMove( BoardState     *inState,
         
         if( newCol < 0
             ||
-            newCol >= BC ) {
+            newCol >= BW ) {
             continue;
             }
 
@@ -257,9 +259,112 @@ static int pawnMove( BoardState     *inState,
     }
 
 
+
+static int bishopMove( BoardState     *inState,
+                       unsigned char   inPieceColor,
+                       int             inPieceRow,
+                       int             inPieceCol,
+                       unsigned char   outDestRows[BN],
+                       unsigned char   outDestCols[BN],
+                       BoardState      outStates  [BN] ) {
+
+    
+    static  int  dirs[4][2] = { { -1, -1 },
+                                {  1, -1 },
+                                {  1,  1 },
+                                { -1,  1 } };
+
+    int  captureColor  =  CHESS_WHITE;
+    int  n             =  0;
+    int  d;
+    int  i;
+    int  maxDiagDist;
+
+    
+        
+    if( inPieceColor == CHESS_WHITE ) {
+        captureColor =  CHESS_BLACK;
+        }
+
+    maxDiagDist = BH - 1;
+
+    if( BW - 1 < maxDiagDist ) {
+        /* non-square board, diags shorter than longest side */
+        maxDiagDist = BW - 1;
+        }
+
+
+    for( d = 0;
+         d < 4;
+         d ++ ) {
+
+        int  dY  =  dirs[d][0];
+        int  dX  =  dirs[d][1];
+        
+        for( i = 1;
+             i <= maxDiagDist;
+             i ++ ) {
+
+            int         destY  = dY * i + inPieceRow;
+            int         destX  = dX * i + inPieceCol;
+            ChessPiece  destP;
+            
+            /* watch for out of bounds,
+               stop pushing in this diag direction */
+            if( destY < 0
+                ||
+                destY >= BH ) {
+                break;
+                }
+            if( destX < 0
+                ||
+                destX >= BW ) {
+                break;
+                }
+
+            destP = inState->squareStates[ destY ][ destX ];
+            
+
+            if( destP == noPiece
+                ||
+                ( destP & CHESS_COLOR_MASK ) == captureColor ) {
+                
+                /* empty spot, or capturable piece, bishop can move here */
+
+                outDestRows[n] = (unsigned char)destY;
+                outDestCols[n] = (unsigned char)destX;
+
+                /* copy state to start with */
+                outStates[n]   = *inState;
+
+                /* copy piece into new spot */
+                outStates[n].squareStates    [ destY      ][ destX      ] =
+                    outStates[n].squareStates[ inPieceRow ][ inPieceCol ];
+
+                /* leave empty space behind */
+                outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
+                n++;
+
+                if( destP != noPiece ) {
+                    /* can't move to spots on this diag
+                       beyond capturable piece */
+                    break;
+                    }
+                }
+            else {
+                /* a blocking piece on this diag */
+                break;
+                }
+            }
+        }
+    
+    return n;
+    }
+
+
+
 /* fixme
    implement unique move functions for each one */
-#define bishopMove pawnMove
 #define knightMove pawnMove
 #define rookMove pawnMove
 #define queenMove pawnMove
@@ -297,11 +402,11 @@ void getStartBoard( BoardState  *outState ) {
     int  i;
     
     for( y = 0;
-         y < BR;
+         y < BH;
          y ++ ) {
         
         for( x = 0;
-             x < BC;
+             x < BW;
              x ++ ) {
 
             outState->squareStates[y][x] = noPiece;
@@ -389,11 +494,11 @@ char getRandomMove( BoardState  *inState,
     
     
     for( y = 0;
-         y < BR;
+         y < BH;
          y ++ ) {
         
         for( x = 0;
-             x < BC;
+             x < BW;
              x ++ ) {
 
             if( inState->squareStates[y][x] != noPiece ) {

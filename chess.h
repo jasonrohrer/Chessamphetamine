@@ -71,8 +71,7 @@ void getStartBoard( BoardState  *outState );
 
 /* returns 1 if move possible, 0 if not */
 char getRandomMove( BoardState  *inState,
-                    Move        *outMove,
-                    char         inWhiteTurn );
+                    Move        *outMove );
 
 
 
@@ -982,8 +981,7 @@ static int getPiecePossibleMoves( BoardState     *inState,
 
 
 char getRandomMove( BoardState  *inState,
-                    Move        *outMove,
-                    char         inWhiteTurn ) {
+                    Move        *outMove ) {
 
     /* fixme:  pay attention to limits on where piece can actually move */
 
@@ -992,13 +990,13 @@ char getRandomMove( BoardState  *inState,
     static  unsigned char  possibleDestRow [BN];
     static  unsigned char  possibleDestCol [BN];
 
-    int             numPossiblePieces = 0;
+    int             numPossiblePieces  =  0;
     int             piecePick;
     int             p;
     unsigned char   x;
     unsigned char   y;
     int            *shuffle;
-    
+    int             colorToMove        =  inState->nextToMove;
     
     for( y = 0;
          y < BH;
@@ -1010,14 +1008,8 @@ char getRandomMove( BoardState  *inState,
 
             if( inState->grid[y][x] != noPiece ) {
 
-                if( ( inWhiteTurn
-                      &&
-                      ( inState->grid[y][x] & 0x80 ) == CHESS_WHITE )
-                    ||
-                    ( ! inWhiteTurn
-                      &&
-                      ( inState->grid[y][x] & 0x80 ) == CHESS_BLACK ) ) {
-                    
+                if( ( inState->grid[y][x] & CHESS_COLOR_MASK ) == colorToMove ) {
+                
                     possiblePieceRow[numPossiblePieces] = y;
                     possiblePieceCol[numPossiblePieces] = x;
                     numPossiblePieces ++;
@@ -1086,6 +1078,13 @@ void applyMove( BoardState  *inState,
     /* leave empty square behind */
     inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ] =
         noPiece;
+
+    if( inState->nextToMove == CHESS_WHITE ) {
+        inState->nextToMove =  CHESS_BLACK;
+        }
+    else {
+        inState->nextToMove =  CHESS_WHITE;
+        }
     }
 
 

@@ -125,7 +125,6 @@ static int          lang_bomb;
 static BoardState   boardState;
 
 static char         moveMade;
-static char         whiteMove = 1;
 
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
@@ -539,10 +538,7 @@ void maxiginGame_step( void ) {
             mingin_log( "Jump\n" );
         
             if( getRandomMove( &boardState,
-                               &m,
-                               whiteMove ) ) {
-
-                whiteMove = ! whiteMove;
+                               &m ) ) {
 
                 applyMove( &boardState,
                            &m );

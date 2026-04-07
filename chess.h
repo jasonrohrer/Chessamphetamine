@@ -34,13 +34,14 @@ enum{
 #define  CHESS_WHITE        0x00
 #define  CHESS_BLACK        0x80
 
-#define  BW                 8
-#define  BH                 8
-#define  BN                 ( BW * BH )
+/* rows, columns, and num square */
+#define  BR                 8
+#define  BC                 8
+#define  BN                 ( BR * BC )
 
 typedef struct BoardState{
         
-        ChessPiece  squareStates[BH][BW];
+        ChessPiece  squareStates[BR][BC];
 
     } BoardState;
 
@@ -152,7 +153,7 @@ static int pawnMove( BoardState     *inState,
         moveDir = -1;
         captureColor = CHESS_BLACK;
 
-        if( inPieceRow == BH - 2 ) {
+        if( inPieceRow == BR - 2 ) {
             maxDist = 2;
             }
         if( inPieceRow == 0 ) {
@@ -167,7 +168,7 @@ static int pawnMove( BoardState     *inState,
         if( inPieceRow == 1 ) {
             maxDist = 2;
             }
-        if( inPieceRow == BH - 1 ) {
+        if( inPieceRow == BR - 1 ) {
             /* at end, no move */
             return 0;
             }
@@ -208,8 +209,48 @@ static int pawnMove( BoardState     *inState,
     /* fixme:
        capture moves */
 
-    if( captureColor == CHESS_WHITE ) {
+    /* loop over left/right diagonal moves */
+    for( i =  -1;
+         i <=  1;
+         i +=  2 ) {
+        
+        unsigned char  newRow    =  (unsigned char)( inPieceRow +  moveDir );
+        int            newCol    =  inPieceCol + i;
+        ChessPiece     targetP;
+        
+        if( newCol < 0
+            ||
+            newCol >= BC ) {
+            continue;
+            }
 
+        targetP = inState->squareStates[ newRow ][ newCol ];
+
+        if( targetP == noPiece ) {
+            continue;
+            }
+
+        if( ( targetP & CHESS_COLOR_MASK ) == captureColor ) {
+
+            /* can capture this piece diagonally */
+            
+            outDestRows[n] = newRow;
+            outDestCols[n] = (unsigned char)newCol;
+
+            /* copy state to start with */
+            outStates[n]   = *inState;
+
+            /* copy piece into new spot
+               (overwrite captured piece) */
+            outStates[n].squareStates    [ newRow     ][ newCol     ] =
+                outStates[n].squareStates[ inPieceRow ][ inPieceCol ];
+
+            /* leave empty space behind */
+            outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
+
+            n++;
+            }
+        
         }
     
     return n;
@@ -256,11 +297,11 @@ void getStartBoard( BoardState  *outState ) {
     int  i;
     
     for( y = 0;
-         y < BH;
+         y < BR;
          y ++ ) {
         
         for( x = 0;
-             x < BW;
+             x < BC;
              x ++ ) {
 
             outState->squareStates[y][x] = noPiece;
@@ -348,11 +389,11 @@ char getRandomMove( BoardState  *inState,
     
     
     for( y = 0;
-         y < BH;
+         y < BR;
          y ++ ) {
         
         for( x = 0;
-             x < BW;
+             x < BC;
              x ++ ) {
 
             if( inState->squareStates[y][x] != noPiece ) {

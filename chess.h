@@ -649,9 +649,83 @@ static int queenMove( BoardState     *inState,
     }
 
 
-/* fixme
-   implement unique move functions for each one */
-#define kingMove pawnMove
+/* fixme:
+   king should never move into check */
+static int kingMove( BoardState     *inState,
+                     unsigned char   inPieceColor,
+                     int             inPieceRow,
+                     int             inPieceCol,
+                     unsigned char   outDestRows[BN],
+                     unsigned char   outDestCols[BN],
+                     BoardState      outStates  [BN] ) {
+
+    
+    static  int  dirs[8][2] = { { -1,  0 },
+                                {  1,  0 },
+                                {  0, -1 },
+                                {  0,  1 },
+                                { -1, -1 },
+                                {  1, -1 },
+                                {  1,  1 },
+                                { -1,  1 }};
+
+    int  captureColor  =  CHESS_WHITE;
+    int  n             =  0;
+    int  d;
+        
+    if( inPieceColor == CHESS_WHITE ) {
+        captureColor =  CHESS_BLACK;
+        }
+
+    for( d = 0;
+         d < 8;
+         d ++ ) {
+
+        int         destY  = dirs[d][0] + inPieceRow;
+        int         destX  = dirs[d][1] + inPieceCol;
+        ChessPiece  destP;
+            
+        /* watch for out of bounds,
+           continue checking other options */
+        if( destY < 0
+            ||
+            destY >= BH ) {
+            continue;
+            }
+        if( destX < 0
+            ||
+            destX >= BW ) {
+            continue;
+            }
+
+        destP = inState->squareStates[ destY ][ destX ];
+            
+
+        if( destP == noPiece
+            ||
+            ( destP & CHESS_COLOR_MASK ) == captureColor ) {
+                
+            /* empty spot, or capturable piece, king can move here */
+
+            outDestRows[n] = (unsigned char)destY;
+            outDestCols[n] = (unsigned char)destX;
+
+            /* copy state to start with */
+            outStates[n]   = *inState;
+
+            /* copy piece into new spot */
+            outStates[n].squareStates    [ destY      ][ destX      ] =
+                outStates[n].squareStates[ inPieceRow ][ inPieceCol ];
+
+            /* leave empty space behind */
+            outStates[n].squareStates[ inPieceRow ][ inPieceCol ] = noPiece;
+            n++;
+            }
+        }
+    
+    return n;
+    }
+
 
 
 static PieceMoveFunction moveFunctions[ NUM_CHESS_PIECES ] = { noPieceMove,

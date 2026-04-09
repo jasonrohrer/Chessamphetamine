@@ -533,15 +533,18 @@ void maxiginGame_step( void ) {
         if( ! moveMade ) {
 
             /* make a chess move */
-            Move  m;
-
+            BoardState  newState;
+            Move        m;
+            
             mingin_log( "Jump\n" );
         
             if( getRandomMove( &boardState,
-                               &m ) ) {
+                               &m,
+                               &newState ) ) {
 
                 applyMove( &boardState,
-                           &m );
+                           &m,
+                           &newState );
                 }
             moveMade = 1;
             }

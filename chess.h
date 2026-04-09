@@ -71,12 +71,15 @@ void getStartBoard( BoardState  *outState );
 
 /* returns 1 if move possible, 0 if not */
 char getRandomMove( BoardState  *inState,
-                    Move        *outMove );
+                    Move        *outMove,
+                    BoardState  *outNewState );
 
 
 
+/* updates inState to reflect move described by inMove and inNewState */
 void applyMove( BoardState  *inState,
-                Move        *inMove );
+                Move        *inMove,
+                BoardState  *inNewState );
 
 
 
@@ -956,8 +959,9 @@ void getStartBoard( BoardState  *outState ) {
 static int getPiecePossibleMoves( BoardState     *inState,
                                   int             inPieceRow,
                                   int             inPieceCol,
-                                  unsigned char   outRows[BN],
-                                  unsigned char   outCols[BN] ) {
+                                  unsigned char   outRows  [BN],
+                                  unsigned char   outCols  [BN],
+                                  BoardState      outStates[BN] ) {
 
     /* for now, we don't do anything with the result states *
        FIXME */
@@ -989,8 +993,9 @@ static int getPiecePossibleMoves( BoardState     *inState,
         if( ! isKingInCheck( &( resultStates[m] ),
                              pColor ) ) {
 
-            outRows[ numGoodMoves ] = resultRows[ m ];
-            outCols[ numGoodMoves ] = resultCols[ m ];
+            outStates[ numGoodMoves ] = resultStates[ m ];
+            outRows  [ numGoodMoves ] = resultRows  [ m ];
+            outCols  [ numGoodMoves ] = resultCols  [ m ];
 
             numGoodMoves ++;
             }
@@ -1002,7 +1007,8 @@ static int getPiecePossibleMoves( BoardState     *inState,
 
 
 char getRandomMove( BoardState  *inState,
-                    Move        *outMove ) {
+                    Move        *outMove,
+                    BoardState  *outNewState ) {
 
     /* fixme:  pay attention to limits on where piece can actually move */
 
@@ -1010,7 +1016,8 @@ char getRandomMove( BoardState  *inState,
     static  unsigned char  possiblePieceCol[BN];
     static  unsigned char  possibleDestRow [BN];
     static  unsigned char  possibleDestCol [BN];
-
+    static  BoardState     possibleStates  [BN];
+    
     int             numPossiblePieces  =  0;
     int             piecePick;
     int             p;
@@ -1068,7 +1075,8 @@ char getRandomMove( BoardState  *inState,
                                           y,
                                           x,
                                           possibleDestRow,
-                                          possibleDestCol );
+                                          possibleDestCol,
+                                          possibleStates );
 
         if( numMoves > 0 ) {
             m = maxigin_randRange( &chessRand,
@@ -1080,6 +1088,8 @@ char getRandomMove( BoardState  *inState,
             outMove->endPos  [0] = possibleDestRow[m];
             outMove->endPos  [1] = possibleDestCol[m];
 
+            *outNewState = possibleStates[m];
+            
             return 1;
             }
         }
@@ -1092,7 +1102,16 @@ char getRandomMove( BoardState  *inState,
 
 
 void applyMove( BoardState  *inState,
-                Move        *inMove ) {
+                Move        *inMove,
+                BoardState  *inNewState ) {
+
+    /* just copy state over, don't need to actually apply move */
+    *inState = *inNewState;
+
+    return;
+
+    /* legacy code where move is applied here */
+    
     inState->grid[ inMove->endPos[0] ][ inMove->endPos[1] ]
         = inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
 

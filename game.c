@@ -877,11 +877,7 @@ static const char  *panelFullSprites[]  =  { "panelFull200_100.tga",
                                              "panelFull300_220.tga" };
 
 
-#define REGISTER_VAL_MEM( x )  \
-    maxigin_initRegisterStaticMemory( &x, sizeof(x), #x )
-
-#define REGISTER_ARRAY_MEM( a ) \
-    maxigin_initRegisterStaticMemory( a, sizeof(a), #a )
+#include "memoryRegister.h"
 
 
 void maxiginGame_init( void ) {

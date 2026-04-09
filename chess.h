@@ -14,6 +14,9 @@
 #ifndef CHESS_H_INCLUDED
 #define CHESS_H_INCLUDED
 
+#include "memoryRegister.h"
+
+
 typedef  unsigned char  ChessPiece;
 
 
@@ -897,6 +900,8 @@ static  MaxiginRand  chessRand;
 void chessInit( void ) {
     maxigin_randSeed( &chessRand,
                       12453597 );
+
+    REGISTER_VAL_MEM( chessRand );
     }
      
 

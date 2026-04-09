@@ -205,7 +205,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_TOTAL_SPRITE_BYTES
-#define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  2000000
+#define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  4000000
 #endif
 
 
@@ -4988,8 +4988,12 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
         mx_sprites[ glowSpriteHandle ].stripParentHandle = -1;
         mx_sprites[ glowSpriteHandle ].stripIndex = -1;
         mx_sprites[ glowSpriteHandle ].stripChildHandle = -1;
+
+        if( glowSpriteHandle == mx_numSprites ) {
+            /* adding a new sprite to end of list */
+            mx_numSprites ++;
+            }
         
-        mx_numSprites ++;
         mx_numSpriteBytesUsed += neededGlowBytes;
 
 

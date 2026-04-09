@@ -31,6 +31,17 @@ enum{
     king,
     NUM_CHESS_PIECES };
 
+
+static int pieceValue[ NUM_CHESS_PIECES ] = { 0,
+                                              1,
+                                              3,
+                                              3,
+                                              5,
+                                              9,
+                                              999 };
+    
+    
+
 /* store color in 8th bit.  This gives us 127 unique pieces in both colors */
 #define  CHESS_TYPE_MASK    0x7F
 #define  CHESS_COLOR_MASK   0x80
@@ -74,6 +85,13 @@ void getStartBoard( BoardState  *outState );
 
 /* returns 1 if move possible, 0 if not */
 char getRandomMove( BoardState  *inState,
+                    Move        *outMove,
+                    BoardState  *outNewState );
+
+
+/* if a capture is possible, makes move that performs most valuable capture
+   if not, makes a random move */
+char getGreedyMove( BoardState  *inState,
                     Move        *outMove,
                     BoardState  *outNewState );
 
@@ -1056,11 +1074,9 @@ char getRandomMove( BoardState  *inState,
         }
 
 
-    /* fixme:
-       this is just a truly random move for testing */
-
-    /* try picking a piece and try moving it 10 times before giving up */
-
+    /* shuffle possible pieces to move, then keep walking through
+       options until we find a piece that can actually move */
+    
     shuffle = maxigin_genShuffle( &chessRand,
                                   0,
                                   numPossiblePieces - 1 );
@@ -1100,6 +1116,183 @@ char getRandomMove( BoardState  *inState,
         }
        
     
+    /* tried all possible pieces, none could move*/
+    return 0;
+    }
+
+
+/* gets the score from the point of view of nextToMove, where it's good
+   for nextToMove if the score is negative */
+static int getScore( BoardState *inState ) {
+
+    int  score  = 0;
+    int  y;
+    int  x;
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            ChessPiece p   =  inState->grid[ y ][ x ];
+            ChessPiece c;
+            ChessPiece t;
+            
+            if( p == noPiece ) {
+                continue;
+                }
+            c =  p & CHESS_COLOR_MASK;
+            t =  p & CHESS_TYPE_MASK;
+            
+            if( c == inState->nextToMove ) {
+                score -= pieceValue[ t ];
+                }
+            else {
+                score += pieceValue[ t ];
+                }
+            }
+
+        }
+
+    return score;
+    }
+
+
+
+
+char getGreedyMove( BoardState  *inState,
+                    Move        *outMove,
+                    BoardState  *outNewState ) {
+
+    /* fixme:  pay attention to limits on where piece can actually move */
+
+    /* look at all pieces that can move */
+    static  unsigned char  possiblePieceRow[BN];
+    static  unsigned char  possiblePieceCol[BN];
+
+    /* for current piece that we're looking at, what are the possible moves */
+    static  unsigned char  possibleDestRow [BN];
+    static  unsigned char  possibleDestCol [BN];
+    static  BoardState     possibleStates  [BN];
+
+    /* for shuffling the possible moves of our current piece before
+       considering them */
+    static  int            moveLookOrder   [BN];
+
+    
+    int             foundBest          =  0;
+    int             bestScore          =  -9999;
+    int             numPossiblePieces  =  0;
+    int             piecePick;
+    int             p;
+    unsigned char   x;
+    unsigned char   y;
+    int            *shuffle;
+    int             colorToMove        =  inState->nextToMove;
+    int             i;
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            if( inState->grid[y][x] != noPiece ) {
+
+                if( ( inState->grid[y][x] & CHESS_COLOR_MASK ) == colorToMove ) {
+                
+                    possiblePieceRow[numPossiblePieces] = y;
+                    possiblePieceCol[numPossiblePieces] = x;
+                    numPossiblePieces ++;
+                    }
+                }
+            }
+        }
+
+    if( numPossiblePieces == 0 ) {
+        return 0;
+        }
+
+
+    shuffle = maxigin_genShuffle( &chessRand,
+                                  0,
+                                  numPossiblePieces - 1 );
+    for( p = 0;
+         p < numPossiblePieces;
+         p ++ ) {
+
+        int  numMoves;
+        int  m;
+        
+        piecePick = shuffle[ p ];
+        
+        y = possiblePieceRow[ piecePick ];
+        x = possiblePieceCol[ piecePick ];
+
+        numMoves = getPiecePossibleMoves( inState,
+                                          y,
+                                          x,
+                                          possibleDestRow,
+                                          possibleDestCol,
+                                          possibleStates );
+
+        if( numMoves > 0 ) {
+
+            /* shuffle an index into our possible moves */
+            for( i = 0;
+                 i < numMoves;
+                 i ++ ) {
+                moveLookOrder[i] = i;
+                }
+            maxigin_shuffle( &chessRand,
+                             numMoves,
+                             moveLookOrder );
+
+            /* now walk through in shuffled order and
+               find first move that has higher score than best so far */
+
+            /* if there are multiple moves for this piece that have the same
+               higher score, a random one will be picked due to the shuffling */
+
+            for( i = 0;
+                 i < numMoves;
+                 i ++ ) {
+
+                int  score;
+                
+                m = moveLookOrder[ i ];
+
+                score = getScore( &( possibleStates[m] ) );
+
+
+                if( score > bestScore ) {
+
+                    foundBest = 1;
+                    bestScore = score;
+
+                    outMove->startPos[0] = y;
+                    outMove->startPos[1] = x;
+                    outMove->endPos[0]   = possibleDestRow[m];
+                    outMove->endPos[1]   = possibleDestCol[m];
+                    *outNewState         = possibleStates [m];
+                    }
+                }
+            }
+        }
+
+    /* if all moves are equal (no captures possible, no score change possible),
+       then we end up picking a random move above, due to the shuffles */
+
+    if( foundBest ) {
+        return 1;
+        }
+        
+        
     /* tried all possible pieces, none could move*/
     return 0;
     }

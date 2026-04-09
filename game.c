@@ -538,7 +538,7 @@ void maxiginGame_step( void ) {
             
             mingin_log( "Jump\n" );
         
-            if( getRandomMove( &boardState,
+            if( getGreedyMove( &boardState,
                                &m,
                                &newState ) ) {
 

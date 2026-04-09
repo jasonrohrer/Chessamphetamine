@@ -101,9 +101,9 @@ void pieceSpritesInit( void ) {
                                                   2,
                                                   0,
                                                   255,
-                                                  50,
+                                                  60,
                                                   30,
-                                                  200,
+                                                  100,
                                                   0 );
 
                 /* haze at bottom */

@@ -39,6 +39,16 @@ static int pieceValue[ NUM_CHESS_PIECES ] = { 0,
                                               5,
                                               9,
                                               999 };
+
+
+static char pieceChars[ NUM_CHESS_PIECES ] = { '+',
+                                               'p',
+                                               'b',
+                                               'n',
+                                               'r',
+                                               'q',
+                                               'k' };
+
     
     
 
@@ -1029,6 +1039,77 @@ static int getPiecePossibleMoves( BoardState     *inState,
 
 
 
+static const char *getBoardStateString( BoardState  *inState ) {
+
+    enum{  bufferSize  =  4 * BN };
+        
+    static char  buffer[ bufferSize ];
+
+    const char   *nextToMove  =  "Next to move: ";
+    int           nLen        =  maxigin_stringLength( nextToMove );
+    int           y;
+    int           x;
+    int           i           =  0;
+    int           n;
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            ChessPiece  p  =  inState->grid[y][x];
+            ChessPiece  t  =  p & CHESS_TYPE_MASK;
+            
+            if( t == noPiece ) {
+                buffer[ i ] = pieceChars[ t ];
+                }
+            else {
+                if( ( inState->grid[y][x] & CHESS_COLOR_MASK ) == CHESS_BLACK ) {
+                    buffer[ i ] = pieceChars[ t ];
+                    }
+                else {
+                    /* make upper case for white */
+                    buffer[ i ] = (char)( pieceChars[ t ] - 32 );
+                    }
+                }
+            
+            i ++;
+
+            buffer[ i ] = ' ';
+
+            i ++;
+            }
+
+        buffer[ i ] = '\n';
+        i ++;
+        }
+
+
+    for( n = 0;
+         n < nLen;
+         n ++ ) {
+
+        buffer[ i++ ] = nextToMove[n];
+        }
+    
+    if( inState->nextToMove == CHESS_WHITE ) {
+        buffer[ i++ ] = 'W';
+        }
+    else {
+        buffer[ i++ ] = 'b';
+        }
+    
+
+    buffer[ i ] = '\0';
+
+    return buffer;
+    }
+
+
+
 char getRandomMove( BoardState  *inState,
                     Move        *outMove,
                     BoardState  *outNewState ) {
@@ -1168,6 +1249,7 @@ static int getScore( BoardState *inState ) {
 static char getGreedyDepthMove( BoardState  *inState,
                                 Move        *outMove,
                                 BoardState  *outNewState,
+                                int         *outScore,
                                 int          inDepth ) {
 
     /* fixme:  pay attention to limits on where piece can actually move */
@@ -1202,6 +1284,13 @@ static char getGreedyDepthMove( BoardState  *inState,
     int             colorToMove        =  inState->nextToMove;
     int             i;
     Move            nextMove;
+
+    /*
+    const char     *stateString        =  getBoardStateString( inState );
+
+    mingin_log( stateString );
+    mingin_log( "\n" );
+    */
     
     for( y = 0;
          y < BH;
@@ -1285,17 +1374,13 @@ static char getGreedyDepthMove( BoardState  *inState,
                     int   nextScore;
                     
                     nextFound =
-                        getGreedyDepthMove( &( possibleStates[ nextDepth ][m] ),
+                        getGreedyDepthMove( &( possibleStates[ inDepth ][m] ),
                                             &nextMove,
                                             &( nextMoveState[ nextDepth ] ),
+                                            &nextScore,
                                             nextDepth );
                     if( nextFound ) {
-                        nextScore =
-                            - getScore( &( nextMoveState[ nextDepth ] ) );
-
-                        if( nextScore != score ) {
-                            mingin_log( "hey\n" );
-                            }
+                        score = -nextScore;
                         }
                     }
                 
@@ -1318,6 +1403,8 @@ static char getGreedyDepthMove( BoardState  *inState,
     /* if all moves are equal (no captures possible, no score change possible),
        then we end up picking a random move above, due to the shuffles */
 
+    *outScore = bestScore;
+    
     if( foundBest ) {
         return 1;
         }
@@ -1333,10 +1420,19 @@ char getGreedyMove( BoardState  *inState,
                     Move        *outMove,
                     BoardState  *outNewState ) {
 
+    int  nextScore;
+    
+    const char *stateString  =  getBoardStateString( inState );
+
+    mingin_log( stateString );
+    mingin_log( "\n" );
+
+    
     return getGreedyDepthMove( inState,
                                outMove,
                                outNewState,
-                               1 );
+                               &nextScore,
+                               2 );
     }
 
 

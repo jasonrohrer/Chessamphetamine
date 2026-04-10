@@ -114,6 +114,14 @@ void applyMove( BoardState  *inState,
 
 
 
+/* gets board state as a nicely-formatted text table
+   returns a string from a pool of 4 statically allocated buffers,
+   round-robin */
+const char *getBoardStateString( BoardState  *inState );
+
+
+
+
 
 #ifdef CHESS_IMPLEMENTATION
 
@@ -927,7 +935,7 @@ static  MaxiginRand  chessRand;
 
 void chessInit( void ) {
     maxigin_randSeed( &chessRand,
-                      12453599 );
+                      12453591 );
 
     REGISTER_VAL_MEM( chessRand );
     }
@@ -1039,11 +1047,14 @@ static int getPiecePossibleMoves( BoardState     *inState,
 
 
 
-static const char *getBoardStateString( BoardState  *inState ) {
+const char *getBoardStateString( BoardState  *inState ) {
 
-    enum{  bufferSize  =  4 * BN };
+    enum{         bufferSize  =  4 * BN,
+                  numBuffers  =  4 };
         
-    static char  buffer[ bufferSize ];
+    static  char  buffer[ numBuffers ][ bufferSize ];
+    static  int   b           =  0;
+    
 
     const char   *nextToMove  =  "Next to move: ";
     int           nLen        =  maxigin_stringLength( nextToMove );
@@ -1051,6 +1062,7 @@ static const char *getBoardStateString( BoardState  *inState ) {
     int           x;
     int           i           =  0;
     int           n;
+    char         *returnBuff;
     
     for( y = 0;
          y < BH;
@@ -1064,26 +1076,26 @@ static const char *getBoardStateString( BoardState  *inState ) {
             ChessPiece  t  =  p & CHESS_TYPE_MASK;
             
             if( t == noPiece ) {
-                buffer[ i ] = pieceChars[ t ];
+                buffer[b][ i ] = pieceChars[ t ];
                 }
             else {
                 if( ( inState->grid[y][x] & CHESS_COLOR_MASK ) == CHESS_BLACK ) {
-                    buffer[ i ] = pieceChars[ t ];
+                    buffer[b][ i ] = pieceChars[ t ];
                     }
                 else {
                     /* make upper case for white */
-                    buffer[ i ] = (char)( pieceChars[ t ] - 32 );
+                    buffer[b][ i ] = (char)( pieceChars[ t ] - 32 );
                     }
                 }
             
             i ++;
 
-            buffer[ i ] = ' ';
+            buffer[b][ i ] = ' ';
 
             i ++;
             }
 
-        buffer[ i ] = '\n';
+        buffer[b][ i ] = '\n';
         i ++;
         }
 
@@ -1092,20 +1104,29 @@ static const char *getBoardStateString( BoardState  *inState ) {
          n < nLen;
          n ++ ) {
 
-        buffer[ i++ ] = nextToMove[n];
+        buffer[b][ i++ ] = nextToMove[n];
         }
     
     if( inState->nextToMove == CHESS_WHITE ) {
-        buffer[ i++ ] = 'W';
+        buffer[b][ i++ ] = 'W';
         }
     else {
-        buffer[ i++ ] = 'b';
+        buffer[b][ i++ ] = 'b';
         }
     
 
-    buffer[ i ] = '\0';
+    buffer[b][ i ] = '\0';
 
-    return buffer;
+    returnBuff = buffer[b];
+
+    b ++;
+
+    /* wrap around */
+    if( b >= numBuffers ) {
+        b = 0;
+        }
+    
+    return returnBuff;
     }
 
 
@@ -1260,7 +1281,8 @@ static char getGreedyDepthMove( BoardState  *inState,
        static state at the current level */
     static  unsigned char  possiblePieceRow[ MAX_DEPTH ][BN];
     static  unsigned char  possiblePieceCol[ MAX_DEPTH ][BN];
-
+    static  int            pieceLookOrder  [ MAX_DEPTH ][BN];
+    
     /* for current piece that we're looking at, what are the possible moves */
     static  unsigned char  possibleDestRow [ MAX_DEPTH ][BN];
     static  unsigned char  possibleDestCol [ MAX_DEPTH ][BN];
@@ -1274,24 +1296,18 @@ static char getGreedyDepthMove( BoardState  *inState,
     
     
     int             foundBest          =  0;
-    int             bestScore          =  - MAX_SCORE;
+    int             bestScore          =  - ( MAX_SCORE - 1 );
     int             numPossiblePieces  =  0;
     int             piecePick;
     int             p;
     unsigned char   x;
     unsigned char   y;
-    int            *shuffle;
     int             colorToMove        =  inState->nextToMove;
     int             i;
     Move            nextMove;
-    
-    const char     *stateString        =  getBoardStateString( inState );
-
-    mingin_log( stateString );
-    mingin_log( "\n" );
 
     if( colorToMove == CHESS_BLACK ) {
-        bestScore = MAX_SCORE;
+        bestScore = MAX_SCORE - 1;
         }
     
     for( y = 0;
@@ -1318,10 +1334,16 @@ static char getGreedyDepthMove( BoardState  *inState,
         return 0;
         }
 
-
-    shuffle = maxigin_genShuffle( &chessRand,
-                                  0,
-                                  numPossiblePieces - 1 );
+    /* shuffle an index into our possible pieces */
+    for( i = 0;
+         i < numPossiblePieces;
+         i ++ ) {
+        pieceLookOrder[ inDepth ][i] = i;
+        }
+    maxigin_shuffle( &chessRand,
+                     numPossiblePieces,
+                     pieceLookOrder[ inDepth ] );
+    
     for( p = 0;
          p < numPossiblePieces;
          p ++ ) {
@@ -1329,7 +1351,7 @@ static char getGreedyDepthMove( BoardState  *inState,
         int  numMoves;
         int  m;
         
-        piecePick = shuffle[ p ];
+        piecePick = pieceLookOrder[ inDepth ][ p ];
         
         y = possiblePieceRow[ inDepth ][ piecePick ];
         x = possiblePieceCol[ inDepth ][ piecePick ];
@@ -1407,10 +1429,6 @@ static char getGreedyDepthMove( BoardState  *inState,
 
                     foundBest = 1;
                     bestScore = score;
-                    
-                    stateString =
-                        getBoardStateString(
-                            &( possibleStates [ inDepth ][m] ) );
 
                     outMove->startPos[0] = y;
                     outMove->startPos[1] = x;
@@ -1443,12 +1461,6 @@ char getGreedyMove( BoardState  *inState,
                     BoardState  *outNewState ) {
 
     int  nextScore;
-    /*
-    const char *stateString  =  getBoardStateString( inState );
-
-    mingin_log( stateString );
-    mingin_log( "\n" );
-    */
     
     return getGreedyDepthMove( inState,
                                outMove,

@@ -1301,7 +1301,7 @@ static char getGreedyDepthMove( BoardState  *inState,
     
     
     int             foundBest          =  0;
-    int             bestScore          =  - ( MAX_SCORE - 1 );
+    int             bestScore          =  - MAX_SCORE;
     int             numPossiblePieces  =  0;
     int             piecePick;
     int             p;
@@ -1312,7 +1312,7 @@ static char getGreedyDepthMove( BoardState  *inState,
     Move            nextMove;
 
     if( colorToMove == CHESS_BLACK ) {
-        bestScore = MAX_SCORE - 1;
+        bestScore = MAX_SCORE;
         }
     
     for( y = 0;
@@ -1415,10 +1415,10 @@ static char getGreedyDepthMove( BoardState  *inState,
                         /* no move found for opponent?
                            they are checkmated */
                         if( colorToMove == CHESS_WHITE ) {
-                            score = MAX_SCORE;
+                            score = MAX_SCORE - 1;
                             }
                         else {
-                            score = - MAX_SCORE;
+                            score = - ( MAX_SCORE - 1 );
                             }
                         }
                     }
@@ -1471,7 +1471,7 @@ char getGreedyMove( BoardState  *inState,
                                outMove,
                                outNewState,
                                &nextScore,
-                               2 );
+                               1 );
     }
 
 

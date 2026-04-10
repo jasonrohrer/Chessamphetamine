@@ -31,6 +31,14 @@ void boardGetSquareCenter( int   inBoardCenterX,
                            int  *outSquareCenterY );
 
 
+
+int boardGetPixelDistance( int  inRowA,
+                           int  inColA,
+                           int  inRowB,
+                           int  inColB );
+
+
+
 #ifdef BOARD_IMPLEMENTATION
 
 
@@ -41,6 +49,34 @@ static  int  squareSpriteWhite;
 static  int  squareSpriteBlack;
 
 static  int  squareSize          =  25;
+
+
+
+/* computes the floored square root of inVal */
+static long  longSquareRoot( long  inVal ) {
+
+    long startVal = 1;
+
+    if( inVal > 10000 ) {
+        startVal = 100;
+        }
+    else if( inVal > 5000 ) {
+        startVal = 70;
+        }
+    else if( inVal > 1000 ) {
+        startVal = 31;
+        }
+    else if( inVal > 100 ) {
+        startVal = 10;
+        }
+
+    while( startVal * startVal <= inVal ) {
+        startVal ++;
+        }
+
+    return startVal - 1;
+    }
+
 
 
 void boardInit( void ) {
@@ -160,6 +196,69 @@ void boardGetSquareCenter( int   inBoardCenterX,
         inBoardCenterX - 100 + inCol * squareSize + squareSize / 2;
     }
 
+
+
+
+
+
+
+int boardGetPixelDistance( int  inRowA,
+                           int  inColA,
+                           int  inRowB,
+                           int  inColB ) {
+ 
+    int  dRow       =  inRowA - inRowB;
+    int  dCol       =  inColA - inColB;
+    
+    if( dRow < 0 ) {
+        dRow = - dRow;
+        }
+    if( dCol < 0 ) {
+        dCol = - dCol;
+        }
+    
+    if( dRow == 0 ) {
+        return dCol * squareSize;
+        }
+    
+    if( dCol == 0 ) {
+        return dRow * squareSize;
+        }
+
+    if( dRow == dCol ) {
+
+        /* diag move */
+
+        /* fixed point approx of square root of 2 */
+        long  working  =  dRow * 1414;
+
+        return (int)( (working * squareSize ) / 1000 );
+        }
+
+    if( ( dRow == 1
+          &&
+          dCol == 2 )
+        ||
+        ( dRow == 2
+          &&
+          dCol == 1 ) ) {
+
+        /* knight's move, sqrt 5 distance */
+        long  working  =  2236;
+
+        return (int)( (working * squareSize ) / 1000 );
+        }
+
+
+    /* if we got here, it's some other non-standard chess move
+       compute actual square root  */
+
+    return (int)(
+        longSquareRoot( (long)( dRow * dRow + dCol * dCol ) * 100 ) / 10 );
+    }
+
+
+    
 
 
 #endif

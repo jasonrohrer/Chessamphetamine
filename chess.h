@@ -126,6 +126,11 @@ const char *getBoardStateString( BoardState  *inState );
 
 
 
+/* gets the score for a board state, where it's good for white if the
+   score is positive, and good for black if the score is negative */
+int getScore( BoardState *inState );
+
+
 
 
 #ifdef CHESS_IMPLEMENTATION
@@ -1228,9 +1233,8 @@ char getRandomMove( BoardState  *inState,
     }
 
 
-/* gets the score for a board state, where it's good for white if the
-   score is positive, and good for black if the score is negative */
-static int getScore( BoardState *inState ) {
+
+int getScore( BoardState *inState ) {
 
     int  score  = 0;
     int  y;

@@ -28,7 +28,12 @@ void drawPiece( ChessPiece  inPiece,
                 int  inBaseCenterY );
 
 
+/* inMoveProgress goes from 0 to inMoveProgressMax
+   if inMoveProgressMax is 0, inMove is ignored */
 void drawBoardState( BoardState  *inState,
+                     Move        *inMove,
+                     int          inMoveProgress,
+                     int          inMoveProgressMax,
                      int          inBoardCenterX,
                      int          inBoardCenterY );
 
@@ -175,6 +180,9 @@ void drawPiece( ChessPiece  inPiece,
 
 
 void drawBoardState( BoardState  *inState,
+                     Move        *inMove,
+                     int          inMoveProgress,
+                     int          inMoveProgressMax,
                      int          inBoardCenterX,
                      int          inBoardCenterY ) {
 
@@ -203,6 +211,36 @@ void drawBoardState( BoardState  *inState,
                                       x,
                                       &pX,
                                       &pY );
+
+                if( inMoveProgressMax != 0
+                    &&
+                    inMove->startPos[0] == y
+                    &&
+                    inMove->startPos[1] == x ) {
+
+                    /* a move is in progress for the piece at this square */
+                    int  dX;
+                    int  dY;
+
+                    long  workingX;
+                    long  workingY;
+                    
+                    boardGetSquareCenter( inBoardCenterX,
+                                          inBoardCenterY,
+                                          inMove->endPos[0],
+                                          inMove->endPos[1],
+                                          &dX,
+                                          &dY );
+
+                    workingX = dX - pX;
+                    workingY = dY - pY;
+
+                    workingX *= inMoveProgress;
+                    workingY *= inMoveProgress;
+
+                    pX = (int)( workingX / inMoveProgressMax ) + pX;
+                    pY = (int)( workingY / inMoveProgressMax ) + pY;
+                    }
                 
                 drawPiece( p,
                            pX,

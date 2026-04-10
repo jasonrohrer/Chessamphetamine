@@ -123,6 +123,10 @@ static int          lang_bomb;
 
 
 static BoardState   boardState;
+static BoardState   postMoveState;
+static Move         boardMove;
+static int          moveProgress;
+static int          moveProgressMax  =  0;
 
 static char         moveMade;
 
@@ -325,6 +329,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                MAXIGIN_GAME_NATIVE_H / 2 );
 
     drawBoardState( &boardState,
+                    &boardMove,
+                    moveProgress,
+                    moveProgressMax,
                     MAXIGIN_GAME_NATIVE_W / 2,
                     MAXIGIN_GAME_NATIVE_H / 2 );
     
@@ -533,25 +540,54 @@ void maxiginGame_step( void ) {
         if( ! moveMade ) {
 
             /* make a chess move */
-            BoardState  newState;
-            Move        m;
             
             mingin_log( "Jump\n" );
         
             if( getMixedMove( &boardState,
-                              &m,
-                              &newState ) ) {
+                              &boardMove,
+                              &postMoveState ) ) {
 
-                applyMove( &boardState,
-                           &m,
-                           &newState );
+                int  pixDist  = boardGetPixelDistance( boardMove.startPos[0],
+                                                       boardMove.startPos[1],
+                                                       boardMove.endPos[0],
+                                                       boardMove.endPos[1] );
+                moveProgressMax = pixDist;
+                moveProgress    = 0;
+
+                moveMade = 1;
                 }
-            moveMade = 1;
             }
         }
-    else {
-        moveMade = 0;
+    
+
+    if( moveMade ) {
+
+        moveProgress += 8;
+
+        if( moveProgress >= moveProgressMax ) {
+
+            if( getScore( &boardState ) != getScore( &postMoveState ) ) {
+                /* thunk on score-changing capture */
+                maxigin_playSoundEffect( thunkSound,
+                                         512 );
+                }
+            else {
+                /* plunk on non-capture move */
+                maxigin_playSoundEffect( plunkSound,
+                                         512 );
+                }
+            
+            applyMove( &boardState,
+                       &boardMove,
+                       &postMoveState );
+            
+            moveProgress = 0;
+            moveProgressMax = 0;
+
+            moveMade = 0;
+            }
         }
+    
 
         
     if( ! remappingJump && maxigin_isButtonDown( REMAP ) ) {
@@ -1067,7 +1103,10 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( gameGUI );
 
     REGISTER_VAL_MEM( boardState );
-    
+    REGISTER_VAL_MEM( postMoveState );
+    REGISTER_VAL_MEM( boardMove );
+    REGISTER_VAL_MEM( moveProgress );
+    REGISTER_VAL_MEM( moveProgressMax );
 
     REGISTER_ARRAY_MEM( bulletOn );
     REGISTER_ARRAY_MEM( bulletPos );

@@ -105,6 +105,11 @@ char getGreedyMove( BoardState  *inState,
                     Move        *outMove,
                     BoardState  *outNewState );
 
+/* makes a greedy move 3/4 of the time and random move 1/4 of the time */
+char getMixedMove( BoardState  *inState,
+                   Move        *outMove,
+                   BoardState  *outNewState );
+
 
 
 /* updates inState to reflect move described by inMove and inNewState */
@@ -1466,7 +1471,30 @@ char getGreedyMove( BoardState  *inState,
                                outMove,
                                outNewState,
                                &nextScore,
-                               1 );
+                               2 );
+    }
+
+
+
+char getMixedMove( BoardState  *inState,
+                   Move        *outMove,
+                   BoardState  *outNewState ) {
+
+    int  pick  =  maxigin_randRange( &chessRand,
+                                     1,
+                                     100 );
+
+    if( pick <= 75 ) {
+
+        return getGreedyMove( inState,
+                              outMove,
+                              outNewState );
+        }
+    else {
+        return getRandomMove( inState,
+                              outMove,
+                              outNewState );
+        }
     }
 
 

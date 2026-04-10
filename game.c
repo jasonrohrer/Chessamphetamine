@@ -538,9 +538,9 @@ void maxiginGame_step( void ) {
             
             mingin_log( "Jump\n" );
         
-            if( getGreedyMove( &boardState,
-                               &m,
-                               &newState ) ) {
+            if( getMixedMove( &boardState,
+                              &m,
+                              &newState ) ) {
 
                 applyMove( &boardState,
                            &m,

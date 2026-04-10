@@ -927,7 +927,7 @@ static  MaxiginRand  chessRand;
 
 void chessInit( void ) {
     maxigin_randSeed( &chessRand,
-                      12453597 );
+                      12453599 );
 
     REGISTER_VAL_MEM( chessRand );
     }
@@ -1202,8 +1202,8 @@ char getRandomMove( BoardState  *inState,
     }
 
 
-/* gets the score from the point of view of nextToMove, where it's good
-   for nextToMove if the score is negative */
+/* gets the score for a board state, where it's good for white if the
+   score is positive, and good for black if the score is negative */
 static int getScore( BoardState *inState ) {
 
     int  score  = 0;
@@ -1228,7 +1228,7 @@ static int getScore( BoardState *inState ) {
             c =  p & CHESS_COLOR_MASK;
             t =  p & CHESS_TYPE_MASK;
             
-            if( c == inState->nextToMove ) {
+            if( c == CHESS_BLACK ) {
                 score -= pieceValue[ t ];
                 }
             else {
@@ -1244,7 +1244,7 @@ static int getScore( BoardState *inState ) {
 
 
 #define  MAX_DEPTH  5
-
+#define  MAX_SCORE  9999
 
 static char getGreedyDepthMove( BoardState  *inState,
                                 Move        *outMove,
@@ -1274,7 +1274,7 @@ static char getGreedyDepthMove( BoardState  *inState,
     
     
     int             foundBest          =  0;
-    int             bestScore          =  -9999;
+    int             bestScore          =  - MAX_SCORE;
     int             numPossiblePieces  =  0;
     int             piecePick;
     int             p;
@@ -1284,13 +1284,15 @@ static char getGreedyDepthMove( BoardState  *inState,
     int             colorToMove        =  inState->nextToMove;
     int             i;
     Move            nextMove;
-
-    /*
+    
     const char     *stateString        =  getBoardStateString( inState );
 
     mingin_log( stateString );
     mingin_log( "\n" );
-    */
+
+    if( colorToMove == CHESS_BLACK ) {
+        bestScore = MAX_SCORE;
+        }
     
     for( y = 0;
          y < BH;
@@ -1380,15 +1382,35 @@ static char getGreedyDepthMove( BoardState  *inState,
                                             &nextScore,
                                             nextDepth );
                     if( nextFound ) {
-                        score = -nextScore;
+                        score = nextScore;
+                        }
+                    else {
+                        /* no move found for opponent?
+                           they are checkmated */
+                        if( colorToMove == CHESS_WHITE ) {
+                            score = MAX_SCORE;
+                            }
+                        else {
+                            score = - MAX_SCORE;
+                            }
                         }
                     }
                 
 
-                if( score > bestScore ) {
+                if( ( colorToMove == CHESS_WHITE
+                      &&
+                      score > bestScore )
+                    ||
+                    ( colorToMove == CHESS_BLACK
+                      &&
+                      score < bestScore ) ) {
 
                     foundBest = 1;
                     bestScore = score;
+                    
+                    stateString =
+                        getBoardStateString(
+                            &( possibleStates [ inDepth ][m] ) );
 
                     outMove->startPos[0] = y;
                     outMove->startPos[1] = x;
@@ -1421,18 +1443,18 @@ char getGreedyMove( BoardState  *inState,
                     BoardState  *outNewState ) {
 
     int  nextScore;
-    
+    /*
     const char *stateString  =  getBoardStateString( inState );
 
     mingin_log( stateString );
     mingin_log( "\n" );
-
+    */
     
     return getGreedyDepthMove( inState,
                                outMove,
                                outNewState,
                                &nextScore,
-                               2 );
+                               1 );
     }
 
 

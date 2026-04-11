@@ -7292,14 +7292,14 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
          y ++ ) {
 
         int  dy     =  y - cy;
-        int  drawY  =  (int)( ( d * dy ) / 100 ) + inCenterY;
+        int  drawY  =  (int)( ( d * dy ) / 100 ) + inCenterY + dy;
 
         for( x = 0;
              x < s->w;
              x ++ ) {
 
             int dx      = x - cx;
-            int  drawX  =  (int)( ( d * dx ) / 100 ) + inCenterX;
+            int  drawX  =  (int)( ( d * dx ) / 100 ) + inCenterX + dx;
 
             maxigin_drawSetColor(
                 mx_spriteBytes[ b     ],

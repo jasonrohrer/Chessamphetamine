@@ -342,12 +342,12 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( explodingProgress != -1 ) {
 
-        explodingProgress = drawExplodingPiece( explodingPiece,
-                                                MAXIGIN_GAME_NATIVE_W / 2,
-                                                MAXIGIN_GAME_NATIVE_H / 2,
-                                                explodingRow,
-                                                explodingCol,
-                                                explodingProgress );
+        drawExplodingPiece( explodingPiece,
+                            MAXIGIN_GAME_NATIVE_W / 2,
+                            MAXIGIN_GAME_NATIVE_H / 2,
+                            explodingRow,
+                            explodingCol,
+                            explodingProgress );
         }
     
 
@@ -609,6 +609,10 @@ void maxiginGame_step( void ) {
 
             moveMade = 0;
             }
+        }
+
+    if( explodingProgress != -1 ) {
+        explodingProgress = stepExplodingPiece( explodingProgress );
         }
     
 

@@ -32,12 +32,14 @@ void drawPiece( ChessPiece  inPiece,
    returns new progress after one explosion step
    returns -1 when explosion done
 */
-int drawExplodingPiece( ChessPiece  inPiece,
-                        int         inBoardCenterX,
-                        int         inBoardCenterY,
-                        int         inRow,
-                        int         inCol,
-                        int         inProgress );
+int stepExplodingPiece( int  inProgress );
+
+void drawExplodingPiece( ChessPiece  inPiece,
+                         int         inBoardCenterX,
+                         int         inBoardCenterY,
+                         int         inRow,
+                         int         inCol,
+                         int         inProgress );
 
 
 
@@ -191,16 +193,32 @@ void drawPiece( ChessPiece  inPiece,
     }
 
 
+static  int  explodeMax  =  512;
 
-int drawExplodingPiece( ChessPiece  inPiece,
-                        int         inBoardCenterX,
-                        int         inBoardCenterY,
-                        int         inRow,
-                        int         inCol,
-                        int         inProgress ) {
+
+int stepExplodingPiece( int  inProgress ) {
+    
+    inProgress += ( 2 * mingin_getStepsPerSecond() ) / 60;
+    
+
+    if( inProgress >= explodeMax ) {
+        inProgress = -1;
+        }
+
+    return inProgress;
+    }
+
+
+    
+void drawExplodingPiece( ChessPiece  inPiece,
+                         int         inBoardCenterX,
+                         int         inBoardCenterY,
+                         int         inRow,
+                         int         inCol,
+                         int         inProgress ) {
 
     ChessPiece     rawP  =  inPiece & CHESS_TYPE_MASK;
-    int            max   =  512;
+
     unsigned char  a;
     int            x;
     int            y;
@@ -225,26 +243,18 @@ int drawExplodingPiece( ChessPiece  inPiece,
                               255 );
         }
 
-    a = (unsigned char)( ( (long)( max - inProgress ) * 255 ) / max );
+    a = (unsigned char)( ( (long)( explodeMax - inProgress ) * 255 )
+                         / explodeMax );
     
     maxigin_drawExplodingSprite( pieceSpriteHandles[ rawP ],
                                  x,
                                  y + pieceOffsetY[ rawP ],
                                  BOARD_SQUARE_SIZE / 2,
                                  inProgress,
-                                 max,
+                                 explodeMax,
                                  a );
 
     maxigin_drawResetColor();
-    
-    inProgress += ( 2 * mingin_getStepsPerSecond() ) / 60;
-    
-
-    if( inProgress >= max ) {
-        inProgress = -1;
-        }
-    
-    return inProgress;
     }
 
 

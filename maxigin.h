@@ -4799,9 +4799,9 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
 
     MaxiginSprite  *mainSprite;
     const char     *glowSpriteDataName;
-    char            skipPersistentData   =  0;
-    int             persistReadHandle;
-    int             numBytes;
+    char            skipPersistentData   =   0;
+    int             persistReadHandle    =  -1;
+    int             numBytes             =   0;
     int             numRead;
     int             b;
     int             glowW;

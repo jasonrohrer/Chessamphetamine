@@ -186,8 +186,54 @@ void drawBoardState( BoardState  *inState,
                      int          inBoardCenterX,
                      int          inBoardCenterY ) {
 
-    int  x;
-    int  y;
+    int         x;
+    int         y;
+    char        drawMoving  =  0;
+    int         mX;
+    int         mY;
+    ChessPiece  mP;
+    
+
+    if( inMoveProgressMax != 0 ) {
+        /* a move is in progress  */
+        int  sY;
+        int  sX;
+        
+        int  dX;
+        int  dY;
+
+        long  workingX;
+        long  workingY;
+
+
+        boardGetSquareCenter( inBoardCenterX,
+                              inBoardCenterY,
+                              inMove->startPos[0],
+                              inMove->startPos[1],
+                              &sX,
+                              &sY );
+        
+        boardGetSquareCenter( inBoardCenterX,
+                              inBoardCenterY,
+                              inMove->endPos[0],
+                              inMove->endPos[1],
+                              &dX,
+                              &dY );
+
+        workingX = dX - sX;
+        workingY = dY - sY;
+
+        workingX *= inMoveProgress;
+        workingY *= inMoveProgress;
+
+        mX = (int)( workingX / inMoveProgressMax ) + sX;
+        mY = (int)( workingY / inMoveProgressMax ) + sY;
+
+        mP = inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
+        
+        drawMoving = 1;
+        }
+    
 
     for( y = 0;
          y < 8;
@@ -197,20 +243,34 @@ void drawBoardState( BoardState  *inState,
              x < 8;
              x ++ ) {
 
-            ChessPiece  p  =  inState->grid[y][x];
-            
+            ChessPiece  p    =  inState->grid[y][x];
+            int         pX;
+            int         pY;
+
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  y,
+                                  x,
+                                  &pX,
+                                  &pY );
+
+            if( drawMoving ) {
+                /* see if we're at a good order spot where we should
+                   finall draw this piece behind this next piece */
+
+                if( pY >= mY ) {
+                    /* next piece is first spot (which may contain a piece)
+                       that should be in
+                       front of our moving piece,
+                       draw our moving piece now, just behind it */
+                    drawPiece( mP,
+                               mX,
+                               mY );
+                    drawMoving = 0;
+                    }
+                }
 
             if( p != noPiece ) {
-
-                int  pX;
-                int  pY;
-
-                boardGetSquareCenter( inBoardCenterX,
-                                      inBoardCenterY,
-                                      y,
-                                      x,
-                                      &pX,
-                                      &pY );
 
                 if( inMoveProgressMax != 0
                     &&
@@ -218,33 +278,15 @@ void drawBoardState( BoardState  *inState,
                     &&
                     inMove->startPos[1] == x ) {
 
-                    /* a move is in progress for the piece at this square */
-                    int  dX;
-                    int  dY;
-
-                    long  workingX;
-                    long  workingY;
-                    
-                    boardGetSquareCenter( inBoardCenterX,
-                                          inBoardCenterY,
-                                          inMove->endPos[0],
-                                          inMove->endPos[1],
-                                          &dX,
-                                          &dY );
-
-                    workingX = dX - pX;
-                    workingY = dY - pY;
-
-                    workingX *= inMoveProgress;
-                    workingY *= inMoveProgress;
-
-                    pX = (int)( workingX / inMoveProgressMax ) + pX;
-                    pY = (int)( workingY / inMoveProgressMax ) + pY;
+                    /* skip this piece, because it's moving
+                       draw it separately */
                     }
-                
-                drawPiece( p,
-                           pX,
-                           pY );
+                else {
+                    
+                    drawPiece( p,
+                               pX,
+                               pY );
+                    }
                 }
             }
         }

@@ -4799,6 +4799,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
 
     MaxiginSprite  *mainSprite;
     const char     *glowSpriteDataName;
+    char            skipPersistentData   =  0;
     int             persistReadHandle;
     int             numBytes;
     int             numRead;
@@ -4828,17 +4829,21 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
         /* empty source resource name, check if this is part of a strip */
 
         if( mainSprite->stripParentHandle == -1 ) {
-            mingin_log( "Failed to make glow sprite for non-strip sprite "
-                        "without bulk resource name.\n" );
-            return;
+            /* no bulk resource name, and not a strip sprite
+               this might be an internally-generated sprite that has
+               no bulk data representation */
+            
+            glowSpriteDataName = "";
+            skipPersistentData = 1;
             }
-
-        glowSpriteDataName =
-            maxigin_stringConcat4(
-                mx_sprites[ mainSprite->stripParentHandle ].bulkResourceName,
-                "_strip_",
-                maxigin_intToString( mainSprite->stripIndex ),
-                ".glow" );
+        else {
+            glowSpriteDataName =
+                maxigin_stringConcat4(
+                    mx_sprites[ mainSprite->stripParentHandle ].bulkResourceName,
+                    "_strip_",
+                    maxigin_intToString( mainSprite->stripIndex ),
+                    ".glow" );
+            }
         }
     else {
         glowSpriteDataName = maxigin_stringConcat( mainSprite->bulkResourceName,
@@ -4846,9 +4851,12 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
         }
 
     readGlowFromFile = 0;
+
+    if( ! skipPersistentData ) {
+        persistReadHandle = mingin_startReadPersistData( glowSpriteDataName,
+                                                         & numBytes );
+        }
     
-    persistReadHandle = mingin_startReadPersistData( glowSpriteDataName,
-                                                     & numBytes );
     
     if( persistReadHandle != -1 ) {
 
@@ -5080,37 +5088,38 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
         mx_blurSprite( glowSpriteHandle,
                        inBlurRadius,
                        inBlurIterations );
+
+        if( ! skipPersistentData ) {
+            glowCacheDataWriteHandle =
+                mingin_startWritePersistData( glowSpriteDataName );
+
+            if( glowCacheDataWriteHandle == -1 ) {
+                maxigin_logString( "Failed to open persistent "
+                                   "data cache file for writing: ",
+                                   glowSpriteDataName );
+                return;
+                }
+
         
+            mingin_writePersistData( glowCacheDataWriteHandle,
+                                     MAXIGIN_SPRITE_HASH_LENGTH,
+                                     mainSprite->hash );
 
-        glowCacheDataWriteHandle =
-            mingin_startWritePersistData( glowSpriteDataName );
+            /* next radius and iteration count as padded ints */
+        
+            mx_writePaddedIntToPerisistentData( glowCacheDataWriteHandle,
+                                                inBlurRadius );
+        
+            mx_writePaddedIntToPerisistentData( glowCacheDataWriteHandle,
+                                                inBlurIterations );
 
-        if( glowCacheDataWriteHandle == -1 ) {
-            maxigin_logString( "Failed to open persistent "
-                               "data cache file for writing: ",
-                               glowSpriteDataName );
-            return;
+        
+            mx_writeSpriteToOpenData( glowSpriteHandle,
+                                      glowCacheDataWriteHandle );
+
+
+            mingin_endWritePersistData( glowCacheDataWriteHandle );
             }
-
-        
-        mingin_writePersistData( glowCacheDataWriteHandle,
-                                 MAXIGIN_SPRITE_HASH_LENGTH,
-                                 mainSprite->hash );
-
-        /* next radius and iteration count as padded ints */
-        
-        mx_writePaddedIntToPerisistentData( glowCacheDataWriteHandle,
-                                            inBlurRadius );
-        
-        mx_writePaddedIntToPerisistentData( glowCacheDataWriteHandle,
-                                            inBlurIterations );
-
-        
-        mx_writeSpriteToOpenData( glowSpriteHandle,
-                                  glowCacheDataWriteHandle );
-
-
-        mingin_endWritePersistData( glowCacheDataWriteHandle );
         }
     
     }
@@ -7269,16 +7278,17 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
                                   int            inExplodeProgressMax,
                                   unsigned char  inAlphaFade ) {
     
-    MaxiginSprite  *s       =  &( mx_sprites[ inSpriteHandle ] );
+    MaxiginSprite  *s         =  &( mx_sprites[ inSpriteHandle ] );
     int             x;
     int             y;
-    int             b       =  s->startByte;
-    int             cx      =  s->w  / 2;
-    int             cy      =  s->h  / 2;
+    int             b         =  s->startByte;
+    int             cx        =  s->w  / 2;
+    int             cy        =  s->h  / 2;
 
     long             d;
+    int              pSprite  =  mx_singlePixelSprite;
     
-    if( mx_singlePixelSprite == -1 ) {
+    if( pSprite == -1 ) {
         return;
         }
     
@@ -7310,18 +7320,9 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
 
             b += 4;
             
-            maxigin_drawSprite( mx_singlePixelSprite,
+            maxigin_drawSprite( pSprite,
                                 drawX,
                                 drawY );
-            maxigin_drawSprite( mx_singlePixelSprite,
-                                drawX + 1,
-                                drawY );
-            maxigin_drawSprite( mx_singlePixelSprite,
-                                drawX,
-                                drawY + 1 );
-            maxigin_drawSprite( mx_singlePixelSprite,
-                                drawX + 1,
-                                drawY + 1 );
             }
         }
     }
@@ -11319,22 +11320,24 @@ static void mx_gameInit( void ) {
 
     if( mx_numSprites >= MAXIGIN_MAX_NUM_SPRITES
         ||
-        mx_numSpriteBytesUsed >= MAXIGIN_MAX_TOTAL_SPRITE_BYTES - 4 ) {
+        mx_numSpriteBytesUsed >= MAXIGIN_MAX_TOTAL_SPRITE_BYTES - 64 ) {
 
         mingin_log( "Not enough room for Maxigin to create its internal single"
                     "pixel sprite\n" );
         }
     else {
-        int  si  =  mx_numSprites;
+        int             si  =  mx_numSprites;
 
-        MaxiginSprite *s = &( mx_sprites[si] );
-
-        s->w                   = 1;
-        s->h                   = 1;
-        s->leftVisibleRadius   = 1;
-        s->rightVisibleRadius  = 0;
-        s->upperVisibleRadius  = 1;
-        s->lowerVisibleRadius  = 0;
+        MaxiginSprite  *s   =  &( mx_sprites[si] );
+        int             b   =  0;
+        int             bi;
+        
+        s->w                   = 4;
+        s->h                   = 4;
+        s->leftVisibleRadius   = 2;
+        s->rightVisibleRadius  = 2;
+        s->upperVisibleRadius  = 2;
+        s->lowerVisibleRadius  = 2;
         s->kerningTableIndex   = -1;
         s->startByte           = mx_numSpriteBytesUsed;
         s->bulkResourceName[0] = '\0';
@@ -11344,14 +11347,23 @@ static void mx_gameInit( void ) {
         s->stripParentHandle   =  -1;
         s->stripChildHandle    =  -1;
 
-        /* solid white pixel */
-        mx_spriteBytes[ s->startByte     ] = 255;
-        mx_spriteBytes[ s->startByte + 1 ] = 255;
-        mx_spriteBytes[ s->startByte + 2 ] = 255;
-        mx_spriteBytes[ s->startByte + 3 ] = 255;
+        b = s->startByte;
+        /* solid white 3x3 */
+        for( bi = 0;
+             bi < 64;
+             bi ++ ) {
+            mx_spriteBytes[ b ++ ] = 255;
+            }
+
+        /* zero alpha in 4 corners to make rounded particle */
+        mx_spriteBytes[ s->startByte + 3  ] = 0;
+        mx_spriteBytes[ s->startByte + 15 ] = 0;
+        mx_spriteBytes[ s->startByte + 51 ] = 0;
+        mx_spriteBytes[ s->startByte + 63 ] = 0;
+        
         
         mx_numSprites++;
-        mx_numSpriteBytesUsed += 4;
+        mx_numSpriteBytesUsed += 64;
 
         mx_singlePixelSprite = si;
 

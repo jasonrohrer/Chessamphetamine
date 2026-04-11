@@ -130,6 +130,11 @@ static int          moveProgressMax  =  0;
 
 static char         moveMade;
 
+static ChessPiece   explodingPiece     =  noPiece;
+static int          explodingProgress  =  -1;
+static int          explodingRow;
+static int          explodingCol;
+
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
@@ -334,6 +339,16 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                     moveProgressMax,
                     MAXIGIN_GAME_NATIVE_W / 2,
                     MAXIGIN_GAME_NATIVE_H / 2 );
+
+    if( explodingProgress != -1 ) {
+
+        explodingProgress = drawExplodingPiece( explodingPiece,
+                                                MAXIGIN_GAME_NATIVE_W / 2,
+                                                MAXIGIN_GAME_NATIVE_H / 2,
+                                                explodingRow,
+                                                explodingCol,
+                                                explodingProgress );
+        }
     
 
     maxigin_drawGUI( &gameGUI );
@@ -567,6 +582,14 @@ void maxiginGame_step( void ) {
         if( moveProgress >= moveProgressMax ) {
 
             if( getScore( &boardState ) != getScore( &postMoveState ) ) {
+
+                /* what piece was captured? */
+                explodingPiece = boardState.grid[ boardMove.endPos[0] ]
+                                                [ boardMove.endPos[1] ];
+                explodingProgress = 0;
+                explodingCol = boardMove.endPos[0];
+                explodingRow = boardMove.endPos[1];
+                
                 /* thunk on score-changing capture */
                 maxigin_playSoundEffect( thunkSound,
                                          512 );
@@ -1107,6 +1130,11 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( boardMove );
     REGISTER_VAL_MEM( moveProgress );
     REGISTER_VAL_MEM( moveProgressMax );
+
+    REGISTER_VAL_MEM( explodingPiece );
+    REGISTER_VAL_MEM( explodingRow );
+    REGISTER_VAL_MEM( explodingCol );
+    REGISTER_VAL_MEM( explodingProgress );
 
     REGISTER_ARRAY_MEM( bulletOn );
     REGISTER_ARRAY_MEM( bulletPos );

@@ -11,8 +11,11 @@
 
 */
 
-#ifndef BOARD_H_INCLUDED
-#define BOARD_H_INCLUDED
+#ifndef  BOARD_H_INCLUDED
+#define  BOARD_H_INCLUDED
+
+
+#define  BOARD_SQUARE_SIZE  25
 
 
 void boardInit( void );
@@ -48,7 +51,7 @@ static  int  borderSpriteV;
 static  int  squareSpriteWhite;
 static  int  squareSpriteBlack;
 
-static  int  squareSize          =  25;
+static  int  squareSize          =  BOARD_SQUARE_SIZE;
 
 
 

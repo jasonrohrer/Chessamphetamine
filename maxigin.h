@@ -1470,6 +1470,41 @@ void maxigin_drawSprite( int  inSpriteHandle,
 
 
 
+/*
+  Draws a sprite into the game's native pixel buffer in a pixel-exploded
+  style.
+
+  Parameters:
+
+      inSpriteHandle         the sprite to draw
+
+      inCenterX              the x position in the game's native pixel buffer
+                             of the sprite's center
+ 
+      inCenterY              the y position in the game's native pixel buffer
+                             of the sprite's center
+                             
+      inMaxDistance          the maximum distance pixels will move by
+                             the end of the explosion
+
+      inExplodeProgress      progress of the explosion animation in range
+                             [0..inExplodeProgressMax]
+
+      inExplodeProgressMax   the max value of inExplodeProgress
+
+      inAlphaFade            the fade-out alpha factor
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawExplodingSprite( int            inSpriteHandle,
+                                  int            inCenterX,
+                                  int            inCenterY,
+                                  int            inMaxDistance,
+                                  int            inExplodeProgress,
+                                  int            inExplodeProgressMax,
+                                  unsigned char  inAlphaFade );
+
+
+
 typedef enum{ MAXIGIN_LEFT    =  -1,
               MAXIGIN_CENTER  =   0,
               MAXIGIN_RIGHT   =   1 
@@ -3803,6 +3838,8 @@ static  MaxiginSprite  mx_sprites      [ MAXIGIN_MAX_NUM_SPRITES        ];
 
 static  int            mx_numSpriteBytesUsed  =  0;
 static  int            mx_numSprites          =  0;
+
+static  int            mx_singlePixelSprite   =  -1;
 
 
 
@@ -7221,6 +7258,65 @@ void maxigin_drawSprite( int  inSpriteHandle,
                               inCenterY );
         }
     }
+
+
+
+void maxigin_drawExplodingSprite( int            inSpriteHandle,
+                                  int            inCenterX,
+                                  int            inCenterY,
+                                  int            inMaxDistance,
+                                  int            inExplodeProgress,
+                                  int            inExplodeProgressMax,
+                                  unsigned char  inAlphaFade ) {
+    
+    MaxiginSprite  *s       =  &( mx_sprites[ inSpriteHandle ] );
+    int             x;
+    int             y;
+    int             b       =  s->startByte;
+    int             cx      =  s->w  / 2;
+    int             cy      =  s->h  / 2;
+
+    long             d;
+    
+    if( mx_singlePixelSprite == -1 ) {
+        return;
+        }
+    
+    /* d is scaled by a factor of 100 */
+    d = ( (long)inMaxDistance * 100 * (long) inExplodeProgress )
+        / inExplodeProgressMax;
+    
+
+    for( y = 0;
+         y < s->h;
+         y ++ ) {
+
+        int  dy     =  y - cy;
+        int  drawY  =  (int)( ( d * dy ) / 100 ) + inCenterY;
+
+        for( x = 0;
+             x < s->w;
+             x ++ ) {
+
+            int dx      = x - cx;
+            int  drawX  =  (int)( ( d * dx ) / 100 ) + inCenterX;
+
+            maxigin_drawSetColor(
+                mx_spriteBytes[ b     ],
+                mx_spriteBytes[ b + 1 ],
+                mx_spriteBytes[ b + 2 ],
+                (unsigned char)( ( mx_spriteBytes[ b + 3 ] * inAlphaFade )
+                                 / 255 ) );
+
+            b += 4;
+            
+            maxigin_drawSprite( mx_singlePixelSprite,
+                                drawX,
+                                drawY );
+            }
+        }
+    }
+
 
     
 
@@ -11209,6 +11305,55 @@ static void mx_gameInit( void ) {
     maxigin_initGUI( &mx_internalGUI );
     
     maxiginGame_init();
+
+    /* setup single-pixel sprite */
+
+    if( mx_numSprites >= MAXIGIN_MAX_NUM_SPRITES
+        ||
+        mx_numSpriteBytesUsed >= MAXIGIN_MAX_TOTAL_SPRITE_BYTES - 4 ) {
+
+        mingin_log( "Not enough room for Maxigin to create its internal single"
+                    "pixel sprite\n" );
+        }
+    else {
+        int  si  =  mx_numSprites;
+
+        MaxiginSprite *s = &( mx_sprites[si] );
+
+        s->w                   = 1;
+        s->h                   = 1;
+        s->leftVisibleRadius   = 1;
+        s->rightVisibleRadius  = 0;
+        s->upperVisibleRadius  = 1;
+        s->lowerVisibleRadius  = 0;
+        s->kerningTableIndex   = -1;
+        s->startByte           = mx_numSpriteBytesUsed;
+        s->bulkResourceName[0] = '\0';
+        s->pendingChange       =  0;
+        s->glowSpriteHandle    = -1;
+        s->numShadows          =  0;
+        s->stripParentHandle   =  -1;
+        s->stripChildHandle    =  -1;
+
+        /* solid white pixel */
+        mx_spriteBytes[ s->startByte     ] = 255;
+        mx_spriteBytes[ s->startByte + 1 ] = 255;
+        mx_spriteBytes[ s->startByte + 2 ] = 255;
+        mx_spriteBytes[ s->startByte + 3 ] = 255;
+        
+        mx_numSprites++;
+        mx_numSpriteBytesUsed += 4;
+
+        mx_singlePixelSprite = si;
+
+        maxigin_initMakeGlowSprite( mx_singlePixelSprite,
+                                    4,
+                                    2 );
+        }
+    
+
+    
+    
 
     /* we save the default dynamic buttons that the game has asked for */
     mx_saveButtonMapping( "maxigin_defaultButtons.ini" );

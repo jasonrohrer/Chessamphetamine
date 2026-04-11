@@ -28,6 +28,19 @@ void drawPiece( ChessPiece  inPiece,
                 int  inBaseCenterY );
 
 
+/* start with inProgress = 0
+   returns new progress after one explosion step
+   returns -1 when explosion done
+*/
+int drawExplodingPiece( ChessPiece  inPiece,
+                        int         inBoardCenterX,
+                        int         inBoardCenterY,
+                        int         inRow,
+                        int         inCol,
+                        int         inProgress );
+
+
+
 /* inMoveProgress goes from 0 to inMoveProgressMax
    if inMoveProgressMax is 0, inMove is ignored */
 void drawBoardState( BoardState  *inState,
@@ -175,6 +188,63 @@ void drawPiece( ChessPiece  inPiece,
                         inBaseCenterY + pieceOffsetY[ rawP ] );
 
     maxigin_drawResetColor();
+    }
+
+
+
+int drawExplodingPiece( ChessPiece  inPiece,
+                        int         inBoardCenterX,
+                        int         inBoardCenterY,
+                        int         inRow,
+                        int         inCol,
+                        int         inProgress ) {
+
+    ChessPiece     rawP  =  inPiece & CHESS_TYPE_MASK;
+    int            max   =  512;
+    unsigned char  a;
+    int            x;
+    int            y;
+
+    boardGetSquareCenter( inBoardCenterX,
+                          inBoardCenterY,
+                          inRow,
+                          inCol,
+                          &x,
+                          &y );
+    
+    if( ( inPiece & CHESS_COLOR_MASK ) == CHESS_BLACK ) {
+        maxigin_drawSetColor( 128,
+                              64,
+                              128,
+                              255 );
+        }
+    else {
+        maxigin_drawSetColor( 192,
+                              128,
+                              0,
+                              255 );
+        }
+
+    a = (unsigned char)( ( (long)( max - inProgress ) * 255 ) / max );
+    
+    maxigin_drawExplodingSprite( pieceSpriteHandles[ rawP ],
+                                 x,
+                                 y + pieceOffsetY[ rawP ],
+                                 BOARD_SQUARE_SIZE / 2,
+                                 inProgress,
+                                 max,
+                                 a );
+
+    maxigin_drawResetColor();
+    
+    inProgress += ( 2 * mingin_getStepsPerSecond() ) / 60;
+    
+
+    if( inProgress >= max ) {
+        inProgress = -1;
+        }
+    
+    return inProgress;
     }
 
 

@@ -198,7 +198,7 @@ static  int  explodeMax  =  512;
 
 int stepExplodingPiece( int  inProgress ) {
     
-    inProgress += ( 2 * mingin_getStepsPerSecond() ) / 60;
+    inProgress += ( 30 * mingin_getStepsPerSecond() ) / 60;
     
 
     if( inProgress >= explodeMax ) {

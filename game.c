@@ -587,8 +587,8 @@ void maxiginGame_step( void ) {
                 explodingPiece = boardState.grid[ boardMove.endPos[0] ]
                                                 [ boardMove.endPos[1] ];
                 explodingProgress = 0;
-                explodingCol = boardMove.endPos[0];
-                explodingRow = boardMove.endPos[1];
+                explodingRow = boardMove.endPos[0];
+                explodingCol = boardMove.endPos[1];
                 
                 /* thunk on score-changing capture */
                 maxigin_playSoundEffect( thunkSound,

@@ -7313,6 +7313,15 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
             maxigin_drawSprite( mx_singlePixelSprite,
                                 drawX,
                                 drawY );
+            maxigin_drawSprite( mx_singlePixelSprite,
+                                drawX + 1,
+                                drawY );
+            maxigin_drawSprite( mx_singlePixelSprite,
+                                drawX,
+                                drawY + 1 );
+            maxigin_drawSprite( mx_singlePixelSprite,
+                                drawX + 1,
+                                drawY + 1 );
             }
         }
     }

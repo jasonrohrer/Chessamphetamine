@@ -15,6 +15,9 @@
 #define CHESS_IMPLEMENTATION
 #include "chess.h"
 
+#define PARTICLE_SPRITE_IMPLEMENTATION
+#include "particleSprite.h"
+
 #define PIECE_SPRITES_IMPLEMENTATION
 #include "pieceSprites.h"
 
@@ -115,6 +118,7 @@ static int          splatterBad    =  -1;
 static int          checkmateGood  =  -1;
 static int          checkmateBad   =  -1;
 
+static int          checkmateSprite  = -1;
 
 static int          lang_settings;
 static int          lang_newGame;
@@ -142,6 +146,12 @@ static ChessPiece   explodingPiece     =  noPiece;
 static int          explodingProgress  =  -1;
 static int          explodingRow;
 static int          explodingCol;
+
+
+static int            explodingCheckmateProgress  =  -1;
+static int            explodingCheckmateMax       =  512;
+static unsigned char  checkmateFade               =  0;
+
 
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
@@ -359,6 +369,64 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                             explodingCol,
                             explodingProgress );
         }
+
+    if( explodingCheckmateProgress != -1 ) {
+
+        unsigned char  a;
+
+        if( checkmateColor == CHESS_BLACK ) {
+            drawSetPieceColor( CHESS_WHITE );
+            }
+        else {
+            drawSetPieceColor( CHESS_BLACK );
+            }
+
+        a = (unsigned char)( ( (long)( explodingCheckmateMax -
+                                       explodingCheckmateProgress ) * 255 )
+                             / explodingCheckmateMax );
+        
+        maxigin_drawSprite( checkmateSprite,
+                            MAXIGIN_GAME_NATIVE_W / 2,
+                            MAXIGIN_GAME_NATIVE_H / 2 );
+
+        
+        maxigin_drawToggleAdditive( 1 );
+
+
+        
+
+        maxigin_drawExplodingSprite( checkmateSprite,
+                                     getParticleSprite(),
+                                     MAXIGIN_GAME_NATIVE_W / 2,
+                                     MAXIGIN_GAME_NATIVE_H / 2,
+                                     BOARD_SQUARE_SIZE / 4,
+                                     explodingCheckmateProgress,
+                                     explodingCheckmateMax,
+                                     a );
+    
+        maxigin_drawToggleAdditive( 0 );
+        
+
+        }
+    else if( checkmate
+             &&
+             checkmateFade > 0 ) {
+
+        if( checkmateColor == CHESS_BLACK ) {
+            drawSetPieceColor( CHESS_WHITE );
+            }
+        else {
+            drawSetPieceColor( CHESS_BLACK );
+            }
+
+        maxigin_drawSetAlpha( checkmateFade );
+
+        maxigin_drawSprite( checkmateSprite,
+                            MAXIGIN_GAME_NATIVE_W / 2,
+                            MAXIGIN_GAME_NATIVE_H / 2 );
+
+        }
+    
     
 
     maxigin_drawGUI( &gameGUI );
@@ -612,6 +680,10 @@ void maxiginGame_step( void ) {
                     }
 
                 checkmate = 1;
+
+                /* start checkmate explosion */
+                explodingCheckmateProgress = 0;
+                checkmateFade = 255;
                 }
             else if( oldScore != newScore ) {
 
@@ -678,6 +750,29 @@ void maxiginGame_step( void ) {
     if( explodingProgress != -1 ) {
         explodingProgress = stepExplodingPiece( explodingProgress );
         }
+
+    
+    if( explodingCheckmateProgress != -1 ) {
+        explodingCheckmateProgress += ( 10 * 60 ) / r;
+
+        if( explodingCheckmateProgress >= explodingCheckmateMax ) {
+            explodingCheckmateProgress = -1;
+            }
+        }
+    else if( checkmate
+             &&
+             checkmateFade > 0 ) {
+
+        int  newFade = checkmateFade - ( 10 * 60 ) / r;
+
+        if( newFade < 0 ) {
+            checkmateFade = 0;
+            }
+        else {
+            checkmateFade = (unsigned char)newFade;
+            }
+        }
+    
     
 
         
@@ -1062,6 +1157,24 @@ void maxiginGame_init( void ) {
             }
         }
 
+    checkmateSprite    = maxigin_initSprite( "checkmate.tga" );
+
+    maxigin_initMakeGlowSprite( checkmateSprite,
+                                4,
+                                2 );
+
+    /* hazy drop shadow top to bottom */
+    maxigin_initMakeDropShadowSprite( checkmateSprite,
+                                      5,
+                                      2,
+                                      255,
+                                      255,
+                                      100,
+                                      0,
+                                      100,
+                                      0 );
+    
+
     lang_settings      = maxigin_initTranslationKey( "settings" );
     lang_newGame       = maxigin_initTranslationKey( "newGame"  );
     lang_quit          = maxigin_initTranslationKey( "quit" );
@@ -1176,6 +1289,7 @@ void maxiginGame_init( void ) {
     chessInit();
     boardInit();
     pieceSpritesInit();
+    particleSpriteInit();
     
     /* init position in image center */
     boxPosX = MAXIGIN_GAME_NATIVE_W / 2;
@@ -1213,6 +1327,9 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( checkmate );
     REGISTER_VAL_MEM( checkmateColor );
 
+    REGISTER_VAL_MEM( explodingCheckmateProgress );
+    REGISTER_VAL_MEM( checkmateFade );
+    
     REGISTER_ARRAY_MEM( bulletOn );
     REGISTER_ARRAY_MEM( bulletPos );
     REGISTER_ARRAY_MEM( bulletSpeed );

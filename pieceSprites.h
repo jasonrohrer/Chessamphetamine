@@ -17,6 +17,7 @@
 
 
 #include "chess.h"
+#include "particleSprite.h"
 
 
 
@@ -56,6 +57,13 @@ void drawBoardState( BoardState  *inState,
 
 
 
+/* sets maxigin draw color to piece color for future draw calls
+   inPieceColor  is CHESS_WHITE or CHESS_BLACK */
+void drawSetPieceColor( int  inPieceColor );
+
+
+
+
 #ifdef PIECE_SPRITES_IMPLEMENTATION
 
 
@@ -71,8 +79,6 @@ static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] = { "",
                                                                 "queen.tga",
                                                                 "king.tga" };
 
-static  int          particleSpriteHandle  =  -1;
-static  const char  *particleDataName      =  "explosionParticle.tga";
 
 static  int          slashSpriteHandle     =  -1;
 
@@ -171,13 +177,7 @@ void pieceSpritesInit( void ) {
             }
         }
 
-    particleSpriteHandle = maxigin_initSprite( particleDataName );
 
-    if( particleSpriteHandle != -1 ) {
-        maxigin_initMakeGlowSprite( particleSpriteHandle,
-                                    4,
-                                    2 );
-        }
 
     slashSpriteHandle = maxigin_initSprite( "checkmateSlash.tga" );
 
@@ -201,13 +201,8 @@ void pieceSpritesInit( void ) {
 
 
 
-void drawPiece( ChessPiece  inPiece,
-                int  inBaseCenterX,
-                int  inBaseCenterY ) {
-
-    ChessPiece  rawP  =  inPiece & CHESS_TYPE_MASK;
-
-    if( ( inPiece & CHESS_COLOR_MASK ) == CHESS_BLACK ) {
+void drawSetPieceColor( int  inPieceColor ) {
+    if( inPieceColor == CHESS_BLACK ) {
         maxigin_drawSetColor( 128,
                               64,
                               128,
@@ -219,6 +214,17 @@ void drawPiece( ChessPiece  inPiece,
                               0,
                               255 );
         }
+    }
+
+
+
+void drawPiece( ChessPiece  inPiece,
+                int  inBaseCenterX,
+                int  inBaseCenterY ) {
+
+    ChessPiece  rawP  =  inPiece & CHESS_TYPE_MASK;
+
+    drawSetPieceColor( inPiece & CHESS_COLOR_MASK );
     
     maxigin_drawSprite( pieceSpriteHandles[ rawP ],
                         inBaseCenterX,
@@ -233,7 +239,7 @@ static  int  explodeMax  =  512;
 
 int stepExplodingPiece( int  inProgress ) {
 
-    if( particleSpriteHandle == -1 ) {
+    if( getParticleSprite() == -1 ) {
         return -1;
         }
     
@@ -256,13 +262,14 @@ void drawExplodingPiece( ChessPiece  inPiece,
                          int         inCol,
                          int         inProgress ) {
 
-    ChessPiece     rawP  =  inPiece & CHESS_TYPE_MASK;
+    ChessPiece     rawP        =  inPiece & CHESS_TYPE_MASK;
 
     unsigned char  a;
     int            x;
     int            y;
-
-    if( particleSpriteHandle == -1 ) {
+    int            partSprite  =  getParticleSprite();
+    
+    if( partSprite == -1 ) {
         return;
         }
 
@@ -292,7 +299,7 @@ void drawExplodingPiece( ChessPiece  inPiece,
     maxigin_drawToggleAdditive( 1 );
 
     maxigin_drawExplodingSprite( pieceSpriteHandles[ rawP ],
-                                 particleSpriteHandle,
+                                 partSprite,
                                  x,
                                  y + pieceOffsetY[ rawP ],
                                  BOARD_SQUARE_SIZE / 4,

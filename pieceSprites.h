@@ -272,7 +272,7 @@ void drawExplodingPiece( ChessPiece  inPiece,
                                  particleSpriteHandle,
                                  x,
                                  y + pieceOffsetY[ rawP ],
-                                 BOARD_SQUARE_SIZE / 2,
+                                 BOARD_SQUARE_SIZE / 4,
                                  inProgress,
                                  explodeMax,
                                  a );

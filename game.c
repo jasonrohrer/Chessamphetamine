@@ -552,7 +552,9 @@ void maxiginGame_step( void ) {
     
     if( maxigin_isButtonDown( JUMP ) ) {
 
-        if( ! moveMade ) {
+        if( ! moveMade
+            &&
+            explodingProgress == -1 ) {
 
             /* make a chess move */
             
@@ -577,7 +579,7 @@ void maxiginGame_step( void ) {
 
     if( moveMade ) {
 
-        moveProgress += ( 7 * r ) / 60;
+        moveProgress += ( 4 * r ) / 60;
 
         if( moveProgress >= moveProgressMax ) {
 

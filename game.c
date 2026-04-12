@@ -596,9 +596,23 @@ void maxiginGame_step( void ) {
                 /* what piece was captured? */
                 explodingPiece = boardState.grid[ boardMove.endPos[0] ]
                                                 [ boardMove.endPos[1] ];
-                explodingProgress = 0;
-                explodingRow = boardMove.endPos[0];
-                explodingCol = boardMove.endPos[1];
+
+                /* if score changed with no piece captured at destination
+                   of move, it might be a promotion of a pawn,
+                   with no capture there */
+                if( explodingPiece == noPiece ) {
+                    /* consider making destination piece
+                       explode, which might be the new queen */
+                    explodingPiece = postMoveState.grid[ boardMove.endPos[0] ]
+                                                       [ boardMove.endPos[1] ];
+                    }
+                    
+                if( explodingPiece != noPiece ) {
+                    /* start an explosion */
+                    explodingProgress = 0;
+                    explodingRow = boardMove.endPos[0];
+                    explodingCol = boardMove.endPos[1];
+                    }
                 
                 /* thunk on score-changing capture */
                 if( oldScore < newScore ) {

@@ -577,7 +577,7 @@ void maxiginGame_step( void ) {
 
     if( moveMade ) {
 
-        moveProgress += ( 8 * r ) / 60;
+        moveProgress += ( 7 * r ) / 60;
 
         if( moveProgress >= moveProgressMax ) {
 

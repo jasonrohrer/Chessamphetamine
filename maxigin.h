@@ -1478,6 +1478,9 @@ void maxigin_drawSprite( int  inSpriteHandle,
 
       inSpriteHandle         the sprite to draw
 
+      inParticleHandle       the sprite to draw as a particle for each
+                             pixel of the exploding sprite.
+
       inCenterX              the x position in the game's native pixel buffer
                              of the sprite's center
  
@@ -1496,6 +1499,7 @@ void maxigin_drawSprite( int  inSpriteHandle,
   [jumpMaxiginDraw]
 */
 void maxigin_drawExplodingSprite( int            inSpriteHandle,
+                                  int            inParticleHandle,
                                   int            inCenterX,
                                   int            inCenterY,
                                   int            inMaxDistance,
@@ -3838,8 +3842,6 @@ static  MaxiginSprite  mx_sprites      [ MAXIGIN_MAX_NUM_SPRITES        ];
 
 static  int            mx_numSpriteBytesUsed  =  0;
 static  int            mx_numSprites          =  0;
-
-static  int            mx_singlePixelSprite   =  -1;
 
 
 
@@ -7271,6 +7273,7 @@ void maxigin_drawSprite( int  inSpriteHandle,
 
 
 void maxigin_drawExplodingSprite( int            inSpriteHandle,
+                                  int            inParticleHandle,
                                   int            inCenterX,
                                   int            inCenterY,
                                   int            inMaxDistance,
@@ -7286,11 +7289,7 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
     int             cy        =  s->h  / 2;
 
     long             d;
-    int              pSprite  =  mx_singlePixelSprite;
-    
-    if( pSprite == -1 ) {
-        return;
-        }
+    int              pSprite  =  inParticleHandle;
     
     /* d is scaled by a factor of 100 */
     d = ( (long)inMaxDistance * 100 * (long) inExplodeProgress )
@@ -11315,66 +11314,6 @@ static void mx_gameInit( void ) {
     maxigin_initGUI( &mx_internalGUI );
     
     maxiginGame_init();
-
-    /* setup single-pixel sprite */
-
-    if( mx_numSprites >= MAXIGIN_MAX_NUM_SPRITES
-        ||
-        mx_numSpriteBytesUsed >= MAXIGIN_MAX_TOTAL_SPRITE_BYTES - 64 ) {
-
-        mingin_log( "Not enough room for Maxigin to create its internal single"
-                    "pixel sprite\n" );
-        }
-    else {
-        int             si  =  mx_numSprites;
-
-        MaxiginSprite  *s   =  &( mx_sprites[si] );
-        int             b   =  0;
-        int             bi;
-        
-        s->w                   = 4;
-        s->h                   = 4;
-        s->leftVisibleRadius   = 2;
-        s->rightVisibleRadius  = 2;
-        s->upperVisibleRadius  = 2;
-        s->lowerVisibleRadius  = 2;
-        s->kerningTableIndex   = -1;
-        s->startByte           = mx_numSpriteBytesUsed;
-        s->bulkResourceName[0] = '\0';
-        s->pendingChange       =  0;
-        s->glowSpriteHandle    = -1;
-        s->numShadows          =  0;
-        s->stripParentHandle   =  -1;
-        s->stripChildHandle    =  -1;
-
-        b = s->startByte;
-        /* solid white 3x3 */
-        for( bi = 0;
-             bi < 64;
-             bi ++ ) {
-            mx_spriteBytes[ b ++ ] = 255;
-            }
-
-        /* zero alpha in 4 corners to make rounded particle */
-        mx_spriteBytes[ s->startByte + 3  ] = 0;
-        mx_spriteBytes[ s->startByte + 15 ] = 0;
-        mx_spriteBytes[ s->startByte + 51 ] = 0;
-        mx_spriteBytes[ s->startByte + 63 ] = 0;
-        
-        
-        mx_numSprites++;
-        mx_numSpriteBytesUsed += 64;
-
-        mx_singlePixelSprite = si;
-
-        maxigin_initMakeGlowSprite( mx_singlePixelSprite,
-                                    4,
-                                    2 );
-        }
-    
-
-    
-    
 
     /* we save the default dynamic buttons that the game has asked for */
     mx_saveButtonMapping( "maxigin_defaultButtons.ini" );

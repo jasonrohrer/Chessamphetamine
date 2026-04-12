@@ -69,6 +69,10 @@ static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] = { "",
                                                                 "queen.tga",
                                                                 "king.tga" };
 
+static  int          particleSpriteHandle  =  -1;
+static  const char  *particleDataName      =  "explosionParticle.tga";
+
+
 void pieceSpritesInit( void ) {
 
     int  i;
@@ -162,6 +166,14 @@ void pieceSpritesInit( void ) {
             pieceOffsetY[ i ] = -( h / 2 - pieceBottomHeight );
             }
         }
+
+    particleSpriteHandle = maxigin_initSprite( particleDataName );
+
+    if( particleSpriteHandle != -1 ) {
+        maxigin_initMakeGlowSprite( particleSpriteHandle,
+                                    4,
+                                    2 );
+        }
     }
 
 
@@ -197,6 +209,10 @@ static  int  explodeMax  =  512;
 
 
 int stepExplodingPiece( int  inProgress ) {
+
+    if( particleSpriteHandle == -1 ) {
+        return -1;
+        }
     
     inProgress += ( 30 * mingin_getStepsPerSecond() ) / 60;
     
@@ -223,6 +239,10 @@ void drawExplodingPiece( ChessPiece  inPiece,
     int            x;
     int            y;
 
+    if( particleSpriteHandle == -1 ) {
+        return;
+        }
+
     boardGetSquareCenter( inBoardCenterX,
                           inBoardCenterY,
                           inRow,
@@ -247,6 +267,7 @@ void drawExplodingPiece( ChessPiece  inPiece,
                          / explodeMax );
     
     maxigin_drawExplodingSprite( pieceSpriteHandles[ rawP ],
+                                 particleSpriteHandle,
                                  x,
                                  y + pieceOffsetY[ rawP ],
                                  BOARD_SQUARE_SIZE / 2,

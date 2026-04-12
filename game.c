@@ -108,6 +108,8 @@ static int          sliderValueC  =   7;
 
 static int          plunkSound    =  -1;
 static int          thunkSound    =  -1;
+static int          beepUp        =  -1;
+static int          beepDown      =  -1;
 
 
 static int          lang_settings;
@@ -598,8 +600,15 @@ void maxiginGame_step( void ) {
                 }
             else {
                 /* plunk on non-capture move */
-                maxigin_playSoundEffect( plunkSound,
-                                         512 );
+
+                if( boardState.nextToMove == CHESS_WHITE ) {
+                    maxigin_playSoundEffect( beepUp,
+                                             256 );
+                    }
+                else {
+                    maxigin_playSoundEffect( beepDown,
+                                             256 );
+                    }
                 }
             
             applyMove( &boardState,
@@ -1092,6 +1101,8 @@ void maxiginGame_init( void ) {
     maxigin_initSoundEffect( "hey2.wav" );
     plunkSound = maxigin_initSoundEffect( "plunk1.wav" );
     thunkSound = maxigin_initSoundEffect( "thunk1.wav" );
+    beepUp = maxigin_initSoundEffect( "beepUp.wav" );
+    beepDown = maxigin_initSoundEffect( "beepDown.wav" );
 
     maxigin_initSoundEffect( "test_long.wav" );
 

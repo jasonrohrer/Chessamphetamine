@@ -46,6 +46,8 @@ void drawExplodingPiece( ChessPiece  inPiece,
 /* inMoveProgress goes from 0 to inMoveProgressMax
    if inMoveProgressMax is 0, inMove is ignored */
 void drawBoardState( BoardState  *inState,
+                     char         inCheckmate,
+                     int          inCheckmateColor,
                      Move        *inMove,
                      int          inMoveProgress,
                      int          inMoveProgressMax,
@@ -71,6 +73,8 @@ static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] = { "",
 
 static  int          particleSpriteHandle  =  -1;
 static  const char  *particleDataName      =  "explosionParticle.tga";
+
+static  int          slashSpriteHandle     =  -1;
 
 
 void pieceSpritesInit( void ) {
@@ -174,6 +178,25 @@ void pieceSpritesInit( void ) {
                                     4,
                                     2 );
         }
+
+    slashSpriteHandle = maxigin_initSprite( "checkmateSlash.tga" );
+
+    if( slashSpriteHandle != -1 ) {
+        maxigin_initMakeGlowSprite( slashSpriteHandle,
+                                    4,
+                                    2 );
+
+        /* hazy drop shadow top to bottom */
+        maxigin_initMakeDropShadowSprite( slashSpriteHandle,
+                                          5,
+                                          2,
+                                          255,
+                                          255,
+                                          100,
+                                          0,
+                                          100,
+                                          0 );
+        }
     }
 
 
@@ -214,7 +237,7 @@ int stepExplodingPiece( int  inProgress ) {
         return -1;
         }
     
-    inProgress += ( 30 * mingin_getStepsPerSecond() ) / 60;
+    inProgress += ( 30 * 60 ) / mingin_getStepsPerSecond();
     
 
     if( inProgress >= explodeMax ) {
@@ -285,6 +308,8 @@ void drawExplodingPiece( ChessPiece  inPiece,
 
 
 void drawBoardState( BoardState  *inState,
+                     char         inCheckmate,
+                     int          inCheckmateColor,
                      Move        *inMove,
                      int          inMoveProgress,
                      int          inMoveProgressMax,
@@ -391,6 +416,21 @@ void drawBoardState( BoardState  *inState,
                     drawPiece( p,
                                pX,
                                pY );
+
+                    if( inCheckmate ) {
+                        ChessPiece  c  =  p & CHESS_COLOR_MASK;
+                        ChessPiece  t  =  p & CHESS_TYPE_MASK;
+
+                        if( t == king
+                            &&
+                            c == inCheckmateColor ) {
+
+                            /* draw checkmate slash */
+                            maxigin_drawSprite( slashSpriteHandle,
+                                                pX,
+                                                pY + pieceOffsetY[ t ] );
+                            }
+                        }  
                     }
                 }
             }

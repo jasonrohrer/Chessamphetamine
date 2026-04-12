@@ -136,6 +136,7 @@ static int          moveProgressMax  =  0;
 
 static char         moveMade           =  0;
 static char         checkmate          =  0;
+static int          checkmateColor     =  CHESS_WHITE;
 
 static ChessPiece   explodingPiece     =  noPiece;
 static int          explodingProgress  =  -1;
@@ -341,6 +342,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                MAXIGIN_GAME_NATIVE_H / 2 );
 
     drawBoardState( &boardState,
+                    checkmate,
+                    checkmateColor,
                     &boardMove,
                     moveProgress,
                     moveProgressMax,
@@ -588,21 +591,18 @@ void maxiginGame_step( void ) {
 
     if( moveMade ) {
 
-        moveProgress += ( 4 * r ) / 60;
+        moveProgress += ( 4 * 60 ) / r;
 
         if( moveProgress >= moveProgressMax ) {
 
             int   oldScore  =  getScore( &boardState );
             int   newScore  =  getScore( &postMoveState );
 
-            int   checkmateVictimColor;
-            
-            
             if( isCheckmate( &postMoveState,
-                             &checkmateVictimColor ) ) {
+                             &checkmateColor ) ) {
 
                 /* move led to checkmate */
-                if( checkmateVictimColor == CHESS_BLACK ) {
+                if( checkmateColor == CHESS_BLACK ) {
                     maxigin_playSoundEffect( checkmateGood,
                                              512 );
                     }
@@ -610,6 +610,8 @@ void maxiginGame_step( void ) {
                     maxigin_playSoundEffect( checkmateBad,
                                              512 );
                     }
+
+                checkmate = 1;
                 }
             else if( oldScore != newScore ) {
 
@@ -1207,6 +1209,9 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( explodingRow );
     REGISTER_VAL_MEM( explodingCol );
     REGISTER_VAL_MEM( explodingProgress );
+
+    REGISTER_VAL_MEM( checkmate );
+    REGISTER_VAL_MEM( checkmateColor );
 
     REGISTER_ARRAY_MEM( bulletOn );
     REGISTER_ARRAY_MEM( bulletPos );

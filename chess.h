@@ -950,7 +950,7 @@ static  MaxiginRand  chessRand;
 
 void chessInit( void ) {
     maxigin_randSeed( &chessRand,
-                      12453591 );
+                      12453603 );
 
     REGISTER_VAL_MEM( chessRand );
     }

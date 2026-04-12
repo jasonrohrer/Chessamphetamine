@@ -128,8 +128,13 @@ const char *getBoardStateString( BoardState  *inState );
 
 /* gets the score for a board state, where it's good for white if the
    score is positive, and good for black if the score is negative */
-int getScore( BoardState *inState );
+int getScore( BoardState  *inState );
 
+
+/* returns 1 if one side is checkmated and sets
+   outColor to the losing side */
+char isCheckmate( BoardState  *inState,
+                  int         *outColor );
 
 
 
@@ -1276,6 +1281,10 @@ int getScore( BoardState *inState ) {
 #define  MAX_DEPTH  5
 #define  MAX_SCORE  9999
 
+
+static  int  checkmateScore  =  MAX_SCORE - 1;
+
+
 static char getGreedyDepthMove( BoardState  *inState,
                                 Move        *outMove,
                                 BoardState  *outNewState,
@@ -1419,10 +1428,10 @@ static char getGreedyDepthMove( BoardState  *inState,
                         /* no move found for opponent?
                            they are checkmated */
                         if( colorToMove == CHESS_WHITE ) {
-                            score = MAX_SCORE - 1;
+                            score = checkmateScore;
                             }
                         else {
-                            score = - ( MAX_SCORE - 1 );
+                            score = - checkmateScore;
                             }
                         }
                     }
@@ -1529,6 +1538,48 @@ void applyMove( BoardState  *inState,
         inState->nextToMove =  CHESS_WHITE;
         }
     }
+
+
+
+char isCheckmate( BoardState  *inState,
+                  int         *outColor ) {
+
+    
+
+
+    /* can't move! */
+
+    if( isKingInCheck( inState,
+                       inState->nextToMove ) ) {
+
+        static  Move        nextMove;
+        static  BoardState  nextState;
+
+        char         canMove;
+        int          nextScore;
+        MaxiginRand  oldRandState  =  chessRand;
+        
+        
+        canMove = getGreedyDepthMove( inState,
+                                      &nextMove,
+                                      &nextState,
+                                      &nextScore,
+                                      0 );
+
+        /* restore rand after looking for move */
+        chessRand = oldRandState;
+        
+        if( canMove ) {
+            return 0;
+            }
+    
+        *outColor = inState->nextToMove;
+        return 1;
+        }
+
+    return 0;
+    }
+
 
 
 #endif

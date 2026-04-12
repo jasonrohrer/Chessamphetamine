@@ -98,20 +98,22 @@ static int          spriteHandles[ NUM_BULK_FILES ];
 static int          spriteStrip;
 static int          buttonHintStrip;
 
-static int          stripIndex    =   0;
-static int          stripC        =   0;
+static int          stripIndex     =   0;
+static int          stripC         =   0;
 
 static MaxiginGUI   gameGUI;
-static int          sliderValue   =   7;
-static int          sliderValueB  =   7;
-static int          sliderValueC  =   7;
+static int          sliderValue    =   7;
+static int          sliderValueB   =   7;
+static int          sliderValueC   =   7;
 
-static int          plunkSound    =  -1;
-static int          thunkSound    =  -1;
-static int          beepUp        =  -1;
-static int          beepDown      =  -1;
-static int          shooshGood    =  -1;
-static int          splatterBad   =  -1;
+static int          plunkSound     =  -1;
+static int          thunkSound     =  -1;
+static int          beepUp         =  -1;
+static int          beepDown       =  -1;
+static int          shooshGood     =  -1;
+static int          splatterBad    =  -1;
+static int          checkmateGood  =  -1;
+static int          checkmateBad   =  -1;
 
 
 static int          lang_settings;
@@ -132,7 +134,8 @@ static Move         boardMove;
 static int          moveProgress;
 static int          moveProgressMax  =  0;
 
-static char         moveMade;
+static char         moveMade           =  0;
+static char         checkmate          =  0;
 
 static ChessPiece   explodingPiece     =  noPiece;
 static int          explodingProgress  =  -1;
@@ -558,6 +561,8 @@ void maxiginGame_step( void ) {
 
         if( ! moveMade
             &&
+            ! checkmate
+            &&
             explodingProgress == -1 ) {
 
             /* make a chess move */
@@ -589,9 +594,24 @@ void maxiginGame_step( void ) {
 
             int   oldScore  =  getScore( &boardState );
             int   newScore  =  getScore( &postMoveState );
-            
 
-            if( oldScore != newScore ) {
+            int   checkmateVictimColor;
+            
+            
+            if( isCheckmate( &postMoveState,
+                             &checkmateVictimColor ) ) {
+
+                /* move led to checkmate */
+                if( checkmateVictimColor == CHESS_BLACK ) {
+                    maxigin_playSoundEffect( checkmateGood,
+                                             512 );
+                    }
+                else {
+                    maxigin_playSoundEffect( checkmateBad,
+                                             512 );
+                    }
+                }
+            else if( oldScore != newScore ) {
 
                 /* what piece was captured? */
                 explodingPiece = boardState.grid[ boardMove.endPos[0] ]
@@ -1136,6 +1156,8 @@ void maxiginGame_init( void ) {
     beepDown = maxigin_initSoundEffect( "beepDown.wav" );
     shooshGood = maxigin_initSoundEffect( "shooshGood.wav" );
     splatterBad = maxigin_initSoundEffect( "splatterBad.wav" );
+    checkmateGood = maxigin_initSoundEffect( "checkmateGood.wav" );
+    checkmateBad = maxigin_initSoundEffect( "checkmateBad.wav" );
 
     maxigin_initSoundEffect( "test_long.wav" );
 

@@ -151,6 +151,7 @@ static int          explodingCol;
 static int            explodingCheckmateProgress  =  -1;
 static int            explodingCheckmateMax       =  512;
 static unsigned char  checkmateFade               =  0;
+static int            checkmatePreFadeSteps       =  0;
 
 
 
@@ -684,6 +685,7 @@ void maxiginGame_step( void ) {
                 /* start checkmate explosion */
                 explodingCheckmateProgress = 0;
                 checkmateFade = 255;
+                checkmatePreFadeSteps = 0;
                 }
             else if( oldScore != newScore ) {
 
@@ -763,13 +765,19 @@ void maxiginGame_step( void ) {
              &&
              checkmateFade > 0 ) {
 
-        int  newFade = checkmateFade - ( 10 * 60 ) / r;
-
-        if( newFade < 0 ) {
-            checkmateFade = 0;
+        if( checkmatePreFadeSteps < ( 30 * 60 ) / r ) {
+            checkmatePreFadeSteps ++;
             }
         else {
-            checkmateFade = (unsigned char)newFade;
+
+            int  newFade = checkmateFade - ( 5 * 60 ) / r;
+
+            if( newFade < 0 ) {
+                checkmateFade = 0;
+                }
+            else {
+                checkmateFade = (unsigned char)newFade;
+                }
             }
         }
     
@@ -1329,6 +1337,7 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( explodingCheckmateProgress );
     REGISTER_VAL_MEM( checkmateFade );
+    REGISTER_VAL_MEM( checkmatePreFadeSteps );
     
     REGISTER_ARRAY_MEM( bulletOn );
     REGISTER_ARRAY_MEM( bulletPos );

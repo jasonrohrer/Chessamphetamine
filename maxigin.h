@@ -7244,6 +7244,8 @@ void maxigin_drawSprite( int  inSpriteHandle,
 
         maxigin_drawResetColor();
 
+        maxigin_drawSetAlpha( oldColor.comp.alpha );
+
         for( i = 0;
              i < mx_sprites[ inSpriteHandle ].numShadows;
              i ++ ) {

@@ -110,6 +110,8 @@ static int          plunkSound    =  -1;
 static int          thunkSound    =  -1;
 static int          beepUp        =  -1;
 static int          beepDown      =  -1;
+static int          shooshGood    =  -1;
+static int          splatterBad   =  -1;
 
 
 static int          lang_settings;
@@ -585,7 +587,11 @@ void maxiginGame_step( void ) {
 
         if( moveProgress >= moveProgressMax ) {
 
-            if( getScore( &boardState ) != getScore( &postMoveState ) ) {
+            int   oldScore  =  getScore( &boardState );
+            int   newScore  =  getScore( &postMoveState );
+            
+
+            if( oldScore != newScore ) {
 
                 /* what piece was captured? */
                 explodingPiece = boardState.grid[ boardMove.endPos[0] ]
@@ -595,8 +601,19 @@ void maxiginGame_step( void ) {
                 explodingCol = boardMove.endPos[1];
                 
                 /* thunk on score-changing capture */
-                maxigin_playSoundEffect( thunkSound,
-                                         512 );
+                if( oldScore < newScore ) {
+                    maxigin_playSoundEffect( shooshGood,
+                                             512 );
+                    }
+                else if( oldScore > newScore ) {
+                    maxigin_playSoundEffect( splatterBad,
+                                             512 );
+                    }
+                else {
+                    /* neutral? */
+                    maxigin_playSoundEffect( thunkSound,
+                                             512 );
+                    } 
                 }
             else {
                 /* plunk on non-capture move */
@@ -1103,6 +1120,8 @@ void maxiginGame_init( void ) {
     thunkSound = maxigin_initSoundEffect( "thunk1.wav" );
     beepUp = maxigin_initSoundEffect( "beepUp.wav" );
     beepDown = maxigin_initSoundEffect( "beepDown.wav" );
+    shooshGood = maxigin_initSoundEffect( "shooshGood.wav" );
+    splatterBad = maxigin_initSoundEffect( "splatterBad.wav" );
 
     maxigin_initSoundEffect( "test_long.wav" );
 

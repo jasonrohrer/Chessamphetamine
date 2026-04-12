@@ -265,7 +265,9 @@ void drawExplodingPiece( ChessPiece  inPiece,
 
     a = (unsigned char)( ( (long)( explodeMax - inProgress ) * 255 )
                          / explodeMax );
-    
+
+    maxigin_drawToggleAdditive( 1 );
+
     maxigin_drawExplodingSprite( pieceSpriteHandles[ rawP ],
                                  particleSpriteHandle,
                                  x,
@@ -274,7 +276,9 @@ void drawExplodingPiece( ChessPiece  inPiece,
                                  inProgress,
                                  explodeMax,
                                  a );
-
+    
+    maxigin_drawToggleAdditive( 0 );
+    
     maxigin_drawResetColor();
     }
 

@@ -7290,6 +7290,14 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
 
     long             d;
     int              pSprite  =  inParticleHandle;
+
+    long             red      =  mx_drawColor.comp.red;
+    long             green    =  mx_drawColor.comp.green;
+    long             blue     =  mx_drawColor.comp.blue;
+    long             alpha    =  mx_drawColor.comp.alpha;
+
+    alpha = ( alpha * inAlphaFade ) / 255;
+    
     
     /* d is scaled by a factor of 100 */
     d = ( (long)inMaxDistance * 100 * (long) inExplodeProgress )
@@ -7311,10 +7319,13 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
             int  drawX  =  (int)( ( d * dx ) / 100 ) + inCenterX + dx;
 
             maxigin_drawSetColor(
-                mx_spriteBytes[ b     ],
-                mx_spriteBytes[ b + 1 ],
-                mx_spriteBytes[ b + 2 ],
-                (unsigned char)( ( mx_spriteBytes[ b + 3 ] * inAlphaFade )
+                (unsigned char)( ( mx_spriteBytes[ b     ] * red )
+                                 / 255 ),
+                (unsigned char)( ( mx_spriteBytes[ b + 1 ] * green )
+                                 / 255 ),
+                (unsigned char)( ( mx_spriteBytes[ b + 2 ] * blue )
+                                 / 255 ),
+                (unsigned char)( ( mx_spriteBytes[ b + 3 ] * alpha )
                                  / 255 ) );
 
             b += 4;

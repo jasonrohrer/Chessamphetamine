@@ -126,6 +126,9 @@ static int          spinPressedSprite          = -1;
 static int          spinPressedTextSprite      = -1;
 static int          spinPressedTextGlowSprite  = -1;
 
+static int          logoSprite                 = -1;
+static int          logoSubSprite              = -1;
+
 static int          lang_settings;
 static int          lang_newGame;
 static int          lang_quit;
@@ -476,8 +479,29 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
     
 
-
+    maxigin_drawResetColor();
     
+    maxigin_drawSprite( logoSprite,
+                        boardCenterX,
+                        boardCenterY );
+
+    maxigin_drawSetColor( 255,
+                          0,
+                          0,
+                          255 );
+    maxigin_drawSprite( logoSubSprite,
+                        boardCenterX,
+                        boardCenterY + 11 );
+
+    /*
+    maxigin_drawSetColor( 255,
+                          64,
+                          64,
+                          128 );
+    maxigin_drawSpriteGlowOnly( logoSubSprite,
+                        boardCenterX,
+                        boardCenterY + 12 );
+    */
     
     maxigin_drawGUI( &gameGUI );
     }
@@ -1268,6 +1292,38 @@ void maxiginGame_init( void ) {
                                 5,
                                 3 );
 
+    logoSprite = maxigin_initSprite( "logo.tga" );
+    logoSubSprite = maxigin_initSprite( "logoSub.tga" );
+
+    maxigin_initMakeGlowSprite( logoSprite,
+                                4,
+                                2 );
+
+    maxigin_initMakeDropShadowSprite( logoSprite,
+                                      4,
+                                      2,
+                                      255,
+                                      255,
+                                      100,
+                                      0,
+                                      200,
+                                      0 );
+    
+    maxigin_initMakeGlowSprite( logoSubSprite,
+                                2,
+                                1 );
+
+    maxigin_initMakeDropShadowSprite( logoSubSprite,
+                                      4,
+                                      2,
+                                      255,
+                                      255,
+                                      100,
+                                      0,
+                                      300,
+                                      0 );
+
+    
     lang_settings      = maxigin_initTranslationKey( "settings" );
     lang_newGame       = maxigin_initTranslationKey( "newGame"  );
     lang_quit          = maxigin_initTranslationKey( "quit" );

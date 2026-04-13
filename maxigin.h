@@ -3187,6 +3187,7 @@ typedef enum MaxiginUserAction {
     MAXIGIN_MOUSE_BUTTON,
     MAXIGIN_SLIDER_INCREASE,
     MAXIGIN_SLIDER_DECREASE,
+    MAXIGIN_HIDE_GUI,
     LAST_MAXIGIN_USER_ACTION
     } MaxiginUserAction;
 
@@ -3329,7 +3330,7 @@ static  int            mx_crtOverlayW         =  0;
 static  int            mx_crtOverlayH         =  0;
 static  char           mx_crtOverlayLive      =  0;
 static  char           mx_crtOverlayOn        =  0;
-
+static  char            mx_hideGUI            =  0;
 
 
 /* generates or loads cached overlay from disk */
@@ -3362,7 +3363,9 @@ void minginGame_getScreenPixels( int             inWide,
     
     maxiginGame_getNativePixels( mx_gameImageBuffer );
 
-    maxigin_drawGUI( &mx_internalGUI );    
+    if( ! mx_hideGUI ) {
+        maxigin_drawGUI( &mx_internalGUI );
+        }
     
     mx_areWeInMaxiginGameDrawFunction = 0;
 
@@ -10558,6 +10561,7 @@ static  void          *mx_menuReturnForceHot               =  0;
 static  char           mx_blockMenuClose                   =  0;
 
 
+
 /* initiates and steps sound fade out, returning 1 when finally done
    returns 0 while still in-progress */
 static char mx_stepSoundFadeOut( void );
@@ -10771,6 +10775,10 @@ void minginGame_step( char  inFinalStep ) {
 
     if( mx_isActionFreshPressed( LANG_SWITCH ) ) {
         mx_nextLang();
+        }
+
+    if( mx_isActionFreshPressed( MAXIGIN_HIDE_GUI ) ) {
+        mx_hideGUI = ! mx_hideGUI;
         }
     
 
@@ -11226,6 +11234,10 @@ static  MinginButton  mx_playbackMappings[8][2] =
       { MGN_KEY_BRACKET_R, MGN_MAP_END } }; /* jump ahead */
 
 
+static  MinginButton  mx_hideGuiMapping[]  = { MGN_KEY_H,
+                                               MGN_MAP_END };
+
+
 static  MinginStick  mx_sliderStickMapping[] = { MGN_STICK_LEFT_X,
                                                  MGN_STICK_RIGHT_X,
                                                  MGN_MAP_END };
@@ -11344,6 +11356,9 @@ static void mx_gameInit( void ) {
             p,
             mx_playbackMappings[ p - PLAYBACK_START_STOP ] );
         }
+
+    mingin_registerButtonMapping( MAXIGIN_HIDE_GUI,
+                                  mx_hideGuiMapping );
 
     /* all buttons start out unpressed */
     for( p = QUIT;

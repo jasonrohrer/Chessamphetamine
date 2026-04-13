@@ -479,19 +479,22 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
     
 
-    maxigin_drawResetColor();
+    if( 0 ) {  
+        maxigin_drawResetColor();
     
-    maxigin_drawSprite( logoSprite,
-                        boardCenterX,
-                        boardCenterY );
+        maxigin_drawSprite( logoSprite,
+                            boardCenterX,
+                            boardCenterY );
 
-    maxigin_drawSetColor( 255,
-                          0,
-                          0,
-                          255 );
-    maxigin_drawSprite( logoSubSprite,
-                        boardCenterX,
-                        boardCenterY + 11 );
+        maxigin_drawSetColor( 255,
+                              0,
+                              0,
+                              255 );
+        maxigin_drawSprite( logoSubSprite,
+                            boardCenterX,
+                            boardCenterY + 11 );
+        }
+    
 
     /*
     maxigin_drawSetColor( 255,

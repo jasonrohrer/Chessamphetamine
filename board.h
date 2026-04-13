@@ -14,6 +14,8 @@
 #ifndef  BOARD_H_INCLUDED
 #define  BOARD_H_INCLUDED
 
+#include "chess.h"
+
 
 #define  BOARD_SQUARE_SIZE  25
 
@@ -118,8 +120,10 @@ void boardDraw( int  inCenterX,
     int  x;
     int  pass;
     
-    int  w   =  1;
-    
+    int  w     =  1;
+    int  yOff  =  ( squareSize * BH ) / 2;
+    int  xOff  =  ( squareSize * BW ) / 2;
+
     maxigin_drawSetColor( 0,
                           255,
                           255,
@@ -131,16 +135,16 @@ void boardDraw( int  inCenterX,
          pass ++ ) {
         
         for( y = 0;
-             y < 8;
+             y < BH;
              y ++ ) {
 
-            int  yPos  =  inCenterY - 100 + y * squareSize + squareSize / 2;
+            int  yPos  =  inCenterY - yOff + y * squareSize + squareSize / 2;
 
             for( x = 0;
-                 x < 8;
+                 x < BW;
                  x ++  ) {
 
-                int  xPos  =  inCenterX - 100 + x * squareSize + squareSize / 2;
+                int  xPos  =  inCenterX - xOff + x * squareSize + squareSize / 2;
 
                 if( w ) {
                     if( pass == 1 ) {
@@ -166,18 +170,18 @@ void boardDraw( int  inCenterX,
 
     maxigin_drawSprite( borderSpriteH,
                         inCenterX,
-                        inCenterY - 100 );
+                        inCenterY - yOff );
 
     maxigin_drawSprite( borderSpriteH,
                         inCenterX,
-                        inCenterY + 99 );
+                        inCenterY + yOff - 1 );
     
     maxigin_drawSprite( borderSpriteV,
-                        inCenterX - 100,
+                        inCenterX - xOff,
                         inCenterY );
 
     maxigin_drawSprite( borderSpriteV,
-                        inCenterX + 99,
+                        inCenterX + xOff - 1,
                         inCenterY );
 
     maxigin_drawResetColor();

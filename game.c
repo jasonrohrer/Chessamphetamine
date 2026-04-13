@@ -1,19 +1,18 @@
 
-/* NOTE:
-   These MUST match defines in maxigin_imp.c */
-#define MAXIGIN_GAME_NATIVE_W  320
-#define MAXIGIN_GAME_NATIVE_H  240
+#include "gameSize.h"
 
 
 #include "maxigin.h"
 
 
-#define BOARD_IMPLEMENTATION
-#include "board.h"
+
 
 
 #define CHESS_IMPLEMENTATION
 #include "chess.h"
+
+#define BOARD_IMPLEMENTATION
+#include "board.h"
 
 #define PARTICLE_SPRITE_IMPLEMENTATION
 #include "particleSprite.h"

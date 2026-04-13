@@ -1,6 +1,6 @@
 
-#define MAXIGIN_GAME_NATIVE_W  320
-#define MAXIGIN_GAME_NATIVE_H  240
+#include "gameSize.h"
+
 
 #define  MAXIGIN_RECORDING_STATIC_MEMORY_MAX_BYTES   5000
 

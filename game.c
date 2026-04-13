@@ -120,6 +120,12 @@ static int          checkmateBad   =  -1;
 
 static int          checkmateSprite  = -1;
 
+static int          spinFrameSprite            = -1;
+static int          spinUnpressedSprite        = -1;
+static int          spinPressedSprite          = -1;
+static int          spinPressedTextSprite      = -1;
+static int          spinPressedTextGlowSprite  = -1;
+
 static int          lang_settings;
 static int          lang_newGame;
 static int          lang_quit;
@@ -154,6 +160,9 @@ static unsigned char  checkmateFade               =  0;
 static int            checkmatePreFadeSteps       =  0;
 
 
+static char           spinning                    =  0;
+
+
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
@@ -163,7 +172,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     int  p;
     int  x;
     int  y;
-    int  i;    
+    int  i;
+    int  boardCenterX;
+    int  boardCenterY;
 
     maxigin_drawSetAlpha( 255 );
     
@@ -355,8 +366,38 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     maxigin_drawResetColor();
 
-    boardDraw( MAXIGIN_GAME_NATIVE_W / 2,
-               MAXIGIN_GAME_NATIVE_H / 2 );
+    boardCenterX = MAXIGIN_GAME_NATIVE_W / 2 - 10;
+    boardCenterY = MAXIGIN_GAME_NATIVE_H / 2;
+
+
+    maxigin_drawResetColor();
+
+    maxigin_drawSprite( spinFrameSprite,
+                        MAXIGIN_GAME_NATIVE_W - 35,
+                        boardCenterY );
+
+    if( ! spinning ) {
+        maxigin_drawSprite( spinUnpressedSprite,
+                            MAXIGIN_GAME_NATIVE_W - 35,
+                            boardCenterY );
+        }
+    else {
+        maxigin_drawSprite( spinPressedSprite,
+                            MAXIGIN_GAME_NATIVE_W - 35,
+                            boardCenterY );
+    
+        maxigin_drawSprite( spinPressedTextSprite,
+                            MAXIGIN_GAME_NATIVE_W - 35,
+                            boardCenterY );
+
+        maxigin_drawSpriteGlowOnly( spinPressedTextGlowSprite,
+                                    MAXIGIN_GAME_NATIVE_W - 35,
+                                    boardCenterY );
+        }
+    
+
+    boardDraw( boardCenterX,
+               boardCenterY);
 
     drawBoardState( &boardState,
                     checkmate,
@@ -364,14 +405,14 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                     &boardMove,
                     moveProgress,
                     moveProgressMax,
-                    MAXIGIN_GAME_NATIVE_W / 2,
-                    MAXIGIN_GAME_NATIVE_H / 2 );
+                    boardCenterX,
+                    boardCenterY );
 
     if( explodingProgress != -1 ) {
 
         drawExplodingPiece( explodingPiece,
-                            MAXIGIN_GAME_NATIVE_W / 2,
-                            MAXIGIN_GAME_NATIVE_H / 2,
+                            boardCenterX,
+                            boardCenterY,
                             explodingRow,
                             explodingCol,
                             explodingProgress );
@@ -393,8 +434,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                              / explodingCheckmateMax );
         
         maxigin_drawSprite( checkmateSprite,
-                            MAXIGIN_GAME_NATIVE_W / 2,
-                            MAXIGIN_GAME_NATIVE_H / 2 );
+                            boardCenterX,
+                            boardCenterY );
 
         
         maxigin_drawToggleAdditive( 1 );
@@ -404,8 +445,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         maxigin_drawExplodingSprite( checkmateSprite,
                                      getParticleSprite(),
-                                     MAXIGIN_GAME_NATIVE_W / 2,
-                                     MAXIGIN_GAME_NATIVE_H / 2,
+                                     boardCenterX,
+                                     boardCenterY,
                                      BOARD_SQUARE_SIZE / 4,
                                      explodingCheckmateProgress,
                                      explodingCheckmateMax,
@@ -429,13 +470,15 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         maxigin_drawSetAlpha( checkmateFade );
 
         maxigin_drawSprite( checkmateSprite,
-                            MAXIGIN_GAME_NATIVE_W / 2,
-                            MAXIGIN_GAME_NATIVE_H / 2 );
+                            boardCenterX,
+                            boardCenterY );
 
         }
     
-    
 
+
+    
+    
     maxigin_drawGUI( &gameGUI );
     }
 
@@ -633,9 +676,26 @@ void maxiginGame_step( void ) {
     r = mingin_getStepsPerSecond();
 
     stepsSinceLastBullet ++;
+
+    if( ! spinning
+        &&
+        maxigin_isButtonDown( JUMP ) ) {
+
+        spinning = 1;
+
+        maxigin_playSoundEffect( thunkSound,
+                                 512 );
+        }
+    else if( spinning
+             &&
+             ! maxigin_isButtonDown( JUMP ) ) {
+        spinning = 0;
+        maxigin_playSoundEffect( thunkSound,
+                                 512 );
+        }
     
     
-    if( maxigin_isButtonDown( JUMP ) ) {
+    if( spinning ) {
 
         if( ! moveMade
             &&
@@ -1188,7 +1248,25 @@ void maxiginGame_init( void ) {
                                       0,
                                       100,
                                       0 );
+
+    spinFrameSprite = maxigin_initSprite( "spinButtonFrame.tga" );
+    spinUnpressedSprite = maxigin_initSprite( "spinButtonUnpressed.tga" );
+    spinPressedSprite = maxigin_initSprite( "spinButtonPressed.tga" );
+    spinPressedTextSprite = maxigin_initSprite( "spinButtonPressedText.tga" );
+    spinPressedTextGlowSprite =
+        maxigin_initSprite( "spinButtonPressedTextGlow.tga" );
     
+    maxigin_initMakeGlowSprite( spinFrameSprite,
+                                4,
+                                2 );
+
+    maxigin_initMakeGlowSprite( spinPressedSprite,
+                                8,
+                                2 );
+
+    maxigin_initMakeGlowSprite( spinPressedTextGlowSprite,
+                                5,
+                                3 );
 
     lang_settings      = maxigin_initTranslationKey( "settings" );
     lang_newGame       = maxigin_initTranslationKey( "newGame"  );
@@ -1331,6 +1409,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( boardState );
     REGISTER_VAL_MEM( postMoveState );
     REGISTER_VAL_MEM( boardMove );
+    
+    REGISTER_VAL_MEM( moveMade );
     REGISTER_VAL_MEM( moveProgress );
     REGISTER_VAL_MEM( moveProgressMax );
 
@@ -1345,6 +1425,9 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( explodingCheckmateProgress );
     REGISTER_VAL_MEM( checkmateFade );
     REGISTER_VAL_MEM( checkmatePreFadeSteps );
+
+    REGISTER_VAL_MEM( spinning );
+    
     
     REGISTER_ARRAY_MEM( bulletOn );
     REGISTER_ARRAY_MEM( bulletPos );

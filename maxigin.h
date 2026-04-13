@@ -1471,6 +1471,26 @@ void maxigin_drawSprite( int  inSpriteHandle,
 
 
 /*
+  Draws a sprite's glow component into the game's native pixel buffer.
+
+  Parameters:
+
+      inSpriteHandle   the sprite to draw the glow component of
+
+      inCenterX        the x position in the game's native pixel buffer of the
+                       sprite's center
+ 
+      inCenterY        the y position in the game's native pixel buffer of the
+                       sprite's center
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawSpriteGlowOnly( int  inSpriteHandle,
+                                 int  inCenterX,
+                                 int  inCenterY );
+
+
+
+/*
   Draws a sprite into the game's native pixel buffer in a pixel-exploded
   style.
 
@@ -7269,6 +7289,26 @@ void maxigin_drawSprite( int  inSpriteHandle,
         mx_drawRegularSprite( inSpriteHandle,
                               inCenterX,
                               inCenterY );
+        }
+    }
+
+
+
+void maxigin_drawSpriteGlowOnly( int  inSpriteHandle,
+                                 int  inCenterX,
+                                 int  inCenterY ) {
+    
+    if( mx_sprites[ inSpriteHandle ].glowSpriteHandle != -1 ) {
+        
+        char  oldAdditive  =  maxigin_drawGetAdditive();
+        
+        maxigin_drawToggleAdditive( 1 );
+
+        mx_drawRegularSprite( mx_sprites[ inSpriteHandle ].glowSpriteHandle,
+                              inCenterX,
+                              inCenterY );
+
+        maxigin_drawToggleAdditive( oldAdditive );
         }
     }
 

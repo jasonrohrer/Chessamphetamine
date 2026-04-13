@@ -267,7 +267,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
     maxigin_drawToggleAdditive( 1 );
-    
+
+    if( 0 )
     for( i = 0;
          i < MAX_NUM_BULLETS;
          i ++ ) {
@@ -282,6 +283,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             }
         }
 
+    if( 0 )
     for( i = 0;
          i < MAX_NUM_BULLETS;
          i ++ ) {
@@ -315,21 +317,25 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                 }
             }
         }
+
+    if( 0 ) {
+        
+        maxigin_drawToggleAdditive( 1 );
+
+        maxigin_drawSetColor( 255, 255, 255, 64 );
+
+        maxigin_drawLine( MAXIGIN_GAME_NATIVE_W / 2,
+                          MAXIGIN_GAME_NATIVE_H / 2,
+                          lineTip.x,
+                          lineTip.y );
+
+        maxigin_drawToggleAdditive( 0 );
+        maxigin_drawSetColor( 255, 255, 255, 255 );
+        maxigin_drawSprite( spriteHandles[6],
+                            lineTip.x,
+                            lineTip.y );
+        }
     
-    maxigin_drawToggleAdditive( 1 );
-
-    maxigin_drawSetColor( 255, 255, 255, 64 );
-
-    maxigin_drawLine( MAXIGIN_GAME_NATIVE_W / 2,
-                      MAXIGIN_GAME_NATIVE_H / 2,
-                      lineTip.x,
-                      lineTip.y );
-
-    maxigin_drawToggleAdditive( 0 );
-    maxigin_drawSetColor( 255, 255, 255, 255 );
-    maxigin_drawSprite( spriteHandles[6],
-                        lineTip.x,
-                        lineTip.y );
 
     if( 0)
     maxigin_drawFillRect( MAXIGIN_GAME_NATIVE_W / 2,
@@ -790,6 +796,7 @@ void maxiginGame_step( void ) {
         remappingJump = 1;
         }
 
+    if( 0 )
     if( maxigin_isButtonDown( SHOOT ) ) {
         int  msSinceLastBullet  =  (stepsSinceLastBullet * 1000 ) / r;
 

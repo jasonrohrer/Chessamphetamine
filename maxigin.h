@@ -690,6 +690,9 @@ int maxigin_initSprite( const char  *inBulkResourceName );
 /*
   Generates a blurred additive glow sprite for a given sprite.
 
+  Each sprite can have one glow sprite, so subsequent calls to this
+  function for a given sprite will replace its glow.
+
   Calls to maxigin_drawSprite for the sprite handle will draw the main
   sprite and additively blend in the glow sprite on top.
   
@@ -711,6 +714,13 @@ void maxigin_initMakeGlowSprite( int  inSpriteHandle,
 
 /*
   Generates a blurred drop-shadow sprite for a given sprite.
+
+  Each sprite can have multiple drop shadows, up to
+  
+      MAXIGIN_MAX_NUM_DROP_SHADOWS
+      
+  per sprite.  Additional calls to this function for a given sprite will
+  add more shadows, up to this limit.
 
   Calls to maxigin_drawSprite for the sprite handle will draw the drop shadow
   sprite and draw the main sprite on top.
@@ -1453,6 +1463,11 @@ char maxigin_drawGetAdditive( void );
 /*
   Draws a sprite into the game's native pixel buffer.
 
+  If the sprite has shadow components, those will be drawn below the sprite.
+
+  If the sprite has a glow component, that will be drawn additively above
+  the sprite.
+  
   Parameters:
 
       inSpriteHandle   the sprite to draw
@@ -1487,6 +1502,47 @@ void maxigin_drawSprite( int  inSpriteHandle,
 void maxigin_drawSpriteGlowOnly( int  inSpriteHandle,
                                  int  inCenterX,
                                  int  inCenterY );
+
+
+
+/*
+  Draws a sprite's shadow components into the game's native pixel buffer.
+
+  Parameters:
+
+      inSpriteHandle   the sprite to draw the shadow components of
+
+      inCenterX        the x position in the game's native pixel buffer of the
+                       sprite's center
+ 
+      inCenterY        the y position in the game's native pixel buffer of the
+                       sprite's center
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawSpriteShadowOnly( int  inSpriteHandle,
+                                   int  inCenterX,
+                                   int  inCenterY );
+
+
+
+/*
+  Draws a sprite's base sprite into the game's native pixel buffer,
+  skipping any attached glow or shadow components.
+
+  Parameters:
+
+      inSpriteHandle   the sprite to draw
+
+      inCenterX        the x position in the game's native pixel buffer of the
+                       sprite's center
+ 
+      inCenterY        the y position in the game's native pixel buffer of the
+                       sprite's center
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawBaseSprite( int  inSpriteHandle,
+                             int  inCenterX,
+                             int  inCenterY );
 
 
 
@@ -6890,9 +6946,9 @@ void maxigin_drawResetColor( void ) {
 
 
 
-static void mx_drawRegularSprite( int  inSpriteHandle,
-                                  int  inCenterX,
-                                  int  inCenterY ) {
+void maxigin_drawBaseSprite( int  inSpriteHandle,
+                             int  inCenterX,
+                             int  inCenterY ) {
 
     int  startImageX;
     int  startImageY;
@@ -7238,17 +7294,17 @@ static void mx_drawGlowSprite( int  inSpriteHandle,
 
     char  oldAdditive  =  maxigin_drawGetAdditive();
     
-    mx_drawRegularSprite( inSpriteHandle,
-                          inCenterX,
-                          inCenterY );
+    maxigin_drawBaseSprite( inSpriteHandle,
+                            inCenterX,
+                            inCenterY );
 
     if( mx_sprites[ inSpriteHandle ].glowSpriteHandle != -1 ) {
 
         maxigin_drawToggleAdditive( 1 );
 
-        mx_drawRegularSprite( mx_sprites[ inSpriteHandle ].glowSpriteHandle,
-                              inCenterX,
-                              inCenterY );
+        maxigin_drawBaseSprite( mx_sprites[ inSpriteHandle ].glowSpriteHandle,
+                                inCenterX,
+                                inCenterY );
 
         maxigin_drawToggleAdditive( oldAdditive );
         }
@@ -7273,10 +7329,10 @@ void maxigin_drawSprite( int  inSpriteHandle,
              i < mx_sprites[ inSpriteHandle ].numShadows;
              i ++ ) {
         
-            mx_drawRegularSprite( mx_sprites[ inSpriteHandle ].
-                                      shadowSpriteHandle[i],
-                                  inCenterX,
-                                  inCenterY );
+            maxigin_drawBaseSprite( mx_sprites[ inSpriteHandle ].
+                                        shadowSpriteHandle[i],
+                                    inCenterX,
+                                    inCenterY );
             }
 
         mx_drawColor = oldColor;
@@ -7289,9 +7345,9 @@ void maxigin_drawSprite( int  inSpriteHandle,
                            inCenterY );
         }
     else {
-        mx_drawRegularSprite( inSpriteHandle,
-                              inCenterX,
-                              inCenterY );
+        maxigin_drawBaseSprite( inSpriteHandle,
+                                inCenterX,
+                                inCenterY );
         }
     }
 
@@ -7307,11 +7363,40 @@ void maxigin_drawSpriteGlowOnly( int  inSpriteHandle,
         
         maxigin_drawToggleAdditive( 1 );
 
-        mx_drawRegularSprite( mx_sprites[ inSpriteHandle ].glowSpriteHandle,
-                              inCenterX,
-                              inCenterY );
+        maxigin_drawBaseSprite( mx_sprites[ inSpriteHandle ].glowSpriteHandle,
+                                inCenterX,
+                                inCenterY );
 
         maxigin_drawToggleAdditive( oldAdditive );
+        }
+    }
+
+
+
+void maxigin_drawSpriteShadowOnly( int  inSpriteHandle,
+                                   int  inCenterX,
+                                   int  inCenterY ) {
+    
+    if( mx_sprites[ inSpriteHandle ].numShadows > 0 ) {
+
+        int           i;
+        MaxiginColor  oldColor  =  mx_drawColor;
+
+        maxigin_drawResetColor();
+
+        maxigin_drawSetAlpha( oldColor.comp.alpha );
+
+        for( i = 0;
+             i < mx_sprites[ inSpriteHandle ].numShadows;
+             i ++ ) {
+        
+            maxigin_drawBaseSprite( mx_sprites[ inSpriteHandle ].
+                                        shadowSpriteHandle[i],
+                                    inCenterX,
+                                    inCenterY );
+            }
+
+        mx_drawColor = oldColor;
         }
     }
 

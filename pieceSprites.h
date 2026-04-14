@@ -373,11 +373,11 @@ void drawBoardState( BoardState  *inState,
     
 
     for( y = 0;
-         y < 8;
+         y < BH;
          y ++ ) {
         
         for( x = 0;
-             x < 8;
+             x < BW;
              x ++ ) {
 
             ChessPiece  p    =  inState->grid[y][x];

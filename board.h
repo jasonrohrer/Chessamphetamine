@@ -197,10 +197,12 @@ void boardGetSquareCenter( int   inBoardCenterX,
                            int  *outSquareCenterY ) {
 
     *outSquareCenterY  =
-        inBoardCenterY - 100 + inRow * squareSize + squareSize / 2;
+        inBoardCenterY -  ( squareSize * BH ) / 2
+        + inRow * squareSize + squareSize / 2;
 
     *outSquareCenterX  =
-        inBoardCenterX - 100 + inCol * squareSize + squareSize / 2;
+        inBoardCenterX - ( squareSize * BW ) / 2
+        + inCol * squareSize + squareSize / 2;
     }
 
 

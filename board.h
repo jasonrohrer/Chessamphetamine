@@ -120,7 +120,7 @@ void boardDraw( int  inCenterX,
     int  x;
     int  pass;
     
-    int  w     =  1;
+    int  w;
     int  yOff  =  ( squareSize * BH ) / 2;
     int  xOff  =  ( squareSize * BW ) / 2;
 
@@ -133,6 +133,8 @@ void boardDraw( int  inCenterX,
     for( pass = 0;
          pass < 2;
          pass ++ ) {
+
+        w = 1;
         
         for( y = 0;
              y < BH;

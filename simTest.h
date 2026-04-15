@@ -13,11 +13,12 @@ static void runChessTest( void ) {
     int            blackWinCount   =  0;
     int            drawCount       =  0;
 
-    int            movesToDraw     =  30;
-    int            numRuns         =  20;
+    int            movesToDraw     =  100;
+    int            numRuns         =  1000;
     int            noScoreMoves    =  0;
     char           gameOver        =  0;
     unsigned long  seed            =  12035793;
+    unsigned long  drawSeed        =  0;
     
     for( i = 0;
          i < numRuns;
@@ -29,7 +30,8 @@ static void runChessTest( void ) {
         seed++;
 
         chessSeed( seed );
-        getStartBoard( &s );
+        if(0)getStartBoard( &s );
+        getTestBoard( &s );
 
         maxigin_logInt( "\n\nSeed: ",
                         (int)seed );
@@ -51,6 +53,7 @@ static void runChessTest( void ) {
                         drawCount ++;
                         gameOver = 1;
                         mingin_log( "Draw\n" );
+                        drawSeed = seed;
                         }
                     }
                 else {
@@ -98,6 +101,9 @@ static void runChessTest( void ) {
                     stalemateCount );
     maxigin_logInt( "Draws: ",
                     drawCount );
+
+    maxigin_logInt( "Most recent Draw seed: ",
+                    (int)drawSeed );
 
     }
 

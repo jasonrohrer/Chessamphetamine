@@ -972,7 +972,7 @@ void chessSeed( unsigned long  inSeed ) {
 
 void chessInit( void ) {
 
-    chessSeed( 12453603 );
+    chessSeed( 12036674 );
 
     REGISTER_VAL_MEM( chessRand );
     }
@@ -1053,6 +1053,8 @@ void getTestBoard( BoardState  *outState ) {
     if(0)outState->grid[6][0] = queen | CHESS_WHITE;
     outState->grid[6][3] = king | CHESS_WHITE;
     if(0)outState->grid[6][7] = rook | CHESS_WHITE;
+
+    outState->nextToMove = CHESS_WHITE;
     }
 
 

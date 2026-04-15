@@ -1441,7 +1441,7 @@ void maxiginGame_init( void ) {
     particleSpriteInit();
 
 
-    runChessTest();
+    if(0)runChessTest();
     
     
     /* init position in image center */

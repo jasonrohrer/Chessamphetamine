@@ -93,6 +93,11 @@ void getStartBoard( BoardState  *outState );
 
 
 
+/* fills outState with a test board state */
+void getTestBoard( BoardState  *outState );
+
+
+
 /* returns 1 if move possible, 0 if not */
 char getRandomMove( BoardState  *inState,
                     Move        *outMove,
@@ -954,14 +959,13 @@ void chessInit( void ) {
 
     REGISTER_VAL_MEM( chessRand );
     }
-     
 
 
-void getStartBoard( BoardState  *outState ) {
+
+static void clearBoard( BoardState  *outState ) {
 
     int  x;
     int  y;
-    int  i;
     
     for( y = 0;
          y < BH;
@@ -974,7 +978,14 @@ void getStartBoard( BoardState  *outState ) {
             outState->grid[y][x] = noPiece;
             }
         }
+    }
+
     
+void getStartBoard( BoardState  *outState ) {
+
+    int  i;
+    
+    clearBoard( outState );
 
     /* fill out whole starting board */
     outState->grid[0][0] = rook   | CHESS_BLACK;
@@ -1008,6 +1019,23 @@ void getStartBoard( BoardState  *outState ) {
         }
 
     outState->nextToMove = CHESS_WHITE;
+    }
+
+
+
+void getTestBoard( BoardState  *outState ) {
+
+
+    clearBoard( outState );
+
+    outState->grid[0][4] = king   | CHESS_BLACK;
+    outState->grid[1][3] = queen   | CHESS_BLACK;
+    outState->grid[1][2] = rook  | CHESS_BLACK;
+    if(0)outState->grid[1][1] = rook  | CHESS_BLACK;
+
+    if(0)outState->grid[6][0] = queen | CHESS_WHITE;
+    outState->grid[6][3] = king | CHESS_WHITE;
+    if(0)outState->grid[6][7] = rook | CHESS_WHITE;
     }
 
 
@@ -1427,11 +1455,30 @@ static char getGreedyDepthMove( BoardState  *inState,
                     else {
                         /* no move found for opponent?
                            they are checkmated */
-                        if( colorToMove == CHESS_WHITE ) {
-                            score = checkmateScore;
+                        int   losingSide;
+                        char  checkmate;
+
+                        checkmate =
+                            isCheckmate( &( possibleStates[ inDepth ][m] ),
+                                         &losingSide );
+
+                        if( checkmate ) {
+                            if( colorToMove == CHESS_WHITE ) {
+                                score = checkmateScore;
+                                }
+                            else {
+                                score = - checkmateScore;
+                                }
                             }
                         else {
-                            score = - checkmateScore;
+                            /* draw? */
+                            /* avoid this by making draw score very bad */
+                            if( colorToMove == CHESS_WHITE ) {
+                                score = - MAX_SCORE;
+                                }
+                            else {
+                                score = MAX_SCORE;
+                                }
                             }
                         }
                     }

@@ -1460,7 +1460,8 @@ void maxiginGame_init( void ) {
 
     boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 12;
 
-    getStartBoard( &boardState );
+    if(0) getStartBoard( &boardState );
+    if(1) getTestBoard( &boardState );
 
 
     REGISTER_VAL_MEM( boxPosX );

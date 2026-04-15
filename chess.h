@@ -86,6 +86,9 @@ typedef struct Move{
 void chessInit( void );
 
 
+void chessSeed( unsigned long  inSeed );
+
+
 
 
 /* fills outState with the starting board state */
@@ -112,6 +115,12 @@ char getGreedyMove( BoardState  *inState,
 
 /* makes a greedy move 3/4 of the time and random move 1/4 of the time */
 char getMixedMove( BoardState  *inState,
+                   Move        *outMove,
+                   BoardState  *outNewState );
+
+
+/* decides internally what type of move to generate */
+char getChessMove( BoardState  *inState,
                    Move        *outMove,
                    BoardState  *outNewState );
 
@@ -953,9 +962,17 @@ static char isKingInCheck( BoardState  *inState,
 static  MaxiginRand  chessRand;
 
 
-void chessInit( void ) {
+
+void chessSeed( unsigned long  inSeed ) {
     maxigin_randSeed( &chessRand,
-                      12453603 );
+                      inSeed );
+    }
+
+
+
+void chessInit( void ) {
+
+    chessSeed( 12453603 );
 
     REGISTER_VAL_MEM( chessRand );
     }
@@ -1557,6 +1574,25 @@ char getMixedMove( BoardState  *inState,
         }
     }
 
+
+
+char getChessMove( BoardState  *inState,
+                   Move        *outMove,
+                   BoardState  *outNewState ) {
+
+    if( inState->nextToMove == CHESS_BLACK ) {
+        return getMixedMove( inState,
+                             outMove,
+                             outNewState );
+        }
+    else {
+        /* white always makes greedy move,
+           so they never hang a queen, etc.  */
+        return getGreedyMove( inState,
+                              outMove,
+                              outNewState );
+        }
+    }
 
 
 

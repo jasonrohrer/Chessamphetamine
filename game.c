@@ -20,6 +20,7 @@
 #define PIECE_SPRITES_IMPLEMENTATION
 #include "pieceSprites.h"
 
+#include "simTest.h"
 
 
 enum GameUserAction {
@@ -730,24 +731,9 @@ void maxiginGame_step( void ) {
             explodingProgress == -1 ) {
 
             /* make a chess move */
-            char  moveSuccess;
-            
-            mingin_log( "Jump\n" );
-        
-            if( boardState.nextToMove == CHESS_BLACK ) {
-                moveSuccess = getMixedMove( &boardState,
-                                            &boardMove,
-                                            &postMoveState );
-                }
-            else {
-                /* white always makes greedy move,
-                   so they never hang a queen, etc.  */
-                moveSuccess = getGreedyMove( &boardState,
-                                             &boardMove,
-                                             &postMoveState );
-                }
-            
-            if( moveSuccess ) {
+            if( getChessMove( &boardState,
+                              &boardMove,
+                              &postMoveState ) ) {
                 int  pixDist  = boardGetPixelDistance( boardMove.startPos[0],
                                                        boardMove.startPos[1],
                                                        boardMove.endPos[0],
@@ -1453,6 +1439,10 @@ void maxiginGame_init( void ) {
     boardInit();
     pieceSpritesInit();
     particleSpriteInit();
+
+
+    runChessTest();
+    
     
     /* init position in image center */
     boxPosX = MAXIGIN_GAME_NATIVE_W / 2;

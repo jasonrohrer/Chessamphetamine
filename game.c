@@ -730,13 +730,24 @@ void maxiginGame_step( void ) {
             explodingProgress == -1 ) {
 
             /* make a chess move */
+            char  moveSuccess;
             
             mingin_log( "Jump\n" );
         
-            if( getMixedMove( &boardState,
-                              &boardMove,
-                              &postMoveState ) ) {
-
+            if( boardState.nextToMove == CHESS_BLACK ) {
+                moveSuccess = getMixedMove( &boardState,
+                                            &boardMove,
+                                            &postMoveState );
+                }
+            else {
+                /* white always makes greedy move,
+                   so they never hang a queen, etc.  */
+                moveSuccess = getGreedyMove( &boardState,
+                                             &boardMove,
+                                             &postMoveState );
+                }
+            
+            if( moveSuccess ) {
                 int  pixDist  = boardGetPixelDistance( boardMove.startPos[0],
                                                        boardMove.startPos[1],
                                                        boardMove.endPos[0],
@@ -746,6 +757,7 @@ void maxiginGame_step( void ) {
 
                 moveMade = 1;
                 }
+                
             }
         }
     

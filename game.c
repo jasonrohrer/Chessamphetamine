@@ -150,7 +150,9 @@ static int          moveProgressMax  =  0;
 static char         moveMade           =  0;
 static char         chessGameOver      =  0;
 static char         checkmate          =  0;
-static int          checkmateColor     =  CHESS_WHITE;
+static char         stalemate          =  0;
+static char         drawGame           =  0;
+static int          gameLoserColor     =  CHESS_WHITE;
 
 static int          noScoreMoveCount   =  0;
 
@@ -413,7 +415,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     drawBoardState( &boardState,
                     checkmate,
-                    checkmateColor,
+                    stalemate,
+                    drawGame,
+                    gameLoserColor,
                     &boardMove,
                     moveProgress,
                     moveProgressMax,
@@ -747,7 +751,8 @@ void maxiginGame_step( void ) {
                 /* failed to make a move and not checkmated */
 
                 /* trapped condition */
-                
+
+                stalemate     = 1;
                 chessGameOver = 1;
 
                 if( boardState.nextToMove == CHESS_BLACK ) {
@@ -782,10 +787,10 @@ void maxiginGame_step( void ) {
             int   newScore  =  getScore( &postMoveState );
 
             if( isCheckmate( &postMoveState,
-                             &checkmateColor ) ) {
+                             &gameLoserColor ) ) {
 
                 /* move led to checkmate */
-                if( checkmateColor == CHESS_BLACK ) {
+                if( gameLoserColor == CHESS_BLACK ) {
                     maxigin_playSoundEffect( checkmateGood,
                                              512 );
                     endMessageColor = CHESS_WHITE;
@@ -853,6 +858,7 @@ void maxiginGame_step( void ) {
                 if( noScoreMoveCount > 50 ) {
                     /* overrun condition */
 
+                    drawGame      = 1;
                     chessGameOver = 1;
 
                     if( newScore >= 0 ) {
@@ -1556,7 +1562,9 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( explodingProgress );
 
     REGISTER_VAL_MEM( checkmate );
-    REGISTER_VAL_MEM( checkmateColor );
+    REGISTER_VAL_MEM( stalemate );
+    REGISTER_VAL_MEM( drawGame );
+    REGISTER_VAL_MEM( gameLoserColor );
 
     REGISTER_VAL_MEM( chessGameOver );
     REGISTER_VAL_MEM( endMessageColor );

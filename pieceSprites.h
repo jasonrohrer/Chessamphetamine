@@ -48,7 +48,9 @@ void drawExplodingPiece( ChessPiece  inPiece,
    if inMoveProgressMax is 0, inMove is ignored */
 void drawBoardState( BoardState  *inState,
                      char         inCheckmate,
-                     int          inCheckmateColor,
+                     char         inStalemate,
+                     char         inDrawGame,
+                     int          inLoserColor,
                      Move        *inMove,
                      int          inMoveProgress,
                      int          inMoveProgressMax,
@@ -80,7 +82,8 @@ static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] = { "",
                                                                 "king.tga" };
 
 
-static  int          slashSpriteHandle     =  -1;
+static  int          slashSpriteHandle      =  -1;
+static  int          whiteFlagSpriteHandle  =  -1;
 
 
 void pieceSpritesInit( void ) {
@@ -188,6 +191,25 @@ void pieceSpritesInit( void ) {
 
         /* hazy drop shadow top to bottom */
         maxigin_initMakeDropShadowSprite( slashSpriteHandle,
+                                          5,
+                                          2,
+                                          255,
+                                          255,
+                                          100,
+                                          0,
+                                          100,
+                                          0 );
+        }
+
+    whiteFlagSpriteHandle = maxigin_initSprite( "whiteFlag.tga" );
+
+    if( whiteFlagSpriteHandle != -1 ) {
+        maxigin_initMakeGlowSprite( whiteFlagSpriteHandle,
+                                    4,
+                                    2 );
+
+        /* hazy drop shadow top to bottom */
+        maxigin_initMakeDropShadowSprite( whiteFlagSpriteHandle,
                                           5,
                                           2,
                                           255,
@@ -316,7 +338,9 @@ void drawExplodingPiece( ChessPiece  inPiece,
 
 void drawBoardState( BoardState  *inState,
                      char         inCheckmate,
-                     int          inCheckmateColor,
+                     char         inStalemate,
+                     char         inDrawGame,
+                     int          inLoserColor,
                      Move        *inMove,
                      int          inMoveProgress,
                      int          inMoveProgressMax,
@@ -329,6 +353,9 @@ void drawBoardState( BoardState  *inState,
     int         mX;
     int         mY;
     ChessPiece  mP;
+
+    /* fixme */
+    (void)inStalemate;
     
 
     if( inMoveProgressMax != 0 ) {
@@ -424,18 +451,29 @@ void drawBoardState( BoardState  *inState,
                                pX,
                                pY );
 
-                    if( inCheckmate ) {
+                    if( inCheckmate
+                        ||
+                        inDrawGame ) {
+                        
                         ChessPiece  c  =  p & CHESS_COLOR_MASK;
                         ChessPiece  t  =  p & CHESS_TYPE_MASK;
 
                         if( t == king
                             &&
-                            c == inCheckmateColor ) {
+                            c == inLoserColor ) {
 
-                            /* draw checkmate slash */
-                            maxigin_drawSprite( slashSpriteHandle,
-                                                pX,
-                                                pY + pieceOffsetY[ t ] );
+                            if( inCheckmate ) {
+                                /* draw checkmate slash */
+                                maxigin_drawSprite( slashSpriteHandle,
+                                                    pX,
+                                                    pY + pieceOffsetY[ t ] );
+                                }
+                            else {
+                                /* draw white flag  */
+                                maxigin_drawSprite( whiteFlagSpriteHandle,
+                                                    pX,
+                                                    pY + pieceOffsetY[ t ] );
+                                }
                             }
                         }  
                     }

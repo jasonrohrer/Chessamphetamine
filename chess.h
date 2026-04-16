@@ -972,8 +972,13 @@ void chessSeed( unsigned long  inSeed ) {
 
 void chessInit( void ) {
 
+    /* stalemate */
     chessSeed( 12036674 );
 
+    /* draw */
+    chessSeed( 12035857 );
+
+    
     REGISTER_VAL_MEM( chessRand );
     }
 

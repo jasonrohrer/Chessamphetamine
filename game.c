@@ -118,7 +118,7 @@ static int          splatterBad    =  -1;
 static int          checkmateGood  =  -1;
 static int          checkmateBad   =  -1;
 
-static int          checkmateSprite  = -1;
+
 
 static int          spinFrameSprite            = -1;
 static int          spinUnpressedSprite        = -1;
@@ -148,8 +148,11 @@ static int          moveProgress;
 static int          moveProgressMax  =  0;
 
 static char         moveMade           =  0;
+static char         chessGameOver      =  0;
 static char         checkmate          =  0;
 static int          checkmateColor     =  CHESS_WHITE;
+
+static int          noScoreMoveCount   =  0;
 
 static ChessPiece   explodingPiece     =  noPiece;
 static int          explodingProgress  =  -1;
@@ -157,10 +160,16 @@ static int          explodingRow;
 static int          explodingCol;
 
 
-static int            explodingCheckmateProgress  =  -1;
-static int            explodingCheckmateMax       =  512;
-static unsigned char  checkmateFade               =  0;
-static int            checkmatePreFadeSteps       =  0;
+static int            endMessageSprites[ 3 ]  = { -1,
+                                                  -1,
+                                                  -1 };
+
+static int            endMessageColor              =  CHESS_WHITE;
+static int            endMessageIndex              =  -1;
+static int            explodingEndMessageProgress  =  -1;
+static int            explodingEndMessageMax       =  512;
+static unsigned char  endMessageFade               =  0;
+static int            endMessagePreFadeSteps       =  0;
 
 
 static char           spinning                    =  0;
@@ -421,22 +430,18 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                             explodingProgress );
         }
 
-    if( explodingCheckmateProgress != -1 ) {
+    if( explodingEndMessageProgress != -1 ) {
 
         unsigned char  a;
 
-        if( checkmateColor == CHESS_BLACK ) {
-            drawSetPieceColor( CHESS_WHITE );
-            }
-        else {
-            drawSetPieceColor( CHESS_BLACK );
-            }
+        drawSetPieceColor( endMessageColor );
 
-        a = (unsigned char)( ( (long)( explodingCheckmateMax -
-                                       explodingCheckmateProgress ) * 255 )
-                             / explodingCheckmateMax );
+
+        a = (unsigned char)( ( (long)( explodingEndMessageMax -
+                                       explodingEndMessageProgress ) * 255 )
+                             / explodingEndMessageMax );
         
-        maxigin_drawSprite( checkmateSprite,
+        maxigin_drawSprite( endMessageSprites[ endMessageIndex ],
                             boardCenterX,
                             boardCenterY );
 
@@ -446,33 +451,28 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         
 
-        maxigin_drawExplodingSprite( checkmateSprite,
+        maxigin_drawExplodingSprite( endMessageSprites[ endMessageIndex ],
                                      getParticleSprite(),
                                      boardCenterX,
                                      boardCenterY,
                                      BOARD_SQUARE_SIZE / 4,
-                                     explodingCheckmateProgress,
-                                     explodingCheckmateMax,
+                                     explodingEndMessageProgress,
+                                     explodingEndMessageMax,
                                      a );
     
         maxigin_drawToggleAdditive( 0 );
         
 
         }
-    else if( checkmate
+    else if( chessGameOver
              &&
-             checkmateFade > 0 ) {
+             endMessageFade > 0 ) {
 
-        if( checkmateColor == CHESS_BLACK ) {
-            drawSetPieceColor( CHESS_WHITE );
-            }
-        else {
-            drawSetPieceColor( CHESS_BLACK );
-            }
+        drawSetPieceColor( endMessageColor );
 
-        maxigin_drawSetAlpha( checkmateFade );
+        maxigin_drawSetAlpha( endMessageFade );
 
-        maxigin_drawSprite( checkmateSprite,
+        maxigin_drawSprite( endMessageSprites[ endMessageIndex ],
                             boardCenterX,
                             boardCenterY );
 
@@ -726,7 +726,7 @@ void maxiginGame_step( void ) {
 
         if( ! moveMade
             &&
-            ! checkmate
+            ! chessGameOver
             &&
             explodingProgress == -1 ) {
 
@@ -742,6 +742,30 @@ void maxiginGame_step( void ) {
                 moveProgress    = 0;
 
                 moveMade = 1;
+                }
+            else {
+                /* failed to make a move and not checkmated */
+
+                /* trapped condition */
+                
+                chessGameOver = 1;
+
+                if( boardState.nextToMove == CHESS_BLACK ) {
+                    maxigin_playSoundEffect( checkmateGood,
+                                             512 );
+                    endMessageColor = CHESS_WHITE;
+                    }
+                else {
+                    maxigin_playSoundEffect( checkmateBad,
+                                             512 );
+                    endMessageColor = CHESS_BLACK;
+                    }
+
+                /* start TRAPPED explosion */
+                endMessageIndex = 1;
+                explodingEndMessageProgress = 0;
+                endMessageFade = 255;
+                endMessagePreFadeSteps = 0;
                 }
                 
             }
@@ -764,18 +788,23 @@ void maxiginGame_step( void ) {
                 if( checkmateColor == CHESS_BLACK ) {
                     maxigin_playSoundEffect( checkmateGood,
                                              512 );
+                    endMessageColor = CHESS_WHITE;
                     }
                 else {
                     maxigin_playSoundEffect( checkmateBad,
                                              512 );
+                    endMessageColor = CHESS_BLACK;
                     }
 
                 checkmate = 1;
+                chessGameOver = 1;
 
                 /* start checkmate explosion */
-                explodingCheckmateProgress = 0;
-                checkmateFade = 255;
-                checkmatePreFadeSteps = 0;
+                
+                endMessageIndex = 0;
+                explodingEndMessageProgress = 0;
+                endMessageFade = 255;
+                endMessagePreFadeSteps = 0;
                 }
             else if( oldScore != newScore ) {
 
@@ -813,18 +842,47 @@ void maxiginGame_step( void ) {
                     /* neutral? */
                     maxigin_playSoundEffect( thunkSound,
                                              512 );
-                    } 
+                    }
+                noScoreMoveCount = 0;
                 }
             else {
                 /* plunk on non-capture move */
 
-                if( boardState.nextToMove == CHESS_WHITE ) {
-                    maxigin_playSoundEffect( beepUp,
-                                             256 );
+                noScoreMoveCount ++;
+
+                if( noScoreMoveCount > 50 ) {
+                    /* overrun condition */
+
+                    chessGameOver = 1;
+
+                    if( newScore >= 0 ) {
+                        /* for now, count tie overrun as win for white */
+                        maxigin_playSoundEffect( checkmateGood,
+                                                 512 );
+                        endMessageColor = CHESS_WHITE;
+                        }
+                    else {
+                        maxigin_playSoundEffect( checkmateBad,
+                                                 512 );
+                        endMessageColor = CHESS_BLACK;
+                        }
+
+                    /* start OVERRUN explosion */
+                    endMessageIndex = 2;
+                    explodingEndMessageProgress = 0;
+                    endMessageFade = 255;
+                    endMessagePreFadeSteps = 0;
                     }
                 else {
-                    maxigin_playSoundEffect( beepDown,
-                                             256 );
+                    
+                    if( boardState.nextToMove == CHESS_WHITE ) {
+                        maxigin_playSoundEffect( beepUp,
+                                                 256 );
+                        }
+                    else {
+                        maxigin_playSoundEffect( beepDown,
+                                                 256 );
+                        }
                     }
                 }
             
@@ -844,29 +902,29 @@ void maxiginGame_step( void ) {
         }
 
     
-    if( explodingCheckmateProgress != -1 ) {
-        explodingCheckmateProgress += ( 10 * 60 ) / r;
+    if( explodingEndMessageProgress != -1 ) {
+        explodingEndMessageProgress += ( 10 * 60 ) / r;
 
-        if( explodingCheckmateProgress >= explodingCheckmateMax ) {
-            explodingCheckmateProgress = -1;
+        if( explodingEndMessageProgress >= explodingEndMessageMax ) {
+            explodingEndMessageProgress = -1;
             }
         }
-    else if( checkmate
+    else if( chessGameOver
              &&
-             checkmateFade > 0 ) {
+             endMessageFade > 0 ) {
 
-        if( checkmatePreFadeSteps < ( 30 * 60 ) / r ) {
-            checkmatePreFadeSteps ++;
+        if( endMessagePreFadeSteps < ( 30 * 60 ) / r ) {
+            endMessagePreFadeSteps ++;
             }
         else {
 
-            int  newFade = checkmateFade - ( 5 * 60 ) / r;
+            int  newFade = endMessageFade - ( 5 * 60 ) / r;
 
             if( newFade < 0 ) {
-                checkmateFade = 0;
+                endMessageFade = 0;
                 }
             else {
-                checkmateFade = (unsigned char)newFade;
+                endMessageFade = (unsigned char)newFade;
                 }
             }
         }
@@ -1201,6 +1259,30 @@ static const char  *panelFullSprites[]  =  { "panelFull200_100.tga",
 #include "memoryRegister.h"
 
 
+static void initEndMessageSprite( int  inIndex,
+                                  const char  *inDataName ) {
+
+    int  i  =  inIndex;
+    
+    endMessageSprites[i] = maxigin_initSprite( inDataName );
+
+    maxigin_initMakeGlowSprite( endMessageSprites[i],
+                                4,
+                                2 );
+
+    /* hazy drop shadow top to bottom */
+    maxigin_initMakeDropShadowSprite( endMessageSprites[i],
+                                      5,
+                                      2,
+                                      255,
+                                      255,
+                                      100,
+                                      0,
+                                      100,
+                                      0 );
+    }
+
+
 void maxiginGame_init( void ) {
 
     int  i;
@@ -1256,22 +1338,15 @@ void maxiginGame_init( void ) {
             }
         }
 
-    checkmateSprite    = maxigin_initSprite( "checkmate.tga" );
 
-    maxigin_initMakeGlowSprite( checkmateSprite,
-                                4,
-                                2 );
+    initEndMessageSprite( 0,
+                          "checkmate.tga" );
+    initEndMessageSprite( 1,
+                          "trapped.tga" );
+    initEndMessageSprite( 2,
+                          "overrun.tga" );
+    
 
-    /* hazy drop shadow top to bottom */
-    maxigin_initMakeDropShadowSprite( checkmateSprite,
-                                      5,
-                                      2,
-                                      255,
-                                      255,
-                                      100,
-                                      0,
-                                      100,
-                                      0 );
 
     spinFrameSprite = maxigin_initSprite( "spinButtonFrame.tga" );
     spinUnpressedSprite = maxigin_initSprite( "spinButtonUnpressed.tga" );
@@ -1483,9 +1558,12 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( checkmate );
     REGISTER_VAL_MEM( checkmateColor );
 
-    REGISTER_VAL_MEM( explodingCheckmateProgress );
-    REGISTER_VAL_MEM( checkmateFade );
-    REGISTER_VAL_MEM( checkmatePreFadeSteps );
+    REGISTER_VAL_MEM( chessGameOver );
+    REGISTER_VAL_MEM( endMessageColor );
+    REGISTER_VAL_MEM( endMessageIndex );
+    REGISTER_VAL_MEM( explodingEndMessageProgress );
+    REGISTER_VAL_MEM( endMessageFade );
+    REGISTER_VAL_MEM( endMessagePreFadeSteps );
 
     REGISTER_VAL_MEM( spinning );
     

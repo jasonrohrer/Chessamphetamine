@@ -84,6 +84,7 @@ static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] = { "",
 
 static  int          slashSpriteHandle      =  -1;
 static  int          whiteFlagSpriteHandle  =  -1;
+static  int          noMoveSpriteHandle     =  -1;
 
 
 void pieceSpritesInit( void ) {
@@ -210,6 +211,25 @@ void pieceSpritesInit( void ) {
 
         /* hazy drop shadow top to bottom */
         maxigin_initMakeDropShadowSprite( whiteFlagSpriteHandle,
+                                          5,
+                                          2,
+                                          255,
+                                          255,
+                                          100,
+                                          0,
+                                          100,
+                                          0 );
+        }
+
+    noMoveSpriteHandle = maxigin_initSprite( "noMoveSquare.tga" );
+
+    if( noMoveSpriteHandle != -1 ) {
+        maxigin_initMakeGlowSprite( noMoveSpriteHandle,
+                                    4,
+                                    2 );
+
+        /* hazy drop shadow top to bottom */
+        maxigin_initMakeDropShadowSprite( noMoveSpriteHandle,
                                           5,
                                           2,
                                           255,
@@ -354,8 +374,79 @@ void drawBoardState( BoardState  *inState,
     int         mY;
     ChessPiece  mP;
 
-    /* fixme */
-    (void)inStalemate;
+
+    if( inStalemate ) {
+        /* draw no move x's around loser's king, under other pieces */
+
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+        
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
+
+                ChessPiece  p    =  inState->grid[y][x];
+                ChessPiece  t    =  p & CHESS_TYPE_MASK;
+                ChessPiece  c    =  p & CHESS_COLOR_MASK;
+
+                if( t == king
+                    &&
+                    c == inLoserColor ) {
+
+                    int dx;
+                    int dy;
+
+                    for( dy = -1;
+                         dy <= 1;
+                         dy ++ ) {
+
+                        int  oy  =  y + dy;
+
+                        if( oy >= 0
+                            &&
+                            oy < BH ) {
+                            /* oy in bounds  */
+                        
+                            for( dx = -1;
+                                 dx <= 1;
+                                 dx ++ ) {
+
+                                int  ox  =  x + dx;
+
+                                if( ox >= 0
+                                    &&
+                                    ox < BW ) {
+
+                                    /* ox in bounds */
+
+                                    if( ox != x
+                                        ||
+                                        oy != y ) {
+                                        /* no x on the king's pos itself */
+                            
+                                        int  pX;
+                                        int  pY;
+
+                                        boardGetSquareCenter( inBoardCenterX,
+                                                              inBoardCenterY,
+                                                              oy,
+                                                              ox,
+                                                              &pX,
+                                                              &pY );
+                                        maxigin_drawSprite( noMoveSpriteHandle,
+                                                            pX,
+                                                            pY );
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    
     
 
     if( inMoveProgressMax != 0 ) {

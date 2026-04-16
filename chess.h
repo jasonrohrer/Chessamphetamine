@@ -976,7 +976,7 @@ void chessInit( void ) {
     chessSeed( 12036674 );
 
     /* draw */
-    chessSeed( 12035857 );
+    if(0)chessSeed( 12035857 );
 
     
     REGISTER_VAL_MEM( chessRand );

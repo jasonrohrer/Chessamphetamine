@@ -7092,11 +7092,6 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
                  x < endSpriteX;
                  x ++ ) {
 
-                int  vR;
-                int  vG;
-                int  vB;
-
-                int  vExtra  =  0;
                 unsigned char  r;
                 unsigned char  g;
                 unsigned char  b;
@@ -7124,89 +7119,79 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
                 
                 if( a == 255 ) {
 
+                    int  v;
+
                     /* red */
-                    vR = mx_gameImageBuffer[ imageByte  ] + r;
+                    v = mx_gameImageBuffer[ imageByte  ] + r;
 
-                    
+                    if( v > 255 ) {
+                        v = 255;
+                        }
+                    mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
+
+                    imageByte  ++;
+
                     /* green */
-                    vG = mx_gameImageBuffer[ imageByte + 1  ] + g;
+                    v = mx_gameImageBuffer[ imageByte  ] + g;
 
-                    
+                    if( v > 255 ) {
+                        v = 255;
+                        }
+                    mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
+
+                    imageByte  ++;
+
                     /* blue */
-                    vB = mx_gameImageBuffer[ imageByte + 2 ] + b;
+                    v = mx_gameImageBuffer[ imageByte  ] + b;
 
+                    if( v > 255 ) {
+                        v = 255;
+                        }
+                    mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
+
+                    imageByte  ++;
                     }
                 else {
                     /* alpha blending */
 
+                    int  v;
+                    
                     /* red */
-                    vR = mx_gameImageBuffer[ imageByte ]
+                    v = mx_gameImageBuffer[ imageByte ]
                         +
                         ( r * a ) / 255;
                     
+                    if( v > 255 ) {
+                        v = 255;
+                        }
+                    mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
+                
+                    imageByte  ++;
+
                     /* green */
-                    vG = mx_gameImageBuffer[ imageByte + 1 ]
+                    v = mx_gameImageBuffer[ imageByte ]
                         +
                         ( g * a ) / 255;
                     
+                    if( v > 255 ) {
+                        v = 255;
+                        }
+                    mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
+                
+                    imageByte  ++;
+
                     /* blue */
-                    vB = mx_gameImageBuffer[ imageByte + 2 ]
+                    v = mx_gameImageBuffer[ imageByte ]
                         +
                         ( b * a ) / 255;
-                    }
+                    
+                    if( v > 255 ) {
+                        v = 255;
+                        }
+                    mx_gameImageBuffer[ imageByte ] = (unsigned char)v;
                 
-                if( vR > 255 ) {
-                    vExtra += vR - 255;
-                    vR = 255;
+                    imageByte  ++;
                     }
-                    
-                if( vG > 255 ) {
-                    vExtra += vG - 255;
-                    vG = 255;
-                    }
-
-                if( vB > 255 ) {
-                    vExtra += vB - 255;
-                    vB = 255;
-                    }
-
-                if( vExtra > 0 ) {
-                    vExtra = vExtra >> 1;
-
-                    if( vExtra > 255 ) {
-                        vExtra = 255;
-                        }
-                    if( vR < 255 ) {
-                        vR += ( (255 - vR) * vExtra ) / 255;
-                        }
-                    if( vG < 255 ) {
-                        vG += ( (255 - vG) * vExtra ) / 255;
-                        }
-                    if( vB < 255 ) {
-                        vB += ( (255 - vB) * vExtra ) / 255;
-                        }
-                    /*
-                    vR += vExtra;
-                    vG += vExtra;
-                    vB += vExtra;
-                    */
-
-                    if( vR > 255 ) {
-                        vR = 255;
-                        }
-                    if( vG > 255 ) {
-                        vG = 255;
-                        }
-                    if( vB > 255 ) {
-                        vB = 255;
-                        }
-                    }
-                    
-                mx_gameImageBuffer[ imageByte ++ ] = (unsigned char)vR;
-
-                mx_gameImageBuffer[ imageByte ++ ] = (unsigned char)vG;
-
-                mx_gameImageBuffer[ imageByte ++ ] = (unsigned char)vB;
             
                 /* skip the alpha in the sprite
                    dest image has no alpha channel */

@@ -1685,6 +1685,29 @@ void maxigin_drawSetColor( unsigned char  inRed,
                            unsigned char  inAlpha );
 
 
+
+/*
+  Gets the active draw color for future calls to drawing functions.
+
+  Parameters:
+
+      outRed     pointer to where red value will be returned
+      
+      outGreen   pointer to where green value will be returned
+      
+      outBlue    pointer to where blue value will be returned
+      
+      outAlpha   pointer to where alpha value will be returned
+      
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawGetColor( unsigned char  *outRed,
+                           unsigned char  *outGreen,
+                           unsigned char  *outBlue,
+                           unsigned char  *outAlpha );
+
+
+
 /*
   Sets the active alpha value for future calls to drawing functions,
   without adjusting the R,G,B draw color.
@@ -6955,6 +6978,18 @@ void maxigin_drawSetColor( unsigned char  inRed,
 
 
 
+void maxigin_drawGetColor( unsigned char  *outRed,
+                           unsigned char  *outGreen,
+                           unsigned char  *outBlue,
+                           unsigned char  *outAlpha ) {
+    *outRed   = mx_drawColor.comp.red;
+    *outGreen = mx_drawColor.comp.green;
+    *outBlue  = mx_drawColor.comp.blue;
+    *outAlpha = mx_drawColor.comp.alpha;
+    }
+
+
+
 void maxigin_drawSetAlpha( unsigned char  inAlpha ) {
     
     mx_drawColor.comp.alpha  =  inAlpha;
@@ -6970,41 +7005,36 @@ void maxigin_drawResetColor( void ) {
     mx_drawColor.comp.alpha  =  255;
     }
 
+
+
 /*
-void mx_convertRGBToHSV( unsigned char   inR,
-                         unsigned char   inG,
-                         unsigned char   inB,
-                         long           *outH,
-                         long           *outS,
-                         long           *outV ) {
-
-    }
+  rgb in  0..255
+  h   in  0..36000
+  s   in  0..10000
+  v   in  0..10000
 */
-                         
-
-int maxigin_drawGetColorSaturation( void ) {
-    return 0;
-    }
-
-
-
-void maxigin_drawSetColorSaturation( int  inSaturation ) {
-
-    /* convert to HSV, adjust S, and convert back */
-    
-    /* based on pseudocode from http://www.easyrgb.com/math.php
-       and forumula found here:
+static void mx_convertRGBToHSV( unsigned char   inR,
+                                unsigned char   inG,
+                                unsigned char   inB,
+                                long           *outH,
+                                long           *outS,
+                                long           *outV ) {
+        
+    /* based on forumula found here:
        
        https://www.rapidtables.com/convert/color/rgb-to-hsv.html
+
+       Translated these formulas into fixed-point math.
     */
+
     
     long  h;   /* in range 0.. 36,000 */
     long  s;   /* in range 0.. 10,000 */
     long  v;   /* in range 0.. 10,000 */
     
-    long  r    =  mx_drawColor.comp.red;
-    long  g    =  mx_drawColor.comp.green;
-    long  b    =  mx_drawColor.comp.blue;
+    long  r    =  inR;
+    long  g    =  inG;
+    long  b    =  inB;
 
     long  min  =  r;
     long  max  =  r;
@@ -7076,26 +7106,45 @@ void maxigin_drawSetColorSaturation( int  inSaturation ) {
             }
         }
 
-    /* now adjust saturation */
 
-    s = inSaturation;
+    *outH = h;
+    *outS = s;
+    *outV = v;
+    }
 
 
-    /* now convert back */
+
+/*
+  h   in  0..36000
+  s   in  0..10000
+  v   in  0..10000
+  rgb in  0..255
+*/
+static void mx_convertHSVToRGB( long           inH,
+                                long           inS,
+                                long           inV,
+                                unsigned char  *outR,
+                                unsigned char  *outG,
+                                unsigned char  *outB ) {
+    long  r;
+    long  g;
+    long  b;
     
-
-    if( s == 0 ) {
-        r = v;                      
-        g = v;
-        b = v;
+    if( inS == 0 ) {
+        /* round with  + 5000 */
+        long  gray  =  ( inV * 255 + 5000 ) / 10000;
+        
+        r = gray;                      
+        g = gray;
+        b = gray;
         }
     else {
 
         /* round with  + 5000 */
-        long  c     =  ( v * s + 5000 ) / 10000;
-        long  m     =  v - c;
+        long  c     =  ( inV * inS + 5000 ) / 10000;
+        long  m     =  inV - c;
         
-        long  hBin  =  h / 6;
+        long  hBin  =  inH / 6;
 
         long  hMod  =  ( hBin % 2000 ) - 1000;
         long  x;
@@ -7111,27 +7160,27 @@ void maxigin_drawSetColorSaturation( int  inSaturation ) {
         x = ( c * (1000 - hMod ) + 500 ) / 1000;
 
 
-        if( h < 6000 ) {
+        if( inH < 6000 ) {
             r2 = c;
             g2 = x;
             b2 = 0;
             }
-        else if( h < 12000 ) {
+        else if( inH < 12000 ) {
             r2 = x;
             g2 = c;
             b2 = 0;
             }
-        else if( h < 18000 ) {
+        else if( inH < 18000 ) {
             r2 = 0;
             g2 = c;
             b2 = x;
             }
-        else if( h < 24000 ) {
+        else if( inH < 24000 ) {
             r2 = 0;
             g2 = x;
             b2 = c;
             }
-        else if( h < 30000 ) {
+        else if( inH < 30000 ) {
             r2 = x;
             g2 = 0;
             b2 = c;
@@ -7148,9 +7197,61 @@ void maxigin_drawSetColorSaturation( int  inSaturation ) {
         b = ( ( b2 + m ) * 255 + 5000 ) / 10000;
         }
 
-    mx_drawColor.comp.red   = (unsigned char)r;
-    mx_drawColor.comp.green = (unsigned char)g;
-    mx_drawColor.comp.blue  = (unsigned char)b;
+    *outR = (unsigned char)r;
+    *outG = (unsigned char)g;
+    *outB = (unsigned char)b;
+    }
+
+
+                         
+
+int maxigin_drawGetColorSaturation( void ) {
+
+    long  h;
+    long  s;
+    long  v;
+    
+    mx_convertRGBToHSV( mx_drawColor.comp.red,
+                        mx_drawColor.comp.green,
+                        mx_drawColor.comp.blue,
+                        &h,
+                        &s,
+                        &v );
+    
+    return (int)s;
+    }
+
+
+
+void maxigin_drawSetColorSaturation( int  inSaturation ) {
+
+    /* convert to HSV, adjust S, and convert back */
+
+    long  h;
+    long  s;
+    long  v;
+    
+    mx_convertRGBToHSV( mx_drawColor.comp.red,
+                        mx_drawColor.comp.green,
+                        mx_drawColor.comp.blue,
+                        &h,
+                        &s,
+                        &v );
+                        
+
+    /* now adjust saturation */
+
+    s = inSaturation;
+
+
+    /* now convert back */
+
+    mx_convertHSVToRGB( h,
+                        s,
+                        v,
+                        &( mx_drawColor.comp.red ),
+                        &( mx_drawColor.comp.green ),
+                        &( mx_drawColor.comp.blue ) );
     }
 
 

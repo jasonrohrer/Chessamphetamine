@@ -453,7 +453,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         maxigin_drawToggleAdditive( 1 );
 
 
-        
+        if( endMessageColor == CHESS_WHITE ) {
+            /* desaturate gold color to make it clip white */
+            maxigin_drawSetColorSaturation( 8500 );
+            }
 
         maxigin_drawExplodingSprite( endMessageSprites[ endMessageIndex ],
                                      getParticleSprite(),

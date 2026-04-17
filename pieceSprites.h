@@ -321,19 +321,16 @@ void drawExplodingPiece( ChessPiece  inPiece,
                           inCol,
                           &x,
                           &y );
+
+    drawSetPieceColor( inPiece & CHESS_COLOR_MASK );
+
     
-    if( ( inPiece & CHESS_COLOR_MASK ) == CHESS_BLACK ) {
-        maxigin_drawSetColor( 128,
-                              64,
-                              128,
-                              255 );
+    if( ( inPiece & CHESS_COLOR_MASK ) == CHESS_WHITE ) {
+
+        /* desaturate gold color to make it clip white */
+        maxigin_drawSetColorSaturation( 8500 );
         }
-    else {
-        maxigin_drawSetColor( 192,
-                              128,
-                              0,
-                              255 );
-        }
+
 
     a = (unsigned char)( ( (long)( explodeMax - inProgress ) * 255 )
                          / explodeMax );

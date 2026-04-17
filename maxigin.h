@@ -1713,6 +1713,32 @@ void maxigin_drawResetColor( void );
 
 
 /*
+  Sets the saturation of the current draw color, where 0 is fully desaturated
+  (gray), and 10000 is fully saturated.
+
+  Parameters:
+      
+      inSaturation   new saturation value in [0..10000]
+
+*/
+void maxigin_drawSetColorSaturation( int  inSaturation );
+
+
+
+/*
+  Gets the saturation of the current draw color, where 0 is fully desaturated
+  (gray), and 10000 is fully saturated.
+
+  Returns:
+
+      saturation value in [0..10000]
+
+*/
+int maxigin_drawGetColorSaturation( void );
+
+
+
+/*
   Draws a line into the game's native pixel buffer.
 
   Parameters:
@@ -6942,6 +6968,189 @@ void maxigin_drawResetColor( void ) {
     mx_drawColor.comp.green  =  255;
     mx_drawColor.comp.blue   =  255;
     mx_drawColor.comp.alpha  =  255;
+    }
+
+/*
+void mx_convertRGBToHSV( unsigned char   inR,
+                         unsigned char   inG,
+                         unsigned char   inB,
+                         long           *outH,
+                         long           *outS,
+                         long           *outV ) {
+
+    }
+*/
+                         
+
+int maxigin_drawGetColorSaturation( void ) {
+    return 0;
+    }
+
+
+
+void maxigin_drawSetColorSaturation( int  inSaturation ) {
+
+    /* convert to HSV, adjust S, and convert back */
+    
+    /* based on pseudocode from http://www.easyrgb.com/math.php
+       and forumula found here:
+       
+       https://www.rapidtables.com/convert/color/rgb-to-hsv.html
+    */
+    
+    long  h;   /* in range 0.. 36,000 */
+    long  s;   /* in range 0.. 10,000 */
+    long  v;   /* in range 0.. 10,000 */
+    
+    long  r    =  mx_drawColor.comp.red;
+    long  g    =  mx_drawColor.comp.green;
+    long  b    =  mx_drawColor.comp.blue;
+
+    long  min  =  r;
+    long  max  =  r;
+
+    long  d;
+    
+    if( g > max ) {
+        max = g;
+        }
+    if( b > max ) {
+        max = b;
+        }
+    
+    if( g < min ) {
+        min = g;
+        }
+    if( b < min ) {
+        min = b;
+        }
+
+    d = max - min;
+
+    /* round with  + 127 */
+    v = ( 10000 * max + 127 ) / 255;
+    
+    if ( d == 0 ) {
+        /* This is a gray, no chroma */
+        h = 0;
+        s = 0;
+        }
+    else {
+        /* chroma present */
+
+        long  halfD  =  d / 2;
+        
+
+        if( max > 0 ) {
+            long  halfMax  =  max / 2;
+
+            /* round with  + halfMax */
+            s = ( 10000 * d + halfMax ) / max;
+            }
+        else {
+            s = 0;
+            }
+
+        if( d == 0 ) {
+            h = 0;
+            }
+        else if( r == max )  {
+            /* round with  + halfD */
+            h =         ( ( g - b ) * 6000 + halfD ) / d;
+            }
+        else if( g == max ) {
+            h = 12000 + ( ( b - r ) * 6000 + halfD ) / d;
+            }
+        else if ( b == max ) {
+            h = 24000 + ( ( r - g ) * 6000 + halfD ) / d;
+            }
+        
+
+        while( h < 0 ) {
+            h += 36000;
+            }
+
+        /* don't ever let h be 36000 */
+        while( h >= 36000 ) {
+            h -= 36000;
+            }
+        }
+
+    /* now adjust saturation */
+
+    s = inSaturation;
+
+
+    /* now convert back */
+    
+
+    if( s == 0 ) {
+        r = v;                      
+        g = v;
+        b = v;
+        }
+    else {
+
+        /* round with  + 5000 */
+        long  c     =  ( v * s + 5000 ) / 10000;
+        long  m     =  v - c;
+        
+        long  hBin  =  h / 6;
+
+        long  hMod  =  ( hBin % 2000 ) - 1000;
+        long  x;
+        long  r2;
+        long  g2;
+        long  b2;
+        
+        if( hMod < 0 ) {
+            hMod = -hMod;
+            }
+
+        /* round with  + 500 */
+        x = ( c * (1000 - hMod ) + 500 ) / 1000;
+
+
+        if( h < 6000 ) {
+            r2 = c;
+            g2 = x;
+            b2 = 0;
+            }
+        else if( h < 12000 ) {
+            r2 = x;
+            g2 = c;
+            b2 = 0;
+            }
+        else if( h < 18000 ) {
+            r2 = 0;
+            g2 = c;
+            b2 = x;
+            }
+        else if( h < 24000 ) {
+            r2 = 0;
+            g2 = x;
+            b2 = c;
+            }
+        else if( h < 30000 ) {
+            r2 = x;
+            g2 = 0;
+            b2 = c;
+            }
+        else {
+            r2 = c;
+            g2 = 0;
+            b2 = x;
+            }
+
+        /* round with  + 5000 */
+        r = ( ( r2 + m ) * 255 + 5000 ) / 10000;
+        g = ( ( g2 + m ) * 255 + 5000 ) / 10000;
+        b = ( ( b2 + m ) * 255 + 5000 ) / 10000;
+        }
+
+    mx_drawColor.comp.red   = (unsigned char)r;
+    mx_drawColor.comp.green = (unsigned char)g;
+    mx_drawColor.comp.blue  = (unsigned char)b;
     }
 
 

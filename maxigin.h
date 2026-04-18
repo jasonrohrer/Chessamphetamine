@@ -12548,8 +12548,22 @@ static void mx_spriteCacheReadFailed( int  inReadHandle ) {
 static void mx_initSpriteCache( void ) {
 
     int  numBytes;
-    int  readHandle  =  mingin_startReadPersistData( mx_spriteCacheName,
-                                                     &numBytes );
+    int  readHandle;
+
+    if( maxigin_readFlagSetting( "maxigin_disableSpriteCache.ini",
+                                 0 ) ) {
+        /* if we're in development and hot-reloading a bunch of sprites
+           while working on them, we might set this flag.
+           That means the cache is likely stale, so delete it for now,
+           until the flag is turned off later and the cache can be regenerated */
+        
+        mingin_deletePersistData( mx_spriteCacheName );
+        
+        return;
+        }
+
+    readHandle =  mingin_startReadPersistData( mx_spriteCacheName,
+                                               &numBytes );
 
     if( readHandle != -1 ) {
 
@@ -12684,6 +12698,11 @@ static void mx_spriteCacheWriteFailed( int  inWriteHandle ) {
 
     
 static void mx_finalizeSpriteCache( void ) {
+
+    if( maxigin_readFlagSetting( "maxigin_disableSpriteCache.ini",
+                                 0 ) ) {
+        return;
+        }
 
     if( mx_spriteCacheBad ) {
         mingin_log( "Deleting bad sprite cache.  Cache will be regenerated on "

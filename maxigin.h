@@ -3890,7 +3890,7 @@ static void mx_generateCRTOverlay( int  inW,
 
 
 static  char  mx_spriteCacheLoaded            =  0;
-
+static  char  mx_spriteCacheBad               =  0;
 static  int   mx_nextCachedSpriteHandle       =  0;
 static  int   mx_nextCachedSpriteStripHandle  =  0;
 
@@ -4647,6 +4647,8 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
             }
         maxigin_logString( "Mismatch in sprite cache for:  ",
                            inBulkResourceName );
+
+        mx_spriteCacheBad = 1;
         }
     
 
@@ -12662,6 +12664,8 @@ static void mx_initSpriteCache( void ) {
         mx_spriteCacheLoaded           = 1;
         mx_nextCachedSpriteHandle      = 0;
         mx_nextCachedSpriteStripHandle = 0;
+
+        mingin_log( "Loaded cached sprite data.\n" );
         }
 
     }
@@ -12681,13 +12685,19 @@ static void mx_spriteCacheWriteFailed( int  inWriteHandle ) {
     
 static void mx_finalizeSpriteCache( void ) {
 
+    if( mx_spriteCacheBad ) {
+        mingin_log( "Deleting bad sprite cache.  Cache will be regenerated on "
+                    "next run.\n" );
+        mingin_deletePersistData( mx_spriteCacheName );
+        }
+
     if( ! mx_spriteCacheLoaded ) {
 
         /* generate a new sprite cache and save it */
 
-        int   writeHandle  =
-            mingin_startWritePersistData( mx_spriteCacheName );
+        int   writeHandle  =  mingin_startWritePersistData( mx_spriteCacheName );
 
+        mingin_log( "Regenerating new sprite cache from good sprite data.\n" );
         
         if( writeHandle != -1 ) {
 

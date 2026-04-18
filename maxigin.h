@@ -3889,6 +3889,15 @@ static void mx_generateCRTOverlay( int  inW,
 
 
 
+static  char  mx_spriteCacheLoaded            =  0;
+
+static  int   mx_nextCachedSpriteHandle       =  0;
+static  int   mx_nextCachedSpriteStripHandle  =  0;
+
+static void mx_initSpriteCache( void );
+
+static void mx_finalizeSpriteCache( void );
+
 
 
 #define  MAXIGIN_SPRITE_MAX_BULK_NAME_LENGTH  64
@@ -4624,6 +4633,23 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
         return -1;
         }
 
+    if( mx_spriteCacheLoaded ) {
+
+        if( mx_nextCachedSpriteHandle < mx_numSprites ) {
+
+            if( maxigin_stringsEqual(
+                    mx_sprites[ mx_nextCachedSpriteHandle ].bulkResourceName,
+                    inBulkResourceName ) ) {
+                int  thisHandle = mx_nextCachedSpriteHandle;
+                mx_nextCachedSpriteHandle ++;
+                return thisHandle;
+                }
+            }
+        maxigin_logString( "Mismatch in sprite cache for:  ",
+                           inBulkResourceName );
+        }
+    
+
     return mx_reloadSprite( inBulkResourceName,
                             -1 );
     }
@@ -5270,6 +5296,13 @@ void maxigin_initMakeGlowSprite( int  inSpriteHandle,
         return;
         }
 
+    if( mx_spriteCacheLoaded ) {
+        /* skip generating glow sprite */
+        /* advance next sprite handle */
+        mx_nextCachedSpriteHandle ++;
+        return;
+        }
+
     mx_regenerateGlowSprite( inSpriteHandle,
                              inBlurRadius,
                              inBlurIterations );
@@ -5900,6 +5933,12 @@ void maxigin_initMakeDropShadowSprite( int            inSpriteHandle,
         return;
         }
 
+    if( mx_spriteCacheLoaded ) {
+        /* skip generating shadow sprite */
+        /* advance next sprite handle */
+        mx_nextCachedSpriteHandle ++;
+        return;
+        }
 
     newShadowIndex = mx_sprites[ inSpriteHandle ].numShadows;
 
@@ -6587,6 +6626,23 @@ int maxigin_initSpriteStrip( const char  *inBulkResourceName,
     if( mainSpriteHandle == -1 ) {
         return -1;
         }
+
+    
+    if( mx_spriteCacheLoaded ) {
+        /* strip already loadded from cache */
+        
+        int  thisHandle  =  mx_nextCachedSpriteStripHandle;
+
+        mx_nextCachedSpriteStripHandle ++;
+
+        /* figure out how many sprite handles to skip */
+
+        mx_nextCachedSpriteHandle +=
+            mx_sprites[ mainSpriteHandle ].h  / inHeightPerSprite;
+        
+        return thisHandle;
+        }
+    
 
     /* generate a brand new strip */
     return mx_regenSpriteStripChildren( mainSpriteHandle,
@@ -11451,7 +11507,11 @@ void minginGame_step( char  inFinalStep ) {
 
     
 
-    mx_checkSpritesNeedReload();
+    if( ! mx_spriteCacheLoaded ) {
+        /* have no last-modified times if sprites loaded from cache */
+        mx_checkSpritesNeedReload();
+        }
+    
     mx_checkLangNeedsReload();
     
     mx_processDoneSoundEffects();
@@ -11775,6 +11835,8 @@ static void mx_gameInit( void ) {
     mx_areWeInMaxiginGameInitFunction = 1;
     
     maxigin_initGUI( &mx_internalGUI );
+
+    mx_initSpriteCache();
     
     maxiginGame_init();
 
@@ -11805,6 +11867,10 @@ static void mx_gameInit( void ) {
        based on those keys */
     mx_initLanguages();
 
+    
+    mx_finalizeSpriteCache();
+
+    
     /* leave init flag set until here, b/c init languages loads sprites, etc */
     mx_areWeInMaxiginGameInitFunction = 0;
 
@@ -12453,6 +12519,260 @@ static char mx_readPaddedIntFromPeristentData( int   inStoreReadHandle,
 
     *outInt = maxigin_stringToInt( (char *)mx_intPadding );
     return 1;
+    }
+
+
+
+static  const char  *mx_spriteCacheName  =  "maxigin_spriteCache.bin";
+
+
+static void mx_spriteCacheReadFailed( int  inReadHandle ) {
+    mingin_endReadPersistData( inReadHandle );
+
+    mingin_deletePersistData( mx_spriteCacheName );
+
+    mx_numSpriteBytesUsed = 0;
+    mx_numSprites         = 0;
+    mx_numStripSubSprites = 0;
+    mx_numSpriteStrips    = 0;
+
+    mingin_log( "Failed to read from sprite cache: " );
+    mingin_log( mx_spriteCacheName );
+    mingin_log( "\n" );
+    }
+
+
+
+static void mx_initSpriteCache( void ) {
+
+    int  numBytes;
+    int  readHandle  =  mingin_startReadPersistData( mx_spriteCacheName,
+                                                     &numBytes );
+
+    if( readHandle != -1 ) {
+
+        int  readInt;
+        
+        if( ! mx_readIntFromPersistData( readHandle,
+                                         & mx_numSpriteBytesUsed ) ) {
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+        
+        if( mx_numSpriteBytesUsed
+            !=
+            mingin_readPersistData(
+                readHandle,
+                mx_numSpriteBytesUsed,
+                mx_spriteBytes ) ) {
+                
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+
+        if( ! mx_readIntFromPersistData( readHandle,
+                                         &readInt ) ) {
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+
+        if( readInt != sizeof( MaxiginSprite ) ) {
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+        
+        if( ! mx_readIntFromPersistData( readHandle,
+                                         &mx_numSprites ) ) {
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+
+
+        if( mx_numSprites * (int)sizeof( MaxiginSprite )
+            !=
+            mingin_readPersistData(
+                readHandle,
+                mx_numSprites * (int)sizeof( MaxiginSprite ),
+                (unsigned char *)mx_sprites ) ) {
+                
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+
+
+        if( ! mx_readIntFromPersistData( readHandle,
+                                         &readInt ) ) {
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+
+        if( readInt != (int)sizeof( int ) ) {
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+
+        if( ! mx_readIntFromPersistData( readHandle,
+                                         &mx_numStripSubSprites ) ) {
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+
+        if( mx_numStripSubSprites * (int)sizeof( int )
+            !=
+            mingin_readPersistData(
+                readHandle,
+                mx_numStripSubSprites * (int)sizeof( int ),
+                (unsigned char *)mx_stripSubSprites ) ) {
+                
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+
+        if( ! mx_readIntFromPersistData( readHandle,
+                                         &readInt ) ) {
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+
+        if( readInt != (int)sizeof( MaxiginSpriteStrip ) ) {
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+
+        if( ! mx_readIntFromPersistData( readHandle,
+                                         &mx_numSpriteStrips ) ) {
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+
+        if( mx_numSpriteStrips * (int)sizeof( MaxiginSpriteStrip )
+            !=
+            mingin_readPersistData(
+                readHandle,
+                mx_numSpriteStrips * (int)sizeof( MaxiginSpriteStrip ),
+                (unsigned char *)mx_spriteStrips ) ) {
+                
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
+
+        mingin_endReadPersistData( readHandle );
+
+
+        mx_spriteCacheLoaded           = 1;
+        mx_nextCachedSpriteHandle      = 0;
+        mx_nextCachedSpriteStripHandle = 0;
+        }
+
+    }
+
+
+
+static void mx_spriteCacheWriteFailed( int  inWriteHandle ) {
+    mingin_endWritePersistData( inWriteHandle );
+
+    mingin_deletePersistData( mx_spriteCacheName );
+
+    mingin_log( "Failed to write to sprite cache: " );
+    mingin_log( mx_spriteCacheName );
+    mingin_log( "\n" );
+    }
+
+    
+static void mx_finalizeSpriteCache( void ) {
+
+    if( ! mx_spriteCacheLoaded ) {
+
+        /* generate a new sprite cache and save it */
+
+        int   writeHandle  =
+            mingin_startWritePersistData( mx_spriteCacheName );
+
+        
+        if( writeHandle != -1 ) {
+
+            if( ! mx_writeIntToPeristentData( writeHandle,
+                                              mx_numSpriteBytesUsed ) ) {
+                mx_spriteCacheWriteFailed( writeHandle );
+                return;
+                }
+
+            if( ! mingin_writePersistData( writeHandle,
+                                           mx_numSpriteBytesUsed,
+                                           mx_spriteBytes ) ) {
+                
+                mx_spriteCacheWriteFailed( writeHandle );
+                return;
+                }
+
+            if( ! mx_writeIntToPeristentData( writeHandle,
+                                              (int)sizeof( MaxiginSprite ) ) ) {
+                mx_spriteCacheWriteFailed( writeHandle );
+                return;
+                }
+            
+            if( ! mx_writeIntToPeristentData( writeHandle,
+                                              mx_numSprites ) ) {
+                mx_spriteCacheWriteFailed( writeHandle );
+                return;
+                }
+
+            if( ! mingin_writePersistData(
+                    writeHandle,
+                    mx_numSprites * (int)sizeof( MaxiginSprite ),
+                    (unsigned char *)mx_sprites ) ) {
+                
+                mx_spriteCacheWriteFailed( writeHandle );
+                return;
+                }
+
+            if( ! mx_writeIntToPeristentData( writeHandle,
+                                              (int)sizeof( int ) ) ) {
+                mx_spriteCacheWriteFailed( writeHandle );
+                return;
+                }
+            
+            if( ! mx_writeIntToPeristentData( writeHandle,
+                                              mx_numStripSubSprites ) ) {
+                mx_spriteCacheWriteFailed( writeHandle );
+                return;
+                }
+            
+            if( ! mingin_writePersistData(
+                    writeHandle,
+                    mx_numStripSubSprites * (int)sizeof( int ),
+                    (unsigned char *)mx_stripSubSprites ) ) {
+                
+                mx_spriteCacheWriteFailed( writeHandle );
+                return;
+                }
+
+            if( ! mx_writeIntToPeristentData(
+                    writeHandle,
+                    (int)sizeof( MaxiginSpriteStrip ) ) ) {
+                
+                mx_spriteCacheWriteFailed( writeHandle );
+                return;
+                }
+            
+            if( ! mx_writeIntToPeristentData( writeHandle,
+                                              mx_numSpriteStrips ) ) {
+                mx_spriteCacheWriteFailed( writeHandle );
+                return;
+                }
+
+            if( ! mingin_writePersistData(
+                    writeHandle,
+                    mx_numSpriteStrips * (int)sizeof( MaxiginSpriteStrip ),
+                    (unsigned char *)mx_spriteStrips ) ) {
+                
+                mx_spriteCacheWriteFailed( writeHandle );
+                return;
+                }
+
+            mingin_endWritePersistData( writeHandle );
+            }
+        }
     }
 
 

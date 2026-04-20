@@ -84,7 +84,7 @@ static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] = { "",
 
 /* extra sprite to be drawn on top of sprite with
    no piece-color modification */
-/*
+
 static  int          pieceSpriteExtraHandles[ NUM_CHESS_PIECES ];
 static  int          pieceExtraOffsetY      [ NUM_CHESS_PIECES ] = { 0,
                                                                      0,
@@ -93,7 +93,7 @@ static  int          pieceExtraOffsetY      [ NUM_CHESS_PIECES ] = { 0,
                                                                      0,
                                                                      0,
                                                                      0,
-                                                                     -20 };
+                                                                     8 };
 static  const char  *pieceSpriteExtraFiles  [ NUM_CHESS_PIECES ] =
                                               { "",
                                                 "",
@@ -103,7 +103,7 @@ static  const char  *pieceSpriteExtraFiles  [ NUM_CHESS_PIECES ] =
                                                 "",
                                                 "",
                                                 "rookLasers.tga" };
-*/
+
 
 static  int          slashSpriteHandle      =  -1;
 static  int          whiteFlagSpriteHandle  =  -1;
@@ -117,17 +117,15 @@ void pieceSpritesInit( void ) {
 
     maxigin_logInt( "Size of enum: ",
                     sizeof( ChessPiece ) );
-
-    /* skip noPiece */
     
-    for( i = pawn;
+    for( i = FIRST_CHESS_PIECE;
          i < NUM_CHESS_PIECES;
          i ++ ) {
 
         int   j;
         char  foundMatch  =  0;
         
-        for( j = pawn;
+        for( j = FIRST_CHESS_PIECE;
              j < i;
              j ++ ) {
 
@@ -191,6 +189,68 @@ void pieceSpritesInit( void ) {
             }
         }
 
+
+    
+    for( i = FIRST_CHESS_PIECE;
+         i < NUM_CHESS_PIECES;
+         i ++ ) {
+
+        int   j;
+        char  foundMatch  =  0;
+        
+        for( j = FIRST_CHESS_PIECE;
+             j < i;
+             j ++ ) {
+
+            if( maxigin_stringsEqual( pieceSpriteExtraFiles[i],
+                                      pieceSpriteExtraFiles[j] ) ) {
+
+                /* we already loaded this file for a previous piece,
+                   re-use it */
+                
+                foundMatch = 1;
+
+                pieceSpriteExtraHandles[ i ] = pieceSpriteExtraHandles[ j ];
+                }
+            }
+
+        if( foundMatch ) {
+            continue;
+            }
+        
+        /* else a different sprite data file from what we've already processed */
+
+        pieceSpriteExtraHandles[ i ] = -1;
+
+        if( maxigin_stringsEqual( pieceSpriteExtraFiles[i],
+                                  "" ) ) {
+            /* skip blank file names */
+            continue;
+            }
+        
+        pieceSpriteExtraHandles[ i ] = maxigin_initSprite(
+                                           pieceSpriteExtraFiles[i] );
+
+        if( pieceSpriteExtraHandles[i] != -1 ) {
+
+            /* hazy black border around top only */
+            maxigin_initMakeDropShadowSprite( pieceSpriteExtraHandles[i],
+                                              5,
+                                              2,
+                                              0,
+                                              255,
+                                              60,
+                                              30,
+                                              100,
+                                              0 );
+
+            
+            maxigin_initMakeGlowSprite( pieceSpriteExtraHandles[i],
+                                        4,
+                                        2 );
+            }
+        }
+    
 
 
     slashSpriteHandle = maxigin_initSprite( "checkmateSlash.tga" );
@@ -283,6 +343,14 @@ void drawPiece( ChessPiece  inPiece,
                         inBaseCenterY + pieceOffsetY[ rawP ] );
 
     maxigin_drawResetColor();
+
+    if( pieceSpriteExtraHandles[ rawP ] != -1 ) {
+        maxigin_drawSprite( pieceSpriteExtraHandles[ rawP ],
+                            inBaseCenterX,
+                            inBaseCenterY
+                            + pieceOffsetY[ rawP ]
+                            + pieceExtraOffsetY[ rawP ] );
+        }
     }
 
 

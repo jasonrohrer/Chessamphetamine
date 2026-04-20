@@ -883,7 +883,8 @@ static PieceMoveFunction moveFunctions[ NUM_CHESS_PIECES ] = { noPieceMove,
                                                                knightMove,
                                                                rookMove,
                                                                queenMove,
-                                                               kingMove };
+                                                               kingMove,
+                                                               laserRookMove };
 
 static char doesKingExist( BoardState  *inState,
                            int          inKingColor ) {

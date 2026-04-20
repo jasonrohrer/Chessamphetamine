@@ -29,6 +29,7 @@ enum{
     rook,
     queen,
     king,
+    laserRook,
     NUM_CHESS_PIECES };
 
 
@@ -38,6 +39,7 @@ static int pieceValue[ NUM_CHESS_PIECES ] = { 0,
                                               3,
                                               5,
                                               9,
+                                              6,
                                               999 };
 
 
@@ -47,7 +49,8 @@ static char pieceChars[ NUM_CHESS_PIECES ] = { '+',
                                                'n',
                                                'r',
                                                'q',
-                                               'k' };
+                                               'k',
+                                               'R' };
 
     
     
@@ -845,6 +848,32 @@ static int kingMove( BoardState     *inState,
     
     return n;
     }
+
+
+
+/* same as rook move, but fires 4-way lasers at end */
+static int laserRookMove( BoardState     *inState,
+                          unsigned char   inPieceColor,
+                          int             inPieceRow,
+                          int             inPieceCol,
+                          unsigned char   outDestRows[BN],
+                          unsigned char   outDestCols[BN],
+                          BoardState      outStates  [BN] ) {
+
+    int  numMoves  =  rookMove( inState,
+                                inPieceColor,
+                                inPieceRow,
+                                inPieceCol,
+                                outDestRows,
+                                outDestCols,
+                                outStates );
+
+    /* fixme:  fire lasers after moving */
+
+    return numMoves;
+    
+    }
+
 
 
 

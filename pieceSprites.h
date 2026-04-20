@@ -81,6 +81,28 @@ static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] = { "",
                                                                 "queen.tga",
                                                                 "king.tga" };
 
+/* extra sprite to be drawn on top of sprite with
+   no piece-color modification */
+/*
+static  int          pieceSpriteExtraHandles[ NUM_CHESS_PIECES ];
+static  int          pieceExtraOffsetY      [ NUM_CHESS_PIECES ] = { 0,
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     -20 };
+static  const char  *pieceSpriteExtraFiles  [ NUM_CHESS_PIECES ] =
+                                              { "",
+                                                "",
+                                                "",
+                                                "",
+                                                "",
+                                                "",
+                                                "",
+                                                "rookLasers.tga" };
+*/
 
 static  int          slashSpriteHandle      =  -1;
 static  int          whiteFlagSpriteHandle  =  -1;
@@ -100,6 +122,40 @@ void pieceSpritesInit( void ) {
     for( i = pawn;
          i < NUM_CHESS_PIECES;
          i ++ ) {
+
+        int   j;
+        char  foundMatch  =  0;
+        
+        for( j = pawn;
+             j < i;
+             j ++ ) {
+
+            if( maxigin_stringsEqual( pieceSpriteFiles[i],
+                                      pieceSpriteFiles[j] ) ) {
+
+                /* we already loaded this file for a previous piece,
+                   re-use it */
+                
+                foundMatch = 1;
+
+                pieceSpriteHandles[ i ] = pieceSpriteHandles[ j ];
+                pieceOffsetY      [ i ] = pieceOffsetY      [ j ];
+                }
+            }
+
+        if( foundMatch ) {
+            continue;
+            }
+        
+        /* else a different sprite data file from what we've already processed */
+
+        pieceSpriteHandles[ i ] = -1;
+
+        if( maxigin_stringsEqual( pieceSpriteFiles[i],
+                                  "" ) ) {
+            /* skip blank file names */
+            continue;
+            }
         
         pieceSpriteHandles[ i ] = maxigin_initSprite( pieceSpriteFiles[i] );
 

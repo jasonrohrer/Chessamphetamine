@@ -79,7 +79,8 @@ static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] = { "",
                                                                 "knight.tga",
                                                                 "rook.tga",
                                                                 "queen.tga",
-                                                                "king.tga" };
+                                                                "king.tga",
+                                                                "rook.tga" };
 
 /* extra sprite to be drawn on top of sprite with
    no piece-color modification */
@@ -165,65 +166,18 @@ void pieceSpritesInit( void ) {
 
             int  w;
             int  h;
-
-            if( 1 ) {
-
-                /* light outline behind black border */
-                if(0)maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
-                                                  1,
-                                                  3,
-                                                  0,
-                                                  192,
-                                                  50,
-                                                  20,
-                                                  3400,
-                                                  255 );
-                /* sharper black borders */
-                if(0)maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
-                                                  1,
-                                                  2,
-                                                  255,
-                                                  255,
-                                                  100,
-                                                  0,
-                                                  700,
-                                                  0 );
                 
-                /* hazy black border around top only */
-                if(1)maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
-                                                  5,
-                                                  2,
-                                                  0,
-                                                  255,
-                                                  60,
-                                                  30,
-                                                  100,
-                                                  0 );
+            /* hazy black border around top only */
+            maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
+                                              5,
+                                              2,
+                                              0,
+                                              255,
+                                              60,
+                                              30,
+                                              100,
+                                              0 );
 
-                /* haze at bottom */
-                if(0)maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
-                                                  4,
-                                                  3,
-                                                  255,
-                                                  0,
-                                                  70,
-                                                  50,
-                                                  100,
-                                                  0 );
-
-                }
-            else {
-                /* hazier black borders */
-                maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
-                                                  4,
-                                                  2,
-                                                  64,
-                                                  255,
-                                                  100,
-                                                  0,
-                                                  200,
-                                                  0 );
-                }
             
             maxigin_initMakeGlowSprite( pieceSpriteHandles[i],
                                         4,

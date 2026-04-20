@@ -52,7 +52,7 @@ static char pieceChars[ NUM_CHESS_PIECES ] = { '+',
                                                'r',
                                                'q',
                                                'k',
-                                               'R' };
+                                               'l' };
 
     
     
@@ -862,6 +862,13 @@ static int laserRookMove( BoardState     *inState,
                           unsigned char   outDestCols[BN],
                           BoardState      outStates  [BN] ) {
 
+    static  int  dirs[4][2] = { { -1,  0 },
+                                {  1,  0 },
+                                {  0, -1 },
+                                {  0,  1 } };
+
+    int  maxDist   =  BH - 1;
+    int  i;
     int  numMoves  =  rookMove( inState,
                                 inPieceColor,
                                 inPieceRow,
@@ -870,7 +877,70 @@ static int laserRookMove( BoardState     *inState,
                                 outDestCols,
                                 outStates );
 
-    /* fixme:  fire lasers after moving */
+    if( BW - 1 > maxDist ) {
+        /* non-square board, consider moves as long as longest side */
+        maxDist = BW - 1;
+        }
+
+    /* fire lasers after moving */
+
+    for( i = 0;
+         i < numMoves;
+         i ++ ) {
+        
+        int          r  =  outDestRows[i];
+        int          c  =  outDestCols[i];
+        BoardState  *s  =  &( outStates[i] );
+        int          d;
+
+        for( d = 0;
+             d < 4;
+             d ++ ) {
+
+            int  dist;
+
+            for( dist =  1;
+                 dist <= maxDist;
+                 dist ++ ) {
+                
+                int         dy  =  r + dirs[ d ][ 0 ] * dist;
+                int         dx  =  c + dirs[ d ][ 1 ] * dist;
+                ChessPiece  p;
+                
+                if( dy < 0
+                    ||
+                    dy >= BH ) {
+                    /* hit top/bottom without finding piece to hit */
+                    break;
+                    }
+                if( dx < 0
+                    ||
+                    dx >= BW ) {
+                    /* hit left/right without finding piece to hit */
+                    break;
+                    }
+
+                p = s->grid[ dy ][ dx ];
+                
+                if( p != noPiece ) {
+
+                    if( ( p & CHESS_COLOR_MASK ) == s->nextToMove ) {
+                        /* opponent piece */
+                        
+                        /* destroy piece */
+                        s->grid[ dy ][ dx ] = noPiece;
+                        }
+                    /* if it's our piece, we don't destroy it, but
+                       stop laser */
+
+                    /* stop looking in dir after first piece hit */
+                    break;
+                    }
+                }
+
+            }
+
+        }
 
     return numMoves;
     
@@ -1042,7 +1112,7 @@ void getStartBoard( BoardState  *outState ) {
     clearBoard( outState );
 
     /* fill out whole starting board */
-    outState->grid[0][0] = rook   | CHESS_BLACK;
+    outState->grid[0][0] = laserRook   | CHESS_BLACK;
     outState->grid[0][1] = knight | CHESS_BLACK;
     outState->grid[0][2] = bishop | CHESS_BLACK;
     outState->grid[0][3] = queen  | CHESS_BLACK;
@@ -1057,7 +1127,7 @@ void getStartBoard( BoardState  *outState ) {
         outState->grid[1][i] = pawn | CHESS_BLACK;
         }
 
-    outState->grid[7][0] = rook      | CHESS_WHITE;
+    outState->grid[7][0] = laserRook      | CHESS_WHITE;
     outState->grid[7][1] = knight    | CHESS_WHITE;
     outState->grid[7][2] = bishop    | CHESS_WHITE;
     outState->grid[7][3] = queen     | CHESS_WHITE;
@@ -1661,6 +1731,23 @@ void applyMove( BoardState  *inState,
         }
     }
 
+
+
+
+/* helper function that can be called from debugger */
+void printState( BoardState  *inState );
+
+
+
+void printState( BoardState  *inState ) {
+
+    maxigin_logString( "State:\n",
+                       getBoardStateString( inState ) );
+    }
+
+
+
+    
 
 
 char isCheckmate( BoardState  *inState,

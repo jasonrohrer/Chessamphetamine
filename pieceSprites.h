@@ -232,13 +232,13 @@ void pieceSpritesInit( void ) {
                 }
             
             for( j = FIRST_CHESS_PIECE;
-                 j < i;
+                 j <= i;
                  j ++ ) {
 
                 int  cj;
 
                 for( cj = 0;
-                     cj < 2;
+                     cj < ci;
                      cj ++ ) {
                 
                     if( maxigin_stringsEqual(

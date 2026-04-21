@@ -1200,6 +1200,8 @@ void getStartBoard( BoardState  *outState ) {
         outState->grid[1][i] = laserPawn | CHESS_BLACK;
         }
 
+    outState->grid[1][7] = laserRook   | CHESS_BLACK;
+
     outState->grid[7][0] = laserRook      | CHESS_WHITE;
     outState->grid[7][1] = knight    | CHESS_WHITE;
     outState->grid[7][2] = bishop    | CHESS_WHITE;
@@ -1212,7 +1214,7 @@ void getStartBoard( BoardState  *outState ) {
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[6][i] = pawn | CHESS_WHITE;
+        outState->grid[6][i] = laserPawn | CHESS_WHITE;
         }
 
     outState->nextToMove = CHESS_WHITE;

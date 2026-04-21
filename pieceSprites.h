@@ -97,7 +97,7 @@ static  int          pieceExtraOffsetY      [ NUM_CHESS_PIECES ][2] =
                                                   { 0, 0 },
                                                   { 0, 0 },
                                                   { 8, 8 },
-                                                  { 8, 0 },
+                                                  { -1, 0 },
                                                            };
 
 static  const char  *pieceSpriteExtraFiles  [ NUM_CHESS_PIECES ][2] =

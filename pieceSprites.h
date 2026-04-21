@@ -423,10 +423,20 @@ void drawExplodingPiece( ChessPiece  inPiece,
                                  inProgress,
                                  explodeMax,
                                  a );
-    
-    maxigin_drawToggleAdditive( 0 );
-    
+
     maxigin_drawResetColor();
+
+    if( pieceSpriteExtraHandles[ rawP ] != -1 ) {
+        maxigin_drawExplodingSprite( pieceSpriteExtraHandles[ rawP ],
+                                     partSprite,
+                                     x,
+                                     y + pieceExtraOffsetY[ rawP ],
+                                     BOARD_SQUARE_SIZE / 4,
+                                     inProgress,
+                                     explodeMax,
+                                     a );
+        }
+    maxigin_drawToggleAdditive( 0 );
     }
 
 

@@ -96,7 +96,7 @@ static  int          pieceExtraOffsetY      [ NUM_CHESS_PIECES ][2] =
                                                   { 0, 0 },
                                                   { 0, 0 },
                                                   { 0, 0 },
-                                                  { 8, 8 },
+                                                  { 2, 2 },
                                                   { -1, 0 },
                                                            };
 

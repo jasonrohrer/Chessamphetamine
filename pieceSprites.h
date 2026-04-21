@@ -438,14 +438,15 @@ void drawExplodingPiece( ChessPiece  inPiece,
                          int         inCol,
                          int         inProgress ) {
 
-    ChessPiece     rawP        =  inPiece & CHESS_TYPE_MASK;
-    ChessPiece     c           =  inPiece & CHESS_COLOR_MASK;
-    int            cIndex      =  getPieceColorIndex( c );
+    ChessPiece     rawP         =  inPiece & CHESS_TYPE_MASK;
+    ChessPiece     c            =  inPiece & CHESS_COLOR_MASK;
+    int            cIndex       =  getPieceColorIndex( c );
     
     unsigned char  a;
     int            x;
     int            y;
-    int            partSprite  =  getParticleSprite();
+    int            partSprite   =  getParticleSprite();
+    int            baseCenterY;
     
     if( partSprite == -1 ) {
         return;
@@ -457,6 +458,8 @@ void drawExplodingPiece( ChessPiece  inPiece,
                           inCol,
                           &x,
                           &y );
+
+    baseCenterY =  y + pieceOffsetY[ rawP ];
 
     drawSetPieceColor( c );
 
@@ -476,7 +479,9 @@ void drawExplodingPiece( ChessPiece  inPiece,
     maxigin_drawExplodingSprite( pieceSpriteHandles[ rawP ],
                                  partSprite,
                                  x,
-                                 y + pieceOffsetY[ rawP ],
+                                 baseCenterY,
+                                 x,
+                                 baseCenterY,
                                  BOARD_SQUARE_SIZE / 4,
                                  inProgress,
                                  explodeMax,
@@ -488,7 +493,11 @@ void drawExplodingPiece( ChessPiece  inPiece,
         maxigin_drawExplodingSprite( pieceSpriteExtraHandles[ rawP ][ cIndex ],
                                      partSprite,
                                      x,
-                                     y + pieceExtraOffsetY[ rawP ][ cIndex ],
+                                     baseCenterY
+                                     + pieceExtraOffsetY[ rawP ][ cIndex ],
+                                     /* explosion centered on base sprite */
+                                     x,
+                                     baseCenterY,
                                      BOARD_SQUARE_SIZE / 4,
                                      inProgress,
                                      explodeMax,

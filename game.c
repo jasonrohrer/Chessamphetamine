@@ -462,6 +462,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                      getParticleSprite(),
                                      boardCenterX,
                                      boardCenterY,
+                                     boardCenterX,
+                                     boardCenterY,
                                      BOARD_SQUARE_SIZE / 4,
                                      explodingEndMessageProgress,
                                      explodingEndMessageMax,

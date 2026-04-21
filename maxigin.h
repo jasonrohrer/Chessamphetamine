@@ -1562,6 +1562,12 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
  
       inCenterY              the y position in the game's native pixel buffer
                              of the sprite's center
+
+      inExplosionCenterX     the x position of the center of the explosion
+                             Particles move away from this center point.
+                             
+      inExplosionCenterY     the y position of the center of the explosion
+                             Particles move away from this center point.
                              
       inMaxDistance          the maximum distance pixels will move by
                              the end of the explosion
@@ -1578,6 +1584,8 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
                                   int            inParticleHandle,
                                   int            inCenterX,
                                   int            inCenterY,
+                                  int            inExplosionCenterX,
+                                  int            inExplosionCenterY,
                                   int            inMaxDistance,
                                   int            inExplodeProgress,
                                   int            inExplodeProgressMax,
@@ -7774,6 +7782,8 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
                                   int            inParticleHandle,
                                   int            inCenterX,
                                   int            inCenterY,
+                                  int            inExplosionCenterX,
+                                  int            inExplosionCenterY,
                                   int            inMaxDistance,
                                   int            inExplodeProgress,
                                   int            inExplodeProgressMax,
@@ -7783,8 +7793,10 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
     int             x;
     int             y;
     int             b         =  s->startByte;
-    int             cx        =  s->w  / 2;
-    int             cy        =  s->h  / 2;
+    int             ex        =  inExplosionCenterX - inCenterX;
+    int             ey        =  inExplosionCenterY - inCenterY;
+    int             cx        =  s->w / 2;
+    int             cy        =  s->h / 2;
 
     long             d;
     int              pSprite  =  inParticleHandle;
@@ -7807,14 +7819,14 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
          y ++ ) {
 
         int  dy     =  y - cy;
-        int  drawY  =  (int)( ( d * dy ) / 100 ) + inCenterY + dy;
+        int  drawY  =  (int)( ( d * ( dy - ey ) ) / 100 ) + inCenterY + dy;
 
         for( x = 0;
              x < s->w;
              x ++ ) {
 
             int dx      = x - cx;
-            int  drawX  =  (int)( ( d * dx ) / 100 ) + inCenterX + dx;
+            int  drawX  =  (int)( ( d * ( dx - ex ) ) / 100 ) + inCenterX + dx;
 
             maxigin_drawSetColor(
                 (unsigned char)( ( mx_spriteBytes[ b     ] * red )

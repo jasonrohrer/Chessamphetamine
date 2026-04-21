@@ -30,6 +30,7 @@ enum{
     queen,
     king,
     laserRook,
+    laserPawn,
     NUM_CHESS_PIECES };
 
 #define  FIRST_CHESS_PIECE  pawn
@@ -42,6 +43,7 @@ static int pieceValue[ NUM_CHESS_PIECES ] = { 0,
                                               5,
                                               9,
                                               6,
+                                              2,
                                               999 };
 
 
@@ -52,7 +54,8 @@ static char pieceChars[ NUM_CHESS_PIECES ] = { '+',
                                                'r',
                                                'q',
                                                'k',
-                                               'l' };
+                                               'l',
+                                               'o' };
 
     
     
@@ -943,7 +946,76 @@ static int laserRookMove( BoardState     *inState,
         }
 
     return numMoves;
-    
+    }
+
+
+
+/* same as pawn move, but fires 1 laser at end */
+static int laserPawnMove( BoardState     *inState,
+                          unsigned char   inPieceColor,
+                          int             inPieceRow,
+                          int             inPieceCol,
+                          unsigned char   outDestRows[BN],
+                          unsigned char   outDestCols[BN],
+                          BoardState      outStates  [BN] ) {
+
+    int  dirY      =  -1;
+    int  maxDist   =  BH - 1;
+    int  i;
+    int  numMoves  =  pawnMove( inState,
+                                inPieceColor,
+                                inPieceRow,
+                                inPieceCol,
+                                outDestRows,
+                                outDestCols,
+                                outStates );
+
+    /* fire laser after moving */
+
+    for( i = 0;
+         i < numMoves;
+         i ++ ) {
+        
+        int          r  =  outDestRows[i];
+        int          c  =  outDestCols[i];
+        BoardState  *s  =  &( outStates[i] );
+
+        int  dist;
+
+        for( dist =  1;
+             dist <= maxDist;
+             dist ++ ) {
+                
+            int         dy  =  r + dirY * dist;
+            ChessPiece  p;
+                
+            if( dy < 0
+                ||
+                dy >= BH ) {
+                /* hit top/bottom without finding piece to hit */
+                break;
+                }
+
+            p = s->grid[ dy ][ c ];
+                
+            if( p != noPiece ) {
+
+                if( ( p & CHESS_COLOR_MASK ) == s->nextToMove ) {
+                    /* opponent piece */
+                        
+                    /* destroy piece */
+                    s->grid[ dy ][ c ] = noPiece;
+                    }
+                /* if it's our piece, we don't destroy it, but
+                   stop laser */
+
+                /* stop looking in dir after first piece hit */
+                break;
+                }
+            }
+        }
+
+    return numMoves;
     }
 
 
@@ -956,7 +1028,8 @@ static PieceMoveFunction moveFunctions[ NUM_CHESS_PIECES ] = { noPieceMove,
                                                                rookMove,
                                                                queenMove,
                                                                kingMove,
-                                                               laserRookMove };
+                                                               laserRookMove,
+                                                               laserPawnMove };
 
 static char doesKingExist( BoardState  *inState,
                            int          inKingColor ) {
@@ -1124,7 +1197,7 @@ void getStartBoard( BoardState  *outState ) {
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[1][i] = pawn | CHESS_BLACK;
+        outState->grid[1][i] = laserPawn | CHESS_BLACK;
         }
 
     outState->grid[7][0] = laserRook      | CHESS_WHITE;
@@ -1153,11 +1226,11 @@ void getTestBoard( BoardState  *outState ) {
     clearBoard( outState );
 
     outState->grid[0][4] = king   | CHESS_BLACK;
-    outState->grid[1][3] = queen   | CHESS_BLACK;
-    outState->grid[1][2] = rook  | CHESS_BLACK;
-    if(0)outState->grid[1][1] = rook  | CHESS_BLACK;
+    if(0)outState->grid[1][3] = queen   | CHESS_BLACK;
+    if(0)outState->grid[1][2] = rook  | CHESS_BLACK;
+    if(1)outState->grid[0][7] = laserRook  | CHESS_BLACK;
 
-    if(0)outState->grid[6][0] = queen | CHESS_WHITE;
+    if(1)outState->grid[6][7] = queen | CHESS_WHITE;
     outState->grid[6][3] = king | CHESS_WHITE;
     if(0)outState->grid[6][7] = rook | CHESS_WHITE;
 

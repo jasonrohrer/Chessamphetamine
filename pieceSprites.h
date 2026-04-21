@@ -142,6 +142,14 @@ void pieceSpritesInit( void ) {
         int   j;
         char  foundMatch  =  0;
         
+        pieceSpriteHandles[ i ] = -1;
+
+        if( maxigin_stringsEqual( pieceSpriteFiles[i],
+                                  "" ) ) {
+            /* skip blank file names */
+            continue;
+            }
+        
         for( j = FIRST_CHESS_PIECE;
              j < i;
              j ++ ) {
@@ -156,6 +164,8 @@ void pieceSpritesInit( void ) {
 
                 pieceSpriteHandles[ i ] = pieceSpriteHandles[ j ];
                 pieceOffsetY      [ i ] = pieceOffsetY      [ j ];
+
+                break;
                 }
             }
 
@@ -164,14 +174,6 @@ void pieceSpritesInit( void ) {
             }
         
         /* else a different sprite data file from what we've already processed */
-
-        pieceSpriteHandles[ i ] = -1;
-
-        if( maxigin_stringsEqual( pieceSpriteFiles[i],
-                                  "" ) ) {
-            /* skip blank file names */
-            continue;
-            }
         
         pieceSpriteHandles[ i ] = maxigin_initSprite( pieceSpriteFiles[i] );
 
@@ -219,11 +221,16 @@ void pieceSpritesInit( void ) {
              ci ++ ) {
             
             int   j;
-        
             char  foundMatch  =  0;
 
             pieceSpriteExtraHandles[ i ][ ci ] = -1;
-        
+            
+            if( maxigin_stringsEqual( pieceSpriteExtraFiles[ i ][ ci ],
+                                      "" ) ) {
+                /* skip blank file names */
+                continue;
+                }
+            
             for( j = FIRST_CHESS_PIECE;
                  j < i;
                  j ++ ) {
@@ -245,44 +252,43 @@ void pieceSpritesInit( void ) {
 
                         pieceSpriteExtraHandles[ i ][ ci ] =
                             pieceSpriteExtraHandles[ j ][ cj ];
+
+                        break;
                         }
                     }
-
                 if( foundMatch ) {
-                    continue;
+                    break;
                     }
-        
-                /* else a different sprite data file from what we've
-                   already processed */
-
-                if( maxigin_stringsEqual( pieceSpriteExtraFiles[ i ][ ci ],
-                                          "" ) ) {
-                    /* skip blank file names */
-                    continue;
-                    }
-        
-                pieceSpriteExtraHandles[ i ][ ci ] = maxigin_initSprite(
-                    pieceSpriteExtraFiles[ i ][ ci ] );
-
-                if( pieceSpriteExtraHandles[ i ][ ci ] != -1 ) {
-
-                    /* hazy, faded black shadow  top-to-bottom */
-                    maxigin_initMakeDropShadowSprite(
-                        pieceSpriteExtraHandles[ i ][ ci ],
-                        4,
-                        2,
-                        192,
-                        192,
-                        60,
-                        30,
-                        50,
-                        0 );
+                }
             
-                    maxigin_initMakeGlowSprite(
-                        pieceSpriteExtraHandles[ i ][ ci ],
-                        4,
-                        2 );
-                    }
+            if( foundMatch ) {
+                continue;
+                }
+        
+            /* else a different sprite data file from what we've
+               already processed */
+        
+            pieceSpriteExtraHandles[ i ][ ci ] = maxigin_initSprite(
+                pieceSpriteExtraFiles[ i ][ ci ] );
+
+            if( pieceSpriteExtraHandles[ i ][ ci ] != -1 ) {
+
+                /* hazy, faded black shadow  top-to-bottom */
+                maxigin_initMakeDropShadowSprite(
+                    pieceSpriteExtraHandles[ i ][ ci ],
+                    4,
+                    2,
+                    192,
+                    192,
+                    60,
+                    30,
+                    50,
+                    0 );
+            
+                maxigin_initMakeGlowSprite(
+                    pieceSpriteExtraHandles[ i ][ ci ],
+                    4,
+                    2 );
                 }
             }
         }

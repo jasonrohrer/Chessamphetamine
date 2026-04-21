@@ -6567,7 +6567,8 @@ static void mx_checkSpritesNeedReload( void ) {
 
             /* skip checking any with blank bulkResourceNames,
                since those are our internally-generated sprites */
-            
+
+            int  so;
             int  handle  =  mx_reloadSprite( mx_sprites[ s ].bulkResourceName,
                                              s );
             
@@ -6586,6 +6587,45 @@ static void mx_checkSpritesNeedReload( void ) {
                 }
             else {
                 mx_postReloadStep( s );
+                }
+
+            /* loop over other sprites and look for any that
+               have same bulk data resource and reload those now too.
+               Otherwise, we will miss reloading them (they won't count
+               as changed since last reload). */
+
+            for( so = 0;
+                 so < mx_numSprites;
+                 so ++ ) {
+
+                int  handleO;
+
+                if( so == s ) {
+                    continue;
+                    }
+                
+                if( mx_sprites[ so ].bulkResourceName[ 0 ] == '\0' ) {
+                    continue;
+                    }
+
+                if( ! maxigin_stringsEqual(
+                        mx_sprites[ s ].bulkResourceName,
+                        mx_sprites[ so ].bulkResourceName ) ) {
+                    continue;
+                    }
+
+                /* a match! */
+                
+                handleO  =  mx_reloadSprite( mx_sprites[ so ].bulkResourceName,
+                                             so );
+                if( handleO == -1 ) {
+                    mx_sprites[ so ].pendingChange       = 1;
+                    mx_sprites[ so ].retryCount          = 1;
+                    mx_sprites[ so ].stepsUntilNextRetry = 1;
+                    }
+                else {
+                    mx_postReloadStep( so );
+                    }
                 }
             }
         }

@@ -42,9 +42,9 @@ static int pieceValue[ NUM_CHESS_PIECES ] = { 0,
                                               3,
                                               5,
                                               9,
+                                              999,
                                               6,
-                                              2,
-                                              999 };
+                                              2 };
 
 
 static char pieceChars[ NUM_CHESS_PIECES ] = { '+',
@@ -1111,6 +1111,10 @@ static int laserPawnMove( BoardState     *inState,
                                 outCaptured,
                                 outStates );
 
+    if( inState->nextToMove == CHESS_BLACK ) {
+        dirY = 1;
+        }
+
     /* fire laser after moving */
 
     for( i = 0;
@@ -1344,7 +1348,7 @@ void getStartBoard( BoardState  *outState ) {
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[1][i] = pawn | CHESS_BLACK;
+        outState->grid[1][i] = laserPawn | CHESS_BLACK;
         }
 
     outState->grid[7][0] = laserRook      | CHESS_WHITE;
@@ -1359,7 +1363,7 @@ void getStartBoard( BoardState  *outState ) {
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[6][i] = pawn | CHESS_WHITE;
+        outState->grid[6][i] = laserPawn | CHESS_WHITE;
         }
 
     outState->nextToMove = CHESS_WHITE;
@@ -1855,11 +1859,15 @@ static char getGreedyDepthMove( BoardState  *inState,
 
                                 /* their only move is into checkmate */
 
+                                /* but, since this is one move away,
+                                   don't count it as quite as good
+                                   as a move that takes the king in one move */
+
                                 if( colorToMove == CHESS_WHITE ) {
-                                    score =    checkmateScore;
+                                    score =    checkmateScore - 1;
                                     }
                                 else {
-                                    score =  - checkmateScore;
+                                    score =  - ( checkmateScore - 1 );
                                     }
                                 }
                             }

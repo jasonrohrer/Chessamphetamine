@@ -1816,9 +1816,17 @@ static char getGreedyDepthMove( BoardState  *inState,
                 if( inDepth > 0 ) {
 
                     int   checkmateVictimColor;
+                    char  forcedCheckmate;
                     char  checkmate =
                              isCheckmate( &( possibleStates[ inDepth ][m] ),
                                           &checkmateVictimColor );
+
+                    if( ! checkmate ) {
+                        forcedCheckmate =
+                             isForcedCheckmate(
+                                 &( possibleStates[ inDepth ][m] ),
+                                 &checkmateVictimColor );
+                        }
 
                     if( checkmate ) {
                         /* already at checkmate state here, don't search
@@ -1828,6 +1836,17 @@ static char getGreedyDepthMove( BoardState  *inState,
                             }
                         else {
                             score =  - checkmateScore;
+                            }
+                        }
+                    else if( forcedCheckmate ) {
+                        /* taking king forced, one move away */
+                        /* not quite as valuable as immediately taking
+                           the king */
+                        if( checkmateVictimColor == CHESS_BLACK ) {
+                            score =    checkmateScore - 1;
+                            }
+                        else {
+                            score =  - ( checkmateScore - 1 );
                             }
                         }
                     else {
@@ -1852,33 +1871,23 @@ static char getGreedyDepthMove( BoardState  *inState,
                             }
                         else {
                             /* no move for opponent?
-                               see if they can move into check, which means
-                               they are checkmated or stalemated */
-                            nextFound =
-                                getGreedyDepthMove(
-                                    &( possibleStates[ inDepth ][m] ),
-                                    0,
-                                    &nextMove,
-                                    &( nextMoveCaptured[ nextDepth ] ),
-                                    &( nextMoveState[ nextDepth ] ),
-                                    &nextScore,
-                                    nextDepth );
 
-                            if( nextFound ) {
+                               this should never happen, since
+                               we're not already checkmating or forceCheckmating
+                               them */
 
-                                /* their only move is into checkmate */
+                            const char  *stateString =
+                                getBoardStateString(
+                                    &( possibleStates[ inDepth ][m] ) );
+                            
 
-                                /* but, since this is one move away,
-                                   don't count it as quite as good
-                                   as a move that takes the king in one move */
-
-                                if( colorToMove == CHESS_WHITE ) {
-                                    score =    checkmateScore - 1;
-                                    }
-                                else {
-                                    score =  - ( checkmateScore - 1 );
-                                    }
-                                }
+                            maxigin_logString( "Unexpected case hit in "
+                                               "getGreedyDepthMove, where we "
+                                               "are not taking king in one "
+                                               "move or checkmating them, but "
+                                               "there's still no next move for "
+                                               "opponent:\n",
+                                               stateString );
                             }
                         }
                     }

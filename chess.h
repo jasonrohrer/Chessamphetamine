@@ -214,8 +214,6 @@ char isForcedCheckmate( BoardState  *inState,
    These functions just look for legal moves for a given piece, in isolation,
    without considering rules around a king in check.
 
-   Though the King function will never pick a move that moves into check.
-
    Returns the number of moves.
 */
 typedef int (*PieceMoveFunction)( BoardState     *inState,

@@ -2111,17 +2111,14 @@ char isForcedCheckmate( BoardState  *inState,
         static  Captured    nextCaptured;
         
         char         canMove;
-        int          nextScore;
         MaxiginRand  oldRandState  =  chessRand;
         
         
-        canMove = getGreedyDepthMove( inState,
-                                      1,  /* no moving into check */
-                                      &nextMove,
-                                      &nextCaptured,
-                                      &nextState,
-                                      &nextScore,
-                                      0 );
+        canMove = getRandomMove( inState,
+                                 1,  /* no moving into check */
+                                 &nextMove,
+                                 &nextCaptured,
+                                 &nextState );
 
         /* restore rand after looking for move */
         chessRand = oldRandState;

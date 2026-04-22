@@ -1544,7 +1544,7 @@ char getRandomMove( BoardState  *inState,
                     Captured    *outCaptured,
                     BoardState  *outNewState ) {
 
-    /* fixme:  pay attention to limits on where piece can actually move */
+    /*  pay attention to limits on where piece can actually move */
 
     static  unsigned char  possiblePieceRow[BN];
     static  unsigned char  possiblePieceCol[BN];
@@ -1630,6 +1630,77 @@ char getRandomMove( BoardState  *inState,
             }
         }
        
+    
+    /* tried all possible pieces, none could move*/
+    return 0;
+    }
+
+
+
+static char isAnyMovePossible( BoardState  *inState,
+                        char         inAvoidCheck ) {
+
+    /* pay attention to limits on where piece can actually move */
+
+    static  unsigned char  possiblePieceRow[BN];
+    static  unsigned char  possiblePieceCol[BN];
+    static  unsigned char  possibleDestRow [BN];
+    static  unsigned char  possibleDestCol [BN];
+    static  Captured       possibleCaptured[BN];
+    static  BoardState     possibleStates  [BN];
+    
+    int             numPossiblePieces  =  0;
+    int             p;
+    unsigned char   x;
+    unsigned char   y;
+    int             colorToMove        =  inState->nextToMove;
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            if( inState->grid[y][x] != noPiece ) {
+
+                if( ( inState->grid[y][x] & CHESS_COLOR_MASK ) == colorToMove ) {
+                
+                    possiblePieceRow[numPossiblePieces] = y;
+                    possiblePieceCol[numPossiblePieces] = x;
+                    numPossiblePieces ++;
+                    }
+                }
+            }
+        }
+
+    if( numPossiblePieces == 0 ) {
+        return 0;
+        }
+
+    
+    for( p = 0;
+         p < numPossiblePieces;
+         p ++ ) {
+
+        int  numMoves;
+        
+        y = possiblePieceRow[ p ];
+        x = possiblePieceCol[ p ];
+
+        numMoves = getPiecePossibleMoves( inState,
+                                          y,
+                                          x,
+                                          inAvoidCheck,
+                                          possibleDestRow,
+                                          possibleDestCol,
+                                          possibleCaptured,
+                                          possibleStates );
+        if( numMoves > 0 ) {
+            return 1;
+            }
+        }
     
     /* tried all possible pieces, none could move*/
     return 0;
@@ -2106,24 +2177,10 @@ char isForcedCheckmate( BoardState  *inState,
     if( isKingInCheck( inState,
                        inState->nextToMove ) ) {
 
-        static  Move        nextMove;
-        static  BoardState  nextState;
-        static  Captured    nextCaptured;
-        
-        char         canMove;
-        MaxiginRand  oldRandState  =  chessRand;
-        
-        
-        canMove = getRandomMove( inState,
-                                 1,  /* no moving into check */
-                                 &nextMove,
-                                 &nextCaptured,
-                                 &nextState );
+        /* no moving into check */
 
-        /* restore rand after looking for move */
-        chessRand = oldRandState;
-        
-        if( canMove ) {
+        if( isAnyMovePossible( inState,
+                               1 ) ) {
             return 0;
             }
     

@@ -196,6 +196,15 @@ char isCheckmate( BoardState  *inState,
 #ifdef CHESS_IMPLEMENTATION
 
 
+
+/* our new semantics above mark "checkmate" as king being captured
+   this function detects the traditional definition, where the king
+   is in check and there's no move that resolves this */
+char isForcedCheckmate( BoardState  *inState,
+                        int         *outColor );
+
+
+
 /* the signature for a piece move function.
    We define one of these for each piece type in the enum above.
 
@@ -2071,6 +2080,45 @@ char isCheckmate( BoardState  *inState,
     if( ! doesKingExist( inState,
                          CHESS_WHITE ) ) {
         *outColor = CHESS_WHITE;
+        return 1;
+        }
+
+    return 0;
+    }
+
+
+
+char isForcedCheckmate( BoardState  *inState,
+                        int         *outColor ) {
+
+    if( isKingInCheck( inState,
+                       inState->nextToMove ) ) {
+
+        static  Move        nextMove;
+        static  BoardState  nextState;
+        static  Captured    nextCaptured;
+        
+        char         canMove;
+        int          nextScore;
+        MaxiginRand  oldRandState  =  chessRand;
+        
+        
+        canMove = getGreedyDepthMove( inState,
+                                      1,  /* no moving into check */
+                                      &nextMove,
+                                      &nextCaptured,
+                                      &nextState,
+                                      &nextScore,
+                                      0 );
+
+        /* restore rand after looking for move */
+        chessRand = oldRandState;
+        
+        if( canMove ) {
+            return 0;
+            }
+    
+        *outColor = inState->nextToMove;
         return 1;
         }
 

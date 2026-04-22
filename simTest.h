@@ -40,9 +40,11 @@ static void runChessTest( void ) {
             
             BoardState  nextS;
             Move        m;
+            Captured    c;
 
             if( getChessMove( &s,
                               &m,
+                              &c,
                               &nextS ) ) {
                 int  oldScore  =  getScore( &s );
 

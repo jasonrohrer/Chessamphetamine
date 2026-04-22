@@ -142,6 +142,7 @@ static int          lang_bomb;
 
 
 static BoardState   boardState;
+static Captured     postMoveCaptured;
 static BoardState   postMoveState;
 static Move         boardMove;
 static int          moveProgress;
@@ -156,10 +157,8 @@ static int          gameLoserColor     =  CHESS_WHITE;
 
 static int          noScoreMoveCount   =  0;
 
-static ChessPiece   explodingPiece     =  noPiece;
 static int          explodingProgress  =  -1;
-static int          explodingRow;
-static int          explodingCol;
+
 
 
 static int            endMessageSprites[ 3 ]  = { -1,
@@ -426,14 +425,24 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( explodingProgress != -1 ) {
 
-        drawExplodingPiece( explodingPiece,
-                            boardCenterX,
-                            boardCenterY,
-                            explodingRow,
-                            explodingCol,
-                            explodingProgress );
+        int  pn;
+
+        for( pn = 0;
+             pn < postMoveCaptured.num;
+             pn ++ ) {
+
+            BoardPiece  *bp  =  &( postMoveCaptured.pieces[ pn ] );
+            
+            drawExplodingPiece( bp->p,
+                                boardCenterX,
+                                boardCenterY,
+                                bp->row,
+                                bp->col,
+                                explodingProgress );
+            }
         }
 
+    
     if( explodingEndMessageProgress != -1 ) {
 
         unsigned char  a;
@@ -742,6 +751,7 @@ void maxiginGame_step( void ) {
             /* make a chess move */
             if( getChessMove( &boardState,
                               &boardMove,
+                              &postMoveCaptured,
                               &postMoveState ) ) {
                 int  pixDist  = boardGetPixelDistance( boardMove.startPos[0],
                                                        boardMove.startPos[1],
@@ -816,28 +826,11 @@ void maxiginGame_step( void ) {
                 endMessageFade = 255;
                 endMessagePreFadeSteps = 0;
                 }
-            else if( oldScore != newScore ) {
 
-                /* what piece was captured? */
-                explodingPiece = boardState.grid[ boardMove.endPos[0] ]
-                                                [ boardMove.endPos[1] ];
+            if( postMoveCaptured.num > 0 ) {
 
-                /* if score changed with no piece captured at destination
-                   of move, it might be a promotion of a pawn,
-                   with no capture there */
-                if( explodingPiece == noPiece ) {
-                    /* consider making destination piece
-                       explode, which might be the new queen */
-                    explodingPiece = postMoveState.grid[ boardMove.endPos[0] ]
-                                                       [ boardMove.endPos[1] ];
-                    }
-                    
-                if( explodingPiece != noPiece ) {
-                    /* start an explosion */
-                    explodingProgress = 0;
-                    explodingRow = boardMove.endPos[0];
-                    explodingCol = boardMove.endPos[1];
-                    }
+                /* start an explosion */
+                explodingProgress = 0;
                 
                 /* thunk on score-changing capture */
                 if( oldScore < newScore ) {
@@ -1554,16 +1547,14 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( gameGUI );
 
     REGISTER_VAL_MEM( boardState );
+    REGISTER_VAL_MEM( postMoveCaptured );
     REGISTER_VAL_MEM( postMoveState );
     REGISTER_VAL_MEM( boardMove );
     
     REGISTER_VAL_MEM( moveMade );
     REGISTER_VAL_MEM( moveProgress );
     REGISTER_VAL_MEM( moveProgressMax );
-
-    REGISTER_VAL_MEM( explodingPiece );
-    REGISTER_VAL_MEM( explodingRow );
-    REGISTER_VAL_MEM( explodingCol );
+    
     REGISTER_VAL_MEM( explodingProgress );
 
     REGISTER_VAL_MEM( checkmate );

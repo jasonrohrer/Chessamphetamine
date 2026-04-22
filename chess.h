@@ -91,6 +91,30 @@ typedef struct Move{
 
 
 
+typedef struct BoardPiece {
+        
+        ChessPiece  p;
+        
+        int         row;
+        
+        int         col;
+        
+    } BoardPiece;
+
+
+
+typedef struct Captured {
+
+        /* number of pieces captured */
+        int        num;
+        
+        /* list of up to BN pieces, with only the first num entries populated */
+        BoardPiece pieces[ BN ];
+        
+    } Captured;
+        
+
+
 void chessInit( void );
 
 
@@ -113,24 +137,32 @@ void getTestBoard( BoardState  *outState );
 char getRandomMove( BoardState  *inState,
                     char         inAvoidCheck,
                     Move        *outMove,
+                    Captured    *outCaptured,
                     BoardState  *outNewState );
+
 
 
 /* if a capture is possible, makes move that performs most valuable capture
    if not, makes a random move */
 char getGreedyMove( BoardState  *inState,
                     Move        *outMove,
+                    Captured    *outCaptured,
                     BoardState  *outNewState );
+
+
 
 /* makes a greedy move 3/4 of the time and random move 1/4 of the time */
 char getMixedMove( BoardState  *inState,
                    Move        *outMove,
+                   Captured    *outCaptured,
                    BoardState  *outNewState );
+
 
 
 /* decides internally what type of move to generate */
 char getChessMove( BoardState  *inState,
                    Move        *outMove,
+                   Captured    *outCaptured,
                    BoardState  *outNewState );
 
 
@@ -186,6 +218,9 @@ typedef int (*PieceMoveFunction)( BoardState     *inState,
                                   /* possible move rows and cols */
                                   unsigned char   outDestRows[BN],
                                   unsigned char   outDestCols[BN],
+                                  /* resulting piece capture lists
+                                     from possible moves */
+                                  Captured        outCaptured[BN],
                                   /* resulting board states from possible
                                      moves */
                                   BoardState      outStates  [BN] );
@@ -204,6 +239,7 @@ static int noPieceMove( BoardState     *inState,
                         int             inPieceCol,
                         unsigned char   outDestRows[BN],
                         unsigned char   outDestCols[BN],
+                        Captured        outCaptured[BN],
                         BoardState      outStates  [BN] ) {
     
     /* suppress warnings for unused params */
@@ -213,9 +249,26 @@ static int noPieceMove( BoardState     *inState,
     (void)inPieceCol;
     (void)outDestRows;
     (void)outDestCols;
+    (void)outCaptured;
     (void)outStates;
     
     return 0;
+    }
+
+
+
+static void addCapturedPiece( Captured    *inCaptured,
+                              BoardState  *inState,
+                              int          inRow,
+                              int          inCol ) {
+
+    BoardPiece  *bp  =  &( inCaptured->pieces[ inCaptured->num ] );
+
+    bp->p   = inState->grid[ inRow ][ inCol ];
+    bp->row = inRow;
+    bp->col = inCol;
+
+    inCaptured->num ++;
     }
 
 
@@ -227,6 +280,7 @@ static int pawnMove( BoardState     *inState,
                      int             inPieceCol,
                      unsigned char   outDestRows[BN],
                      unsigned char   outDestCols[BN],
+                     Captured        outCaptured[BN],
                      BoardState      outStates  [BN] ) {
 
     int  moveDir       =  1;
@@ -289,6 +343,9 @@ static int pawnMove( BoardState     *inState,
             outStates[n].grid[ inPieceRow ][ inPieceCol ] = noPiece;
 
             outStates[n].nextToMove = otherColor;
+
+            /* no capture */
+            outCaptured[n].num = 0;
             
             /* fixme:
                promote to Queen in final row */
@@ -301,6 +358,12 @@ static int pawnMove( BoardState     *inState,
                   &&
                   newRow == 0 ) ) {
 
+                /* count our pawn as captured during promotion */
+                addCapturedPiece( &( outCaptured[n] ),
+                                  &( outStates[n]   ),
+                                  newRow,
+                                  inPieceCol );
+                
                 outStates[n].grid[ newRow ][ inPieceCol ] = inPieceColor | queen;
                 }
             
@@ -341,6 +404,13 @@ static int pawnMove( BoardState     *inState,
             /* copy state to start with */
             outStates[n]   = *inState;
 
+            /* add to captured list */
+            outCaptured[n].num = 0;
+            addCapturedPiece( &( outCaptured[n] ),
+                              &( outStates[n]   ),
+                              newRow,
+                              newCol );
+
             /* copy piece into new spot
                (overwrite captured piece) */
             outStates[n].grid    [ newRow     ][ newCol     ] =
@@ -361,6 +431,12 @@ static int pawnMove( BoardState     *inState,
                   &&
                   newRow == 0 ) ) {
 
+                /* count our pawn as captured during promotion */
+                addCapturedPiece( &( outCaptured[n] ),
+                                  &( outStates[n]   ),
+                                  newRow,
+                                  inPieceCol );
+                
                 outStates[n].grid[ newRow ][ newCol ] = inPieceColor | queen;
                 }
             
@@ -380,6 +456,7 @@ static int bishopMove( BoardState     *inState,
                        int             inPieceCol,
                        unsigned char   outDestRows[BN],
                        unsigned char   outDestCols[BN],
+                       Captured        outCaptured[BN],
                        BoardState      outStates  [BN] ) {
 
     
@@ -451,6 +528,16 @@ static int bishopMove( BoardState     *inState,
                 /* copy state to start with */
                 outStates[n]   = *inState;
 
+                outCaptured[n].num = 0;
+                
+                if( destP != noPiece ) {
+                    /* add to captured list */
+                    addCapturedPiece( &( outCaptured[n] ),
+                                      &( outStates[n]   ),
+                                      destY,
+                                      destX );
+                    }
+
                 /* copy piece into new spot */
                 outStates[n].grid    [ destY      ][ destX      ] =
                     outStates[n].grid[ inPieceRow ][ inPieceCol ];
@@ -486,6 +573,7 @@ static int knightMove( BoardState     *inState,
                        int             inPieceCol,
                        unsigned char   outDestRows[BN],
                        unsigned char   outDestCols[BN],
+                       Captured        outCaptured[BN],
                        BoardState      outStates  [BN] ) {
 
     
@@ -543,6 +631,16 @@ static int knightMove( BoardState     *inState,
             /* copy state to start with */
             outStates[n]   = *inState;
 
+            outCaptured[n].num = 0;
+            
+            if( destP != noPiece ) {
+                /* add to captured list */
+                addCapturedPiece( &( outCaptured[n] ),
+                                  &( outStates[n]   ),
+                                  destY,
+                                  destX );
+                }
+            
             /* copy piece into new spot */
             outStates[n].grid    [ destY      ][ destX      ] =
                 outStates[n].grid[ inPieceRow ][ inPieceCol ];
@@ -567,6 +665,7 @@ static int rookMove( BoardState     *inState,
                      int             inPieceCol,
                      unsigned char   outDestRows[BN],
                      unsigned char   outDestCols[BN],
+                     Captured        outCaptured[BN],
                      BoardState      outStates  [BN] ) {
 
     
@@ -638,6 +737,16 @@ static int rookMove( BoardState     *inState,
                 /* copy state to start with */
                 outStates[n]   = *inState;
 
+                outCaptured[n].num = 0;
+            
+                if( destP != noPiece ) {
+                    /* add to captured list */
+                    addCapturedPiece( &( outCaptured[n] ),
+                                      &( outStates[n]   ),
+                                      destY,
+                                      destX );
+                    }
+
                 /* copy piece into new spot */
                 outStates[n].grid    [ destY      ][ destX      ] =
                     outStates[n].grid[ inPieceRow ][ inPieceCol ];
@@ -673,6 +782,7 @@ static int queenMove( BoardState     *inState,
                       int             inPieceCol,
                       unsigned char   outDestRows[BN],
                       unsigned char   outDestCols[BN],
+                      Captured        outCaptured[BN],
                       BoardState      outStates  [BN] ) {
 
     
@@ -747,6 +857,16 @@ static int queenMove( BoardState     *inState,
                 /* copy state to start with */
                 outStates[n]   = *inState;
 
+                outCaptured[n].num = 0;
+            
+                if( destP != noPiece ) {
+                    /* add to captured list */
+                    addCapturedPiece( &( outCaptured[n] ),
+                                      &( outStates[n]   ),
+                                      destY,
+                                      destX );
+                    }
+
                 /* copy piece into new spot */
                 outStates[n].grid    [ destY      ][ destX      ] =
                     outStates[n].grid[ inPieceRow ][ inPieceCol ];
@@ -783,6 +903,7 @@ static int kingMove( BoardState     *inState,
                      int             inPieceCol,
                      unsigned char   outDestRows[BN],
                      unsigned char   outDestCols[BN],
+                     Captured        outCaptured[BN],
                      BoardState      outStates  [BN] ) {
 
     
@@ -839,6 +960,16 @@ static int kingMove( BoardState     *inState,
             /* copy state to start with */
             outStates[n]   = *inState;
 
+            outCaptured[n].num = 0;
+            
+            if( destP != noPiece ) {
+                /* add to captured list */
+                addCapturedPiece( &( outCaptured[n] ),
+                                  &( outStates[n]   ),
+                                  destY,
+                                  destX );
+                }
+
             /* copy piece into new spot */
             outStates[n].grid    [ destY      ][ destX      ] =
                 outStates[n].grid[ inPieceRow ][ inPieceCol ];
@@ -864,6 +995,7 @@ static int laserRookMove( BoardState     *inState,
                           int             inPieceCol,
                           unsigned char   outDestRows[BN],
                           unsigned char   outDestCols[BN],
+                          Captured        outCaptured[BN],
                           BoardState      outStates  [BN] ) {
 
     static  int  dirs[4][2] = { { -1,  0 },
@@ -879,6 +1011,7 @@ static int laserRookMove( BoardState     *inState,
                                 inPieceCol,
                                 outDestRows,
                                 outDestCols,
+                                outCaptured,
                                 outStates );
 
     if( BW - 1 > maxDist ) {
@@ -930,6 +1063,11 @@ static int laserRookMove( BoardState     *inState,
 
                     if( ( p & CHESS_COLOR_MASK ) == s->nextToMove ) {
                         /* opponent piece */
+
+                        addCapturedPiece( &( outCaptured[i] ),
+                                          s,
+                                          dy,
+                                          dx );
                         
                         /* destroy piece */
                         s->grid[ dy ][ dx ] = noPiece;
@@ -958,6 +1096,7 @@ static int laserPawnMove( BoardState     *inState,
                           int             inPieceCol,
                           unsigned char   outDestRows[BN],
                           unsigned char   outDestCols[BN],
+                          Captured        outCaptured[BN],
                           BoardState      outStates  [BN] ) {
 
     int  dirY      =  -1;
@@ -969,6 +1108,7 @@ static int laserPawnMove( BoardState     *inState,
                                 inPieceCol,
                                 outDestRows,
                                 outDestCols,
+                                outCaptured,
                                 outStates );
 
     /* fire laser after moving */
@@ -1003,6 +1143,11 @@ static int laserPawnMove( BoardState     *inState,
 
                 if( ( p & CHESS_COLOR_MASK ) == s->nextToMove ) {
                     /* opponent piece */
+
+                    addCapturedPiece( &( outCaptured[i] ),
+                                      s,
+                                      dy,
+                                      c );
                         
                     /* destroy piece */
                     s->grid[ dy ][ c ] = noPiece;
@@ -1066,10 +1211,10 @@ static char isKingInCheck( BoardState  *inState,
     int  y;
     int  x;
     
-    static  BoardState     resultStates[BN];
-    static  unsigned char  destRows    [BN];
-    static  unsigned char  destCols    [BN];
-
+    static  BoardState     resultStates  [BN];
+    static  unsigned char  destRows      [BN];
+    static  unsigned char  destCols      [BN];
+    static  Captured       resultCaptured[BN];
 
     if( ! doesKingExist( inState,
                          inVictimKingColor ) ) {
@@ -1109,6 +1254,7 @@ static char isKingInCheck( BoardState  *inState,
                                         x,
                                         destRows,
                                         destCols,
+                                        resultCaptured,
                                         resultStates );
             for( i = 0;
                  i < n;
@@ -1244,13 +1390,15 @@ static int getPiecePossibleMoves( BoardState     *inState,
                                   int             inPieceRow,
                                   int             inPieceCol,
                                   char            inAvoidCheck,
-                                  unsigned char   outRows  [BN],
-                                  unsigned char   outCols  [BN],
-                                  BoardState      outStates[BN] ) {
+                                  unsigned char   outRows    [BN],
+                                  unsigned char   outCols    [BN],
+                                  Captured        outCaptured[BN],
+                                  BoardState      outStates  [BN] ) {
     
-    static  BoardState     resultStates[BN];
-    static  unsigned char  resultRows  [BN];
-    static  unsigned char  resultCols  [BN];
+    static  BoardState     resultStates  [BN];
+    static  unsigned char  resultRows    [BN];
+    static  unsigned char  resultCols    [BN];
+    static  Captured       resultCaptured[BN];
     
     ChessPiece  p             =  inState->grid[ inPieceRow ][ inPieceCol ];
     ChessPiece  pType         =  p & CHESS_TYPE_MASK;
@@ -1266,6 +1414,7 @@ static int getPiecePossibleMoves( BoardState     *inState,
                                        inPieceCol,
                                        resultRows,
                                        resultCols,
+                                       resultCaptured,
                                        resultStates );
 
     /* filter moves to remove illegal moves that put our king in check */
@@ -1278,9 +1427,10 @@ static int getPiecePossibleMoves( BoardState     *inState,
             ! isKingInCheck( &( resultStates[m] ),
                              pColor ) ) {
 
-            outStates[ numGoodMoves ] = resultStates[ m ];
-            outRows  [ numGoodMoves ] = resultRows  [ m ];
-            outCols  [ numGoodMoves ] = resultCols  [ m ];
+            outCaptured[ numGoodMoves ] = resultCaptured[ m ];
+            outStates  [ numGoodMoves ] = resultStates  [ m ];
+            outRows    [ numGoodMoves ] = resultRows    [ m ];
+            outCols    [ numGoodMoves ] = resultCols    [ m ];
 
             numGoodMoves ++;
             }
@@ -1378,6 +1528,7 @@ const char *getBoardStateString( BoardState  *inState ) {
 char getRandomMove( BoardState  *inState,
                     char         inAvoidCheck,
                     Move        *outMove,
+                    Captured    *outCaptured,
                     BoardState  *outNewState ) {
 
     /* fixme:  pay attention to limits on where piece can actually move */
@@ -1386,6 +1537,7 @@ char getRandomMove( BoardState  *inState,
     static  unsigned char  possiblePieceCol[BN];
     static  unsigned char  possibleDestRow [BN];
     static  unsigned char  possibleDestCol [BN];
+    static  Captured       possibleCaptured[BN];
     static  BoardState     possibleStates  [BN];
     
     int             numPossiblePieces  =  0;
@@ -1445,6 +1597,7 @@ char getRandomMove( BoardState  *inState,
                                           inAvoidCheck,
                                           possibleDestRow,
                                           possibleDestCol,
+                                          possibleCaptured,
                                           possibleStates );
 
         if( numMoves > 0 ) {
@@ -1457,7 +1610,8 @@ char getRandomMove( BoardState  *inState,
             outMove->endPos  [0] = possibleDestRow[m];
             outMove->endPos  [1] = possibleDestCol[m];
 
-            *outNewState = possibleStates[m];
+            *outCaptured = possibleCaptured[m];
+            *outNewState = possibleStates  [m];
             
             return 1;
             }
@@ -1519,6 +1673,7 @@ static  int  checkmateScore  =  MAX_SCORE - 1;
 static char getGreedyDepthMove( BoardState  *inState,
                                 char         inAvoidCheck,
                                 Move        *outMove,
+                                Captured    *outCaptured,
                                 BoardState  *outNewState,
                                 int         *outScore,
                                 int          inDepth ) {
@@ -1536,12 +1691,14 @@ static char getGreedyDepthMove( BoardState  *inState,
     /* for current piece that we're looking at, what are the possible moves */
     static  unsigned char  possibleDestRow [ MAX_DEPTH ][BN];
     static  unsigned char  possibleDestCol [ MAX_DEPTH ][BN];
+    static  Captured       possibleCaptured[ MAX_DEPTH ][BN];
     static  BoardState     possibleStates  [ MAX_DEPTH ][BN];
 
     /* for shuffling the possible moves of our current piece before
        considering them */
     static  int            moveLookOrder   [ MAX_DEPTH ][BN];
 
+    static Captured        nextMoveCaptured[ MAX_DEPTH ];
     static BoardState      nextMoveState   [ MAX_DEPTH ];
     
     
@@ -1610,9 +1767,10 @@ static char getGreedyDepthMove( BoardState  *inState,
                                           y,
                                           x,
                                           inAvoidCheck,
-                                          possibleDestRow[ inDepth ],
-                                          possibleDestCol[ inDepth ],
-                                          possibleStates [ inDepth ] );
+                                          possibleDestRow [ inDepth ],
+                                          possibleDestCol [ inDepth ],
+                                          possibleCaptured[ inDepth ],
+                                          possibleStates  [ inDepth ] );
 
         if( numMoves > 0 ) {
 
@@ -1672,7 +1830,8 @@ static char getGreedyDepthMove( BoardState  *inState,
                                 &( possibleStates[ inDepth ][m] ),
                                 1,
                                 &nextMove,
-                                &( nextMoveState[ nextDepth ] ),
+                                &( nextMoveCaptured[ nextDepth ] ),
+                                &( nextMoveState   [ nextDepth ] ),
                                 &nextScore,
                                 nextDepth );
                         if( nextFound ) {
@@ -1687,6 +1846,7 @@ static char getGreedyDepthMove( BoardState  *inState,
                                     &( possibleStates[ inDepth ][m] ),
                                     0,
                                     &nextMove,
+                                    &( nextMoveCaptured[ nextDepth ] ),
                                     &( nextMoveState[ nextDepth ] ),
                                     &nextScore,
                                     nextDepth );
@@ -1720,9 +1880,10 @@ static char getGreedyDepthMove( BoardState  *inState,
 
                     outMove->startPos[0] = y;
                     outMove->startPos[1] = x;
-                    outMove->endPos[0]   = possibleDestRow[ inDepth ][m];
-                    outMove->endPos[1]   = possibleDestCol[ inDepth ][m];
-                    *outNewState         = possibleStates [ inDepth ][m];
+                    outMove->endPos[0]   = possibleDestRow [ inDepth ][m];
+                    outMove->endPos[1]   = possibleDestCol [ inDepth ][m];
+                    *outCaptured         = possibleCaptured[ inDepth ][m];
+                    *outNewState         = possibleStates  [ inDepth ][m];
                     }
                 }
             }
@@ -1746,6 +1907,7 @@ static char getGreedyDepthMove( BoardState  *inState,
 
 char getGreedyMove( BoardState  *inState,
                     Move        *outMove,
+                    Captured    *outCaptured,
                     BoardState  *outNewState ) {
 
     int   nextScore;
@@ -1755,6 +1917,7 @@ char getGreedyMove( BoardState  *inState,
     canMove = getGreedyDepthMove( inState,
                                   1,
                                   outMove,
+                                  outCaptured,
                                   outNewState,
                                   &nextScore,
                                   1 );
@@ -1766,6 +1929,7 @@ char getGreedyMove( BoardState  *inState,
         canMove = getGreedyDepthMove( inState,
                                       0,
                                       outMove,
+                                      outCaptured,
                                       outNewState,
                                       &nextScore,
                                       1 );
@@ -1778,6 +1942,7 @@ char getGreedyMove( BoardState  *inState,
 
 char getMixedMove( BoardState  *inState,
                    Move        *outMove,
+                   Captured    *outCaptured,
                    BoardState  *outNewState ) {
 
     int  pick  =  maxigin_randRange( &chessRand,
@@ -1788,12 +1953,14 @@ char getMixedMove( BoardState  *inState,
 
         return getGreedyMove( inState,
                               outMove,
+                              outCaptured,
                               outNewState );
         }
     else {
         char  canMove =  getRandomMove( inState,
                                         1,
                                         outMove,
+                                        outCaptured,
                                         outNewState );
 
         if( ! canMove ) {
@@ -1803,6 +1970,7 @@ char getMixedMove( BoardState  *inState,
             canMove = getRandomMove( inState,
                                      0,
                                      outMove,
+                                     outCaptured,
                                      outNewState );
             }
         return canMove;
@@ -1813,11 +1981,13 @@ char getMixedMove( BoardState  *inState,
 
 char getChessMove( BoardState  *inState,
                    Move        *outMove,
+                   Captured    *outCaptured,
                    BoardState  *outNewState ) {
 
     if( inState->nextToMove == CHESS_BLACK ) {
         return getMixedMove( inState,
                              outMove,
+                             outCaptured,
                              outNewState );
         }
     else {
@@ -1825,6 +1995,7 @@ char getChessMove( BoardState  *inState,
            so they never hang a queen, etc.  */
         return getGreedyMove( inState,
                               outMove,
+                              outCaptured,
                               outNewState );
         }
     }

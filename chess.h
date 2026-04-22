@@ -1308,7 +1308,7 @@ void chessSeed( unsigned long  inSeed ) {
 void chessInit( void ) {
 
     /* stalemate */
-    chessSeed( 12036674 );
+    chessSeed( 12036675 );
 
     /* draw */
     if(0)chessSeed( 12035857 );
@@ -1807,50 +1807,53 @@ static char getGreedyDepthMove( BoardState  *inState,
                  i < numMoves;
                  i ++ ) {
 
-                int  score;
+                int   score;
+                int   checkmateVictimColor;
+                char  forcedCheckmate;
+                char  checkmate;
+                
                 
                 m = moveLookOrder[ inDepth ][ i ];
 
-                score = getScore( &( possibleStates[ inDepth ][m] ) );
+                checkmate = isCheckmate( &( possibleStates[ inDepth ][m] ),
+                                         &checkmateVictimColor );
 
-                if( inDepth > 0 ) {
+                if( ! checkmate ) {
+                    forcedCheckmate =
+                        isForcedCheckmate( &( possibleStates[ inDepth ][m] ),
+                                           &checkmateVictimColor );
+                    }
 
-                    int   checkmateVictimColor;
-                    char  forcedCheckmate;
-                    char  checkmate =
-                             isCheckmate( &( possibleStates[ inDepth ][m] ),
-                                          &checkmateVictimColor );
-
-                    if( ! checkmate ) {
-                        forcedCheckmate =
-                             isForcedCheckmate(
-                                 &( possibleStates[ inDepth ][m] ),
-                                 &checkmateVictimColor );
-                        }
-
-                    if( checkmate ) {
-                        /* already at checkmate state here, don't search
-                           deeper */
-                        if( checkmateVictimColor == CHESS_BLACK ) {
-                            score =    checkmateScore;
-                            }
-                        else {
-                            score =  - checkmateScore;
-                            }
-                        }
-                    else if( forcedCheckmate ) {
-                        /* taking king forced, one move away */
-                        /* not quite as valuable as immediately taking
-                           the king */
-                        if( checkmateVictimColor == CHESS_BLACK ) {
-                            score =    checkmateScore - 1;
-                            }
-                        else {
-                            score =  - ( checkmateScore - 1 );
-                            }
+                if( checkmate ) {
+                    /* already at checkmate state here, don't search
+                       deeper */
+                    if( checkmateVictimColor == CHESS_BLACK ) {
+                        score =    checkmateScore;
                         }
                     else {
-                        /* continue searching deeper */
+                        score =  - checkmateScore;
+                        }
+                    }
+                else if( forcedCheckmate ) {
+                    /* taking king forced, one move away */
+                    /* not quite as valuable as immediately taking
+                       the king */
+                    if( checkmateVictimColor == CHESS_BLACK ) {
+                        score =    checkmateScore - 1;
+                        }
+                    else {
+                        score =  - ( checkmateScore - 1 );
+                        }
+                    }
+                else {
+                    
+                    score = getScore( &( possibleStates[ inDepth ][m] ) );
+
+                    if( inDepth > 0 ) {
+                        /* not in checkmate or forced checkmate state after
+                           one move
+                       
+                           continue searching deeper */
                         
                         int   nextDepth  = inDepth - 1;
                         char  nextFound;

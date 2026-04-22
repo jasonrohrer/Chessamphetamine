@@ -1640,17 +1640,11 @@ char getRandomMove( BoardState  *inState,
 static char isAnyMovePossible( BoardState  *inState,
                         char         inAvoidCheck ) {
 
-    /* pay attention to limits on where piece can actually move */
-
-    static  unsigned char  possiblePieceRow[BN];
-    static  unsigned char  possiblePieceCol[BN];
     static  unsigned char  possibleDestRow [BN];
     static  unsigned char  possibleDestCol [BN];
     static  Captured       possibleCaptured[BN];
     static  BoardState     possibleStates  [BN];
-    
-    int             numPossiblePieces  =  0;
-    int             p;
+
     unsigned char   x;
     unsigned char   y;
     int             colorToMove        =  inState->nextToMove;
@@ -1666,43 +1660,24 @@ static char isAnyMovePossible( BoardState  *inState,
             if( inState->grid[y][x] != noPiece ) {
 
                 if( ( inState->grid[y][x] & CHESS_COLOR_MASK ) == colorToMove ) {
-                
-                    possiblePieceRow[numPossiblePieces] = y;
-                    possiblePieceCol[numPossiblePieces] = x;
-                    numPossiblePieces ++;
+
+                    int numMoves = getPiecePossibleMoves( inState,
+                                                          y,
+                                                          x,
+                                                          inAvoidCheck,
+                                                          possibleDestRow,
+                                                          possibleDestCol,
+                                                          possibleCaptured,
+                                                          possibleStates );
+                    if( numMoves > 0 ) {
+                        return 1;
+                        }
                     }
                 }
             }
         }
-
-    if( numPossiblePieces == 0 ) {
-        return 0;
-        }
-
     
-    for( p = 0;
-         p < numPossiblePieces;
-         p ++ ) {
-
-        int  numMoves;
-        
-        y = possiblePieceRow[ p ];
-        x = possiblePieceCol[ p ];
-
-        numMoves = getPiecePossibleMoves( inState,
-                                          y,
-                                          x,
-                                          inAvoidCheck,
-                                          possibleDestRow,
-                                          possibleDestCol,
-                                          possibleCaptured,
-                                          possibleStates );
-        if( numMoves > 0 ) {
-            return 1;
-            }
-        }
-    
-    /* tried all possible pieces, none could move*/
+    /* tried all possible pieces, none could move */
     return 0;
     }
 

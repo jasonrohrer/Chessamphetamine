@@ -1883,7 +1883,7 @@ static char getGreedyDepthMove( BoardState  *inState,
                     /* not quite as valuable as immediately taking
                        the king */
                     if( checkmateVictimColor == CHESS_BLACK ) {
-                        score =    checkmateScore - 1;
+                        score =      checkmateScore - 1;
                         }
                     else {
                         score =  - ( checkmateScore - 1 );
@@ -1919,22 +1919,23 @@ static char getGreedyDepthMove( BoardState  *inState,
                         else {
                             /* no move for opponent?
 
-                               this should never happen, since
-                               we're not already checkmating or forceCheckmating
-                               them */
+                               but they're not currently checkmated
+                               or in a forced checkmate situation
+                               this means they are stalemated,
+                               but they will move into check on their next
+                               move anyway */
 
-                            const char  *stateString =
-                                getBoardStateString(
-                                    &( possibleStates[ inDepth ][m] ) );
-                            
+                            /* count such situations as slightly
+                               less valuable than a force checkmate */
 
-                            maxigin_logString( "Unexpected case hit in "
-                                               "getGreedyDepthMove, where we "
-                                               "are not taking king in one "
-                                               "move or checkmating them, but "
-                                               "there's still no next move for "
-                                               "opponent:\n",
-                                               stateString );
+                            if( possibleStates[ inDepth ][ m ].nextToMove
+                                == CHESS_BLACK ) {
+                                
+                                score =      checkmateScore - 2;
+                                }
+                            else {
+                                score =  - ( checkmateScore - 2 );
+                                }
                             }
                         }
                     }

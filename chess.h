@@ -587,7 +587,7 @@ static int knightMove( BoardState     *inState,
     static  int  dirs[8][2] = { { -1,  2 },
                                 { -2, -1 },
                                 { -2,  1 },
-                                { -1,  2 },
+                                { -1, -2 },
                                 
                                 {  1,  2 },
                                 {  2,  1 },

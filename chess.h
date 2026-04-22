@@ -1336,34 +1336,34 @@ void getStartBoard( BoardState  *outState ) {
     clearBoard( outState );
 
     /* fill out whole starting board */
-    outState->grid[0][0] = laserRook   | CHESS_BLACK;
+    outState->grid[0][0] = rook   | CHESS_BLACK;
     outState->grid[0][1] = knight | CHESS_BLACK;
     outState->grid[0][2] = bishop | CHESS_BLACK;
     outState->grid[0][3] = queen  | CHESS_BLACK;
     outState->grid[0][4] = king   | CHESS_BLACK;
     outState->grid[0][5] = bishop | CHESS_BLACK;
     outState->grid[0][6] = knight | CHESS_BLACK;
-    outState->grid[0][7] = laserRook   | CHESS_BLACK;
+    outState->grid[0][7] = rook   | CHESS_BLACK;
 
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[1][i] = laserPawn | CHESS_BLACK;
+        outState->grid[1][i] = pawn | CHESS_BLACK;
         }
 
-    outState->grid[7][0] = laserRook      | CHESS_WHITE;
+    outState->grid[7][0] = rook      | CHESS_WHITE;
     outState->grid[7][1] = knight    | CHESS_WHITE;
     outState->grid[7][2] = bishop    | CHESS_WHITE;
     outState->grid[7][3] = queen     | CHESS_WHITE;
     outState->grid[7][4] = king      | CHESS_WHITE;
     outState->grid[7][5] = bishop    | CHESS_WHITE;
     outState->grid[7][6] = knight    | CHESS_WHITE;
-    outState->grid[7][7] = laserRook | CHESS_WHITE;
+    outState->grid[7][7] = rook | CHESS_WHITE;
 
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[6][i] = laserPawn | CHESS_WHITE;
+        outState->grid[6][i] = pawn | CHESS_WHITE;
         }
 
     outState->nextToMove = CHESS_WHITE;

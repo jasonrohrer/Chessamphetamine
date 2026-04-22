@@ -1804,7 +1804,7 @@ static char getGreedyDepthMove( BoardState  *inState,
 
                     int   checkmateVictimColor;
                     char  checkmate =
-                             isCheckmate( inState,
+                             isCheckmate( &( possibleStates[ inDepth ][m] ),
                                           &checkmateVictimColor );
 
                     if( checkmate ) {

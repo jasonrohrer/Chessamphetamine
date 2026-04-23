@@ -186,11 +186,11 @@ void drawMoveAnimation( BoardState  *inState,
     ChessPiece  t  =
         inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
     
-    return drawFunctions[ t ]( inState,
-                               inMove,
-                               inCaptured,
-                               inNewState,
-                               inMoveProgress );
+    drawFunctions[ t ]( inState,
+                        inMove,
+                        inCaptured,
+                        inNewState,
+                        inMoveProgress );
     }
 
 

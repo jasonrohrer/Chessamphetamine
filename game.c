@@ -21,7 +21,7 @@
 #include "pieceSprites.h"
 
 #define PIECE_ANIM_IMPLEMENTATION
-#include "pieceAnim.h"
+#include "moveAnim.h"
 
 #include "simTest.h"
 

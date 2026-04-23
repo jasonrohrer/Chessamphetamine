@@ -1,18 +1,18 @@
 /*
   Include in your C code wherever like so:
 
-      #include "pieceAnim.h"
+      #include "moveAnim.h"
 
   Include exactly once, in one .c file, like so, to compile in the
   implementation:
 
-      #define PIECE_ANIM_IMPLEMENTATION
-      #include "pieceAnim.h"
+      #define MOVE_ANIM_IMPLEMENTATION
+      #include "moveAnim.h"
 
 */
 
-#ifndef PIECE_ANIM_H_INCLUDED
-#define PIECE_ANIM_H_INCLUDED
+#ifndef MOVE_ANIM_H_INCLUDED
+#define MOVE_ANIM_H_INCLUDED
 
 
 #include "board.h"
@@ -45,7 +45,7 @@ void drawMoveAnimation( BoardState  *inState,
 
 
 
-#ifdef PIECE_ANIM_IMPLEMENTATION
+#ifdef MOVE_ANIM_IMPLEMENTATION
 
 
 /* The signature for a move animation step function.

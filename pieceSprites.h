@@ -438,17 +438,21 @@ void drawExplodingPiece( ChessPiece  inPiece,
                          int         inCol,
                          int         inProgress ) {
 
-    ChessPiece     rawP         =  inPiece & CHESS_TYPE_MASK;
-    ChessPiece     c            =  inPiece & CHESS_COLOR_MASK;
-    int            cIndex       =  getPieceColorIndex( c );
+    ChessPiece     rawP              =  inPiece & CHESS_TYPE_MASK;
+    ChessPiece     c                 =  inPiece & CHESS_COLOR_MASK;
+    int            cIndex            =  getPieceColorIndex( c );
     
     unsigned char  a;
     int            x;
     int            y;
-    int            partSprite   =  getParticleSprite();
+    int            glowPartSprite    =  getParticleSprite();
+    int            noGlowPartSprite  =  getNoGlowParticleSprite();
+    int            partSpriteToUse; 
     int            baseCenterY;
     
-    if( partSprite == -1 ) {
+    if( glowPartSprite == -1
+        ||
+        noGlowPartSprite == -1 ) {
         return;
         }
 
@@ -461,23 +465,50 @@ void drawExplodingPiece( ChessPiece  inPiece,
 
     baseCenterY =  y + pieceOffsetY[ rawP ];
 
-    drawSetPieceColor( c );
+
+    if( rawP == king ) {
+
+        if( c == CHESS_WHITE ) {
+
+            /* red, player lost */
+            maxigin_drawSetColor( 255, 0, 0, 255 );
+            }
+        else {
+            /* green, player won */
+            maxigin_drawSetColor( 0, 255, 0, 255 );
+            }
+
+        maxigin_drawToggleAdditive( 0 );
+
+        partSpriteToUse = noGlowPartSprite;
+        }
+    else {
+
+        /* explosion of non-king, colored with piece color */
+        
+        drawSetPieceColor( c );
 
     
-    if( c == CHESS_WHITE ) {
+        if( c == CHESS_WHITE ) {
 
-        /* desaturate gold color to make it clip white */
-        maxigin_drawSetColorSaturation( 8500 );
+            /* desaturate gold color to make it clip white */
+            maxigin_drawSetColorSaturation( 8500 );
+            }
+
+        maxigin_drawToggleAdditive( 1 );
+
+        partSpriteToUse = glowPartSprite;
         }
+    
 
 
     a = (unsigned char)( ( (long)( explodeMax - inProgress ) * 255 )
                          / explodeMax );
 
-    maxigin_drawToggleAdditive( 1 );
+   
 
     maxigin_drawExplodingSprite( pieceSpriteHandles[ rawP ],
-                                 partSprite,
+                                 partSpriteToUse,
                                  x,
                                  baseCenterY,
                                  x,
@@ -491,7 +522,7 @@ void drawExplodingPiece( ChessPiece  inPiece,
 
     if( pieceSpriteExtraHandles[ rawP ][ cIndex ] != -1 ) {
         maxigin_drawExplodingSprite( pieceSpriteExtraHandles[ rawP ][ cIndex ],
-                                     partSprite,
+                                     partSpriteToUse,
                                      x,
                                      baseCenterY
                                      + pieceExtraOffsetY[ rawP ][ cIndex ],

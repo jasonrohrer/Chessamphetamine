@@ -19,11 +19,14 @@ void particleSpriteInit( void );
 
 int getParticleSprite( void );
 
+int getNoGlowParticleSprite( void );
+
 
 #ifdef PIECE_SPRITES_IMPLEMENTATION
 
-static  int          particleSpriteHandle  =  -1;
-static  const char  *particleDataName      =  "explosionParticle.tga";
+static  int          particleSpriteHandle        =  -1;
+static  int          noGlowParticleSpriteHandle  =  -1;
+static  const char  *particleDataName            =  "explosionParticle.tga";
 
 
 
@@ -36,12 +39,19 @@ void particleSpriteInit( void ) {
                                     4,
                                     2 );
         }
+
+    noGlowParticleSpriteHandle = maxigin_initSprite( particleDataName );
     }
 
 
 
 int getParticleSprite( void ) {
     return particleSpriteHandle;
+    }
+
+
+int getNoGlowParticleSprite( void ) {
+    return noGlowParticleSpriteHandle;
     }
 
 

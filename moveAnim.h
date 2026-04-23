@@ -37,7 +37,9 @@ char stepMoveAnimation( BoardState  *inState,
 
 
 /* draws entire board with move animation according to inMoveProgress */
-void drawMoveAnimation( BoardState  *inState,
+void drawMoveAnimation( int          inBoardCenterX,
+                        int          inBoardCenterY,
+                        BoardState  *inState,
                         Move        *inMove,
                         Captured    *inCaptured,
                         BoardState  *inNewState,
@@ -62,7 +64,9 @@ typedef char (*MoveAnimStepFunction)( BoardState  *inState,
 /* The signature for a move animation draw function.
    We define one of these for each piece type in the enum in chess.h.
 */
-typedef void (*MoveAnimDrawFunction)( BoardState  *inState,
+typedef void (*MoveAnimDrawFunction)( int          inBoardCenterX,
+                                      int          inBoardCenterY,
+                                      BoardState  *inState,
                                       Move        *inMove,
                                       Captured    *inCaptured,
                                       BoardState  *inNewState,
@@ -86,11 +90,16 @@ static char noPieceStep( BoardState  *inState,
 
 
 /* draws entire board with move animation according to inMoveProgress */
-static void noPieceDraw( BoardState  *inState,
+static void noPieceDraw( int          inBoardCenterX,
+                         int          inBoardCenterY,
+                         BoardState  *inState,
                          Move        *inMove,
                          Captured    *inCaptured,
                          BoardState  *inNewState,
                          int          inMoveProgress ) {
+    
+    (void)inBoardCenterX;
+    (void)inBoardCenterY;
     (void)inState;
     (void)inMove;
     (void)inCaptured;
@@ -106,27 +115,118 @@ static char defaultPieceStep( BoardState  *inState,
                               Captured    *inCaptured,
                               BoardState  *inNewState,
                               int         *inMoveProgress ) {
+    
+    int  pixDist  =  boardGetPixelDistance( inMove->startPos[0],
+                                            inMove->startPos[1],
+                                            inMove->endPos[0],
+                                            inMove->endPos[1] );
+    int  r        =  mingin_getStepsPerSecond();
+
+    
     (void)inState;
-    (void)inMove;
-    (void)inCaptured;
     (void)inNewState;
-    (void)inMoveProgress;
-    return 1;
+    
+    
+    if( *inMoveProgress < pixDist ) {
+
+        /* still on piece movement portion of animtion */
+        
+        *inMoveProgress += ( 4 * 60 ) / r;
+
+        if( *inMoveProgress > pixDist ) {
+            *inMoveProgress = pixDist;
+            
+            if( inCaptured->num == 0 ) {
+                /* nothing to explode */
+                return 1;
+                }
+            }
+        }
+    else {
+        /* onto explosion of captured pieces */
+
+        int  explodeProgress  =  *inMoveProgress - pixDist;
+        
+        explodeProgress = stepExplodingPiece( explodeProgress );
+
+        if( explodeProgress == -1 ) {
+            /* done exploding */
+            return 1;
+            }
+
+        *inMoveProgress = pixDist + explodeProgress;
+        }
+
+    return 0;
     }
 
 
 
 /* draws entire board with move animation according to inMoveProgress */
-static void defaultPieceDraw( BoardState  *inState,
+static void defaultPieceDraw( int          inBoardCenterX,
+                              int          inBoardCenterY,
+                              BoardState  *inState,
                               Move        *inMove,
                               Captured    *inCaptured,
                               BoardState  *inNewState,
                               int          inMoveProgress ) {
-    (void)inState;
-    (void)inMove;
-    (void)inCaptured;
-    (void)inNewState;
-    (void)inMoveProgress;
+
+    int  pixDist  =  boardGetPixelDistance( inMove->startPos[0],
+                                            inMove->startPos[1],
+                                            inMove->endPos[0],
+                                            inMove->endPos[1] );
+    boardDraw( inBoardCenterX,
+               inBoardCenterY );
+
+    if( inMoveProgress < pixDist ) {
+        /* draw move in progress */
+
+        drawBoardState( inState,
+                        0,
+                        0,
+                        0,
+                        0,
+                        inMove,
+                        inMoveProgress,
+                        pixDist,
+                        inBoardCenterX,
+                        inBoardCenterY );
+        }
+    else {
+        /* move done, draw end state */
+        drawBoardState( inNewState,
+                        0,
+                        0,
+                        0,
+                        0,
+                        inMove,
+                        0,
+                        0,
+                        inBoardCenterX,
+                        inBoardCenterY );
+
+        if( inCaptured->num > 0 ) {
+
+            /* there are captured pieces, draw them */
+
+            int  pn;
+            int  explodingProgress  =  inMoveProgress - pixDist;
+            
+            for( pn = 0;
+                 pn < inCaptured->num;
+                 pn ++ ) {
+
+                BoardPiece  *bp  =  &( inCaptured->pieces[ pn ] );
+            
+                drawExplodingPiece( bp->p,
+                                    inBoardCenterX,
+                                    inBoardCenterY,
+                                    bp->row,
+                                    bp->col,
+                                    explodingProgress );
+                }
+            }
+        }
     }
 
 
@@ -177,7 +277,9 @@ char stepMoveAnimation( BoardState  *inState,
 
 
 /* draws entire board with move animation according to inMoveProgress */
-void drawMoveAnimation( BoardState  *inState,
+void drawMoveAnimation( int          inBoardCenterX,
+                        int          inBoardCenterY,
+                        BoardState  *inState,
                         Move        *inMove,
                         Captured    *inCaptured,
                         BoardState  *inNewState,
@@ -186,7 +288,9 @@ void drawMoveAnimation( BoardState  *inState,
     ChessPiece  t  =
         inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
     
-    drawFunctions[ t ]( inState,
+    drawFunctions[ t ]( inBoardCenterX,
+                        inBoardCenterY,
+                        inState,
                         inMove,
                         inCaptured,
                         inNewState,

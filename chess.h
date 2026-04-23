@@ -1859,6 +1859,20 @@ static char getGreedyDepthMove( BoardState  *inState,
                 
                 m = moveLookOrder[ inDepth ][ i ];
 
+                /* code for debugging, to peek at board states
+                if( inDepth == 1 ) {
+                    const char  *stateStringOld =
+                        getBoardStateString( inState );
+                    const char  *stateString =
+                        getBoardStateString( &( possibleStates[ inDepth ][m] ) );
+
+                    (void)stateStringOld;
+                    (void)stateString;
+
+                    checkmate = 0;
+                    }
+                */
+
                 checkmate = isCheckmate( &( possibleStates[ inDepth ][m] ),
                                          &checkmateVictimColor );
 
@@ -1958,6 +1972,20 @@ static char getGreedyDepthMove( BoardState  *inState,
                     outMove->endPos[1]   = possibleDestCol [ inDepth ][m];
                     *outCaptured         = possibleCaptured[ inDepth ][m];
                     *outNewState         = possibleStates  [ inDepth ][m];
+
+                    /* code for debugging, to peek at board states
+                    if( inDepth == 1 ) {
+                        const char  *stateStringOld =
+                            getBoardStateString( inState );
+                        const char  *stateString =
+                            getBoardStateString( outNewState );
+
+                        (void)stateStringOld;
+                        (void)stateString;
+
+                        foundBest = 1;
+                        }
+                    */
                     }
                 }
             }

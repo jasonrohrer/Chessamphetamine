@@ -20,6 +20,9 @@
 #define PIECE_SPRITES_IMPLEMENTATION
 #include "pieceSprites.h"
 
+#define PIECE_ANIM_IMPLEMENTATION
+#include "pieceAnim.h"
+
 #include "simTest.h"
 
 

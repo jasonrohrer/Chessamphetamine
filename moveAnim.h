@@ -312,8 +312,9 @@ char stepMoveAnimation( BoardState  *inState,
                         BoardState  *inNewState,
                         int         *inMoveProgress ) {
 
-    ChessPiece  t  =
-        inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
+    ChessPiece  p  =  inState->grid[ inMove->startPos[0] ]
+                                   [ inMove->startPos[1] ];
+    ChessPiece  t  =  p & CHESS_TYPE_MASK;
     
     return stepFunctions[ t ]( inState,
                                inMove,
@@ -334,8 +335,9 @@ void drawMoveAnimation( int          inBoardCenterX,
                         BoardState  *inNewState,
                         int          inMoveProgress ) {
 
-    ChessPiece  t  =
-        inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
+    ChessPiece  p  =  inState->grid[ inMove->startPos[0] ]
+                                   [ inMove->startPos[1] ];
+    ChessPiece  t  =  p & CHESS_TYPE_MASK;
     
     drawFunctions[ t ]( inBoardCenterX,
                         inBoardCenterY,

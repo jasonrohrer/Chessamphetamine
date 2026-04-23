@@ -758,11 +758,13 @@ void maxiginGame_step( void ) {
                     maxigin_playSoundEffect( checkmateGood,
                                              512 );
                     endMessageColor = CHESS_WHITE;
+                    gameLoserColor  = CHESS_BLACK;
                     }
                 else {
                     maxigin_playSoundEffect( checkmateBad,
                                              512 );
                     endMessageColor = CHESS_BLACK;
+                    gameLoserColor  = CHESS_WHITE;
                     }
 
                 /* start TRAPPED explosion */
@@ -828,11 +830,13 @@ void maxiginGame_step( void ) {
                         maxigin_playSoundEffect( checkmateGood,
                                                  512 );
                         endMessageColor = CHESS_WHITE;
+                        gameLoserColor  = CHESS_BLACK;
                         }
                     else {
                         maxigin_playSoundEffect( checkmateBad,
                                                  512 );
                         endMessageColor = CHESS_BLACK;
+                        gameLoserColor  = CHESS_WHITE;
                         }
 
                     /* start OVERRUN explosion */

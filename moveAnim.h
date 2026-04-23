@@ -19,6 +19,8 @@
 #include "pieceSprites.h"
 
 
+void moveAnimInit( void );
+
 
 /* inMoveProgress should start at 0
 
@@ -48,6 +50,24 @@ void drawMoveAnimation( int          inBoardCenterX,
 
 
 #ifdef MOVE_ANIM_IMPLEMENTATION
+
+
+static  int  beepUp       =  -1;
+static  int  beepDown     =  -1;
+static  int  shooshGood   =  -1;
+static  int  splatterBad  =  -1;
+
+
+
+void moveAnimInit( void ) {
+
+    beepUp = maxigin_initSoundEffect( "beepUp.wav" );
+    beepDown = maxigin_initSoundEffect( "beepDown.wav" );
+    shooshGood = maxigin_initSoundEffect( "shooshGood.wav" );
+    splatterBad = maxigin_initSoundEffect( "splatterBad.wav" );
+    }
+
+
 
 
 /* The signature for a move animation step function.
@@ -138,7 +158,36 @@ static char defaultPieceStep( BoardState  *inState,
             
             if( inCaptured->num == 0 ) {
                 /* nothing to explode */
+
+                /* play sound at end of piece move */
+
+                if( inState->nextToMove == CHESS_WHITE ) {
+                    maxigin_playSoundEffect( beepUp,
+                                             256 );
+                    }
+                else {
+                    maxigin_playSoundEffect( beepDown,
+                                             256 );
+                    }
+
+                /* animation done */
                 return 1;
+                }
+            else {
+                
+                /* play sound effect at start of capture explosions */
+                
+                int   oldScore  =  getScore( inState );
+                int   newScore  =  getScore( inNewState );
+
+                if( oldScore <= newScore ) {
+                    maxigin_playSoundEffect( shooshGood,
+                                             512 );
+                    }
+                else {
+                    maxigin_playSoundEffect( splatterBad,
+                                             512 );
+                    }
                 }
             }
         }

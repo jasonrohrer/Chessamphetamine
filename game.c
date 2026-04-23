@@ -114,10 +114,7 @@ static int          sliderValueC   =   7;
 
 static int          plunkSound     =  -1;
 static int          thunkSound     =  -1;
-static int          beepUp         =  -1;
-static int          beepDown       =  -1;
-static int          shooshGood     =  -1;
-static int          splatterBad    =  -1;
+
 static int          checkmateGood  =  -1;
 static int          checkmateBad   =  -1;
 
@@ -149,7 +146,6 @@ static Captured     postMoveCaptured;
 static BoardState   postMoveState;
 static Move         boardMove;
 static int          moveProgress;
-static int          moveProgressMax  =  0;
 
 static char         moveMade           =  0;
 static char         chessGameOver      =  0;
@@ -159,8 +155,6 @@ static char         drawGame           =  0;
 static int          gameLoserColor     =  CHESS_WHITE;
 
 static int          noScoreMoveCount   =  0;
-
-static int          explodingProgress  =  -1;
 
 
 
@@ -410,40 +404,34 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                     MAXIGIN_GAME_NATIVE_W - 35,
                                     boardCenterY );
         }
-    
 
-    boardDraw( boardCenterX,
-               boardCenterY);
-
-    drawBoardState( &boardState,
-                    checkmate,
-                    stalemate,
-                    drawGame,
-                    gameLoserColor,
-                    &boardMove,
-                    moveProgress,
-                    moveProgressMax,
-                    boardCenterX,
-                    boardCenterY );
-
-    if( explodingProgress != -1 ) {
-
-        int  pn;
-
-        for( pn = 0;
-             pn < postMoveCaptured.num;
-             pn ++ ) {
-
-            BoardPiece  *bp  =  &( postMoveCaptured.pieces[ pn ] );
-            
-            drawExplodingPiece( bp->p,
-                                boardCenterX,
-                                boardCenterY,
-                                bp->row,
-                                bp->col,
-                                explodingProgress );
-            }
+    if( moveMade ) {
+        drawMoveAnimation( boardCenterX,
+                           boardCenterY,
+                           &boardState,
+                           &boardMove,
+                           &postMoveCaptured,
+                           &postMoveState,
+                           moveProgress );
         }
+    else {
+        /* draw non-moving board */
+
+        boardDraw( boardCenterX,
+                   boardCenterY);
+
+        drawBoardState( &boardState,
+                        checkmate,
+                        stalemate,
+                        drawGame,
+                        gameLoserColor,
+                        &boardMove,
+                        0,
+                        0,
+                        boardCenterX,
+                        boardCenterY );
+        }
+    
 
     
     if( explodingEndMessageProgress != -1 ) {
@@ -747,23 +735,16 @@ void maxiginGame_step( void ) {
 
         if( ! moveMade
             &&
-            ! chessGameOver
-            &&
-            explodingProgress == -1 ) {
+            ! chessGameOver ) {
 
             /* make a chess move */
             if( getChessMove( &boardState,
                               &boardMove,
                               &postMoveCaptured,
                               &postMoveState ) ) {
-                int  pixDist  = boardGetPixelDistance( boardMove.startPos[0],
-                                                       boardMove.startPos[1],
-                                                       boardMove.endPos[0],
-                                                       boardMove.endPos[1] );
-                moveProgressMax = pixDist;
-                moveProgress    = 0;
-
-                moveMade = 1;
+                
+                moveProgress = 0;
+                moveMade     = 1;
                 }
             else {
                 /* failed to make a move and not checkmated */
@@ -797,12 +778,13 @@ void maxiginGame_step( void ) {
 
     if( moveMade ) {
 
-        moveProgress += ( 4 * 60 ) / r;
+        char moveDone = stepMoveAnimation( &boardState,
+                                           &boardMove,
+                                           &postMoveCaptured,
+                                           &postMoveState,
+                                           & moveProgress );
 
-        if( moveProgress >= moveProgressMax ) {
-
-            int   oldScore  =  getScore( &boardState );
-            int   newScore  =  getScore( &postMoveState );
+        if( moveDone ) {
 
             if( isCheckmate( &postMoveState,
                              &gameLoserColor ) ) {
@@ -829,35 +811,14 @@ void maxiginGame_step( void ) {
                 endMessageFade = 255;
                 endMessagePreFadeSteps = 0;
                 }
-
-            if( postMoveCaptured.num > 0 ) {
-
-                /* start an explosion */
-                explodingProgress = 0;
+            else if( postMoveCaptured.num == 0 ) {
                 
-                /* thunk on score-changing capture */
-                if( oldScore < newScore ) {
-                    maxigin_playSoundEffect( shooshGood,
-                                             512 );
-                    }
-                else if( oldScore > newScore ) {
-                    maxigin_playSoundEffect( splatterBad,
-                                             512 );
-                    }
-                else {
-                    /* neutral? */
-                    maxigin_playSoundEffect( thunkSound,
-                                             512 );
-                    }
-                noScoreMoveCount = 0;
-                }
-            else {
-                /* plunk on non-capture move */
-
                 noScoreMoveCount ++;
 
                 if( noScoreMoveCount > 50 ) {
                     /* overrun condition */
+                    
+                    int  newScore  =  getScore( &postMoveState );
 
                     drawGame      = 1;
                     chessGameOver = 1;
@@ -880,32 +841,20 @@ void maxiginGame_step( void ) {
                     endMessageFade = 255;
                     endMessagePreFadeSteps = 0;
                     }
-                else {
-                    
-                    if( boardState.nextToMove == CHESS_WHITE ) {
-                        maxigin_playSoundEffect( beepUp,
-                                                 256 );
-                        }
-                    else {
-                        maxigin_playSoundEffect( beepDown,
-                                                 256 );
-                        }
-                    }
                 }
+            else {
+                noScoreMoveCount = 0;
+                }
+            
             
             applyMove( &boardState,
                        &boardMove,
                        &postMoveState );
             
             moveProgress = 0;
-            moveProgressMax = 0;
-
+            
             moveMade = 0;
             }
-        }
-
-    if( explodingProgress != -1 ) {
-        explodingProgress = stepExplodingPiece( explodingProgress );
         }
 
     
@@ -1498,10 +1447,7 @@ void maxiginGame_init( void ) {
     maxigin_initSoundEffect( "hey2.wav" );
     plunkSound = maxigin_initSoundEffect( "plunk1.wav" );
     thunkSound = maxigin_initSoundEffect( "thunk1.wav" );
-    beepUp = maxigin_initSoundEffect( "beepUp.wav" );
-    beepDown = maxigin_initSoundEffect( "beepDown.wav" );
-    shooshGood = maxigin_initSoundEffect( "shooshGood.wav" );
-    splatterBad = maxigin_initSoundEffect( "splatterBad.wav" );
+
     checkmateGood = maxigin_initSoundEffect( "checkmateGood.wav" );
     checkmateBad = maxigin_initSoundEffect( "checkmateBad.wav" );
 
@@ -1521,6 +1467,7 @@ void maxiginGame_init( void ) {
     boardInit();
     pieceSpritesInit();
     particleSpriteInit();
+    moveAnimInit();
 
 
     if(0)runChessTest();
@@ -1556,9 +1503,6 @@ void maxiginGame_init( void ) {
     
     REGISTER_VAL_MEM( moveMade );
     REGISTER_VAL_MEM( moveProgress );
-    REGISTER_VAL_MEM( moveProgressMax );
-    
-    REGISTER_VAL_MEM( explodingProgress );
 
     REGISTER_VAL_MEM( checkmate );
     REGISTER_VAL_MEM( stalemate );

@@ -7134,9 +7134,9 @@ static void mx_convertRGBToHSV( unsigned char   inR,
     */
 
     
-    long  h;   /* in range 0.. 36,000 */
-    long  s;   /* in range 0.. 10,000 */
-    long  v;   /* in range 0.. 10,000 */
+    long  h    =  0;   /* in range 0.. 36,000 */
+    long  s    =  0;   /* in range 0.. 10,000 */
+    long  v    =  0;   /* in range 0.. 10,000 */
     
     long  r    =  inR;
     long  g    =  inG;

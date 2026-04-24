@@ -70,6 +70,11 @@ static  int          laserShortSprites[4];
 static  int          laserShortGlowSprites[4];
 
 
+static  int  laserHorMidSprite;
+static  int  laserHorMidGlowSprite;
+static  int  laserVertMidSprite;
+static  int  laserVertMidGlowSprite;
+
 
 void moveAnimInit( void ) {
 
@@ -89,6 +94,12 @@ void moveAnimInit( void ) {
         laserShortSprites[i] = maxigin_initSprite( laserShortSpriteNames[i] );
         laserShortGlowSprites[i] = maxigin_initSprite( laserShortGlowNames[i] );
         }
+
+    laserHorMidSprite = maxigin_initSprite( "laserHorMid.tga" );
+    laserHorMidGlowSprite = maxigin_initSprite( "laserHorMidGlow.tga" );
+    laserVertMidSprite = maxigin_initSprite( "laserVertMid.tga" );
+    laserVertMidGlowSprite = maxigin_initSprite( "laserVertMidGlow.tga" );
+    
         
     }
 
@@ -596,6 +607,16 @@ static void laserRookDraw( int          inBoardCenterX,
                        inBoardCenterY );
 
             /* test drawing up lasers behind rook */
+
+            /* fixme:  rook shadow overlaps, and it doesn't
+               look good, and anyway, we need to draw laser over
+               pieces BEHIND rook too.
+
+               So we need a version of drawBoardState that draws
+               rows, and that can skip pieces.
+
+               So we can draw parts of rook (like shadow) under
+               an up laser */
 
             drawLaser( inBoardCenterX,
                        inBoardCenterY,

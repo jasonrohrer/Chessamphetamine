@@ -58,14 +58,38 @@ static  int  shooshGood   =  -1;
 static  int  splatterBad  =  -1;
 static  int  laserSound   =  -1;
 
+static  const char  *laserShortSpriteNames[4] = { "laserShortLeft.tga",
+                                                  "laserShortRight.tga",
+                                                  "laserShortUp.tga",
+                                                  "laserShortDown.tga" };
+static  const char  *laserShortGlowNames[4] = { "laserShortLeftGlow.tga",
+                                                "laserShortRightGlow.tga",
+                                                "laserShortUpGlow.tga",
+                                                "laserShortDownGlow.tga" };
+static  int          laserShortSprites[4];
+static  int          laserShortGlowSprites[4];
+
+
 
 void moveAnimInit( void ) {
+
+    int  i;
+    
 
     beepUp = maxigin_initSoundEffect( "beepUp.wav" );
     beepDown = maxigin_initSoundEffect( "beepDown.wav" );
     shooshGood = maxigin_initSoundEffect( "shooshGood.wav" );
     splatterBad = maxigin_initSoundEffect( "splatterBad.wav" );
     laserSound = maxigin_initSoundEffect( "laser_sd_16.wav" );
+
+    for( i = 0;
+         i < 4;
+         i ++ ) {
+
+        laserShortSprites[i] = maxigin_initSprite( laserShortSpriteNames[i] );
+        laserShortGlowSprites[i] = maxigin_initSprite( laserShortGlowNames[i] );
+        }
+        
     }
 
 
@@ -438,6 +462,97 @@ static char laserRookStep( BoardState  *inState,
     }
 
 
+static void drawLaser( int  inBoardCenterX,
+                       int  inBoardCenterY,
+                       int  inFromRow,
+                       int  inFromCol,
+                       int  inToRow,
+                       int  inToCol,
+                       int  inProgress ) {
+
+    int   sI;
+    int   xOff;
+    int   yOff;
+    int   sourcePosX;
+    int   sourcePosY;
+
+    long  glowFade;
+    long  progressRange = laserMax - laserStart;
+
+    glowFade = ( inProgress * 255 ) / progressRange;
+
+    boardGetSquareCenter( inBoardCenterX,
+                          inBoardCenterY,
+                          inFromRow,
+                          inFromCol,
+                          &sourcePosX,
+                          &sourcePosY );
+    
+    
+    if( inFromRow == inToRow ) {
+        /* horizontal */
+
+        if( inFromCol > inToCol ) {
+            /* left */
+
+            sI = 0;
+
+            xOff = -16;
+            yOff = -16;
+            }
+        else {
+            /* right */
+
+            sI = 1;
+
+            xOff = +16;
+            yOff = -16;
+            }
+        }
+    else {
+        /* vertical */
+        if( inFromRow > inToRow ) {
+            /* up */
+
+            sI = 2;
+
+            xOff = 0;
+            yOff = -30;
+            }
+        else {
+            /* down */
+
+            sI = 3;
+
+            xOff = 0;
+            yOff = -5;
+            }
+        }
+    
+    
+            
+    maxigin_drawResetColor();
+            
+    maxigin_drawSprite( laserShortSprites[sI],
+                        sourcePosX + xOff,
+                        sourcePosY + yOff );
+
+
+    maxigin_drawToggleAdditive( 1 );
+
+    maxigin_drawSetAlpha( (unsigned char)glowFade );
+            
+    maxigin_drawSprite( laserShortGlowSprites[sI],
+                        sourcePosX + xOff,
+                        sourcePosY + yOff );
+            
+    maxigin_drawToggleAdditive( 0 );
+
+    maxigin_drawResetColor();
+    }
+
+                       
+
 
 static void laserRookDraw( int          inBoardCenterX,
                            int          inBoardCenterY,
@@ -475,8 +590,20 @@ static void laserRookDraw( int          inBoardCenterX,
 
             /* hold board still from now during laser fire */
 
+            int  laserProgress  =  inMoveProgress - laserStart;
+
             boardDraw( inBoardCenterX,
                        inBoardCenterY );
+
+            /* test drawing up lasers behind rook */
+
+            drawLaser( inBoardCenterX,
+                       inBoardCenterY,
+                       inMove->endPos[0],
+                       inMove->endPos[1],
+                       inMove->endPos[0] - 1,
+                       inMove->endPos[1],
+                       laserProgress );
             
             drawBoardState( &midState,
                             0,
@@ -491,6 +618,31 @@ static void laserRookDraw( int          inBoardCenterX,
 
             /* fixme:  draw the laser beams here! */
 
+
+            drawLaser( inBoardCenterX,
+                       inBoardCenterY,
+                       inMove->endPos[0],
+                       inMove->endPos[1],
+                       inMove->endPos[0] ,
+                       inMove->endPos[1] - 1,
+                       laserProgress );
+
+            drawLaser( inBoardCenterX,
+                       inBoardCenterY,
+                       inMove->endPos[0],
+                       inMove->endPos[1],
+                       inMove->endPos[0],
+                       inMove->endPos[1] + 1,
+                       laserProgress );
+
+            drawLaser( inBoardCenterX,
+                       inBoardCenterY,
+                       inMove->endPos[0],
+                       inMove->endPos[1],
+                       inMove->endPos[0] + 1,
+                       inMove->endPos[1],
+                       laserProgress );
+            
             }
         
 

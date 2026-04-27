@@ -11171,7 +11171,10 @@ void minginGame_step( char  inFinalStep ) {
         if( mx_quitting ) {
             mingin_log( "Found auto-quit in persistent data settings\n" );
 
-            mx_quittingReady = 0;
+            /* We normally wait for sound/music to fade out nicely when quitting
+               to avoid a pop, but in case of hot-reload, speed things up
+               by skipping fade-out */
+            mx_quittingReady = 1;
             }
         }
 

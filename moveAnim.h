@@ -62,18 +62,46 @@ static  const char  *laserShortSpriteNames[4] = { "laserShortLeft.tga",
                                                   "laserShortRight.tga",
                                                   "laserShortUp.tga",
                                                   "laserShortDown.tga" };
-static  const char  *laserShortGlowNames[4] = { "laserShortLeftGlow.tga",
-                                                "laserShortRightGlow.tga",
-                                                "laserShortUpGlow.tga",
-                                                "laserShortDownGlow.tga" };
-static  int          laserShortSprites[4];
+static  const char  *laserShortGlowNames  [4] = { "laserShortLeftGlow.tga",
+                                                  "laserShortRightGlow.tga",
+                                                  "laserShortUpGlow.tga",
+                                                  "laserShortDownGlow.tga" };
+static  int          laserShortSprites    [4];
 static  int          laserShortGlowSprites[4];
 
 
-static  int  laserHorMidSprite;
-static  int  laserHorMidGlowSprite;
-static  int  laserVertMidSprite;
-static  int  laserVertMidGlowSprite;
+static  const char  *laserMidSpriteNames  [2] = { "laserHorMid.tga",
+                                                  "laserVertMid.tga" };
+static  const char  *laserMidGlowNames    [2] = { "laserHorMidGlow.tga",
+                                                  "laserVertMidGlow.tga" };
+static  int          laserMidSprites      [2];
+static  int          laserMidGlowSprites  [2];
+
+
+
+static  const char  *laserStartSpriteNames[4] = { "laserLeftStart.tga",
+                                                  "laserRightStart.tga",
+                                                  "laserUpStart.tga",
+                                                  "laserDownStart.tga" };
+static  const char  *laserStartGlowNames  [4] = { "laserLeftStartGlow.tga",
+                                                  "laserRightStartGlow.tga",
+                                                  "laserUpStartGlow.tga",
+                                                  "laserDownStartGlow.tga" };
+
+static  const char  *laserEndSpriteNames  [4] = { "laserLeftEnd.tga",
+                                                  "laserRightEnd.tga",
+                                                  "laserUpEnd.tga",
+                                                  "laserDownEnd.tga" };
+static  const char  *laserEndGlowNames    [4] = { "laserLeftEndGlow.tga",
+                                                  "laserRightEndGlow.tga",
+                                                  "laserUpEndGlow.tga",
+                                                  "laserDownEndGlow.tga" };
+static  int          laserStartSprites    [4];
+static  int          laserStartGlowSprites[4];
+static  int          laserEndSprites      [4];
+static  int          laserEndGlowSprites  [4];
+
+
 
 
 void moveAnimInit( void ) {
@@ -93,14 +121,22 @@ void moveAnimInit( void ) {
 
         laserShortSprites[i] = maxigin_initSprite( laserShortSpriteNames[i] );
         laserShortGlowSprites[i] = maxigin_initSprite( laserShortGlowNames[i] );
+
+        laserStartSprites[i] = maxigin_initSprite( laserStartSpriteNames[i] );
+        laserStartGlowSprites[i] = maxigin_initSprite( laserStartGlowNames[i] );
+
+        laserEndSprites[i] = maxigin_initSprite( laserEndSpriteNames[i] );
+        laserEndGlowSprites[i] = maxigin_initSprite( laserEndGlowNames[i] );
         }
 
-    laserHorMidSprite = maxigin_initSprite( "laserHorMid.tga" );
-    laserHorMidGlowSprite = maxigin_initSprite( "laserHorMidGlow.tga" );
-    laserVertMidSprite = maxigin_initSprite( "laserVertMid.tga" );
-    laserVertMidGlowSprite = maxigin_initSprite( "laserVertMidGlow.tga" );
-    
-        
+    for( i = 0;
+         i < 2;
+         i ++ ) {
+
+        laserMidSprites[i] = maxigin_initSprite( laserMidSpriteNames[i] );
+        laserMidGlowSprites[i] = maxigin_initSprite( laserMidGlowNames[i] );
+
+        }
     }
 
 
@@ -482,10 +518,27 @@ static void drawLaser( int  inBoardCenterX,
                        int  inProgress ) {
 
     int   sI;
-    int   xOff;
-    int   yOff;
+    int   midI;
+
+    int   r;
+    int   c;
+    int   midRowStart;
+    int   midRowEnd;
+    
+    int   midColStart;
+    int   midColEnd;
+    
+    int   xOffStart;
+    int   yOffStart;
+    int   xOffEnd;
+    int   yOffEnd; 
+    int   numLaserSteps;
+    
     int   sourcePosX;
     int   sourcePosY;
+
+    int   targetPosX;
+    int   targetPosY;
 
     long  glowFade;
     long  progressRange = laserMax - laserStart;
@@ -498,67 +551,259 @@ static void drawLaser( int  inBoardCenterX,
                           inFromCol,
                           &sourcePosX,
                           &sourcePosY );
+
+    boardGetSquareCenter( inBoardCenterX,
+                          inBoardCenterY,
+                          inToRow,
+                          inToCol,
+                          &targetPosX,
+                          &targetPosY );
     
     
     if( inFromRow == inToRow ) {
         /* horizontal */
+
+        midI = 0;
 
         if( inFromCol > inToCol ) {
             /* left */
 
             sI = 0;
 
-            xOff = -16;
-            yOff = -16;
+            numLaserSteps = inFromCol - inToCol;
+
+            if( numLaserSteps == 1 ) {
+                xOffStart = -16;
+                yOffStart = -16;
+                }
+            else {
+                xOffStart = -16;
+                yOffStart = -16;
+                xOffEnd   =   0;
+                yOffEnd   = -16;
+
+                midColStart = inToCol   + 1;
+                midColEnd   = inFromCol - 2;
+                }
             }
         else {
             /* right */
 
             sI = 1;
+            numLaserSteps = inToCol - inFromCol;
 
-            xOff = +16;
-            yOff = -16;
+            if( numLaserSteps == 1 ) {
+                xOffStart = +16;
+                yOffStart = -16;
+                }
+            else {
+                xOffStart = +16;
+                yOffStart = -16;
+                xOffEnd   =   0;
+                yOffEnd   = -16;
+
+                midColStart = inFromCol + 2;
+                midColEnd   = inToCol   - 1;
+                }
             }
         }
     else {
         /* vertical */
+
+        midI = 1;
+        
         if( inFromRow > inToRow ) {
             /* up */
 
+            numLaserSteps = inFromRow - inToRow;
+
             sI = 2;
 
-            xOff = 0;
-            yOff = -30;
+            if( numLaserSteps == 1 ) {
+                xOffStart = 0;
+                yOffStart = -30;
+                }
+            else {
+                xOffStart =   0;
+                yOffStart = -23;
+                xOffEnd   =   0;
+                yOffEnd   =   -7;
+
+                midRowStart = inToRow   + 1;
+                midRowEnd   = inFromRow - 2;
+                }
             }
         else {
             /* down */
 
+            numLaserSteps = inToRow - inFromRow;
+
             sI = 3;
 
-            xOff = 0;
-            yOff = -5;
+            if( numLaserSteps == 1 ) {
+                xOffStart = 0;
+                yOffStart = -5;
+                }
+            else {
+                xOffStart =  0;
+                yOffStart = -7;
+                xOffEnd   =  0;
+                yOffEnd   =  -19;
+
+                midRowStart = inFromRow + 1;
+                midRowEnd   = inToRow   - 2;
+                }
             }
         }
     
     
+
+    if( numLaserSteps == 1 ) {
+        
+        maxigin_drawResetColor();
             
+        maxigin_drawSprite( laserShortSprites[sI],
+                            sourcePosX + xOffStart,
+                            sourcePosY + yOffStart );
+
+
+        maxigin_drawToggleAdditive( 1 );
+
+        maxigin_drawSetAlpha( (unsigned char)glowFade );
+            
+        maxigin_drawSprite( laserShortGlowSprites[sI],
+                            sourcePosX + xOffStart,
+                            sourcePosY + yOffStart );
+            
+        maxigin_drawToggleAdditive( 0 );
+
+        maxigin_drawResetColor();
+        return;
+        }
+
+    /* else draw tiled laser from start to end with at least
+       one mid-section in between */
+
+    /* fixme:  draw mid sections */
+
     maxigin_drawResetColor();
             
-    maxigin_drawSprite( laserShortSprites[sI],
-                        sourcePosX + xOff,
-                        sourcePosY + yOff );
+    maxigin_drawSprite( laserStartSprites[sI],
+                        sourcePosX + xOffStart,
+                        sourcePosY + yOffStart );
+
+        
+    maxigin_drawSprite( laserEndSprites[sI],
+                        targetPosX + xOffEnd,
+                        targetPosY + yOffEnd  );
+
+    if( midI == 0 ) {
+        for( c =  midColStart;
+             c <= midColEnd;
+             c ++ ) {
+
+            int  midPosX;
+            int  midPosY;
+
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  0,
+                                  c,
+                                  &midPosX,
+                                  &midPosY );
+            
+            midPosY = sourcePosY + yOffStart;
+
+            maxigin_drawSprite( laserMidSprites[ midI ],
+                                midPosX,
+                                midPosY);
+            }
+        }
+    else {
+        for( r =  midRowStart;
+             r <= midRowEnd;
+             r ++ ) {
+
+            int  midPosX;
+            int  midPosY;
+
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  r,
+                                  0,
+                                  &midPosX,
+                                  &midPosY );
+            
+            midPosX = sourcePosX + xOffStart;
+
+            maxigin_drawSprite( laserMidSprites[ midI ],
+                                midPosX,
+                                midPosY);
+            }
+        }
+    
 
 
     maxigin_drawToggleAdditive( 1 );
 
     maxigin_drawSetAlpha( (unsigned char)glowFade );
             
-    maxigin_drawSprite( laserShortGlowSprites[sI],
-                        sourcePosX + xOff,
-                        sourcePosY + yOff );
-            
-    maxigin_drawToggleAdditive( 0 );
+    maxigin_drawSprite( laserStartGlowSprites[sI],
+                        sourcePosX + xOffStart,
+                        sourcePosY + yOffStart );
 
+    maxigin_drawSprite( laserEndGlowSprites[sI],
+                        targetPosX + xOffEnd,
+                        targetPosY + yOffEnd );
+
+
+    if( midI == 0 ) {
+        for( c =  midColStart;
+             c <= midColEnd;
+             c ++ ) {
+
+            int  midPosX;
+            int  midPosY;
+
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  0,
+                                  c,
+                                  &midPosX,
+                                  &midPosY );
+            
+            midPosY = sourcePosY + yOffStart;
+
+            maxigin_drawSprite( laserMidGlowSprites[ midI ],
+                                midPosX,
+                                midPosY);
+            }
+        }
+    else {
+        for( r =  midRowStart;
+             r <= midRowEnd;
+             r ++ ) {
+
+            int  midPosX;
+            int  midPosY;
+
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  r,
+                                  0,
+                                  &midPosX,
+                                  &midPosY );
+            
+            midPosX = sourcePosX + xOffStart;
+
+            maxigin_drawSprite( laserMidGlowSprites[ midI ],
+                                midPosX,
+                                midPosY);
+            }
+        }
+
+    maxigin_drawToggleAdditive( 0 );
+    
     maxigin_drawResetColor();
     }
 
@@ -618,13 +863,7 @@ static void laserRookDraw( int          inBoardCenterX,
                So we can draw parts of rook (like shadow) under
                an up laser */
 
-            drawLaser( inBoardCenterX,
-                       inBoardCenterY,
-                       inMove->endPos[0],
-                       inMove->endPos[1],
-                       inMove->endPos[0] - 1,
-                       inMove->endPos[1],
-                       laserProgress );
+            
             
             drawBoardState( &midState,
                             0,
@@ -639,13 +878,21 @@ static void laserRookDraw( int          inBoardCenterX,
 
             /* fixme:  draw the laser beams here! */
 
+            drawLaser( inBoardCenterX,
+                       inBoardCenterY,
+                       inMove->endPos[0],
+                       inMove->endPos[1],
+                       inMove->endPos[0] - 3,
+                       inMove->endPos[1],
+                       laserProgress );
+
 
             drawLaser( inBoardCenterX,
                        inBoardCenterY,
                        inMove->endPos[0],
                        inMove->endPos[1],
                        inMove->endPos[0] ,
-                       inMove->endPos[1] - 1,
+                       inMove->endPos[1] - 2,
                        laserProgress );
 
             drawLaser( inBoardCenterX,
@@ -653,14 +900,14 @@ static void laserRookDraw( int          inBoardCenterX,
                        inMove->endPos[0],
                        inMove->endPos[1],
                        inMove->endPos[0],
-                       inMove->endPos[1] + 1,
+                       inMove->endPos[1] + 2,
                        laserProgress );
 
             drawLaser( inBoardCenterX,
                        inBoardCenterY,
                        inMove->endPos[0],
                        inMove->endPos[1],
-                       inMove->endPos[0] + 1,
+                       inMove->endPos[0] + 3,
                        inMove->endPos[1],
                        laserProgress );
             

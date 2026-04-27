@@ -11194,6 +11194,19 @@ void minginGame_step( char  inFinalStep ) {
         
         mx_saveGame();
 
+        if( mx_playbackRunning ) {
+            /* in the middle of playing back a recording */
+
+            maxigin_writeIntSetting( "maxigin_resumePlayback.ini",
+                                     1 );
+            maxigin_writeIntSetting( "maxigin_resumePlaybackPos.ini",
+                                     mx_playbackCurrentStep );
+            }
+        else {
+            maxigin_writeIntSetting( "maxigin_resumePlayback.ini",
+                                     0 );
+            }
+        
         mx_finalizeRecording();
 
         mx_stopPlayingMusic();
@@ -13139,6 +13152,52 @@ static char mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
 
 
 
+static void mx_checkStartupPlaybackResume( void ) {
+
+    char  resume  =  maxigin_readFlagSetting( "maxigin_resumePlayback.ini",
+                                              0 );
+    int   pos;
+
+    if( ! resume ) {
+        return;
+        }
+
+    pos = maxigin_readIntSetting( "maxigin_resumePlaybackPos.ini",
+                                  -1 );
+
+    if( pos == -1 ) {
+        return;
+        }
+
+    
+    mx_playbackBlockForwardSounds = 1;
+                    
+    mx_initPlayback();
+
+    /* jump to saved step */
+    mx_playbackJumpToStep( pos );
+
+    mx_playbackBlockForwardSounds = 0;
+
+    
+    /* start paused in that spot
+       
+       This is very useful when hot-reloading to tweak the position
+       of something mid-move */
+
+    mx_playbackPaused    = 1;
+    mx_playbackDirection = 1;
+    mx_playbackSpeed     = 1;
+
+    /* sound speed to 0 when paused */
+    mx_setSoundSpeedAndDirection( 0,
+                                  mx_playbackDirection );
+
+    
+    }
+
+
+
 
 void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
     char success;
@@ -13166,10 +13225,14 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
 
     mingin_endReadPersistData( readHandle );
 
-    
-    if( success ) {
-        mingin_log( "Restored live memory from saved game data.\n" );
+
+    if( !success ) {
+        return;
         }
+    mingin_log( "Restored live memory from saved game data.\n" );
+
+
+    mx_checkStartupPlaybackResume();
     }
 
 

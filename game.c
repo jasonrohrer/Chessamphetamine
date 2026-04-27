@@ -429,7 +429,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                         0,
                         0,
                         boardCenterX,
-                        boardCenterY );
+                        boardCenterY,
+                        0 );
         }
     
 
@@ -1483,8 +1484,8 @@ void maxiginGame_init( void ) {
 
     boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 12;
 
-    if(1) getStartBoard( &boardState );
-    if(0) getTestBoard( &boardState );
+    if(0) getStartBoard( &boardState );
+    if(1) getTestBoard( &boardState );
 
 
     REGISTER_VAL_MEM( boxPosX );

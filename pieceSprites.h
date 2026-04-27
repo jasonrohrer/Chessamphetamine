@@ -44,18 +44,47 @@ void drawExplodingPiece( ChessPiece  inPiece,
 
 
 
+/* used to mask out some board squares when drawing board state */
+typedef struct DrawBoardMask{
+
+        /* 1 to draw, 0 to skip */
+        char  grid[BH][BW];
+
+    } DrawBoardMask;
+
+
+
+void getRowsAboveMask( DrawBoardMask  *inMask,
+                       int             inRow );
+
+void getRowsBelowMask( DrawBoardMask  *inMask,
+                       int             inRow );
+
+void clearMaskSpot( DrawBoardMask  *inMask,
+                    int             inRow,
+                    int             inCol );
+
+void clearMaskRow( DrawBoardMask  *inMask,
+                   int             inRow );
+
+
+
 /* inMoveProgress goes from 0 to inMoveProgressMax
-   if inMoveProgressMax is 0, inMove is ignored */
-void drawBoardState( BoardState  *inState,
-                     char         inCheckmate,
-                     char         inStalemate,
-                     char         inDrawGame,
-                     int          inLoserColor,
-                     Move        *inMove,
-                     int          inMoveProgress,
-                     int          inMoveProgressMax,
-                     int          inBoardCenterX,
-                     int          inBoardCenterY );
+   if inMoveProgressMax is 0, inMove is ignored
+
+   if inMask is 0 (null), it is ignored
+*/
+void drawBoardState( BoardState     *inState,
+                     char            inCheckmate,
+                     char            inStalemate,
+                     char            inDrawGame,
+                     int             inLoserColor,
+                     Move           *inMove,
+                     int             inMoveProgress,
+                     int             inMoveProgressMax,
+                     int             inBoardCenterX,
+                     int             inBoardCenterY,
+                     DrawBoardMask  *inMask );
 
 
 
@@ -539,16 +568,17 @@ void drawExplodingPiece( ChessPiece  inPiece,
 
 
 
-void drawBoardState( BoardState  *inState,
-                     char         inCheckmate,
-                     char         inStalemate,
-                     char         inDrawGame,
-                     int          inLoserColor,
-                     Move        *inMove,
-                     int          inMoveProgress,
-                     int          inMoveProgressMax,
-                     int          inBoardCenterX,
-                     int          inBoardCenterY ) {
+void drawBoardState( BoardState     *inState,
+                     char            inCheckmate,
+                     char            inStalemate,
+                     char            inDrawGame,
+                     int             inLoserColor,
+                     Move           *inMove,
+                     int             inMoveProgress,
+                     int             inMoveProgressMax,
+                     int             inBoardCenterX,
+                     int             inBoardCenterY,
+                     DrawBoardMask  *inMask ) {
 
     int         x;
     int         y;
@@ -685,6 +715,14 @@ void drawBoardState( BoardState  *inState,
             int         pX;
             int         pY;
 
+            if( inMask != 0 ) {
+                if( inMask->grid[y][x] == 0 ) {
+                    /* skip this masked-out spot on board */
+                    continue;
+                    }
+                }
+            
+
             boardGetSquareCenter( inBoardCenterX,
                                   inBoardCenterY,
                                   y,
@@ -755,7 +793,99 @@ void drawBoardState( BoardState  *inState,
             }
         }
     }
+
+
+
+static void clearMask( DrawBoardMask  *inMask ) {
     
+    int  x;
+    int  y;
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            inMask->grid[y][x] = 0;
+            }
+        }
+    }
+
+
+
+void getRowsAboveMask( DrawBoardMask  *inMask,
+                       int             inRow ) {
+
+    int  x;
+    int  y;
+    
+    clearMask( inMask );
+
+    for( y = 0;
+         y <= inRow;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            inMask->grid[y][x] = 1;
+            }
+        }
+    }
+
+
+
+void getRowsBelowMask( DrawBoardMask  *inMask,
+                       int             inRow ) {
+    
+    int  x;
+    int  y;
+    
+    clearMask( inMask );
+
+    for( y = inRow;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            inMask->grid[y][x] = 1;
+            }
+        }
+    }
+
+
+
+void clearMaskSpot( DrawBoardMask  *inMask,
+                    int             inRow,
+                    int             inCol ) {
+
+    inMask->grid[ inRow ][ inCol ] = 0;
+    }
+
+
+
+void clearMaskRow( DrawBoardMask  *inMask,
+                   int             inRow ) {
+
+    int  x;
+
+    for( x = 0;
+         x < BW;
+         x ++ ) {
+
+        inMask->grid[ inRow ][ x ] = 0;
+        }
+    }
+
+
+
 
 #endif
 

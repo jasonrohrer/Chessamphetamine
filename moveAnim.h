@@ -310,7 +310,8 @@ static void defaultPieceDraw( int          inBoardCenterX,
                         inMoveProgress,
                         pixDist,
                         inBoardCenterX,
-                        inBoardCenterY );
+                        inBoardCenterY,
+                        0 );
         }
     else {
         /* move done, draw end state */
@@ -323,7 +324,8 @@ static void defaultPieceDraw( int          inBoardCenterX,
                         0,
                         0,
                         inBoardCenterX,
-                        inBoardCenterY );
+                        inBoardCenterY,
+                        0 );
 
         if( inCaptured->num > 0 ) {
 
@@ -846,7 +848,9 @@ static void laserRookDraw( int          inBoardCenterX,
 
             /* hold board still from now during laser fire */
 
-            int  laserProgress  =  inMoveProgress - laserStart;
+            int            laserProgress  =  inMoveProgress - laserStart;
+            DrawBoardMask  mask;
+            
 
             boardDraw( inBoardCenterX,
                        inBoardCenterY );
@@ -863,7 +867,44 @@ static void laserRookDraw( int          inBoardCenterX,
                So we can draw parts of rook (like shadow) under
                an up laser */
 
+            if( inMove->endPos[0] > 0 ) {
+
+                /* draw pieces north of rook row */
+                getRowsAboveMask( &mask,
+                                  inMove->endPos[0] - 1 );
             
+                drawBoardState( &midState,
+                                0,
+                                0,
+                                0,
+                                0,
+                                inMove,
+                                0,
+                                0,
+                                inBoardCenterX,
+                                inBoardCenterY,
+                                &mask );
+                }
+
+            
+
+            /* draw up laser behind rook*/
+
+            drawLaser( inBoardCenterX,
+                       inBoardCenterY,
+                       inMove->endPos[0],
+                       inMove->endPos[1],
+                       inMove->endPos[0] - 3,
+                       inMove->endPos[1],
+                       laserProgress );
+
+            /* draw rook's row and everything to south */
+            getRowsBelowMask( &mask,
+                              inMove->endPos[0] );
+
+            /* skip bottom row */
+            clearMaskRow( &mask,
+                          BH - 1 );
             
             drawBoardState( &midState,
                             0,
@@ -874,17 +915,10 @@ static void laserRookDraw( int          inBoardCenterX,
                             0,
                             0,
                             inBoardCenterX,
-                            inBoardCenterY );
+                            inBoardCenterY,
+                            &mask );
 
-            /* fixme:  draw the laser beams here! */
-
-            drawLaser( inBoardCenterX,
-                       inBoardCenterY,
-                       inMove->endPos[0],
-                       inMove->endPos[1],
-                       inMove->endPos[0] - 3,
-                       inMove->endPos[1],
-                       laserProgress );
+            /* draw remaining 4 lasers on top of those pieces */
 
 
             drawLaser( inBoardCenterX,
@@ -910,6 +944,23 @@ static void laserRookDraw( int          inBoardCenterX,
                        inMove->endPos[0] + 3,
                        inMove->endPos[1],
                        laserProgress );
+
+            /* now draw bottom row on top */
+
+            getRowsBelowMask( &mask,
+                              BH - 1 );
+
+            drawBoardState( &midState,
+                            0,
+                            0,
+                            0,
+                            0,
+                            inMove,
+                            0,
+                            0,
+                            inBoardCenterX,
+                            inBoardCenterY,
+                            &mask );
             
             }
         
@@ -932,7 +983,8 @@ static void laserRookDraw( int          inBoardCenterX,
                     0,
                     0,
                     inBoardCenterX,
-                    inBoardCenterY );
+                    inBoardCenterY,
+                    0 );
 
     if( inCaptured->num > 0 ) {
 

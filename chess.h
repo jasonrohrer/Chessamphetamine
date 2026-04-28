@@ -1384,12 +1384,15 @@ void getTestBoard( BoardState  *outState ) {
     clearBoard( outState );
 
     outState->grid[0][4] = king   | CHESS_BLACK;
-    if(0)outState->grid[1][3] = queen   | CHESS_BLACK;
-    if(0)outState->grid[1][2] = rook  | CHESS_BLACK;
-    if(1)outState->grid[0][7] = laserRook  | CHESS_BLACK;
+    if(1)outState->grid[3][4] = pawn   | CHESS_BLACK;
+    if(0)outState->grid[2][4] = pawn   | CHESS_BLACK;
+    if(1)outState->grid[4][3] = rook  | CHESS_BLACK;
+    if(1)outState->grid[4][5] = rook  | CHESS_BLACK;
+    if(1)outState->grid[4][4] = queen  | CHESS_BLACK;
+    if(1)outState->grid[6][4] = queen  | CHESS_BLACK;
 
-    if(1)outState->grid[6][7] = queen | CHESS_WHITE;
-    outState->grid[6][3] = king | CHESS_WHITE;
+    if(1)outState->grid[5][3] = laserRook | CHESS_WHITE;
+    outState->grid[7][0] = king | CHESS_WHITE;
     if(0)outState->grid[6][7] = rook | CHESS_WHITE;
 
     outState->nextToMove = CHESS_WHITE;

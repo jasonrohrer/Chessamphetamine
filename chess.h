@@ -31,6 +31,7 @@ enum{
     king,
     laserRook,
     laserPawn,
+    doublingPawn,
     NUM_CHESS_PIECES };
 
 #define  FIRST_CHESS_PIECE  pawn
@@ -55,7 +56,8 @@ static char pieceChars[ NUM_CHESS_PIECES ] = { '+',
                                                'q',
                                                'k',
                                                'l',
-                                               'o' };
+                                               'o',
+                                               'd' };
 
     
     
@@ -1186,7 +1188,8 @@ static PieceMoveFunction moveFunctions[ NUM_CHESS_PIECES ] = { noPieceMove,
                                                                queenMove,
                                                                kingMove,
                                                                laserRookMove,
-                                                               laserPawnMove };
+                                                               laserPawnMove,
+                                                               pawnMove };
 
 static char doesKingExist( BoardState  *inState,
                            int          inKingColor ) {
@@ -1355,7 +1358,7 @@ void getStartBoard( BoardState  *outState ) {
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[1][i] = pawn | CHESS_BLACK;
+        outState->grid[1][i] = doublingPawn | CHESS_BLACK;
         }
 
     outState->grid[7][0] = rook      | CHESS_WHITE;
@@ -1370,7 +1373,7 @@ void getStartBoard( BoardState  *outState ) {
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[6][i] = pawn | CHESS_WHITE;
+        outState->grid[6][i] = doublingPawn | CHESS_WHITE;
         }
 
     outState->nextToMove = CHESS_WHITE;
@@ -1384,7 +1387,7 @@ void getTestBoard( BoardState  *outState ) {
     clearBoard( outState );
 
     outState->grid[0][4] = king   | CHESS_BLACK;
-    if(1)outState->grid[3][4] = pawn   | CHESS_BLACK;
+    if(1)outState->grid[3][4] = doublingPawn   | CHESS_BLACK;
     if(0)outState->grid[2][4] = pawn   | CHESS_BLACK;
     if(1)outState->grid[4][3] = rook  | CHESS_BLACK;
     if(1)outState->grid[4][5] = rook  | CHESS_BLACK;

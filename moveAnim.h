@@ -1243,7 +1243,8 @@ static MoveAnimStepFunction stepFunctions[ NUM_CHESS_PIECES ] =
                                                 /* laser rook and pawn
                                                    use same */
                                                 laserNSEWStep,
-                                                laserNSEWStep };
+                                                laserNSEWStep,
+                                                defaultPieceStep };
 
 
 static MoveAnimDrawFunction drawFunctions[ NUM_CHESS_PIECES ] =
@@ -1257,7 +1258,8 @@ static MoveAnimDrawFunction drawFunctions[ NUM_CHESS_PIECES ] =
                                                 /* laser rook and pawn
                                                    use same */
                                                 laserNSEWDraw,
-                                                laserNSEWDraw };
+                                                laserNSEWDraw,
+                                                defaultPieceDraw };
 
 
 

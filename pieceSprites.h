@@ -119,15 +119,17 @@ static  int  pieceBottomHeight  =  6;
 
 static  int          pieceSpriteHandles[ NUM_CHESS_PIECES ];
 static  int          pieceOffsetY      [ NUM_CHESS_PIECES ];
-static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] = { "",
-                                                                "pawn.tga",
-                                                                "bishop.tga",
-                                                                "knight.tga",
-                                                                "rook.tga",
-                                                                "queen.tga",
-                                                                "king.tga",
-                                                                "rook.tga",
-                                                                "pawn.tga" };
+static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] =
+                                            { "",
+                                              "pawn.tga",
+                                              "bishop.tga",
+                                              "knight.tga",
+                                              "rook.tga",
+                                              "queen.tga",
+                                              "king.tga",
+                                              "rook.tga",
+                                              "pawn.tga",
+                                              "doublingPawn.tga" };
 
 /* extra sprite to be drawn on top of sprite with
    no piece-color modification,
@@ -144,6 +146,7 @@ static  int          pieceExtraOffsetY      [ NUM_CHESS_PIECES ][2] =
                                                   { 0, 0 },
                                                   { 2, 2 },
                                                   { -1, 0 },
+                                                  { 0, 0 },
                                                            };
 
 static  const char  *pieceSpriteExtraFiles  [ NUM_CHESS_PIECES ][2] =
@@ -164,7 +167,9 @@ static  const char  *pieceSpriteExtraFiles  [ NUM_CHESS_PIECES ][2] =
                                                   { "rookLasers.tga",
                                                     "rookLasers.tga" },
                                                   { "pawnLasersWhite.tga",
-                                                    "pawnLasersBlack.tga" }
+                                                    "pawnLasersBlack.tga" },
+                                                  { "",
+                                                    "" },
                                                     };
 
 

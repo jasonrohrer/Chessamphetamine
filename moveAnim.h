@@ -105,6 +105,8 @@ static  int          laserEndGlowSprites  [4];
 static  int          laserBackGlintSprite;
 static  int          laserBackGlintGlow;
 
+static  int          laserPawnTopGlintSprite;
+static  int          laserPawnTopGlintGlow;
 
 
 void moveAnimInit( void ) {
@@ -141,8 +143,11 @@ void moveAnimInit( void ) {
 
         }
 
-    laserBackGlintSprite = maxigin_initSprite( "laserBackSideGlint.tga" );
-    laserBackGlintGlow = maxigin_initSprite( "laserBackSideGlintGlow.tga" );
+    laserBackGlintSprite = maxigin_initSprite( "laserBackSideGlint.tga"     );
+    laserBackGlintGlow   = maxigin_initSprite( "laserBackSideGlintGlow.tga" );
+    
+    laserPawnTopGlintSprite = maxigin_initSprite( "laserPawnTopGlint.tga"     );
+    laserPawnTopGlintGlow   = maxigin_initSprite( "laserPawnTopGlintGlow.tga" );
     }
 
 
@@ -1000,7 +1005,33 @@ static void laserNSEWDraw( int          inBoardCenterX,
 
             drawPieceBaseAndGlowOnly( mainP,
                                       destX,
-                                      destY ); 
+                                      destY );
+
+            if( ( mainP & CHESS_TYPE_MASK  ) == laserPawn
+                &&
+                ( mainP & CHESS_COLOR_MASK ) == CHESS_WHITE ) {
+                /* special case of white (back-facing) laser pawn
+                   draw an extra glint on top */
+
+                int  glintOffsetY  =  -19;
+                
+
+                maxigin_drawResetColor();
+
+                maxigin_drawSprite( laserPawnTopGlintSprite,
+                                    destX,
+                                    destY + glintOffsetY );
+                maxigin_drawToggleAdditive( 1 );
+
+                maxigin_drawSetAlpha( getLaserGlowFade( laserProgress ) );
+
+                maxigin_drawSprite( laserPawnTopGlintGlow,
+                                    destX,
+                                    destY + glintOffsetY );
+                maxigin_drawResetColor();
+                maxigin_drawToggleAdditive( 0 );
+                }
+                
 
 
             /* draw everything to south,

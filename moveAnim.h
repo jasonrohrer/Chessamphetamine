@@ -102,6 +102,9 @@ static  int          laserEndSprites      [4];
 static  int          laserEndGlowSprites  [4];
 
 
+static  int          laserBackGlintSprite;
+static  int          laserBackGlintGlow;
+
 
 
 void moveAnimInit( void ) {
@@ -137,6 +140,9 @@ void moveAnimInit( void ) {
         laserMidGlowSprites[i] = maxigin_initSprite( laserMidGlowNames[i] );
 
         }
+
+    laserBackGlintSprite = maxigin_initSprite( "laserBackSideGlint.tga" );
+    laserBackGlintGlow = maxigin_initSprite( "laserBackSideGlintGlow.tga" );
     }
 
 
@@ -511,6 +517,18 @@ static char laserRookStep( BoardState  *inState,
     }
 
 
+
+static unsigned char getLaserGlowFade( int  inProgress ) {
+    long  glowFade;
+    long  progressRange = laserMax - laserStart;
+
+    glowFade = ( inProgress * 255 ) / progressRange;
+
+    return (unsigned char)glowFade;
+    }
+
+
+
 static void drawLaser( int  inBoardCenterX,
                        int  inBoardCenterY,
                        int  inFromRow,
@@ -542,11 +560,9 @@ static void drawLaser( int  inBoardCenterX,
     int   targetPosX;
     int   targetPosY;
 
-    long  glowFade;
-    long  progressRange = laserMax - laserStart;
+    unsigned char  glowFade  = getLaserGlowFade( inProgress );
 
-    glowFade = ( inProgress * 255 ) / progressRange;
-
+    
     boardGetSquareCenter( inBoardCenterX,
                           inBoardCenterY,
                           inFromRow,
@@ -671,7 +687,7 @@ static void drawLaser( int  inBoardCenterX,
 
         maxigin_drawToggleAdditive( 1 );
 
-        maxigin_drawSetAlpha( (unsigned char)glowFade );
+        maxigin_drawSetAlpha( glowFade );
             
         maxigin_drawSprite( laserShortGlowSprites[sI],
                             sourcePosX + xOffStart,
@@ -748,7 +764,7 @@ static void drawLaser( int  inBoardCenterX,
 
     maxigin_drawToggleAdditive( 1 );
 
-    maxigin_drawSetAlpha( (unsigned char)glowFade );
+    maxigin_drawSetAlpha( glowFade );
             
     maxigin_drawSprite( laserStartGlowSprites[sI],
                         sourcePosX + xOffStart,
@@ -823,8 +839,6 @@ static void laserRookDraw( int          inBoardCenterX,
     static  BoardState  midState;
     static  Captured    midCaptured;
 
-    (void)inNewState;
-
     if( inMoveProgress < laserMax ) {
 
         getLaserRookMidState( inState,
@@ -848,9 +862,62 @@ static void laserRookDraw( int          inBoardCenterX,
 
             /* hold board still from now during laser fire */
 
+            /* n, s, e, w order, with noPiece marking empty spots */
+            static  BoardPiece  laserCaptured[4];
+
             int            laserProgress  =  inMoveProgress - laserStart;
             DrawBoardMask  mask;
+            int            i;
+            int            destR          =  inMove->endPos[0];
+            int            destC          =  inMove->endPos[1];
+            int            southCapR;
+            int            southCapX;
+            int            southCapY;
             
+            for( i = 0;
+                 i < 4;
+                 i ++ ) {
+                
+                laserCaptured[i].p = noPiece;
+                }
+
+            for( i = 0;
+                 i < inCaptured->num;
+                 i ++ ) {
+
+                int  r  =  inCaptured->pieces[i].row;
+                int  c  =  inCaptured->pieces[i].col;
+
+                if( r == destR
+                    &&
+                    c == destC ) {
+                    /* our direct, non-laser capture */
+                    continue;
+                    }
+
+                if( r < destR ) {
+                    /* north */
+                    laserCaptured[0] = inCaptured->pieces[i];
+                    continue;
+                    }
+                if( r > destR ) {
+                    /* south */
+                    laserCaptured[1] = inCaptured->pieces[i];
+                    southCapR        = laserCaptured[1].row;
+                    
+                    continue;
+                    }
+                if( c > destC ) {
+                    /* east */
+                    laserCaptured[2] = inCaptured->pieces[i];
+                    continue;
+                    }
+                if( c < destC ) {
+                    /* west */
+                    laserCaptured[3] = inCaptured->pieces[i];
+                    continue;
+                    }
+                }
 
             boardDraw( inBoardCenterX,
                        inBoardCenterY );
@@ -886,25 +953,36 @@ static void laserRookDraw( int          inBoardCenterX,
                                 &mask );
                 }
 
+
+
+            if( laserCaptured[0].p != noPiece ) {
+
+                /* draw up laser behind rook*/
+
+                drawLaser( inBoardCenterX,
+                           inBoardCenterY,
+                           inMove->endPos[0],
+                           inMove->endPos[1],
+                           laserCaptured[0].row,
+                           laserCaptured[0].col,
+                           laserProgress );
+                }
             
 
-            /* draw up laser behind rook*/
+            /* draw rook's row and everything to south,
+               not including row of south captured piece */
 
-            drawLaser( inBoardCenterX,
-                       inBoardCenterY,
-                       inMove->endPos[0],
-                       inMove->endPos[1],
-                       inMove->endPos[0] - 3,
-                       inMove->endPos[1],
-                       laserProgress );
-
-            /* draw rook's row and everything to south */
-            getRowsBelowMask( &mask,
-                              inMove->endPos[0] );
-
-            /* skip bottom row */
-            clearMaskRow( &mask,
-                          BH - 1 );
+            if( laserCaptured[1].p != noPiece ) {
+                
+                getRowRangeMask( &mask,
+                                 inMove->endPos[0],
+                                 southCapR - 1 );
+                }
+            else {
+                getRowsBelowMask( &mask,
+                                  inMove->endPos[0] );
+                }
+            
             
             drawBoardState( &midState,
                             0,
@@ -917,50 +995,110 @@ static void laserRookDraw( int          inBoardCenterX,
                             inBoardCenterX,
                             inBoardCenterY,
                             &mask );
+
+            if( laserCaptured[1].p != noPiece ) {
+
+                boardGetSquareCenter( inBoardCenterX,
+                                      inBoardCenterY,
+                                      laserCaptured[1].row,
+                                      laserCaptured[1].col,
+                                      &southCapX,
+                                      &southCapY );
+
+                drawPieceShadowOnly( laserCaptured[1].p,
+                                     southCapX,
+                                     southCapY );
+                }
+            
 
             /* draw remaining 4 lasers on top of those pieces */
 
+            for( i = 1;
+                 i < 4;
+                 i ++ ) {
+                
+                if( laserCaptured[i].p != noPiece ) {
+                    drawLaser( inBoardCenterX,
+                               inBoardCenterY,
+                               inMove->endPos[0],
+                               inMove->endPos[1],
+                               laserCaptured[i].row,
+                               laserCaptured[i].col,
+                               laserProgress );
+                    }
+                }
+            
 
-            drawLaser( inBoardCenterX,
-                       inBoardCenterY,
-                       inMove->endPos[0],
-                       inMove->endPos[1],
-                       inMove->endPos[0] ,
-                       inMove->endPos[1] - 2,
-                       laserProgress );
+            /* now draw bottom section on top */
 
-            drawLaser( inBoardCenterX,
-                       inBoardCenterY,
-                       inMove->endPos[0],
-                       inMove->endPos[1],
-                       inMove->endPos[0],
-                       inMove->endPos[1] + 2,
-                       laserProgress );
+            if( laserCaptured[1].p != noPiece ) {
 
-            drawLaser( inBoardCenterX,
-                       inBoardCenterY,
-                       inMove->endPos[0],
-                       inMove->endPos[1],
-                       inMove->endPos[0] + 3,
-                       inMove->endPos[1],
-                       laserProgress );
+                /* row with south captured piece */
 
-            /* now draw bottom row on top */
+                int  glintOffsetY  =  -14;
 
-            getRowsBelowMask( &mask,
-                              BH - 1 );
+                getRowMask( &mask,
+                            southCapR );
 
-            drawBoardState( &midState,
-                            0,
-                            0,
-                            0,
-                            0,
-                            inMove,
-                            0,
-                            0,
-                            inBoardCenterX,
-                            inBoardCenterY,
-                            &mask );
+                /* don't draw piece itself, since it's shadow already drawn
+                   above */
+                clearMaskSpot( &mask,
+                               southCapR,
+                               destC );
+
+                drawBoardState( &midState,
+                                0,
+                                0,
+                                0,
+                                0,
+                                inMove,
+                                0,
+                                0,
+                                inBoardCenterX,
+                                inBoardCenterY,
+                                &mask );
+
+                /* now draw rest of piece, above shadow drawn behind
+                   laser before */
+                drawPieceBaseAndGlowOnly( laserCaptured[1].p,
+                                          southCapX,
+                                          southCapY );
+
+                /* now draw back-side glint */
+
+                maxigin_drawResetColor();
+
+                maxigin_drawSprite( laserBackGlintSprite,
+                                    southCapX,
+                                    southCapY + glintOffsetY );
+                maxigin_drawToggleAdditive( 1 );
+
+                maxigin_drawSetAlpha( getLaserGlowFade( laserProgress ) );
+
+                maxigin_drawSprite( laserBackGlintGlow,
+                                    southCapX,
+                                    southCapY + glintOffsetY );
+                maxigin_drawResetColor();
+                maxigin_drawToggleAdditive( 0 );
+
+                if( southCapR < BH - 1  ) {
+
+                    getRowsBelowMask( &mask,
+                                      southCapR + 1 );
+                    
+                    drawBoardState( &midState,
+                                    0,
+                                    0,
+                                    0,
+                                    0,
+                                    inMove,
+                                    0,
+                                    0,
+                                    inBoardCenterX,
+                                    inBoardCenterY,
+                                    &mask );
+                    } 
+                }
             
             }
         

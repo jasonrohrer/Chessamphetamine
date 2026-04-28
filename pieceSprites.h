@@ -28,6 +28,16 @@ void drawPiece( ChessPiece  inPiece,
                 int  inBaseCenterX,
                 int  inBaseCenterY );
 
+/* draws the shadow component of a piece */
+void drawPieceShadowOnly( ChessPiece  inPiece,
+                          int  inBaseCenterX,
+                          int  inBaseCenterY );
+
+/* draws the non-shadow component of a piece (base sprite and glow) */
+void drawPieceBaseAndGlowOnly( ChessPiece  inPiece,
+                               int  inBaseCenterX,
+                               int  inBaseCenterY );
+
 
 /* start with inProgress = 0
    returns new progress after one explosion step
@@ -53,6 +63,13 @@ typedef struct DrawBoardMask{
     } DrawBoardMask;
 
 
+
+void getRowRangeMask( DrawBoardMask  *inMask,
+                      int             inStartRow,
+                      int             inEndRow );
+
+void getRowMask( DrawBoardMask  *inMask,
+                 int             inRow );
 
 void getRowsAboveMask( DrawBoardMask  *inMask,
                        int             inRow );
@@ -439,6 +456,54 @@ void drawPiece( ChessPiece  inPiece,
     }
 
 
+
+void drawPieceShadowOnly( ChessPiece  inPiece,
+                          int  inBaseCenterX,
+                          int  inBaseCenterY ) {
+    
+    ChessPiece  rawP          =  inPiece & CHESS_TYPE_MASK;
+    
+    maxigin_drawSpriteShadowOnly( pieceSpriteHandles[ rawP ],
+                                  inBaseCenterX,
+                                  inBaseCenterY + pieceOffsetY[ rawP ] );
+    }
+
+
+
+void drawPieceBaseAndGlowOnly( ChessPiece  inPiece,
+                               int  inBaseCenterX,
+                               int  inBaseCenterY ) {
+    
+    ChessPiece  rawP          =  inPiece & CHESS_TYPE_MASK;
+    ChessPiece  c             =  inPiece & CHESS_COLOR_MASK;
+    int         cIndex        =  getPieceColorIndex( c );
+    
+    drawSetPieceColor( c );
+    
+    maxigin_drawBaseSprite( pieceSpriteHandles[ rawP ],
+                            inBaseCenterX,
+                            inBaseCenterY + pieceOffsetY[ rawP ] );
+    
+    maxigin_drawSpriteGlowOnly( pieceSpriteHandles[ rawP ],
+                                inBaseCenterX,
+                                inBaseCenterY + pieceOffsetY[ rawP ] );
+
+    maxigin_drawResetColor();
+
+    if( pieceSpriteExtraHandles[ rawP ][ cIndex ] != -1 ) {
+        /* for extra overlays, draw full sprite, including shadows, since
+           those shadows are over top of base piece itself */
+        
+        maxigin_drawSprite( pieceSpriteExtraHandles[ rawP ][ cIndex ],
+                            inBaseCenterX,
+                            inBaseCenterY
+                            + pieceOffsetY[ rawP ]
+                            + pieceExtraOffsetY[ rawP ][ cIndex ] );
+        }
+    }
+
+
+
 static  int  explodeMax  =  512;
 
 
@@ -816,16 +881,17 @@ static void clearMask( DrawBoardMask  *inMask ) {
 
 
 
-void getRowsAboveMask( DrawBoardMask  *inMask,
-                       int             inRow ) {
+void getRowRangeMask( DrawBoardMask  *inMask,
+                      int             inStartRow,
+                      int             inEndRow ) {
 
     int  x;
     int  y;
     
     clearMask( inMask );
 
-    for( y = 0;
-         y <= inRow;
+    for( y = inStartRow;
+         y <= inEndRow;
          y ++ ) {
         
         for( x = 0;
@@ -839,25 +905,33 @@ void getRowsAboveMask( DrawBoardMask  *inMask,
 
 
 
+void getRowMask( DrawBoardMask  *inMask,
+                 int             inRow ) {
+    
+    getRowRangeMask( inMask,
+                     inRow,
+                     inRow );
+    }
+
+
+
+void getRowsAboveMask( DrawBoardMask  *inMask,
+                       int             inRow ) {
+
+    getRowRangeMask( inMask,
+                     0,
+                     inRow );
+    }
+
+
+
 void getRowsBelowMask( DrawBoardMask  *inMask,
                        int             inRow ) {
-    
-    int  x;
-    int  y;
-    
-    clearMask( inMask );
 
-    for( y = inRow;
-         y < BH;
-         y ++ ) {
-        
-        for( x = 0;
-             x < BW;
-             x ++ ) {
 
-            inMask->grid[y][x] = 1;
-            }
-        }
+    getRowRangeMask( inMask,
+                     inRow,
+                     BH - 1 );
     }
 
 

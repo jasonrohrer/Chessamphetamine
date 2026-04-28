@@ -870,9 +870,14 @@ static void laserRookDraw( int          inBoardCenterX,
             int            i;
             int            destR          =  inMove->endPos[0];
             int            destC          =  inMove->endPos[1];
+            int            destX;
+            int            destY;
+            ChessPiece     rookP;
             int            southCapR;
             int            southCapX;
             int            southCapY;
+
+            rookP = inNewState->grid[ destR ][ destC ];
             
             for( i = 0;
                  i < 4;
@@ -954,6 +959,19 @@ static void laserRookDraw( int          inBoardCenterX,
                 }
 
 
+            /* draw rook's shadow behind any up laser */
+
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  destR,
+                                  destC,
+                                  &destX,
+                                  &destY );
+
+            drawPieceShadowOnly( rookP,
+                                 destX,
+                                 destY );
+
 
             if( laserCaptured[0].p != noPiece ) {
 
@@ -969,21 +987,15 @@ static void laserRookDraw( int          inBoardCenterX,
                 }
             
 
-            /* draw rook's row and everything to south,
-               not including row of south captured piece */
+            /* draw rook's row without rook */
 
-            if( laserCaptured[1].p != noPiece ) {
-                
-                getRowRangeMask( &mask,
-                                 inMove->endPos[0],
-                                 southCapR - 1 );
-                }
-            else {
-                getRowsBelowMask( &mask,
-                                  inMove->endPos[0] );
-                }
+            getRowMask( &mask,
+                        destR );
             
-            
+            clearMaskSpot( &mask,
+                           destR,
+                           destC );
+
             drawBoardState( &midState,
                             0,
                             0,
@@ -995,6 +1007,45 @@ static void laserRookDraw( int          inBoardCenterX,
                             inBoardCenterX,
                             inBoardCenterY,
                             &mask );
+
+            /* now draw rook in row on top of shadow drawn before */
+
+            drawPieceBaseAndGlowOnly( rookP,
+                                      destX,
+                                      destY ); 
+
+
+            /* draw everything to south,
+               not including row of south captured piece */
+
+            if( destR < BH - 1 ) {
+                
+
+                if( laserCaptured[1].p != noPiece ) {
+                
+                    getRowRangeMask( &mask,
+                                     destR + 1,
+                                     southCapR - 1 );
+                    }
+                else {
+                    getRowsBelowMask( &mask,
+                                      destR + 1 );
+                    }
+            
+            
+                drawBoardState( &midState,
+                                0,
+                                0,
+                                0,
+                                0,
+                                inMove,
+                                0,
+                                0,
+                                inBoardCenterX,
+                                inBoardCenterY,
+                                &mask );
+                }
+            
 
             if( laserCaptured[1].p != noPiece ) {
 
@@ -1030,62 +1081,24 @@ static void laserRookDraw( int          inBoardCenterX,
             
 
             /* now draw bottom section on top */
+            if( destR < BH - 1 ) {
+                
 
-            if( laserCaptured[1].p != noPiece ) {
+                if( laserCaptured[1].p != noPiece ) {
 
-                /* row with south captured piece */
+                    /* row with south captured piece */
 
-                int  glintOffsetY  =  -14;
+                    int  glintOffsetY  =  -14;
 
-                getRowMask( &mask,
-                            southCapR );
+                    getRowMask( &mask,
+                                southCapR );
 
-                /* don't draw piece itself, since it's shadow already drawn
-                   above */
-                clearMaskSpot( &mask,
-                               southCapR,
-                               destC );
+                    /* don't draw piece itself, since it's shadow already drawn
+                       above */
+                    clearMaskSpot( &mask,
+                                   southCapR,
+                                   destC );
 
-                drawBoardState( &midState,
-                                0,
-                                0,
-                                0,
-                                0,
-                                inMove,
-                                0,
-                                0,
-                                inBoardCenterX,
-                                inBoardCenterY,
-                                &mask );
-
-                /* now draw rest of piece, above shadow drawn behind
-                   laser before */
-                drawPieceBaseAndGlowOnly( laserCaptured[1].p,
-                                          southCapX,
-                                          southCapY );
-
-                /* now draw back-side glint */
-
-                maxigin_drawResetColor();
-
-                maxigin_drawSprite( laserBackGlintSprite,
-                                    southCapX,
-                                    southCapY + glintOffsetY );
-                maxigin_drawToggleAdditive( 1 );
-
-                maxigin_drawSetAlpha( getLaserGlowFade( laserProgress ) );
-
-                maxigin_drawSprite( laserBackGlintGlow,
-                                    southCapX,
-                                    southCapY + glintOffsetY );
-                maxigin_drawResetColor();
-                maxigin_drawToggleAdditive( 0 );
-
-                if( southCapR < BH - 1  ) {
-
-                    getRowsBelowMask( &mask,
-                                      southCapR + 1 );
-                    
                     drawBoardState( &midState,
                                     0,
                                     0,
@@ -1097,9 +1110,50 @@ static void laserRookDraw( int          inBoardCenterX,
                                     inBoardCenterX,
                                     inBoardCenterY,
                                     &mask );
-                    } 
-                }
+
+                    /* now draw rest of piece, above shadow drawn behind
+                       laser before */
+                    drawPieceBaseAndGlowOnly( laserCaptured[1].p,
+                                              southCapX,
+                                              southCapY );
+
+                    /* now draw back-side glint */
+
+                    maxigin_drawResetColor();
+
+                    maxigin_drawSprite( laserBackGlintSprite,
+                                        southCapX,
+                                        southCapY + glintOffsetY );
+                    maxigin_drawToggleAdditive( 1 );
+
+                    maxigin_drawSetAlpha( getLaserGlowFade( laserProgress ) );
+
+                    maxigin_drawSprite( laserBackGlintGlow,
+                                        southCapX,
+                                        southCapY + glintOffsetY );
+                    maxigin_drawResetColor();
+                    maxigin_drawToggleAdditive( 0 );
+
+                    if( southCapR < BH - 1  ) {
+
+                        getRowsBelowMask( &mask,
+                                          southCapR + 1 );
+                    
+                        drawBoardState( &midState,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        inMove,
+                                        0,
+                                        0,
+                                        inBoardCenterX,
+                                        inBoardCenterY,
+                                        &mask );
+                        } 
+                    }
             
+                }
             }
         
 

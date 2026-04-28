@@ -366,9 +366,9 @@ static int  laserMax    =  10000 + 512;
 
 
 
-/* gets state and captured list for laser rook after it moves but
+/* gets state and captured list for laser NSEW piece after it moves but
    before it fires */
-static void getLaserRookMidState( BoardState  *inState,
+static void getLaserNSEWMidState( BoardState  *inState,
                                   Move        *inMove,
                                   Captured    *inCaptured,
                                   BoardState  *outMidState,
@@ -393,7 +393,7 @@ static void getLaserRookMidState( BoardState  *inState,
             }
         }
 
-    /* put rook where it lands in outMidState */
+    /* put piece where it lands in outMidState */
     outMidState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ] = noPiece;
     outMidState->grid[ inMove->endPos  [0] ][ inMove->endPos  [1] ] =
         inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
@@ -401,8 +401,8 @@ static void getLaserRookMidState( BoardState  *inState,
 
 
     
-
-static char laserRookStep( BoardState  *inState,
+/* for NSEW laser pieces, including rook and pawn */
+static char laserNSEWStep( BoardState  *inState,
                            Move        *inMove,
                            Captured    *inCaptured,
                            BoardState  *inNewState,
@@ -422,13 +422,13 @@ static char laserRookStep( BoardState  *inState,
         
         char  baseMoveDone;
 
-        getLaserRookMidState( inState,
+        getLaserNSEWMidState( inState,
                               inMove,
                               inCaptured,
                               &midState,
                               &midCaptured );
 
-        /* use base move for rook move and for any direct-piece capture
+        /* use base move for main piece move and for any direct-piece capture
            explosion.
            Fire lasers after that's all done */
         
@@ -453,7 +453,7 @@ static char laserRookStep( BoardState  *inState,
                 &&
                 bp.col == inMove->endPos[1] ) {
 
-                /* single piece captured directly by rook, not by laser */
+                /* single piece captured directly by main piece, not by laser */
 
                 takeDefault = 1;
                 }
@@ -827,8 +827,8 @@ static void drawLaser( int  inBoardCenterX,
 
                        
 
-
-static void laserRookDraw( int          inBoardCenterX,
+/* for NSEW laser pieces, including rook and pawn */
+static void laserNSEWDraw( int          inBoardCenterX,
                            int          inBoardCenterY,
                            BoardState  *inState,
                            Move        *inMove,
@@ -841,7 +841,7 @@ static void laserRookDraw( int          inBoardCenterX,
 
     if( inMoveProgress < laserMax ) {
 
-        getLaserRookMidState( inState,
+        getLaserNSEWMidState( inState,
                               inMove,
                               inCaptured,
                               &midState,
@@ -872,12 +872,12 @@ static void laserRookDraw( int          inBoardCenterX,
             int            destC          =  inMove->endPos[1];
             int            destX;
             int            destY;
-            ChessPiece     rookP;
+            ChessPiece     mainP;
             int            southCapR;
             int            southCapX;
             int            southCapY;
 
-            rookP = inNewState->grid[ destR ][ destC ];
+            mainP = inNewState->grid[ destR ][ destC ];
             
             for( i = 0;
                  i < 4;
@@ -927,21 +927,9 @@ static void laserRookDraw( int          inBoardCenterX,
             boardDraw( inBoardCenterX,
                        inBoardCenterY );
 
-            /* test drawing up lasers behind rook */
-
-            /* fixme:  rook shadow overlaps, and it doesn't
-               look good, and anyway, we need to draw laser over
-               pieces BEHIND rook too.
-
-               So we need a version of drawBoardState that draws
-               rows, and that can skip pieces.
-
-               So we can draw parts of rook (like shadow) under
-               an up laser */
-
             if( inMove->endPos[0] > 0 ) {
 
-                /* draw pieces north of rook row */
+                /* draw pieces north of main piece row */
                 getRowsAboveMask( &mask,
                                   inMove->endPos[0] - 1 );
             
@@ -959,7 +947,7 @@ static void laserRookDraw( int          inBoardCenterX,
                 }
 
 
-            /* draw rook's shadow behind any up laser */
+            /* draw main piece's shadow behind any up laser */
 
             boardGetSquareCenter( inBoardCenterX,
                                   inBoardCenterY,
@@ -968,14 +956,14 @@ static void laserRookDraw( int          inBoardCenterX,
                                   &destX,
                                   &destY );
 
-            drawPieceShadowOnly( rookP,
+            drawPieceShadowOnly( mainP,
                                  destX,
                                  destY );
 
 
             if( laserCaptured[0].p != noPiece ) {
 
-                /* draw up laser behind rook*/
+                /* draw up laser behind main piece */
 
                 drawLaser( inBoardCenterX,
                            inBoardCenterY,
@@ -987,7 +975,7 @@ static void laserRookDraw( int          inBoardCenterX,
                 }
             
 
-            /* draw rook's row without rook */
+            /* draw main piece's row without main piece */
 
             getRowMask( &mask,
                         destR );
@@ -1008,9 +996,9 @@ static void laserRookDraw( int          inBoardCenterX,
                             inBoardCenterY,
                             &mask );
 
-            /* now draw rook in row on top of shadow drawn before */
+            /* now draw main piece in row on top of shadow drawn before */
 
-            drawPieceBaseAndGlowOnly( rookP,
+            drawPieceBaseAndGlowOnly( mainP,
                                       destX,
                                       destY ); 
 
@@ -1191,7 +1179,7 @@ static void laserRookDraw( int          inBoardCenterX,
 
             BoardPiece  *bp  =  &( inCaptured->pieces[ pn ] );
 
-            /* don't explot any captured pieces that our rook landed
+            /* don't explode any captured pieces that our main piece landed
                on directly, since those were already exploded by default move */
             if( bp->row != inMove->endPos[0]
                 ||
@@ -1221,8 +1209,10 @@ static MoveAnimStepFunction stepFunctions[ NUM_CHESS_PIECES ] =
                                                 defaultPieceStep,
                                                 defaultPieceStep,
                                                 defaultPieceStep,
-                                                laserRookStep,
-                                                defaultPieceStep };
+                                                /* laser rook and pawn
+                                                   use same */
+                                                laserNSEWStep,
+                                                laserNSEWStep };
 
 
 static MoveAnimDrawFunction drawFunctions[ NUM_CHESS_PIECES ] =
@@ -1233,8 +1223,10 @@ static MoveAnimDrawFunction drawFunctions[ NUM_CHESS_PIECES ] =
                                                 defaultPieceDraw,
                                                 defaultPieceDraw,
                                                 defaultPieceDraw,
-                                                laserRookDraw,
-                                                defaultPieceDraw };
+                                                /* laser rook and pawn
+                                                   use same */
+                                                laserNSEWDraw,
+                                                laserNSEWDraw };
 
 
 

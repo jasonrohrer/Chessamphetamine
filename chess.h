@@ -114,7 +114,60 @@ typedef struct Captured {
         BoardPiece pieces[ BN ];
         
     } Captured;
+
+
+
+/* for effects on board spaces */
+typedef  unsigned char  SpaceEffect;
+
+
+enum{
+    noEffect = 0,
+    multiply,
+    NUM_SPACE_EFFECTS };
+
+
+#define  FIRST_SPACE_EFFECT  multiply
+
+
+
+/* each space on the board can be possibly affected by all pieces
+   on the board.
+*/
+typedef struct ActiveSpaceEffects {
+
+        int               num;
+        SpaceEffect       effectType [ BN ];
+        int               effectValue[ BN ];
+        /* where on the board each effect came from */
+        int               sourceRow  [ BN ];
+        int               sourceCol  [ BN ];
+    } ActiveSpaceEffects;
+
+
+
+typedef struct FullBoardSpaceEffects {
         
+        ActiveSpaceEffects grid[ BH ][ BW ];
+        
+    } FullBoardSpaceEffects;
+
+    
+
+/* gets the per-square, non-compounded space effects for the whole board */
+void getSpaceEffects( BoardState             *inState,
+                      FullBoardSpaceEffects  *outEffects );
+
+
+/* computes the final compounded space effects for the whole board */
+void compoundSpaceEffects( BoardState             *inState,
+                           FullBoardSpaceEffects  *inEffects );
+
+        
+        
+        
+
+
 
 
 void chessInit( void );
@@ -2198,6 +2251,160 @@ char isForcedCheckmate( BoardState  *inState,
 
     return 0;
     }
+
+
+
+/* the signature for a piece effects function.
+   We define one of these for each piece type in the enum above.
+
+   Updates the passed-in effects map to include effects caused by a given
+   piece.
+*/
+typedef void (*PieceEffectsFunction)( ChessPiece              inPiece,
+                                      int                     inPieceRow,
+                                      int                     inPieceCol,
+                                      FullBoardSpaceEffects  *inEffects );
+
+
+
+static void nullEffects( ChessPiece              inPiece,
+                         int                     inPieceRow,
+                         int                     inPieceCol,
+                         FullBoardSpaceEffects  *inEffects ) {
+
+    (void)inPiece;
+    (void)inPieceRow;
+    (void)inPieceCol;
+    (void)inEffects;
+    }
+
+
+
+static void doublingPawnEffects( ChessPiece              inPiece,
+                                 int                     inPieceRow,
+                                 int                     inPieceCol,
+                                 FullBoardSpaceEffects  *inEffects ) {
+
+    int  yDir      = -1;
+    int  targetY;
+
+    if( ( inPiece & CHESS_COLOR_MASK ) == CHESS_BLACK ) {
+        yDir = 1;
+        }
+
+    targetY = inPieceRow + yDir;
+
+    if( targetY >= 0
+        &&
+        targetY < BH ) {
+
+        int  oldNum  =  inEffects->grid[ targetY ][ inPieceCol ].num;
+
+        inEffects->grid[ targetY ][ inPieceCol ].effectType [ oldNum ] =
+            multiply;
+        
+        inEffects->grid[ targetY ][ inPieceCol ].effectValue[ oldNum ] =
+            2;
+        
+        inEffects->grid[ targetY ][ inPieceCol ].sourceRow[ oldNum ] =
+            inPieceRow;
+        
+        inEffects->grid[ targetY ][ inPieceCol ].sourceCol[ oldNum ] =
+            inPieceCol;
+        
+
+        inEffects->grid[ targetY ][ inPieceCol ].num ++;
+        }
+
+    }
+
+
+static PieceEffectsFunction effectsFunctions[ NUM_CHESS_PIECES ] =
+                                                  { nullEffects,
+                                                    nullEffects,
+                                                    nullEffects,
+                                                    nullEffects,
+                                                    nullEffects,
+                                                    nullEffects,
+                                                    nullEffects,
+                                                    nullEffects,
+                                                    nullEffects,
+                                                    doublingPawnEffects, 
+                                                      };
+
+
+static void clearSpaceEffects( FullBoardSpaceEffects  *outEffects ) {
+
+    int  y;
+    int  x;
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            outEffects->grid[y][x].num = 0;
+            }
+        }
+    }
+
+
+void getSpaceEffects( BoardState             *inState,
+                      FullBoardSpaceEffects  *outEffects ) {
+
+    int  y;
+    int  x;
+
+    clearSpaceEffects( outEffects );
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            ChessPiece  p  = inState->grid[y][x];
+            ChessPiece  t;
+            ChessPiece  c;
+            
+            if( p == noPiece ) {
+                continue;
+                }
+
+            c = p & CHESS_COLOR_MASK;
+
+            if( c != inState->nextToMove ) {
+                /* only compute effects for next to move */
+                continue;
+                }
+            
+            t = p & CHESS_TYPE_MASK;
+
+            effectsFunctions[ t ]( p,
+                                   y,
+                                   x,
+                                   outEffects );
+            }
+        }
+    }
+
+
+
+void compoundSpaceEffects( BoardState             *inState,
+                           FullBoardSpaceEffects  *inEffects ) {
+
+    (void)inState;
+    (void)inEffects;
+
+    /* fixme:  compute compound effects while avoiding loops */
+
+    }
+
 
 
 

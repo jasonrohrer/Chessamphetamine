@@ -166,6 +166,7 @@ typedef struct TotalSpaceEffects {
 
 /* gets the per-square, non-compounded space effects for the whole board */
 void getSpaceEffects( BoardState             *inState,
+                      int                     inAffectedColor,
                       FullBoardSpaceEffects  *outEffects );
 
 
@@ -1079,6 +1080,7 @@ static int kingMove( BoardState     *inState,
 
 /* returns pointer to statically allocated effects totals */
 static int getTotalEffectsRepeatValue( BoardState  *inState,
+                                       int          inAffectedColor,
                                        int          inPieceRow,
                                        int          inPieceCol ) {
 
@@ -1086,6 +1088,7 @@ static int getTotalEffectsRepeatValue( BoardState  *inState,
     static  TotalSpaceEffects      totals;
     
     getSpaceEffects( inState,
+                     inAffectedColor,
                      &effects );
 
     compoundSpaceEffects( inPieceRow,
@@ -1151,6 +1154,7 @@ static int laserRookMove( BoardState     *inState,
         int          v;
         int          d;
         int          repeatVal  =  getTotalEffectsRepeatValue( s,
+                                                               inPieceColor,
                                                                r,
                                                                c );
         for( v = 0;
@@ -1253,6 +1257,7 @@ static int laserPawnMove( BoardState     *inState,
         int          dist;
         int          v;
         int          repeatVal  =  getTotalEffectsRepeatValue( s,
+                                                               inPieceColor,
                                                                r,
                                                                c );
         for( v = 0;
@@ -1509,6 +1514,8 @@ void getTestBoard( BoardState  *outState ) {
     clearBoard( outState );
 
     outState->grid[0][4] = king   | CHESS_BLACK;
+    outState->grid[1][4] = pawn   | CHESS_BLACK;
+    if(0)outState->grid[2][4] = pawn   | CHESS_BLACK;
     if(1)outState->grid[3][4] = pawn   | CHESS_BLACK;
     if(0)outState->grid[2][4] = pawn   | CHESS_BLACK;
     if(1)outState->grid[4][3] = rook  | CHESS_BLACK;
@@ -1520,6 +1527,7 @@ void getTestBoard( BoardState  *outState ) {
     outState->grid[7][0] = king | CHESS_WHITE;
     if(0)outState->grid[6][7] = rook | CHESS_WHITE;
     outState->grid[6][4] = doublingPawn  | CHESS_WHITE;
+    outState->grid[7][4] = doublingPawn  | CHESS_WHITE;
 
     outState->nextToMove = CHESS_WHITE;
     }
@@ -2421,6 +2429,7 @@ static void clearSpaceEffects( FullBoardSpaceEffects  *outEffects ) {
 
 
 void getSpaceEffects( BoardState             *inState,
+                      int                     inAffectedColor,
                       FullBoardSpaceEffects  *outEffects ) {
 
     int  y;
@@ -2446,7 +2455,7 @@ void getSpaceEffects( BoardState             *inState,
 
             c = p & CHESS_COLOR_MASK;
 
-            if( c != inState->nextToMove ) {
+            if( c != inAffectedColor ) {
                 /* only compute effects for next to move */
                 continue;
                 }

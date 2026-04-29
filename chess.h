@@ -409,8 +409,7 @@ static int pawnMove( BoardState     *inState,
             /* no capture */
             outCaptured[n].num = 0;
             
-            /* fixme:
-               promote to Queen in final row */
+            /* promote to Queen in final row */
 
             if( ( moveDir == 1
                   &&
@@ -957,8 +956,7 @@ static int queenMove( BoardState     *inState,
     }
 
 
-/* fixme:
-   king should never move into check */
+
 static int kingMove( BoardState     *inState,
                      unsigned char   inPieceColor,
                      int             inPieceRow,
@@ -1793,9 +1791,7 @@ static char getGreedyDepthMove( BoardState  *inState,
                                 BoardState  *outNewState,
                                 int         *outScore,
                                 int          inDepth ) {
-
-    /* fixme:  pay attention to limits on where piece can actually move */
-
+    
     /* look at all pieces that can move */
 
     /* index with inDepth here so deeper recursions don't clobber our

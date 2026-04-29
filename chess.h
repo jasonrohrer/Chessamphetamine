@@ -123,6 +123,7 @@ typedef  unsigned char  SpaceEffect;
 
 enum{
     noEffect = 0,
+    add,
     multiply,
     NUM_SPACE_EFFECTS };
 
@@ -152,6 +153,15 @@ typedef struct FullBoardSpaceEffects {
         
     } FullBoardSpaceEffects;
 
+
+
+
+typedef struct TotalSpaceEffects {
+        
+        int  effectValue[ NUM_SPACE_EFFECTS ];
+        
+    } TotalSpaceEffects;
+        
     
 
 /* gets the per-square, non-compounded space effects for the whole board */
@@ -159,9 +169,28 @@ void getSpaceEffects( BoardState             *inState,
                       FullBoardSpaceEffects  *outEffects );
 
 
-/* computes the final compounded space effects for the whole board */
-void compoundSpaceEffects( BoardState             *inState,
-                           FullBoardSpaceEffects  *inEffects );
+/* computes the final compounded space effects for a specific spot on the board
+   
+   Updates inOutEffects, compounding all squares that affect the target
+   space, while leaving other squares untouched.
+ */
+void compoundSpaceEffects( int                     inTargetRow,
+                           int                     inTargetCol,
+                           FullBoardSpaceEffects  *inOutEffects );
+
+
+/* computes the final total space effects for a specific spot on the board.
+
+   inEffects must be compounded for target space before calling this function.
+
+   Leaves inEffects untouched.
+
+   Puts totals into outTotals
+ */
+void getTotalSpaceEffects( int                     inTargetRow,
+                           int                     inTargetCol,
+                           FullBoardSpaceEffects  *inEffects,
+                           TotalSpaceEffects      *outTotals );
 
         
         
@@ -1048,6 +1077,37 @@ static int kingMove( BoardState     *inState,
 
 
 
+/* returns pointer to statically allocated effects totals */
+static int getTotalEffectsRepeatValue( BoardState  *inState,
+                                       int          inPieceRow,
+                                       int          inPieceCol ) {
+
+    static  FullBoardSpaceEffects  effects;
+    static  TotalSpaceEffects      totals;
+    
+    getSpaceEffects( inState,
+                     &effects );
+
+    compoundSpaceEffects( inPieceRow,
+                          inPieceCol,
+                          &effects );
+
+    getTotalSpaceEffects( inPieceRow,
+                          inPieceCol,
+                          &effects,
+                          &totals );
+
+    if( totals.effectValue[ multiply ] > 0 ) {
+        return totals.effectValue[ multiply ];
+        }
+    else {
+        return 1;
+        }
+    }
+
+
+
+
 /* same as rook move, but fires 4-way lasers at end */
 static int laserRookMove( BoardState     *inState,
                           unsigned char   inPieceColor,
@@ -1085,11 +1145,17 @@ static int laserRookMove( BoardState     *inState,
          i < numMoves;
          i ++ ) {
         
-        int          r  =  outDestRows[i];
-        int          c  =  outDestCols[i];
-        BoardState  *s  =  &( outStates[i] );
+        int          r          =  outDestRows[i];
+        int          c          =  outDestCols[i];
+        BoardState  *s          =  &( outStates[i] );
+        int          v;
         int          d;
-
+        int          repeatVal  =  getTotalEffectsRepeatValue( s,
+                                                               r,
+                                                               c );
+        for( v = 0;
+             v < repeatVal;
+             v++ )
         for( d = 0;
              d < 4;
              d ++ ) {
@@ -1181,12 +1247,17 @@ static int laserPawnMove( BoardState     *inState,
          i < numMoves;
          i ++ ) {
         
-        int          r  =  outDestRows[i];
-        int          c  =  outDestCols[i];
-        BoardState  *s  =  &( outStates[i] );
-
-        int  dist;
-
+        int          r          =  outDestRows[i];
+        int          c          =  outDestCols[i];
+        BoardState  *s          =  &( outStates[i] );
+        int          dist;
+        int          v;
+        int          repeatVal  =  getTotalEffectsRepeatValue( s,
+                                                               r,
+                                                               c );
+        for( v = 0;
+             v < repeatVal;
+             v++ )
         for( dist =  1;
              dist <= maxDist;
              dist ++ ) {
@@ -1438,16 +1509,17 @@ void getTestBoard( BoardState  *outState ) {
     clearBoard( outState );
 
     outState->grid[0][4] = king   | CHESS_BLACK;
-    if(1)outState->grid[3][4] = doublingPawn   | CHESS_BLACK;
+    if(1)outState->grid[3][4] = pawn   | CHESS_BLACK;
     if(0)outState->grid[2][4] = pawn   | CHESS_BLACK;
     if(1)outState->grid[4][3] = rook  | CHESS_BLACK;
     if(1)outState->grid[4][5] = rook  | CHESS_BLACK;
     if(1)outState->grid[4][4] = queen  | CHESS_BLACK;
-    if(1)outState->grid[6][4] = queen  | CHESS_BLACK;
+    if(0)outState->grid[6][4] = queen  | CHESS_BLACK;
 
     if(1)outState->grid[5][3] = laserRook | CHESS_WHITE;
     outState->grid[7][0] = king | CHESS_WHITE;
     if(0)outState->grid[6][7] = rook | CHESS_WHITE;
+    outState->grid[6][4] = doublingPawn  | CHESS_WHITE;
 
     outState->nextToMove = CHESS_WHITE;
     }
@@ -2391,14 +2463,188 @@ void getSpaceEffects( BoardState             *inState,
 
 
 
-void compoundSpaceEffects( BoardState             *inState,
-                           FullBoardSpaceEffects  *inEffects ) {
 
-    (void)inState;
-    (void)inEffects;
+
+static  char  visitFlags[ BH ][ BW ];
+
+
+
+static void compoundSpaceEffectsRec( int                     inTargetRow,
+                                     int                     inTargetCol,
+                                     FullBoardSpaceEffects  *inOutEffects ) {
+
+    ActiveSpaceEffects  *a  =
+        &( inOutEffects->grid[ inTargetRow ][ inTargetCol ] );
+
+    int                  i;
+
+    visitFlags[ inTargetRow ][ inTargetCol ] = 1;
+    
+    for( i = 0;
+         i < a->num;
+         i ++ ) {
+        
+        int                  value  =  a->effectValue[ i ];
+        int                  sR     =  a->sourceRow  [ i ];
+        int                  sC     =  a->sourceCol  [ i ];
+        ActiveSpaceEffects  *sA     =  &( inOutEffects->grid[ sR ][ sC ] );
+        int                  sI;
+        
+        if( ! visitFlags[ sR ][ sC ] ) {
+            /* recurse */
+            compoundSpaceEffectsRec( sR,
+                                     sC,
+                                     inOutEffects );
+            }
+        /* else already computed compound effects for this node
+           use those values without recomputing */
+
+        /* multiply happens first */
+        for( sI = 0;
+             sI < sA->num;
+             sI ++ ) {
+
+            if( sA->effectType[ sI ] == multiply ) {
+                value *= sA->effectValue[ sI ];
+                }
+            }
+        
+        /* then addition */
+        for( sI = 0;
+             sI < sA->num;
+             sI ++ ) {
+
+            if( sA->effectType[ sI ] == add ) {
+                value += sA->effectValue[ sI ];
+                }
+            }
+
+        a->effectValue[ i ] = value;
+        }
+    }
+    
+
+
+
+void compoundSpaceEffects( int                     inTargetRow,
+                           int                     inTargetCol,
+                           FullBoardSpaceEffects  *inOutEffects ) {
+    
+    int y;
+    int x;
+    
+    (void)inTargetRow;
+    (void)inTargetCol;
+    (void)inOutEffects;
 
     /* fixme:  compute compound effects while avoiding loops */
 
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+            visitFlags[ y ][ x ] = 0;
+            }
+        }
+
+    compoundSpaceEffectsRec( inTargetRow,
+                             inTargetCol,
+                             inOutEffects );
+
+    }
+
+
+
+void getTotalSpaceEffects( int                     inTargetRow,
+                           int                     inTargetCol,
+                           FullBoardSpaceEffects  *inEffects,
+                           TotalSpaceEffects      *outTotals ) {
+
+    ActiveSpaceEffects  *a          =
+        &( inEffects->grid[ inTargetRow ][ inTargetCol ] );
+    int                  i;
+    int                  repeatVal  =  1;
+    
+    for( i = 0;
+         i < NUM_SPACE_EFFECTS;
+         i ++ ) {
+        
+        outTotals->effectValue[ i ] = 0;
+        }
+
+    
+    /* multiply happens first */
+    for( i = 0;
+         i < a->num;
+         i ++ ) {
+
+        if( a->effectType[ i ] == multiply ) {
+            repeatVal *= a->effectValue[ i ];
+            }
+        }
+
+    /* then add */
+    for( i = 0;
+         i < a->num;
+         i ++ ) {
+
+        if( a->effectType[ i ] == add ) {
+            repeatVal += a->effectValue[i];
+            }
+        }
+
+    /* stick result in the multiply effect
+       which means the piece should repeat its special abilities this many
+       times */
+    outTotals->effectValue[ multiply ] = repeatVal;
+
+
+    /* now sum any non-mult and non-add effects */
+    for( i = 0;
+         i < a->num;
+         i ++ ) {
+
+        SpaceEffect  t  =  a->effectType[ i ];
+        
+        if( t == add ) {
+            continue;
+            }
+        
+        if( t == multiply ) {
+            continue;
+            }
+        outTotals->effectValue[ t ] += a->effectValue[i];
+        }
+
+    /* now multiply non-mult, non-add effects by repeat value */
+    if( repeatVal > 1 ) {
+        
+        for( i = 0;
+             i < a->num;
+             i ++ ) {
+
+            SpaceEffect  t  =  a->effectType[ i ];
+
+            if( outTotals->effectValue[ t ] == 0 ) {
+                continue;
+                }
+        
+            if( t == add ) {
+                continue;
+                }
+        
+            if( t == multiply ) {
+                continue;
+                }
+        
+            outTotals->effectValue[ t ] *= repeatVal;
+            }
+        }
+    
     }
 
 

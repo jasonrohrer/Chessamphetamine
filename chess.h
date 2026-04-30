@@ -1368,7 +1368,6 @@ static char doesKingExist( BoardState  *inState,
 
 static char isKingInCheck( BoardState  *inState,
                            int          inVictimKingColor ) {
-    /* fixme */
 
     int  y;
     int  x;
@@ -1541,6 +1540,7 @@ void getTestBoard( BoardState  *outState ) {
 
     outState->grid[0][4] = king   | CHESS_BLACK;
     outState->grid[1][4] = pawn   | CHESS_BLACK;
+    outState->grid[2][4] = pawn   | CHESS_BLACK;
     if(0)outState->grid[2][4] = pawn   | CHESS_BLACK;
     if(1)outState->grid[4][4] = rook   | CHESS_BLACK;
     if(0)outState->grid[2][4] = pawn   | CHESS_BLACK;
@@ -1557,10 +1557,13 @@ void getTestBoard( BoardState  *outState ) {
     if(0)outState->grid[6][5] = doublingPawn  | CHESS_WHITE;
     if(0)outState->grid[7][5] = doublingPawn  | CHESS_WHITE;
 
-    outState->grid[5][5] = addingRook  | CHESS_WHITE;
+    if(0)outState->grid[5][5] = addingRook  | CHESS_WHITE;
 
-    outState->grid[6][4] = addingRook  | CHESS_WHITE;
-    outState->grid[7][4] = doublingPawn  | CHESS_WHITE;
+    outState->grid[7][4] = addingRook  | CHESS_WHITE;
+    if(1)outState->grid[6][4] = doublingPawn  | CHESS_WHITE;
+    if(1)outState->grid[6][5] = addingRook  | CHESS_WHITE;
+
+    if(0)outState->grid[7][4] = addingRook  | CHESS_WHITE;
     
     outState->nextToMove = CHESS_WHITE;
     }
@@ -2445,8 +2448,8 @@ static void addingRookEffects( ChessPiece              inPiece,
          i < 4;
          i ++ ) {
 
-        int  targetX  =  inPieceRow + dX[i];
-        int  targetY  =  inPieceCol + dY[i];
+        int  targetX  =  inPieceCol + dX[i];
+        int  targetY  =  inPieceRow + dY[i];
 
         if( targetX >= 0
             &&
@@ -2584,15 +2587,24 @@ static void compoundSpaceEffectsRec( int                     inTargetRow,
         int                  sC     =  a->sourceCol  [ i ];
         ActiveSpaceEffects  *sA     =  &( inOutEffects->grid[ sR ][ sC ] );
         int                  sI;
-        
-        if( ! visitFlags[ sR ][ sC ] ) {
-            /* recurse */
-            compoundSpaceEffectsRec( sR,
-                                     sC,
-                                     inOutEffects );
+
+        if( visitFlags[ sR ][ sC ] ) {
+            /* skip any nodes we've already visited entirely
+               since we are computing compound rec for a specific space,
+               and each node should only affect the compound once  */
+
+            /* also clear these out entirely, since we've already hit them
+               before elsewhere in the tree affecting our target space */
+            a->effectType [ i ] = noEffect;
+            a->effectValue[ i ] = 0;
+            
+            continue;
             }
-        /* else already computed compound effects for this node
-           use those values without recomputing */
+        
+        /* recurse */
+        compoundSpaceEffectsRec( sR,
+                                 sC,
+                                 inOutEffects );
 
         /* multiply happens first */
         for( sI = 0;
@@ -2627,13 +2639,6 @@ void compoundSpaceEffects( int                     inTargetRow,
     
     int y;
     int x;
-    
-    (void)inTargetRow;
-    (void)inTargetCol;
-    (void)inOutEffects;
-
-    /* fixme:  compute compound effects while avoiding loops */
-
     
     for( y = 0;
          y < BH;

@@ -366,8 +366,8 @@ static void defaultPieceDraw( int          inBoardCenterX,
 
 /* push this way above progress range used by a default move,
    which would be diagonal pixels across board plus 512 for explosion */
-static int  laserStart  =  10000;
-static int  laserMax    =  10000 + 512;
+static int  laserStart     =  10000; 
+static int  laserPhaseLen  =  512;
 
 
 
@@ -405,6 +405,19 @@ static void getLaserNSEWMidState( BoardState  *inState,
     }
 
 
+
+static int getLaserHitDepth( int        inPieceRow,
+                             int        inPieceCol,
+                             Captured  *inCaptured ) {
+    /* fixme:
+       actually implement this */
+    (void)inPieceRow;
+    (void)inPieceCol;
+    (void)inCaptured;
+    return 4;
+    }
+
+
     
 /* for NSEW laser pieces, including rook and pawn */
 static char laserNSEWStep( BoardState  *inState,
@@ -419,7 +432,10 @@ static char laserNSEWStep( BoardState  *inState,
     char  takeDefault       =  0;
     int   r;
     int   explodeProgress;
-
+    int   laserMax;
+    int   laserHitDepth;
+    int   explodingMax;
+    
     (void)inNewState;
     
     
@@ -479,11 +495,27 @@ static char laserNSEWStep( BoardState  *inState,
         }
     
 
+    laserHitDepth = getLaserHitDepth( inMove->endPos[0],
+                                      inMove->endPos[1],
+                                      inCaptured );
 
+    laserMax = laserStart + laserPhaseLen * laserHitDepth;
+
+    explodingMax = getExplodingPieceMaxProgress();
+
+    (void)explodingMax;
+    
+    /* fixme:
+       how to interleave explosions ?
+    laserMax += ( laserHitDepth - 1 ) * explodingMax;
+    */
+    
     r = mingin_getStepsPerSecond();
 
     if( *inMoveProgress < laserMax ) {
         /* step laser animation itself */
+
+        int  old  =  *inMoveProgress;
         
         *inMoveProgress += ( 30 * 60 ) / r;
 
@@ -501,6 +533,17 @@ static char laserNSEWStep( BoardState  *inState,
                                          512 );
                 }
             }
+        else if( laserHitDepth > 1 ) {
+            /* see if we need to make another laser sound */
+            int  oldPhases = old / laserPhaseLen;
+            int  newPhases = *inMoveProgress / laserPhaseLen;
+
+            if( newPhases > oldPhases ) {
+                maxigin_playSoundEffect( laserSound,
+                                         512 );
+                }
+            }
+                
 
         return 0;
         }
@@ -525,7 +568,7 @@ static char laserNSEWStep( BoardState  *inState,
 
 static unsigned char getLaserGlowFade( int  inProgress ) {
     long  glowFade;
-    long  progressRange = laserMax - laserStart;
+    long  progressRange = laserPhaseLen;
 
     glowFade = ( inProgress * 255 ) / progressRange;
 
@@ -843,6 +886,13 @@ static void laserNSEWDraw( int          inBoardCenterX,
 
     static  BoardState  midState;
     static  Captured    midCaptured;
+
+    int  laserMax;
+    int  laserHitDepth  = getLaserHitDepth( inMove->endPos[0],
+                                            inMove->endPos[1],
+                                            inCaptured );
+
+    laserMax = laserStart + laserPhaseLen * laserHitDepth;
 
     if( inMoveProgress < laserMax ) {
 

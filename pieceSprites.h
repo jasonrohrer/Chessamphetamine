@@ -45,6 +45,9 @@ void drawPieceBaseAndGlowOnly( ChessPiece  inPiece,
 */
 int stepExplodingPiece( int  inProgress );
 
+int getExplodingPieceMaxProgress( void );
+
+
 void drawExplodingPiece( ChessPiece  inPiece,
                          int         inBoardCenterX,
                          int         inBoardCenterY,
@@ -542,7 +545,13 @@ int stepExplodingPiece( int  inProgress ) {
     }
 
 
-    
+
+int getExplodingPieceMaxProgress( void ) {
+    return explodeMax;
+    }
+
+
+
 void drawExplodingPiece( ChessPiece  inPiece,
                          int         inBoardCenterX,
                          int         inBoardCenterY,

@@ -1232,34 +1232,43 @@ static void laserNSEWDraw( int          inBoardCenterX,
 
 
 
-static MoveAnimStepFunction stepFunctions[ NUM_CHESS_PIECES ] =
-                                              { noPieceStep,
-                                                defaultPieceStep,
-                                                defaultPieceStep,
-                                                defaultPieceStep,
-                                                defaultPieceStep,
-                                                defaultPieceStep,
-                                                defaultPieceStep,
-                                                /* laser rook and pawn
-                                                   use same */
-                                                laserNSEWStep,
-                                                laserNSEWStep,
-                                                defaultPieceStep };
+static MoveAnimStepFunction stepFunctions[] =
+                                { noPieceStep,
+                                  defaultPieceStep,
+                                  defaultPieceStep,
+                                  defaultPieceStep,
+                                  defaultPieceStep,
+                                  defaultPieceStep,
+                                  defaultPieceStep,
+                                  /* laser rook and pawn
+                                     use same */
+                                  laserNSEWStep,
+                                  laserNSEWStep,
+                                  defaultPieceStep,
+                                  defaultPieceStep };
+
+CHECK_ARRAY_LENGTH( stepFunctions,
+                    NUM_CHESS_PIECES );
 
 
-static MoveAnimDrawFunction drawFunctions[ NUM_CHESS_PIECES ] =
-                                              { noPieceDraw,
-                                                defaultPieceDraw,
-                                                defaultPieceDraw,
-                                                defaultPieceDraw,
-                                                defaultPieceDraw,
-                                                defaultPieceDraw,
-                                                defaultPieceDraw,
-                                                /* laser rook and pawn
-                                                   use same */
-                                                laserNSEWDraw,
-                                                laserNSEWDraw,
-                                                defaultPieceDraw };
+
+static MoveAnimDrawFunction drawFunctions[] =
+                                { noPieceDraw,
+                                  defaultPieceDraw,
+                                  defaultPieceDraw,
+                                  defaultPieceDraw,
+                                  defaultPieceDraw,
+                                  defaultPieceDraw,
+                                  defaultPieceDraw,
+                                  /* laser rook and pawn
+                                     use same */
+                                  laserNSEWDraw,
+                                  laserNSEWDraw,
+                                  defaultPieceDraw,
+                                  defaultPieceDraw };
+
+CHECK_ARRAY_LENGTH( drawFunctions,
+                    NUM_CHESS_PIECES );
 
 
 

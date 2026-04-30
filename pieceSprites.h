@@ -119,7 +119,7 @@ static  int  pieceBottomHeight  =  6;
 
 static  int          pieceSpriteHandles[ NUM_CHESS_PIECES ];
 static  int          pieceOffsetY      [ NUM_CHESS_PIECES ];
-static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] =
+static  const char  *pieceSpriteFiles  [                  ] =
                                             { "",
                                               "pawn.tga",
                                               "bishop.tga",
@@ -129,27 +129,35 @@ static  const char  *pieceSpriteFiles  [ NUM_CHESS_PIECES ] =
                                               "king.tga",
                                               "rook.tga",
                                               "pawn.tga",
-                                              "doublingPawn.tga" };
+                                              "doublingPawn.tga",
+                                              "addingRook.tga" };
+CHECK_ARRAY_LENGTH( pieceSpriteFiles,
+                    NUM_CHESS_PIECES );
+
+
 
 /* extra sprite to be drawn on top of sprite with
    no piece-color modification,
    second index is 0 => white, 1 => black */
 
 static  int          pieceSpriteExtraHandles[ NUM_CHESS_PIECES ][2];
-static  int          pieceExtraOffsetY      [ NUM_CHESS_PIECES ][2] =
-                                                { { 0, 0 },
-                                                  { 0, 0 },
-                                                  { 0, 0 },
-                                                  { 0, 0 },
-                                                  { 0, 0 },
-                                                  { 0, 0 },
-                                                  { 0, 0 },
-                                                  { 2, 2 },
+static  int          pieceExtraOffsetY      [                  ][2] =
+                                                { {  0, 0 },
+                                                  {  0, 0 },
+                                                  {  0, 0 },
+                                                  {  0, 0 },
+                                                  {  0, 0 },
+                                                  {  0, 0 },
+                                                  {  0, 0 },
+                                                  {  2, 2 },
                                                   { -1, 0 },
-                                                  { 0, 0 },
+                                                  {  0, 0 },
+                                                  {  0, 0 },
                                                            };
+CHECK_ARRAY_LENGTH( pieceExtraOffsetY,
+                    NUM_CHESS_PIECES );
 
-static  const char  *pieceSpriteExtraFiles  [ NUM_CHESS_PIECES ][2] =
+static  const char  *pieceSpriteExtraFiles  [                  ][2] =
                                                 { { "",
                                                     "" },
                                                   { "",
@@ -170,7 +178,12 @@ static  const char  *pieceSpriteExtraFiles  [ NUM_CHESS_PIECES ][2] =
                                                     "pawnLasersBlack.tga" },
                                                   { "",
                                                     "" },
+                                                  { "",
+                                                    "" },
                                                     };
+CHECK_ARRAY_LENGTH( pieceSpriteExtraFiles,
+                    NUM_CHESS_PIECES );
+
 
 
 static  int          slashSpriteHandle      =  -1;

@@ -32,32 +32,14 @@ enum{
     laserRook,
     laserPawn,
     doublingPawn,
+    addingRook,
     NUM_CHESS_PIECES };
 
 #define  FIRST_CHESS_PIECE  pawn
 
 
-static int pieceValue[ NUM_CHESS_PIECES ] = { 0,
-                                              1,
-                                              3,
-                                              3,
-                                              5,
-                                              9,
-                                              999,
-                                              6,
-                                              2 };
 
 
-static char pieceChars[ NUM_CHESS_PIECES ] = { '+',
-                                               'p',
-                                               'b',
-                                               'n',
-                                               'r',
-                                               'q',
-                                               'k',
-                                               'l',
-                                               'o',
-                                               'd' };
 
     
     
@@ -279,6 +261,40 @@ char isCheckmate( BoardState  *inState,
 
 
 #ifdef CHESS_IMPLEMENTATION
+
+#include "arraySizeCheck.h"
+
+
+static int pieceValue[] = { 0,
+                            1,
+                            3,
+                            3,
+                            5,
+                            9,
+                            999,
+                            7,
+                            2,
+                            2,
+                            6 };
+
+CHECK_ARRAY_LENGTH( pieceValue,
+                    NUM_CHESS_PIECES );
+
+
+static char pieceChars[] = { '+',
+                             'p',
+                             'b',
+                             'n',
+                             'r',
+                             'q',
+                             'k',
+                             'l',
+                             'o',
+                             'd',
+                             'a' };
+
+CHECK_ARRAY_LENGTH( pieceChars,
+                    NUM_CHESS_PIECES );
 
 
 
@@ -1307,16 +1323,21 @@ static int laserPawnMove( BoardState     *inState,
 
 
 
-static PieceMoveFunction moveFunctions[ NUM_CHESS_PIECES ] = { noPieceMove,
-                                                               pawnMove,
-                                                               bishopMove,
-                                                               knightMove,
-                                                               rookMove,
-                                                               queenMove,
-                                                               kingMove,
-                                                               laserRookMove,
-                                                               laserPawnMove,
-                                                               pawnMove };
+static PieceMoveFunction moveFunctions[] = { noPieceMove,
+                                             pawnMove,
+                                             bishopMove,
+                                             knightMove,
+                                             rookMove,
+                                             queenMove,
+                                             kingMove,
+                                             laserRookMove,
+                                             laserPawnMove,
+                                             pawnMove,
+                                             rookMove };
+CHECK_ARRAY_LENGTH( moveFunctions,
+                    NUM_CHESS_PIECES );
+
+
 
 static char doesKingExist( BoardState  *inState,
                            int          inKingColor ) {
@@ -1516,19 +1537,26 @@ void getTestBoard( BoardState  *outState ) {
     outState->grid[0][4] = king   | CHESS_BLACK;
     outState->grid[1][4] = pawn   | CHESS_BLACK;
     if(0)outState->grid[2][4] = pawn   | CHESS_BLACK;
-    if(1)outState->grid[3][4] = pawn   | CHESS_BLACK;
+    if(1)outState->grid[4][4] = rook   | CHESS_BLACK;
     if(0)outState->grid[2][4] = pawn   | CHESS_BLACK;
     if(1)outState->grid[4][3] = rook  | CHESS_BLACK;
     if(1)outState->grid[4][5] = rook  | CHESS_BLACK;
-    if(1)outState->grid[4][4] = queen  | CHESS_BLACK;
+    if(1)outState->grid[3][5] = rook  | CHESS_BLACK;
+    if(1)outState->grid[2][5] = rook  | CHESS_BLACK;
+    if(1)outState->grid[3][4] = rook  | CHESS_BLACK;
     if(0)outState->grid[6][4] = queen  | CHESS_BLACK;
 
     if(1)outState->grid[5][3] = laserRook | CHESS_WHITE;
     outState->grid[7][0] = king | CHESS_WHITE;
     if(0)outState->grid[6][7] = rook | CHESS_WHITE;
-    outState->grid[6][4] = doublingPawn  | CHESS_WHITE;
-    outState->grid[7][4] = doublingPawn  | CHESS_WHITE;
+    if(0)outState->grid[6][5] = doublingPawn  | CHESS_WHITE;
+    if(0)outState->grid[7][5] = doublingPawn  | CHESS_WHITE;
 
+    outState->grid[5][5] = addingRook  | CHESS_WHITE;
+
+    outState->grid[6][4] = addingRook  | CHESS_WHITE;
+    outState->grid[7][4] = doublingPawn  | CHESS_WHITE;
+    
     outState->nextToMove = CHESS_WHITE;
     }
 
@@ -2395,18 +2423,71 @@ static void doublingPawnEffects( ChessPiece              inPiece,
     }
 
 
-static PieceEffectsFunction effectsFunctions[ NUM_CHESS_PIECES ] =
-                                                  { nullEffects,
-                                                    nullEffects,
-                                                    nullEffects,
-                                                    nullEffects,
-                                                    nullEffects,
-                                                    nullEffects,
-                                                    nullEffects,
-                                                    nullEffects,
-                                                    nullEffects,
-                                                    doublingPawnEffects, 
-                                                      };
+
+static void addingRookEffects( ChessPiece              inPiece,
+                               int                     inPieceRow,
+                               int                     inPieceCol,
+                               FullBoardSpaceEffects  *inEffects ) {
+
+    static  int  dX[4]  =  { 1, -1,  0,  0 };
+    static  int  dY[4]  =  { 0,  0, -1,  1 };
+
+    int  i;
+
+    (void)inPiece;
+
+    for( i = 0;
+         i < 4;
+         i ++ ) {
+
+        int  targetX  =  inPieceRow + dX[i];
+        int  targetY  =  inPieceCol + dY[i];
+
+        if( targetX >= 0
+            &&
+            targetX < BW
+            &&
+            targetY >= 0
+            &&
+            targetY < BH ) {
+
+            int  oldNum  =  inEffects->grid[ targetY ][ targetX ].num;
+
+            inEffects->grid[ targetY ][ targetX ].effectType [ oldNum ] =
+                add;
+        
+            inEffects->grid[ targetY ][ targetX ].effectValue[ oldNum ] =
+                1;
+        
+            inEffects->grid[ targetY ][ targetX ].sourceRow[ oldNum ] =
+                inPieceRow;
+        
+            inEffects->grid[ targetY ][ targetX ].sourceCol[ oldNum ] =
+                inPieceCol;
+        
+
+            inEffects->grid[ targetY ][ targetX ].num ++;
+            }
+        }
+    }
+
+
+
+static PieceEffectsFunction effectsFunctions[] =
+                                { nullEffects,
+                                  nullEffects,
+                                  nullEffects,
+                                  nullEffects,
+                                  nullEffects,
+                                  nullEffects,
+                                  nullEffects,
+                                  nullEffects,
+                                  nullEffects,
+                                  doublingPawnEffects,
+                                  addingRookEffects,
+                                    };
+CHECK_ARRAY_LENGTH( effectsFunctions,
+                    NUM_CHESS_PIECES );
 
 
 static void clearSpaceEffects( FullBoardSpaceEffects  *outEffects ) {

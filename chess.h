@@ -1407,6 +1407,11 @@ static char isKingInCheck( BoardState  *inState,
             int         n;
             int         i;
 
+            if( pColor == inVictimKingColor ) {
+                /* victim's king's color can't move to capture him, skip */
+                continue;
+                }
+
             /* check if any resulting states of moving this piece
                result in the king being captured */
             

@@ -94,6 +94,8 @@ static  int  beepDown     =  -1;
 static  int  shooshGood   =  -1;
 static  int  splatterBad  =  -1;
 static  int  laserSound   =  -1;
+static  int  addSound     =  -1;
+static  int  multSound    =  -1;
 
 static  const char  *laserShortSpriteNames[4] = { "laserShortLeft.tga",
                                                   "laserShortRight.tga",
@@ -156,6 +158,8 @@ void moveAnimInit( void ) {
     shooshGood = maxigin_initSoundEffect( "shooshGood.wav" );
     splatterBad = maxigin_initSoundEffect( "splatterBad.wav" );
     laserSound = maxigin_initSoundEffect( "laser_sd_16.wav" );
+    addSound = maxigin_initSoundEffect( "add_sd_5.wav" );
+    multSound = maxigin_initSoundEffect( "mult_sd_7.wav" );
 
     for( i = 0;
          i < 4;
@@ -461,8 +465,6 @@ static int getLaserHitDepth( int          inPieceRow,
                              int          inPieceCol,
                              Captured    *inCaptured,
                              HitBatches  *inHit ) {
-    /* fixme:
-       actually implement this */
     
     /* n s e w */
     int  dirCounts[4]  =  {  0,  0,  0,  0 };
@@ -535,6 +537,107 @@ static int getLaserHitDepth( int          inPieceRow,
 
 
 
+/* updates outMoveProgress, which must be alread inited
+   with any phases that happen before space effects */
+static void spaceEffectsInit( BoardState    *inState,
+                              Move          *inMove,
+                              AnimProgress  *outMoveProgress ) {
+
+    static  BoardState             postMoveState;
+    static  FullBoardSpaceEffects  effects;
+
+
+    /* gather these in order walking backwards from our target space */
+    static  SpaceEffect            types     [ BN ];
+    static  int                    values    [ BN ];
+    static  int                    targetRows[ BN ];
+    static  int                    targetCols[ BN ];
+
+    static  int                    frontierR [ BN ];
+    static  int                    frontierC [ BN ];
+    
+    int  numEffects   =  0;
+    int  numFrontier  =  0;
+    int  r            =  inMove->endPos[0];
+    int  c            =  inMove->endPos[1];
+    int  i;
+    
+    postMoveState = *inState;
+
+    postMoveState.grid[ r ][ c ] = 
+        postMoveState.grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
+    
+    postMoveState.grid[ inMove->startPos[0] ][ inMove->startPos[1] ] = noPiece;
+    
+    getSpaceEffects( &postMoveState,
+                     inState->nextToMove,
+                     &effects );
+
+    compoundSpaceEffects( r,
+                          c,
+                          &effects );
+
+    frontierR[0] = r;
+    frontierC[0] = c;
+    numFrontier  = 1;
+
+    while( numFrontier > 0 ) {
+
+        int                  fR  = frontierR[ numFrontier - 1 ];
+        int                  fC  = frontierC[ numFrontier - 1 ];
+        ActiveSpaceEffects  *a;
+        
+        numFrontier --;
+
+        a = &( effects.grid[ fR ][ fC ] );
+
+        for( i = 0;
+             i < a->num;
+             i ++ ) {
+
+            types     [ numEffects ] = a->effectType [ i ];
+            values    [ numEffects ] = a->effectValue[ i ];
+            targetRows[ numEffects ] = fR;
+            targetCols[ numEffects ] = fC;
+            
+            numEffects ++;
+
+            frontierR[ numFrontier ] = a->sourceRow[ i ];
+            frontierC[ numFrontier ] = a->sourceCol[ i ];
+
+            numFrontier++;
+            }
+        }
+
+    
+    /* stick them in as animation phases in reverse order */
+
+    for( i =  numEffects - 1;
+         i >= 0;
+         i -- ) {
+
+        int  p  =  outMoveProgress->numPhases;
+        
+        if( types[i] == add ) {
+            outMoveProgress->phases[ p ]      = addition;
+            outMoveProgress->params[ p ][ 0 ] = (short)( targetRows[i] );
+            outMoveProgress->params[ p ][ 1 ] = (short)( targetCols[i] );
+            outMoveProgress->params[ p ][ 2 ] = (short)( values[i] );
+            outMoveProgress->numPhases ++;
+            }
+        else if( types[i] == multiply ) {
+            outMoveProgress->phases[ p ]      = multiplier;
+            outMoveProgress->params[ p ][ 0 ] = (short)( targetRows[i] );
+            outMoveProgress->params[ p ][ 1 ] = (short)( targetCols[i] );
+            outMoveProgress->params[ p ][ 2 ] = (short)( values[i] );
+            outMoveProgress->numPhases ++;
+            } 
+        }
+    }
+
+
+
+
 static void laserPieceInit( BoardState    *inState,
                             Move          *inMove,
                             Captured      *inCaptured,
@@ -558,13 +661,19 @@ static void laserPieceInit( BoardState    *inState,
                                       &hit );
         }
     
-    outMoveProgress->numPhases     = 1 + numLasers * 2;
+    outMoveProgress->numPhases     = 1;
     outMoveProgress->phaseNumber   = 0;
     outMoveProgress->phaseProgress = 0;
 
     outMoveProgress->phases[0] = move;
 
-    p = 1;
+    spaceEffectsInit( inState,
+                      inMove,
+                      outMoveProgress );
+
+    p = outMoveProgress->numPhases;
+    
+    outMoveProgress->numPhases += numLasers * 2;
     
     for( i = 0;
          i < numLasers;
@@ -751,16 +860,32 @@ static char multiPhaseStep( BoardState    *inState,
             }
         }
     else if( p == multiplier ) {
-        /* fixme */
-        inMoveProgress->phaseNumber ++;
-        inMoveProgress->phaseProgress = 0;
 
+        if( inMoveProgress->phaseProgress == 0 ) {
+            maxigin_playSoundEffect( multSound,
+                                     512 );
+            }
+
+        inMoveProgress->phaseProgress += ( 30 * 60 ) / r;
+
+        if( inMoveProgress->phaseProgress >= laserPhaseLen ) {
+            inMoveProgress->phaseNumber ++;
+            inMoveProgress->phaseProgress = 0;
+            }
         }
     else if( p == addition ) {
-        /* fixme */
-        inMoveProgress->phaseNumber ++;
-        inMoveProgress->phaseProgress = 0;
+        
+        if( inMoveProgress->phaseProgress == 0 ) {
+            maxigin_playSoundEffect( addSound,
+                                     512 );
+            }
 
+        inMoveProgress->phaseProgress += ( 30 * 60 ) / r;
+
+        if( inMoveProgress->phaseProgress >= laserPhaseLen ) {
+            inMoveProgress->phaseNumber ++;
+            inMoveProgress->phaseProgress = 0;
+            }
         }
 
     
@@ -1480,12 +1605,99 @@ static void multiPhaseDraw( int            inBoardCenterX,
             }
         }
     else if( p == multiplier ) {
-        /* fixme */
 
+        /* fixme:
+           draw addition value and x symbol with font, and have it
+           float up above target piece
+
+           Currently just have a place-holder sprite being drawn */
+
+        int targetR        =  inMoveProgress->params[ pn ][ 0 ];
+        int targetC        =  inMoveProgress->params[ pn ][ 1 ];
+        int targetX;
+        int targetY;
+        int  glintOffsetY  =  -14;
+        
+        boardGetSquareCenter( inBoardCenterX,
+                              inBoardCenterY,
+                              targetR,
+                              targetC,
+                              &targetX,
+                              &targetY );
+        
+        boardDraw( inBoardCenterX,
+                   inBoardCenterY );
+
+        getCaptureMidState( inState,
+                            inMove,
+                            inCaptured,
+                            &midState,
+                            &midCaptured );
+    
+        drawBoardState( &midState,
+                        0,
+                        0,
+                        0,
+                        0,
+                        inMove,
+                        0,
+                        0,
+                        inBoardCenterX,
+                        inBoardCenterY,
+                        0 );
+
+        maxigin_drawResetColor();
+        
+        maxigin_drawSprite( laserBackGlintSprite,
+                            targetX,
+                            targetY+ glintOffsetY );
         }
     else if( p == addition ) {
-        /* fixme */
+        /* fixme:
+           draw addition value and + symbol with font, and have it
+           float up above target piece
 
+           Currently just have a place-holder sprite being drawn */
+        
+        int targetR        =  inMoveProgress->params[ pn ][ 0 ];
+        int targetC        =  inMoveProgress->params[ pn ][ 1 ];
+        int targetX;
+        int targetY;
+        int  glintOffsetY  =  -14;
+        
+        boardGetSquareCenter( inBoardCenterX,
+                              inBoardCenterY,
+                              targetR,
+                              targetC,
+                              &targetX,
+                              &targetY );
+        
+        boardDraw( inBoardCenterX,
+                   inBoardCenterY );
+
+        getCaptureMidState( inState,
+                            inMove,
+                            inCaptured,
+                            &midState,
+                            &midCaptured );
+    
+        drawBoardState( &midState,
+                        0,
+                        0,
+                        0,
+                        0,
+                        inMove,
+                        0,
+                        0,
+                        inBoardCenterX,
+                        inBoardCenterY,
+                        0 );
+
+        maxigin_drawResetColor();
+        
+        maxigin_drawSprite( laserBackGlintSprite,
+                            targetX,
+                            targetY+ glintOffsetY );
         }
     }
 

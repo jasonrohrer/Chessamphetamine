@@ -141,11 +141,12 @@ static int          lang_shoot;
 static int          lang_bomb;
 
 
-static BoardState   boardState;
-static Captured     postMoveCaptured;
-static BoardState   postMoveState;
-static Move         boardMove;
-static int          moveProgress;
+static BoardState    boardState;
+static Captured      postMoveCaptured;
+static BoardState    postMoveState;
+static Move          boardMove;
+static AnimProgress  moveProgress;
+
 
 static char         moveMade           =  0;
 static char         chessGameOver      =  0;
@@ -412,7 +413,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                            &boardMove,
                            &postMoveCaptured,
                            &postMoveState,
-                           moveProgress );
+                           &moveProgress );
         }
     else {
         /* draw non-moving board */
@@ -743,8 +744,12 @@ void maxiginGame_step( void ) {
                               &boardMove,
                               &postMoveCaptured,
                               &postMoveState ) ) {
-                
-                moveProgress = 0;
+
+                initMoveAnimation( &boardState,
+                                   &boardMove,
+                                   &postMoveCaptured,
+                                   &postMoveState,
+                                   &moveProgress );
                 moveMade     = 1;
                 }
             else {
@@ -785,7 +790,7 @@ void maxiginGame_step( void ) {
                                            &boardMove,
                                            &postMoveCaptured,
                                            &postMoveState,
-                                           & moveProgress );
+                                           &moveProgress );
 
         if( moveDone ) {
 
@@ -855,8 +860,6 @@ void maxiginGame_step( void ) {
             applyMove( &boardState,
                        &boardMove,
                        &postMoveState );
-            
-            moveProgress = 0;
             
             moveMade = 0;
             }

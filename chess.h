@@ -1562,7 +1562,8 @@ void getTestBoard( BoardState  *outState ) {
 
     outState->grid[7][4] = addingRook  | CHESS_WHITE;
     if(1)outState->grid[6][4] = doublingPawn  | CHESS_WHITE;
-    if(0)outState->grid[6][5] = addingRook  | CHESS_WHITE;
+    if(1)outState->grid[6][5] = addingRook  | CHESS_WHITE;
+    if(1)outState->grid[6][6] = addingRook  | CHESS_WHITE;
 
     if(0)outState->grid[7][4] = addingRook  | CHESS_WHITE;
     

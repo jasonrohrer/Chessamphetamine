@@ -555,12 +555,28 @@ static void spaceEffectsInit( BoardState    *inState,
 
     static  int                    frontierR [ BN ];
     static  int                    frontierC [ BN ];
+    static  char                   visitMap  [ BH ][ BW ];
     
     int  numEffects   =  0;
     int  numFrontier  =  0;
     int  r            =  inMove->endPos[0];
     int  c            =  inMove->endPos[1];
     int  i;
+    int  y;
+    int  x;
+
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+            visitMap[ y ][ x ] = 0;
+            }
+        }
+        
     
     postMoveState = *inState;
 
@@ -580,6 +596,8 @@ static void spaceEffectsInit( BoardState    *inState,
     frontierR[0] = r;
     frontierC[0] = c;
     numFrontier  = 1;
+
+    visitMap[ r ][ c ] = 1;
 
     while( numFrontier > 0 ) {
 
@@ -602,10 +620,13 @@ static void spaceEffectsInit( BoardState    *inState,
             
             numEffects ++;
 
-            frontierR[ numFrontier ] = a->sourceRow[ i ];
-            frontierC[ numFrontier ] = a->sourceCol[ i ];
+            if( ! visitMap[ a->sourceRow[ i ] ][ a->sourceCol[ i ] ] ) {
+                frontierR[ numFrontier ] = a->sourceRow[ i ];
+                frontierC[ numFrontier ] = a->sourceCol[ i ];
 
-            numFrontier++;
+                numFrontier++;
+                visitMap[ a->sourceRow[ i ] ][ a->sourceCol[ i ] ] =  1;
+                }
             }
         }
 

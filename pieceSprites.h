@@ -675,9 +675,9 @@ void drawBoardState( BoardState     *inState,
     int         x;
     int         y;
     char        drawMoving  =  0;
-    int         mX;
-    int         mY;
-    ChessPiece  mP;
+    int         mX          =  0;
+    int         mY          =  0;
+    ChessPiece  mP          =  noPiece;
 
 
     if( inStalemate ) {

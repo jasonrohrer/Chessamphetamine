@@ -483,9 +483,9 @@ static int getLaserHitDepth( int          inPieceRow,
          i < inCaptured->num;
          i ++ ) {
 
-        int  r             =  inCaptured->pieces[ i ].row;
-        int  c             =  inCaptured->pieces[ i ].col;
-        int  oldDirCount;
+        int  r            =  inCaptured->pieces[ i ].row;
+        int  c            =  inCaptured->pieces[ i ].col;
+        int  oldDirCount  =  0;
         
         if( r == inPieceRow
             &&
@@ -1275,9 +1275,9 @@ static void multiPhaseDraw( int            inBoardCenterX,
         int            destX;
         int            destY;
         ChessPiece     mainP;
-        int            southCapR;
-        int            southCapX;
-        int            southCapY;
+        int            southCapR      =  0;
+        int            southCapX      =  0;
+        int            southCapY      =  0;
         int            startC;
         int            endC;
             

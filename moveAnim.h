@@ -623,6 +623,34 @@ static void getCaptureMidState( BoardState  *inState,
     }
 
 
+/* mid state has pieces removed up to and included inCutoff in capture list */
+static void getCaptureCutoffMidState( BoardState  *inState,
+                                      Move        *inMove,
+                                      Captured    *inCaptured,
+                                      BoardState  *outMidState,
+                                      Captured    *outMidCaptured,
+                                      int          inCutoff ) {
+    int  i;
+    
+    *outMidState    = *inState;
+    *outMidCaptured = *inCaptured;
+
+    for( i = 0;
+         i <= inCutoff;
+         i++ ) {
+        
+        int  r  =  inCaptured->pieces[ i ].row;
+        int  c  =  inCaptured->pieces[ i ].col;
+        
+        outMidState->grid[ r ][ c ] = noPiece;
+        }
+
+    /* put piece where it lands in outMidState */
+    outMidState->grid[ inMove->endPos  [0] ][ inMove->endPos  [1] ] =
+        inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
+    }
+
+
 
 static char multiPhaseStep( BoardState    *inState,
                             Move          *inMove,
@@ -1172,6 +1200,413 @@ static void drawLaser( int  inBoardCenterX,
     maxigin_drawResetColor();
     }
 
+
+
+static void multiPhaseDraw( int            inBoardCenterX,
+                            int            inBoardCenterY,
+                            BoardState    *inState,
+                            Move          *inMove,
+                            Captured      *inCaptured,
+                            BoardState    *inNewState,
+                            AnimProgress  *inMoveProgress ) {
+
+    static  BoardState  midState;
+    static  Captured    midCaptured;
+    
+    int        pn  =  inMoveProgress->phaseNumber;
+    AnimPhase  p   =  inMoveProgress->phases[ inMoveProgress->phaseNumber ];
+    
+    (void)inNewState;
+    
+
+    if( p == move ) {
+        getCaptureMidState( inState,
+                            inMove,
+                            inCaptured,
+                            &midState,
+                            &midCaptured );
+
+        defaultPieceDraw( inBoardCenterX,
+                          inBoardCenterY,
+                          inState,
+                          inMove,
+                          &midCaptured,
+                          &midState,
+                          inMoveProgress );
+        }
+    else if( p == laser ) {
+
+        /* n, s, e, w order, with noPiece marking empty spots */
+        static  BoardPiece  laserCaptured[4];
+
+        int            laserProgress  =  inMoveProgress->phaseProgress;
+        DrawBoardMask  mask;
+        int            i;
+        int            destR          =  inMove->endPos[0];
+        int            destC          =  inMove->endPos[1];
+        int            destX;
+        int            destY;
+        ChessPiece     mainP;
+        int            southCapR;
+        int            southCapX;
+        int            southCapY;
+        int            startC;
+        int            endC;
+            
+            
+        mainP = inNewState->grid[ destR ][ destC ];
+            
+        for( i = 0;
+             i < 4;
+             i ++ ) {
+                
+            laserCaptured[i].p = noPiece;
+            }
+
+        startC = inMoveProgress->params[ pn ][ 0 ];
+        endC   = inMoveProgress->params[ pn ][ 1 ];
+
+        getCaptureCutoffMidState( inState,
+                                  inMove,
+                                  inCaptured,
+                                  &midState,
+                                  &midCaptured,
+                                  startC - 1 );
+
+        for( i = startC;
+             i <= endC;
+             i ++ ) {
+
+            int  r  =  inCaptured->pieces[i].row;
+            int  c  =  inCaptured->pieces[i].col;
+
+            if( r < destR ) {
+                /* north */
+                laserCaptured[0] = inCaptured->pieces[i];
+                continue;
+                }
+            if( r > destR ) {
+                /* south */
+                laserCaptured[1] = inCaptured->pieces[i];
+                southCapR        = laserCaptured[1].row;
+                    
+                continue;
+                }
+            if( c > destC ) {
+                /* east */
+                laserCaptured[2] = inCaptured->pieces[i];
+                continue;
+                }
+            if( c < destC ) {
+                /* west */
+                laserCaptured[3] = inCaptured->pieces[i];
+                continue;
+                }
+            }
+
+        boardDraw( inBoardCenterX,
+                   inBoardCenterY );
+
+        if( inMove->endPos[0] > 0 ) {
+
+            /* draw pieces north of main piece row */
+            getRowsAboveMask( &mask,
+                              inMove->endPos[0] - 1 );
+            
+            drawBoardState( &midState,
+                            0,
+                            0,
+                            0,
+                            0,
+                            inMove,
+                            0,
+                            0,
+                            inBoardCenterX,
+                            inBoardCenterY,
+                            &mask );
+            }
+
+
+        /* draw main piece's shadow behind any up laser */
+
+        boardGetSquareCenter( inBoardCenterX,
+                              inBoardCenterY,
+                              destR,
+                              destC,
+                              &destX,
+                              &destY );
+
+        drawPieceShadowOnly( mainP,
+                             destX,
+                             destY );
+
+
+        if( laserCaptured[0].p != noPiece ) {
+
+            /* draw up laser behind main piece */
+
+            drawLaser( inBoardCenterX,
+                       inBoardCenterY,
+                       inMove->endPos[0],
+                       inMove->endPos[1],
+                       laserCaptured[0].row,
+                       laserCaptured[0].col,
+                       laserProgress );
+            }
+            
+
+        /* draw main piece's row without main piece */
+
+        getRowMask( &mask,
+                    destR );
+            
+        clearMaskSpot( &mask,
+                       destR,
+                       destC );
+
+        drawBoardState( &midState,
+                        0,
+                        0,
+                        0,
+                        0,
+                        inMove,
+                        0,
+                        0,
+                        inBoardCenterX,
+                        inBoardCenterY,
+                        &mask );
+
+        /* now draw main piece in row on top of shadow drawn before */
+
+        drawPieceBaseAndGlowOnly( mainP,
+                                  destX,
+                                  destY );
+
+        if( ( mainP & CHESS_TYPE_MASK  ) == laserPawn
+            &&
+            ( mainP & CHESS_COLOR_MASK ) == CHESS_WHITE ) {
+            /* special case of white (back-facing) laser pawn
+               draw an extra glint on top */
+
+            int  glintOffsetY  =  -19;
+                
+
+            maxigin_drawResetColor();
+
+            maxigin_drawSprite( laserPawnTopGlintSprite,
+                                destX,
+                                destY + glintOffsetY );
+            maxigin_drawToggleAdditive( 1 );
+
+            maxigin_drawSetAlpha( getLaserGlowFade( laserProgress ) );
+
+            maxigin_drawSprite( laserPawnTopGlintGlow,
+                                destX,
+                                destY + glintOffsetY );
+            maxigin_drawResetColor();
+            maxigin_drawToggleAdditive( 0 );
+            }
+                
+
+
+        /* draw everything to south,
+           not including row of south captured piece */
+
+        if( destR < BH - 1 ) {
+                
+
+            if( laserCaptured[1].p != noPiece ) {
+                
+                getRowRangeMask( &mask,
+                                 destR + 1,
+                                 southCapR - 1 );
+                }
+            else {
+                getRowsBelowMask( &mask,
+                                  destR + 1 );
+                }
+            
+            
+            drawBoardState( &midState,
+                            0,
+                            0,
+                            0,
+                            0,
+                            inMove,
+                            0,
+                            0,
+                            inBoardCenterX,
+                            inBoardCenterY,
+                            &mask );
+            }
+            
+
+        if( laserCaptured[1].p != noPiece ) {
+
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  laserCaptured[1].row,
+                                  laserCaptured[1].col,
+                                  &southCapX,
+                                  &southCapY );
+
+            drawPieceShadowOnly( laserCaptured[1].p,
+                                 southCapX,
+                                 southCapY );
+            }
+            
+
+        /* draw remaining 4 lasers on top of those pieces */
+
+        for( i = 1;
+             i < 4;
+             i ++ ) {
+                
+            if( laserCaptured[i].p != noPiece ) {
+                drawLaser( inBoardCenterX,
+                           inBoardCenterY,
+                           inMove->endPos[0],
+                           inMove->endPos[1],
+                           laserCaptured[i].row,
+                           laserCaptured[i].col,
+                           laserProgress );
+                }
+            }
+            
+
+        /* now draw bottom section on top */
+        if( destR < BH - 1 ) {
+                
+
+            if( laserCaptured[1].p != noPiece ) {
+
+                /* row with south captured piece */
+
+                int  glintOffsetY  =  -14;
+
+                getRowMask( &mask,
+                            southCapR );
+
+                /* don't draw piece itself, since it's shadow already drawn
+                   above */
+                clearMaskSpot( &mask,
+                               southCapR,
+                               destC );
+
+                drawBoardState( &midState,
+                                0,
+                                0,
+                                0,
+                                0,
+                                inMove,
+                                0,
+                                0,
+                                inBoardCenterX,
+                                inBoardCenterY,
+                                &mask );
+
+                /* now draw rest of piece, above shadow drawn behind
+                   laser before */
+                drawPieceBaseAndGlowOnly( laserCaptured[1].p,
+                                          southCapX,
+                                          southCapY );
+
+                /* now draw back-side glint */
+
+                maxigin_drawResetColor();
+
+                maxigin_drawSprite( laserBackGlintSprite,
+                                    southCapX,
+                                    southCapY + glintOffsetY );
+                maxigin_drawToggleAdditive( 1 );
+
+                maxigin_drawSetAlpha( getLaserGlowFade( laserProgress ) );
+
+                maxigin_drawSprite( laserBackGlintGlow,
+                                    southCapX,
+                                    southCapY + glintOffsetY );
+                maxigin_drawResetColor();
+                maxigin_drawToggleAdditive( 0 );
+
+                if( southCapR < BH - 1  ) {
+
+                    getRowsBelowMask( &mask,
+                                      southCapR + 1 );
+                    
+                    drawBoardState( &midState,
+                                    0,
+                                    0,
+                                    0,
+                                    0,
+                                    inMove,
+                                    0,
+                                    0,
+                                    inBoardCenterX,
+                                    inBoardCenterY,
+                                    &mask );
+                    } 
+                }
+            
+            }
+        /* end of p == laser case */
+        }
+    else if( p == explode ) {
+
+        int  explodingProgress  =  inMoveProgress->phaseProgress;
+        int  startC;
+        int  endC;
+        int  c;
+
+        startC = inMoveProgress->params[ pn ][ 0 ];
+        endC   = inMoveProgress->params[ pn ][ 1 ];
+
+        getCaptureCutoffMidState( inState,
+                                  inMove,
+                                  inCaptured,
+                                  &midState,
+                                  &midCaptured,
+                                  endC );
+
+        boardDraw( inBoardCenterX,
+                   inBoardCenterY );
+    
+        /* draw mid state with captures up to this point removed */
+        drawBoardState( &midState,
+                        0,
+                        0,
+                        0,
+                        0,
+                        inMove,
+                        0,
+                        0,
+                        inBoardCenterX,
+                        inBoardCenterY,
+                        0 );
+            
+        for( c = startC;
+             c <= endC;
+             c ++ ) {
+
+            BoardPiece  *bp  =  &( inCaptured->pieces[ c ] );
+
+            drawExplodingPiece( bp->p,
+                                inBoardCenterX,
+                                inBoardCenterY,
+                                bp->row,
+                                bp->col,
+                                explodingProgress );
+            }
+        }
+    else if( p == multiplier ) {
+        /* fixme */
+
+        }
+    else if( p == addition ) {
+        /* fixme */
+
+        }
+    }
+
                        
 
 /* for NSEW laser pieces, including rook and pawn */
@@ -1612,9 +2047,9 @@ static MoveAnimStepFunction stepFunctions[] =
                                   defaultPieceStep,
                                   /* laser rook and pawn
                                      use same */
-                                  laserNSEWStep,
-                                  laserNSEWStep,
                                   multiPhaseStep,
+                                  laserNSEWStep,
+                                  defaultPieceStep,
                                   defaultPieceStep };
 
 CHECK_ARRAY_LENGTH( stepFunctions,
@@ -1632,7 +2067,7 @@ static MoveAnimDrawFunction drawFunctions[] =
                                   defaultPieceDraw,
                                   /* laser rook and pawn
                                      use same */
-                                  laserNSEWDraw,
+                                  multiPhaseDraw,
                                   laserNSEWDraw,
                                   defaultPieceDraw,
                                   defaultPieceDraw };

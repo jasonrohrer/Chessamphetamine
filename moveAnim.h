@@ -537,6 +537,7 @@ static int getLaserHitDepth( int          inPieceRow,
     }
 
 
+
 static void laserPieceInit( BoardState    *inState,
                             Move          *inMove,
                             Captured      *inCaptured,
@@ -646,6 +647,7 @@ static void getCaptureCutoffMidState( BoardState  *inState,
         }
 
     /* put piece where it lands in outMidState */
+    outMidState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ] = noPiece;
     outMidState->grid[ inMove->endPos  [0] ][ inMove->endPos  [1] ] =
         inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
     }
@@ -704,6 +706,41 @@ static char multiPhaseStep( BoardState    *inState,
         }
     else if( p == explode ) {
         int  explodeProgress  =  inMoveProgress->phaseProgress;
+
+        if( explodeProgress == 0 ) {
+            int  startC     =  inMoveProgress->params[ pn ][ 0 ];
+            int  endC       =  inMoveProgress->params[ pn ][ 1 ];
+            int  oldScore;
+            int  newScore;
+
+            getCaptureCutoffMidState( inState,
+                                      inMove,
+                                      inCaptured,
+                                      &midState,
+                                      &midCaptured,
+                                      startC -  1 );
+
+            oldScore = getScore( &midState );
+
+            getCaptureCutoffMidState( inState,
+                                      inMove,
+                                      inCaptured,
+                                      &midState,
+                                      &midCaptured,
+                                      endC );
+            
+            newScore = getScore( &midState );
+
+            if( oldScore <= newScore ) {
+                maxigin_playSoundEffect( shooshGood,
+                                         512 );
+                }
+            else {
+                maxigin_playSoundEffect( splatterBad,
+                                         512 );
+                }
+            }
+        
 
         explodeProgress = stepExplodingPiece( explodeProgress );
 

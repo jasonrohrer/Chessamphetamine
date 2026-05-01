@@ -452,14 +452,150 @@ static int  laserStart     =  10000;
 static int  laserPhaseLen  =  512;
 
 
+typedef struct HitBatches {
+        /* at most BMAX batches */
+        /* indices into captured list */
+        int  startC[ BMAX ];
+        int  endC  [ BMAX ];
+    } HitBatches;
+        
 
-/* gets state and captured list for laser NSEW piece after it moves but
+static int getLaserHitDepth( int          inPieceRow,
+                             int          inPieceCol,
+                             Captured    *inCaptured,
+                             HitBatches  *inHit ) {
+    /* fixme:
+       actually implement this */
+    
+    /* n s e w */
+    int  dirCounts[4]  =  {  0,  0,  0,  0 };
+    int  i;
+    int  max;
+
+    for( i = 0;
+         i < BMAX;
+         i ++ ) {
+        
+        inHit->startC[i] = -1;
+        inHit->endC  [i] = -1;
+        }
+        
+    for( i = 0;
+         i < inCaptured->num;
+         i ++ ) {
+
+        int  r             =  inCaptured->pieces[ i ].row;
+        int  c             =  inCaptured->pieces[ i ].col;
+        int  oldDirCount;
+        
+        if( r == inPieceRow
+            &&
+            c == inPieceCol ) {
+            /* direct non-laser capture */
+            continue;
+            }
+        
+        if( r < inPieceRow ) {
+            oldDirCount = dirCounts[0];
+            dirCounts[0] ++;
+            }
+        else if( r > inPieceRow ) {
+            oldDirCount = dirCounts[1];
+            dirCounts[1] ++;
+            }
+        else if( c < inPieceCol ) {
+            oldDirCount = dirCounts[2];
+            dirCounts[3] ++;
+            }
+        else if( c > inPieceRow ) {
+            oldDirCount = dirCounts[2];
+            dirCounts[2] ++;
+            }
+
+        /* update our batches
+           This is a tricky way to do this, where oldDirCount
+           tells us which batch to update... we can have up to four
+           pieces in each batch, one from each NSEW direction */
+        if( inHit->startC[ oldDirCount ] == -1 ) {
+            inHit->startC[ oldDirCount ] = i;
+            }
+        
+        inHit->endC[ oldDirCount ] = i;
+        }
+
+    max = 0;
+
+    for( i = 0;
+         i < 4;
+         i ++ ) {
+        if( dirCounts[i] > max ) {
+            max = dirCounts[i];
+            }
+        }
+    
+    return max;
+    }
+
+
+static void laserPieceInit( BoardState    *inState,
+                            Move          *inMove,
+                            Captured      *inCaptured,
+                            BoardState    *inNewState,
+                            AnimProgress  *outMoveProgress ) {
+
+    static  HitBatches  hit;
+    
+    int  numLasers  =  0;
+    int  i;
+    int  p;
+
+    (void)inState;
+    (void)inNewState;
+    
+    if( inCaptured->num > 0 ) {
+
+        numLasers = getLaserHitDepth( inMove->endPos[0],
+                                      inMove->endPos[1],
+                                      inCaptured,
+                                      &hit );
+        }
+    
+    outMoveProgress->numPhases     = 1 + numLasers * 2;
+    outMoveProgress->phaseNumber   = 0;
+    outMoveProgress->phaseProgress = 0;
+
+    outMoveProgress->phases[0] = move;
+
+    p = 1;
+    
+    for( i = 0;
+         i < numLasers;
+         i ++ ) {
+
+        short  startC  =  (short)( hit.startC[i] );
+        short  endC    =  (short)( hit.endC  [i] );
+        
+        outMoveProgress->phases[p]    = laser;
+        outMoveProgress->params[p][0] = startC;
+        outMoveProgress->params[p][1] = endC;
+        p++;
+
+        outMoveProgress->phases[p]    = explode;
+        outMoveProgress->params[p][0] = startC;
+        outMoveProgress->params[p][1] = endC;
+        p++;
+        }   
+    }
+
+
+
+/* gets state and captured list for special piece after it moves but
    before it fires */
-static void getLaserNSEWMidState( BoardState  *inState,
-                                  Move        *inMove,
-                                  Captured    *inCaptured,
-                                  BoardState  *outMidState,
-                                  Captured    *outMidCaptured ) {
+static void getCaptureMidState( BoardState  *inState,
+                                Move        *inMove,
+                                Captured    *inCaptured,
+                                BoardState  *outMidState,
+                                Captured    *outMidCaptured ) {
 
     *outMidState    = *inState;
     *outMidCaptured = *inCaptured;
@@ -488,16 +624,95 @@ static void getLaserNSEWMidState( BoardState  *inState,
 
 
 
-static int getLaserHitDepth( int        inPieceRow,
-                             int        inPieceCol,
-                             Captured  *inCaptured ) {
-    /* fixme:
-       actually implement this */
-    (void)inPieceRow;
-    (void)inPieceCol;
-    (void)inCaptured;
-    return 4;
+static char multiPhaseStep( BoardState    *inState,
+                            Move          *inMove,
+                            Captured      *inCaptured,
+                            BoardState    *inNewState,
+                            AnimProgress  *inMoveProgress ) {
+
+    static  BoardState  midState;
+    static  Captured    midCaptured;
+    
+    int        pn  =  inMoveProgress->phaseNumber;
+    AnimPhase  p   =  inMoveProgress->phases[ pn ];
+    int        r   = mingin_getStepsPerSecond();
+    
+    (void)inNewState;
+    
+
+    if( p == move ) {
+        char  baseMoveDone;
+
+        getCaptureMidState( inState,
+                            inMove,
+                            inCaptured,
+                            &midState,
+                            &midCaptured );
+
+        /* use base move for main piece move and for any direct-piece capture
+           explosion */
+        
+        baseMoveDone = defaultPieceStep( inState,
+                                         inMove,
+                                         &midCaptured,
+                                         &midState,
+                                         inMoveProgress );
+        if( baseMoveDone ) {
+            inMoveProgress->phaseNumber ++;
+            inMoveProgress->phaseProgress = 0;
+            }
+        }
+    else if( p == laser ) {
+        if( inMoveProgress->phaseProgress == 0 ) {
+            maxigin_playSoundEffect( laserSound,
+                                     512 );
+            }
+        inMoveProgress->phaseProgress += ( 30 * 60 ) / r;
+
+        if( inMoveProgress->phaseProgress >= laserPhaseLen ) {
+            inMoveProgress->phaseNumber ++;
+            inMoveProgress->phaseProgress = 0;
+            }
+        }
+    else if( p == explode ) {
+        int  explodeProgress  =  inMoveProgress->phaseProgress;
+
+        explodeProgress = stepExplodingPiece( explodeProgress );
+
+        if( explodeProgress == -1 ) {
+            /* done exploding */
+            inMoveProgress->phaseNumber ++;
+            inMoveProgress->phaseProgress = 0;
+            }
+        else {
+            inMoveProgress->phaseProgress = explodeProgress;
+            }
+        }
+    else if( p == multiplier ) {
+        /* fixme */
+        inMoveProgress->phaseNumber ++;
+        inMoveProgress->phaseProgress = 0;
+
+        }
+    else if( p == addition ) {
+        /* fixme */
+        inMoveProgress->phaseNumber ++;
+        inMoveProgress->phaseProgress = 0;
+
+        }
+
+    
+    if( inMoveProgress->phaseNumber >= inMoveProgress->numPhases ) {
+        /* done with all phases */
+        return 1;
+        }
+    else {
+        return 0;
+        }
+    
     }
+
+
 
 
     
@@ -510,6 +725,7 @@ static char laserNSEWStep( BoardState    *inState,
 
     static  BoardState  midState;
     static  Captured    midCaptured;
+    static  HitBatches  hit;
     
     char  takeDefault       =  0;
     int   r;
@@ -525,11 +741,11 @@ static char laserNSEWStep( BoardState    *inState,
         
         char  baseMoveDone;
 
-        getLaserNSEWMidState( inState,
-                              inMove,
-                              inCaptured,
-                              &midState,
-                              &midCaptured );
+        getCaptureMidState( inState,
+                            inMove,
+                            inCaptured,
+                            &midState,
+                            &midCaptured );
 
         /* use base move for main piece move and for any direct-piece capture
            explosion.
@@ -579,7 +795,8 @@ static char laserNSEWStep( BoardState    *inState,
 
     laserHitDepth = getLaserHitDepth( inMove->endPos[0],
                                       inMove->endPos[1],
-                                      inCaptured );
+                                      inCaptured,
+                                      &hit );
 
     laserMax = laserStart + laserPhaseLen * laserHitDepth;
 
@@ -968,21 +1185,23 @@ static void laserNSEWDraw( int            inBoardCenterX,
 
     static  BoardState  midState;
     static  Captured    midCaptured;
-
+    static  HitBatches  hit;
+    
     int  laserMax;
     int  laserHitDepth  = getLaserHitDepth( inMove->endPos[0],
                                             inMove->endPos[1],
-                                            inCaptured );
+                                            inCaptured,
+                                            &hit );
 
     laserMax = laserStart + laserPhaseLen * laserHitDepth;
 
     if( inMoveProgress->phaseProgress < laserMax ) {
 
-        getLaserNSEWMidState( inState,
-                              inMove,
-                              inCaptured,
-                              &midState,
-                              &midCaptured );
+        getCaptureMidState( inState,
+                            inMove,
+                            inCaptured,
+                            &midState,
+                            &midCaptured );
         
 
         if( inMoveProgress->phaseProgress < laserStart ) {
@@ -1373,8 +1592,8 @@ static MoveAnimInitFunction initFunctions[] =
                                   defaultPieceInit,
                                   /* laser rook and pawn
                                      use same */
-                                  defaultPieceInit,
-                                  defaultPieceInit,
+                                  laserPieceInit,
+                                  laserPieceInit,
                                   defaultPieceInit,
                                   defaultPieceInit };
 
@@ -1395,7 +1614,7 @@ static MoveAnimStepFunction stepFunctions[] =
                                      use same */
                                   laserNSEWStep,
                                   laserNSEWStep,
-                                  defaultPieceStep,
+                                  multiPhaseStep,
                                   defaultPieceStep };
 
 CHECK_ARRAY_LENGTH( stepFunctions,

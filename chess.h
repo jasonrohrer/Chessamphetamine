@@ -53,6 +53,7 @@ enum{
 /* rows, columns, and num square */
 #define  BH                 8
 #define  BW                 8
+#define  BMAX               8    /* for non-rect boards, max dimension */
 #define  BN                 ( BH * BW )
 
 typedef struct BoardState{
@@ -1561,7 +1562,7 @@ void getTestBoard( BoardState  *outState ) {
 
     outState->grid[7][4] = addingRook  | CHESS_WHITE;
     if(1)outState->grid[6][4] = doublingPawn  | CHESS_WHITE;
-    if(1)outState->grid[6][5] = addingRook  | CHESS_WHITE;
+    if(0)outState->grid[6][5] = addingRook  | CHESS_WHITE;
 
     if(0)outState->grid[7][4] = addingRook  | CHESS_WHITE;
     

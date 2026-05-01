@@ -1638,6 +1638,11 @@ static void multiPhaseDraw( int            inBoardCenterX,
         int targetX;
         int targetY;
         int  glintOffsetY  =  -14;
+
+        glintOffsetY -= (int)( 
+            ( (long)inMoveProgress->phaseProgress * 10 ) /
+            (long)laserPhaseLen );
+            
         
         boardGetSquareCenter( inBoardCenterX,
                               inBoardCenterY,
@@ -1685,6 +1690,10 @@ static void multiPhaseDraw( int            inBoardCenterX,
         int targetX;
         int targetY;
         int  glintOffsetY  =  -14;
+        
+        glintOffsetY -= (int)( 
+            ( (long)inMoveProgress->phaseProgress * 10 ) /
+            (long)laserPhaseLen );
         
         boardGetSquareCenter( inBoardCenterX,
                               inBoardCenterY,

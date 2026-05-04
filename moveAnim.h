@@ -148,9 +148,13 @@ static  int          laserPawnTopGlintSprite;
 static  int          laserPawnTopGlintGlow;
 
 
+static  int          modifierFont;
+
+
 void moveAnimInit( void ) {
 
     int  i;
+    int  fontStrip;
     
 
     beepUp = maxigin_initSoundEffect( "beepUp.wav" );
@@ -189,6 +193,34 @@ void moveAnimInit( void ) {
     
     laserPawnTopGlintSprite = maxigin_initSprite( "laserPawnTopGlint.tga"     );
     laserPawnTopGlintGlow   = maxigin_initSprite( "laserPawnTopGlintGlow.tga" );
+
+    fontStrip = maxigin_initSpriteStrip( "modifierFont.tga",
+                                         8 );
+
+    if( fontStrip != -1 ) {
+
+        maxigin_initMakeGlowSpriteStrip( fontStrip,
+                                         2,
+                                         2 );
+
+        /* hazy, faded black shadow  top-to-bottom */
+        if(0)maxigin_initMakeDropShadowSpriteStrip(
+            fontStrip,
+            4,
+            2,
+            192,
+            192,
+            60,
+            30,
+            50,
+            0 );
+
+        modifierFont = maxigin_initFont( fontStrip,
+                                         "modifierFont.txt",
+                                         0,
+                                         4,
+                                         0 );
+        }
     }
 
 
@@ -887,7 +919,7 @@ static char multiPhaseStep( BoardState    *inState,
                                      512 );
             }
 
-        inMoveProgress->phaseProgress += ( 30 * 60 ) / r;
+        inMoveProgress->phaseProgress += ( 10 * 60 ) / r;
 
         if( inMoveProgress->phaseProgress >= laserPhaseLen ) {
             inMoveProgress->phaseNumber ++;
@@ -901,7 +933,7 @@ static char multiPhaseStep( BoardState    *inState,
                                      512 );
             }
 
-        inMoveProgress->phaseProgress += ( 30 * 60 ) / r;
+        inMoveProgress->phaseProgress += ( 10 * 60 ) / r;
 
         if( inMoveProgress->phaseProgress >= laserPhaseLen ) {
             inMoveProgress->phaseNumber ++;
@@ -1633,15 +1665,29 @@ static void multiPhaseDraw( int            inBoardCenterX,
 
            Currently just have a place-holder sprite being drawn */
 
-        int targetR        =  inMoveProgress->params[ pn ][ 0 ];
-        int targetC        =  inMoveProgress->params[ pn ][ 1 ];
-        int targetX;
-        int targetY;
-        int  glintOffsetY  =  -14;
+        int            targetR        =  inMoveProgress->params[ pn ][ 0 ];
+        int            targetC        =  inMoveProgress->params[ pn ][ 1 ];
+        int            targetX;
+        int            targetY;
+        int            glintOffsetY  =  -11;
+        unsigned char  glintFade     =  255;
+        long           beginLen      =  laserPhaseLen / 2;
+        const char    *displayText;
+        
+        if( inMoveProgress->phaseProgress > beginLen ) {
 
-        glintOffsetY -= (int)( 
-            ( (long)inMoveProgress->phaseProgress * 10 ) /
-            (long)laserPhaseLen );
+            long  extraProgress =
+                inMoveProgress->phaseProgress   - beginLen;
+            long  extraLen      = laserPhaseLen - beginLen;
+            
+            glintOffsetY -= (int)( 
+                ( extraProgress * 20 ) /
+                extraLen );
+            
+            glintFade =
+                (unsigned char)(
+                    ( ( extraLen - extraProgress ) * 255 ) / extraLen );
+            }
             
         
         boardGetSquareCenter( inBoardCenterX,
@@ -1673,10 +1719,25 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         0 );
 
         maxigin_drawResetColor();
+
+        maxigin_drawSetAlpha( glintFade );
         
+        /*
         maxigin_drawSprite( laserBackGlintSprite,
                             targetX,
                             targetY+ glintOffsetY );
+        */
+
+        displayText =
+            maxigin_stringConcat(
+                "x",
+                maxigin_intToString( inMoveProgress->params[ pn ][ 2 ] ) );
+        
+        maxigin_drawText( modifierFont,
+                          displayText,
+                          targetX,
+                          targetY + glintOffsetY,
+                          MAXIGIN_CENTER );
         }
     else if( p == addition ) {
         /* fixme:
@@ -1685,15 +1746,29 @@ static void multiPhaseDraw( int            inBoardCenterX,
 
            Currently just have a place-holder sprite being drawn */
         
-        int targetR        =  inMoveProgress->params[ pn ][ 0 ];
-        int targetC        =  inMoveProgress->params[ pn ][ 1 ];
-        int targetX;
-        int targetY;
-        int  glintOffsetY  =  -14;
+        int            targetR        =  inMoveProgress->params[ pn ][ 0 ];
+        int            targetC        =  inMoveProgress->params[ pn ][ 1 ];
+        int            targetX;
+        int            targetY;
+        int            glintOffsetY  =  -11;
+        unsigned char  glintFade     =  255;
+        long           beginLen      =  laserPhaseLen / 2;
+        const char    *displayText;
         
-        glintOffsetY -= (int)( 
-            ( (long)inMoveProgress->phaseProgress * 10 ) /
-            (long)laserPhaseLen );
+        if( inMoveProgress->phaseProgress > beginLen ) {
+
+            long  extraProgress =
+                inMoveProgress->phaseProgress   - beginLen;
+            long  extraLen      = laserPhaseLen - beginLen;
+            
+            glintOffsetY -= (int)( 
+                ( extraProgress * 20 ) /
+                extraLen );
+
+            glintFade =
+                (unsigned char)(
+                    ( ( extraLen - extraProgress ) * 255 ) / extraLen );
+            }
         
         boardGetSquareCenter( inBoardCenterX,
                               inBoardCenterY,
@@ -1724,10 +1799,25 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         0 );
 
         maxigin_drawResetColor();
-        
+
+        maxigin_drawSetAlpha( glintFade );
+
+        /*
         maxigin_drawSprite( laserBackGlintSprite,
                             targetX,
                             targetY+ glintOffsetY );
+        */
+
+        displayText =
+            maxigin_stringConcat(
+                "+",
+                maxigin_intToString( inMoveProgress->params[ pn ][ 2 ] ) );
+        
+        maxigin_drawText( modifierFont,
+                          displayText,
+                          targetX,
+                          targetY + glintOffsetY,
+                          MAXIGIN_CENTER );
         }
     }
 

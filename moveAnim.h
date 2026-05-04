@@ -1677,29 +1677,34 @@ static void multiPhaseDraw( int            inBoardCenterX,
         int            drawY;
         int            glintOffsetY  =  -11;
         unsigned char  glintFade     =  255;
-        long           beginLen      =  modifierPhaseLen / 2;
         const char    *displayText;
         const char    *symbol        =  "x";
-
+        long           parH          =  10;
+        long           parY;
+        long           halfPhaseLen  =  modifierPhaseLen / 2;
+        long           endPhase      =  modifierPhaseLen / 8;
+        
         if( p == addition ) {
             symbol = "+";
             }
-        
-        if(0)if( inMoveProgress->phaseProgress > beginLen ) {
 
-            long  extraProgress =
-                inMoveProgress->phaseProgress   - beginLen;
-            long  extraLen      = modifierPhaseLen - beginLen;
-            
-            glintOffsetY -= (int)( 
-                ( extraProgress * 20 ) /
-                extraLen );
+
+        if( inMoveProgress->phaseProgress < halfPhaseLen ) {
             
             glintFade =
                 (unsigned char)(
-                    ( ( extraLen - extraProgress ) * 255 ) / extraLen );
+                    ( ( inMoveProgress->phaseProgress )
+                      * 255 ) / halfPhaseLen );
             }
-            
+        else if( inMoveProgress->phaseProgress > modifierPhaseLen - endPhase ) {
+
+            glintFade =
+                (unsigned char)(
+                    ( ( modifierPhaseLen - inMoveProgress->phaseProgress )
+                      * 255 ) / endPhase );
+            }
+        
+        
         
         boardGetSquareCenter( inBoardCenterX,
                               inBoardCenterY,
@@ -1724,6 +1729,22 @@ static void multiPhaseDraw( int            inBoardCenterX,
         drawY = (int)( sourceY +
                        ( (long)inMoveProgress->phaseProgress * deltaY ) /
                        (long)modifierPhaseLen );
+
+        /* parabolic */
+        /*
+          example equation for height of 6 and phase length of 512
+          (6.0 * 512/( 256 * 256 ) ) * x - (6.0/( 256 * 256 ) ) * x * x
+        */
+
+        parY = ( parH * modifierPhaseLen * inMoveProgress->phaseProgress
+            - parH * inMoveProgress->phaseProgress
+                 * inMoveProgress->phaseProgress )
+            /
+            ( halfPhaseLen * halfPhaseLen );
+
+        /* do this for both horizontal and vertical moves,
+           since it makes a visual bouncing effect in both cases */
+        drawY -= (int)parY;
         
         
         boardDraw( inBoardCenterX,

@@ -920,7 +920,8 @@ void maxigin_initSetLanguageFontGLow( int  inBlurRadius,
                               corresponding to each sprite in the sprite
                               strip.
                               These UTF-8 code points are separated by ASCII
-                              space characters ( 0x20 in hex ) in the text
+                              whitespace characters ( 0x20, 0x0A, 0x0D, 0x09)
+                              (space, newline, carriage return, tab) in the text
                               data.
 
       inCharSpacing           the space to insert between characters in the font
@@ -18789,7 +18790,9 @@ static  int          mx_numFonts                         =  0;
 
 
 
-/* auto-skips any space characters (0x20) before next code point
+/* auto-skips any white space characters (0x20, 0x0A, 0x0D, 0x09)
+   (space, newline, carriage return, and tab)
+   before next code point
    returns -1 on failure */
 static long mx_readNextCodePoint( int  inBulkResourceHandle ) {
 
@@ -18804,11 +18807,11 @@ static long mx_readNextCodePoint( int  inBulkResourceHandle ) {
 
     while( c0 == 0x20
            ||
-           c0 == '\n'
+           c0 == 0x0A
            ||
-           c0 == '\r'
+           c0 == 0x0D
            ||
-           c0 == '\t' ) {
+           c0 == 0x09 ) {
         
         if( 1 != mingin_readBulkData( inBulkResourceHandle,
                                       1,

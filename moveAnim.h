@@ -35,7 +35,7 @@ enum{
 
 #define  MAX_ANIM_PHASES  BN
 
-#define  NUM_ANIM_PARAMS  4
+#define  NUM_ANIM_PARAMS  5
 
 typedef struct AnimProgress {
 
@@ -482,8 +482,8 @@ static void defaultPieceDraw( int            inBoardCenterX,
 
 
 
-static int  laserPhaseLen  =  512;
-
+static int  laserPhaseLen     =  512;
+static int  modifierPhaseLen  =  512;
 
 typedef struct HitBatches {
         /* at most BMAX batches */
@@ -582,6 +582,8 @@ static void spaceEffectsInit( BoardState    *inState,
     /* gather these in order walking backwards from our target space */
     static  SpaceEffect            types     [ BN ];
     static  int                    values    [ BN ];
+    static  int                    sourceRows[ BN ];
+    static  int                    sourceCols[ BN ];
     static  int                    targetRows[ BN ];
     static  int                    targetCols[ BN ];
 
@@ -647,6 +649,8 @@ static void spaceEffectsInit( BoardState    *inState,
 
             types     [ numEffects ] = a->effectType [ i ];
             values    [ numEffects ] = a->effectValue[ i ];
+            sourceRows[ numEffects ] = a->sourceRow  [ i ];
+            sourceCols[ numEffects ] = a->sourceCol  [ i ];
             targetRows[ numEffects ] = fR;
             targetCols[ numEffects ] = fC;
             
@@ -673,16 +677,20 @@ static void spaceEffectsInit( BoardState    *inState,
         
         if( types[i] == add ) {
             outMoveProgress->phases[ p ]      = addition;
-            outMoveProgress->params[ p ][ 0 ] = (short)( targetRows[i] );
-            outMoveProgress->params[ p ][ 1 ] = (short)( targetCols[i] );
-            outMoveProgress->params[ p ][ 2 ] = (short)( values[i] );
+            outMoveProgress->params[ p ][ 0 ] = (short)( sourceRows[i] );
+            outMoveProgress->params[ p ][ 1 ] = (short)( sourceCols[i] );
+            outMoveProgress->params[ p ][ 2 ] = (short)( targetRows[i] );
+            outMoveProgress->params[ p ][ 3 ] = (short)( targetCols[i] );
+            outMoveProgress->params[ p ][ 4 ] = (short)( values[i] );
             outMoveProgress->numPhases ++;
             }
         else if( types[i] == multiply ) {
             outMoveProgress->phases[ p ]      = multiplier;
-            outMoveProgress->params[ p ][ 0 ] = (short)( targetRows[i] );
-            outMoveProgress->params[ p ][ 1 ] = (short)( targetCols[i] );
-            outMoveProgress->params[ p ][ 2 ] = (short)( values[i] );
+            outMoveProgress->params[ p ][ 0 ] = (short)( sourceRows[i] );
+            outMoveProgress->params[ p ][ 1 ] = (short)( sourceCols[i] );
+            outMoveProgress->params[ p ][ 2 ] = (short)( targetRows[i] );
+            outMoveProgress->params[ p ][ 3 ] = (short)( targetCols[i] );
+            outMoveProgress->params[ p ][ 4 ] = (short)( values[i] );
             outMoveProgress->numPhases ++;
             } 
         }
@@ -929,7 +937,7 @@ static char multiPhaseStep( BoardState    *inState,
 
         inMoveProgress->phaseProgress += ( 10 * 60 ) / r;
 
-        if( inMoveProgress->phaseProgress >= laserPhaseLen ) {
+        if( inMoveProgress->phaseProgress >= modifierPhaseLen ) {
             inMoveProgress->phaseNumber ++;
             inMoveProgress->phaseProgress = 0;
             }
@@ -1655,13 +1663,21 @@ static void multiPhaseDraw( int            inBoardCenterX,
              ||
              p == addition ) {
 
-        int            targetR        =  inMoveProgress->params[ pn ][ 0 ];
-        int            targetC        =  inMoveProgress->params[ pn ][ 1 ];
+        int            sourceR        =  inMoveProgress->params[ pn ][ 0 ];
+        int            sourceC        =  inMoveProgress->params[ pn ][ 1 ];
+        int            targetR        =  inMoveProgress->params[ pn ][ 2 ];
+        int            targetC        =  inMoveProgress->params[ pn ][ 3 ];
+        int            sourceX;
+        int            sourceY;
         int            targetX;
         int            targetY;
+        int            deltaX;
+        int            deltaY;
+        int            drawX;
+        int            drawY;
         int            glintOffsetY  =  -11;
         unsigned char  glintFade     =  255;
-        long           beginLen      =  laserPhaseLen / 2;
+        long           beginLen      =  modifierPhaseLen / 2;
         const char    *displayText;
         const char    *symbol        =  "x";
 
@@ -1669,11 +1685,11 @@ static void multiPhaseDraw( int            inBoardCenterX,
             symbol = "+";
             }
         
-        if( inMoveProgress->phaseProgress > beginLen ) {
+        if(0)if( inMoveProgress->phaseProgress > beginLen ) {
 
             long  extraProgress =
                 inMoveProgress->phaseProgress   - beginLen;
-            long  extraLen      = laserPhaseLen - beginLen;
+            long  extraLen      = modifierPhaseLen - beginLen;
             
             glintOffsetY -= (int)( 
                 ( extraProgress * 20 ) /
@@ -1691,6 +1707,24 @@ static void multiPhaseDraw( int            inBoardCenterX,
                               targetC,
                               &targetX,
                               &targetY );
+
+        boardGetSquareCenter( inBoardCenterX,
+                              inBoardCenterY,
+                              sourceR,
+                              sourceC,
+                              &sourceX,
+                              &sourceY );
+
+        deltaX = targetX - sourceX;
+        deltaY = targetY - sourceY;
+
+        drawX = (int)( sourceX +
+                       ( (long)inMoveProgress->phaseProgress * deltaX ) /
+                       (long)modifierPhaseLen );
+        drawY = (int)( sourceY +
+                       ( (long)inMoveProgress->phaseProgress * deltaY ) /
+                       (long)modifierPhaseLen );
+        
         
         boardDraw( inBoardCenterX,
                    inBoardCenterY );
@@ -1726,12 +1760,12 @@ static void multiPhaseDraw( int            inBoardCenterX,
         displayText =
             maxigin_stringConcat(
                 symbol,
-                maxigin_intToString( inMoveProgress->params[ pn ][ 2 ] ) );
+                maxigin_intToString( inMoveProgress->params[ pn ][ 4 ] ) );
         
         maxigin_drawText( modifierFont,
                           displayText,
-                          targetX,
-                          targetY + glintOffsetY,
+                          drawX,
+                          drawY + glintOffsetY,
                           MAXIGIN_CENTER );
         }
     }

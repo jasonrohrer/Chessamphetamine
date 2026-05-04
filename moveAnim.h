@@ -912,25 +912,19 @@ static char multiPhaseStep( BoardState    *inState,
             inMoveProgress->phaseProgress = explodeProgress;
             }
         }
-    else if( p == multiplier ) {
+    else if( p == multiplier
+             ||
+             p == addition ) {
 
         if( inMoveProgress->phaseProgress == 0 ) {
-            maxigin_playSoundEffect( multSound,
-                                     512 );
-            }
-
-        inMoveProgress->phaseProgress += ( 10 * 60 ) / r;
-
-        if( inMoveProgress->phaseProgress >= laserPhaseLen ) {
-            inMoveProgress->phaseNumber ++;
-            inMoveProgress->phaseProgress = 0;
-            }
-        }
-    else if( p == addition ) {
-        
-        if( inMoveProgress->phaseProgress == 0 ) {
-            maxigin_playSoundEffect( addSound,
-                                     512 );
+            if( p == multiplier ) {
+                maxigin_playSoundEffect( multSound,
+                                         512 );
+                }
+            else {
+                maxigin_playSoundEffect( addSound,
+                                         512 );
+                }   
             }
 
         inMoveProgress->phaseProgress += ( 10 * 60 ) / r;
@@ -1657,13 +1651,9 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                 explodingProgress );
             }
         }
-    else if( p == multiplier ) {
-
-        /* fixme:
-           draw addition value and x symbol with font, and have it
-           float up above target piece
-
-           Currently just have a place-holder sprite being drawn */
+    else if( p == multiplier
+             ||
+             p == addition ) {
 
         int            targetR        =  inMoveProgress->params[ pn ][ 0 ];
         int            targetC        =  inMoveProgress->params[ pn ][ 1 ];
@@ -1673,6 +1663,11 @@ static void multiPhaseDraw( int            inBoardCenterX,
         unsigned char  glintFade     =  255;
         long           beginLen      =  laserPhaseLen / 2;
         const char    *displayText;
+        const char    *symbol        =  "x";
+
+        if( p == addition ) {
+            symbol = "+";
+            }
         
         if( inMoveProgress->phaseProgress > beginLen ) {
 
@@ -1730,87 +1725,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
 
         displayText =
             maxigin_stringConcat(
-                "x",
-                maxigin_intToString( inMoveProgress->params[ pn ][ 2 ] ) );
-        
-        maxigin_drawText( modifierFont,
-                          displayText,
-                          targetX,
-                          targetY + glintOffsetY,
-                          MAXIGIN_CENTER );
-        }
-    else if( p == addition ) {
-        /* fixme:
-           draw addition value and + symbol with font, and have it
-           float up above target piece
-
-           Currently just have a place-holder sprite being drawn */
-        
-        int            targetR        =  inMoveProgress->params[ pn ][ 0 ];
-        int            targetC        =  inMoveProgress->params[ pn ][ 1 ];
-        int            targetX;
-        int            targetY;
-        int            glintOffsetY  =  -11;
-        unsigned char  glintFade     =  255;
-        long           beginLen      =  laserPhaseLen / 2;
-        const char    *displayText;
-        
-        if( inMoveProgress->phaseProgress > beginLen ) {
-
-            long  extraProgress =
-                inMoveProgress->phaseProgress   - beginLen;
-            long  extraLen      = laserPhaseLen - beginLen;
-            
-            glintOffsetY -= (int)( 
-                ( extraProgress * 20 ) /
-                extraLen );
-
-            glintFade =
-                (unsigned char)(
-                    ( ( extraLen - extraProgress ) * 255 ) / extraLen );
-            }
-        
-        boardGetSquareCenter( inBoardCenterX,
-                              inBoardCenterY,
-                              targetR,
-                              targetC,
-                              &targetX,
-                              &targetY );
-        
-        boardDraw( inBoardCenterX,
-                   inBoardCenterY );
-
-        getCaptureMidState( inState,
-                            inMove,
-                            inCaptured,
-                            &midState,
-                            &midCaptured );
-    
-        drawBoardState( &midState,
-                        0,
-                        0,
-                        0,
-                        0,
-                        inMove,
-                        0,
-                        0,
-                        inBoardCenterX,
-                        inBoardCenterY,
-                        0 );
-
-        maxigin_drawResetColor();
-
-        maxigin_drawSetAlpha( glintFade );
-
-        /*
-        maxigin_drawSprite( laserBackGlintSprite,
-                            targetX,
-                            targetY+ glintOffsetY );
-        */
-
-        displayText =
-            maxigin_stringConcat(
-                "+",
+                symbol,
                 maxigin_intToString( inMoveProgress->params[ pn ][ 2 ] ) );
         
         maxigin_drawText( modifierFont,

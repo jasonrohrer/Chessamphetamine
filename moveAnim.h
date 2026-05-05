@@ -1004,6 +1004,8 @@ static char multiPhaseStep( BoardState    *inState,
     if( inMoveProgress->anyMultFactors ) {
 
         char  forceFadeOut = 0;
+        char  allDone      = 1;
+        
         int   y;
         int   x;
         
@@ -1025,6 +1027,10 @@ static char multiPhaseStep( BoardState    *inState,
 
                 if( forceFadeOut ) {
                     inMoveProgress->multFactorFadeDir[ y ][ x ] = 0;
+                    }
+
+                if( inMoveProgress->multFactorFadeDir[ y ][ x ] == 1 ) {
+                    allDone = 0;
                     }
 
                 if( inMoveProgress->multFactorFadeDir[ y ][ x ] == 1
@@ -1058,9 +1064,14 @@ static char multiPhaseStep( BoardState    *inState,
                     else {
                         inMoveProgress->multFactorFades[ y ][ x ] =
                             (unsigned char)newFade;
+                        allDone = 0;
                         }
                     }
                 }
+            }
+
+        if( allDone ) {
+            inMoveProgress->anyMultFactors = 0;
             }
         }
     
@@ -1895,53 +1906,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         inBoardCenterY,
                         0 );
 
-        if( inMoveProgress->anyMultFactors ) {
 
-            int  mY;
-            int  mX;
-
-            for( mY = 0;
-                 mY < BH;
-                 mY ++ ) {
-                for( mX = 0;
-                     mX < BW;
-                     mX ++ ) {
-
-                    int            vI;
-                    int            bX;
-                    int            bY;
-                    unsigned char  f    =
-                        inMoveProgress->multFactorFades[ mY ][ mX ];
-                    long           v    =
-                        inMoveProgress->multFactors    [ mY ][ mX ];
-                    
-                    if( f == 0 ) {
-                        continue;
-                        }
-                    
-                    boardGetSquareCenter( inBoardCenterX,
-                                          inBoardCenterY,
-                                          mY,
-                                          mX,
-                                          &bX,
-                                          &bY );
-                    /* repeat glow to make it stronger as mult factor
-                       rises,
-                       but skip first one, since there's no glow at mult-factor
-                       1 (it starts at 2) */
-                    for( vI = 1;
-                         vI < v;
-                         vI ++ ) {
-                        drawPieceGlowOnly( midState.grid[ mY ][ mX ],
-                               bX,
-                               bY,
-                               f );
-
-                        }
-                    }
-                }
-
-            }
 
         if(0) if( glowFade > 0 ) {
             drawPieceGlowOnly( midState.grid[ targetR ][ targetC ],
@@ -1970,6 +1935,64 @@ static void multiPhaseDraw( int            inBoardCenterX,
                           drawX,
                           drawY + glintOffsetY,
                           MAXIGIN_CENTER );
+        }
+
+
+    
+    /* draw mult-factor glow over pieces
+     this may linger and fade out after multiplier animation phases are done */
+    
+    if( inMoveProgress->anyMultFactors ) {
+        
+        int  mY;
+        int  mX;
+        
+        getCaptureMidState( inState,
+                            inMove,
+                            inCaptured,
+                            &midState,
+                            &midCaptured );
+        
+        for( mY = 0;
+             mY < BH;
+             mY ++ ) {
+            
+            for( mX = 0;
+                 mX < BW;
+                 mX ++ ) {
+
+                int            vI;
+                int            bX;
+                int            bY;
+                unsigned char  f    =
+                    inMoveProgress->multFactorFades[ mY ][ mX ];
+                long           v    =
+                    inMoveProgress->multFactors    [ mY ][ mX ];
+                    
+                if( f == 0 ) {
+                    continue;
+                    }
+                    
+                boardGetSquareCenter( inBoardCenterX,
+                                      inBoardCenterY,
+                                      mY,
+                                      mX,
+                                      &bX,
+                                      &bY );
+                /* repeat glow to make it stronger as mult factor
+                   rises,
+                   but skip first one, since there's no glow at mult-factor
+                   1 (it starts at 2) */
+                for( vI = 1;
+                     vI < v;
+                     vI ++ ) {
+                    drawPieceGlowOnly( midState.grid[ mY ][ mX ],
+                                       bX,
+                                       bY,
+                                       f );
+                    }
+                }
+            }
         }
     }
 

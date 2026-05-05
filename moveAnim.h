@@ -49,6 +49,13 @@ typedef struct AnimProgress {
         /* each phase may have multiple parameters that the phase
            interprets in unique ways */
         short      params[ MAX_ANIM_PHASES ][ NUM_ANIM_PARAMS ];
+
+        /* for accumulating multiplier factors that build up
+           as modifiers propagate */
+        char           anyMultFactors;
+        long           multFactors      [ BH ][ BW ];
+        unsigned char  multFactorFades  [ BH ][ BW ];
+        char           multFactorFadeDir[ BH ][ BW ];
         
     } AnimProgress;
         
@@ -310,6 +317,29 @@ static void noPieceDraw( int            inBoardCenterX,
     }
 
 
+
+static void initMultFactors( AnimProgress  *outMoveProgress ) {
+    int y;
+    int x;
+
+    outMoveProgress->anyMultFactors = 0;
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            outMoveProgress->multFactors      [ y ][ x ] = 1;
+            outMoveProgress->multFactorFades  [ y ][ x ] = 0;
+            outMoveProgress->multFactorFadeDir[ y ][ x ] = 0;
+            }
+        }
+    }
+
+
+
 static void defaultPieceInit( BoardState    *inState,
                               Move          *inMove,
                               Captured      *inCaptured,
@@ -326,6 +356,8 @@ static void defaultPieceInit( BoardState    *inState,
     outMoveProgress->phaseProgress = 0;
 
     outMoveProgress->phases[0] = move;
+
+    initMultFactors( outMoveProgress );
     }
 
 
@@ -713,6 +745,8 @@ static void laserPieceInit( BoardState    *inState,
 
     (void)inState;
     (void)inNewState;
+
+    initMultFactors( outMoveProgress );
     
     if( inCaptured->num > 0 ) {
 
@@ -832,7 +866,7 @@ static char multiPhaseStep( BoardState    *inState,
     
     int        pn  =  inMoveProgress->phaseNumber;
     AnimPhase  p   =  inMoveProgress->phases[ pn ];
-    int        r   = mingin_getStepsPerSecond();
+    int        r   =  mingin_getStepsPerSecond();
     
     (void)inNewState;
     
@@ -925,6 +959,12 @@ static char multiPhaseStep( BoardState    *inState,
              p == addition ) {
 
         if( inMoveProgress->phaseProgress == 0 ) {
+            int  sourceR  =  inMoveProgress->params[ pn ][ 0 ];
+            int  sourceC  =  inMoveProgress->params[ pn ][ 1 ];
+            int  targetR  =  inMoveProgress->params[ pn ][ 2 ];
+            int  targetC  =  inMoveProgress->params[ pn ][ 3 ];
+            int  value    =  inMoveProgress->params[ pn ][ 4 ];
+            
             if( p == multiplier ) {
                 maxigin_playSoundEffect( multSound,
                                          512 );
@@ -932,7 +972,23 @@ static char multiPhaseStep( BoardState    *inState,
             else {
                 maxigin_playSoundEffect( addSound,
                                          512 );
-                }   
+                }
+
+            /* start (or continue) fade-in of mult-factor display on target */
+
+            if( p == multiplier ) {
+                inMoveProgress->multFactors[ targetR ][ targetC ]
+                    *= value;
+                }
+            else {
+                inMoveProgress->multFactors[ targetR ][ targetC ]
+                    += value;
+                }
+            inMoveProgress->multFactorFadeDir[ targetR ][ targetC ] = 1;
+
+            /* fade out source */
+            inMoveProgress->multFactorFadeDir[ sourceR ][ sourceC ] = 0;
+            inMoveProgress->anyMultFactors = 1;
             }
 
         inMoveProgress->phaseProgress += ( 10 * 60 ) / r;
@@ -943,6 +999,73 @@ static char multiPhaseStep( BoardState    *inState,
             }
         }
 
+
+    /* deal with mult factor fading progress */
+    if( inMoveProgress->anyMultFactors ) {
+
+        char  forceFadeOut = 0;
+        int   y;
+        int   x;
+        
+        if( p != multiplier
+            &&
+            p != addition ) {
+
+            /* done with addition/multiplier phases, and there are some
+               lingering mult factors, fade them out */
+            forceFadeOut = 1;
+            }
+
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
+
+                if( forceFadeOut ) {
+                    inMoveProgress->multFactorFadeDir[ y ][ x ] = 0;
+                    }
+
+                if( inMoveProgress->multFactorFadeDir[ y ][ x ] == 1
+                    &&
+                    inMoveProgress->multFactorFades  [ y ][ x ] <  255 ) {
+
+                    int  newFade =
+                        inMoveProgress->multFactorFades[ y ][ x ]
+                        + ( 10 * 60 ) / r;
+
+                    if( newFade >= 255 ) {
+                        inMoveProgress->multFactorFades[ y ][ x ] = 255;
+                        }
+                    else {
+                        inMoveProgress->multFactorFades[ y ][ x ] =
+                            (unsigned char)newFade;
+                        }
+
+                    }
+                else if( inMoveProgress->multFactorFadeDir[ y ][ x ] == 0
+                         &&
+                         inMoveProgress->multFactorFades  [ y ][ x ] >  0 ) {
+
+                    int  newFade =
+                        inMoveProgress->multFactorFades[ y ][ x ]
+                        - ( 10 * 60 ) / r;
+
+                    if( newFade <= 0 ) {
+                        inMoveProgress->multFactorFades[ y ][ x ] = 0;
+                        }
+                    else {
+                        inMoveProgress->multFactorFades[ y ][ x ] =
+                            (unsigned char)newFade;
+                        }
+                    }
+                }
+            }
+        }
+    
+        
+    
     
     if( inMoveProgress->phaseNumber >= inMoveProgress->numPhases ) {
         /* done with all phases */
@@ -1772,7 +1895,55 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         inBoardCenterY,
                         0 );
 
-        if( glowFade > 0 ) {
+        if( inMoveProgress->anyMultFactors ) {
+
+            int  mY;
+            int  mX;
+
+            for( mY = 0;
+                 mY < BH;
+                 mY ++ ) {
+                for( mX = 0;
+                     mX < BW;
+                     mX ++ ) {
+
+                    int            vI;
+                    int            bX;
+                    int            bY;
+                    unsigned char  f    =
+                        inMoveProgress->multFactorFades[ mY ][ mX ];
+                    long           v    =
+                        inMoveProgress->multFactors    [ mY ][ mX ];
+                    
+                    if( f == 0 ) {
+                        continue;
+                        }
+                    
+                    boardGetSquareCenter( inBoardCenterX,
+                                          inBoardCenterY,
+                                          mY,
+                                          mX,
+                                          &bX,
+                                          &bY );
+                    /* repeat glow to make it stronger as mult factor
+                       rises,
+                       but skip first one, since there's no glow at mult-factor
+                       1 (it starts at 2) */
+                    for( vI = 1;
+                         vI < v;
+                         vI ++ ) {
+                        drawPieceGlowOnly( midState.grid[ mY ][ mX ],
+                               bX,
+                               bY,
+                               f );
+
+                        }
+                    }
+                }
+
+            }
+
+        if(0) if( glowFade > 0 ) {
             drawPieceGlowOnly( midState.grid[ targetR ][ targetC ],
                                targetX,
                                targetY,

@@ -1985,15 +1985,18 @@ static void multiPhaseDraw( int            inBoardCenterX,
             for( mX = 0;
                  mX < BW;
                  mX ++ ) {
-
-                int            vI;
+                
                 int            bX;
                 int            bY;
-                unsigned char  f    =
+                unsigned char  f          =
                     inMoveProgress->multFactorFades[ mY ][ mX ];
-                long           v    =
+                long           v          =
                     inMoveProgress->multFactors    [ mY ][ mX ];
-                    
+                long           glowFade;
+                long           glowMax    =  f / 2;
+                long           glowMin    =  f / 8;
+                long           glowRange  =  glowMax - glowMin;
+                
                 if( f == 0 ) {
                     continue;
                     }
@@ -2020,16 +2023,18 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                        f );
                     
                     }
-                
-                if(0)
-                for( vI = 1;
-                     vI < v;
-                     vI ++ ) {
-                    drawPieceGlowOnly( midState.grid[ mY ][ mX ],
-                                       bX,
-                                       bY,
-                                       f );
+
+                /* reaches glowMax when v hits 10 */
+                glowFade = ( glowRange * v ) / 10 + glowMin;
+
+                if( glowFade > glowMax ) {
+                    glowFade = glowMax;
                     }
+                
+                drawPieceGlowOnly( midState.grid[ mY ][ mX ],
+                                   bX,
+                                   bY,
+                                   (unsigned char)glowFade );
                 }
             }
 

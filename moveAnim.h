@@ -56,6 +56,12 @@ typedef struct AnimProgress {
         long           multFactors      [ BH ][ BW ];
         unsigned char  multFactorFades  [ BH ][ BW ];
         char           multFactorFadeDir[ BH ][ BW ];
+
+        /* used for shimmering in multFactors */
+        MaxiginRand    multRandA;
+        MaxiginRand    multRandB;
+
+        int            sparkleProgress;
         
     } AnimProgress;
         
@@ -336,6 +342,13 @@ static void initMultFactors( AnimProgress  *outMoveProgress ) {
             outMoveProgress->multFactorFadeDir[ y ][ x ] = 0;
             }
         }
+
+    /* use same seed every time */
+    maxigin_randSeed( &( outMoveProgress->multRandA ),
+                      0xDEADBEEF );
+    outMoveProgress->multRandB = outMoveProgress->multRandA;
+
+    outMoveProgress->sparkleProgress = 0;
     }
 
 
@@ -1008,6 +1021,17 @@ static char multiPhaseStep( BoardState    *inState,
         
         int   y;
         int   x;
+
+        
+        inMoveProgress->sparkleProgress += ( 20 * 60 ) / r;
+
+        if( inMoveProgress->sparkleProgress >= 80 ) {
+            inMoveProgress->sparkleProgress = 0;
+            
+            /* advance rand to change sparkle */
+            inMoveProgress->multRandA = inMoveProgress->multRandB;
+            }
+        
         
         if( p != multiplier
             &&
@@ -1944,8 +1968,9 @@ static void multiPhaseDraw( int            inBoardCenterX,
     
     if( inMoveProgress->anyMultFactors ) {
         
-        int  mY;
-        int  mX;
+        int          mY;
+        int          mX;
+        MaxiginRand  oldRand = inMoveProgress->multRandA;
         
         getCaptureMidState( inState,
                             inMove,
@@ -1983,6 +2008,20 @@ static void multiPhaseDraw( int            inBoardCenterX,
                    rises,
                    but skip first one, since there's no glow at mult-factor
                    1 (it starts at 2) */
+
+                if( 1 ) {
+                    
+                    
+                    drawPieceSparkles( midState.grid[ mY ][ mX ],
+                                       bX,
+                                       bY,
+                                       &( inMoveProgress->multRandA ),
+                                       (int)( v * 10 ),
+                                       f );
+                    
+                    }
+                
+                if(0)
                 for( vI = 1;
                      vI < v;
                      vI ++ ) {
@@ -1993,6 +2032,19 @@ static void multiPhaseDraw( int            inBoardCenterX,
                     }
                 }
             }
+
+        /* restore rand state after drawing, so rand state doesn't
+           keep advancing with each new frame drawn
+           let anim step advance it */
+        
+        /* save post-drawing state, so we can use it in step to advance
+           rand by more than one step.
+           If we just advance rand by calling it once in step,
+           we simply inch one frame forward in these sparkle animations,
+           which causes them to repeat */
+        inMoveProgress->multRandB = inMoveProgress->multRandA;
+        
+        inMoveProgress->multRandA = oldRand;
         }
     }
 

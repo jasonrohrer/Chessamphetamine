@@ -21,6 +21,9 @@ int getParticleSprite( void );
 
 int getNoGlowParticleSprite( void );
 
+int getStarParticleSprite( void );
+
+
 
 #ifdef PIECE_SPRITES_IMPLEMENTATION
 
@@ -28,6 +31,8 @@ static  int          particleSpriteHandle        =  -1;
 static  int          noGlowParticleSpriteHandle  =  -1;
 static  const char  *particleDataName            =  "explosionParticle.tga";
 
+static  int          starSpriteHandle            =  -1;
+static  const char  *starDataName                =  "starParticle.tga";
 
 
 void particleSpriteInit( void ) {
@@ -41,6 +46,14 @@ void particleSpriteInit( void ) {
         }
 
     noGlowParticleSpriteHandle = maxigin_initSprite( particleDataName );
+
+    starSpriteHandle = maxigin_initSprite( starDataName );
+
+    if( starSpriteHandle != -1 ) {
+        maxigin_initMakeGlowSprite( starSpriteHandle,
+                                    4,
+                                    2 );
+        }
     }
 
 
@@ -54,6 +67,9 @@ int getNoGlowParticleSprite( void ) {
     return noGlowParticleSpriteHandle;
     }
 
+int getStarParticleSprite( void ) {
+    return starSpriteHandle;
+    }
 
 
 #endif

@@ -43,6 +43,13 @@ void drawPieceBaseAndGlowOnly( ChessPiece  inPiece,
                                int  inBaseCenterX,
                                int  inBaseCenterY );
 
+void drawPieceSparkles( ChessPiece     inPiece,
+                        int            inBaseCenterX,
+                        int            inBaseCenterY,
+                        MaxiginRand   *inRand,
+                        int            inNumSparkles,
+                        unsigned char  inAlpha );
+
 
 /* start with inProgress = 0
    returns new progress after one explosion step
@@ -569,6 +576,61 @@ void drawPieceBaseAndGlowOnly( ChessPiece  inPiece,
         }
     }
 
+
+void drawPieceSparkles( ChessPiece     inPiece,
+                        int            inBaseCenterX,
+                        int            inBaseCenterY,
+                        MaxiginRand   *inRand,
+                        int            inNumSparkles,
+                        unsigned char  inAlpha ) {
+
+    ChessPiece  rawP            =  inPiece & CHESS_TYPE_MASK;
+    ChessPiece  c               =  inPiece & CHESS_COLOR_MASK;
+    int         cIndex          =  getPieceColorIndex( c );
+    int         nMain           =  inNumSparkles;
+    int         nExtra          =  0;
+    int         partSprite      =  getStarParticleSprite();
+
+    maxigin_drawToggleAdditive( 1 );
+    
+    drawSetPieceColor( c );
+
+    if( pieceSpriteExtraHandles[ rawP ][ cIndex ] != -1 ) {
+        nMain  = inNumSparkles / 2;
+        nExtra = nMain;
+        }
+
+    if( c == CHESS_WHITE ) {
+
+        /* desaturate gold color to make it clip white */
+        maxigin_drawSetColorSaturation( 8500 );
+        }
+
+    maxigin_drawSpriteSparkles( pieceSpriteHandles[ rawP ],
+                                partSprite,
+                                inBaseCenterX,
+                                inBaseCenterY + pieceOffsetY[ rawP ],
+                                inRand,
+                                nMain,
+                                inAlpha );
+
+    maxigin_drawResetColor();
+    
+    if( pieceSpriteExtraHandles[ rawP ][ cIndex ] != -1 ) {
+    
+        maxigin_drawSpriteSparkles( pieceSpriteExtraHandles[ rawP ][ cIndex ],
+                                    partSprite,
+                                    inBaseCenterX,
+                                    inBaseCenterY
+                                    + pieceOffsetY[ rawP ]
+                                    + pieceExtraOffsetY[ rawP ][ cIndex ],
+                                    inRand,
+                                    nExtra,
+                                    inAlpha );
+        }
+    maxigin_drawToggleAdditive( 0 );
+    }
+        
 
 
 static  int  explodeMax  =  512;

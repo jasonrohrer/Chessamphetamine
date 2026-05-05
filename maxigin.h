@@ -1579,6 +1579,7 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
       inExplodeProgressMax   the max value of inExplodeProgress
 
       inAlphaFade            the fade-out alpha factor
+      
   [jumpMaxiginDraw]
 */
 void maxigin_drawExplodingSprite( int            inSpriteHandle,
@@ -1591,6 +1592,44 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
                                   int            inExplodeProgress,
                                   int            inExplodeProgressMax,
                                   unsigned char  inAlphaFade );
+
+
+
+typedef struct MaxiginRand MaxiginRand;
+
+
+
+/*
+  Draws sparkles from a sprite into the game's native pixel buffer.
+
+  Parameters:
+
+      inSpriteHandle         the sprite to draw
+
+      inParticleHandle       the sprite to draw as a particle for each
+                             pixel of the exploding sprite.
+
+      inCenterX              the x position in the game's native pixel buffer
+                             of the sprite's center
+ 
+      inCenterY              the y position in the game's native pixel buffer
+                             of the sprite's center
+
+      inRand                 pointer to the random state to use
+
+      inNumSparkles          the number of sparkles to draw
+      
+      inAlphaFade            the fade-out alpha factor
+      
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawSpriteSparkles( int            inSpriteHandle,
+                                 int            inParticleHandle,
+                                 int            inCenterX,
+                                 int            inCenterY,
+                                 MaxiginRand   *inRand,
+                                 int            inNumSparkles,
+                                 unsigned char  inAlphaFade );
 
 
 
@@ -2919,13 +2958,13 @@ void maxigin_flexHashFinish( MaxiginFlexHashState  *inState );
 
 
 
-typedef struct MaxiginRand {
+struct MaxiginRand {
         unsigned long  a;
         unsigned long  b;
         unsigned long  c;
         unsigned long  d;
         
-    } MaxiginRand;
+    };
 
 
 
@@ -7889,7 +7928,88 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
     }
 
 
+
+void maxigin_drawSpriteSparkles( int            inSpriteHandle,
+                                 int            inParticleHandle,
+                                 int            inCenterX,
+                                 int            inCenterY,
+                                 MaxiginRand   *inRand,
+                                 int            inNumSparkles,
+                                 unsigned char  inAlphaFade ) {
+
+    MaxiginSprite  *s         =  &( mx_sprites[ inSpriteHandle ] );
+    long            numDrawn  =  0;
+    int             pSprite   =  inParticleHandle;
+    int             numFail   =  0;
+    int             cx        =  s->w / 2;
+    int             cy        =  s->h / 2;
+    long            red       =  mx_drawColor.comp.red;
+    long            green     =  mx_drawColor.comp.green;
+    long            blue      =  mx_drawColor.comp.blue;
+    long            alpha     =  mx_drawColor.comp.alpha;
+
+
+    /* compound alpha here */
+    if( inAlphaFade < 255 ) {
+        alpha = ( alpha * inAlphaFade ) / 255;
+        }
     
+    while( numDrawn < inNumSparkles ) {
+
+        int            y       =  maxigin_randRange( inRand,
+                                                     0,
+                                                     s->h );
+        int            x       =  maxigin_randRange( inRand,
+                                                     0,
+                                                     s->w );
+        
+        int            aTweak  =  maxigin_randRange( inRand,
+                                                     0,
+                                                     255 );
+        int            drawY;
+        int            drawX;
+
+        int            b       =  s->startByte + y * 4 * s->w + x * 4;
+
+        unsigned char  a       =  mx_spriteBytes[ b + 3 ];
+
+        if( a == 0 ) {
+            numFail ++;
+
+            if( numFail < 10 ) {
+                continue;
+                }
+            else {
+                /* 10 failures in a row looking for non-transparent pixel */
+                break;
+                }
+            }
+        numFail = 0;
+
+        drawY = inCenterY + ( y - cy );
+        drawX = inCenterX + ( x - cx );
+
+        maxigin_drawSetColor(
+            (unsigned char)( ( mx_spriteBytes[ b     ] * red )
+                             / 255 ),
+            (unsigned char)( ( mx_spriteBytes[ b + 1 ] * green )
+                             / 255 ),
+            (unsigned char)( ( mx_spriteBytes[ b + 2 ] * blue )
+                             / 255 ),
+            (unsigned char)( ( a * alpha * aTweak )
+                             / 65025 ) );
+
+            
+        maxigin_drawSprite( pSprite,
+                            drawX,
+                            drawY );
+
+        numDrawn ++;
+        }
+    
+        
+        
+    }
 
 
 

@@ -217,7 +217,7 @@ void moveAnimInit( void ) {
                                          2 );
 
         /* hazy, faded black shadow  top-to-bottom */
-        if(1)maxigin_initMakeDropShadowSpriteStrip(
+        maxigin_initMakeDropShadowSpriteStrip(
             fontStrip,
             4,
             2,
@@ -1473,22 +1473,14 @@ static void drawMultSparkles( int            inBoardCenterX,
                                       mX,
                                       &bX,
                                       &bY );
-                /* repeat glow to make it stronger as mult factor
-                   rises,
-                   but skip first one, since there's no glow at mult-factor
-                   1 (it starts at 2) */
-
-                if( 1 ) {
+                
+                drawPieceSparkles( midState.grid[ mY ][ mX ],
+                                   bX,
+                                   bY,
+                                   &( inMoveProgress->multRandA ),
+                                   (int)( v * 10 ),
+                                   f );
                     
-                    
-                    drawPieceSparkles( midState.grid[ mY ][ mX ],
-                                       bX,
-                                       bY,
-                                       &( inMoveProgress->multRandA ),
-                                       (int)( v * 10 ),
-                                       f );
-                    
-                    }
 
                 /* reaches glowMax when v hits 10 */
                 glowFade = ( glowRange * v ) / 10 + glowMin;

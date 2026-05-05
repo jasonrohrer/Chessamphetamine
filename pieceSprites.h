@@ -586,19 +586,11 @@ void drawPieceSparkles( ChessPiece     inPiece,
 
     ChessPiece  rawP            =  inPiece & CHESS_TYPE_MASK;
     ChessPiece  c               =  inPiece & CHESS_COLOR_MASK;
-    int         cIndex          =  getPieceColorIndex( c );
-    int         nMain           =  inNumSparkles;
-    int         nExtra          =  0;
     int         partSprite      =  getStarParticleSprite();
 
     maxigin_drawToggleAdditive( 1 );
     
     drawSetPieceColor( c );
-
-    if( pieceSpriteExtraHandles[ rawP ][ cIndex ] != -1 ) {
-        nMain  = inNumSparkles / 2;
-        nExtra = nMain;
-        }
 
     if( c == CHESS_WHITE ) {
 
@@ -611,23 +603,9 @@ void drawPieceSparkles( ChessPiece     inPiece,
                                 inBaseCenterX,
                                 inBaseCenterY + pieceOffsetY[ rawP ],
                                 inRand,
-                                nMain,
+                                inNumSparkles,
                                 inAlpha );
 
-    maxigin_drawResetColor();
-    
-    if( pieceSpriteExtraHandles[ rawP ][ cIndex ] != -1 ) {
-    
-        maxigin_drawSpriteSparkles( pieceSpriteExtraHandles[ rawP ][ cIndex ],
-                                    partSprite,
-                                    inBaseCenterX,
-                                    inBaseCenterY
-                                    + pieceOffsetY[ rawP ]
-                                    + pieceExtraOffsetY[ rawP ][ cIndex ],
-                                    inRand,
-                                    nExtra,
-                                    inAlpha );
-        }
     maxigin_drawToggleAdditive( 0 );
     }
         

@@ -217,7 +217,7 @@ void moveAnimInit( void ) {
                                          2 );
 
         /* hazy, faded black shadow  top-to-bottom */
-        if(0)maxigin_initMakeDropShadowSpriteStrip(
+        if(1)maxigin_initMakeDropShadowSpriteStrip(
             fontStrip,
             4,
             2,
@@ -1422,6 +1422,106 @@ static void drawLaser( int  inBoardCenterX,
 
 
 
+static void drawMultSparkles( int            inBoardCenterX,
+                              int            inBoardCenterY,
+                              BoardState    *inState,
+                              Move          *inMove,
+                              Captured      *inCaptured,
+                              AnimProgress  *inMoveProgress ) {
+    
+    static  BoardState  midState;
+    static  Captured    midCaptured;
+
+    if( inMoveProgress->anyMultFactors ) {
+        
+        int          mY;
+        int          mX;
+        MaxiginRand  oldRand = inMoveProgress->multRandA;
+        
+        getCaptureMidState( inState,
+                            inMove,
+                            inCaptured,
+                            &midState,
+                            &midCaptured );
+        
+        for( mY = 0;
+             mY < BH;
+             mY ++ ) {
+            
+            for( mX = 0;
+                 mX < BW;
+                 mX ++ ) {
+                
+                int            bX;
+                int            bY;
+                unsigned char  f          =
+                    inMoveProgress->multFactorFades[ mY ][ mX ];
+                long           v          =
+                    inMoveProgress->multFactors    [ mY ][ mX ];
+                long           glowFade;
+                long           glowMax    =  f / 2;
+                long           glowMin    =  f / 8;
+                long           glowRange  =  glowMax - glowMin;
+                
+                if( f == 0 ) {
+                    continue;
+                    }
+                    
+                boardGetSquareCenter( inBoardCenterX,
+                                      inBoardCenterY,
+                                      mY,
+                                      mX,
+                                      &bX,
+                                      &bY );
+                /* repeat glow to make it stronger as mult factor
+                   rises,
+                   but skip first one, since there's no glow at mult-factor
+                   1 (it starts at 2) */
+
+                if( 1 ) {
+                    
+                    
+                    drawPieceSparkles( midState.grid[ mY ][ mX ],
+                                       bX,
+                                       bY,
+                                       &( inMoveProgress->multRandA ),
+                                       (int)( v * 10 ),
+                                       f );
+                    
+                    }
+
+                /* reaches glowMax when v hits 10 */
+                glowFade = ( glowRange * v ) / 10 + glowMin;
+
+                if( glowFade > glowMax ) {
+                    glowFade = glowMax;
+                    }
+                
+                drawPieceGlowOnly( midState.grid[ mY ][ mX ],
+                                   bX,
+                                   bY,
+                                   (unsigned char)glowFade );
+                }
+            }
+
+        /* restore rand state after drawing, so rand state doesn't
+           keep advancing with each new frame drawn
+           let anim step advance it */
+        
+        /* save post-drawing state, so we can use it in step to advance
+           rand by more than one step.
+           If we just advance rand by calling it once in step,
+           we simply inch one frame forward in these sparkle animations,
+           which causes them to repeat */
+        inMoveProgress->multRandB = inMoveProgress->multRandA;
+        
+        inMoveProgress->multRandA = oldRand;
+        }
+    }
+
+
+
+
 static void multiPhaseDraw( int            inBoardCenterX,
                             int            inBoardCenterY,
                             BoardState    *inState,
@@ -1433,8 +1533,10 @@ static void multiPhaseDraw( int            inBoardCenterX,
     static  BoardState  midState;
     static  Captured    midCaptured;
     
-    int        pn  =  inMoveProgress->phaseNumber;
-    AnimPhase  p   =  inMoveProgress->phases[ inMoveProgress->phaseNumber ];
+    int        pn                =  inMoveProgress->phaseNumber;
+    AnimPhase  p                 =  inMoveProgress->
+                                        phases[ inMoveProgress->phaseNumber ];
+    char       multFactorsDrawn  =  0;
     
     (void)inNewState;
     
@@ -1925,17 +2027,24 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         inBoardCenterX,
                         inBoardCenterY,
                         0 );
+        
+        
+        /* draw mult factor sparkle under mult factor numbers */
+        drawMultSparkles( inBoardCenterX,
+                          inBoardCenterY,
+                          inState,
+                          inMove,
+                          inCaptured,
+                          inMoveProgress );
 
+        multFactorsDrawn = 1;
+
+        
+        
         maxigin_drawResetColor();
 
         maxigin_drawSetAlpha( glintFade );
         
-        /*
-        maxigin_drawSprite( laserBackGlintSprite,
-                            targetX,
-                            targetY+ glintOffsetY );
-        */
-
         displayText =
             maxigin_stringConcat(
                 symbol,
@@ -1952,92 +2061,17 @@ static void multiPhaseDraw( int            inBoardCenterX,
     
     /* draw mult-factor glow over pieces
      this may linger and fade out after multiplier animation phases are done */
-    
-    if( inMoveProgress->anyMultFactors ) {
-        
-        int          mY;
-        int          mX;
-        MaxiginRand  oldRand = inMoveProgress->multRandA;
-        
-        getCaptureMidState( inState,
-                            inMove,
-                            inCaptured,
-                            &midState,
-                            &midCaptured );
-        
-        for( mY = 0;
-             mY < BH;
-             mY ++ ) {
-            
-            for( mX = 0;
-                 mX < BW;
-                 mX ++ ) {
-                
-                int            bX;
-                int            bY;
-                unsigned char  f          =
-                    inMoveProgress->multFactorFades[ mY ][ mX ];
-                long           v          =
-                    inMoveProgress->multFactors    [ mY ][ mX ];
-                long           glowFade;
-                long           glowMax    =  f / 2;
-                long           glowMin    =  f / 8;
-                long           glowRange  =  glowMax - glowMin;
-                
-                if( f == 0 ) {
-                    continue;
-                    }
-                    
-                boardGetSquareCenter( inBoardCenterX,
-                                      inBoardCenterY,
-                                      mY,
-                                      mX,
-                                      &bX,
-                                      &bY );
-                /* repeat glow to make it stronger as mult factor
-                   rises,
-                   but skip first one, since there's no glow at mult-factor
-                   1 (it starts at 2) */
 
-                if( 1 ) {
-                    
-                    
-                    drawPieceSparkles( midState.grid[ mY ][ mX ],
-                                       bX,
-                                       bY,
-                                       &( inMoveProgress->multRandA ),
-                                       (int)( v * 10 ),
-                                       f );
-                    
-                    }
+    if( ! multFactorsDrawn ) {
 
-                /* reaches glowMax when v hits 10 */
-                glowFade = ( glowRange * v ) / 10 + glowMin;
-
-                if( glowFade > glowMax ) {
-                    glowFade = glowMax;
-                    }
-                
-                drawPieceGlowOnly( midState.grid[ mY ][ mX ],
-                                   bX,
-                                   bY,
-                                   (unsigned char)glowFade );
-                }
-            }
-
-        /* restore rand state after drawing, so rand state doesn't
-           keep advancing with each new frame drawn
-           let anim step advance it */
-        
-        /* save post-drawing state, so we can use it in step to advance
-           rand by more than one step.
-           If we just advance rand by calling it once in step,
-           we simply inch one frame forward in these sparkle animations,
-           which causes them to repeat */
-        inMoveProgress->multRandB = inMoveProgress->multRandA;
-        
-        inMoveProgress->multRandA = oldRand;
+        drawMultSparkles( inBoardCenterX,
+                          inBoardCenterY,
+                          inState,
+                          inMove,
+                          inCaptured,
+                          inMoveProgress );
         }
+    
     }
 
                        

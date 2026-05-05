@@ -33,6 +33,11 @@ void drawPieceShadowOnly( ChessPiece  inPiece,
                           int  inBaseCenterX,
                           int  inBaseCenterY );
 
+void drawPieceGlowOnly( ChessPiece     inPiece,
+                        int            inBaseCenterX,
+                        int            inBaseCenterY,
+                        unsigned char  inAlpha );
+
 /* draws the non-shadow component of a piece (base sprite and glow) */
 void drawPieceBaseAndGlowOnly( ChessPiece  inPiece,
                                int  inBaseCenterX,
@@ -487,6 +492,47 @@ void drawPieceShadowOnly( ChessPiece  inPiece,
     maxigin_drawSpriteShadowOnly( pieceSpriteHandles[ rawP ],
                                   inBaseCenterX,
                                   inBaseCenterY + pieceOffsetY[ rawP ] );
+    }
+
+
+
+void drawPieceGlowOnly( ChessPiece     inPiece,
+                        int            inBaseCenterX,
+                        int            inBaseCenterY,
+                        unsigned char  inAlpha ) {
+
+    ChessPiece  rawP          =  inPiece & CHESS_TYPE_MASK;
+    ChessPiece  c             =  inPiece & CHESS_COLOR_MASK;
+    int         cIndex        =  getPieceColorIndex( c );
+
+    maxigin_drawToggleAdditive( 1 );
+    
+    drawSetPieceColor( c );
+
+    maxigin_drawSetAlpha( inAlpha );
+    
+    maxigin_drawSpriteGlowOnly( pieceSpriteHandles[ rawP ],
+                                inBaseCenterX,
+                                inBaseCenterY + pieceOffsetY[ rawP ] );
+    
+    maxigin_drawSpriteGlowOnly( pieceSpriteHandles[ rawP ],
+                                inBaseCenterX,
+                                inBaseCenterY + pieceOffsetY[ rawP ] );
+
+    maxigin_drawResetColor();
+
+    maxigin_drawSetAlpha( inAlpha );
+
+    if( pieceSpriteExtraHandles[ rawP ][ cIndex ] != -1 ) {
+        
+        maxigin_drawSpriteGlowOnly( pieceSpriteExtraHandles[ rawP ][ cIndex ],
+                                    inBaseCenterX,
+                                    inBaseCenterY
+                                    + pieceOffsetY[ rawP ]
+                            + pieceExtraOffsetY[ rawP ][ cIndex ] );
+        }
+
+    maxigin_drawToggleAdditive( 0 );
     }
 
 

@@ -991,7 +991,7 @@ static char multiPhaseStep( BoardState    *inState,
             inMoveProgress->anyMultFactors = 1;
             }
 
-        inMoveProgress->phaseProgress += ( 10 * 60 ) / r;
+        inMoveProgress->phaseProgress += ( 15 * 60 ) / r;
 
         if( inMoveProgress->phaseProgress >= modifierPhaseLen ) {
             inMoveProgress->phaseNumber ++;

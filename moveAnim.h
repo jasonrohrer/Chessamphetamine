@@ -1835,7 +1835,6 @@ static void multiPhaseDraw( int            inBoardCenterX,
         int            drawY;
         int            glintOffsetY  =  -11;
         unsigned char  glintFade     =  255;
-        unsigned char  glowFade      =  0;
         const char    *displayText;
         const char    *symbol        =  "x";
         long           parH          =  10;
@@ -1863,9 +1862,6 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         (long)( inMoveProgress->phaseProgress ) )
                       * 255 ) / endPhase );  
             }
-
-        glowFade = glintFade;
-        
         
         
         boardGetSquareCenter( inBoardCenterX,
@@ -1929,15 +1925,6 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         inBoardCenterX,
                         inBoardCenterY,
                         0 );
-
-
-
-        if(0) if( glowFade > 0 ) {
-            drawPieceGlowOnly( midState.grid[ targetR ][ targetC ],
-                               targetX,
-                               targetY,
-                               glowFade );
-            }
 
         maxigin_drawResetColor();
 

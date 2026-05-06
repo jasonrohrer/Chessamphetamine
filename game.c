@@ -128,6 +128,7 @@ static int          spinPressedTextGlowSprite  = -1;
 
 static int          logoSprite                 = -1;
 static int          logoSubSprite              = -1;
+static int          microdoseSprite            = -1;
 
 static int          lang_settings;
 static int          lang_newGame;
@@ -489,21 +490,55 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         }
     
-
-    if( 0 ) {  
+    if( 1 ) {  
         maxigin_drawResetColor();
-    
-        maxigin_drawSprite( logoSprite,
-                            boardCenterX,
-                            boardCenterY );
 
-        maxigin_drawSetColor( 255,
+        maxigin_drawSetColor( 0,
                               0,
                               0,
                               255 );
-        maxigin_drawSprite( logoSubSprite,
-                            boardCenterX,
-                            boardCenterY + 11 );
+        maxigin_drawFillRect( 0,
+                              0,
+                              MAXIGIN_GAME_NATIVE_W,
+                              MAXIGIN_GAME_NATIVE_H );
+
+        maxigin_drawResetColor();
+
+        if( 0 ) {
+            
+            maxigin_drawSprite( logoSprite,
+                                boardCenterX,
+                                boardCenterY );
+
+            maxigin_drawSetColor( 255,
+                                  0,
+                                  0,
+                                  255 );
+            maxigin_drawSprite( logoSubSprite,
+                                boardCenterX,
+                                boardCenterY + 11 );
+            }
+        else {
+
+            
+            
+            maxigin_drawSprite( microdoseSprite,
+                                boardCenterX,
+                                boardCenterY );
+
+            if( 0 ) {
+                int  border  =  10;
+                
+                maxigin_drawResetColor();
+
+                maxigin_drawRect( boardCenterX - 90 - border,
+                                  boardCenterY - 13 - border,
+                                  boardCenterX + 90 + border,
+                                  boardCenterY + 13 + border );
+                }
+            
+            }
+        
         }
     
 
@@ -1362,6 +1397,11 @@ void maxiginGame_init( void ) {
                                       300,
                                       0 );
 
+    microdoseSprite = maxigin_initSprite( "microdoseLogo.tga" );
+
+    maxigin_initMakeGlowSprite( microdoseSprite,
+                                4,
+                                2 );
     
     lang_settings      = maxigin_initTranslationKey( "settings" );
     lang_newGame       = maxigin_initTranslationKey( "newGame"  );

@@ -129,6 +129,8 @@ static int          spinPressedTextGlowSprite  = -1;
 static int          logoSprite                 = -1;
 static int          logoSubSprite              = -1;
 static int          microdoseSprite            = -1;
+static int          jasonBylineSprite          = -1;
+static int          tomBylineSprite            = -1;
 
 static int          lang_settings;
 static int          lang_newGame;
@@ -504,7 +506,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         maxigin_drawResetColor();
 
-        if( 0 ) {
+        if( 1 ) {
             
             maxigin_drawSprite( logoSprite,
                                 boardCenterX,
@@ -517,6 +519,17 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             maxigin_drawSprite( logoSubSprite,
                                 boardCenterX,
                                 boardCenterY + 11 );
+
+            if( 1 ) {
+                maxigin_drawResetColor();
+                
+                maxigin_drawSprite( jasonBylineSprite,
+                                boardCenterX,
+                                boardCenterY - 20 );
+                maxigin_drawSprite( tomBylineSprite,
+                                boardCenterX,
+                                boardCenterY + 51 );
+                }
             }
         else {
 
@@ -1402,7 +1415,19 @@ void maxiginGame_init( void ) {
     maxigin_initMakeGlowSprite( microdoseSprite,
                                 4,
                                 2 );
+
+    jasonBylineSprite = maxigin_initSprite( "jasonByline.tga" );
+
+    maxigin_initMakeGlowSprite( jasonBylineSprite,
+                                4,
+                                2 );
+
     
+    tomBylineSprite = maxigin_initSprite( "tomByline.tga" );
+
+    maxigin_initMakeGlowSprite( tomBylineSprite,
+                                4,
+                                2 );
     lang_settings      = maxigin_initTranslationKey( "settings" );
     lang_newGame       = maxigin_initTranslationKey( "newGame"  );
     lang_quit          = maxigin_initTranslationKey( "quit" );

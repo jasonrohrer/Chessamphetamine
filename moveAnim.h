@@ -1927,8 +1927,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
         int            deltaY;
         int            drawX;
         int            drawY;
-        int            glintOffsetY  =  -11;
-        unsigned char  glintFade     =  255;
+        int            labelOffsetY  =  -11;
+        unsigned char  labelFade     =  255;
         const char    *displayText;
         const char    *symbol        =  "x";
         long           parH          =  10;
@@ -1943,14 +1943,14 @@ static void multiPhaseDraw( int            inBoardCenterX,
 
         if( inMoveProgress->phaseProgress < halfPhaseLen ) {
             
-            glintFade =
+            labelFade =
                 (unsigned char)(
                     ( (long)( inMoveProgress->phaseProgress ) * 255 )
                     / halfPhaseLen );
             }
         else if( inMoveProgress->phaseProgress > modifierPhaseLen - endPhase ) {
 
-            glintFade =
+            labelFade =
                 (unsigned char)(
                     ( ( modifierPhaseLen -
                         (long)( inMoveProgress->phaseProgress ) )
@@ -2035,7 +2035,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
         
         maxigin_drawResetColor();
 
-        maxigin_drawSetAlpha( glintFade );
+        maxigin_drawSetAlpha( labelFade );
         
         displayText =
             maxigin_stringConcat(
@@ -2045,7 +2045,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
         maxigin_drawText( modifierFont,
                           displayText,
                           drawX,
-                          drawY + glintOffsetY,
+                          drawY + labelOffsetY,
                           MAXIGIN_CENTER );
         }
 

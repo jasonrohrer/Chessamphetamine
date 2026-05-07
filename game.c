@@ -131,6 +131,7 @@ static int          logoSubSprite              = -1;
 static int          microdoseSprite            = -1;
 static int          jasonBylineSprite          = -1;
 static int          tomBylineSprite            = -1;
+static int          smallCapsFont              = -1;
 
 static int          lang_settings;
 static int          lang_newGame;
@@ -511,6 +512,14 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         maxigin_drawResetColor();
 
         if( 1 ) {
+            
+            maxigin_drawText( smallCapsFont,
+                              "CHECKMATE IN ONE",
+                              cX,
+                              cY,
+                              MAXIGIN_CENTER );
+            }
+        else if( 1 ) {
             
             maxigin_drawSprite( logoSprite,
                                 cX,
@@ -1302,6 +1311,7 @@ static void initEndMessageSprite( int  inIndex,
 void maxiginGame_init( void ) {
 
     int  i;
+    int  fontStrip;
     
     for( i = 0;
          i < MAX_NUM_BULLETS;
@@ -1432,6 +1442,23 @@ void maxiginGame_init( void ) {
     maxigin_initMakeGlowSprite( tomBylineSprite,
                                 4,
                                 2 );
+
+    fontStrip = maxigin_initSpriteStrip( "5x5CapsFont.tga",
+                                         6 );
+
+    if( fontStrip != -1 ) {
+
+        maxigin_initMakeGlowSpriteStrip( fontStrip,
+                                         2,
+                                         2 );
+
+        smallCapsFont = maxigin_initFont( fontStrip,
+                                          "5x5CapsFont.txt",
+                                          2,
+                                          6,
+                                          0 );
+        }
+    
     lang_settings      = maxigin_initTranslationKey( "settings" );
     lang_newGame       = maxigin_initTranslationKey( "newGame"  );
     lang_quit          = maxigin_initTranslationKey( "quit" );

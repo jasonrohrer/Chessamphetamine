@@ -129,6 +129,9 @@ static int          spinPressedTextGlowSprite  = -1;
 static int          logoSprite                 = -1;
 static int          logoSubSprite              = -1;
 static int          microdoseSprite            = -1;
+static int          microdoseSpriteA           = -1;
+static int          microdoseSpriteB           = -1;
+static int          microdoseSpriteC           = -1;
 static int          jasonBylineSprite          = -1;
 static int          tomBylineSprite            = -1;
 static int          smallCapsFont              = -1;
@@ -511,7 +514,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         maxigin_drawResetColor();
 
-        if( 1 ) {
+        if( 0 ) {
             
             maxigin_drawText( smallCapsFont,
                               "CHECKMATE IN ONE",
@@ -519,7 +522,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                               cY,
                               MAXIGIN_CENTER );
             }
-        else if( 1 ) {
+        else if( 0 ) {
             
             maxigin_drawSprite( logoSprite,
                                 cX,
@@ -548,7 +551,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
             
             
-            maxigin_drawSprite( microdoseSprite,
+            maxigin_drawSprite( microdoseSpriteC,
                                 cX,
                                 cY );
 
@@ -1424,11 +1427,24 @@ void maxiginGame_init( void ) {
                                       300,
                                       0 );
 
-    microdoseSprite = maxigin_initSprite( "microdoseLogo.tga" );
+    microdoseSprite  = maxigin_initSprite( "microdoseLogo.tga" );
+    microdoseSpriteA = maxigin_initSprite( "microdoseLogoSolo.tga" );
+    microdoseSpriteB = maxigin_initSprite( "microdoseLogoTiny.tga" ); 
+    microdoseSpriteC = maxigin_initSprite( "microdoseLogoTinyCheap.tga" );
 
     maxigin_initMakeGlowSprite( microdoseSprite,
                                 4,
                                 2 );
+    maxigin_initMakeGlowSprite( microdoseSpriteA,
+                                4,
+                                2 );
+    maxigin_initMakeGlowSprite( microdoseSpriteB,
+                                4,
+                                2 );
+    maxigin_initMakeGlowSprite( microdoseSpriteC,
+                                4,
+                                2 );
+    
 
     jasonBylineSprite = maxigin_initSprite( "jasonByline.tga" );
 

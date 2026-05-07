@@ -1443,7 +1443,7 @@ void maxiginGame_init( void ) {
                                 4,
                                 2 );
 
-    fontStrip = maxigin_initSpriteStrip( "5x5CapsFont.tga",
+    fontStrip = maxigin_initSpriteStrip( "5x6CapsFont.tga",
                                          6 );
 
     if( fontStrip != -1 ) {
@@ -1453,7 +1453,7 @@ void maxiginGame_init( void ) {
                                          2 );
 
         smallCapsFont = maxigin_initFont( fontStrip,
-                                          "5x5CapsFont.txt",
+                                          "5x6CapsFont.txt",
                                           2,
                                           6,
                                           0 );

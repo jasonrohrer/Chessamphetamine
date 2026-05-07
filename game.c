@@ -492,7 +492,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         }
     
-    if( 1 ) {  
+    if( 1 ) {
+
+        int  cX = MAXIGIN_GAME_NATIVE_W / 2;
+        int  cY = MAXIGIN_GAME_NATIVE_H / 2;
+        
         maxigin_drawResetColor();
 
         maxigin_drawSetColor( 0,
@@ -509,26 +513,26 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         if( 1 ) {
             
             maxigin_drawSprite( logoSprite,
-                                boardCenterX,
-                                boardCenterY );
+                                cX,
+                                cY );
 
             maxigin_drawSetColor( 255,
                                   0,
                                   0,
                                   255 );
             maxigin_drawSprite( logoSubSprite,
-                                boardCenterX,
-                                boardCenterY + 11 );
+                                cX,
+                                cY + 11 );
 
             if( 1 ) {
                 maxigin_drawResetColor();
                 
                 maxigin_drawSprite( jasonBylineSprite,
-                                boardCenterX,
-                                boardCenterY - 20 );
+                                cX,
+                                cY - 20 );
                 maxigin_drawSprite( tomBylineSprite,
-                                boardCenterX,
-                                boardCenterY + 51 );
+                                cX,
+                                cY + 48 );
                 }
             }
         else {
@@ -536,18 +540,18 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             
             
             maxigin_drawSprite( microdoseSprite,
-                                boardCenterX,
-                                boardCenterY );
+                                cX,
+                                cY );
 
             if( 0 ) {
                 int  border  =  10;
                 
                 maxigin_drawResetColor();
 
-                maxigin_drawRect( boardCenterX - 90 - border,
-                                  boardCenterY - 13 - border,
-                                  boardCenterX + 90 + border,
-                                  boardCenterY + 13 + border );
+                maxigin_drawRect( cX - 90 - border,
+                                  cY - 13 - border,
+                                  cX + 90 + border,
+                                  cY + 13 + border );
                 }
             
             }

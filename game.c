@@ -23,6 +23,9 @@
 #define MOVE_ANIM_IMPLEMENTATION
 #include "moveAnim.h"
 
+#define MONEY_IMPLEMENTATION
+#include "money.h"
+
 #include "simTest.h"
 
 
@@ -496,7 +499,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         }
     
-    if( 1 ) {
+    if( 0 ) {
 
         int  cX = MAXIGIN_GAME_NATIVE_W / 2;
         int  cY = MAXIGIN_GAME_NATIVE_H / 2;
@@ -551,7 +554,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
             
             
-            maxigin_drawSprite( microdoseSpriteC,
+            maxigin_drawSprite( microdoseSprite,
                                 cX,
                                 cY );
 
@@ -580,6 +583,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                         boardCenterX,
                         boardCenterY + 12 );
     */
+
+
+    moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
+               30 );
+
     
     maxigin_drawGUI( &gameGUI );
     }
@@ -956,6 +964,9 @@ void maxiginGame_step( void ) {
                 }
             }
         }
+
+
+    moneyStep();
     
     
 
@@ -1588,7 +1599,8 @@ void maxiginGame_init( void ) {
     pieceSpritesInit();
     particleSpriteInit();
     moveAnimInit();
-
+    moneyInit( 10 );
+    
 
     if(0)runChessTest();
     

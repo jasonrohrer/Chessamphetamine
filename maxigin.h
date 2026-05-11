@@ -3855,7 +3855,7 @@ static void mx_generateCRTOverlay( int  inW,
 
             /* push it back from center, so there's a center region
                with no vignetting at all */
-            r2 -= 10;
+            r2 -= 40;
 
             if( r2 <= 0 ) {
                 mx_crtOverlayPixelBuffer[i] = 255;

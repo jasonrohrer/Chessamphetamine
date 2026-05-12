@@ -18,6 +18,9 @@
 void moneyInit( int inStartVal );
 
 
+void moneyAdd( int inValToAdd );
+
+
 void moneyDraw( int  inPosX,
                 int  inPosY );
 
@@ -127,8 +130,12 @@ void moneyDraw( int  inPosX,
 
 
 void moneyStep( void ) {
-    moneyVal ++;
 
+    }
+
+
+void moneyAdd( int  inValToAdd ) {
+    moneyVal += inValToAdd;
     }
 
 

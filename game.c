@@ -866,6 +866,8 @@ void maxiginGame_step( void ) {
 
         if( moveDone ) {
 
+            moneyAdd( 1 );
+
             if( isCheckmate( &postMoveState,
                              &gameLoserColor ) ) {
 
@@ -1611,8 +1613,8 @@ void maxiginGame_init( void ) {
 
     boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 12;
 
-    if(0) getStartBoard( &boardState );
-    if(1) getTestBoard( &boardState );
+    if(1) getStartBoard( &boardState );
+    if(0) getTestBoard( &boardState );
 
 
     REGISTER_VAL_MEM( boxPosX );

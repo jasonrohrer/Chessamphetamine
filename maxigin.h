@@ -277,7 +277,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_NUM_FONTS
-#define  MAXIGIN_MAX_NUM_FONTS  4
+#define  MAXIGIN_MAX_NUM_FONTS  6
 #endif
 
 

@@ -64,9 +64,17 @@ CHECK_ARRAY_LENGTH( pieceCaptureMoney,
 
 static int coinSprite;
 
-static int moneyVal;
-
 static int moneyFont;
+
+static int coinSound;
+
+
+static int  moneyVal;
+static int  moneyToAdd;
+static int  moneyAddProgress;
+static int  moneyAddProgressMax   =  100;
+static char moneyProgressMidPeak  =  0;
+
 
 
 void moneyInit( int inStartVal ) {
@@ -84,6 +92,11 @@ void moneyInit( int inStartVal ) {
 
     moneyVal = inStartVal;
 
+    moneyToAdd = 0;
+
+    moneyAddProgress = 0;
+    moneyProgressMidPeak = 0;
+    
 
     /* same as modifier font, but fixed width */
     fontStrip = maxigin_initSpriteStrip( "modifierFont.tga",
@@ -102,7 +115,32 @@ void moneyInit( int inStartVal ) {
                                       7 );
         }
 
+    coinSound = maxigin_initSoundEffect( "coin_sd_4.wav" );
+
     REGISTER_VAL_MEM( moneyVal );
+    REGISTER_VAL_MEM( moneyToAdd );
+    REGISTER_VAL_MEM( moneyAddProgress );
+    REGISTER_VAL_MEM( moneyProgressMidPeak );
+    }
+
+
+static int parabola( int  inT,
+                     int  inTMax,
+                     int  inPeak ) {
+    /* float formula is
+       y = 4 * inPeak * ( inT / inTMax ) * ( 1 - inT / inTMax )
+
+       rewritten with division at end for fixed point as:
+
+       y = 4 * inPeak * (inT * (inTMax - inT ) ) / ( inTMax * inTMax )
+
+    */
+    
+    long  tMax2  =  (long)inTMax * (long)inTMax;
+    long  t      =  (long)inT;
+    long  y      =  4 * inPeak * ( t * (inTMax - t ) );
+
+    return (int)( y / tMax2 );
     }
 
 
@@ -110,15 +148,43 @@ void moneyInit( int inStartVal ) {
 void moneyDraw( int  inPosX,
                 int  inPosY ) {
 
-    const char  *displayText;
+    const char    *displayText;
+    int            bounceY       =  0;
+    unsigned char  glowFade      =  0;
     
+    if( moneyAddProgress > 0 ) {
 
+        bounceY = - parabola( moneyAddProgress,
+                              moneyAddProgressMax,
+                              10 );
+
+        glowFade = (unsigned char)parabola( moneyAddProgress,
+                                            moneyAddProgressMax,
+                                            255 );
+        }
+        
+    
     drawSetPieceColor( CHESS_WHITE );
 
     
     maxigin_drawSprite( coinSprite,
                         inPosX,
-                        inPosY );
+                        inPosY + bounceY );
+
+    if( glowFade > 0 ) {
+        maxigin_drawSetAlpha( glowFade );
+        
+        maxigin_drawSpriteGlowOnly( coinSprite,
+                                    inPosX,
+                                    inPosY + bounceY );
+
+        maxigin_drawSetAlpha( glowFade / 2 );
+        
+        maxigin_drawSpriteGlowOnly( coinSprite,
+                                    inPosX,
+                                    inPosY + bounceY );
+        maxigin_drawSetAlpha( 255 );
+        }
 
     displayText = maxigin_intToString( moneyVal );
         
@@ -128,31 +194,79 @@ void moneyDraw( int  inPosX,
                       inPosY,
                       MAXIGIN_RIGHT );
 
+    if( glowFade > 0 ) {
+        maxigin_drawSetAlpha( glowFade / 2 );
+
+        maxigin_drawToggleAdditive( 1 );
+        
+        maxigin_drawText( moneyFont,
+                      displayText,
+                      inPosX - 9,
+                      inPosY,
+                      MAXIGIN_RIGHT );
+
+        maxigin_drawToggleAdditive( 0 );
+        maxigin_drawSetAlpha( 255 );
+        }
+    
+
     }
 
 
 
 void moneyStep( void ) {
 
-    /*moneyVal ++;*/
+    int  r  = mingin_getStepsPerSecond();
+
+    if( moneyToAdd == 0
+        &&
+        moneyAddProgress == 0 ) {
+        return;
+        }
+
+    moneyAddProgress += ( 10 * 60 ) / r;
+
+    if( ! moneyProgressMidPeak
+        &&
+        moneyAddProgress >= moneyAddProgressMax / 2 ) {
+
+        moneyVal += 1;
+
+        moneyToAdd -= 1;
+    
+        maxigin_playSoundEffect( coinSound,
+                                 512 );
+
+        moneyProgressMidPeak = 1;
+        }
+    else if( moneyProgressMidPeak
+             &&
+             moneyAddProgress >= moneyAddProgressMax ) {
+        /* start next increment */
+        moneyProgressMidPeak = 0;
+        moneyAddProgress = 0;
+        }
+    
 
     }
 
 
+
 void moneyAdd( int  inValToAdd ) {
-    moneyVal += inValToAdd;
+    moneyToAdd += inValToAdd;
     }
 
 
 void moneyAddCapture( ChessPiece inPiece ) {
 
-    ChessPiece  c  =  inPiece & CHESS_COLOR_MASK;
-    ChessPiece  t  =  inPiece & CHESS_TYPE_MASK;
-
+    ChessPiece  c    =  inPiece & CHESS_COLOR_MASK;
+    ChessPiece  t    =  inPiece & CHESS_TYPE_MASK;
+    
     if( c == CHESS_BLACK ) {
 
-        moneyVal += pieceCaptureMoney[ t ];
+        moneyToAdd += pieceCaptureMoney[ t ];
         }
+
     }
 
 

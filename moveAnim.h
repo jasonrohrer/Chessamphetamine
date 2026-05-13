@@ -375,6 +375,45 @@ static void defaultPieceInit( BoardState    *inState,
     }
 
 
+/* handles adding money for captured pieces, given a range of
+   indices in the capture list */
+static void processCaptureMoney( Captured  *inCaptured,
+                                 int        inStartC,
+                                 int        inEndC ) {
+    int  c;
+    int  anyKing  =  0;
+
+    /* first check if any is a king */
+
+    for( c  = inStartC;
+         c <= inEndC;
+         c ++ ) {
+                    
+        ChessPiece  cp  = inCaptured->pieces[c].p;
+
+        if( ( cp & CHESS_TYPE_MASK ) == king ) {
+            anyKing = 1;
+            }
+        }
+
+    
+    for( c  = inStartC;
+         c <= inEndC;
+         c ++ ) {
+
+        ChessPiece  cp  = inCaptured->pieces[c].p;
+
+        if( anyKing ) {
+            /* if king is in the capture batch, delay showing money
+               getting added until later, b/c game is over */
+            moneyAddCaptureDelayed( cp );
+            }
+        else {
+            moneyAddCapture( cp );
+            }
+        }
+    }
+
 
 
 static char defaultPieceStep( BoardState    *inState,
@@ -428,7 +467,6 @@ static char defaultPieceStep( BoardState    *inState,
                 
                 int   oldScore  =  getScore( inState );
                 int   newScore  =  getScore( inNewState );
-                int   c;
                 
                 if( oldScore <= newScore ) {
                     maxigin_playSoundEffect( shooshGood,
@@ -439,16 +477,9 @@ static char defaultPieceStep( BoardState    *inState,
                                              512 );
                     }
 
-                /* start stepping money for captured pieces */
-
-                for( c = 0;
-                     c < inCaptured->num;
-                     c ++ ) {
-                    ChessPiece  cp  = inCaptured->pieces[c].p;
-
-                    moneyAddCapture( cp );
-                    }
-                
+                processCaptureMoney( inCaptured,
+                                     0,
+                                     inCaptured->num - 1 );
                 }
             }
         }
@@ -970,7 +1001,6 @@ static char multiPhaseStep( BoardState    *inState,
             int  endC       =  inMoveProgress->params[ pn ][ 1 ];
             int  oldScore;
             int  newScore;
-            int  c;
             
             getCaptureCutoffMidState( inState,
                                       inMove,
@@ -998,17 +1028,10 @@ static char multiPhaseStep( BoardState    *inState,
                 maxigin_playSoundEffect( splatterBad,
                                          512 );
                 }
-
-            /* add captured to money at start of explosions */
-            for( c  = startC;
-                 c <= endC;
-                 c ++ ) {
-                
-                ChessPiece  cp  = inCaptured->pieces[c].p;
-
-                moneyAddCapture( cp );
-                }
             
+            processCaptureMoney( inCaptured,
+                                 startC,
+                                 endC );
             }
         
 

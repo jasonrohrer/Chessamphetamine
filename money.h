@@ -24,6 +24,14 @@ void moneyAdd( int inValToAdd );
 void moneyAddCapture( ChessPiece inPiece );
 
 
+/* adds captured money value that is delayed until later */
+void moneyAddCaptureDelayed( ChessPiece inPiece );
+
+
+void moneyReleaseDelayed( void );
+
+
+
 void moneyDraw( int  inPosX,
                 int  inPosY );
 
@@ -75,7 +83,9 @@ static int coinSound;
 
 
 static int  moneyVal;
-static int  moneyToAdd;
+static int  moneyToAdd            =  0;
+static int  delayedMoneyToAdd     =  0;
+
 static int  moneyAddProgress;
 static int  moneyAddProgressMax   =  100;
 static char moneyProgressMidPeak  =  0;
@@ -96,8 +106,6 @@ void moneyInit( int inStartVal ) {
         }
 
     moneyVal = inStartVal;
-
-    moneyToAdd = 0;
 
     moneyAddProgress = 0;
     moneyProgressMidPeak = 0;
@@ -240,7 +248,7 @@ void moneyStep( void ) {
         moneyToAdd -= 1;
     
         maxigin_playSoundEffect( coinSound,
-                                 512 );
+                                 256 );
 
         moneyProgressMidPeak = 1;
         }
@@ -262,16 +270,35 @@ void moneyAdd( int  inValToAdd ) {
     }
 
 
-void moneyAddCapture( ChessPiece inPiece ) {
 
+static int getCaptureValue( ChessPiece  inPiece ) {
+    
     ChessPiece  c    =  inPiece & CHESS_COLOR_MASK;
     ChessPiece  t    =  inPiece & CHESS_TYPE_MASK;
     
     if( c == CHESS_BLACK ) {
-
-        moneyToAdd += pieceCaptureMoney[ t ];
+       return pieceCaptureMoney[ t ];
         }
+    return 0;
+    }
 
+
+
+void moneyAddCapture( ChessPiece inPiece ) {
+    moneyToAdd += getCaptureValue( inPiece );
+    }
+
+
+
+void moneyAddCaptureDelayed( ChessPiece inPiece ) {
+    delayedMoneyToAdd += getCaptureValue( inPiece );
+    }
+
+
+
+void moneyReleaseDelayed( void ) {
+    moneyToAdd += delayedMoneyToAdd;
+    delayedMoneyToAdd = 0;
     }
 
 

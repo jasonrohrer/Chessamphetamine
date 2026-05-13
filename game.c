@@ -944,6 +944,10 @@ void maxiginGame_step( void ) {
 
         if( explodingEndMessageProgress >= explodingEndMessageMax ) {
             explodingEndMessageProgress = -1;
+
+            /* when end-game message done exploding, release any pent-up
+               money */
+            moneyReleaseDelayed();
             }
         }
     else if( chessGameOver

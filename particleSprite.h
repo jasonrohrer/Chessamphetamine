@@ -12,7 +12,7 @@
 */
 
 #ifndef PARTICLE_SPRITE_H_INCLUDED
-#define PARTICLE_SPRITE_H_NCLUDED
+#define PARTICLE_SPRITE_H_INCLUDED
 
 
 void particleSpriteInit( void );

@@ -9,21 +9,22 @@
 
 
 #define CHESS_IMPLEMENTATION
+#define BOARD_IMPLEMENTATION
+#define PARTICLE_SPRITE_IMPLEMENTATION
+#define PIECE_SPRITES_IMPLEMENTATION
+#define MOVE_ANIM_IMPLEMENTATION
+#define MONEY_IMPLEMENTATION
+
 #include "chess.h"
 
-#define BOARD_IMPLEMENTATION
 #include "board.h"
 
-#define PARTICLE_SPRITE_IMPLEMENTATION
 #include "particleSprite.h"
 
-#define PIECE_SPRITES_IMPLEMENTATION
 #include "pieceSprites.h"
 
-#define MOVE_ANIM_IMPLEMENTATION
 #include "moveAnim.h"
 
-#define MONEY_IMPLEMENTATION
 #include "money.h"
 
 #include "simTest.h"
@@ -865,8 +866,6 @@ void maxiginGame_step( void ) {
                                            &moveProgress );
 
         if( moveDone ) {
-
-            moneyAdd( 1 );
 
             if( isCheckmate( &postMoveState,
                              &gameLoserColor ) ) {

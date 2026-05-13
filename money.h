@@ -21,6 +21,9 @@ void moneyInit( int inStartVal );
 void moneyAdd( int inValToAdd );
 
 
+void moneyAddCapture( ChessPiece inPiece );
+
+
 void moneyDraw( int  inPosX,
                 int  inPosY );
 
@@ -131,13 +134,25 @@ void moneyDraw( int  inPosX,
 
 void moneyStep( void ) {
 
-    moneyVal ++;
+    /*moneyVal ++;*/
 
     }
 
 
 void moneyAdd( int  inValToAdd ) {
     moneyVal += inValToAdd;
+    }
+
+
+void moneyAddCapture( ChessPiece inPiece ) {
+
+    ChessPiece  c  =  inPiece & CHESS_COLOR_MASK;
+    ChessPiece  t  =  inPiece & CHESS_TYPE_MASK;
+
+    if( c == CHESS_BLACK ) {
+
+        moneyVal += pieceCaptureMoney[ t ];
+        }
     }
 
 

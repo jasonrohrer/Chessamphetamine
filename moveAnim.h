@@ -101,6 +101,7 @@ void drawMoveAnimation( int            inBoardCenterX,
 
 #ifdef MOVE_ANIM_IMPLEMENTATION
 
+#include "money.h"
 
 static  int  beepUp       =  -1;
 static  int  beepDown     =  -1;
@@ -425,7 +426,8 @@ static char defaultPieceStep( BoardState    *inState,
                 
                 int   oldScore  =  getScore( inState );
                 int   newScore  =  getScore( inNewState );
-
+                int   c;
+                
                 if( oldScore <= newScore ) {
                     maxigin_playSoundEffect( shooshGood,
                                              512 );
@@ -434,6 +436,17 @@ static char defaultPieceStep( BoardState    *inState,
                     maxigin_playSoundEffect( splatterBad,
                                              512 );
                     }
+
+                /* start stepping money for captured pieces */
+
+                for( c = 0;
+                     c < inCaptured->num;
+                     c ++ ) {
+                    ChessPiece  cp  = inCaptured->pieces[c].p;
+
+                    moneyAddCapture( cp );
+                    }
+                
                 }
             }
         }
@@ -926,7 +939,8 @@ static char multiPhaseStep( BoardState    *inState,
             int  endC       =  inMoveProgress->params[ pn ][ 1 ];
             int  oldScore;
             int  newScore;
-
+            int  c;
+            
             getCaptureCutoffMidState( inState,
                                       inMove,
                                       inCaptured,
@@ -953,6 +967,17 @@ static char multiPhaseStep( BoardState    *inState,
                 maxigin_playSoundEffect( splatterBad,
                                          512 );
                 }
+
+            /* add captured to money at start of explosions */
+            for( c  = startC;
+                 c <= endC;
+                 c ++ ) {
+                
+                ChessPiece  cp  = inCaptured->pieces[c].p;
+
+                moneyAddCapture( cp );
+                }
+            
             }
         
 

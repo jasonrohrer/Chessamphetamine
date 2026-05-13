@@ -394,7 +394,9 @@ static char defaultPieceStep( BoardState    *inState,
     (void)inNewState;
     
     
-    if( inMoveProgress->phaseProgress < pixDist ) {
+    if( inMoveProgress->phaseProgress >= 0
+        &&
+        inMoveProgress->phaseProgress < pixDist ) {
 
         /* still on piece movement portion of animtion */
         
@@ -453,13 +455,32 @@ static char defaultPieceStep( BoardState    *inState,
     else {
         /* onto explosion of captured pieces */
 
-        int  explodeProgress  =  inMoveProgress->phaseProgress - pixDist;
-        
-        explodeProgress = stepExplodingPiece( explodeProgress );
+        int  explodeProgress;
+
+        if( inMoveProgress->phaseProgress > 0 ) {
+            explodeProgress =  inMoveProgress->phaseProgress - pixDist;
+            explodeProgress = stepExplodingPiece( explodeProgress );
+            }
+        else {
+            /* if there's a negative value in phase progress,
+               then explosion must already be done, and we're
+               waiting for money to settle */
+            explodeProgress = -1;
+            }
 
         if( explodeProgress == -1 ) {
             /* done exploding */
-            return 1;
+
+            /* wait for money to settle before going on to next phase */
+            if( moneyIsSettled() ) {
+                return 1;
+                }
+            else {
+                /* hang on to the -1 for our progress as we wait for
+                   money to settle */
+                inMoveProgress->phaseProgress = explodeProgress;
+                return 0;
+                }
             }
 
         inMoveProgress->phaseProgress = pixDist + explodeProgress;
@@ -485,7 +506,12 @@ static void defaultPieceDraw( int            inBoardCenterX,
     boardDraw( inBoardCenterX,
                inBoardCenterY );
 
-    if( inMoveProgress->phaseProgress < pixDist ) {
+    /* if progress negaive, move done, explosion done
+       and we're waiting for money to settle */
+    if( inMoveProgress->phaseProgress >= 0
+        &&
+        inMoveProgress->phaseProgress < pixDist ) {
+        
         /* draw move in progress */
 
         drawBoardState( inState,
@@ -516,23 +542,28 @@ static void defaultPieceDraw( int            inBoardCenterX,
 
         if( inCaptured->num > 0 ) {
 
-            /* there are captured pieces, draw them */
+            /* there are captured pieces, draw them exploding */
 
-            int  pn;
-            int  explodingProgress  =  inMoveProgress->phaseProgress - pixDist;
+            /* if progress is negative, explosions are already done
+               but we're waiting for money to settle */
+            if( inMoveProgress->phaseProgress > 0 ) {
+                int  pn;
+                int  explodingProgress  =
+                     inMoveProgress->phaseProgress - pixDist;
             
-            for( pn = 0;
-                 pn < inCaptured->num;
-                 pn ++ ) {
+                for( pn = 0;
+                     pn < inCaptured->num;
+                     pn ++ ) {
 
-                BoardPiece  *bp  =  &( inCaptured->pieces[ pn ] );
+                    BoardPiece  *bp  =  &( inCaptured->pieces[ pn ] );
             
-                drawExplodingPiece( bp->p,
-                                    inBoardCenterX,
-                                    inBoardCenterY,
-                                    bp->row,
-                                    bp->col,
-                                    explodingProgress );
+                    drawExplodingPiece( bp->p,
+                                        inBoardCenterX,
+                                        inBoardCenterY,
+                                        bp->row,
+                                        bp->col,
+                                        explodingProgress );
+                    }
                 }
             }
         }
@@ -985,8 +1016,17 @@ static char multiPhaseStep( BoardState    *inState,
 
         if( explodeProgress == -1 ) {
             /* done exploding */
-            inMoveProgress->phaseNumber ++;
-            inMoveProgress->phaseProgress = 0;
+
+            /* wait for money to settle before going on to next phase */
+            if( moneyIsSettled() ) {
+                inMoveProgress->phaseNumber ++;
+                inMoveProgress->phaseProgress = 0;
+                }
+            else {
+                /* hang on to the -1 for our progress as we wait for
+                   money to settle */
+                inMoveProgress->phaseProgress = explodeProgress;
+                }
             }
         else {
             inMoveProgress->phaseProgress = explodeProgress;
@@ -1921,19 +1961,25 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         inBoardCenterX,
                         inBoardCenterY,
                         0 );
+
             
-        for( c = startC;
-             c <= endC;
-             c ++ ) {
+        /* if progress is negative, explosions are already done
+           but we're waiting for money to settle */
+        if( explodingProgress != -1 ) {
+                
+            for( c = startC;
+                 c <= endC;
+                 c ++ ) {
 
-            BoardPiece  *bp  =  &( inCaptured->pieces[ c ] );
+                BoardPiece  *bp  =  &( inCaptured->pieces[ c ] );
 
-            drawExplodingPiece( bp->p,
-                                inBoardCenterX,
-                                inBoardCenterY,
-                                bp->row,
-                                bp->col,
-                                explodingProgress );
+                drawExplodingPiece( bp->p,
+                                    inBoardCenterX,
+                                    inBoardCenterY,
+                                    bp->row,
+                                    bp->col,
+                                    explodingProgress );
+                }
             }
         }
     else if( p == multiplier

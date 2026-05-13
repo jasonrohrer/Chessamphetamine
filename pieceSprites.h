@@ -616,6 +616,10 @@ static  int  explodeMax  =  512;
 
 int stepExplodingPiece( int  inProgress ) {
 
+    if( inProgress == -1 ) {
+        return -1;
+        }
+
     if( getParticleSprite() == -1 ) {
         return -1;
         }

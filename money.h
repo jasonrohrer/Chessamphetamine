@@ -31,6 +31,11 @@ void moneyDraw( int  inPosX,
 void moneyStep( void );
 
 
+/* returns 1 if all money adding animations are settled and done */
+char moneyIsSettled( void );
+
+
+
 
 #ifdef MONEY_IMPLEMENTATION
 
@@ -270,6 +275,15 @@ void moneyAddCapture( ChessPiece inPiece ) {
     }
 
 
+
+char moneyIsSettled( void ) {
+    if( moneyToAdd == 0
+        &&
+        moneyAddProgress == 0 ) {
+        return 1;
+        }
+    return 0;
+    }
 
 
 

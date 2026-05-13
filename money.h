@@ -96,7 +96,7 @@ void moneyInit( int inStartVal ) {
                                       "modifierFont.txt",
                                       0,
                                       4,
-                                      6 );
+                                      7 );
         }
 
     REGISTER_VAL_MEM( moneyVal );
@@ -130,6 +130,8 @@ void moneyDraw( int  inPosX,
 
 
 void moneyStep( void ) {
+
+    moneyVal ++;
 
     }
 

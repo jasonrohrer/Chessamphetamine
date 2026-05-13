@@ -19520,7 +19520,6 @@ int maxigin_drawText( int           inFontHandle,
     char         *nextText        =  (char*)inText;
     int           numSprites      =  0;
     int           totalPixWidth   =  0;
-    int           lastCharRightR  =  0;
     int           startX;
     int           s;
     char          fixed           =  ( f->fixedWidth > 0 );
@@ -19687,14 +19686,12 @@ int maxigin_drawText( int           inFontHandle,
                 }
             else {
                 /* first sprite
-                   use actual pixel span for perfect alignment
-                   of whole string */
-                charCenterOffsetFromPrev[ numSprites ] =
-                    mx_sprites[ spriteHandle ].leftVisibleRadius;
+                   use half fixed width for center
+                   don't use actual sprite left radius here, because
+                   it causes jiggle as fixed-width displays change
+                   numerical values */
+                charCenterOffsetFromPrev[ numSprites ] = f->fixedWidth / 2;
                 }
-            
-            lastCharRightR =
-                mx_sprites[ spriteHandle ].rightVisibleRadius;
             }
 
         
@@ -19704,15 +19701,6 @@ int maxigin_drawText( int           inFontHandle,
             /* cut off at the max string length limit */
             break;
             }
-        }
-    
-    if( fixed
-        &&
-        numSprites > 0 ) {
-        /* fix total width by accounting for actual
-           pixel span of final char */
-        totalPixWidth -= f->fixedWidth / 2;
-        totalPixWidth += lastCharRightR;
         }
 
     

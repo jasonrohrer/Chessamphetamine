@@ -652,10 +652,15 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( showingMoveLog ) {
         numberDraw( moveLogProgress,
-                MAXIGIN_GAME_NATIVE_W - 20,
-                70,
-                1 );
+                    MAXIGIN_GAME_NATIVE_W - 20,
+                    70,
+                    1 );
         }
+    numberDraw( boardState.moveCount,
+                MAXIGIN_GAME_NATIVE_W - 20,
+                80,
+                1 );
+                
     
     maxigin_drawGUI( &gameGUI );
     }

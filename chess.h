@@ -1478,7 +1478,7 @@ void chessSeed( unsigned long  inSeed ) {
 void chessInit( void ) {
 
     /* stalemate */
-    chessSeed( 12036693 );
+    chessSeed( 12036694 );
 
     /* draw */
     if(0)chessSeed( 12035857 );
@@ -1607,8 +1607,13 @@ void getTestBoard( BoardState  *outState ) {
 */
 
 
-#define MAX_LOGGED_STATES    30000
 
+#define LOG_CHESS_STATES     0
+
+/* set to a large value to actually log states
+   set to 1 when not doing debug logging, to save RAM*/
+#define MAX_LOGGED_STATES    1
+    
 static  BoardState  stateLog[ MAX_LOGGED_STATES ];
 
 static  int         logCount  =  0;
@@ -1678,7 +1683,10 @@ static int getPiecePossibleMoves( BoardState     *inState,
             numGoodMoves ++;
             }
         
-        if( logCount < MAX_LOGGED_STATES ) {
+        if( LOG_CHESS_STATES
+            &&
+            logCount < MAX_LOGGED_STATES ) {
+            
             stateLog[ logCount ] = resultStates  [ m ];
             logCount++;
             }

@@ -495,6 +495,25 @@ int mingin_getMillisecondsLeftInStep( void );
 
 
 /*
+  How many seconds and milliseconds has the program been running?
+
+  Values might be set to -1 on platforms that don't have clocks.
+
+  Parameters:
+  
+      outSeconds         pointer to where the elapsed seconds should be returned
+
+      outMilliseconds    pointer to where the elapsed milliseconds should be
+                         returned
+            
+  [jumpMinginProvides]                         
+*/
+void mingin_getRunningTime( long  *outSeconds,
+                            long  *outMilliseconds );
+
+
+
+/*
   Prevents minginGame_getAudioSamples() from being called until
   mingin_unlockAudio() is called.
 
@@ -2290,6 +2309,7 @@ static  char            mn_areWeInStepFunction  =  0;
 static  char            mn_xFullscreen          =  0;
 static  int             mn_screenRefreshRate    =  0;
 static  struct timeval  mn_lastRedrawTime;
+static  struct timeval  mn_programStartTime;
 static  const char     *mn_settingsDirName      =  "settings";
 static  const char     *mn_bulkDataDirName      =  "data";
 static  char            mn_steamDeck            =  0;
@@ -2347,6 +2367,21 @@ int mingin_getMillisecondsLeftInStep( void ) {
     else {
         return msPerStep - msPassed;
         }
+    }
+
+
+
+void mingin_getRunningTime( long  *outSeconds,
+                            long  *outMilliseconds ) {
+
+    static  struct timeval  currentTime;
+
+    gettimeofday( & currentTime,
+                  NULL );
+
+    *outSeconds = (long)( currentTime.tv_sec - mn_programStartTime.tv_sec );
+    *outMilliseconds =
+        (long)( ( currentTime.tv_usec - mn_programStartTime.tv_usec ) / 1000 );
     }
 
 
@@ -3616,6 +3651,10 @@ int main( void ) {
 
     struct timespec  nextFrameTime;
 
+    
+    gettimeofday( & mn_programStartTime,
+                  NULL );
+    
     mingin_log( "Linux mingin platform starting up\n" );
     
     mn_steamDeck = mn_isRunningOnSteamDeck();
@@ -7842,6 +7881,10 @@ static void mn_pollControllers( void ) {
 
 
 
+static  LARGE_INTEGER  mn_frameEndTarget;
+static  LARGE_INTEGER  mn_programStartCount;
+
+
 
 int APIENTRY WinMain( HINSTANCE  hInstance,
                       HINSTANCE  hInstancePrev,
@@ -7850,11 +7893,12 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
 
     MSG            msg;
     char           success;
-    LARGE_INTEGER  frameEndTarget;
     
     HANDLE         frameTimer;
     int            i;
     int            b;
+
+    QueryPerformanceCounter( &mn_programStartCount );
     
     for( i = 0;
          i < MINGIN_WINDOWS_MAX_OPEN_FILES;
@@ -7903,9 +7947,9 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     mn_ticksPerFrame.QuadPart =
         mn_performanceCounterFreq.QuadPart / mn_screenRefreshRate;
 
-    QueryPerformanceCounter( &frameEndTarget );
+    QueryPerformanceCounter( &mn_frameEndTarget );
 
-    frameEndTarget.QuadPart += mn_ticksPerFrame.QuadPart;
+    mn_frameEndTarget.QuadPart += mn_ticksPerFrame.QuadPart;
     
     
     while( 1 ) {
@@ -8075,7 +8119,7 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                 QueryPerformanceCounter( &frameEndTime );
 
                 countDiff.QuadPart =
-                    frameEndTarget.QuadPart - frameEndTime.QuadPart;
+                    mn_frameEndTarget.QuadPart - frameEndTime.QuadPart;
                 
                 if( countDiff.QuadPart > 0 ) {
                     /* we ended too soon */
@@ -8099,7 +8143,7 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
             
             QueryPerformanceCounter( &frameEndTime );
             
-            frameEndTarget.QuadPart =
+            mn_frameEndTarget.QuadPart =
                 frameEndTime.QuadPart + mn_ticksPerFrame.QuadPart;
             }
         }
@@ -8146,7 +8190,7 @@ int mingin_getMillisecondsLeftInStep( void ) {
     QueryPerformanceCounter( &currCount );
 
     countDiff.QuadPart =
-        currCount.QuadPart - currCount.QuadPart;
+        mn_frameEndTarget.QuadPart - currCount.QuadPart;
 
     if( countDiff.QuadPart <= 0 ) {
         return 0;
@@ -8154,6 +8198,33 @@ int mingin_getMillisecondsLeftInStep( void ) {
 
     return (int)( ( countDiff.QuadPart * 1000 ) /
                   mn_performanceCounterFreq.QuadPart );
+    }
+
+
+
+void mingin_getRunningTime( long  *outSeconds,
+                            long  *outMilliseconds ) {
+
+    LARGE_INTEGER  currCount;
+    LARGE_INTEGER  countDiff;
+    long           sec;
+    long           msec;
+    
+    QueryPerformanceCounter( &currCount );
+
+    countDiff.QuadPart =
+        currCount.QuadPart - mn_programStartCount.QuadPart;
+
+    /* frequency is in ticks per second */
+    sec  = (long)( countDiff.QuadPart / mn_performanceCounterFreq.QuadPart );
+
+    msec = (long)( ( countDiff.QuadPart * 1000 )
+                   / mn_performanceCounterFreq.QuadPart );
+
+    msec -= sec * 1000;
+
+    *outSeconds      = sec;
+    *outMilliseconds = msec;
     }
 
 
@@ -9981,6 +10052,17 @@ int main( void ) {
         /* don't even bother asking for game audio samples */
         }
 
+    /* we don't ever call these static mingin all-platform internal functions
+       suppress warnings */
+    (void)mn_getWindowTitle;
+    (void)mn_getFlagSetting;
+    (void)mn_saveFlagSetting;
+    (void)mn_stringStartsWith;
+    (void)mn_stringsEqual;
+    (void)mn_stringLength;
+    (void)mn_intToString;
+    
+    
     /* game asked to quit ! */
     return 0;
     }
@@ -9996,6 +10078,14 @@ int mingin_getStepsPerSecond( void ) {
 
 int mingin_getMillisecondsLeftInStep( void ) {
     return -1;
+    }
+
+
+
+void mingin_getRunningTime( long  *outSeconds,
+                            long  *outMilliseconds ) {
+    *outSeconds      = -1;
+    *outMilliseconds = -1;
     }
 
 

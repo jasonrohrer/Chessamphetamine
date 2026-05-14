@@ -14,6 +14,7 @@
 #define PIECE_SPRITES_IMPLEMENTATION
 #define MOVE_ANIM_IMPLEMENTATION
 #define MONEY_IMPLEMENTATION
+#define NUMBERS_IMPLEMENTATION
 
 #include "chess.h"
 
@@ -28,6 +29,8 @@
 #include "money.h"
 
 #include "simTest.h"
+
+#include "numbers.h"
 
 
 enum GameUserAction {
@@ -1605,7 +1608,7 @@ void maxiginGame_init( void ) {
     particleSpriteInit();
     moveAnimInit();
     moneyInit( 10 );
-    
+    numbersInit();
 
     if(0)runChessTest();
     

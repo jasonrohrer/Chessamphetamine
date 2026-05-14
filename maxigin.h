@@ -1938,10 +1938,38 @@ void maxigin_drawButtonHintSprite( int  inButtonHandle,
 
       the horizontal extent of the text, in pixels, or -1 on failure
 
-  [jumpMaxiginDraw]
+  [jumpMaxiginGeneral]
 */
 int maxigin_measureLangText( int  inPhraseKey );
 
+
+
+/*
+  Adjusts spacing for an already-initialized font.
+
+  Parameters
+
+      inFont                  handle for font
+      
+      inCharSpacing           the space to insert between characters in the font
+                              when drawing, in pixels.
+                              If 0, characters will be drawn butted against
+                              each other.
+
+      inSpaceWidth            the width of any space characters (0x20) that occur
+                              in strings rendered with this font.  Also applies
+                              to any sprites in the strip that have no
+                              non-transparent pixels.
+
+      inFixedWidth            0       for variable-width characters
+                              n > 0   to force all characters to be n pixels
+                                      wide (with inSpacing added in between)
+  [jumpMaxiginGeneral]                                      
+*/
+void maxigin_adjustFontSpacing( int  inFont,
+                                int  inCharSpacing,
+                                int  inSpaceWidth,
+                                int  inFixedWidth );
 
 
 /*
@@ -20594,6 +20622,20 @@ int maxigin_measureLangText( int  inPhraseKey ) {
                                  0,
                                  0,
                                  MAXIGIN_SKIP_DRAW_AND_MEASURE );
+    }
+
+
+
+void maxigin_adjustFontSpacing( int  inFont,
+                                int  inCharSpacing,
+                                int  inSpaceWidth,
+                                int  inFixedWidth ) {
+    
+    MaxiginFont  *font  =  &( mx_fonts[ inFont ] );
+
+    font->spacing    = inCharSpacing;
+    font->spaceWidth = inSpaceWidth;
+    font->fixedWidth = inFixedWidth;
     }
 
 

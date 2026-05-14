@@ -162,14 +162,9 @@ static  int          laserPawnTopGlintSprite;
 static  int          laserPawnTopGlintGlow;
 
 
-static  int          modifierFont;
-
-
 void moveAnimInit( void ) {
 
     int  i;
-    int  fontStrip;
-    
 
     beepUp = maxigin_initSoundEffect( "beepUp.wav" );
     beepDown = maxigin_initSoundEffect( "beepDown.wav" );
@@ -207,34 +202,6 @@ void moveAnimInit( void ) {
     
     laserPawnTopGlintSprite = maxigin_initSprite( "laserPawnTopGlint.tga"     );
     laserPawnTopGlintGlow   = maxigin_initSprite( "laserPawnTopGlintGlow.tga" );
-
-    fontStrip = maxigin_initSpriteStrip( "modifierFont.tga",
-                                         8 );
-
-    if( fontStrip != -1 ) {
-
-        maxigin_initMakeGlowSpriteStrip( fontStrip,
-                                         2,
-                                         2 );
-
-        /* hazy, faded black shadow  top-to-bottom */
-        maxigin_initMakeDropShadowSpriteStrip(
-            fontStrip,
-            4,
-            2,
-            192,
-            192,
-            60,
-            30,
-            50,
-            0 );
-
-        modifierFont = maxigin_initFont( fontStrip,
-                                         "modifierFont.txt",
-                                         0,
-                                         4,
-                                         0 );
-        }
     }
 
 
@@ -2135,12 +2102,11 @@ static void multiPhaseDraw( int            inBoardCenterX,
             maxigin_stringConcat(
                 symbol,
                 maxigin_intToString( inMoveProgress->params[ pn ][ 4 ] ) );
-        
-        maxigin_drawText( modifierFont,
-                          displayText,
-                          drawX,
-                          drawY + labelOffsetY,
-                          MAXIGIN_CENTER );
+
+        numberDrawText( displayText,
+                        drawX,
+                        drawY + labelOffsetY,
+                        0 );
         }
 
 

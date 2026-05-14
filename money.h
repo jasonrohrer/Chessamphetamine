@@ -51,7 +51,7 @@ char moneyIsSettled( void );
 #include "chess.h"
 #include "arraySizeCheck.h"
 #include "memoryRegister.h"
-
+#include "numbers.h"
 
 /*
   how much money you get for capturing a given piece
@@ -77,8 +77,6 @@ CHECK_ARRAY_LENGTH( pieceCaptureMoney,
 
 static int   coinSprite;
 
-static int   moneyFont;
-
 static int   coinSound;
 
 
@@ -96,9 +94,6 @@ static long  stepMSec              =  0;
 
 
 void moneyInit( int inStartVal ) {
-
-    int  fontStrip;
-
     
     coinSprite = maxigin_initSprite( "coin.tga" );
 
@@ -112,24 +107,6 @@ void moneyInit( int inStartVal ) {
 
     moneyAddProgress = 0;
     moneyProgressMidPeak = 0;
-    
-
-    /* same as modifier font, but fixed width */
-    fontStrip = maxigin_initSpriteStrip( "modifierFont.tga",
-                                         8 );
-
-    if( fontStrip != -1 ) {
-
-        maxigin_initMakeGlowSpriteStrip( fontStrip,
-                                         2,
-                                         2 );
-
-        moneyFont = maxigin_initFont( fontStrip,
-                                      "modifierFont.txt",
-                                      0,
-                                      4,
-                                      7 );
-        }
 
     coinSound = maxigin_initSoundEffect( "coin_sd_4.wav" );
 
@@ -167,8 +144,7 @@ static int parabola( int  inT,
 
 void moneyDraw( int  inPosX,
                 int  inPosY ) {
-
-    const char    *displayText;
+    
     int            bounceY       =  0;
     unsigned char  glowFade      =  0;
     
@@ -206,24 +182,20 @@ void moneyDraw( int  inPosX,
         maxigin_drawSetAlpha( 255 );
         }
 
-    displayText = maxigin_intToString( moneyVal );
-        
-    maxigin_drawText( moneyFont,
-                      displayText,
-                      inPosX - 9,
-                      inPosY,
-                      MAXIGIN_RIGHT );
+    numberDraw( moneyVal,
+                inPosX - 9,
+                inPosY,
+                1 );
 
     if( glowFade > 0 ) {
         maxigin_drawSetAlpha( glowFade / 2 );
 
         maxigin_drawToggleAdditive( 1 );
-        
-        maxigin_drawText( moneyFont,
-                      displayText,
-                      inPosX - 9,
-                      inPosY,
-                      MAXIGIN_RIGHT );
+
+        numberDraw( moneyVal,
+                    inPosX - 9,
+                    inPosY,
+                    1 );
 
         maxigin_drawToggleAdditive( 0 );
         maxigin_drawSetAlpha( 255 );
@@ -232,20 +204,15 @@ void moneyDraw( int  inPosX,
 
     maxigin_drawResetColor();
 
-    displayText = maxigin_intToString( (int)stepSec );
-        
-    maxigin_drawText( moneyFont,
-                      displayText,
-                      inPosX - 9,
-                      inPosY + 10,
-                      MAXIGIN_RIGHT );
-    displayText = maxigin_intToString( (int)stepMSec );
-        
-    maxigin_drawText( moneyFont,
-                      displayText,
-                      inPosX - 9,
-                      inPosY + 20,
-                      MAXIGIN_RIGHT );
+    numberDraw( (int)stepSec,
+                inPosX - 9,
+                inPosY + 10,
+                1 );
+
+    numberDraw( (int)stepMSec,
+                inPosX - 9,
+                inPosY + 20,
+                1 );
     }
 
 

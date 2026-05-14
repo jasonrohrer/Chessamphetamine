@@ -75,20 +75,23 @@ CHECK_ARRAY_LENGTH( pieceCaptureMoney,
                     NUM_CHESS_PIECES );
 
 
-static int coinSprite;
+static int   coinSprite;
 
-static int moneyFont;
+static int   moneyFont;
 
-static int coinSound;
+static int   coinSound;
 
 
-static int  moneyVal;
-static int  moneyToAdd            =  0;
-static int  delayedMoneyToAdd     =  0;
+static int   moneyVal;
+static int   moneyToAdd            =  0;
+static int   delayedMoneyToAdd     =  0;
 
-static int  moneyAddProgress;
-static int  moneyAddProgressMax   =  100;
-static char moneyProgressMidPeak  =  0;
+static int   moneyAddProgress;
+static int   moneyAddProgressMax   =  100;
+static char  moneyProgressMidPeak  =  0;
+
+static long  stepSec               =  0;
+static long  stepMSec              =  0;
 
 
 
@@ -130,11 +133,15 @@ void moneyInit( int inStartVal ) {
 
     coinSound = maxigin_initSoundEffect( "coin_sd_4.wav" );
 
+    REGISTER_VAL_MEM( stepSec );
+    REGISTER_VAL_MEM( stepMSec );
+    
     REGISTER_VAL_MEM( moneyVal );
     REGISTER_VAL_MEM( moneyToAdd );
     REGISTER_VAL_MEM( moneyAddProgress );
     REGISTER_VAL_MEM( moneyProgressMidPeak );
     }
+
 
 
 static int parabola( int  inT,
@@ -221,8 +228,24 @@ void moneyDraw( int  inPosX,
         maxigin_drawToggleAdditive( 0 );
         maxigin_drawSetAlpha( 255 );
         }
-    
 
+
+    maxigin_drawResetColor();
+
+    displayText = maxigin_intToString( (int)stepSec );
+        
+    maxigin_drawText( moneyFont,
+                      displayText,
+                      inPosX - 9,
+                      inPosY + 10,
+                      MAXIGIN_RIGHT );
+    displayText = maxigin_intToString( (int)stepMSec );
+        
+    maxigin_drawText( moneyFont,
+                      displayText,
+                      inPosX - 9,
+                      inPosY + 20,
+                      MAXIGIN_RIGHT );
     }
 
 
@@ -230,6 +253,9 @@ void moneyDraw( int  inPosX,
 void moneyStep( void ) {
 
     int  r  = mingin_getStepsPerSecond();
+    
+    mingin_getRunningTime( &stepSec,
+                           &stepMSec );
 
     if( moneyToAdd == 0
         &&
@@ -259,7 +285,6 @@ void moneyStep( void ) {
         moneyProgressMidPeak = 0;
         moneyAddProgress = 0;
         }
-    
 
     }
 

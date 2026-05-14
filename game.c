@@ -39,6 +39,11 @@ enum GameUserAction {
     BOMB,
     REMAP,
     CRASH,
+    TOGGLE_MOVE_LOG,
+    ADVANCE_MOVE_LOG,
+    BACK_MOVE_LOG,
+    SHIFT,
+    CTRL,
     BOX_THICK
     };
 
@@ -170,6 +175,7 @@ static char         drawGame           =  0;
 static int          gameLoserColor     =  CHESS_WHITE;
 
 static int          noScoreMoveCount   =  0;
+static int          statesTested       =  0;
 
 
 
@@ -187,6 +193,11 @@ static int            endMessagePreFadeSteps       =  0;
 
 static char           spinning                    =  0;
 
+static char           showingMoveLog              =  0;
+static char           moveLogButtonDown           =  1;
+static int            moveLogProgress             =  0;
+static char           moveLogAdvDown              =  0;
+static char           moveLogBackDown             =  0;
 
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
@@ -429,6 +440,46 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                            &postMoveState,
                            &moveProgress );
         }
+    else if( showingMoveLog ) {
+        
+        BoardState  testedState;
+        char        logGood;
+        
+        /* draw one of the logged moves */
+        boardDraw( boardCenterX,
+                   boardCenterY);
+
+        logGood = getLoggedState( moveLogProgress,
+                                  &testedState );
+
+        if( logGood ) {
+
+            drawSetPieceColor( testedState.nextToMove );
+            maxigin_drawFillRect( 0,
+                                  0,
+                                  20,
+                                  20 );
+
+            maxigin_drawResetColor();
+
+            numberDraw( testedState.moveCount,
+                        40,
+                        10,
+                        1 );
+            
+            drawBoardState( &testedState,
+                            checkmate,
+                            stalemate,
+                            drawGame,
+                            gameLoserColor,
+                            &boardMove,
+                            0,
+                            0,
+                            boardCenterX,
+                            boardCenterY,
+                            0 );
+            }
+        }
     else {
         /* draw non-moving board */
 
@@ -592,6 +643,19 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
                30 );
 
+    maxigin_drawResetColor();
+
+    numberDraw( statesTested,
+                MAXIGIN_GAME_NATIVE_W - 20,
+                60,
+                1 );
+
+    if( showingMoveLog ) {
+        numberDraw( moveLogProgress,
+                MAXIGIN_GAME_NATIVE_W - 20,
+                70,
+                1 );
+        }
     
     maxigin_drawGUI( &gameGUI );
     }
@@ -807,6 +871,65 @@ void maxiginGame_step( void ) {
         maxigin_playSoundEffect( thunkSound,
                                  512 );
         }
+
+    if( ! spinning ) {
+        if( ! moveLogButtonDown ) {
+
+            if( maxigin_isButtonDown( TOGGLE_MOVE_LOG ) ) {
+                moveLogButtonDown = 1;
+                
+                showingMoveLog  =  ! showingMoveLog;
+                moveLogProgress =  0;
+                }
+            }
+        }
+
+    moveLogButtonDown = maxigin_isButtonDown( TOGGLE_MOVE_LOG );
+
+    if( showingMoveLog ) {
+        int  amount = 1;
+
+        if( maxigin_isButtonDown( CTRL ) ) {
+            amount = 10;
+            }
+        
+        if( ! moveLogAdvDown
+            &&
+            maxigin_isButtonDown( ADVANCE_MOVE_LOG ) ) {
+            moveLogAdvDown = 1;
+            moveLogProgress += amount;
+            }
+        if( ! moveLogBackDown
+            &&
+            maxigin_isButtonDown( BACK_MOVE_LOG ) ) {
+            moveLogBackDown = 1;
+            moveLogProgress -= amount;
+            if( moveLogProgress < 0 ) {
+                moveLogProgress = 0;
+                }
+            }
+        }
+    moveLogAdvDown = maxigin_isButtonDown( ADVANCE_MOVE_LOG );
+    moveLogBackDown = maxigin_isButtonDown( BACK_MOVE_LOG );
+
+    if( maxigin_isButtonDown( SHIFT ) ) {
+        int  amount = 1;
+
+        if( maxigin_isButtonDown( CTRL ) ) {
+            amount = 10;
+            }
+        
+        
+        if( moveLogAdvDown ) {
+            moveLogProgress += amount;
+            }
+        else if( moveLogBackDown ) {
+            moveLogProgress -= amount;
+            if( moveLogProgress < 0 ) {
+                moveLogProgress = 0;
+                }
+            }
+        }
     
     
     if( spinning ) {
@@ -855,8 +978,11 @@ void maxiginGame_step( void ) {
                 endMessageFade = 255;
                 endMessagePreFadeSteps = 0;
                 }
-                
+
+            statesTested = getStateCountLastMove();
             }
+        }
+    else if( showingMoveLog ) {
         }
     
 
@@ -1208,7 +1334,13 @@ void maxiginGame_step( void ) {
 
 
 
-static MinginButton jumpMapping[]   =  { MGN_KEY_SPACE,     MGN_MAP_END };
+static MinginButton jumpMapping[]    =  { MGN_KEY_SPACE,     MGN_MAP_END };
+
+static MinginButton moveLogMapping[] =  { MGN_KEY_Y,     MGN_MAP_END };
+static MinginButton moveLogAdvMapping[] =  { MGN_KEY_I,     MGN_MAP_END };
+static MinginButton moveLogBackMapping[] =  { MGN_KEY_U,     MGN_MAP_END };
+static MinginButton shiftMapping[] =  { MGN_KEY_SHIFT_L,     MGN_MAP_END };
+static MinginButton ctrlMapping[] =  { MGN_KEY_CONTROL_L,     MGN_MAP_END };
 
 static MinginButton shootMapping[]  =  { MGN_KEY_V,
                                          MGN_BUTTON_MOUSE_LEFT,
@@ -1506,6 +1638,17 @@ void maxiginGame_init( void ) {
     
     
     maxigin_registerButtonMapping( JUMP,   jumpMapping );
+
+    maxigin_registerButtonMapping( TOGGLE_MOVE_LOG,
+                                   moveLogMapping );
+    maxigin_registerButtonMapping( ADVANCE_MOVE_LOG,
+                                   moveLogAdvMapping );
+    maxigin_registerButtonMapping( BACK_MOVE_LOG,
+                                   moveLogBackMapping );
+    maxigin_registerButtonMapping( SHIFT,
+                                   shiftMapping );
+    maxigin_registerButtonMapping( CTRL,
+                                   ctrlMapping );
     
     maxigin_registerDynamicButtonMapping(
         SHOOT,
@@ -1657,6 +1800,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( endMessagePreFadeSteps );
 
     REGISTER_VAL_MEM( spinning );
+
+    REGISTER_VAL_MEM( statesTested );
     
     
     REGISTER_ARRAY_MEM( bulletOn );

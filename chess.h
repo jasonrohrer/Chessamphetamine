@@ -62,6 +62,8 @@ typedef struct BoardState{
 
         int         nextToMove;
 
+        int         moveCount;
+
     } BoardState;
 
 
@@ -260,6 +262,17 @@ char isCheckmate( BoardState  *inState,
                   int         *outColor );
 
 
+/* gets the number of board states that were considered when picking
+   the last move */
+int getStateCountLastMove( void );
+
+
+/* returns 1 on success, 0 if inLogNumber is beyond end of log */
+char getLoggedState( int          inLogNumber,
+                     BoardState  *outState );
+
+
+
 
 #ifdef CHESS_IMPLEMENTATION
 
@@ -296,6 +309,9 @@ static char pieceChars[] = { '+',
 
 CHECK_ARRAY_LENGTH( pieceChars,
                     NUM_CHESS_PIECES );
+
+
+static  int  statesTestedLastMove  =  0;
 
 
 
@@ -1462,7 +1478,7 @@ void chessSeed( unsigned long  inSeed ) {
 void chessInit( void ) {
 
     /* stalemate */
-    chessSeed( 12036675 );
+    chessSeed( 12036693 );
 
     /* draw */
     if(0)chessSeed( 12035857 );
@@ -1499,14 +1515,14 @@ void getStartBoard( BoardState  *outState ) {
     clearBoard( outState );
 
     /* fill out whole starting board */
-    outState->grid[0][0] = rook   | CHESS_BLACK;
+    outState->grid[0][0] = laserRook   | CHESS_BLACK;
     outState->grid[0][1] = knight | CHESS_BLACK;
     outState->grid[0][2] = bishop | CHESS_BLACK;
     outState->grid[0][3] = queen  | CHESS_BLACK;
     outState->grid[0][4] = king   | CHESS_BLACK;
     outState->grid[0][5] = bishop | CHESS_BLACK;
     outState->grid[0][6] = knight | CHESS_BLACK;
-    outState->grid[0][7] = rook   | CHESS_BLACK;
+    outState->grid[0][7] = laserRook   | CHESS_BLACK;
 
     for( i = 0;
          i < 8;
@@ -1514,14 +1530,14 @@ void getStartBoard( BoardState  *outState ) {
         outState->grid[1][i] = doublingPawn | CHESS_BLACK;
         }
 
-    outState->grid[7][0] = rook      | CHESS_WHITE;
+    outState->grid[7][0] = laserRook      | CHESS_WHITE;
     outState->grid[7][1] = knight    | CHESS_WHITE;
     outState->grid[7][2] = bishop    | CHESS_WHITE;
     outState->grid[7][3] = queen     | CHESS_WHITE;
     outState->grid[7][4] = king      | CHESS_WHITE;
     outState->grid[7][5] = bishop    | CHESS_WHITE;
     outState->grid[7][6] = knight    | CHESS_WHITE;
-    outState->grid[7][7] = rook | CHESS_WHITE;
+    outState->grid[7][7] = laserRook | CHESS_WHITE;
 
     for( i = 0;
          i < 8;
@@ -1530,44 +1546,83 @@ void getStartBoard( BoardState  *outState ) {
         }
 
     outState->nextToMove = CHESS_WHITE;
+    outState->moveCount  = 0;
     }
 
 
 
 void getTestBoard( BoardState  *outState ) {
 
+    int  i;
 
     clearBoard( outState );
 
     outState->grid[0][4] = king   | CHESS_BLACK;
     outState->grid[1][4] = pawn   | CHESS_BLACK;
     outState->grid[2][4] = pawn   | CHESS_BLACK;
-    if(0)outState->grid[2][4] = pawn   | CHESS_BLACK;
-    if(1)outState->grid[4][4] = rook   | CHESS_BLACK;
-    if(0)outState->grid[2][4] = pawn   | CHESS_BLACK;
-    if(1)outState->grid[4][3] = rook  | CHESS_BLACK;
-    if(1)outState->grid[4][5] = rook  | CHESS_BLACK;
-    if(1)outState->grid[3][5] = rook  | CHESS_BLACK;
-    if(1)outState->grid[2][5] = rook  | CHESS_BLACK;
-    if(1)outState->grid[3][4] = rook  | CHESS_BLACK;
-    if(0)outState->grid[6][4] = queen  | CHESS_BLACK;
-
-    if(1)outState->grid[5][3] = laserRook | CHESS_WHITE;
-    outState->grid[7][0] = king | CHESS_WHITE;
-    if(0)outState->grid[6][7] = rook | CHESS_WHITE;
-    if(0)outState->grid[6][5] = doublingPawn  | CHESS_WHITE;
-    if(0)outState->grid[7][5] = doublingPawn  | CHESS_WHITE;
-
-    if(0)outState->grid[5][5] = addingRook  | CHESS_WHITE;
-
-    outState->grid[7][4] = addingRook  | CHESS_WHITE;
-    if(1)outState->grid[6][4] = doublingPawn  | CHESS_WHITE;
-    if(1)outState->grid[6][5] = addingRook  | CHESS_WHITE;
-    if(1)outState->grid[6][6] = addingRook  | CHESS_WHITE;
-
-    if(0)outState->grid[7][4] = addingRook  | CHESS_WHITE;
+    outState->grid[2][5] = rook  | CHESS_BLACK;
+    outState->grid[3][3] = rook  | CHESS_BLACK;
+    outState->grid[3][4] = rook  | CHESS_BLACK;
+    outState->grid[3][5] = rook  | CHESS_BLACK;
     
+    outState->grid[4][3] = laserRook | CHESS_WHITE;
+    outState->grid[6][5] = king | CHESS_WHITE;
+
+    
+    outState->grid[6][4] = doublingPawn  | CHESS_WHITE;
+    outState->grid[5][4] = doublingPawn  | CHESS_WHITE;
+    outState->grid[5][5] = addingRook  | CHESS_WHITE;
+    outState->grid[5][6] = addingRook  | CHESS_WHITE;
+
+
+    for( i = 0;
+         i < BW;
+         i ++ ) {
+        outState->grid[7][i] = addingRook  | CHESS_WHITE;
+        }
+    
+
     outState->nextToMove = CHESS_WHITE;
+    outState->moveCount  = 0;
+    }
+
+/*
+void getTestBoard( BoardState  *outState ) {
+
+
+    clearBoard( outState );
+
+    outState->grid[0][4] = king   | CHESS_BLACK;
+    outState->grid[1][3] = pawn   | CHESS_BLACK;
+    outState->grid[1][4] = pawn   | CHESS_BLACK;
+    
+    outState->grid[6][3] = bishop | CHESS_WHITE;
+    outState->grid[6][4] = pawn | CHESS_WHITE;
+    outState->grid[7][4] = king | CHESS_WHITE;
+
+    
+
+    outState->nextToMove = CHESS_WHITE;
+    }
+*/
+
+
+#define MAX_LOGGED_STATES    30000
+
+static  BoardState  stateLog[ MAX_LOGGED_STATES ];
+
+static  int         logCount  =  0;
+
+
+
+char getLoggedState( int          inLogNumber,
+                     BoardState  *outState ) {
+    if( inLogNumber >= logCount ) {
+        return 0;
+        }
+    
+    *outState = stateLog[ inLogNumber ];
+    return 1;
     }
 
 
@@ -1608,6 +1663,8 @@ static int getPiecePossibleMoves( BoardState     *inState,
          m < numMoves;
          m ++ ) {
 
+        resultStates[m].moveCount ++;
+
         if( ! inAvoidCheck
             ||
             ! isKingInCheck( &( resultStates[m] ),
@@ -1620,8 +1677,15 @@ static int getPiecePossibleMoves( BoardState     *inState,
 
             numGoodMoves ++;
             }
+        
+        if( logCount < MAX_LOGGED_STATES ) {
+            stateLog[ logCount ] = resultStates  [ m ];
+            logCount++;
+            }
         }
 
+    statesTestedLastMove += numMoves;
+    
     return numGoodMoves;   
     }
 
@@ -2200,14 +2264,18 @@ char getGreedyMove( BoardState  *inState,
     if( ! canMove ) {
         /* stuck with no moves that don't move into check */
 
-        /* try again, allowing moving into check */
+        /* try again, allowing moving into check,
+           but just find the "best" shallow move,
+           no sense in searching multiple moves ahead in this case,
+           since we can't avoid moving into check, and are going to lose
+           on the next move anyway */
         canMove = getGreedyDepthMove( inState,
                                       0,
                                       outMove,
                                       outCaptured,
                                       outNewState,
                                       &nextScore,
-                                      1 );
+                                      0 );
         }
 
     return canMove;
@@ -2259,6 +2327,9 @@ char getChessMove( BoardState  *inState,
                    Captured    *outCaptured,
                    BoardState  *outNewState ) {
 
+    statesTestedLastMove = 0;
+    logCount             = 0;
+
     if( inState->nextToMove == CHESS_BLACK ) {
         return getMixedMove( inState,
                              outMove,
@@ -2273,6 +2344,12 @@ char getChessMove( BoardState  *inState,
                               outCaptured,
                               outNewState );
         }
+    }
+
+
+
+int getStateCountLastMove( void ) {
+    return statesTestedLastMove;
     }
 
 

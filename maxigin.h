@@ -3099,7 +3099,45 @@ void maxigin_shuffle( MaxiginRand  *inRand,
 int *maxigin_genShuffle( MaxiginRand  *inRand,
                          int           inMin,
                          int           inMax );
-                      
+
+
+
+typedef struct MaxiginTimer{
+        long  sec;
+        long  msec;
+    } MaxiginTimer;
+
+
+
+/*
+  Starts a timer.
+
+  Returns:
+
+      A timer.
+  
+  [jumpMaxiginGeneral]
+*/
+MaxiginTimer maxigin_startTimer( void );
+
+
+
+
+/*
+  Gets elapsed milliseconds for a timer.
+
+  Parameters:
+
+      inTimer    the timer.
+
+  Returns:
+
+      Milliseconds that have passed since the timer was started.
+  
+  [jumpMaxiginGeneral]
+*/
+int maxigin_getElapsedMilliseconds( MaxiginTimer  inTimer );
+
 
 
 
@@ -22244,6 +22282,37 @@ int *maxigin_genShuffle( MaxiginRand  *inRand,
 
     return resultArray;
     }
+
+
+
+MaxiginTimer maxigin_startTimer( void ) {
+
+    MaxiginTimer  t;
+
+    mingin_getRunningTime( &( t.sec ),
+                           &( t.msec ) );
+
+    return t;
+    }
+
+
+
+int maxigin_getElapsedMilliseconds( MaxiginTimer  inTimer ) {
+
+    long  curSec;
+    long  curMsec;
+    
+    mingin_getRunningTime( &curSec,
+                           &curMsec );
+
+    curSec  -= inTimer.sec;
+    /* this can be negative */
+    curMsec -= inTimer.msec;
+
+
+    return (int)( curSec * 1000 + curMsec );
+    }
+
 
 
 

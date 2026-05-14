@@ -176,7 +176,7 @@ static int          gameLoserColor     =  CHESS_WHITE;
 
 static int          noScoreMoveCount   =  0;
 static int          statesTested       =  0;
-
+static int          movePickTime       =  0;
 
 
 static int            endMessageSprites[ 3 ]  = { -1,
@@ -657,15 +657,20 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                 60,
                 1 );
 
+    numberDraw( movePickTime,
+                MAXIGIN_GAME_NATIVE_W - 20,
+                70,
+                1 );
+
     if( showingMoveLog ) {
         numberDraw( moveLogProgress,
                     MAXIGIN_GAME_NATIVE_W - 20,
-                    70,
+                    80,
                     1 );
         }
     numberDraw( boardState.moveCount,
                 MAXIGIN_GAME_NATIVE_W - 20,
-                80,
+                90,
                 1 );
                 
     
@@ -950,6 +955,8 @@ void maxiginGame_step( void ) {
             &&
             ! chessGameOver ) {
 
+            MaxiginTimer  timer  =  maxigin_startTimer();
+            
             /* make a chess move */
             if( getChessMove( &boardState,
                               &boardMove,
@@ -992,6 +999,7 @@ void maxiginGame_step( void ) {
                 }
 
             statesTested = getStateCountLastMove();
+            movePickTime = maxigin_getElapsedMilliseconds( timer );
             }
         }
     else if( showingMoveLog ) {

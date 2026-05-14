@@ -269,7 +269,8 @@ int getStateCountLastMove( void );
 
 /* returns 1 on success, 0 if inLogNumber is beyond end of log */
 char getLoggedState( int          inLogNumber,
-                     BoardState  *outState );
+                     BoardState  *outState,
+                     int         *outBestScore );
 
 
 
@@ -1478,7 +1479,7 @@ void chessSeed( unsigned long  inSeed ) {
 void chessInit( void ) {
 
     /* stalemate */
-    chessSeed( 12036694 );
+    chessSeed( 12036701 );
 
     /* draw */
     if(0)chessSeed( 12035857 );
@@ -1515,34 +1516,34 @@ void getStartBoard( BoardState  *outState ) {
     clearBoard( outState );
 
     /* fill out whole starting board */
-    outState->grid[0][0] = laserRook   | CHESS_BLACK;
+    outState->grid[0][0] = rook   | CHESS_BLACK;
     outState->grid[0][1] = knight | CHESS_BLACK;
     outState->grid[0][2] = bishop | CHESS_BLACK;
     outState->grid[0][3] = queen  | CHESS_BLACK;
     outState->grid[0][4] = king   | CHESS_BLACK;
     outState->grid[0][5] = bishop | CHESS_BLACK;
     outState->grid[0][6] = knight | CHESS_BLACK;
-    outState->grid[0][7] = laserRook   | CHESS_BLACK;
+    outState->grid[0][7] = rook   | CHESS_BLACK;
 
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[1][i] = doublingPawn | CHESS_BLACK;
+        outState->grid[1][i] = pawn | CHESS_BLACK;
         }
 
-    outState->grid[7][0] = laserRook      | CHESS_WHITE;
+    outState->grid[7][0] = rook      | CHESS_WHITE;
     outState->grid[7][1] = knight    | CHESS_WHITE;
     outState->grid[7][2] = bishop    | CHESS_WHITE;
     outState->grid[7][3] = queen     | CHESS_WHITE;
     outState->grid[7][4] = king      | CHESS_WHITE;
     outState->grid[7][5] = bishop    | CHESS_WHITE;
     outState->grid[7][6] = knight    | CHESS_WHITE;
-    outState->grid[7][7] = laserRook | CHESS_WHITE;
+    outState->grid[7][7] = rook | CHESS_WHITE;
 
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[6][i] = doublingPawn | CHESS_WHITE;
+        outState->grid[6][i] = pawn | CHESS_WHITE;
         }
 
     outState->nextToMove = CHESS_WHITE;
@@ -1613,20 +1614,24 @@ void getTestBoard( BoardState  *outState ) {
 /* set to a large value to actually log states
    set to 1 when not doing debug logging, to save RAM*/
 #define MAX_LOGGED_STATES    1
-    
-static  BoardState  stateLog[ MAX_LOGGED_STATES ];
 
+static  int         bestTopLevelScore;
+
+static  BoardState  stateLog[ MAX_LOGGED_STATES ];
+static  int         bestScoreLog[ MAX_LOGGED_STATES ];
 static  int         logCount  =  0;
 
 
 
 char getLoggedState( int          inLogNumber,
-                     BoardState  *outState ) {
+                     BoardState  *outState,
+                     int         *outBestScore ) {
     if( inLogNumber >= logCount ) {
         return 0;
         }
     
-    *outState = stateLog[ inLogNumber ];
+    *outState     = stateLog[ inLogNumber ];
+    *outBestScore = bestScoreLog[ inLogNumber ];
     return 1;
     }
 
@@ -1688,6 +1693,8 @@ static int getPiecePossibleMoves( BoardState     *inState,
             logCount < MAX_LOGGED_STATES ) {
             
             stateLog[ logCount ] = resultStates  [ m ];
+
+            bestScoreLog[ logCount ] = bestTopLevelScore;
             logCount++;
             }
         }
@@ -1974,12 +1981,16 @@ int getScore( BoardState *inState ) {
 static  int  checkmateScore  =  MAX_SCORE - 1;
 
 
+/* inBailAboveScore and inBailBelowScore are used for alpha-beta style
+   pruning */
 static char getGreedyDepthMove( BoardState  *inState,
                                 char         inAvoidCheck,
                                 Move        *outMove,
                                 Captured    *outCaptured,
                                 BoardState  *outNewState,
                                 int         *outScore,
+                                int          inBailAboveScore,
+                                int          inBailBelowScore,
                                 int          inDepth ) {
     
     /* look at all pieces that can move */
@@ -2005,7 +2016,7 @@ static char getGreedyDepthMove( BoardState  *inState,
     
     
     int             foundBest          =  0;
-    int             bestScore          =  - MAX_SCORE;
+    int             bestScore          =  - MAX_SCORE - 1;
     int             numPossiblePieces  =  0;
     int             piecePick;
     int             p;
@@ -2016,7 +2027,11 @@ static char getGreedyDepthMove( BoardState  *inState,
     Move            nextMove;
 
     if( colorToMove == CHESS_BLACK ) {
-        bestScore = MAX_SCORE;
+        bestScore = MAX_SCORE + 1;
+        }
+
+    if( inDepth == 1 ) {
+        bestTopLevelScore = bestScore;
         }
     
     for( y = 0;
@@ -2158,10 +2173,39 @@ static char getGreedyDepthMove( BoardState  *inState,
                        
                            continue searching deeper */
                         
-                        int   nextDepth  = inDepth - 1;
+                        int   nextDepth  =  inDepth - 1;
                         char  nextFound;
                         int   nextScore;
+                        int   bailAbove  =  MAX_SCORE + 1;
+                        int   bailBelow  =  - MAX_SCORE - 1;
 
+                        if( foundBest ) {
+
+                            /* setup limits for alpha-beta pruning */
+
+                            if( colorToMove == CHESS_WHITE ) {
+                                /* our best score so far is a high water mark
+                                   ignore any moves that lead to ANY next
+                                   move that is lower than that */
+                                bailBelow = bestScore;
+                                }
+                            else {
+                                /* we're black, and best move is a low
+                                   water mark */
+                                bailAbove = bestScore;
+                                }
+                            }
+                        
+
+                        /* also carry any limits from further up */
+                        if( bailAbove > inBailAboveScore ) {
+                            bailAbove = inBailAboveScore;
+                            }
+                        if( bailBelow < inBailBelowScore ) {
+                            bailBelow = inBailBelowScore;
+                            }
+                            
+                        
                         /* avoid check at first when looking at next move */
                         nextFound =
                             getGreedyDepthMove(
@@ -2171,6 +2215,8 @@ static char getGreedyDepthMove( BoardState  *inState,
                                 &( nextMoveCaptured[ nextDepth ] ),
                                 &( nextMoveState   [ nextDepth ] ),
                                 &nextScore,
+                                bailAbove,
+                                bailBelow,
                                 nextDepth );
                         if( nextFound ) {
                             score = nextScore;
@@ -2211,6 +2257,10 @@ static char getGreedyDepthMove( BoardState  *inState,
                     foundBest = 1;
                     bestScore = score;
 
+                    if( inDepth == 1 ) {
+                        bestTopLevelScore = bestScore;
+                        }
+
                     outMove->startPos[0] = y;
                     outMove->startPos[1] = x;
                     outMove->endPos[0]   = possibleDestRow [ inDepth ][m];
@@ -2218,6 +2268,16 @@ static char getGreedyDepthMove( BoardState  *inState,
                     *outCaptured         = possibleCaptured[ inDepth ][m];
                     *outNewState         = possibleStates  [ inDepth ][m];
 
+                    if( bestScore >= inBailAboveScore
+                        ||
+                        bestScore <= inBailBelowScore ) {
+
+                        /* prune rest of search */
+                        *outScore = bestScore;
+                        
+                        return 1;
+                        }
+                    
                     /* code for debugging, to peek at board states
                     if( inDepth == 1 ) {
                         const char  *stateStringOld =
@@ -2267,6 +2327,8 @@ char getGreedyMove( BoardState  *inState,
                                   outCaptured,
                                   outNewState,
                                   &nextScore,
+                                  MAX_SCORE + 1,
+                                  - MAX_SCORE - 1,
                                   1 );
 
     if( ! canMove ) {
@@ -2283,6 +2345,8 @@ char getGreedyMove( BoardState  *inState,
                                       outCaptured,
                                       outNewState,
                                       &nextScore,
+                                      MAX_SCORE + 1,
+                                      - MAX_SCORE - 1,
                                       0 );
         }
 
@@ -2337,7 +2401,8 @@ char getChessMove( BoardState  *inState,
 
     statesTestedLastMove = 0;
     logCount             = 0;
-
+    bestTopLevelScore    = 0;
+    
     if( inState->nextToMove == CHESS_BLACK ) {
         return getMixedMove( inState,
                              outMove,

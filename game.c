@@ -443,6 +443,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     else if( showingMoveLog ) {
         
         BoardState  testedState;
+        int         testedBestScore;
         char        logGood;
         
         /* draw one of the logged moves */
@@ -450,7 +451,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                    boardCenterY);
 
         logGood = getLoggedState( moveLogProgress,
-                                  &testedState );
+                                  &testedState,
+                                  &testedBestScore );
 
         if( logGood ) {
 
@@ -465,6 +467,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             numberDraw( testedState.moveCount,
                         40,
                         10,
+                        1 );
+
+            numberDraw( testedBestScore,
+                        40,
+                        30,
                         1 );
             
             drawBoardState( &testedState,

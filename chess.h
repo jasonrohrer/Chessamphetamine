@@ -336,6 +336,14 @@ char isForcedCheckmate( BoardState  *inState,
    These functions just look for legal moves for a given piece, in isolation,
    without considering rules around a king in check.
 
+   If inMaySkipNonCaptureMoves is 1, then the move function MAY skip returning
+   any moves that don't involve capturing a piece, to reduce computation.
+   This flag is advisory only, and if it's actually more complicated for a
+   specific piece to skip non-capture moves, it can include them.  The
+   whole point of this call is to reduce computation when possible, for
+   calls to this function that don't care about non-capture moves (such as
+   king-in-check detection)
+
    Returns the number of moves.
 */
 typedef int (*PieceMoveFunction)( BoardState     *inState,
@@ -344,6 +352,7 @@ typedef int (*PieceMoveFunction)( BoardState     *inState,
                                   /* starting position of the piece */
                                   int             inPieceRow,
                                   int             inPieceCol,
+                                  char            inMaySkipNonCaptureMoves,
                                   /* possible move rows and cols */
                                   unsigned char   outDestRows[BN],
                                   unsigned char   outDestCols[BN],
@@ -366,6 +375,7 @@ static int noPieceMove( BoardState     *inState,
                         unsigned char   inPieceColor,
                         int             inPieceRow,
                         int             inPieceCol,
+                        char            inMaySkipNonCaptureMoves,
                         unsigned char   outDestRows[BN],
                         unsigned char   outDestCols[BN],
                         Captured        outCaptured[BN],
@@ -376,6 +386,7 @@ static int noPieceMove( BoardState     *inState,
     (void)inPieceColor;
     (void)inPieceRow;
     (void)inPieceCol;
+    (void)inMaySkipNonCaptureMoves;
     (void)outDestRows;
     (void)outDestCols;
     (void)outCaptured;
@@ -412,6 +423,7 @@ static int pawnMove( BoardState     *inState,
                      unsigned char   inPieceColor,
                      int             inPieceRow,
                      int             inPieceCol,
+                     char            inMaySkipNonCaptureMoves,
                      unsigned char   outDestRows[BN],
                      unsigned char   outDestCols[BN],
                      Captured        outCaptured[BN],
@@ -450,6 +462,7 @@ static int pawnMove( BoardState     *inState,
 
     /* first, look at all forward moves, which can only go to empty squares
        and can only pass through empty squares if doing a double-move */
+    if( ! inMaySkipNonCaptureMoves )
     for( i = 1;
          i <= maxDist;
          i ++ ) {
@@ -587,6 +600,7 @@ static int bishopMove( BoardState     *inState,
                        unsigned char   inPieceColor,
                        int             inPieceRow,
                        int             inPieceCol,
+                       char            inMaySkipNonCaptureMoves,
                        unsigned char   outDestRows[BN],
                        unsigned char   outDestCols[BN],
                        Captured        outCaptured[BN],
@@ -655,6 +669,12 @@ static int bishopMove( BoardState     *inState,
                 
                 /* empty spot, or capturable piece, bishop can move here */
 
+                if( inMaySkipNonCaptureMoves
+                    &&
+                    destP == noPiece ) {
+                    continue;
+                    }
+
                 outDestRows[n] = (unsigned char)destY;
                 outDestCols[n] = (unsigned char)destX;
 
@@ -704,6 +724,7 @@ static int knightMove( BoardState     *inState,
                        unsigned char   inPieceColor,
                        int             inPieceRow,
                        int             inPieceCol,
+                       char            inMaySkipNonCaptureMoves,
                        unsigned char   outDestRows[BN],
                        unsigned char   outDestCols[BN],
                        Captured        outCaptured[BN],
@@ -758,6 +779,12 @@ static int knightMove( BoardState     *inState,
                 
             /* empty spot, or capturable piece, knight can move here */
 
+            if( inMaySkipNonCaptureMoves
+                &&
+                destP == noPiece ) {
+                continue;
+                }
+            
             outDestRows[n] = (unsigned char)destY;
             outDestCols[n] = (unsigned char)destX;
 
@@ -796,6 +823,7 @@ static int rookMove( BoardState     *inState,
                      unsigned char   inPieceColor,
                      int             inPieceRow,
                      int             inPieceCol,
+                     char            inMaySkipNonCaptureMoves,
                      unsigned char   outDestRows[BN],
                      unsigned char   outDestCols[BN],
                      Captured        outCaptured[BN],
@@ -864,6 +892,12 @@ static int rookMove( BoardState     *inState,
                 
                 /* empty spot, or capturable piece, rook can move here */
 
+                if( inMaySkipNonCaptureMoves
+                    &&
+                    destP == noPiece ) {
+                    continue;
+                    }
+                
                 outDestRows[n] = (unsigned char)destY;
                 outDestCols[n] = (unsigned char)destX;
 
@@ -913,6 +947,7 @@ static int queenMove( BoardState     *inState,
                       unsigned char   inPieceColor,
                       int             inPieceRow,
                       int             inPieceCol,
+                      char            inMaySkipNonCaptureMoves,
                       unsigned char   outDestRows[BN],
                       unsigned char   outDestCols[BN],
                       Captured        outCaptured[BN],
@@ -984,6 +1019,12 @@ static int queenMove( BoardState     *inState,
                 
                 /* empty spot, or capturable piece, queen can move here */
 
+                if( inMaySkipNonCaptureMoves
+                    &&
+                    destP == noPiece ) {
+                    continue;
+                    }
+                
                 outDestRows[n] = (unsigned char)destY;
                 outDestCols[n] = (unsigned char)destX;
 
@@ -1033,6 +1074,7 @@ static int kingMove( BoardState     *inState,
                      unsigned char   inPieceColor,
                      int             inPieceRow,
                      int             inPieceCol,
+                     char            inMaySkipNonCaptureMoves,
                      unsigned char   outDestRows[BN],
                      unsigned char   outDestCols[BN],
                      Captured        outCaptured[BN],
@@ -1086,6 +1128,12 @@ static int kingMove( BoardState     *inState,
                 
             /* empty spot, or capturable piece, king can move here */
 
+            if( inMaySkipNonCaptureMoves
+                &&
+                destP == noPiece ) {
+                continue;
+                }
+            
             outDestRows[n] = (unsigned char)destY;
             outDestCols[n] = (unsigned char)destX;
 
@@ -1158,6 +1206,7 @@ static int laserRookMove( BoardState     *inState,
                           unsigned char   inPieceColor,
                           int             inPieceRow,
                           int             inPieceCol,
+                          char            inMaySkipNonCaptureMoves,
                           unsigned char   outDestRows[BN],
                           unsigned char   outDestCols[BN],
                           Captured        outCaptured[BN],
@@ -1174,10 +1223,18 @@ static int laserRookMove( BoardState     *inState,
                                 inPieceColor,
                                 inPieceRow,
                                 inPieceCol,
+                                /* do NOT skip non-capture moves in rook call,
+                                   since then we'll miss cases where we
+                                   don't capture with move but capture with
+                                   laser after */
+                                0,
                                 outDestRows,
                                 outDestCols,
                                 outCaptured,
                                 outStates );
+
+    (void)inMaySkipNonCaptureMoves;
+    
 
     if( BW - 1 > maxDist ) {
         /* non-square board, consider moves as long as longest side */
@@ -1266,6 +1323,7 @@ static int laserPawnMove( BoardState     *inState,
                           unsigned char   inPieceColor,
                           int             inPieceRow,
                           int             inPieceCol,
+                          char            inMaySkipNonCaptureMoves,
                           unsigned char   outDestRows[BN],
                           unsigned char   outDestCols[BN],
                           Captured        outCaptured[BN],
@@ -1278,10 +1336,18 @@ static int laserPawnMove( BoardState     *inState,
                                 inPieceColor,
                                 inPieceRow,
                                 inPieceCol,
+                                /* do NOT skip non-capture moves in pawn call,
+                                   since then we'll miss cases where we
+                                   don't capture with move but capture with
+                                   laser after */
+                                0,
                                 outDestRows,
                                 outDestCols,
                                 outCaptured,
                                 outStates );
+
+    (void)inMaySkipNonCaptureMoves;
+    
 
     if( inState->nextToMove == CHESS_BLACK ) {
         dirY = 1;
@@ -1425,6 +1491,10 @@ static char isKingInCheck( BoardState  *inState,
                                         pColor,
                                         y,
                                         x,
+                                        /* may skip non-captures
+                                           since we only care about
+                                           king capture detection */
+                                        1,
                                         destRows,
                                         destCols,
                                         resultCaptured,
@@ -1660,6 +1730,7 @@ static int getPiecePossibleMoves( BoardState     *inState,
                                        pColor,
                                        inPieceRow,
                                        inPieceCol,
+                                       0,
                                        resultRows,
                                        resultCols,
                                        resultCaptured,

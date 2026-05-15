@@ -474,6 +474,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                         30,
                         1 );
             
+            numberDraw( getScore( &testedState ),
+                        40,
+                        40,
+                        1 );
+            
             drawBoardState( &testedState,
                             checkmate,
                             stalemate,

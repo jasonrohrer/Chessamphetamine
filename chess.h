@@ -64,6 +64,9 @@ typedef struct BoardState{
 
         int         moveCount;
 
+        /* can index with  (piece >> 7)  or  (pieceColor >> 7) */
+        char        kingExists[2];
+
     } BoardState;
 
 
@@ -393,6 +396,11 @@ static void addCapturedPiece( Captured    *inCaptured,
     bp->p   = inState->grid[ inRow ][ inCol ];
     bp->row = inRow;
     bp->col = inCol;
+
+    if( ( bp->p & CHESS_TYPE_MASK ) == king ) {
+
+        inState->kingExists[ ( bp->p ) >> 7 ] = 0;
+        }
 
     inCaptured->num ++;
     }
@@ -1359,25 +1367,8 @@ CHECK_ARRAY_LENGTH( moveFunctions,
 
 static char doesKingExist( BoardState  *inState,
                            int          inKingColor ) {
-    
-    int         y;
-    int         x;
-    ChessPiece  kingToFind = (ChessPiece)( king | inKingColor );
 
-    for( y = 0;
-         y < BH;
-         y ++ ) {
-        
-        for( x = 0;
-             x < BW;
-             x ++ ) {
-
-            if( inState->grid[ y ][ x ] == kingToFind ) {
-                return 1;
-                }
-            }
-        }
-    return 0;
+    return inState->kingExists[ inKingColor >> 7 ];
     }
 
 
@@ -1546,6 +1537,9 @@ void getStartBoard( BoardState  *outState ) {
 
     outState->nextToMove = CHESS_WHITE;
     outState->moveCount  = 0;
+
+    outState->kingExists[0] = 1;
+    outState->kingExists[1] = 1;
     }
 
 
@@ -1583,6 +1577,8 @@ void getTestBoard( BoardState  *outState ) {
 
     outState->nextToMove = CHESS_WHITE;
     outState->moveCount  = 0;
+    outState->kingExists[0] = 1;
+    outState->kingExists[1] = 1;
     }
 
 /*
@@ -1602,6 +1598,9 @@ void getTestBoard( BoardState  *outState ) {
     
 
     outState->nextToMove = CHESS_WHITE;
+    outState->moveCount  = 0;
+    outState->kingExists[0] = 1;
+    outState->kingExists[1] = 1;
     }
 */
 

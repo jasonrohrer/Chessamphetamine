@@ -1890,7 +1890,7 @@ char getRandomMove( BoardState  *inState,
 
 
 static char isAnyMovePossible( BoardState  *inState,
-                        char         inAvoidCheck ) {
+                               char         inAvoidCheck ) {
 
     static  unsigned char  possibleDestRow [BN];
     static  unsigned char  possibleDestCol [BN];

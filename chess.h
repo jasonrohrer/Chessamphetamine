@@ -1359,8 +1359,10 @@ CHECK_ARRAY_LENGTH( moveFunctions,
 
 static char doesKingExist( BoardState  *inState,
                            int          inKingColor ) {
-    int  y;
-    int  x;
+    
+    int         y;
+    int         x;
+    ChessPiece  kingToFind = (ChessPiece)( king | inKingColor );
 
     for( y = 0;
          y < BH;
@@ -1370,11 +1372,7 @@ static char doesKingExist( BoardState  *inState,
              x < BW;
              x ++ ) {
 
-            ChessPiece  p  = inState->grid[ y ][ x ];
-
-            if( ( p & CHESS_TYPE_MASK ) == king
-                &&
-                ( p & CHESS_COLOR_MASK ) == inKingColor ) {
+            if( inState->grid[ y ][ x ] == kingToFind ) {
                 return 1;
                 }
             }

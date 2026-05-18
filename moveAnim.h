@@ -414,7 +414,7 @@ static char defaultPieceStep( BoardState    *inState,
         
         inMoveProgress->phaseProgress += ( 4 * 60 ) / r;
 
-        if( inMoveProgress->phaseProgress > pixDist ) {
+        if( inMoveProgress->phaseProgress >= pixDist ) {
 
             char  explosionHappening = 0;
             

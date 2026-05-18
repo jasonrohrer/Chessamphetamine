@@ -25,23 +25,31 @@ void pieceSpritesInit( void );
 
 
 void drawPiece( ChessPiece  inPiece,
-                int  inBaseCenterX,
-                int  inBaseCenterY );
+                int         inBaseCenterX,
+                int         inBaseCenterY );
 
 /* draws the shadow component of a piece */
 void drawPieceShadowOnly( ChessPiece  inPiece,
-                          int  inBaseCenterX,
-                          int  inBaseCenterY );
+                          int         inBaseCenterX,
+                          int         inBaseCenterY );
 
 void drawPieceGlowOnly( ChessPiece     inPiece,
                         int            inBaseCenterX,
                         int            inBaseCenterY,
                         unsigned char  inAlpha );
 
+
 /* draws the non-shadow component of a piece (base sprite and glow) */
+/* sets color automatically based on which side piece is from */
 void drawPieceBaseAndGlowOnly( ChessPiece  inPiece,
-                               int  inBaseCenterX,
-                               int  inBaseCenterY );
+                               int         inBaseCenterX,
+                               int         inBaseCenterY );
+
+
+void drawPieceBaseAndGlowOnlyNoColor( ChessPiece  inPiece,
+                                      int         inBaseCenterX,
+                                      int         inBaseCenterY );
+
 
 void drawPieceSparkles( ChessPiece     inPiece,
                         int            inBaseCenterX,
@@ -464,8 +472,8 @@ static int getPieceColorIndex( ChessPiece  inPieceColor ) {
 
 
 void drawPiece( ChessPiece  inPiece,
-                int  inBaseCenterX,
-                int  inBaseCenterY ) {
+                int         inBaseCenterX,
+                int         inBaseCenterY ) {
 
     ChessPiece  rawP          =  inPiece & CHESS_TYPE_MASK;
     ChessPiece  c             =  inPiece & CHESS_COLOR_MASK;
@@ -491,8 +499,8 @@ void drawPiece( ChessPiece  inPiece,
 
 
 void drawPieceShadowOnly( ChessPiece  inPiece,
-                          int  inBaseCenterX,
-                          int  inBaseCenterY ) {
+                          int         inBaseCenterX,
+                          int         inBaseCenterY ) {
     
     ChessPiece  rawP          =  inPiece & CHESS_TYPE_MASK;
     
@@ -544,15 +552,20 @@ void drawPieceGlowOnly( ChessPiece     inPiece,
 
 
 
-void drawPieceBaseAndGlowOnly( ChessPiece  inPiece,
-                               int  inBaseCenterX,
-                               int  inBaseCenterY ) {
+
+static void drawPieceBaseAndGlowOnlyInternal( ChessPiece  inPiece,
+                                              int         inBaseCenterX,
+                                              int         inBaseCenterY,
+                                              char        inUseColor ) {
+    
     
     ChessPiece  rawP          =  inPiece & CHESS_TYPE_MASK;
     ChessPiece  c             =  inPiece & CHESS_COLOR_MASK;
     int         cIndex        =  getPieceColorIndex( c );
-    
-    drawSetPieceColor( c );
+
+    if( inUseColor ) {
+        drawSetPieceColor( c );
+        }
     
     maxigin_drawBaseSprite( pieceSpriteHandles[ rawP ],
                             inBaseCenterX,
@@ -562,7 +575,9 @@ void drawPieceBaseAndGlowOnly( ChessPiece  inPiece,
                                 inBaseCenterX,
                                 inBaseCenterY + pieceOffsetY[ rawP ] );
 
-    maxigin_drawResetColor();
+    if( inUseColor ) {
+        maxigin_drawResetColor();
+        }
 
     if( pieceSpriteExtraHandles[ rawP ][ cIndex ] != -1 ) {
         /* for extra overlays, draw full sprite, including shadows, since
@@ -575,6 +590,31 @@ void drawPieceBaseAndGlowOnly( ChessPiece  inPiece,
                             + pieceExtraOffsetY[ rawP ][ cIndex ] );
         }
     }
+
+
+
+void drawPieceBaseAndGlowOnly( ChessPiece  inPiece,
+                               int         inBaseCenterX,
+                               int         inBaseCenterY ) {
+
+    drawPieceBaseAndGlowOnlyInternal( inPiece,
+                                      inBaseCenterX,
+                                      inBaseCenterY,
+                                      1 );
+    }
+
+
+
+void drawPieceBaseAndGlowOnlyNoColor( ChessPiece  inPiece,
+                                      int         inBaseCenterX,
+                                      int         inBaseCenterY ) {
+    
+    drawPieceBaseAndGlowOnlyInternal( inPiece,
+                                      inBaseCenterX,
+                                      inBaseCenterY,
+                                      0 );
+    }
+
 
 
 void drawPieceSparkles( ChessPiece     inPiece,

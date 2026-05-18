@@ -40,13 +40,16 @@ char checkDisplayIsSettled( void );
 #include "memoryRegister.h"
 
 
-static  char  checkRunning      =  0;
-static  int   checkProgress;
-static  int   checkProgressMax  =  512;
-static  int   checkKingX;
-static  int   checkKingY;
-static  Move  checkingMove;
+static  char        checkRunning      =  0;
+static  int         checkProgress;
+static  int         checkProgressMax  =  512;
+static  int         checkKingX;
+static  int         checkKingY;
+static  Move        checkingMove;
+static  ChessPiece  checkingPiece;
 
+
+static  int   checkSprite       =  -1;
 
 
 void checkDisplayInit( void ) {
@@ -56,6 +59,26 @@ void checkDisplayInit( void ) {
     REGISTER_VAL_MEM( checkKingX );
     REGISTER_VAL_MEM( checkKingY );
     REGISTER_VAL_MEM( checkingMove );
+    REGISTER_VAL_MEM( checkingPiece );
+
+    checkSprite = maxigin_initSprite( "check.tga" );
+
+    if( checkSprite != -1 ) {
+        maxigin_initMakeGlowSprite( checkSprite,
+                                    4,
+                                    2 );
+        /* hazy, faded black shadow  top-to-bottom */
+        maxigin_initMakeDropShadowSprite(
+            checkSprite,
+            4,
+            2,
+            192,
+            192,
+            60,
+            30,
+            50,
+            0 );
+        }
     }
 
 
@@ -65,8 +88,10 @@ void checkDisplayDraw( int  inBoardCenterX,
 
     int   kingScreenX;
     int   kingScreenY;
+    int   threatScreenX;
+    int   threatScreenY;
     long  fade;
-    
+    long  jump;
     
     if( ! checkRunning ) {
         return;
@@ -82,16 +107,31 @@ void checkDisplayDraw( int  inBoardCenterX,
                           &kingScreenY );
 
     fade = ( (long)checkProgress * 255 ) / checkProgressMax;
+
+    fade = 255 - fade;
+    
+    jump = ( (long)checkProgress * 30 ) / checkProgressMax;
     
     maxigin_drawSetColor( 255,
                           0,
                           0,
                           (unsigned char)fade );
 
-    maxigin_drawFillRect( kingScreenX - 10,
-                          kingScreenY - 10,
-                          kingScreenX + 10,
-                          kingScreenY + 10 );                  
+    maxigin_drawSprite( checkSprite,
+                        kingScreenX,
+                        kingScreenY - (int)jump - 10);
+
+    boardGetSquareCenter( inBoardCenterX,
+                          inBoardCenterY,
+                          checkingMove.startPos[0],
+                          checkingMove.startPos[1],
+                          &threatScreenX,
+                          &threatScreenY );
+    
+
+    drawPieceBaseAndGlowOnlyNoColor( checkingPiece,
+                                     threatScreenX,
+                                     threatScreenY );
     }
 
 
@@ -124,6 +164,9 @@ void checkDisplayStartCheck( BoardState  *inState ) {
 
         checkRunning  = 1;
         checkProgress = 0;
+
+        checkingPiece = inState->grid[ checkingMove.startPos[0] ]
+                                     [ checkingMove.startPos[1] ];
         }
     }
 

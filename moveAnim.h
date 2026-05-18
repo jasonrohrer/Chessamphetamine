@@ -417,9 +417,6 @@ static char defaultPieceStep( BoardState    *inState,
         if( inMoveProgress->phaseProgress > pixDist ) {
 
             char  explosionHappening = 0;
-            int   kingX;
-            int   kingY;
-            Move  checkMove;
             
             inMoveProgress->phaseProgress = pixDist;
             
@@ -465,23 +462,9 @@ static char defaultPieceStep( BoardState    *inState,
                 explosionHappening = 1;
                 }
 
-            if( ! blockCheckDetection
-                &&
-                isKingInCheckGetMove( inNewState,
-                                      inNewState->nextToMove,
-                                      &kingX,
-                                      &kingY,
-                                      &checkMove ) ) {
+            if( ! blockCheckDetection ) {
 
-                ChessPiece  kingPiece  = inNewState->grid[ kingY ][ kingX ];
-
-                if( ( kingPiece & CHESS_COLOR_MASK )
-                    == inNewState->nextToMove ) {
-                    
-                    checkDisplayStartCheck( kingX,
-                                            kingY,
-                                            &checkMove );
-                    }
+                checkDisplayStartCheck( inNewState );
                 }
 
             if( ! explosionHappening
@@ -670,7 +653,7 @@ static int getLaserHitDepth( int          inPieceRow,
             oldDirCount = dirCounts[2];
             dirCounts[3] ++;
             }
-        else if( c > inPieceRow ) {
+        else if( c > inPieceCol ) {
             oldDirCount = dirCounts[2];
             dirCounts[2] ++;
             }
@@ -965,11 +948,31 @@ static char multiPhaseStep( BoardState    *inState,
     static  Captured    midCaptured;
     
     int        pn  =  inMoveProgress->phaseNumber;
-    AnimPhase  p   =  inMoveProgress->phases[ pn ];
+    AnimPhase  p;
     int        r   =  mingin_getStepsPerSecond();
     
     (void)inNewState;
-    
+
+
+    if( pn >= inMoveProgress->numPhases ) {
+
+        /* off end of phase list, but still stepping
+           perhaps waiting for money or check display to settle */
+
+        if( checkDisplayIsSettled()
+            &&
+            moneyIsSettled() ) {
+            
+            return 1;
+            }
+        else {
+            /* still waiting for displays to settle */
+            return 0;
+            }
+        
+        }
+
+    p =  inMoveProgress->phases[ pn ];
 
     if( p == move ) {
         char  baseMoveDone;
@@ -1059,16 +1062,8 @@ static char multiPhaseStep( BoardState    *inState,
         if( explodeProgress == -1 ) {
             /* done exploding */
 
-            /* wait for money to settle before going on to next phase */
-            if( moneyIsSettled() ) {
-                inMoveProgress->phaseNumber ++;
-                inMoveProgress->phaseProgress = 0;
-                }
-            else {
-                /* hang on to the -1 for our progress as we wait for
-                   money to settle */
-                inMoveProgress->phaseProgress = explodeProgress;
-                }
+            inMoveProgress->phaseNumber ++;
+            inMoveProgress->phaseProgress = 0;
             }
         else {
             inMoveProgress->phaseProgress = explodeProgress;
@@ -1210,8 +1205,24 @@ static char multiPhaseStep( BoardState    *inState,
     
     
     if( inMoveProgress->phaseNumber >= inMoveProgress->numPhases ) {
-        /* done with all phases */
-        return 1;
+        /* newly done with all phases */
+
+        /* does this move lead to a check ? */
+        checkDisplayStartCheck( inNewState );
+        
+
+        /* wait for money/check displays to settle */
+
+        if( moneyIsSettled()
+            &&
+            checkDisplayIsSettled() ) {
+            
+            return 1;
+            }
+        else {
+            /* still waiting for displays to settle */
+            return 0;
+            }
         }
     else {
         return 0;
@@ -1633,13 +1644,36 @@ static void multiPhaseDraw( int            inBoardCenterX,
     static  Captured    midCaptured;
     
     int        pn                =  inMoveProgress->phaseNumber;
-    AnimPhase  p                 =  inMoveProgress->
-                                        phases[ inMoveProgress->phaseNumber ];
+    AnimPhase  p;
     char       multFactorsDrawn  =  0;
     
     (void)inNewState;
+
+    if( inMoveProgress->phaseNumber >= inMoveProgress->numPhases ) {
+        /* done with move anim, but still drawing it...
+           waiting for displays to settle */
+
+        boardDraw( inBoardCenterX,
+                   inBoardCenterY );
+
+        drawBoardState( inNewState,
+                        0,
+                        0,
+                        0,
+                        0,
+                        inMove,
+                        0,
+                        0,
+                        inBoardCenterX,
+                        inBoardCenterY,
+                        0 );
+        return;
+        }
     
 
+    p = inMoveProgress->phases[ inMoveProgress->phaseNumber ];
+
+    
     if( p == move ) {
         getCaptureMidState( inState,
                             inMove,

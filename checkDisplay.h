@@ -14,6 +14,8 @@
 #ifndef CHECK_DISPLAY_H_INCLUDED
 #define CHECK_DISPLAY_H_INCLUDED
 
+#include "chess.h"
+
 
 void checkDisplayInit( void );
 
@@ -23,9 +25,7 @@ void checkDisplayDraw( int  inBoardCenterX,
 
 void checkDisplayStep( void );
 
-void checkDisplayStartCheck( int    inKingX,
-                             int    inKingY,
-                             Move  *inCheckingMove );
+void checkDisplayStartCheck( BoardState  *inState );
 
                              
 
@@ -114,15 +114,17 @@ char checkDisplayIsSettled( void ) {
 
 
 
-void checkDisplayStartCheck( int    inKingX,
-                             int    inKingY,
-                             Move  *inCheckingMove ) {
-    checkRunning  = 1;
-    checkProgress = 0;
-    checkKingX         = inKingX;
-    checkKingY         = inKingY;
+void checkDisplayStartCheck( BoardState  *inState ) {
 
-    checkingMove = *inCheckingMove;
+    if( isKingInCheckGetMove( inState,
+                              inState->nextToMove,
+                              &checkKingX,
+                              &checkKingY,
+                              &checkingMove ) ) {
+
+        checkRunning  = 1;
+        checkProgress = 0;
+        }
     }
 
 

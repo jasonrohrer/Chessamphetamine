@@ -143,6 +143,31 @@ void checkDisplayDraw( int  inBoardCenterX,
                                      threatScreenY - parabola( bounceProgress,
                                                                bounceMax,
                                                                10  ) );
+
+    if( checkKingX != checkingMove.endPos[1]
+        ||
+        checkKingY != checkingMove.endPos[0] ) {
+        /* piece doesn't take king directly with basic move
+           must take king with special effect,
+           highlight piece destination to make this clear */
+        int  destX;
+        int  destY;
+
+        boardGetSquareCenter( inBoardCenterX,
+                              inBoardCenterY,
+                              checkingMove.endPos[0],
+                              checkingMove.endPos[1],
+                              &destX,
+                              &destY );
+
+        /* no bounce on dest */
+        drawPieceBaseAndGlowOnlyNoColor( checkingPiece,
+                                         destX,
+                                         destY );
+        }
+    
+        
+        
     }
 
 

@@ -16,6 +16,7 @@
 #define MONEY_IMPLEMENTATION
 #define NUMBERS_IMPLEMENTATION
 #define CHECK_DISPLAY_IMPLEMENTATION
+#define UTIL_IMPLEMENTATION
 
 #include "chess.h"
 
@@ -34,6 +35,8 @@
 #include "numbers.h"
 
 #include "checkDisplay.h"
+
+#include "util.h"
 
 
 enum GameUserAction {

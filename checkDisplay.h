@@ -84,6 +84,28 @@ void checkDisplayInit( void ) {
 
 
 
+static int getMoveLength( Move  *inMove ) {
+    
+    int  dX  =  inMove->endPos[1] - inMove->startPos[1];
+    int  dY  =  inMove->endPos[0] - inMove->startPos[0];
+
+    if( dX < 0 ) {
+        dX *= -1;
+        }
+    if( dY < 0 ) {
+        dY *= -1;
+        }
+
+    if( dX > dY ) {
+        return dX;
+        }
+    else {
+        return dY;
+        }
+    }
+    
+
+
 void checkDisplayDraw( int  inBoardCenterX,
                        int  inBoardCenterY ) {
 
@@ -137,21 +159,26 @@ void checkDisplayDraw( int  inBoardCenterX,
     if( bounceProgress > bounceMax ) {
         bounceProgress = bounceMax;
         }
-
+    
     drawPieceBaseAndGlowOnlyNoColor( checkingPiece,
                                      threatScreenX,
                                      threatScreenY - parabola( bounceProgress,
                                                                bounceMax,
                                                                10  ) );
 
-    if( checkKingX != checkingMove.endPos[1]
+    /* do this always, for now. */
+    if( 1
+        ||
+        checkKingX != checkingMove.endPos[1]
         ||
         checkKingY != checkingMove.endPos[0] ) {
         /* piece doesn't take king directly with basic move
            must take king with special effect,
            highlight piece destination to make this clear */
-        int  destX;
-        int  destY;
+        int   destX;
+        int   destY;
+        long  drawX;
+        long  drawY;
 
         boardGetSquareCenter( inBoardCenterX,
                               inBoardCenterY,
@@ -160,10 +187,37 @@ void checkDisplayDraw( int  inBoardCenterX,
                               &destX,
                               &destY );
 
-        /* no bounce on dest */
-        drawPieceBaseAndGlowOnlyNoColor( checkingPiece,
-                                         destX,
-                                         destY );
+        if( getMoveLength( &checkingMove ) > 1 ) {
+            /* piece is moving long distance, show slide effect */
+        
+            drawX =
+                ( bounceProgress * destX
+                  + ( bounceMax - bounceProgress ) * threatScreenX )
+                / bounceMax;
+
+            drawY =
+                ( bounceProgress * destY
+                  + ( bounceMax - bounceProgress ) * threatScreenY )
+                / bounceMax;
+        
+            drawPieceBaseAndGlowOnlyNoColor( checkingPiece,
+                                             (int)drawX,
+                                             (int)drawY );
+            }
+        
+
+        if( checkKingX != checkingMove.endPos[1]
+            ||
+            checkKingY != checkingMove.endPos[0] ) {
+
+            /* if we don't land right on king, show our destination
+               position too */
+            
+            drawPieceBaseAndGlowOnlyNoColor( checkingPiece,
+                                             (int)destX,
+                                             (int)destY );
+            }
+        
         }
     
         

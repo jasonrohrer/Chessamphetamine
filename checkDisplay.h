@@ -38,6 +38,7 @@ char checkDisplayIsSettled( void );
 #ifdef CHECK_DISPLAY_IMPLEMENTATION
 
 #include "memoryRegister.h"
+#include "util.h"
 
 
 static  char        checkRunning      =  0;
@@ -92,6 +93,8 @@ void checkDisplayDraw( int  inBoardCenterX,
     int   threatScreenY;
     long  fade;
     long  jump;
+    int   bounceProgress;
+    int   bounceMax;
     
     if( ! checkRunning ) {
         return;
@@ -127,11 +130,19 @@ void checkDisplayDraw( int  inBoardCenterX,
                           checkingMove.startPos[1],
                           &threatScreenX,
                           &threatScreenY );
-    
+
+
+    bounceMax      = checkProgressMax / 2;
+    bounceProgress = checkProgress;
+    if( bounceProgress > bounceMax ) {
+        bounceProgress = bounceMax;
+        }
 
     drawPieceBaseAndGlowOnlyNoColor( checkingPiece,
                                      threatScreenX,
-                                     threatScreenY );
+                                     threatScreenY - parabola( bounceProgress,
+                                                               bounceMax,
+                                                               10  ) );
     }
 
 
@@ -139,7 +150,7 @@ void checkDisplayDraw( int  inBoardCenterX,
 void checkDisplayStep( void ) {
     int  r  = mingin_getStepsPerSecond();
 
-    checkProgress += ( 10 * 60 ) / r;
+    checkProgress += ( 20 * 60 ) / r;
 
     if( checkProgress >= checkProgressMax ) {
         checkRunning = 0;

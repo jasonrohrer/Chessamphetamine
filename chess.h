@@ -1680,7 +1680,7 @@ void getStartBoard( BoardState  *outState ) {
     outState->grid[0][4] = king   | CHESS_BLACK;
     outState->grid[0][5] = bishop | CHESS_BLACK;
     outState->grid[0][6] = knight | CHESS_BLACK;
-    outState->grid[0][7] = rook   | CHESS_BLACK;
+    outState->grid[0][7] = laserRook   | CHESS_BLACK;
 
     for( i = 0;
          i < 8;
@@ -1688,7 +1688,7 @@ void getStartBoard( BoardState  *outState ) {
         outState->grid[1][i] = pawn | CHESS_BLACK;
         }
 
-    outState->grid[7][0] = rook      | CHESS_WHITE;
+    outState->grid[7][0] = laserRook      | CHESS_WHITE;
     outState->grid[7][1] = knight    | CHESS_WHITE;
     outState->grid[7][2] = bishop    | CHESS_WHITE;
     outState->grid[7][3] = queen     | CHESS_WHITE;
@@ -1726,7 +1726,9 @@ void getTestBoard( BoardState  *outState ) {
     outState->grid[3][4] = rook  | CHESS_BLACK;
     outState->grid[3][5] = rook  | CHESS_BLACK;
     
-    outState->grid[4][3] = laserRook | CHESS_WHITE;
+    outState->grid[4][0] = laserRook | CHESS_WHITE;
+    outState->grid[4][2] = pawn | CHESS_WHITE;
+    outState->grid[3][0] = pawn | CHESS_WHITE;
     outState->grid[6][5] = king | CHESS_WHITE;
 
     

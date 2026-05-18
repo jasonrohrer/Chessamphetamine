@@ -51,6 +51,7 @@ static  ChessPiece  checkingPiece;
 
 
 static  int   checkSprite       =  -1;
+static  int   checkSound        =  -1;
 
 
 void checkDisplayInit( void ) {
@@ -80,6 +81,8 @@ void checkDisplayInit( void ) {
             50,
             0 );
         }
+
+    checkSound = maxigin_initSoundEffect( "check_sd_19.wav" );
     }
 
 
@@ -257,6 +260,9 @@ void checkDisplayStartCheck( BoardState  *inState ) {
 
         checkingPiece = inState->grid[ checkingMove.startPos[0] ]
                                      [ checkingMove.startPos[1] ];
+
+        maxigin_playSoundEffect( checkSound,
+                                 512 );
         }
     }
 

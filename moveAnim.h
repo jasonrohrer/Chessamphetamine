@@ -103,6 +103,8 @@ void drawMoveAnimation( int            inBoardCenterX,
 
 #include "money.h"
 
+#include "checkDisplay.h"
+
 static  int  beepUp       =  -1;
 static  int  beepDown     =  -1;
 static  int  shooshGood   =  -1;
@@ -383,6 +385,10 @@ static void processCaptureMoney( Captured  *inCaptured,
 
 
 
+static  char  blockCheckDetection  =  0;
+
+
+
 static char defaultPieceStep( BoardState    *inState,
                               Move          *inMove,
                               Captured      *inCaptured,
@@ -409,6 +415,12 @@ static char defaultPieceStep( BoardState    *inState,
         inMoveProgress->phaseProgress += ( 4 * 60 ) / r;
 
         if( inMoveProgress->phaseProgress > pixDist ) {
+
+            char  explosionHappening = 0;
+            int   kingX;
+            int   kingY;
+            Move  checkMove;
+            
             inMoveProgress->phaseProgress = pixDist;
             
             if( inCaptured->num == 0 ) {
@@ -425,8 +437,10 @@ static char defaultPieceStep( BoardState    *inState,
                                              256 );
                     }
 
-                /* animation done */
-                return 1;
+
+                /* set to -1 here, since there's no explosion,
+                   but there might be a check display to wait for */
+                inMoveProgress->phaseProgress = -1;
                 }
             else {
                 
@@ -447,7 +461,36 @@ static char defaultPieceStep( BoardState    *inState,
                 processCaptureMoney( inCaptured,
                                      0,
                                      inCaptured->num - 1 );
+
+                explosionHappening = 1;
                 }
+
+            if( ! blockCheckDetection
+                &&
+                isKingInCheckGetMove( inNewState,
+                                      inNewState->nextToMove,
+                                      &kingX,
+                                      &kingY,
+                                      &checkMove ) ) {
+
+                ChessPiece  kingPiece  = inNewState->grid[ kingY ][ kingX ];
+
+                if( ( kingPiece & CHESS_COLOR_MASK )
+                    == inNewState->nextToMove ) {
+                    
+                    checkDisplayStartCheck( kingX,
+                                            kingY,
+                                            &checkMove );
+                    }
+                }
+
+            if( ! explosionHappening
+                &&
+                checkDisplayIsSettled() ) {
+                /* no check display, no explosion, animation done */
+                return 1;
+                }
+            
             }
         }
     else {
@@ -462,7 +505,7 @@ static char defaultPieceStep( BoardState    *inState,
         else {
             /* if there's a negative value in phase progress,
                then explosion must already be done, and we're
-               waiting for money to settle */
+               waiting for money or check to settle */
             explodeProgress = -1;
             }
 
@@ -470,7 +513,9 @@ static char defaultPieceStep( BoardState    *inState,
             /* done exploding */
 
             /* wait for money to settle before going on to next phase */
-            if( moneyIsSettled() ) {
+            if( moneyIsSettled()
+                &&
+                checkDisplayIsSettled() ) {
                 return 1;
                 }
             else {
@@ -937,12 +982,19 @@ static char multiPhaseStep( BoardState    *inState,
 
         /* use base move for main piece move and for any direct-piece capture
            explosion */
+
+        /* don't display check state mid-move */
+
+        blockCheckDetection = 1;
         
         baseMoveDone = defaultPieceStep( inState,
                                          inMove,
                                          &midCaptured,
                                          &midState,
                                          inMoveProgress );
+        blockCheckDetection = 0;
+
+        
         if( baseMoveDone ) {
             inMoveProgress->phaseNumber ++;
             inMoveProgress->phaseProgress = 0;

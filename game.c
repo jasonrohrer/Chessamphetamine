@@ -15,6 +15,7 @@
 #define MOVE_ANIM_IMPLEMENTATION
 #define MONEY_IMPLEMENTATION
 #define NUMBERS_IMPLEMENTATION
+#define CHECK_DISPLAY_IMPLEMENTATION
 
 #include "chess.h"
 
@@ -31,6 +32,8 @@
 #include "simTest.h"
 
 #include "numbers.h"
+
+#include "checkDisplay.h"
 
 
 enum GameUserAction {
@@ -655,6 +658,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
                30 );
 
+    checkDisplayDraw( boardCenterX,
+                      boardCenterY );
+
     maxigin_drawResetColor();
 
     numberDraw( statesTested,
@@ -1126,7 +1132,7 @@ void maxiginGame_step( void ) {
 
 
     moneyStep();
-    
+    checkDisplayStep();
     
 
         
@@ -1777,6 +1783,7 @@ void maxiginGame_init( void ) {
     moveAnimInit();
     moneyInit( 10 );
     numbersInit();
+    checkDisplayInit();
 
     if(0)runChessTest();
     

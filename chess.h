@@ -370,6 +370,12 @@ static char isKingInCheck( BoardState  *inState,
                            int          inVictimKingColor );
 
 
+static char isKingInCheckGetMove( BoardState  *inState,
+                                  int          inVictimKingColor,
+                                  int         *outKingX,
+                                  int         *outKingY,
+                                  Move        *outMove );
+
 
 
 static int noPieceMove( BoardState     *inState,
@@ -1464,9 +1470,60 @@ static char doesKingExist( BoardState  *inState,
 
 static char isKingInCheck( BoardState  *inState,
                            int          inVictimKingColor ) {
+    
+    return isKingInCheckGetMove( inState,
+                                 inVictimKingColor,
+                                 0,
+                                 0,
+                                 0 );
+    }
 
-    int  y;
-    int  x;
+
+
+static void findKing( BoardState  *inState,
+                      int          inTargetKingColor,
+                      int         *outKingX,
+                      int         *outKingY ) {
+
+    unsigned char  y;
+    unsigned char  x;
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+            
+    
+            ChessPiece  p       =  inState->grid[ y ][ x ];
+            ChessPiece  pType   =  p & CHESS_TYPE_MASK;
+            ChessPiece  pColor  =  p & CHESS_COLOR_MASK;
+
+            if( pType  == king
+                &&
+                pColor == inTargetKingColor ) {
+                
+                *outKingX = x;
+                *outKingY = y;
+                
+                return;
+                }
+            }
+        }
+    }
+
+
+
+static char isKingInCheckGetMove( BoardState  *inState,
+                                  int          inVictimKingColor,
+                                  int         *outKingX,
+                                  int         *outKingY,
+                                  Move        *outMove ) {
+
+    unsigned char  y;
+    unsigned char  x;
     
     static  BoardState     resultStates  [BN];
     static  unsigned char  destRows      [BN];
@@ -1531,6 +1588,24 @@ static char isKingInCheck( BoardState  *inState,
                     /* king was present, but gone one move later
                        he was in check */
 
+                    if( outMove != 0 ) {
+                        outMove->startPos[0] = y;
+                        outMove->startPos[1] = x;
+                        outMove->endPos[0] = destRows[n];
+                        outMove->endPos[1] = destCols[n];
+                        }
+                    if( outKingX != 0
+                        &&
+                        outKingY != 0 ) {
+
+                        findKing( inState,
+                                  inVictimKingColor,
+                                  outKingX,
+                                  outKingY );
+                        
+                        }
+                    
+
                     return 1;
                     }
                 }
@@ -1561,7 +1636,7 @@ void chessSeed( unsigned long  inSeed ) {
 void chessInit( void ) {
 
     /* stalemate */
-    chessSeed( 12036701 );
+    chessSeed( 12036703 );
 
     /* draw */
     if(0)chessSeed( 12035857 );
@@ -1598,7 +1673,7 @@ void getStartBoard( BoardState  *outState ) {
     clearBoard( outState );
 
     /* fill out whole starting board */
-    outState->grid[0][0] = rook   | CHESS_BLACK;
+    outState->grid[0][0] = laserRook   | CHESS_BLACK;
     outState->grid[0][1] = knight | CHESS_BLACK;
     outState->grid[0][2] = bishop | CHESS_BLACK;
     outState->grid[0][3] = queen  | CHESS_BLACK;

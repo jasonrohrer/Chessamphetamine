@@ -462,7 +462,9 @@ static char defaultPieceStep( BoardState    *inState,
                 explosionHappening = 1;
                 }
 
-            if( ! blockCheckDetection ) {
+            if( ! blockCheckDetection
+                &&
+                ! explosionHappening ) {
 
                 checkDisplayStartCheck( inNewState );
                 }
@@ -484,6 +486,12 @@ static char defaultPieceStep( BoardState    *inState,
         if( inMoveProgress->phaseProgress > 0 ) {
             explodeProgress =  inMoveProgress->phaseProgress - pixDist;
             explodeProgress = stepExplodingPiece( explodeProgress );
+
+            if( explodeProgress == -1 ) {
+                /* explosion just ended
+                   do we need to start check display? */
+                checkDisplayStartCheck( inNewState );
+                }
             }
         else {
             /* if there's a negative value in phase progress,

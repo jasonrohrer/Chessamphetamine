@@ -444,16 +444,10 @@ void pieceSpritesInit( void ) {
 
 void drawSetPieceColor( int  inPieceColor ) {
     if( inPieceColor == CHESS_BLACK ) {
-        maxigin_drawSetColor( 128,
-                              64,
-                              128,
-                              255 );
+        colorsApplyBlackPieceColor();
         }
     else {
-        maxigin_drawSetColor( 192,
-                              128,
-                              0,
-                              255 );
+        colorsApplyWhitePieceColor();
         }
     }
 

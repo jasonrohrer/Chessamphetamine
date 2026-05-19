@@ -17,6 +17,7 @@
 #define NUMBERS_IMPLEMENTATION
 #define CHECK_DISPLAY_IMPLEMENTATION
 #define UTIL_IMPLEMENTATION
+#define COLORS_IMPLEMENTATION
 
 #include "chess.h"
 
@@ -38,6 +39,8 @@
 
 #include "util.h"
 
+#include "colors.h"
+
 
 enum GameUserAction {
     JUMP,
@@ -50,6 +53,8 @@ enum GameUserAction {
     BACK_MOVE_LOG,
     SHIFT,
     CTRL,
+    RAND_COLORS,
+    ROT_COLORS,
     BOX_THICK
     };
 
@@ -761,9 +766,12 @@ static void fireBomb( int  inX,
 
 
 
-static char remappingJump = 0;
+static char  remappingJump = 0;
 
-static int  loudnessToggle = 512;
+static int   loudnessToggle = 512;
+
+static char  randColorsDown = 0;
+
 
 
 void maxiginGame_step( void ) {
@@ -914,6 +922,22 @@ void maxiginGame_step( void ) {
                 }
             }
         }
+
+    if( maxigin_isButtonDown( RAND_COLORS ) ) {
+
+        if( ! randColorsDown ) {
+            randColorsDown = 1;
+            colorsSetRandom();
+            }
+        }
+    else {
+        randColorsDown = 0;
+        }
+
+    if( maxigin_isButtonDown( ROT_COLORS ) ) {
+        colorsRotate();
+        }
+    
 
     moveLogButtonDown = maxigin_isButtonDown( TOGGLE_MOVE_LOG );
 
@@ -1376,6 +1400,10 @@ static MinginButton moveLogBackMapping[] =  { MGN_KEY_U,     MGN_MAP_END };
 static MinginButton shiftMapping[] =  { MGN_KEY_SHIFT_L,     MGN_MAP_END };
 static MinginButton ctrlMapping[] =  { MGN_KEY_CONTROL_L,     MGN_MAP_END };
 
+static MinginButton randColorsMapping[] = { MGN_KEY_R,  MGN_MAP_END };
+static MinginButton rotColorsMapping[] = { MGN_KEY_1,  MGN_MAP_END };
+
+
 static MinginButton shootMapping[]  =  { MGN_KEY_V,
                                          MGN_BUTTON_MOUSE_LEFT,
                                          MGN_BUTTON_PS_X,
@@ -1683,6 +1711,11 @@ void maxiginGame_init( void ) {
                                    shiftMapping );
     maxigin_registerButtonMapping( CTRL,
                                    ctrlMapping );
+
+    maxigin_registerButtonMapping( RAND_COLORS,
+                                   randColorsMapping );
+    maxigin_registerButtonMapping( ROT_COLORS,
+                                   rotColorsMapping );
     
     maxigin_registerDynamicButtonMapping(
         SHOOT,
@@ -1787,6 +1820,8 @@ void maxiginGame_init( void ) {
     moneyInit( 10 );
     numbersInit();
     checkDisplayInit();
+    colorsInit();
+    
 
     if(0)runChessTest();
     

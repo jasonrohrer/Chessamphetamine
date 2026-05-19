@@ -1,0 +1,44 @@
+{
+  "type": "curved-hsv-palette-setup",
+  "version": 2,
+  "baseColor": "#373aae",
+  "params": {
+    "count": 25,
+    "baseIndex": 10,
+    "hueSpan": 190,
+    "brightReach": 0.97,
+    "brightSpacing": 2.58,
+    "darkReach": 0.97,
+    "darkSpacing": 0.63,
+    "gamma": 3.018474294766166,
+    "topHue": 73.5,
+    "topValue": 0.35,
+    "topSat": 0.05,
+    "bottomHue": -69.5,
+    "bottomValue": 0.46,
+    "bottomSat": 0.64
+  }
+}
+
+
+{
+  "type": "curved-hsv-palette-setup",
+  "version": 2,
+  "baseColor": "#373aae",
+  "params": {
+    "count": 13,
+    "baseIndex": 10,
+    "hueSpan": 190,
+    "brightReach": 0.97,
+    "brightSpacing": 2.58,
+    "darkReach": 0.97,
+    "darkSpacing": 0.63,
+    "gamma": 3.018474294766166,
+    "topHue": 73.5,
+    "topValue": 0.35,
+    "topSat": 0.05,
+    "bottomHue": -69.5,
+    "bottomValue": 0.46,
+    "bottomSat": 0.64
+  }
+}

@@ -124,9 +124,9 @@ void boardDraw( int  inCenterX,
     int  yOff  =  ( squareSize * BH ) / 2;
     int  xOff  =  ( squareSize * BW ) / 2;
 
-    maxigin_drawSetColor( 0,
-                          255,
-                          255,
+    maxigin_drawSetColor( 238,
+                          142,
+                          228,
                           255 );
 
     /* draw black squares in first pass, then white on top */

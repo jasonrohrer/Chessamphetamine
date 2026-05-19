@@ -21,7 +21,10 @@ void colorsSetClassic( void );
 
 void colorsSetRandom( void );
 
-void colorsRotate( void );
+
+/* inColor pick is 0, 1, or 2 for white, black, and board colors
+   or -1 for all colors */
+void colorsRotate( int  inColorPick );
 
 
 /* these call maxigin_drawSetColor */
@@ -359,10 +362,27 @@ static void colorsRotateColor( ColorsColor  *inColor ) {
     }
 
 
-void colorsRotate( void ) {
-    colorsRotateColor( &colorsBlackPlayer );
-    colorsRotateColor( &colorsWhitePlayer );
-    colorsRotateColor( &colorsBoard       );
+void colorsRotate( int  inColorPick ) {
+
+    if( inColorPick == -1 ) {
+        colorsRotateColor( &colorsWhitePlayer );
+        colorsRotateColor( &colorsBlackPlayer );
+        colorsRotateColor( &colorsBoard       );
+        }
+    else {
+        switch( inColorPick ) {
+            case 0:
+                colorsRotateColor( &colorsWhitePlayer );
+                break;
+            case 1:
+                colorsRotateColor( &colorsBlackPlayer );
+                break;
+            case 2:
+                colorsRotateColor( &colorsBoard       );
+                break;
+            }
+        }
+    
 
     if( 0 ) logColors();
     }

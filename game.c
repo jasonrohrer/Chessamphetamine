@@ -54,7 +54,10 @@ enum GameUserAction {
     SHIFT,
     CTRL,
     RAND_COLORS,
-    ROT_COLORS,
+    ROT_COLORS_0,
+    ROT_COLORS_1,
+    ROT_COLORS_2,
+    ROT_COLORS_ALL,
     BOX_THICK
     };
 
@@ -934,8 +937,17 @@ void maxiginGame_step( void ) {
         randColorsDown = 0;
         }
 
-    if( maxigin_isButtonDown( ROT_COLORS ) ) {
-        colorsRotate();
+    if( maxigin_isButtonDown( ROT_COLORS_0 ) ) {
+        colorsRotate( 0 );
+        }
+    if( maxigin_isButtonDown( ROT_COLORS_1 ) ) {
+        colorsRotate( 1 );
+        }
+    if( maxigin_isButtonDown( ROT_COLORS_2 ) ) {
+        colorsRotate( 2 );
+        }
+    if( maxigin_isButtonDown( ROT_COLORS_ALL ) ) {
+        colorsRotate( -1 );
         }
     
 
@@ -1401,7 +1413,10 @@ static MinginButton shiftMapping[] =  { MGN_KEY_SHIFT_L,     MGN_MAP_END };
 static MinginButton ctrlMapping[] =  { MGN_KEY_CONTROL_L,     MGN_MAP_END };
 
 static MinginButton randColorsMapping[] = { MGN_KEY_R,  MGN_MAP_END };
-static MinginButton rotColorsMapping[] = { MGN_KEY_1,  MGN_MAP_END };
+static MinginButton rotColors0Mapping[] = { MGN_KEY_1,  MGN_MAP_END };
+static MinginButton rotColors1Mapping[] = { MGN_KEY_2,  MGN_MAP_END };
+static MinginButton rotColors2Mapping[] = { MGN_KEY_3,  MGN_MAP_END };
+static MinginButton rotColorsAllMapping[] = { MGN_KEY_4,  MGN_MAP_END };
 
 
 static MinginButton shootMapping[]  =  { MGN_KEY_V,
@@ -1714,8 +1729,14 @@ void maxiginGame_init( void ) {
 
     maxigin_registerButtonMapping( RAND_COLORS,
                                    randColorsMapping );
-    maxigin_registerButtonMapping( ROT_COLORS,
-                                   rotColorsMapping );
+    maxigin_registerButtonMapping( ROT_COLORS_0,
+                                   rotColors0Mapping );
+    maxigin_registerButtonMapping( ROT_COLORS_1,
+                                   rotColors1Mapping );
+    maxigin_registerButtonMapping( ROT_COLORS_2,
+                                   rotColors2Mapping );
+    maxigin_registerButtonMapping( ROT_COLORS_ALL,
+                                   rotColorsAllMapping );
     
     maxigin_registerDynamicButtonMapping(
         SHOOT,

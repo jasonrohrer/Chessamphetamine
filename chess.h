@@ -1452,8 +1452,6 @@ static int laserPawnMove( BoardState     *inState,
 
 
 
-
-/* fixme... they just move like pawns for now */
 static int rocketMove( BoardState     *inState,
                        unsigned char   inPieceColor,
                        int             inPieceRow,
@@ -1483,6 +1481,7 @@ static int rocketMove( BoardState     *inState,
         return 0;
         }
 
+    /* rockets are impacted by multipliers */
     repeatVal = getTotalEffectsRepeatValue( inState,
                                             inPieceColor,
                                             inPieceRow,

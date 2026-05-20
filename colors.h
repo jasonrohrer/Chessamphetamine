@@ -26,6 +26,8 @@ void colorsSetRandom( void );
    or -1 for all colors */
 void colorsRotate( int  inColorPick );
 
+void colorsPrint( void );
+
 
 /* these call maxigin_drawSetColor */
 void colorsApplyWhitePieceColor( void );
@@ -387,7 +389,12 @@ void colorsRotate( int  inColorPick ) {
     if( 0 ) logColors();
     }
 
-    
+
+
+void colorsPrint( void ) {
+
+    logColors();
+    }
 
 
 

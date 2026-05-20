@@ -58,6 +58,7 @@ enum GameUserAction {
     ROT_COLORS_1,
     ROT_COLORS_2,
     ROT_COLORS_ALL,
+    PRINT_COLORS,
     BOX_THICK
     };
 
@@ -775,6 +776,8 @@ static int   loudnessToggle = 512;
 
 static char  randColorsDown = 0;
 
+static char  printColorsDown = 0;
+
 
 
 void maxiginGame_step( void ) {
@@ -949,7 +952,17 @@ void maxiginGame_step( void ) {
     if( maxigin_isButtonDown( ROT_COLORS_ALL ) ) {
         colorsRotate( -1 );
         }
-    
+
+    if( maxigin_isButtonDown( PRINT_COLORS ) ) {
+
+        if( ! printColorsDown ) {
+            colorsPrint();
+            printColorsDown = 1;
+            }
+        }
+    else {
+        printColorsDown = 0;
+        }
 
     moveLogButtonDown = maxigin_isButtonDown( TOGGLE_MOVE_LOG );
 
@@ -1417,6 +1430,7 @@ static MinginButton rotColors0Mapping[] = { MGN_KEY_1,  MGN_MAP_END };
 static MinginButton rotColors1Mapping[] = { MGN_KEY_2,  MGN_MAP_END };
 static MinginButton rotColors2Mapping[] = { MGN_KEY_3,  MGN_MAP_END };
 static MinginButton rotColorsAllMapping[] = { MGN_KEY_4,  MGN_MAP_END };
+static MinginButton printColorsMapping[] = { MGN_KEY_5,  MGN_MAP_END };
 
 
 static MinginButton shootMapping[]  =  { MGN_KEY_V,
@@ -1737,6 +1751,8 @@ void maxiginGame_init( void ) {
                                    rotColors2Mapping );
     maxigin_registerButtonMapping( ROT_COLORS_ALL,
                                    rotColorsAllMapping );
+    maxigin_registerButtonMapping( PRINT_COLORS,
+                                   printColorsMapping );
     
     maxigin_registerDynamicButtonMapping(
         SHOOT,

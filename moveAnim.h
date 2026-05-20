@@ -2200,7 +2200,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
         numberDrawText( displayText,
                         drawX,
                         drawY + labelOffsetY,
-                        0 );
+                        0,
+                        MAXIGIN_CENTER );
         }
 
 

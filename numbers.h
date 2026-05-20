@@ -24,10 +24,11 @@ void numberDraw( int   inValue,
                  int   inPosY,
                  char  inFixedWidth );
 
-void numberDrawText( const char  *inText,
-                     int          inPosX,
-                     int          inPosY,
-                     char         inFixedWidth );
+void numberDrawText( const char   *inText,
+                     int           inPosX,
+                     int           inPosY,
+                     char          inFixedWidth,
+                     MaxiginAlign  inAlign );
 
 
 #ifdef NUMBERS_IMPLEMENTATION
@@ -77,15 +78,17 @@ void numberDraw( int   inValue,
     numberDrawText( maxigin_intToString( inValue ),
                     inPosX,
                     inPosY,
-                    inFixedWidth );
+                    inFixedWidth,
+                    MAXIGIN_RIGHT );
     }
 
 
 
-void numberDrawText( const char  *inText,
-                     int          inPosX,
-                     int          inPosY,
-                     char         inFixedWidth ) {
+void numberDrawText( const char   *inText,
+                     int           inPosX,
+                     int           inPosY,
+                     char          inFixedWidth,
+                     MaxiginAlign  inAlign ) {
     if( inFixedWidth ) {
         maxigin_adjustFontSpacing( numbersFont,
                                    0,
@@ -103,7 +106,7 @@ void numberDrawText( const char  *inText,
                       inText,
                       inPosX,
                       inPosY,
-                      MAXIGIN_RIGHT );
+                      inAlign );
     }
 
 

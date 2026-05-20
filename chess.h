@@ -1509,6 +1509,34 @@ static int rocketMove( BoardState     *inState,
         }
 
     if( numEnemy == 0 ) {
+        /* no enemy pieces?  Try again, including king
+           so rockets can only kill king when he's last one left */
+
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
+
+                ChessPiece  p  = inState->grid[y][x];
+
+                if( p != noPiece
+                    &&
+                    ( p & CHESS_COLOR_MASK ) == otherColor ) {
+
+                    enemy[numEnemy].p   = p;
+                    enemy[numEnemy].row = y;
+                    enemy[numEnemy].col = x;
+                    numEnemy++;
+                    } 
+                }
+            }
+        }
+    
+
+    if( numEnemy == 0 ) {
         return 0;
         }
     
@@ -1531,13 +1559,13 @@ static int rocketMove( BoardState     *inState,
        maybe don't do this for now... */
     if( 0 )
     addCapturedPiece( &( outCaptured[0] ),
-                      inState,
+                      &( outStates  [0] ),
                       inPieceRow,
                       inPieceCol );
     
     /* target is captured too */
     addCapturedPiece( &( outCaptured[0] ),
-                      inState,
+                      &( outStates  [0] ),
                       r,
                       c );
 

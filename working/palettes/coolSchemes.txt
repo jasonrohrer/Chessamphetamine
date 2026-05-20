@@ -1,0 +1,5 @@
+Black Player: { 218, 92, 107 } (index = 16)
+White Player: { 66, 55, 174 } (index = 36)
+Board: { 66, 55, 174 } (index = 36)
+
+

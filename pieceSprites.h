@@ -153,7 +153,8 @@ static  const char  *pieceSpriteFiles  [                  ] =
                                               "rook.tga",
                                               "pawn.tga",
                                               "doublingPawn.tga",
-                                              "addingRook.tga" };
+                                              "addingRook.tga",
+                                              "rocket.tga" };
 CHECK_ARRAY_LENGTH( pieceSpriteFiles,
                     NUM_CHESS_PIECES );
 
@@ -176,7 +177,8 @@ static  int          pieceExtraOffsetY      [                  ][2] =
                                                   { -1, 0 },
                                                   {  0, 0 },
                                                   {  0, 0 },
-                                                           };
+                                                  {  0, 0 }
+                                                    };
 CHECK_ARRAY_LENGTH( pieceExtraOffsetY,
                     NUM_CHESS_PIECES );
 
@@ -199,6 +201,8 @@ static  const char  *pieceSpriteExtraFiles  [                  ][2] =
                                                     "rookLasers.tga" },
                                                   { "pawnLasersWhite.tga",
                                                     "pawnLasersBlack.tga" },
+                                                  { "",
+                                                    "" },
                                                   { "",
                                                     "" },
                                                   { "",

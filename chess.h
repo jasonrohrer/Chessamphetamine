@@ -33,6 +33,7 @@ enum{
     laserPawn,
     doublingPawn,
     addingRook,
+    rocket,
     NUM_CHESS_PIECES };
 
 #define  FIRST_CHESS_PIECE  pawn
@@ -293,7 +294,8 @@ static int pieceValue[] = { 0,
                             7,
                             2,
                             2,
-                            6 };
+                            6,
+                            2 };
 
 CHECK_ARRAY_LENGTH( pieceValue,
                     NUM_CHESS_PIECES );
@@ -309,7 +311,8 @@ static char pieceChars[] = { '+',
                              'l',
                              'o',
                              'd',
-                             'a' };
+                             'a',
+                             'v' };
 
 CHECK_ARRAY_LENGTH( pieceChars,
                     NUM_CHESS_PIECES );
@@ -1444,6 +1447,190 @@ static int laserPawnMove( BoardState     *inState,
 
 
 
+/* fixme... they just move like pawns for now */
+static int rocketMove( BoardState     *inState,
+                       unsigned char   inPieceColor,
+                       int             inPieceRow,
+                       int             inPieceCol,
+                       char            inMaySkipNonKingCaptureMoves,
+                       unsigned char   outDestRows[BN],
+                       unsigned char   outDestCols[BN],
+                       Captured        outCaptured[BN],
+                       BoardState      outStates  [BN] ) {
+
+    int  moveDir       =  1;
+    int  maxDist       =  1;
+    int  otherColor    =  CHESS_WHITE;
+    int  n             =  0;
+    int  i;
+    
+    if( inPieceColor == CHESS_WHITE ) {
+        moveDir = -1;
+        otherColor = CHESS_BLACK;
+
+        if( inPieceRow == BH - 2 ) {
+            maxDist = 2;
+            }
+        if( inPieceRow == 0 ) {
+            /* at end, no move */
+            return 0;
+            }
+        }
+    else {
+        moveDir = 1;
+        otherColor = CHESS_WHITE;
+
+        if( inPieceRow == 1 ) {
+            maxDist = 2;
+            }
+        if( inPieceRow == BH - 1 ) {
+            /* at end, no move */
+            return 0;
+            }
+        }
+
+    /* first, look at all forward moves, which can only go to empty squares
+       and can only pass through empty squares if doing a double-move */
+    if( ! inMaySkipNonKingCaptureMoves )
+    for( i = 1;
+         i <= maxDist;
+         i ++ ) {
+
+        /* viaRow might be the same as newRow if we're considering 1-step
+           moves */
+        unsigned char  newRow  =  (unsigned char)( inPieceRow + (moveDir * i) );
+        unsigned char  viaRow  =  (unsigned char)( inPieceRow +  moveDir      );
+        
+        if( inState->grid[ newRow ][ inPieceCol ] == noPiece
+            &&
+            inState->grid[ viaRow ][ inPieceCol ] == noPiece ) {
+            
+            outDestRows[n] = newRow;
+            outDestCols[n] = (unsigned char)inPieceCol;
+
+            /* copy state to start with */
+            outStates[n]   = *inState;
+
+            /* copy piece into new spot */
+            outStates[n].grid    [ newRow     ][ inPieceCol ] =
+                outStates[n].grid[ inPieceRow ][ inPieceCol ];
+
+            /* leave empty space behind */
+            outStates[n].grid[ inPieceRow ][ inPieceCol ] = noPiece;
+
+            outStates[n].nextToMove = otherColor;
+
+            /* no capture */
+            outCaptured[n].num = 0;
+            
+            /* promote to Queen in final row */
+
+            if( ( moveDir == 1
+                  &&
+                  newRow == BH - 1 )
+                ||
+                ( moveDir == -1
+                  &&
+                  newRow == 0 ) ) {
+
+                /* count our pawn as captured during promotion */
+                addCapturedPiece( &( outCaptured[n] ),
+                                  &( outStates[n]   ),
+                                  newRow,
+                                  inPieceCol );
+                
+                outStates[n].grid[ newRow ][ inPieceCol ] = inPieceColor | queen;
+                }
+            
+            n++;
+            }
+        }
+
+    /* capture moves */
+
+    /* loop over left/right diagonal moves */
+    for( i =  -1;
+         i <=  1;
+         i +=  2 ) {
+        
+        unsigned char  newRow    =  (unsigned char)( inPieceRow +  moveDir );
+        int            newCol    =  inPieceCol + i;
+        ChessPiece     targetP;
+        
+        if( newCol < 0
+            ||
+            newCol >= BW ) {
+            continue;
+            }
+
+        targetP = inState->grid[ newRow ][ newCol ];
+
+        if( targetP == noPiece ) {
+            continue;
+            }
+
+        if( inMaySkipNonKingCaptureMoves
+            &&
+            ( targetP & CHESS_TYPE_MASK ) != king ) {
+            continue;
+            }
+
+        if( ( targetP & CHESS_COLOR_MASK ) == otherColor ) {
+
+            /* can capture this piece diagonally */
+            
+            outDestRows[n] = newRow;
+            outDestCols[n] = (unsigned char)newCol;
+
+            /* copy state to start with */
+            outStates[n]   = *inState;
+
+            /* add to captured list */
+            outCaptured[n].num = 0;
+            addCapturedPiece( &( outCaptured[n] ),
+                              &( outStates[n]   ),
+                              newRow,
+                              newCol );
+
+            /* copy piece into new spot
+               (overwrite captured piece) */
+            outStates[n].grid    [ newRow     ][ newCol     ] =
+                outStates[n].grid[ inPieceRow ][ inPieceCol ];
+
+            /* leave empty space behind */
+            outStates[n].grid[ inPieceRow ][ inPieceCol ] = noPiece;
+
+            outStates[n].nextToMove = otherColor;
+
+            /* promote to Queen in final row */
+
+            if( ( moveDir == 1
+                  &&
+                  newRow == BH - 1 )
+                ||
+                ( moveDir == -1
+                  &&
+                  newRow == 0 ) ) {
+
+                /* count our pawn as captured during promotion */
+                addCapturedPiece( &( outCaptured[n] ),
+                                  &( outStates[n]   ),
+                                  newRow,
+                                  inPieceCol );
+                
+                outStates[n].grid[ newRow ][ newCol ] = inPieceColor | queen;
+                }
+            
+            n++;
+            }
+        
+        }
+    
+    return n;
+    }
+
+
+
 static PieceMoveFunction moveFunctions[] = { noPieceMove,
                                              pawnMove,
                                              bishopMove,
@@ -1454,7 +1641,8 @@ static PieceMoveFunction moveFunctions[] = { noPieceMove,
                                              laserRookMove,
                                              laserPawnMove,
                                              pawnMove,
-                                             rookMove };
+                                             rookMove,
+                                             rocketMove };
 CHECK_ARRAY_LENGTH( moveFunctions,
                     NUM_CHESS_PIECES );
 
@@ -1703,6 +1891,8 @@ void getStartBoard( BoardState  *outState ) {
         outState->grid[6][i] = pawn | CHESS_WHITE;
         }
 
+    outState->grid[6][1] = rocket | CHESS_WHITE;
+    
     outState->nextToMove = CHESS_WHITE;
     outState->moveCount  = 0;
 
@@ -2813,7 +3003,9 @@ static PieceEffectsFunction effectsFunctions[] =
                                   nullEffects,
                                   doublingPawnEffects,
                                   addingRookEffects,
+                                  nullEffects,
                                     };
+
 CHECK_ARRAY_LENGTH( effectsFunctions,
                     NUM_CHESS_PIECES );
 

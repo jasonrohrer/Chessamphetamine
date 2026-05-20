@@ -70,7 +70,8 @@ static int pieceCaptureMoney[] = { 0,
                                    2,
                                    2,
                                    2,
-                                   2 };
+                                   2,
+                                   4 };
 
 CHECK_ARRAY_LENGTH( pieceCaptureMoney,
                     NUM_CHESS_PIECES );

@@ -2237,6 +2237,7 @@ static MoveAnimInitFunction initFunctions[] =
                                   laserPieceInit,
                                   laserPieceInit,
                                   defaultPieceInit,
+                                  defaultPieceInit,
                                   defaultPieceInit };
 
 CHECK_ARRAY_LENGTH( initFunctions,
@@ -2257,6 +2258,7 @@ static MoveAnimStepFunction stepFunctions[] =
                                   multiPhaseStep,
                                   multiPhaseStep,
                                   defaultPieceStep,
+                                  defaultPieceStep,
                                   defaultPieceStep };
 
 CHECK_ARRAY_LENGTH( stepFunctions,
@@ -2276,6 +2278,7 @@ static MoveAnimDrawFunction drawFunctions[] =
                                      use same */
                                   multiPhaseDraw,
                                   multiPhaseDraw,
+                                  defaultPieceDraw,
                                   defaultPieceDraw,
                                   defaultPieceDraw };
 

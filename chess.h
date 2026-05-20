@@ -1825,7 +1825,7 @@ void getStartBoard( BoardState  *outState ) {
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[1][i] = pawn | CHESS_BLACK;
+        outState->grid[1][i] = rocket | CHESS_BLACK;
         }
 
     outState->grid[7][0] = rook      | CHESS_WHITE;
@@ -2779,7 +2779,13 @@ char getChessMove( BoardState  *inState,
                                           repickStates );
 
         if( numMoves == 0 ) {
-            return 0;
+            /* no moves possibe when we repicked
+               this can only happen in one situation,
+               where our first game-tree pick saved us from checkmate
+               but our random repick move does not
+               in that case, go with the original game tree move */
+            
+            return 1;
             }
 
         /* assume that all pieces that require a repick are producing

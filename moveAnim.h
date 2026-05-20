@@ -920,6 +920,14 @@ static void rocketPieceInit( BoardState    *inState,
     outMoveProgress->phases[p] = move;
     p++;
 
+
+    /* fixme:
+       need special take-off phase
+       and          comeDone phease
+
+       and update multiPhaseStep and Draw to deal with these
+    */
+    
     outMoveProgress->phases[p]    = explode;
     outMoveProgress->params[p][0] = 0;
     outMoveProgress->params[p][1] = (short)( inCaptured->num - 1 );

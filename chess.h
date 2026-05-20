@@ -1496,42 +1496,13 @@ static int rocketMove( BoardState     *inState,
 
             if( p != noPiece
                 &&
-                ( p & CHESS_COLOR_MASK ) == otherColor
-                &&
-                ( p & CHESS_TYPE_MASK  ) != king ) {
+                ( p & CHESS_COLOR_MASK ) == otherColor ) {
 
                 enemy[numEnemy].p   = p;
                 enemy[numEnemy].row = y;
                 enemy[numEnemy].col = x;
                 numEnemy++;
                 } 
-            }
-        }
-
-    if( numEnemy == 0 ) {
-        /* no enemy pieces?  Try again, including king
-           so rockets can only kill king when he's last one left */
-
-        for( y = 0;
-             y < BH;
-             y ++ ) {
-
-            for( x = 0;
-                 x < BW;
-                 x ++ ) {
-
-                ChessPiece  p  = inState->grid[y][x];
-
-                if( p != noPiece
-                    &&
-                    ( p & CHESS_COLOR_MASK ) == otherColor ) {
-
-                    enemy[numEnemy].p   = p;
-                    enemy[numEnemy].row = y;
-                    enemy[numEnemy].col = x;
-                    numEnemy++;
-                    } 
-                }
             }
         }
     

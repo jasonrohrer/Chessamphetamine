@@ -882,6 +882,55 @@ static void laserPieceInit( BoardState    *inState,
 
 
 
+static void rocketPieceInit( BoardState    *inState,
+                             Move          *inMove,
+                             Captured      *inCaptured,
+                             BoardState    *inNewState,
+                             AnimProgress  *outMoveProgress ) {
+    
+    static  Move  dummyMove;
+    
+    int  p;
+
+    (void)inState;
+    (void)inNewState;
+
+    initMultFactors( outMoveProgress );
+
+    outMoveProgress->numPhases     = 0;
+    outMoveProgress->phaseNumber   = 0;
+    outMoveProgress->phaseProgress = 0;
+
+
+
+    /* rocket doesn't move before multiplier affects it
+       make a dummy move  where rocket stands still */
+    dummyMove.startPos[0] = inMove->startPos[0];
+    dummyMove.startPos[1] = inMove->startPos[1];
+    dummyMove.endPos  [0] = inMove->startPos[0];
+    dummyMove.endPos  [1] = inMove->startPos[1];
+
+    spaceEffectsInit( inState,
+                      &dummyMove,
+                      outMoveProgress );
+
+    p = outMoveProgress->numPhases;
+
+    /* rocket "moves" after multipliers are applied */
+    outMoveProgress->phases[p] = move;
+    p++;
+
+    outMoveProgress->phases[p]    = explode;
+    outMoveProgress->params[p][0] = 0;
+    outMoveProgress->params[p][1] = (short)( inCaptured->num - 1 );
+
+    p++;
+    
+    outMoveProgress->numPhases = p;
+    }
+
+
+
 /* gets state and captured list for special piece after it moves but
    before it fires */
 static void getCaptureMidState( BoardState  *inState,
@@ -890,29 +939,52 @@ static void getCaptureMidState( BoardState  *inState,
                                 BoardState  *outMidState,
                                 Captured    *outMidCaptured ) {
 
-    *outMidState    = *inState;
-    *outMidCaptured = *inCaptured;
+    ChessPiece  movingP  = inState->grid[ inMove->startPos[0] ]
+                                        [ inMove->startPos[1] ];
 
-    if( outMidCaptured->num > 0 ) {
+    if( ( movingP & CHESS_TYPE_MASK ) == rocket ) {
 
-        /* cut off all but the first one,
-           extras are always laser hits */
+        /* rocket piece does NOT move before getting multipliers
+           applied */
+        *outMidState    = *inState;
+        *outMidCaptured = *inCaptured;
 
-        outMidCaptured->num = 1;
-
-        if( outMidCaptured->pieces[ 0 ].row != inMove->endPos[ 0 ]
-            ||
-            outMidCaptured->pieces[ 0 ].col != inMove->endPos[ 1 ] ) {
-
-            /* even the single capture is hit at a distance */
-            outMidCaptured->num = 0;
-            }
+        /* rocket does not capture anything before multipliers applied */
+        outMidCaptured->num = 0;
         }
+    else {
+        /* all other special pieces work the same as laser rook for now
+           this may need to change later */
+    
+        *outMidState    = *inState;
+        *outMidCaptured = *inCaptured;
 
-    /* put piece where it lands in outMidState */
-    outMidState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ] = noPiece;
-    outMidState->grid[ inMove->endPos  [0] ][ inMove->endPos  [1] ] =
-        inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
+        if( outMidCaptured->num > 0 ) {
+
+            /* cut off all but the first one,
+               extras are always laser hits */
+
+            outMidCaptured->num = 1;
+
+            if( outMidCaptured->pieces[ 0 ].row != inMove->endPos[ 0 ]
+                ||
+                outMidCaptured->pieces[ 0 ].col != inMove->endPos[ 1 ] ) {
+
+                /* even the single capture is hit at a distance */
+                outMidCaptured->num = 0;
+                }
+            }
+
+        /* put piece where it lands in outMidState */
+        outMidState->grid[ inMove->startPos[0] ]
+                         [ inMove->startPos[1] ] = noPiece;
+        
+        outMidState->grid[ inMove->endPos  [0] ]
+                         [ inMove->endPos  [1] ] =
+            inState->grid[ inMove->startPos[0] ]
+                         [ inMove->startPos[1] ];
+        }
+    
     }
 
 
@@ -2239,7 +2311,7 @@ static MoveAnimInitFunction initFunctions[] =
                                   laserPieceInit,
                                   defaultPieceInit,
                                   defaultPieceInit,
-                                  defaultPieceInit };
+                                  rocketPieceInit };
 
 CHECK_ARRAY_LENGTH( initFunctions,
                     NUM_CHESS_PIECES );
@@ -2260,7 +2332,7 @@ static MoveAnimStepFunction stepFunctions[] =
                                   multiPhaseStep,
                                   defaultPieceStep,
                                   defaultPieceStep,
-                                  defaultPieceStep };
+                                  multiPhaseStep };
 
 CHECK_ARRAY_LENGTH( stepFunctions,
                     NUM_CHESS_PIECES );
@@ -2281,7 +2353,7 @@ static MoveAnimDrawFunction drawFunctions[] =
                                   multiPhaseDraw,
                                   defaultPieceDraw,
                                   defaultPieceDraw,
-                                  defaultPieceDraw };
+                                  multiPhaseDraw };
 
 CHECK_ARRAY_LENGTH( drawFunctions,
                     NUM_CHESS_PIECES );

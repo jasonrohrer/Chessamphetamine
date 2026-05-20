@@ -1591,8 +1591,8 @@ static char isKingInCheckGetMove( BoardState  *inState,
                     if( outMove != 0 ) {
                         outMove->startPos[0] = y;
                         outMove->startPos[1] = x;
-                        outMove->endPos[0] = destRows[n];
-                        outMove->endPos[1] = destCols[n];
+                        outMove->endPos[0] = destRows[i];
+                        outMove->endPos[1] = destCols[i];
                         }
                     if( outKingX != 0
                         &&

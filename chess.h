@@ -1468,17 +1468,25 @@ static int rocketMove( BoardState     *inState,
     int  numEnemy      =  0;
     int  x;
     int  y;
+    int  i;
     int  pick;
     int  r;
     int  c;
+    int  repeatVal;
     
-    static  BoardPiece  enemy[BN];
-
+    static  BoardPiece  enemy  [ BN ];
+    static  int         shuffle[ BN ];
+    
     if( inMaySkipNonKingCaptureMoves ) {
         /* never count a rocket's existence as putting the king in check,
            so when we're testing for check, return no moves */
         return 0;
         }
+
+    repeatVal = getTotalEffectsRepeatValue( inState,
+                                            inPieceColor,
+                                            inPieceRow,
+                                            inPieceCol );
     
     if( inPieceColor == CHESS_WHITE ) {
         otherColor = CHESS_BLACK;
@@ -1510,11 +1518,24 @@ static int rocketMove( BoardState     *inState,
     if( numEnemy == 0 ) {
         return 0;
         }
-    
-    pick = maxigin_randRange( &chessRand,
-                              0,
-                              numEnemy - 1 );
 
+    for( i = 0;
+         i < numEnemy;
+         i ++ ) {
+        shuffle[ i ] = i;
+        }
+
+    maxigin_shuffle( &chessRand,
+                     numEnemy,
+                     shuffle );
+
+    if( repeatVal > numEnemy ) {
+        repeatVal = numEnemy;
+        }
+
+    pick = shuffle[ 0 ];
+
+    /* our "move" is to first piece captured */
     r = enemy[pick].row;
     c = enemy[pick].col;
 
@@ -1525,27 +1546,31 @@ static int rocketMove( BoardState     *inState,
     outStates[0] = *inState;
 
     outCaptured[0].num = 0;
+
+    /* now add all captured pieces (including the first one, and maybe more) */
+
+    for( i = 0;
+         i < repeatVal;
+         i ++ ) {
+
+        pick = shuffle[ i ];
+
+        r = enemy[pick].row;
+        c = enemy[pick].col;
     
-    /* count rocked as captured
-       maybe don't do this for now... */
-    if( 0 )
-    addCapturedPiece( &( outCaptured[0] ),
-                      &( outStates  [0] ),
-                      inPieceRow,
-                      inPieceCol );
+        /* target captured */
+        addCapturedPiece( &( outCaptured[0] ),
+                          &( outStates  [0] ),
+                          r,
+                          c );
+
+        /* destroy target */
+        outStates[0].grid[ r ][ c ] = noPiece;
+        }
     
-    /* target is captured too */
-    addCapturedPiece( &( outCaptured[0] ),
-                      &( outStates  [0] ),
-                      r,
-                      c );
 
     /* clear rocket */
     outStates[0].grid[ inPieceRow ][ inPieceCol ] = noPiece;
-
-    /* destroy target */
-    outStates[0].grid[ r ][ c ] = noPiece;
-
     
     outStates[0].nextToMove = otherColor;
 

@@ -995,6 +995,12 @@ static void getCaptureCutoffMidState( BoardState  *inState,
                                       BoardState  *outMidState,
                                       Captured    *outMidCaptured,
                                       int          inCutoff ) {
+
+    ChessPiece  movingP  = inState->grid[ inMove->startPos[0] ]
+                                        [ inMove->startPos[1] ];
+
+    
+        
     int  i;
     
     *outMidState    = *inState;
@@ -1012,8 +1018,17 @@ static void getCaptureCutoffMidState( BoardState  *inState,
 
     /* put piece where it lands in outMidState */
     outMidState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ] = noPiece;
-    outMidState->grid[ inMove->endPos  [0] ][ inMove->endPos  [1] ] =
-        inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
+
+    
+    if( ( movingP & CHESS_TYPE_MASK ) == rocket ) {
+       /* special case
+          rocket doesn't get put there */ 
+        }
+    else {
+        /* all other pieces move to their destination */
+        outMidState->grid[ inMove->endPos  [0] ][ inMove->endPos  [1] ] =
+            inState->grid[ inMove->startPos[0] ][ inMove->startPos[1] ];
+        }
     }
 
 

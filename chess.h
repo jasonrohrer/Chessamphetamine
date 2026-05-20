@@ -282,6 +282,12 @@ char getLoggedState( int          inLogNumber,
 #ifdef CHESS_IMPLEMENTATION
 
 #include "arraySizeCheck.h"
+#include "maxigin.h"
+
+
+
+static  MaxiginRand  chessRand;
+
 
 
 static int pieceValue[] = { 0,
@@ -1457,176 +1463,94 @@ static int rocketMove( BoardState     *inState,
                        unsigned char   outDestCols[BN],
                        Captured        outCaptured[BN],
                        BoardState      outStates  [BN] ) {
-
-    int  moveDir       =  1;
-    int  maxDist       =  1;
+    
     int  otherColor    =  CHESS_WHITE;
-    int  n             =  0;
-    int  i;
+    int  numEnemy      =  0;
+    int  x;
+    int  y;
+    int  pick;
+    int  r;
+    int  c;
+    
+    static  BoardPiece  enemy[BN];
+
+    if( inMaySkipNonKingCaptureMoves ) {
+        /* never count a rocket's existence as putting the king in check,
+           so when we're testing for check, return no moves */
+        return 0;
+        }
     
     if( inPieceColor == CHESS_WHITE ) {
-        moveDir = -1;
         otherColor = CHESS_BLACK;
-
-        if( inPieceRow == BH - 2 ) {
-            maxDist = 2;
-            }
-        if( inPieceRow == 0 ) {
-            /* at end, no move */
-            return 0;
-            }
-        }
-    else {
-        moveDir = 1;
-        otherColor = CHESS_WHITE;
-
-        if( inPieceRow == 1 ) {
-            maxDist = 2;
-            }
-        if( inPieceRow == BH - 1 ) {
-            /* at end, no move */
-            return 0;
-            }
         }
 
-    /* first, look at all forward moves, which can only go to empty squares
-       and can only pass through empty squares if doing a double-move */
-    if( ! inMaySkipNonKingCaptureMoves )
-    for( i = 1;
-         i <= maxDist;
-         i ++ ) {
+    for( y = 0;
+         y < BH;
+         y ++ ) {
 
-        /* viaRow might be the same as newRow if we're considering 1-step
-           moves */
-        unsigned char  newRow  =  (unsigned char)( inPieceRow + (moveDir * i) );
-        unsigned char  viaRow  =  (unsigned char)( inPieceRow +  moveDir      );
-        
-        if( inState->grid[ newRow ][ inPieceCol ] == noPiece
-            &&
-            inState->grid[ viaRow ][ inPieceCol ] == noPiece ) {
-            
-            outDestRows[n] = newRow;
-            outDestCols[n] = (unsigned char)inPieceCol;
+        for( x = 0;
+             x < BW;
+             x ++ ) {
 
-            /* copy state to start with */
-            outStates[n]   = *inState;
+            ChessPiece  p  = inState->grid[y][x];
 
-            /* copy piece into new spot */
-            outStates[n].grid    [ newRow     ][ inPieceCol ] =
-                outStates[n].grid[ inPieceRow ][ inPieceCol ];
+            if( p != noPiece
+                &&
+                ( p & CHESS_COLOR_MASK ) == otherColor
+                &&
+                ( p & CHESS_TYPE_MASK  ) != king ) {
 
-            /* leave empty space behind */
-            outStates[n].grid[ inPieceRow ][ inPieceCol ] = noPiece;
-
-            outStates[n].nextToMove = otherColor;
-
-            /* no capture */
-            outCaptured[n].num = 0;
-            
-            /* promote to Queen in final row */
-
-            if( ( moveDir == 1
-                  &&
-                  newRow == BH - 1 )
-                ||
-                ( moveDir == -1
-                  &&
-                  newRow == 0 ) ) {
-
-                /* count our pawn as captured during promotion */
-                addCapturedPiece( &( outCaptured[n] ),
-                                  &( outStates[n]   ),
-                                  newRow,
-                                  inPieceCol );
-                
-                outStates[n].grid[ newRow ][ inPieceCol ] = inPieceColor | queen;
-                }
-            
-            n++;
+                enemy[numEnemy].p   = p;
+                enemy[numEnemy].row = y;
+                enemy[numEnemy].col = x;
+                numEnemy++;
+                } 
             }
         }
 
-    /* capture moves */
-
-    /* loop over left/right diagonal moves */
-    for( i =  -1;
-         i <=  1;
-         i +=  2 ) {
-        
-        unsigned char  newRow    =  (unsigned char)( inPieceRow +  moveDir );
-        int            newCol    =  inPieceCol + i;
-        ChessPiece     targetP;
-        
-        if( newCol < 0
-            ||
-            newCol >= BW ) {
-            continue;
-            }
-
-        targetP = inState->grid[ newRow ][ newCol ];
-
-        if( targetP == noPiece ) {
-            continue;
-            }
-
-        if( inMaySkipNonKingCaptureMoves
-            &&
-            ( targetP & CHESS_TYPE_MASK ) != king ) {
-            continue;
-            }
-
-        if( ( targetP & CHESS_COLOR_MASK ) == otherColor ) {
-
-            /* can capture this piece diagonally */
-            
-            outDestRows[n] = newRow;
-            outDestCols[n] = (unsigned char)newCol;
-
-            /* copy state to start with */
-            outStates[n]   = *inState;
-
-            /* add to captured list */
-            outCaptured[n].num = 0;
-            addCapturedPiece( &( outCaptured[n] ),
-                              &( outStates[n]   ),
-                              newRow,
-                              newCol );
-
-            /* copy piece into new spot
-               (overwrite captured piece) */
-            outStates[n].grid    [ newRow     ][ newCol     ] =
-                outStates[n].grid[ inPieceRow ][ inPieceCol ];
-
-            /* leave empty space behind */
-            outStates[n].grid[ inPieceRow ][ inPieceCol ] = noPiece;
-
-            outStates[n].nextToMove = otherColor;
-
-            /* promote to Queen in final row */
-
-            if( ( moveDir == 1
-                  &&
-                  newRow == BH - 1 )
-                ||
-                ( moveDir == -1
-                  &&
-                  newRow == 0 ) ) {
-
-                /* count our pawn as captured during promotion */
-                addCapturedPiece( &( outCaptured[n] ),
-                                  &( outStates[n]   ),
-                                  newRow,
-                                  inPieceCol );
-                
-                outStates[n].grid[ newRow ][ newCol ] = inPieceColor | queen;
-                }
-            
-            n++;
-            }
-        
+    if( numEnemy == 0 ) {
+        return 0;
         }
     
-    return n;
+    pick = maxigin_randRange( &chessRand,
+                              0,
+                              numEnemy - 1 );
+
+    r = enemy[pick].row;
+    c = enemy[pick].col;
+
+    outDestRows[0] = (unsigned char)r;
+    outDestCols[0] = (unsigned char)c;
+
+    /* copy state to start */
+    outStates[0] = *inState;
+
+    outCaptured[0].num = 0;
+    
+    /* count rocked as captured
+       maybe don't do this for now... */
+    if( 0 )
+    addCapturedPiece( &( outCaptured[0] ),
+                      inState,
+                      inPieceRow,
+                      inPieceCol );
+    
+    /* target is captured too */
+    addCapturedPiece( &( outCaptured[0] ),
+                      inState,
+                      r,
+                      c );
+
+    /* clear rocket */
+    outStates[0].grid[ inPieceRow ][ inPieceCol ] = noPiece;
+
+    /* destroy target */
+    outStates[0].grid[ r ][ c ] = noPiece;
+
+    
+    outStates[0].nextToMove = otherColor;
+
+    return 1;
     }
 
 
@@ -1646,6 +1570,35 @@ static PieceMoveFunction moveFunctions[] = { noPieceMove,
 CHECK_ARRAY_LENGTH( moveFunctions,
                     NUM_CHESS_PIECES );
 
+
+/* this tells the AI to re-pick a piece's move after game-tree search selects
+   a given piece to move.
+
+   Randomized pieces pick a random-move during game-tree search, which
+   means the AI will only prefer them to move when they randomly do a really
+   good move that increases the score.
+
+   However, we don't only want these pieces making really good moves.
+
+   We want them to make random moves, so we re-pick their move after
+   the game tree search is done
+*/
+static char  repickMoveAtEnd[] = { 0,
+                                   0,
+                                   0,
+                                   0,
+                                   0,
+                                   0,
+                                   0,
+                                   0,
+                                   0,
+                                   0,
+                                   0,
+                                   1 };
+
+CHECK_ARRAY_LENGTH( repickMoveAtEnd,
+                    NUM_CHESS_PIECES );
+    
 
 
 static char doesKingExist( BoardState  *inState,
@@ -1810,7 +1763,6 @@ static char isKingInCheckGetMove( BoardState  *inState,
     
 
 
-static  MaxiginRand  chessRand;
 
 
 
@@ -1824,7 +1776,7 @@ void chessSeed( unsigned long  inSeed ) {
 void chessInit( void ) {
 
     /* stalemate */
-    chessSeed( 12036703 );
+    chessSeed( 12036704 );
 
     /* draw */
     if(0)chessSeed( 12035857 );
@@ -1861,14 +1813,14 @@ void getStartBoard( BoardState  *outState ) {
     clearBoard( outState );
 
     /* fill out whole starting board */
-    outState->grid[0][0] = laserRook   | CHESS_BLACK;
+    outState->grid[0][0] = rook   | CHESS_BLACK;
     outState->grid[0][1] = knight | CHESS_BLACK;
     outState->grid[0][2] = bishop | CHESS_BLACK;
     outState->grid[0][3] = queen  | CHESS_BLACK;
     outState->grid[0][4] = king   | CHESS_BLACK;
     outState->grid[0][5] = bishop | CHESS_BLACK;
     outState->grid[0][6] = knight | CHESS_BLACK;
-    outState->grid[0][7] = laserRook   | CHESS_BLACK;
+    outState->grid[0][7] = rook   | CHESS_BLACK;
 
     for( i = 0;
          i < 8;
@@ -1876,7 +1828,7 @@ void getStartBoard( BoardState  *outState ) {
         outState->grid[1][i] = pawn | CHESS_BLACK;
         }
 
-    outState->grid[7][0] = laserRook      | CHESS_WHITE;
+    outState->grid[7][0] = rook      | CHESS_WHITE;
     outState->grid[7][1] = knight    | CHESS_WHITE;
     outState->grid[7][2] = bishop    | CHESS_WHITE;
     outState->grid[7][3] = queen     | CHESS_WHITE;
@@ -1888,10 +1840,11 @@ void getStartBoard( BoardState  *outState ) {
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[6][i] = pawn | CHESS_WHITE;
+        outState->grid[6][i] = rocket | CHESS_WHITE;
         }
 
     outState->grid[6][1] = rocket | CHESS_WHITE;
+    outState->grid[6][2] = rocket | CHESS_WHITE;
     
     outState->nextToMove = CHESS_WHITE;
     outState->moveCount  = 0;
@@ -2752,10 +2705,10 @@ char getMixedMove( BoardState  *inState,
 
 
 
-char getChessMove( BoardState  *inState,
-                   Move        *outMove,
-                   Captured    *outCaptured,
-                   BoardState  *outNewState ) {
+static char getChessMoveInternal( BoardState  *inState,
+                                  Move        *outMove,
+                                  Captured    *outCaptured,
+                                  BoardState  *outNewState ) {
 
     statesTestedLastMove = 0;
     logCount             = 0;
@@ -2776,6 +2729,73 @@ char getChessMove( BoardState  *inState,
                               outNewState );
         }
     }
+
+
+
+char getChessMove( BoardState  *inState,
+                   Move        *outMove,
+                   Captured    *outCaptured,
+                   BoardState  *outNewState ) {
+
+    char        foundMove    =  getChessMoveInternal( inState,
+                                                      outMove,
+                                                      outCaptured,
+                                                      outNewState );
+    ChessPiece  movingPiece;
+
+    if( ! foundMove ) {
+        return foundMove;
+        }
+
+
+    movingPiece = inState->grid[ outMove->startPos[0] ]
+                               [ outMove->startPos[1] ];
+    
+
+    if( ! repickMoveAtEnd[ movingPiece & CHESS_TYPE_MASK ] ) {
+        return foundMove;
+        }
+    else {
+
+        /* else we need to repick */
+
+        static  unsigned char  repickRows    [ BN ];
+        static  unsigned char  repickCols    [ BN ];
+        static  Captured       repickCaptured[ BN ];
+        static  BoardState     repickStates  [ BN ];
+
+        int  numMoves;
+        
+
+        
+
+        numMoves = getPiecePossibleMoves( inState,
+                                          outMove->startPos[0],
+                                          outMove->startPos[1],
+                                          1,
+                                          repickRows,
+                                          repickCols,
+                                          repickCaptured,
+                                          repickStates );
+
+        if( numMoves == 0 ) {
+            return 0;
+            }
+
+        /* assume that all pieces that require a repick are producing
+           randomized moves.  They usually return 1 move, but always
+           return the first move regardless */
+
+        outMove->endPos[0] = repickRows    [0];
+        outMove->endPos[1] = repickCols    [0];
+        *outCaptured       = repickCaptured[0];
+        *outNewState       = repickStates  [0];
+
+        return 1;
+        }
+    }
+
+    
 
 
 

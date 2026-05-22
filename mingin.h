@@ -2382,6 +2382,13 @@ void mingin_getRunningTime( long  *outSeconds,
     *outSeconds = (long)( currentTime.tv_sec - mn_programStartTime.tv_sec );
     *outMilliseconds =
         (long)( ( currentTime.tv_usec - mn_programStartTime.tv_usec ) / 1000 );
+
+    if( *outMilliseconds < 0 ) {
+        
+        *outMilliseconds += 1000;
+        *outSeconds      -=    1;
+        }
+        
     }
 
 

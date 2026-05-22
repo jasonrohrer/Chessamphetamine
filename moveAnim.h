@@ -30,7 +30,9 @@ enum{
     laser,
     explode,
     multiplier,
-    addition
+    addition,
+    rocketUp,
+    rocketDown
     };
 
 #define  MAX_ANIM_PHASES  BN
@@ -61,7 +63,12 @@ typedef struct AnimProgress {
         MaxiginRand    multRandA;
         MaxiginRand    multRandB;
 
+        /* used for other randomized effects */
+        MaxiginRand    randA;
+        MaxiginRand    randB;
+
         int            sparkleProgress;
+        int            randProgress;
         
     } AnimProgress;
         
@@ -112,6 +119,7 @@ static  int  splatterBad  =  -1;
 static  int  laserSound   =  -1;
 static  int  addSound     =  -1;
 static  int  multSound    =  -1;
+static  int  rocketSound  =  -1;
 
 static  const char  *laserShortSpriteNames[4] = { "laserShortLeft.tga",
                                                   "laserShortRight.tga",
@@ -163,6 +171,9 @@ static  int          laserBackGlintGlow;
 static  int          laserPawnTopGlintSprite;
 static  int          laserPawnTopGlintGlow;
 
+static  int          rocketPathSprite;
+static  int          rocketPathParticleSprite;
+
 
 void moveAnimInit( void ) {
 
@@ -175,6 +186,7 @@ void moveAnimInit( void ) {
     laserSound = maxigin_initSoundEffect( "laser_sd_16.wav" );
     addSound = maxigin_initSoundEffect( "add_sd_5.wav" );
     multSound = maxigin_initSoundEffect( "mult_sd_7.wav" );
+    rocketSound = maxigin_initSoundEffect( "rocket_sd_25.wav" );
 
     for( i = 0;
          i < 4;
@@ -204,6 +216,9 @@ void moveAnimInit( void ) {
     
     laserPawnTopGlintSprite = maxigin_initSprite( "laserPawnTopGlint.tga"     );
     laserPawnTopGlintGlow   = maxigin_initSprite( "laserPawnTopGlintGlow.tga" );
+
+    rocketPathSprite = maxigin_initSprite( "rocketPath.tga" );
+    rocketPathParticleSprite = maxigin_initSprite( "rocketPathParticle.tga" );
     }
 
 
@@ -318,6 +333,10 @@ static void initMultFactors( AnimProgress  *outMoveProgress ) {
                       0xDEADBEEF );
     outMoveProgress->multRandB = outMoveProgress->multRandA;
 
+    /* seed multi-purpose rand the same way */
+    outMoveProgress->randA = outMoveProgress->multRandA;
+    outMoveProgress->randB = outMoveProgress->multRandA;
+    
     outMoveProgress->sparkleProgress = 0;
     }
 
@@ -605,8 +624,11 @@ static void defaultPieceDraw( int            inBoardCenterX,
 
 
 
-static int  laserPhaseLen     =  512;
-static int  modifierPhaseLen  =  512;
+static  int  laserPhaseLen      =  512;
+static  int  modifierPhaseLen   =  512;
+static  int  rocketUpPhaseLen   =  512;
+static  int  rocketDownPhaseLen = 512;
+
 
 typedef struct HitBatches {
         /* at most BMAX batches */
@@ -891,6 +913,8 @@ static void rocketPieceInit( BoardState    *inState,
     static  Move  dummyMove;
     
     int  p;
+    int  i;
+    
 
     (void)inState;
     (void)inNewState;
@@ -916,8 +940,11 @@ static void rocketPieceInit( BoardState    *inState,
 
     p = outMoveProgress->numPhases;
 
-    /* rocket "moves" after multipliers are applied */
-    outMoveProgress->phases[p] = move;
+    outMoveProgress->phases[p] = rocketUp;
+    /* params are where it takes off from */
+    outMoveProgress->params[p][0] = (short)( inMove->startPos[0] );
+    outMoveProgress->params[p][1] = (short)( inMove->startPos[1] );
+
     p++;
 
 
@@ -927,12 +954,26 @@ static void rocketPieceInit( BoardState    *inState,
 
        and update multiPhaseStep and Draw to deal with these
     */
-    
-    outMoveProgress->phases[p]    = explode;
-    outMoveProgress->params[p][0] = 0;
-    outMoveProgress->params[p][1] = (short)( inCaptured->num - 1 );
 
-    p++;
+    for( i = 0;
+         i < inCaptured->num;
+         i ++ ) {
+
+        /* each captured piece has rocket come down, and then it explodes
+           one by one */
+
+        outMoveProgress->phases[p]    = rocketDown;
+        outMoveProgress->params[p][0] = (short)( inCaptured->pieces[i].row );
+        outMoveProgress->params[p][1] = (short)( inCaptured->pieces[i].col );
+
+        p++;
+        
+        outMoveProgress->phases[p]    = explode;
+        outMoveProgress->params[p][0] = (short)i;
+        outMoveProgress->params[p][1] = (short)i;
+
+        p++;
+        };
     
     outMoveProgress->numPhases = p;
     }
@@ -1216,6 +1257,30 @@ static char multiPhaseStep( BoardState    *inState,
             inMoveProgress->phaseProgress = 0;
             }
         }
+    else if( p == rocketUp ) {
+        if( inMoveProgress->phaseProgress == 0 ) {
+            maxigin_playSoundEffect( rocketSound,
+                                     512 );
+            }
+        inMoveProgress->phaseProgress += ( 10 * 60 ) / r;
+
+        if( inMoveProgress->phaseProgress >= rocketUpPhaseLen ) {
+            inMoveProgress->phaseNumber ++;
+            inMoveProgress->phaseProgress = 0;
+            }
+        }
+    else if( p == rocketDown ) {
+        if( inMoveProgress->phaseProgress == 0 ) {
+            maxigin_playSoundEffect( rocketSound,
+                                     512 );
+            }
+        inMoveProgress->phaseProgress += ( 30 * 60 ) / r;
+
+        if( inMoveProgress->phaseProgress >= rocketDownPhaseLen ) {
+            inMoveProgress->phaseNumber ++;
+            inMoveProgress->phaseProgress = 0;
+            }
+        }
 
 
     /* deal with mult factor fading progress */
@@ -1303,8 +1368,16 @@ static char multiPhaseStep( BoardState    *inState,
             inMoveProgress->anyMultFactors = 0;
             }
         }
-    
-        
+
+    /* always advance general-purpose rand */
+    inMoveProgress->randProgress += ( 20 * 60 ) / r;
+
+    if( inMoveProgress->randProgress >= 80 ) {
+        inMoveProgress->randProgress = 0;
+            
+        /* advance rand to change effects  */
+        inMoveProgress->randA = inMoveProgress->randB;
+        }
     
     
     if( inMoveProgress->phaseNumber >= inMoveProgress->numPhases ) {
@@ -2297,6 +2370,151 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         drawY + labelOffsetY,
                         0,
                         MAXIGIN_CENTER );
+        }
+    else if( p == rocketUp ) {
+
+        DrawBoardMask  mask;
+        int            launchPosX;
+        int            launchPosY;
+        int            pathH;
+        int            pathW;
+        long           rocketY;
+        ChessPiece     rocketP     =  inState->grid[ inMove->startPos[0] ]
+                                                   [ inMove->startPos[1] ];
+        int            thirdPhase  =  rocketUpPhaseLen / 3;
+        MaxiginRand    oldRand     =  inMoveProgress->randA
+            ;
+        
+
+        boardDraw( inBoardCenterX,
+                   inBoardCenterY );
+
+        /* draw pieces north of main piece row */
+        getRowsAboveMask( &mask,
+                          inMove->startPos[0] - 1 );
+            
+        drawBoardState( inState,
+                        0,
+                        0,
+                        0,
+                        0,
+                        inMove,
+                        0,
+                        0,
+                        inBoardCenterX,
+                        inBoardCenterY,
+                        &mask );
+
+        getRowMask( &mask,
+                    inMove->startPos[0] );
+
+        clearMaskSpot( &mask,
+                       inMove->startPos[0],
+                       inMove->startPos[1] );
+
+        drawBoardState( inState,
+                        0,
+                        0,
+                        0,
+                        0,
+                        inMove,
+                        0,
+                        0,
+                        inBoardCenterX,
+                        inBoardCenterY,
+                        &mask );
+
+        /* now draw launch smoke */
+
+        boardGetSquareCenter( inBoardCenterX,
+                              inBoardCenterY,
+                              inMove->startPos[0],
+                              inMove->startPos[1],
+                              &launchPosX,
+                              &launchPosY );
+
+        maxigin_drawResetColor();
+
+        /* draw rising rocket */
+
+        rocketY =
+            ( (long)inMoveProgress->phaseProgress * MAXIGIN_GAME_NATIVE_H )
+            /
+            thirdPhase;
+
+        if( rocketY < launchPosY ) {
+            maxigin_drawResetColor();
+            drawPiece( rocketP,
+                       launchPosX,
+                       launchPosY - (int)rocketY );
+            }
+        else {
+
+            long  smokeFade  =  rocketY - launchPosY;
+
+            if( smokeFade < 0 ) {
+                smokeFade = 0;
+                }
+            else {
+                /* smoke visible */
+
+                if( smokeFade > 255 ) {
+                    smokeFade = 255;
+                    }
+
+                if( inMoveProgress->phaseProgress >
+                    rocketUpPhaseLen - thirdPhase ) {
+
+                    /* in last 1/3, fade back out */
+
+                    smokeFade *=
+                        rocketUpPhaseLen - inMoveProgress->phaseProgress;
+
+                    smokeFade /= thirdPhase;
+                    }
+
+                }
+            maxigin_drawSetAlpha( (unsigned char)smokeFade );
+
+            /* rocket off screen, draw smoke trail */
+            maxigin_getSpriteDimensions( rocketPathSprite,
+                                         &pathW,
+                                         &pathH );
+
+
+            maxigin_drawSpriteSparkles( rocketPathSprite,
+                                        rocketPathParticleSprite,
+                                        launchPosX,
+                                        launchPosY - pathH / 2,
+                                        &( inMoveProgress->randA ),
+                                        500,
+                                        255 );
+
+            /* save advanced rand state in B, so we can step to
+               it if we take a step */
+            inMoveProgress->randB = inMoveProgress->randA;
+
+            /* reset our rand state, so if we draw the same frame
+               twice (like when paused), it won't advance */
+
+            inMoveProgress->randA = oldRand;
+            }
+        
+
+        getRowsBelowMask( &mask,
+                          inMove->startPos[0] + 1 );
+            
+        drawBoardState( inState,
+                        0,
+                        0,
+                        0,
+                        0,
+                        inMove,
+                        0,
+                        0,
+                        inBoardCenterX,
+                        inBoardCenterY,
+                        &mask );
         }
 
 

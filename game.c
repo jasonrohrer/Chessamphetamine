@@ -705,6 +705,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                 
     
     maxigin_drawGUI( &gameGUI );
+
+    pinchApply( inRGBBuffer );
     }
 
 
@@ -808,6 +810,21 @@ void maxiginGame_step( void ) {
     int   stickLowerRange  =  0;
     int   stickUpperRange  =  0;
 
+    if( 0 ) {
+        int  mouseX;
+        int  mouseY;
+
+        char avail = maxigin_getPointerLocation( &mouseX,
+                                                 &mouseY );
+
+        if( avail ) {
+            pinchSet( mouseX,
+                      mouseY,
+                      mouseY * 1024 / MAXIGIN_GAME_NATIVE_W,
+                      mouseX );
+            }
+
+        }
     
     stripC ++;
 
@@ -1865,6 +1882,13 @@ void maxiginGame_init( void ) {
     numbersInit();
     checkDisplayInit();
     colorsInit();
+
+    pinchInit();
+
+    pinchSet( MAXIGIN_GAME_NATIVE_W / 2,
+              MAXIGIN_GAME_NATIVE_H / 2,
+              1024,
+              40 );
     
 
     if(0)runChessTest();

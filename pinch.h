@@ -95,7 +95,10 @@ void pinchApply( unsigned char *inRGBBuffer ) {
     long  numPixels;
     long  numBytes;
     long  p           =  0;
-    
+    int   minX;
+    int   maxX;
+    int   minY;
+    int   maxY;
     
     if( pinchStrength == 0
         ||
@@ -106,15 +109,59 @@ void pinchApply( unsigned char *inRGBBuffer ) {
     numPixels = MAXIGIN_GAME_NATIVE_H * MAXIGIN_GAME_NATIVE_W;
     numBytes  = numPixels * 3;
 
-    for( y = 0;
-         y < MAXIGIN_GAME_NATIVE_H;
+    
+    /* copy into working buffer
+       then we can pinch and pull results into live buffer
+       and we only have to process part that is inside radius */
+    for( b = 0;
+         b < numBytes;
+         b ++ ) {
+
+        pinchBuffer[b] = inRGBBuffer[b];
+        }
+
+    minX = pinchX - pinchRadius;
+    maxX = pinchX + pinchRadius;
+    minY = pinchY - pinchRadius;
+    maxY = pinchY + pinchRadius;
+
+    if( minX < 0 ) {
+        minX = 0;
+        }
+    if( minX >= MAXIGIN_GAME_NATIVE_W ) {
+        minX = MAXIGIN_GAME_NATIVE_W - 1;
+        }
+    if( maxX < 0 ) {
+        maxX = 0;
+        }
+    if( maxX >= MAXIGIN_GAME_NATIVE_W ) {
+        maxX  = MAXIGIN_GAME_NATIVE_W - 1;
+        }
+
+    if( minY < 0 ) {
+        minY = 0;
+        }
+    if( minY >= MAXIGIN_GAME_NATIVE_H ) {
+        minY  = MAXIGIN_GAME_NATIVE_H - 1;
+        }
+    if( maxY < 0 ) {
+        maxY = 0;
+        }
+    if( maxY >= MAXIGIN_GAME_NATIVE_H ) {
+        maxY  = MAXIGIN_GAME_NATIVE_H - 1;
+        }
+    
+
+    for( y = minY;
+         y <= maxY;
          y ++ ) {
 
-        long  dy  =  y - pinchY;
-        long  dy2 = dy * dy;
+        long  dy     =  y - pinchY;
+        long  dy2    =  dy * dy;
+        long  yPart  =  y * MAXIGIN_GAME_NATIVE_W * 3;
 
-        for( x = 0;
-             x < MAXIGIN_GAME_NATIVE_W;
+        for( x = minX;
+             x <= maxX;
              x ++ ) {
 
             /* where should x and y pixel values come from in source image? */
@@ -149,7 +196,8 @@ void pinchApply( unsigned char *inRGBBuffer ) {
                 sy = y;
                 sx = x;
                 }
-            
+
+            p = yPart + x * 3;
             
             if( sy < 0
                 ||
@@ -160,28 +208,21 @@ void pinchApply( unsigned char *inRGBBuffer ) {
                 sx >= MAXIGIN_GAME_NATIVE_W ) {
 
                 /* out of bounds, black */
-                pinchBuffer[ p++ ] = 0;
-                pinchBuffer[ p++ ] = 0;
-                pinchBuffer[ p++ ] = 0;
+                inRGBBuffer[ p++ ] = 0;
+                inRGBBuffer[ p++ ] = 255;
+                inRGBBuffer[ p++ ] = 0;
                 }
             else {
                 /* landed in image, take color from there */
                 long sp = (long)sy * MAXIGIN_GAME_NATIVE_W * 3 + sx * 3;
 
-                pinchBuffer[ p++ ] = inRGBBuffer[ sp++ ];
-                pinchBuffer[ p++ ] = inRGBBuffer[ sp++ ];
-                pinchBuffer[ p++ ] = inRGBBuffer[ sp++ ];
+                inRGBBuffer[ p++ ] = pinchBuffer[ sp++ ];
+                inRGBBuffer[ p++ ] = pinchBuffer[ sp++ ];
+                inRGBBuffer[ p++ ] = pinchBuffer[ sp++ ];
                 }
             }
         }
 
-    /* copy back into native buffer */
-    for( b = 0;
-         b < numBytes;
-         b ++ ) {
-
-        inRGBBuffer[b] = pinchBuffer[b];
-        }
     
     
     }

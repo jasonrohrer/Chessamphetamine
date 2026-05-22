@@ -171,8 +171,10 @@ static  int          laserBackGlintGlow;
 static  int          laserPawnTopGlintSprite;
 static  int          laserPawnTopGlintGlow;
 
+static  int          rocketBlurSprite;
 static  int          rocketPathSprite;
 static  int          rocketPathParticleSprite;
+static  int          rocketHeadSprite;
 
 
 void moveAnimInit( void ) {
@@ -217,8 +219,20 @@ void moveAnimInit( void ) {
     laserPawnTopGlintSprite = maxigin_initSprite( "laserPawnTopGlint.tga"     );
     laserPawnTopGlintGlow   = maxigin_initSprite( "laserPawnTopGlintGlow.tga" );
 
+    rocketBlurSprite = maxigin_initSprite( "rocketBlur.tga" );
+
+    maxigin_initMakeGlowSprite( rocketBlurSprite,
+                                4,
+                                2 );
+    
     rocketPathSprite = maxigin_initSprite( "rocketPath.tga" );
     rocketPathParticleSprite = maxigin_initSprite( "rocketPathParticle.tga" );
+
+    rocketHeadSprite = maxigin_initSprite( "rocketHeadDownBlur.tga" );
+
+    maxigin_initMakeGlowSprite( rocketHeadSprite,
+                                4,
+                                2 );
     }
 
 
@@ -965,7 +979,8 @@ static void rocketPieceInit( BoardState    *inState,
         outMoveProgress->phases[p]    = rocketDown;
         outMoveProgress->params[p][0] = (short)( inCaptured->pieces[i].row );
         outMoveProgress->params[p][1] = (short)( inCaptured->pieces[i].col );
-
+        outMoveProgress->params[p][2] = (short)( i - 1 );
+            
         p++;
         
         outMoveProgress->phases[p]    = explode;
@@ -2382,8 +2397,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
         ChessPiece     rocketP     =  inState->grid[ inMove->startPos[0] ]
                                                    [ inMove->startPos[1] ];
         int            thirdPhase  =  rocketUpPhaseLen / 3;
-        MaxiginRand    oldRand     =  inMoveProgress->randA
-            ;
+        MaxiginRand    oldRand     =  inMoveProgress->randA;
         
 
         boardDraw( inBoardCenterX,
@@ -2443,10 +2457,23 @@ static void multiPhaseDraw( int            inBoardCenterX,
             thirdPhase;
 
         if( rocketY < launchPosY ) {
+            
             maxigin_drawResetColor();
-            drawPiece( rocketP,
-                       launchPosX,
+            
+            drawSetPieceColor( inState->nextToMove );
+
+            if( rocketY != 0 ) {
+                maxigin_drawSprite( rocketBlurSprite,
+                                    launchPosX,
+                                    launchPosY - (int)rocketY - 9 );
+                }
+            else {
+                /* rocket hasn't moved yet, don't blur it */
+                drawPiece( rocketP,
+                           launchPosX,
                        launchPosY - (int)rocketY );
+                }
+            
             }
         else {
 
@@ -2516,6 +2543,102 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         inBoardCenterY,
                         &mask );
         }
+    else if( p == rocketDown ) {
+
+        DrawBoardMask  mask;
+        long           rocketY;
+        int            landPosX;
+        int            landPosY;
+        
+
+        boardDraw( inBoardCenterX,
+                   inBoardCenterY );
+
+        getRowRangeMask( &mask,
+                         0,
+                         BH - 1 );
+
+        clearMaskSpot( &mask,
+                       inMove->startPos[0],
+                       inMove->startPos[1] );
+
+        getCaptureCutoffMidState( inState,
+                                  inMove,
+                                  inCaptured,
+                                  &midState,
+                                  &midCaptured,
+                                  inMoveProgress->params[ pn ][ 2 ] );
+
+        /* draw row of rocket landing and further north */
+
+        getRowRangeMask( &mask,
+                         0,
+                         inMoveProgress->params[ pn ][ 0 ] );
+        
+        drawBoardState( &midState,
+                        0,
+                        0,
+                        0,
+                        0,
+                        inMove,
+                        0,
+                        0,
+                        inBoardCenterX,
+                        inBoardCenterY,
+                        &mask );
+
+        /* draw rocket coming down */
+
+        boardGetSquareCenter( inBoardCenterX,
+                              inBoardCenterY,
+                              inMoveProgress->params[pn][0],
+                              inMoveProgress->params[pn][1],
+                              &landPosX,
+                              &landPosY );
+
+        drawSetPieceColor( inState->nextToMove );
+
+        rocketY =
+            ( (long)inMoveProgress->phaseProgress * MAXIGIN_GAME_NATIVE_H )
+            /
+            rocketDownPhaseLen;
+
+        rocketY = MAXIGIN_GAME_NATIVE_H - rocketY;
+
+        if( rocketY < landPosY ) {
+
+            int  headW;
+            int  headH;
+
+            maxigin_getSpriteDimensions( rocketHeadSprite,
+                                         &headW,
+                                         &headH );
+            
+
+            maxigin_drawSprite( rocketHeadSprite,
+                                landPosX,
+                                landPosY - (int)rocketY - headH / 2 );
+            }
+
+        /* now draw everything to south of where rocket landed */
+        getRowRangeMask( &mask,
+                         inMoveProgress->params[ pn ][ 0 ] + 1,
+                         BH - 1 );
+        
+        drawBoardState( &midState,
+                        0,
+                        0,
+                        0,
+                        0,
+                        inMove,
+                        0,
+                        0,
+                        inBoardCenterX,
+                        inBoardCenterY,
+                        &mask );
+        
+        }
+    
 
 
     

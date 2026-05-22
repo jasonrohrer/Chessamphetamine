@@ -16,7 +16,7 @@
 
 
 /* computes the floored square root of inVal */
-long longSquareRoot( long  inVal );
+unsigned long longSquareRoot( unsigned long  inVal );
 
 
 
@@ -24,28 +24,37 @@ long longSquareRoot( long  inVal );
 #ifdef FIXED_MATH_IMPLEMENTATION
 
 
-long longSquareRoot( long  inVal ) {
+unsigned long longSquareRoot( unsigned long  inVal ) {
 
-    long startVal = 1;
+    unsigned  long  bit     =  1;
+    unsigned  long  result  =  0;
 
-    if( inVal > 10000 ) {
-        startVal = 100;
-        }
-    else if( inVal > 5000 ) {
-        startVal = 70;
-        }
-    else if( inVal > 1000 ) {
-        startVal = 31;
-        }
-    else if( inVal > 100 ) {
-        startVal = 10;
+    /* find the highest power of 4 <= inVal */
+
+    bit = 1;
+
+    while( bit <= inVal / 4 ) {
+        bit = bit << 2;
         }
 
-    while( startVal * startVal <= inVal ) {
-        startVal ++;
-        }
+    /* this is the restoring square root algorithm */
+    while( bit != 0 ) {
 
-    return startVal - 1;
+        if( inVal >= result
+            &&
+            inVal - result >= bit ) {
+
+            inVal -= result;
+            inVal -= bit;
+
+            result = ( result >> 1 ) + bit;
+            }
+        else {
+            result = result >> 1;
+            }
+        bit = bit >> 2;
+        }
+    return result;
     }
 
 

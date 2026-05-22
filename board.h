@@ -242,8 +242,10 @@ int boardGetPixelDistance( int  inRowA,
     /* if we got here, it's some other non-standard chess move
        compute actual square root  */
 
-    return (int)( longSquareRoot( (long)( dRow * dRow + dCol * dCol )
-                                  * squareSize * squareSize ) );
+    return (int)( longSquareRoot(
+                      (unsigned long )( dRow * dRow + dCol * dCol )
+                      *
+                      (unsigned long)( squareSize * squareSize ) ) );
     }
 
 

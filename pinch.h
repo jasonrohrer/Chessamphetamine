@@ -124,7 +124,9 @@ void pinchApply( unsigned char *inRGBBuffer ) {
             long  dx = x - pinchX;
 
             /* compute sqrt with more precision */
-            long r_16 = longSquareRoot( ( dy2 + dx * dx ) * 256 );
+            long r_16 =
+                (long)longSquareRoot(
+                    (unsigned long)( dy2 + dx * dx ) * 256 );
 
             if( r_16 > 0
                 &&

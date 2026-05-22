@@ -18,6 +18,8 @@
 #define CHECK_DISPLAY_IMPLEMENTATION
 #define UTIL_IMPLEMENTATION
 #define COLORS_IMPLEMENTATION
+#define FIXED_MATH_IMPLEMENTATION
+#define PINCH_IMPLEMENTATION
 
 #include "chess.h"
 
@@ -40,6 +42,11 @@
 #include "util.h"
 
 #include "colors.h"
+
+#include "fixedMath.h"
+
+#include "pinch.h"
+
 
 
 enum GameUserAction {

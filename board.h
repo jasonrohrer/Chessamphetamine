@@ -48,6 +48,8 @@ int boardGetPixelDistance( int  inRowA,
 
 #include "colors.h"
 
+#include "fixedMath.h"
+
 
 static  int  borderSpriteH;
 static  int  borderSpriteV;
@@ -59,30 +61,7 @@ static  int  squareSize          =  BOARD_SQUARE_SIZE;
 
 
 
-/* computes the floored square root of inVal */
-static long  longSquareRoot( long  inVal ) {
 
-    long startVal = 1;
-
-    if( inVal > 10000 ) {
-        startVal = 100;
-        }
-    else if( inVal > 5000 ) {
-        startVal = 70;
-        }
-    else if( inVal > 1000 ) {
-        startVal = 31;
-        }
-    else if( inVal > 100 ) {
-        startVal = 10;
-        }
-
-    while( startVal * startVal <= inVal ) {
-        startVal ++;
-        }
-
-    return startVal - 1;
-    }
 
 
 

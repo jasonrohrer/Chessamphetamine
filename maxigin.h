@@ -8024,10 +8024,10 @@ void maxigin_drawSpriteSparkles( int            inSpriteHandle,
 
         int            y       =  maxigin_randRange( inRand,
                                                      0,
-                                                     s->h );
+                                                     s->h - 1 );
         int            x       =  maxigin_randRange( inRand,
                                                      0,
-                                                     s->w );
+                                                     s->w - 1 );
         
         int            aTweak  =  maxigin_randRange( inRand,
                                                      0,

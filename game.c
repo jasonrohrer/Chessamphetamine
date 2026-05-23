@@ -1884,11 +1884,6 @@ void maxiginGame_init( void ) {
     colorsInit();
 
     pinchInit();
-
-    pinchSet( MAXIGIN_GAME_NATIVE_W / 2,
-              MAXIGIN_GAME_NATIVE_H / 2,
-              1024,
-              40 );
     
 
     if(0)runChessTest();

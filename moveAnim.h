@@ -69,6 +69,10 @@ typedef struct AnimProgress {
 
         int            sparkleProgress;
         int            randProgress;
+
+        /* in [0..1024] */
+        int            pinchAmount;
+        int            pinchAmountTarget;
         
     } AnimProgress;
         
@@ -111,6 +115,8 @@ void drawMoveAnimation( int            inBoardCenterX,
 #include "money.h"
 
 #include "checkDisplay.h"
+
+#include "pinch.h"
 
 static  int  beepUp       =  -1;
 static  int  beepDown     =  -1;
@@ -352,6 +358,10 @@ static void initMultFactors( AnimProgress  *outMoveProgress ) {
     outMoveProgress->randB = outMoveProgress->multRandA;
     
     outMoveProgress->sparkleProgress = 0;
+
+    outMoveProgress->pinchAmount       = 0;
+    outMoveProgress->pinchAmountTarget = 0;
+    
     }
 
 
@@ -375,6 +385,7 @@ static void defaultPieceInit( BoardState    *inState,
 
     initMultFactors( outMoveProgress );
     }
+
 
 
 /* handles adding money for captured pieces, given a range of
@@ -1096,6 +1107,40 @@ static void getCaptureCutoffMidState( BoardState  *inState,
     }
 
 
+static void stepPinch( AnimProgress  *inMoveProgress,
+                       int            r ) {
+    
+    if( inMoveProgress->pinchAmountTarget != inMoveProgress->pinchAmount ) {
+
+        int  dir  =  1;
+
+        if( inMoveProgress->pinchAmount > inMoveProgress->pinchAmountTarget ) {
+            dir = -1;
+            }
+
+        inMoveProgress->pinchAmount += dir * ( 120 * 60 ) / r;
+
+        if( dir == 1
+            &&
+            inMoveProgress->pinchAmount > inMoveProgress->pinchAmountTarget ) {
+            
+            inMoveProgress->pinchAmount = inMoveProgress->pinchAmountTarget;
+
+            /* instantly start decaying pinch as soon as it reaches apex */
+            inMoveProgress->pinchAmountTarget = 0;
+            }
+        else if( dir == -1
+                 &&
+                 inMoveProgress->pinchAmount <
+                 inMoveProgress->pinchAmountTarget ) {
+            
+            inMoveProgress->pinchAmount = inMoveProgress->pinchAmountTarget;
+            }      
+        }
+    }
+
+
+
 
 static char multiPhaseStep( BoardState    *inState,
                             Move          *inMove,
@@ -1116,11 +1161,16 @@ static char multiPhaseStep( BoardState    *inState,
     if( pn >= inMoveProgress->numPhases ) {
 
         /* off end of phase list, but still stepping
-           perhaps waiting for money or check display to settle */
+           perhaps waiting for money or check or pinch display to settle */
 
+        stepPinch( inMoveProgress,
+                   r );
+        
         if( checkDisplayIsSettled()
             &&
-            moneyIsSettled() ) {
+            moneyIsSettled()
+            &&
+            inMoveProgress->pinchAmount == inMoveProgress->pinchAmountTarget ) {
             
             return 1;
             }
@@ -1285,11 +1335,20 @@ static char multiPhaseStep( BoardState    *inState,
             }
         }
     else if( p == rocketDown ) {
+
+        int  stepAmount  =  ( 30 * 60 ) / r;
+        
         if( inMoveProgress->phaseProgress == 0 ) {
             maxigin_playSoundEffect( rocketSound,
                                      512 );
             }
-        inMoveProgress->phaseProgress += ( 30 * 60 ) / r;
+        inMoveProgress->phaseProgress += stepAmount;
+
+        if( inMoveProgress->phaseProgress >= rocketDownPhaseLen - stepAmount ) {
+            /* final step, start pinch
+               this also allows our draw function to center pinch properly */
+            inMoveProgress->pinchAmountTarget = 1024;
+            }
 
         if( inMoveProgress->phaseProgress >= rocketDownPhaseLen ) {
             inMoveProgress->phaseNumber ++;
@@ -1393,6 +1452,13 @@ static char multiPhaseStep( BoardState    *inState,
         /* advance rand to change effects  */
         inMoveProgress->randA = inMoveProgress->randB;
         }
+
+
+    /* always advance pinch */
+
+    stepPinch( inMoveProgress,
+               r );
+    
     
     
     if( inMoveProgress->phaseNumber >= inMoveProgress->numPhases ) {
@@ -1402,11 +1468,13 @@ static char multiPhaseStep( BoardState    *inState,
         checkDisplayStartCheck( inNewState );
         
 
-        /* wait for money/check displays to settle */
+        /* wait for money/check/pinch displays to settle */
 
         if( moneyIsSettled()
             &&
-            checkDisplayIsSettled() ) {
+            checkDisplayIsSettled()
+            &&
+            inMoveProgress->pinchAmount == inMoveProgress->pinchAmountTarget ) {
             
             return 1;
             }
@@ -1843,6 +1911,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
     if( inMoveProgress->phaseNumber >= inMoveProgress->numPhases ) {
         /* done with move anim, but still drawing it...
            waiting for displays to settle */
+
+        pinchSetStrength( inMoveProgress->pinchAmount );
 
         boardDraw( inBoardCenterX,
                    inBoardCenterY );
@@ -2596,6 +2666,11 @@ static void multiPhaseDraw( int            inBoardCenterX,
                               &landPosX,
                               &landPosY );
 
+        pinchSet( landPosX,
+                  landPosY,
+                  inMoveProgress->pinchAmount,
+                  30 );
+
         drawSetPieceColor( inState->nextToMove );
 
         rocketY =
@@ -2654,6 +2729,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
                           inCaptured,
                           inMoveProgress );
         }
+
+    pinchSetStrength( inMoveProgress->pinchAmount );
     
     }
 

@@ -24,6 +24,12 @@ void pinchSet( int  inX,
                int  inStrength,
                int  inRadius );
 
+
+/* leaves other params along from what was last set with pinchSet */
+void pinchSetStrength( int  inStrength );
+
+
+
 void pinchClear( void );
 
 
@@ -78,6 +84,12 @@ void pinchSet( int  inX,
     pinchY        = inY;
     pinchStrength = inStrength;
     pinchRadius   = inRadius;
+    }
+
+
+
+void pinchSetStrength( int  inStrength ) {
+    pinchStrength = inStrength;
     }
 
 
@@ -209,7 +221,7 @@ void pinchApply( unsigned char *inRGBBuffer ) {
 
                 /* out of bounds, black */
                 inRGBBuffer[ p++ ] = 0;
-                inRGBBuffer[ p++ ] = 255;
+                inRGBBuffer[ p++ ] = 0;
                 inRGBBuffer[ p++ ] = 0;
                 }
             else {

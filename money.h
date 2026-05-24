@@ -90,9 +90,6 @@ static int   moneyAddProgress;
 static int   moneyAddProgressMax   =  100;
 static char  moneyProgressMidPeak  =  0;
 
-static long  stepSec               =  0;
-static long  stepMSec              =  0;
-
 
 
 void moneyInit( int inStartVal ) {
@@ -111,9 +108,6 @@ void moneyInit( int inStartVal ) {
     moneyProgressMidPeak = 0;
 
     coinSound = maxigin_initSoundEffect( "coin_sd_4.wav" );
-
-    REGISTER_VAL_MEM( stepSec );
-    REGISTER_VAL_MEM( stepMSec );
     
     REGISTER_VAL_MEM( moneyVal );
     REGISTER_VAL_MEM( moneyToAdd );
@@ -181,19 +175,6 @@ void moneyDraw( int  inPosX,
         maxigin_drawToggleAdditive( 0 );
         maxigin_drawSetAlpha( 255 );
         }
-
-
-    maxigin_drawResetColor();
-
-    numberDraw( (int)stepSec,
-                inPosX - 9,
-                inPosY + 10,
-                1 );
-
-    numberDraw( (int)stepMSec,
-                inPosX - 9,
-                inPosY + 20,
-                1 );
     }
 
 
@@ -201,9 +182,6 @@ void moneyDraw( int  inPosX,
 void moneyStep( void ) {
 
     int  r  = mingin_getStepsPerSecond();
-    
-    mingin_getRunningTime( &stepSec,
-                           &stepMSec );
 
     if( moneyToAdd == 0
         &&

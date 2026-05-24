@@ -221,6 +221,10 @@ static int            moveLogProgress             =  0;
 static char           moveLogAdvDown              =  0;
 static char           moveLogBackDown             =  0;
 
+static long           stepSec                     =  0;
+static long           stepMSec                    =  0;
+
+
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
@@ -588,7 +592,56 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         }
     
+
+    moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
+               30 );
+
+    checkDisplayDraw( boardCenterX,
+                      boardCenterY );
+
     if( 0 ) {
+
+        /* debugging numbers */
+
+        int  xPos = MAXIGIN_GAME_NATIVE_W - 30;
+        
+        maxigin_drawResetColor();
+        
+        numberDraw( (int)stepSec,
+                    xPos,
+                    40,
+                    1 );
+
+        numberDraw( (int)stepMSec,
+                    xPos,
+                    50,
+                    1 );
+
+        numberDraw( statesTested,
+                    xPos,
+                    60,
+                    1 );
+
+        numberDraw( movePickTime,
+                    xPos,
+                    70,
+                    1 );
+
+        if( showingMoveLog ) {
+            numberDraw( moveLogProgress,
+                        xPos,
+                        80,
+                        1 );
+            }
+        numberDraw( boardState.moveCount,
+                    xPos,
+                    90,
+                    1 );
+        }
+    
+    
+    
+    if( 1 ) {
 
         int  cX = MAXIGIN_GAME_NATIVE_W / 2;
         int  cY = MAXIGIN_GAME_NATIVE_H / 2;
@@ -606,10 +659,13 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         maxigin_drawResetColor();
 
-        if( 0 ) {
+        if( 1 ) {
+            /*const  char  *phrase  =  "CHECKMATE, IN ONE... ROCKET?";*/
+            const  char  *phrase  =  "TRADING ROCKETS";
+            
             
             maxigin_drawText( smallCapsFont,
-                              "CHECKMATE IN ONE",
+                              phrase,
                               cX,
                               cY,
                               MAXIGIN_CENTER );
@@ -673,35 +729,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                         boardCenterY + 12 );
     */
 
-
-    moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
-               30 );
-
-    checkDisplayDraw( boardCenterX,
-                      boardCenterY );
-
-    maxigin_drawResetColor();
-
-    numberDraw( statesTested,
-                MAXIGIN_GAME_NATIVE_W - 20,
-                60,
-                1 );
-
-    numberDraw( movePickTime,
-                MAXIGIN_GAME_NATIVE_W - 20,
-                70,
-                1 );
-
-    if( showingMoveLog ) {
-        numberDraw( moveLogProgress,
-                    MAXIGIN_GAME_NATIVE_W - 20,
-                    80,
-                    1 );
-        }
-    numberDraw( boardState.moveCount,
-                MAXIGIN_GAME_NATIVE_W - 20,
-                90,
-                1 );
                 
     
     maxigin_drawGUI( &gameGUI );
@@ -825,6 +852,9 @@ void maxiginGame_step( void ) {
             }
 
         }
+    
+    mingin_getRunningTime( &stepSec,
+                           &stepMSec );
     
     stripC ++;
 
@@ -1955,6 +1985,9 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( lineTip );
 
     REGISTER_VAL_MEM( stripIndex );
+
+    REGISTER_VAL_MEM( stepSec );
+    REGISTER_VAL_MEM( stepMSec );
 
     maxigin_initRestoreStaticMemoryFromLastRun();
     }

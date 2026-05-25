@@ -20,6 +20,8 @@
 #define COLORS_IMPLEMENTATION
 #define FIXED_MATH_IMPLEMENTATION
 #define PINCH_IMPLEMENTATION
+#define PARTICLE_SYSTEM_IMPLEMENTATION
+
 
 #include "chess.h"
 
@@ -47,6 +49,7 @@
 
 #include "pinch.h"
 
+#include "particleSystem.h"
 
 
 enum GameUserAction {
@@ -641,7 +644,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
     
     
-    if( 1 ) {
+    if( 0 ) {
 
         int  cX = MAXIGIN_GAME_NATIVE_W / 2;
         int  cY = MAXIGIN_GAME_NATIVE_H / 2;
@@ -660,7 +663,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         maxigin_drawResetColor();
 
         if( 1 ) {
-            /*const  char  *phrase  =  "CHECKMATE, IN ONE... ROCKET?";*/
+            /*const  char  *phrase  =  "CHECKMATE IN ONE... ROCKET?";*/
             const  char  *phrase  =  "TRADING ROCKETS";
             
             
@@ -1925,8 +1928,8 @@ void maxiginGame_init( void ) {
 
     boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 12;
 
-    if(1) getStartBoard( &boardState );
-    if(0) getTestBoard( &boardState );
+    if(0) getStartBoard( &boardState );
+    if(1) getTestBoard( &boardState );
 
 
     REGISTER_VAL_MEM( boxPosX );

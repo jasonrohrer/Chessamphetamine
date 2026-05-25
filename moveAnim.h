@@ -17,7 +17,7 @@
 
 #include "board.h"
 #include "pieceSprites.h"
-
+#include "particleSystem.h"
 
 void moveAnimInit( void );
 
@@ -35,9 +35,12 @@ enum{
     rocketDown
     };
 
-#define  MAX_ANIM_PHASES  BN
+#define  MAX_ANIM_PHASES       BN
 
-#define  NUM_ANIM_PARAMS  5
+#define  NUM_ANIM_PARAMS       5
+
+#define  MAX_PARTICLE_SYSTEMS  4
+
 
 typedef struct AnimProgress {
 
@@ -73,6 +76,11 @@ typedef struct AnimProgress {
         /* in [0..1024] */
         int            pinchAmount;
         int            pinchAmountTarget;
+
+        unsigned char  partFade      [ MAX_PARTICLE_SYSTEMS ];
+        unsigned char  partFadeTarget[ MAX_PARTICLE_SYSTEMS ];
+        char           partDrawable  [ MAX_PARTICLE_SYSTEMS ];
+        ParticleState  partState     [ MAX_PARTICLE_SYSTEMS ];
         
     } AnimProgress;
         
@@ -330,9 +338,11 @@ static void noPieceDraw( int            inBoardCenterX,
 
 
 static void initMultFactors( AnimProgress  *outMoveProgress ) {
-    int y;
-    int x;
 
+    int  y;
+    int  x;
+    int  partI;
+    
     outMoveProgress->anyMultFactors = 0;
     
     for( y = 0;
@@ -361,6 +371,15 @@ static void initMultFactors( AnimProgress  *outMoveProgress ) {
 
     outMoveProgress->pinchAmount       = 0;
     outMoveProgress->pinchAmountTarget = 0;
+
+    for( partI = 0;
+         partI < MAX_PARTICLE_SYSTEMS;
+         partI ++ ) {
+        
+        outMoveProgress->partFade      [ partI ] = 0;
+        outMoveProgress->partFadeTarget[ partI ] = 0;
+        outMoveProgress->partDrawable  [ partI ] = 0;
+        }
     
     }
 
@@ -1151,9 +1170,10 @@ static char multiPhaseStep( BoardState    *inState,
     static  BoardState  midState;
     static  Captured    midCaptured;
     
-    int        pn  =  inMoveProgress->phaseNumber;
+    int        pn      =  inMoveProgress->phaseNumber;
     AnimPhase  p;
-    int        r   =  mingin_getStepsPerSecond();
+    int        r       =  mingin_getStepsPerSecond();
+    int        partI;
     
     (void)inNewState;
 
@@ -1214,12 +1234,39 @@ static char multiPhaseStep( BoardState    *inState,
         }
     else if( p == laser ) {
         if( inMoveProgress->phaseProgress == 0 ) {
+
+            for( partI = 0;
+                 partI < MAX_PARTICLE_SYSTEMS;
+                 partI ++ ) {
+
+                /* setup particles at laser burn site */
+                inMoveProgress->partFade[ partI ]               = 255;
+                inMoveProgress->partFadeTarget[ partI ]         = 255;
+                /* not drawable until source sprite position set in
+                   first draw call after it's set up */
+                inMoveProgress->partDrawable[ partI ]           = 0;
+                inMoveProgress->partState[ partI ].type         =
+                    laserHeatParticle;
+                inMoveProgress->partState[ partI ].progress     = 0;
+                inMoveProgress->partState[ partI ].sourceSprite =
+                    laserBackGlintSprite;
+                }
+            
             maxigin_playSoundEffect( laserSound,
                                      512 );
             }
         inMoveProgress->phaseProgress += ( 30 * 60 ) / r;
 
         if( inMoveProgress->phaseProgress >= laserPhaseLen ) {
+            /* fade out laser burn site particles */
+            
+            
+            for( partI = 0;
+                 partI < MAX_PARTICLE_SYSTEMS;
+                 partI ++ ) {
+                inMoveProgress->partFadeTarget[ partI ] = 0;
+                }
+            
             inMoveProgress->phaseNumber ++;
             inMoveProgress->phaseProgress = 0;
             }
@@ -1458,6 +1505,61 @@ static char multiPhaseStep( BoardState    *inState,
 
     stepPinch( inMoveProgress,
                r );
+
+    
+    /* always advance any visible particles */
+    for( partI = 0;
+         partI < MAX_PARTICLE_SYSTEMS;
+         partI ++ ) {
+        
+        if( inMoveProgress->partFadeTarget[ partI ] !=
+            inMoveProgress->partFade[ partI ] ) {
+        
+            /* first, advance any changing fade */
+
+            int  dir;
+            int  newFade  =  inMoveProgress->partFade[ partI ];
+            int  target   =  inMoveProgress->partFadeTarget[ partI ];
+        
+            if( target > newFade ) {
+                dir = 1;
+                }
+            else {
+                dir = -1;
+                }
+        
+
+            newFade += ( dir * 10 * 60 ) / r;
+
+            if( dir == 1
+                &&
+                newFade > target ) {
+                newFade = target;
+                }
+            if( dir == -1
+                &&
+                newFade < target ) {
+                newFade = target;
+                }
+            inMoveProgress->partFade[ partI ] = (unsigned char)newFade;
+
+            if( inMoveProgress->partDrawable[ partI ]
+                &&
+                inMoveProgress->partFade[ partI ] == 0 ) {
+                /* was drawable, but faded out, done now */
+                inMoveProgress->partDrawable[ partI ] = 0;
+                }
+            }
+
+        /* then, if particles visible, and drawable, advance their progress */
+        if( inMoveProgress->partDrawable[ partI ]
+            &&
+            inMoveProgress->partFade[ partI ] > 0 ) {
+        
+            inMoveProgress->partState[ partI ].progress += ( 20 * 60 ) / r;
+            }
+        }
+    
     
     
     
@@ -1905,6 +2007,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
     int        pn                =  inMoveProgress->phaseNumber;
     AnimPhase  p;
     char       multFactorsDrawn  =  0;
+    int        partI;
     
     (void)inNewState;
 
@@ -2264,6 +2367,41 @@ static void multiPhaseDraw( int            inBoardCenterX,
                 }
             
             }
+
+        /* kick off drawing any particles at the hit sites */
+        for( i = 0;
+             i < 4;
+             i ++ ) {
+
+            int  hitX;
+            int  hitY;
+            int  glintOffsetY  =  -14;
+            
+            if( inMoveProgress->partDrawable[i] ) {
+                /* already set, skip */
+                continue;
+                }
+
+            if( laserCaptured[i].p == noPiece ) {
+                continue;
+                }
+
+            /* laser hits a piece! */
+
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  laserCaptured[i].row,
+                                  laserCaptured[i].col,
+                                  &hitX,
+                                  &hitY );
+
+            /* this is the spot where we know the hit location
+               kick off the drawing of the particles at that spot */
+            inMoveProgress->partState[i].spriteCenterX = hitX;
+            inMoveProgress->partState[i].spriteCenterY = hitY + glintOffsetY;
+            inMoveProgress->partDrawable[i] = 1;
+            }
+        
         /* end of p == laser case */
         }
     else if( p == explode ) {
@@ -2730,6 +2868,20 @@ static void multiPhaseDraw( int            inBoardCenterX,
                           inMoveProgress );
         }
 
+
+    /* draw any drawable particle systems */
+    for( partI = 0;
+         partI < MAX_PARTICLE_SYSTEMS;
+         partI ++ ) {
+        if( inMoveProgress->partDrawable[ partI ]
+            &&
+            inMoveProgress->partFade[ partI ] > 0 ) {
+            
+            drawParticles( &( inMoveProgress->partState[ partI ] ),
+                           inMoveProgress->partFade[ partI ] );
+            }
+        }
+    
     pinchSetStrength( inMoveProgress->pinchAmount );
     
     }

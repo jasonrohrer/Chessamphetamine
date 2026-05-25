@@ -1917,6 +1917,7 @@ void maxiginGame_init( void ) {
     colorsInit();
 
     pinchInit();
+    particleSystemInit();
     
 
     if(0)runChessTest();

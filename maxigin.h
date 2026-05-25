@@ -7971,7 +7971,7 @@ void maxigin_getSpritePixel( int            inSpriteHandle,
         return;
         }
     
-    b = s->startByte;
+    b = s->startByte + ( inPixelY * s->w + inPixelX ) * 4;
 
     outColor->val[0] = mx_spriteBytes[ b++ ];
     outColor->val[1] = mx_spriteBytes[ b++ ];

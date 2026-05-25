@@ -41,7 +41,9 @@ void particleSystemInit( void );
 
 
 void drawParticles( ParticleState  *inState,
-                    unsigned char   inFade );
+                    unsigned char   inFade,
+                    int             inCenterOffsetX,
+                    int             inCenterOffsetY );
 
 
 
@@ -58,15 +60,22 @@ void particleSystemInit( void ) {
 
 
 typedef void (*ParticleDrawFunction)( ParticleState  *inState,
-                                      unsigned char   inFade );
+                                      unsigned char   inFade,
+                                      int             inCenterOffsetX,
+                                      int             inCenterOffsetY );
 
 
 
 static void drawNoParticles( ParticleState  *inState,
-                             unsigned char   inFade ) {
+                             unsigned char   inFade,
+                             int             inCenterOffsetX,
+                             int             inCenterOffsetY ) {
     (void)inState;
     (void)inFade;
+    (void)inCenterOffsetX;
+    (void)inCenterOffsetY;
     }
+
 
 
 static int pickSeededVal( int  inIndex,
@@ -87,7 +96,9 @@ static int pickSeededVal( int  inIndex,
 
 
 static void drawLaserHeatParticles( ParticleState  *inState,
-                                    unsigned char   inFade ) {
+                                    unsigned char   inFade,
+                                    int             inCenterOffsetX,
+                                    int             inCenterOffsetY ) {
 
     int  maxNumParticles  =  50;
     int  i;
@@ -99,6 +110,8 @@ static void drawLaserHeatParticles( ParticleState  *inState,
     int  sH;
     int  sWHalf;
     int  sHHalf;
+    int  cX               =  inState->spriteCenterX + inCenterOffsetX;
+    int  cY               =  inState->spriteCenterY + inCenterOffsetY;
 
     char oldAdditive      =  maxigin_drawGetAdditive();
 
@@ -171,8 +184,8 @@ static void drawLaserHeatParticles( ParticleState  *inState,
 
             maxigin_drawSprite(
                 pixelParticleSprite,
-                inState->spriteCenterX + sourceX - sWHalf,
-                inState->spriteCenterY + sourceY - sHHalf + yOffset );
+                cX + sourceX - sWHalf,
+                cY + sourceY - sHHalf + yOffset );
             
             }
         }
@@ -191,10 +204,14 @@ CHECK_ARRAY_LENGTH( particleDrawFunctions,
 
 
 void drawParticles( ParticleState  *inState,
-                    unsigned char   inFade ) {
+                    unsigned char   inFade,
+                    int             inCenterOffsetX,
+                    int             inCenterOffsetY ) {
 
     particleDrawFunctions[ inState->type ]( inState,
-                                            inFade );
+                                            inFade,
+                                            inCenterOffsetX,
+                                            inCenterOffsetY );
     }
 
 

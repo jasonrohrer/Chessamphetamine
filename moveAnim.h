@@ -1165,6 +1165,64 @@ static void stepPinch( AnimProgress  *inMoveProgress,
     }
 
 
+/* returns n, s, e, w captured pieces for this phase of anim progress */
+static void getLaserCaptured( int            inDestR,
+                              int            inDestC,
+                              Captured      *inCaptured,
+                              AnimProgress  *inMoveProgress,
+                              BoardPiece     outLaserCaptured[4],
+                              int           *outSouthCapR ) {
+
+    /* fixme */
+
+    int  pn      =  inMoveProgress->phaseNumber;
+    int  startC  =  inMoveProgress->params[ pn ][ 0 ];
+    int  endC    =  inMoveProgress->params[ pn ][ 1 ];
+    int  i;
+
+    *outSouthCapR = 0;
+    
+    for( i = 0;
+         i < 4;
+         i ++ ) {
+                
+        outLaserCaptured[i].p = noPiece;
+        }
+
+    for( i = startC;
+         i <= endC;
+         i ++ ) {
+
+        int  r  =  inCaptured->pieces[i].row;
+        int  c  =  inCaptured->pieces[i].col;
+
+        if( r < inDestR ) {
+            /* north */
+            outLaserCaptured[0] = inCaptured->pieces[i];
+            continue;
+            }
+        if( r > inDestR ) {
+            /* south */
+            outLaserCaptured[1] = inCaptured->pieces[i];
+            *outSouthCapR       = outLaserCaptured[1].row;
+                    
+            continue;
+            }
+        if( c > inDestC ) {
+            /* east */
+            outLaserCaptured[2] = inCaptured->pieces[i];
+            continue;
+            }
+        if( c < inDestC ) {
+            /* west */
+            outLaserCaptured[3] = inCaptured->pieces[i];
+            continue;
+            }
+        }
+
+    }
+
+
 
 
 static char multiPhaseStep( BoardState    *inState,
@@ -1241,32 +1299,80 @@ static char multiPhaseStep( BoardState    *inState,
     else if( p == laser ) {
         if( inMoveProgress->phaseProgress == 0 ) {
 
-            for( partI = 0;
-                 partI < MAX_PARTICLE_SYSTEMS;
-                 partI ++ ) {
+            static  BoardPiece  laserCaptured[4];
 
-                /* setup particles at laser burn site */
-                inMoveProgress->partFade[ partI ]               = 255;
-                inMoveProgress->partFadeTarget[ partI ]         = 255;
-                /* not drawable until source sprite position set in
-                   first draw call after it's set up */
-                inMoveProgress->partDrawable[ partI ]           = 0;
-                inMoveProgress->partState[ partI ].type         =
+            int     southCapR;
+            int     capI;
+            
+            getLaserCaptured( inMove->endPos[0],
+                              inMove->endPos[1],
+                              inCaptured,
+                              inMoveProgress,
+                              laserCaptured,
+                              &southCapR );
+             
+
+            /* kick off drawing any particles at the hit sites */
+            for( capI = 0;
+                 capI < 4;
+                 capI ++ ) {
+
+                int  hitX;
+                int  hitY;
+                int  glintOffsetY  =  -16;
+
+                if( capI == 1 ) {
+                    /* south capture, glint on back side */
+                    glintOffsetY = -14;
+                    }
+            
+                if( 0 && inMoveProgress->partDrawable[ capI ] ) {
+                    /* already set, skip */
+                    continue;
+                    }
+
+                if( laserCaptured[ capI ].p == noPiece ) {
+                    continue;
+                    }
+
+                /* laser hits a piece! */
+
+                /* we don't know board center here, since we're not drawing it
+                   pass the center in to drawParticles later, for an offset */
+                boardGetSquareCenter( 0,
+                                      0,
+                                      laserCaptured[ capI ].row,
+                                      laserCaptured[ capI ].col,
+                                      &hitX,
+                                      &hitY );
+
+                inMoveProgress->partState[ capI ].spriteCenterX = hitX;
+                inMoveProgress->partState[ capI ].spriteCenterY =
+                    hitY + glintOffsetY;
+            
+                inMoveProgress->partFade[ capI ]               = 255;
+                inMoveProgress->partFadeTarget[ capI ]         = 255;
+ 
+                inMoveProgress->partState[ capI ].type         =
                     laserHeatParticle;
-                inMoveProgress->partState[ partI ].progress     = 0;
-                inMoveProgress->partState[ partI ].sourceSprite =
+                
+                inMoveProgress->partState[ capI ].progress     = 0;
+            
+                inMoveProgress->partState[ capI ].sourceSprite =
                     laserBackGlintSprite;
 
                 /* we give each emitter a different instance number
                    so the random source is seeded differently for each
                    but eventually wrap these around back to 0 */
                 
-                inMoveProgress->partState[ partI ].instance     =
+                inMoveProgress->partState[ capI ].instance     =
                     particleInstanceCount ++;
 
                 if( particleInstanceCount >= 255 ) {
                     particleInstanceCount = 0;
                     }
+                
+                inMoveProgress->partDrawable[ capI ] = 1;
                 }
             
             maxigin_playSoundEffect( laserSound,
@@ -1793,8 +1899,6 @@ static void drawLaser( int  inBoardCenterX,
     /* else draw tiled laser from start to end with at least
        one mid-section in between */
 
-    /* fixme:  draw mid sections */
-
     maxigin_drawResetColor();
             
     maxigin_drawSprite( laserStartSprites[sI],
@@ -2087,20 +2191,19 @@ static void multiPhaseDraw( int            inBoardCenterX,
         int            southCapX      =  0;
         int            southCapY      =  0;
         int            startC;
-        int            endC;
             
             
         mainP = inNewState->grid[ destR ][ destC ];
-            
-        for( i = 0;
-             i < 4;
-             i ++ ) {
-                
-            laserCaptured[i].p = noPiece;
-            }
+
+
+        getLaserCaptured( destR,
+                          destC,
+                          inCaptured,
+                          inMoveProgress,
+                          laserCaptured,
+                          &southCapR );
 
         startC = inMoveProgress->params[ pn ][ 0 ];
-        endC   = inMoveProgress->params[ pn ][ 1 ];
 
         getCaptureCutoffMidState( inState,
                                   inMove,
@@ -2109,36 +2212,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                   &midCaptured,
                                   startC - 1 );
 
-        for( i = startC;
-             i <= endC;
-             i ++ ) {
-
-            int  r  =  inCaptured->pieces[i].row;
-            int  c  =  inCaptured->pieces[i].col;
-
-            if( r < destR ) {
-                /* north */
-                laserCaptured[0] = inCaptured->pieces[i];
-                continue;
-                }
-            if( r > destR ) {
-                /* south */
-                laserCaptured[1] = inCaptured->pieces[i];
-                southCapR        = laserCaptured[1].row;
-                    
-                continue;
-                }
-            if( c > destC ) {
-                /* east */
-                laserCaptured[2] = inCaptured->pieces[i];
-                continue;
-                }
-            if( c < destC ) {
-                /* west */
-                laserCaptured[3] = inCaptured->pieces[i];
-                continue;
-                }
-            }
+        
 
         boardDraw( inBoardCenterX,
                    inBoardCenterY );
@@ -2383,45 +2457,6 @@ static void multiPhaseDraw( int            inBoardCenterX,
                     } 
                 }
             
-            }
-
-        /* kick off drawing any particles at the hit sites */
-        for( i = 0;
-             i < 4;
-             i ++ ) {
-
-            int  hitX;
-            int  hitY;
-            int  glintOffsetY  =  -16;
-
-            if( i == 1 ) {
-                /* south capture, glint on back side */
-                glintOffsetY = -14;
-                }
-            
-            if( inMoveProgress->partDrawable[i] ) {
-                /* already set, skip */
-                continue;
-                }
-
-            if( laserCaptured[i].p == noPiece ) {
-                continue;
-                }
-
-            /* laser hits a piece! */
-
-            boardGetSquareCenter( inBoardCenterX,
-                                  inBoardCenterY,
-                                  laserCaptured[i].row,
-                                  laserCaptured[i].col,
-                                  &hitX,
-                                  &hitY );
-
-            /* this is the spot where we know the hit location
-               kick off the drawing of the particles at that spot */
-            inMoveProgress->partState[i].spriteCenterX = hitX;
-            inMoveProgress->partState[i].spriteCenterY = hitY + glintOffsetY;
-            inMoveProgress->partDrawable[i] = 1;
             }
         
         /* end of p == laser case */
@@ -2900,7 +2935,9 @@ static void multiPhaseDraw( int            inBoardCenterX,
             inMoveProgress->partFade[ partI ] > 0 ) {
             
             drawParticles( &( inMoveProgress->partState[ partI ] ),
-                           inMoveProgress->partFade[ partI ] );
+                           inMoveProgress->partFade[ partI ],
+                           inBoardCenterX,
+                           inBoardCenterY );
             }
         }
     

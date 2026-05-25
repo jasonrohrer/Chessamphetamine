@@ -105,7 +105,6 @@ static void drawLaserHeatParticles( ParticleState  *inState,
     int  t                =  inState->progress;
     int  s                =  inState->sourceSprite;
     int  p                =  8;
-    int  page             =  123 + inState->instance;
     int  sW;
     int  sH;
     int  sWHalf;
@@ -128,6 +127,7 @@ static void drawLaserHeatParticles( ParticleState  *inState,
          i < maxNumParticles;
          i ++ ) {
 
+        int  page        =  123 + inState->instance;
         int  jitter      =  pickSeededVal( i,
                                           page++,
                                           -10,

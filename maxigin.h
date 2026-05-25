@@ -2525,6 +2525,46 @@ char maxigin_getStickPosition( int   inStickAxisHandle,
 
 
 
+typedef union MaxiginColor {
+
+        struct {
+                
+                unsigned char  red;
+                
+                unsigned char  green;
+                
+                unsigned char  blue;
+                
+                unsigned char  alpha;
+                
+            } comp;
+
+        unsigned char val[ 4 ];
+        
+    } MaxiginColor;
+
+
+
+/* Gets the RGBA color of a particular sprite pixel.
+   Returns black transparent if out of bounds.
+
+   Parameters:
+
+      inSpriteHandle   the sprite to sample
+
+      inPixelX         the x position of the pixel
+
+      inPixelY         the y position of the pixel
+
+      outColor         where the color data should be returned
+       
+   [jumpMaxiginGeneral]     
+*/
+void maxigin_getSpritePixel( int            inSpriteHandle,
+                             int            inPixelX,
+                             int            inPixelY,
+                             MaxiginColor  *outColor );
+
 
 
 /*
@@ -7153,23 +7193,7 @@ char maxigin_drawGetAdditive( void ) {
 
 
 
-typedef union MaxiginColor {
 
-        struct {
-                
-                unsigned char  red;
-                
-                unsigned char  green;
-                
-                unsigned char  blue;
-                
-                unsigned char  alpha;
-                
-            } comp;
-
-        unsigned char val[ 4 ];
-        
-    } MaxiginColor;
 
 
 
@@ -7920,6 +7944,39 @@ void maxigin_drawSpriteShadowOnly( int  inSpriteHandle,
 
         mx_drawColor = oldColor;
         }
+    }
+
+
+
+void maxigin_getSpritePixel( int            inSpriteHandle,
+                             int            inPixelX,
+                             int            inPixelY,
+                             MaxiginColor  *outColor ) {
+
+    MaxiginSprite  *s  =  &( mx_sprites[ inSpriteHandle ] );
+    int             b;
+    
+    if( inPixelX < 0
+        ||
+        inPixelX >= s->w
+        ||
+        inPixelY < 0
+        ||
+        inPixelY >= s->h ) {
+
+        outColor->val[0] = 0;
+        outColor->val[1] = 0;
+        outColor->val[2] = 0;
+        outColor->val[3] = 0;
+        return;
+        }
+    
+    b = s->startByte;
+
+    outColor->val[0] = mx_spriteBytes[ b++ ];
+    outColor->val[1] = mx_spriteBytes[ b++ ];
+    outColor->val[2] = mx_spriteBytes[ b++ ];
+    outColor->val[3] = mx_spriteBytes[ b++ ];
     }
 
 

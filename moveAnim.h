@@ -79,7 +79,6 @@ typedef struct AnimProgress {
 
         unsigned char  partFade      [ MAX_PARTICLE_SYSTEMS ];
         unsigned char  partFadeTarget[ MAX_PARTICLE_SYSTEMS ];
-        char           partDrawable  [ MAX_PARTICLE_SYSTEMS ];
         ParticleState  partState     [ MAX_PARTICLE_SYSTEMS ];
         
     } AnimProgress;
@@ -384,7 +383,6 @@ static void initMultFactors( AnimProgress  *outMoveProgress ) {
         
         outMoveProgress->partFade      [ partI ] = 0;
         outMoveProgress->partFadeTarget[ partI ] = 0;
-        outMoveProgress->partDrawable  [ partI ] = 0;
         }
     
     }
@@ -1325,12 +1323,7 @@ static char multiPhaseStep( BoardState    *inState,
                     /* south capture, glint on back side */
                     glintOffsetY = -14;
                     }
-            
-                if( 0 && inMoveProgress->partDrawable[ capI ] ) {
-                    /* already set, skip */
-                    continue;
-                    }
-
+                
                 if( laserCaptured[ capI ].p == noPiece ) {
                     continue;
                     }
@@ -1371,8 +1364,6 @@ static char multiPhaseStep( BoardState    *inState,
                 if( particleInstanceCount >= 255 ) {
                     particleInstanceCount = 0;
                     }
-                
-                inMoveProgress->partDrawable[ capI ] = 1;
                 }
             
             maxigin_playSoundEffect( laserSound,
@@ -1665,19 +1656,10 @@ static char multiPhaseStep( BoardState    *inState,
                 newFade = target;
                 }
             inMoveProgress->partFade[ partI ] = (unsigned char)newFade;
-
-            if( inMoveProgress->partDrawable[ partI ]
-                &&
-                inMoveProgress->partFade[ partI ] == 0 ) {
-                /* was drawable, but faded out, done now */
-                inMoveProgress->partDrawable[ partI ] = 0;
-                }
             }
 
-        /* then, if particles visible, and drawable, advance their progress */
-        if( inMoveProgress->partDrawable[ partI ]
-            &&
-            inMoveProgress->partFade[ partI ] > 0 ) {
+        /* then, if particles visible, advance their progress */
+        if( inMoveProgress->partFade[ partI ] > 0 ) {
         
             inMoveProgress->partState[ partI ].progress += ( 20 * 60 ) / r;
             }
@@ -2926,13 +2908,12 @@ static void multiPhaseDraw( int            inBoardCenterX,
         }
 
 
-    /* draw any drawable particle systems */
+    /* draw any visible particle systems */
     for( partI = 0;
          partI < MAX_PARTICLE_SYSTEMS;
          partI ++ ) {
-        if( inMoveProgress->partDrawable[ partI ]
-            &&
-            inMoveProgress->partFade[ partI ] > 0 ) {
+        
+        if( inMoveProgress->partFade[ partI ] > 0 ) {
             
             drawParticles( &( inMoveProgress->partState[ partI ] ),
                            inMoveProgress->partFade[ partI ],

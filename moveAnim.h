@@ -191,6 +191,10 @@ static  int          rocketPathParticleSprite;
 static  int          rocketHeadSprite;
 
 
+static  int          particleInstanceCount;
+
+
+
 void moveAnimInit( void ) {
 
     int  i;
@@ -247,6 +251,8 @@ void moveAnimInit( void ) {
     maxigin_initMakeGlowSprite( rocketHeadSprite,
                                 4,
                                 2 );
+
+    particleInstanceCount = 0;
     }
 
 
@@ -1250,6 +1256,17 @@ static char multiPhaseStep( BoardState    *inState,
                 inMoveProgress->partState[ partI ].progress     = 0;
                 inMoveProgress->partState[ partI ].sourceSprite =
                     laserBackGlintSprite;
+
+                /* we give each emitter a different instance number
+                   so the random source is seeded differently for each
+                   but eventually wrap these around back to 0 */
+                
+                inMoveProgress->partState[ partI ].instance     =
+                    particleInstanceCount ++;
+
+                if( particleInstanceCount >= 255 ) {
+                    particleInstanceCount = 0;
+                    }
                 }
             
             maxigin_playSoundEffect( laserSound,
@@ -2375,7 +2392,12 @@ static void multiPhaseDraw( int            inBoardCenterX,
 
             int  hitX;
             int  hitY;
-            int  glintOffsetY  =  -14;
+            int  glintOffsetY  =  -16;
+
+            if( i == 1 ) {
+                /* south capture, glint on back side */
+                glintOffsetY = -14;
+                }
             
             if( inMoveProgress->partDrawable[i] ) {
                 /* already set, skip */

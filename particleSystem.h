@@ -30,6 +30,7 @@ typedef struct ParticleState {
         int  progress;
         int  spriteCenterX;
         int  spriteCenterY;
+        int  instance;
         
     } ParticleState;
 
@@ -93,7 +94,7 @@ static void drawLaserHeatParticles( ParticleState  *inState,
     int  t                =  inState->progress;
     int  s                =  inState->sourceSprite;
     int  p                =  8;
-    int  page             =  100;
+    int  page             =  123 + inState->instance;
     int  sW;
     int  sH;
     int  sWHalf;

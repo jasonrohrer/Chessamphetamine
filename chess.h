@@ -283,45 +283,58 @@ char getLoggedState( int          inLogNumber,
 
 #include "arraySizeCheck.h"
 #include "maxigin.h"
-
+#include "chessArrayCheck.h"
 
 
 static  MaxiginRand  chessRand;
 
 
 
-static int pieceValue[] = { 0,
-                            1,
-                            3,
-                            3,
-                            5,
-                            9,
-                            999,
-                            7,
-                            2,
-                            2,
-                            6,
-                            2 };
+#define PIECE_VALUE_LIST( C, V )   \
+    V( C, 0,   noPiece,      0   ) \
+    V( C, 1,   pawn,         1   ) \
+    V( C, 2,   bishop,       3   ) \
+    V( C, 3,   knight,       3   ) \
+    V( C, 4,   rook,         5   ) \
+    V( C, 5,   queen,        9   ) \
+    V( C, 6,   king,         999 ) \
+    V( C, 7,   laserRook,    7   ) \
+    V( C, 8,   laserPawn,    2   ) \
+    V( C, 9,   doublingPawn, 2   ) \
+    V( C, 10,  addingRook,   6   ) \
+    V( C, 11,  rocket,       2   )
 
-CHECK_ARRAY_LENGTH( pieceValue,
-                    NUM_CHESS_PIECES );
+static int pieceValue[] = {
+    MAKE_CHESS_ARRAY( PIECE_VALUE_LIST )
+    };
+
+CHECK_CHESS_ARRAY( pieceValue,
+                   PIECE_VALUE_LIST );
 
 
-static char pieceChars[] = { '+',
-                             'p',
-                             'b',
-                             'n',
-                             'r',
-                             'q',
-                             'k',
-                             'l',
-                             'o',
-                             'd',
-                             'a',
-                             'v' };
 
-CHECK_ARRAY_LENGTH( pieceChars,
-                    NUM_CHESS_PIECES );
+#define PIECE_CHAR_LIST( C, V )      \
+    V( C, 0,   noPiece,      '+'   ) \
+    V( C, 1,   pawn,         'p'   ) \
+    V( C, 2,   bishop,       'b'   ) \
+    V( C, 3,   knight,       'n'   ) \
+    V( C, 4,   rook,         'r'   ) \
+    V( C, 5,   queen,        'q'   ) \
+    V( C, 6,   king,         'k'   ) \
+    V( C, 7,   laserRook,    'l'   ) \
+    V( C, 8,   laserPawn,    'o'   ) \
+    V( C, 9,   doublingPawn, 'd'   ) \
+    V( C, 10,  addingRook,   'a'   ) \
+    V( C, 11,  rocket,       'v'   )
+
+static char pieceChars[] = {
+    MAKE_CHESS_ARRAY( PIECE_CHAR_LIST )
+    };
+
+CHECK_CHESS_ARRAY( pieceChars,
+                   PIECE_CHAR_LIST );
+
+
 
 
 static  int  statesTestedLastMove  =  0;

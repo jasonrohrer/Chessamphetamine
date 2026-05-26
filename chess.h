@@ -1591,20 +1591,28 @@ static int rocketMove( BoardState     *inState,
 
 
 
-static PieceMoveFunction moveFunctions[] = { noPieceMove,
-                                             pawnMove,
-                                             bishopMove,
-                                             knightMove,
-                                             rookMove,
-                                             queenMove,
-                                             kingMove,
-                                             laserRookMove,
-                                             laserPawnMove,
-                                             pawnMove,
-                                             rookMove,
-                                             rocketMove };
-CHECK_ARRAY_LENGTH( moveFunctions,
-                    NUM_CHESS_PIECES );
+#define MOVE_FUNCTION_LIST( C, V )           \
+    V( C, 0,   noPiece,      noPieceMove   ) \
+    V( C, 1,   pawn,         pawnMove      ) \
+    V( C, 2,   bishop,       bishopMove    ) \
+    V( C, 3,   knight,       knightMove    ) \
+    V( C, 4,   rook,         rookMove      ) \
+    V( C, 5,   queen,        queenMove     ) \
+    V( C, 6,   king,         kingMove      ) \
+    V( C, 7,   laserRook,    laserRookMove ) \
+    V( C, 8,   laserPawn,    laserPawnMove ) \
+    V( C, 9,   doublingPawn, pawnMove      ) \
+    V( C, 10,  addingRook,   rookMove      ) \
+    V( C, 11,  rocket,       rocketMove    )
+
+static PieceMoveFunction moveFunctions[] = {
+    MAKE_CHESS_ARRAY( MOVE_FUNCTION_LIST )
+    };
+
+CHECK_CHESS_ARRAY( moveFunctions,
+                   MOVE_FUNCTION_LIST );
+
+
 
 
 /* this tells the AI to re-pick a piece's move after game-tree search selects
@@ -1619,21 +1627,27 @@ CHECK_ARRAY_LENGTH( moveFunctions,
    We want them to make random moves, so we re-pick their move after
    the game tree search is done
 */
-static char  repickMoveAtEnd[] = { 0,
-                                   0,
-                                   0,
-                                   0,
-                                   0,
-                                   0,
-                                   0,
-                                   0,
-                                   0,
-                                   0,
-                                   0,
-                                   1 };
+#define REPICK_MOVE_AT_END_LIST( C, V ) \
+    V( C, 0,   noPiece,      0 )        \
+    V( C, 1,   pawn,         0 )        \
+    V( C, 2,   bishop,       0 )        \
+    V( C, 3,   knight,       0 )        \
+    V( C, 4,   rook,         0 )        \
+    V( C, 5,   queen,        0 )        \
+    V( C, 6,   king,         0 )        \
+    V( C, 7,   laserRook,    0 )        \
+    V( C, 8,   laserPawn,    0 )        \
+    V( C, 9,   doublingPawn, 0 )        \
+    V( C, 10,  addingRook,   0 )        \
+    V( C, 11,  rocket,       1 )
 
-CHECK_ARRAY_LENGTH( repickMoveAtEnd,
-                    NUM_CHESS_PIECES );
+static int repickMoveAtEnd[] = {
+    MAKE_CHESS_ARRAY( REPICK_MOVE_AT_END_LIST )
+    };
+
+CHECK_CHESS_ARRAY( repickMoveAtEnd,
+                   REPICK_MOVE_AT_END_LIST );
+
     
 
 
@@ -3053,23 +3067,26 @@ static void addingRookEffects( ChessPiece              inPiece,
 
 
 
-static PieceEffectsFunction effectsFunctions[] =
-                                { nullEffects,
-                                  nullEffects,
-                                  nullEffects,
-                                  nullEffects,
-                                  nullEffects,
-                                  nullEffects,
-                                  nullEffects,
-                                  nullEffects,
-                                  nullEffects,
-                                  doublingPawnEffects,
-                                  addingRookEffects,
-                                  nullEffects,
-                                    };
+#define EFFECTS_FUNCTION_LIST( C, V )              \
+    V( C, 0,   noPiece,      nullEffects         ) \
+    V( C, 1,   pawn,         nullEffects         ) \
+    V( C, 2,   bishop,       nullEffects         ) \
+    V( C, 3,   knight,       nullEffects         ) \
+    V( C, 4,   rook,         nullEffects         ) \
+    V( C, 5,   queen,        nullEffects         ) \
+    V( C, 6,   king,         nullEffects         ) \
+    V( C, 7,   laserRook,    nullEffects         ) \
+    V( C, 8,   laserPawn,    nullEffects         ) \
+    V( C, 9,   doublingPawn, doublingPawnEffects ) \
+    V( C, 10,  addingRook,   addingRookEffects   ) \
+    V( C, 11,  rocket,       nullEffects         )
 
-CHECK_ARRAY_LENGTH( effectsFunctions,
-                    NUM_CHESS_PIECES );
+static PieceEffectsFunction effectsFunctions[] = {
+    MAKE_CHESS_ARRAY( EFFECTS_FUNCTION_LIST )
+    };
+
+CHECK_CHESS_ARRAY( effectsFunctions,
+                   EFFECTS_FUNCTION_LIST );
 
 
 static void clearSpaceEffects( FullBoardSpaceEffects  *outEffects ) {

@@ -142,21 +142,28 @@ static  int  pieceBottomHeight  =  6;
 
 static  int          pieceSpriteHandles[ NUM_CHESS_PIECES ];
 static  int          pieceOffsetY      [ NUM_CHESS_PIECES ];
-static  const char  *pieceSpriteFiles  [                  ] =
-                                            { "",
-                                              "pawn.tga",
-                                              "bishop.tga",
-                                              "knight.tga",
-                                              "rook.tga",
-                                              "queen.tga",
-                                              "king.tga",
-                                              "rook.tga",
-                                              "pawn.tga",
-                                              "doublingPawn.tga",
-                                              "addingRook.tga",
-                                              "rocket.tga" };
-CHECK_ARRAY_LENGTH( pieceSpriteFiles,
-                    NUM_CHESS_PIECES );
+
+
+#define PIECE_SPRITE_FILE_LIST( C, V )            \
+    V( C, 0,   noPiece,      ""                 ) \
+    V( C, 1,   pawn,         "pawn.tga"         ) \
+    V( C, 2,   bishop,       "bishop.tga"       ) \
+    V( C, 3,   knight,       "knight.tga"       ) \
+    V( C, 4,   rook,         "rook.tga"         ) \
+    V( C, 5,   queen,        "queen.tga"        ) \
+    V( C, 6,   king,         "king.tga"         ) \
+    V( C, 7,   laserRook,    "rook.tga"         ) \
+    V( C, 8,   laserPawn,    "pawn.tga"         ) \
+    V( C, 9,   doublingPawn, "doublingPawn.tga" ) \
+    V( C, 10,  addingRook,   "addingRook.tga"   ) \
+    V( C, 11,  rocket,       "rocket.tga"       )
+
+static const char *pieceSpriteFiles[] = {
+    MAKE_CHESS_ARRAY( PIECE_SPRITE_FILE_LIST )
+    };
+
+CHECK_CHESS_ARRAY( pieceSpriteFiles,
+                   PIECE_SPRITE_FILE_LIST );
 
 
 
@@ -165,51 +172,55 @@ CHECK_ARRAY_LENGTH( pieceSpriteFiles,
    second index is 0 => white, 1 => black */
 
 static  int          pieceSpriteExtraHandles[ NUM_CHESS_PIECES ][2];
-static  int          pieceExtraOffsetY      [                  ][2] =
-                                                { {  0, 0 },
-                                                  {  0, 0 },
-                                                  {  0, 0 },
-                                                  {  0, 0 },
-                                                  {  0, 0 },
-                                                  {  0, 0 },
-                                                  {  0, 0 },
-                                                  {  2, 2 },
-                                                  { -1, 0 },
-                                                  {  0, 0 },
-                                                  {  0, 0 },
-                                                  {  0, 0 }
-                                                    };
-CHECK_ARRAY_LENGTH( pieceExtraOffsetY,
-                    NUM_CHESS_PIECES );
 
-static  const char  *pieceSpriteExtraFiles  [                  ][2] =
-                                                { { "",
-                                                    "" },
-                                                  { "",
-                                                    "" },
-                                                  { "",
-                                                    "" },
-                                                  { "",
-                                                    "" },
-                                                  { "",
-                                                    "" },
-                                                  { "",
-                                                    "" },
-                                                  { "",
-                                                    "" },
-                                                  { "rookLasers.tga",
-                                                    "rookLasers.tga" },
-                                                  { "pawnLasersWhite.tga",
-                                                    "pawnLasersBlack.tga" },
-                                                  { "",
-                                                    "" },
-                                                  { "",
-                                                    "" },
-                                                  { "",
-                                                    "" },
-                                                    };
-CHECK_ARRAY_LENGTH( pieceSpriteExtraFiles,
-                    NUM_CHESS_PIECES );
+
+
+#define PIECE_EXTRA_OFFSET_Y_LIST( C, V )            \
+    V( C, 0,   noPiece,      ARRAY_PAIR(  0,  0 )  ) \
+    V( C, 1,   pawn,         ARRAY_PAIR(  0,  0 )  ) \
+    V( C, 2,   bishop,       ARRAY_PAIR(  0,  0 )  ) \
+    V( C, 3,   knight,       ARRAY_PAIR(  0,  0 )  ) \
+    V( C, 4,   rook,         ARRAY_PAIR(  0,  0 )  ) \
+    V( C, 5,   queen,        ARRAY_PAIR(  0,  0 )  ) \
+    V( C, 6,   king,         ARRAY_PAIR(  0,  0 )  ) \
+    V( C, 7,   laserRook,    ARRAY_PAIR(  2,  2 )  ) \
+    V( C, 8,   laserPawn,    ARRAY_PAIR( -1,  0 )  ) \
+    V( C, 9,   doublingPawn, ARRAY_PAIR(  0,  0 )  ) \
+    V( C, 10,  addingRook,   ARRAY_PAIR(  0,  0 )  ) \
+    V( C, 11,  rocket,       ARRAY_PAIR(  0,  0 )  )
+
+static int pieceExtraOffsetY[][2] = {
+    MAKE_CHESS_ARRAY( PIECE_EXTRA_OFFSET_Y_LIST )
+    };
+
+CHECK_CHESS_ARRAY( pieceExtraOffsetY,
+                   PIECE_EXTRA_OFFSET_Y_LIST );
+
+
+
+#define PIECE_EXTRA_SPRITE_LIST( C, V )                             \
+    V( C, 0,   noPiece,      ARRAY_PAIR( "", "" )  )                \
+    V( C, 1,   pawn,         ARRAY_PAIR( "", "" )  )                \
+    V( C, 2,   bishop,       ARRAY_PAIR( "", "" )  )                \
+    V( C, 3,   knight,       ARRAY_PAIR( "", "" )  )                \
+    V( C, 4,   rook,         ARRAY_PAIR( "", "" )  )                \
+    V( C, 5,   queen,        ARRAY_PAIR( "", "" )  )                \
+    V( C, 6,   king,         ARRAY_PAIR( "", "" )  )                \
+    V( C, 7,   laserRook,    ARRAY_PAIR( "rookLasers.tga",          \
+                                         "rookLasers.tga"      )  ) \
+    V( C, 8,   laserPawn,    ARRAY_PAIR( "pawnLasersWhite.tga",     \
+                                         "pawnLasersBlack.tga" )  ) \
+    V( C, 9,   doublingPawn, ARRAY_PAIR( "", "" )  )                \
+    V( C, 10,  addingRook,   ARRAY_PAIR( "", "" )  )                \
+    V( C, 11,  rocket,       ARRAY_PAIR( "", "" )  )
+
+static  const char  *pieceSpriteExtraFiles[][2] = {
+    MAKE_CHESS_ARRAY( PIECE_EXTRA_SPRITE_LIST )
+    };
+
+CHECK_CHESS_ARRAY( pieceSpriteExtraFiles,
+                   PIECE_EXTRA_SPRITE_LIST );
+
 
 
 

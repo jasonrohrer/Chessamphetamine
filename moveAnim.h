@@ -2926,70 +2926,76 @@ static void multiPhaseDraw( int            inBoardCenterX,
     
     }
 
-                       
+
+
+#define INIT_FUNCTION_LIST( C, V )              \
+    V( C, 0,   noPiece,      noPieceInit      ) \
+    V( C, 1,   pawn,         defaultPieceInit ) \
+    V( C, 2,   bishop,       defaultPieceInit ) \
+    V( C, 3,   knight,       defaultPieceInit ) \
+    V( C, 4,   rook,         defaultPieceInit ) \
+    V( C, 5,   queen,        defaultPieceInit ) \
+    V( C, 6,   king,         defaultPieceInit ) \
+    V( C, 7,   laserRook,    laserPieceInit   ) \
+    V( C, 8,   laserPawn,    laserPieceInit   ) \
+    V( C, 9,   doublingPawn, defaultPieceInit ) \
+    V( C, 10,  addingRook,   defaultPieceInit ) \
+    V( C, 11,  rocket,       rocketPieceInit  )
+
+static MoveAnimInitFunction initFunctions[] = {
+    MAKE_CHESS_ARRAY( INIT_FUNCTION_LIST )
+    };
+
+CHECK_CHESS_ARRAY( initFunctions,
+                   INIT_FUNCTION_LIST );
 
 
 
-static MoveAnimInitFunction initFunctions[] =
-                                { noPieceInit,
-                                  defaultPieceInit,
-                                  defaultPieceInit,
-                                  defaultPieceInit,
-                                  defaultPieceInit,
-                                  defaultPieceInit,
-                                  defaultPieceInit,
-                                  /* laser rook and pawn
-                                     use same */
-                                  laserPieceInit,
-                                  laserPieceInit,
-                                  defaultPieceInit,
-                                  defaultPieceInit,
-                                  rocketPieceInit };
 
-CHECK_ARRAY_LENGTH( initFunctions,
-                    NUM_CHESS_PIECES );
+#define STEP_FUNCTION_LIST( C, V )              \
+    V( C, 0,   noPiece,      noPieceStep      ) \
+    V( C, 1,   pawn,         defaultPieceStep ) \
+    V( C, 2,   bishop,       defaultPieceStep ) \
+    V( C, 3,   knight,       defaultPieceStep ) \
+    V( C, 4,   rook,         defaultPieceStep ) \
+    V( C, 5,   queen,        defaultPieceStep ) \
+    V( C, 6,   king,         defaultPieceStep ) \
+    V( C, 7,   laserRook,    multiPhaseStep   ) \
+    V( C, 8,   laserPawn,    multiPhaseStep   ) \
+    V( C, 9,   doublingPawn, defaultPieceStep ) \
+    V( C, 10,  addingRook,   defaultPieceStep ) \
+    V( C, 11,  rocket,       multiPhaseStep  )
 
+static MoveAnimStepFunction stepFunctions[] = {
+    MAKE_CHESS_ARRAY( STEP_FUNCTION_LIST )
+    };
 
-
-static MoveAnimStepFunction stepFunctions[] =
-                                { noPieceStep,
-                                  defaultPieceStep,
-                                  defaultPieceStep,
-                                  defaultPieceStep,
-                                  defaultPieceStep,
-                                  defaultPieceStep,
-                                  defaultPieceStep,
-                                  /* laser rook and pawn
-                                     use same */
-                                  multiPhaseStep,
-                                  multiPhaseStep,
-                                  defaultPieceStep,
-                                  defaultPieceStep,
-                                  multiPhaseStep };
-
-CHECK_ARRAY_LENGTH( stepFunctions,
-                    NUM_CHESS_PIECES );
+CHECK_CHESS_ARRAY( stepFunctions,
+                   STEP_FUNCTION_LIST );
 
 
 
-static MoveAnimDrawFunction drawFunctions[] =
-                                { noPieceDraw,
-                                  defaultPieceDraw,
-                                  defaultPieceDraw,
-                                  defaultPieceDraw,
-                                  defaultPieceDraw,
-                                  defaultPieceDraw,
-                                  defaultPieceDraw,
-                                  /* laser rook and pawn
-                                     use same */
-                                  multiPhaseDraw,
-                                  multiPhaseDraw,
-                                  defaultPieceDraw,
-                                  defaultPieceDraw,
-                                  multiPhaseDraw };
+#define DRAW_FUNCTION_LIST( C, V )              \
+    V( C, 0,   noPiece,      noPieceDraw      ) \
+    V( C, 1,   pawn,         defaultPieceDraw ) \
+    V( C, 2,   bishop,       defaultPieceDraw ) \
+    V( C, 3,   knight,       defaultPieceDraw ) \
+    V( C, 4,   rook,         defaultPieceDraw ) \
+    V( C, 5,   queen,        defaultPieceDraw ) \
+    V( C, 6,   king,         defaultPieceDraw ) \
+    V( C, 7,   laserRook,    multiPhaseDraw   ) \
+    V( C, 8,   laserPawn,    multiPhaseDraw   ) \
+    V( C, 9,   doublingPawn, defaultPieceDraw ) \
+    V( C, 10,  addingRook,   defaultPieceDraw ) \
+    V( C, 11,  rocket,       multiPhaseDraw  )
 
-CHECK_ARRAY_LENGTH( drawFunctions,
-                    NUM_CHESS_PIECES );
+static MoveAnimDrawFunction drawFunctions[] = {
+    MAKE_CHESS_ARRAY( DRAW_FUNCTION_LIST )
+    };
+
+CHECK_CHESS_ARRAY( drawFunctions,
+                   DRAW_FUNCTION_LIST );
+
 
 
 void initMoveAnimation( BoardState    *inState,

@@ -25,5 +25,8 @@
     CHECK_ARRAY_LENGTH( inArray, NUM_CHESS_PIECES )
 
 
+#define ARRAY_PAIR( inA, inB ) \
+    { inA, inB }
+
 
 #endif

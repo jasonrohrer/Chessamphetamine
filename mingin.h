@@ -2233,7 +2233,7 @@ static const char *mn_getWindowTitle( void ) {
    files the game will read.  If this is too small, tracking of bulk resource
    changes may become less reliable
 */
-#define  MINGIN_MAX_NUM_BULK_CHANGE_RECORDS   128
+#define  MINGIN_MAX_NUM_BULK_CHANGE_RECORDS   256
 
 
 /* make inline keyword disappear in asoundlib header so it can compile

@@ -37,3 +37,39 @@ bombDesc       "Bomb"
 press          "press"
 
 defaults       "Defaults"
+
+
+
+pawn           "Pawn"
+pawnDesc       "Moves 1 or 2 spaces forward, captures diagonally"
+
+bishop         "Bishop"
+bishopDesc     "Moves diagonally"
+
+knight         "Knight"
+knightDesc     "Moves in L-shaped pattern"
+
+rook           "Rook"
+rookDesc       "Moves in straight lines"
+
+queen          "Queen"
+queenDesc      "Moves in straight lines and diagonally"
+
+king           "King"
+kingDesc       "Moves 1 space in any direction"
+
+laserRook      "Laser Rook"
+laserRookDesc  "Fires lasers in straight lines after moving, moves in straight lines"
+
+laserPawn      "Laser Pawn"
+laserPawnDesc  "Fires laser forward after moving, moves 1 or 2 spaces forward, captures diagonally"
+
+doublingPawn   "Doubling Pawn"
+doublingPawnDesc  "Doubles special abilities of any piece immediately in front, moves 1 or 2 spaces forward, captures diagonally"
+
+
+addingRook     "Adding Rook"
+addingRookDesc "Adds 1 to special abilities of any neighboring pieces, moves in straight lines"
+
+rocket         "CCCP Rocket"
+rocketDesc     "Destroys a random enemy piece, then destroys itself"

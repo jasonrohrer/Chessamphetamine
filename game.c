@@ -21,6 +21,7 @@
 #define FIXED_MATH_IMPLEMENTATION
 #define PINCH_IMPLEMENTATION
 #define PARTICLE_SYSTEM_IMPLEMENTATION
+#define PIECE_DESCRIPTIONS_IMPLEMENTATION
 
 
 #include "chess.h"
@@ -50,6 +51,8 @@
 #include "pinch.h"
 
 #include "particleSystem.h"
+
+#include "pieceDescriptions.h"
 
 
 enum GameUserAction {
@@ -1918,6 +1921,7 @@ void maxiginGame_init( void ) {
 
     pinchInit();
     particleSystemInit();
+    pieceDescriptionsInit();
     
 
     if(0)runChessTest();

@@ -16543,7 +16543,7 @@ const char *maxigin_stringConcat( const char  *inStringA,
                                   const char  *inStringB ) {
     
     enum{  NUM_BUFFERS  =  10,
-           BUFFER_LEN   =  128 };
+           BUFFER_LEN   =  256 };
 
     static  char  buffers[ NUM_BUFFERS ][ BUFFER_LEN ];
     static  int   nextBuffer                             =  0;
@@ -20325,12 +20325,12 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
                         lang->bulkResourceName );
     
 
-    languageReadHandle = mingin_startReadBulkData( inLanguageBulkResourceName,
+    languageReadHandle = mingin_startReadBulkData( lang->bulkResourceName,
                                                    &dataLen );
 
     if( languageReadHandle == -1 ) {
         maxigin_logString( "Failed to open language bulk resource: ",
-                           inLanguageBulkResourceName );
+                           lang->bulkResourceName );
         return;
         }
 
@@ -20341,7 +20341,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
     if( ! success ) {
         maxigin_logString( "Failed to read display name from language "
                            "bulk resource: ",
-                           inLanguageBulkResourceName );
+                           lang->bulkResourceName );
         
         mingin_endReadBulkData( languageReadHandle );
         return;
@@ -20353,7 +20353,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
     if( langFontName == 0 ) {
         maxigin_logString( "Failed to read font TGA name from language "
                            "bulk resource: ",
-                           inLanguageBulkResourceName );
+                           lang->bulkResourceName );
         
         mingin_endReadBulkData( languageReadHandle );
         return;
@@ -20364,7 +20364,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
 
         maxigin_logString( "Font TGA name too long in language "
                            "bulk resource: ",
-                           inLanguageBulkResourceName );
+                           lang->bulkResourceName );
         
         mingin_endReadBulkData( languageReadHandle );
         return;
@@ -20377,7 +20377,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
     if( ! success ) {
         maxigin_logString( "Failed to read font character height from language "
                            "bulk resource: ",
-                           inLanguageBulkResourceName );
+                           lang->bulkResourceName );
         
         mingin_endReadBulkData( languageReadHandle );
         return;
@@ -20389,7 +20389,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
     if( ! success ) {
         maxigin_logString( "Failed to read font character spacing from language "
                            "bulk resource: ",
-                           inLanguageBulkResourceName );
+                           lang->bulkResourceName );
         
         mingin_endReadBulkData( languageReadHandle );
         return;
@@ -20401,7 +20401,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
     if( ! success ) {
         maxigin_logString( "Failed to read font space width from language "
                            "bulk resource: ",
-                           inLanguageBulkResourceName );
+                           lang->bulkResourceName );
         
         mingin_endReadBulkData( languageReadHandle );
         return;
@@ -20413,7 +20413,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
     if( ! success ) {
         maxigin_logString( "Failed to read font fixed width from language "
                            "bulk resource: ",
-                           inLanguageBulkResourceName );
+                           lang->bulkResourceName );
         
         mingin_endReadBulkData( languageReadHandle );
         return;
@@ -20424,7 +20424,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
     if( langFontTextName == 0 ) {
         maxigin_logString( "Failed to read font TXT name from language "
                            "bulk resource: ",
-                           inLanguageBulkResourceName );
+                           lang->bulkResourceName );
         
         mingin_endReadBulkData( languageReadHandle );
         return;
@@ -20456,7 +20456,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
         if( mx_numLanguageFonts >= MAXIGIN_MAX_NUM_LANGUAGE_FONTS ) {
             maxigin_logString( "Too many language fonts already when trying "
                                "to create new one for language: ",
-                               inLanguageBulkResourceName );
+                               lang->bulkResourceName );
             
             mingin_endReadBulkData( languageReadHandle );
             return;
@@ -20471,7 +20471,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
                     "Failed to read font strip ",
                     langFontName,
                     " specified in language bulk resource: ",
-                    inLanguageBulkResourceName,
+                    lang->bulkResourceName,
                     "\n" ) );
             
             mingin_endReadBulkData( languageReadHandle );
@@ -20499,7 +20499,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
                     "Failed to read font mapping ",
                     langFontName,
                     " specified in language bulk resource: ",
-                    inLanguageBulkResourceName,
+                    lang->bulkResourceName,
                     "\n" ) );
             
             mingin_endReadBulkData( languageReadHandle );
@@ -20538,7 +20538,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
                     "Failed to find translation key ",
                     nextKey,
                     " specified in language bulk resource: ",
-                    inLanguageBulkResourceName,
+                    lang->bulkResourceName,
                     " (game needs to call maxigin_initTranslationKey for "
                     "each valid key during maxiginGame_init() )\n" ) );
 
@@ -20551,7 +20551,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
 
             maxigin_logString( "Ran out of room for more translation strings "
                                "when loading language: ",
-                               inLanguageBulkResourceName );
+                               lang->bulkResourceName );
             
             mingin_endReadBulkData( languageReadHandle );
             return;
@@ -20569,7 +20569,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
         if( ! success ) {
             maxigin_logString( "Failed to read translation string "
                                "when loading language: ",
-                               inLanguageBulkResourceName );
+                               lang->bulkResourceName );
             
             mingin_endReadBulkData( languageReadHandle );
             return;

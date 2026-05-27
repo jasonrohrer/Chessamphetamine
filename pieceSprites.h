@@ -136,7 +136,18 @@ void drawSetPieceColor( int  inPieceColor );
 
 ChessPiece getPointerOverPiece( BoardState  *inState,
                                 int          inBoardCenterX,
-                                int          inBoardCenterY );
+                                int          inBoardCenterY,
+                                int         *outRow,
+                                int         *outCol );
+
+
+
+void drawPieceHighlight( BoardState    *inState,
+                         int            inBoardCenterX,
+                         int            inBoardCenterY,
+                         int            inPieceRow,
+                         int            inPieceCol,
+                         unsigned char  inFade );
 
 
 
@@ -1134,7 +1145,9 @@ void clearMaskRow( DrawBoardMask  *inMask,
 
 ChessPiece getPointerOverPiece( BoardState  *inState,
                                 int          inBoardCenterX,
-                                int          inBoardCenterY ) {
+                                int          inBoardCenterY,
+                                int         *outRow,
+                                int         *outCol ) {
     int  y;
     int  x;
 
@@ -1189,6 +1202,8 @@ ChessPiece getPointerOverPiece( BoardState  *inState,
             if( maxigin_isInSprite( pieceSpriteHandles[ t ],
                                     spritePixX,
                                     spritePixY ) ) {
+                *outRow = y;
+                *outCol = x;
                 return p;
                 }
 
@@ -1206,6 +1221,8 @@ ChessPiece getPointerOverPiece( BoardState  *inState,
                         spritePixX,
                         spritePixY ) ) {
 
+                    *outRow = y;
+                    *outCol = x;
                     return p;
                     }
                 }
@@ -1216,6 +1233,31 @@ ChessPiece getPointerOverPiece( BoardState  *inState,
     return noPiece;   
     }
 
+
+
+
+void drawPieceHighlight( BoardState    *inState,
+                         int            inBoardCenterX,
+                         int            inBoardCenterY,
+                         int            inPieceRow,
+                         int            inPieceCol,
+                         unsigned char  inFade ) {
+
+    int  pX;
+    int  pY;
+    
+    boardGetSquareCenter( inBoardCenterX,
+                          inBoardCenterY,
+                          inPieceRow,
+                          inPieceCol,
+                          &pX,
+                          &pY );
+
+    drawPieceGlowOnly( inState->grid[ inPieceRow ][ inPieceCol ],
+                       pX,
+                       pY,
+                       inFade );
+    }
 
 
 

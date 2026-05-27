@@ -234,6 +234,14 @@ static long           stepMSec                    =  0;
 static int            boardCenterX;
 static int            boardCenterY;
 static ChessPiece     infoPanelPiece              =  noPiece;
+static ChessPiece     infoPanelLastPiece          =  noPiece;
+static unsigned char  infoPanelFade               =  0;
+
+#define  INFO_HIGHLIGHT_BUFFER_SIZE  5
+static int            infoRow [ INFO_HIGHLIGHT_BUFFER_SIZE ];
+static int            infoCol [ INFO_HIGHLIGHT_BUFFER_SIZE ];
+static unsigned char  infoFade[ INFO_HIGHLIGHT_BUFFER_SIZE ];
+static int            curInfoIndex                =  0;
 
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
@@ -741,8 +749,40 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     if( infoPanelPiece != noPiece ) {
         drawPieceInfoPanel( infoPanelPiece,
                             MAXIGIN_GAME_NATIVE_W - 35,
-                            boardCenterY );
+                            boardCenterY,
+                            infoPanelFade );
+        
         }
+    else if( infoPanelLastPiece != noPiece
+             &&
+             infoPanelFade > 0 ) {
+        drawPieceInfoPanel( infoPanelLastPiece,
+                            MAXIGIN_GAME_NATIVE_W - 35,
+                            boardCenterY,
+                            infoPanelFade );
+        }
+
+    for( i = 0;
+         i < INFO_HIGHLIGHT_BUFFER_SIZE;
+         i ++ ) {
+
+        if( infoFade[ i ] >   0
+            &&
+            infoRow [ i ] != -1
+            &&
+            infoRow [ i ] != -1 ) {
+            
+            drawPieceHighlight( &boardState,
+                                boardCenterX,
+                                boardCenterY,
+                                infoRow[ i ],
+                                infoCol[ i  ],
+                                infoFade[ i ] );
+            }
+        }
+    
+        
+        
                 
     
     maxigin_drawGUI( &gameGUI );
@@ -851,6 +891,9 @@ void maxiginGame_step( void ) {
     int   stickLowerRange  =  0;
     int   stickUpperRange  =  0;
 
+    int   deltaFade;
+    
+    
     if( 0 ) {
         int  mouseX;
         int  mouseY;
@@ -1220,14 +1263,103 @@ void maxiginGame_step( void ) {
 
     if( ! moveMade ) {
 
+        ChessPiece  oldPiece  =  infoPanelPiece;
+        int         panRow;
+        int         panCol;
+        
         infoPanelPiece  =  getPointerOverPiece( &boardState,
-                                                       boardCenterX,
-                                                       boardCenterY );
+                                                boardCenterX,
+                                                boardCenterY,
+                                                &panRow,
+                                                &panCol );
+
+        if( oldPiece == noPiece
+            &&
+            infoPanelPiece != noPiece ) {
+            maxigin_playSoundEffect( plunkSound,
+                                     512 );
+            }
+
+        if( infoPanelPiece != noPiece ) {
+            infoPanelFade = 255;
+
+            if( panRow != infoRow[ curInfoIndex ]
+                ||
+                panCol != infoCol[ curInfoIndex ] ) {
+
+                curInfoIndex ++;
+
+                if( curInfoIndex >= INFO_HIGHLIGHT_BUFFER_SIZE ) {
+                    curInfoIndex = 0;
+                    }
+                infoRow [ curInfoIndex ] = panRow;
+                infoCol [ curInfoIndex ] = panCol;
+                }
+            
+            infoFade[ curInfoIndex ] = 255;
+            }
+
+        if( oldPiece != noPiece
+            &&
+            oldPiece != infoPanelPiece ) {
+            
+            infoPanelLastPiece = oldPiece;
+            }                       
         }
     else {
         infoPanelPiece = noPiece;
         }
+
+    deltaFade = ( 20 * 60 ) / r;
+
+    if( infoPanelPiece == noPiece ) {
+        
+            
+        if( infoPanelFade > 0 ) {
+        
+            if( infoPanelFade > deltaFade ) {
+            
+                infoPanelFade = (unsigned char)( infoPanelFade - deltaFade );
+                }
+            else {
+                infoPanelFade = 0;
+                }
+            }
+        if( infoFade[ curInfoIndex ] > 0 ) {
+            
+            if( infoFade[ curInfoIndex ] > deltaFade ) {
+            
+                infoFade[ curInfoIndex ] =
+                    (unsigned char)( infoFade[ curInfoIndex ] - deltaFade );
+                }
+            else {
+                infoFade[ curInfoIndex ] = 0;
+                }
+            }
+        }
     
+
+    for( i = 0;
+         i < INFO_HIGHLIGHT_BUFFER_SIZE;
+         i ++ ) {
+
+        if( i != curInfoIndex
+            &&
+            infoFade[ i ] > 0 ) {
+
+            if( infoFade[ i ] > deltaFade ) {
+            
+                infoFade[ i ] = (unsigned char)( infoFade[ i ] - deltaFade );
+                }
+            else {
+                infoFade[ i ] = 0;
+                }
+            }
+        }
+    
+
+
+            
 
     
     if( explodingEndMessageProgress != -1 ) {
@@ -1646,6 +1778,15 @@ void maxiginGame_init( void ) {
         bombOn[ i ] = 0;
         }
 
+    for( i = 0;
+         i < INFO_HIGHLIGHT_BUFFER_SIZE;
+         i ++ ) {
+        infoRow [i] = -1;
+        infoCol [i] = -1;
+        infoFade[i] = 0;
+        }
+        
+
     maxigin_randSeed( &rand,
                       1234859 );
 
@@ -2019,6 +2160,16 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( stepSec );
     REGISTER_VAL_MEM( stepMSec );
+
+    REGISTER_VAL_MEM( infoPanelPiece );
+    REGISTER_VAL_MEM( infoPanelLastPiece );
+    REGISTER_VAL_MEM( infoPanelFade );
+
+    REGISTER_ARRAY_MEM( infoRow );
+    REGISTER_ARRAY_MEM( infoCol );
+    REGISTER_ARRAY_MEM( infoFade );
+    
+    REGISTER_VAL_MEM( curInfoIndex );
 
     maxigin_initRestoreStaticMemoryFromLastRun();
     }

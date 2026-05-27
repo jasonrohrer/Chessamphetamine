@@ -24,9 +24,10 @@
 void pieceDescriptionsInit( void );
 
 
-void drawPieceInfoPanel( ChessPiece  inPiece,
-                         int         inCenterX,
-                         int         inCenterY );
+void drawPieceInfoPanel( ChessPiece     inPiece,
+                         int            inCenterX,
+                         int            inCenterY,
+                         unsigned char  inFade );
 
 
 
@@ -121,14 +122,17 @@ void pieceDescriptionsInit( void ) {
 
 
 
-void drawPieceInfoPanel( ChessPiece  inPiece,
-                         int         inCenterX,
-                         int         inCenterY ) {
+void drawPieceInfoPanel( ChessPiece     inPiece,
+                         int            inCenterX,
+                         int            inCenterY,
+                         unsigned char  inFade ) {
 
     ChessPiece  c  =  inPiece & CHESS_COLOR_MASK;
     ChessPiece  t  =  inPiece & CHESS_TYPE_MASK;
     
     drawSetPieceColor( c );
+
+    maxigin_drawSetAlpha( inFade );
 
     maxigin_drawSprite( infoPanelSprite,
                         inCenterX,
@@ -137,7 +141,7 @@ void drawPieceInfoPanel( ChessPiece  inPiece,
     maxigin_drawSetColor( 255,
                           255,
                           255,
-                          255 );
+                          inFade );
     
     maxigin_drawLangText( pieceNameKeys[ t ],
                           inCenterX,

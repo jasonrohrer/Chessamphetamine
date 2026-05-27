@@ -134,6 +134,12 @@ void drawSetPieceColor( int  inPieceColor );
 
 
 
+ChessPiece getPointerOverPiece( BoardState  *inState,
+                                int          inBoardCenterX,
+                                int          inBoardCenterY );
+
+
+
 
 #ifdef PIECE_SPRITES_IMPLEMENTATION
 
@@ -1122,6 +1128,92 @@ void clearMaskRow( DrawBoardMask  *inMask,
 
         inMask->grid[ inRow ][ x ] = 0;
         }
+    }
+
+
+
+ChessPiece getPointerOverPiece( BoardState  *inState,
+                                int          inBoardCenterX,
+                                int          inBoardCenterY ) {
+    int  y;
+    int  x;
+
+    int  pointerX;
+    int  pointerY;
+
+    if( ! maxigin_getPointerLocation( &pointerX,
+                                      &pointerY ) ) {
+        /* pointer not available */
+        return noPiece;
+        }
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            ChessPiece  p  =  inState->grid[y][x];
+            ChessPiece  t;
+            ChessPiece  c;
+            int         cIndex;
+            int         pX;
+            int         pY;
+
+            int         spritePixX;
+            int         spritePixY;
+            
+            if( p == noPiece ) {
+                continue;
+                }
+
+            t      = p & CHESS_TYPE_MASK;
+            c      = p & CHESS_COLOR_MASK;
+            cIndex = getPieceColorIndex( c );
+
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  y,
+                                  x,
+                                  &pX,
+                                  &pY );
+
+            pY += pieceOffsetY[ t ];
+
+            spritePixX = pointerX - pX;
+            spritePixY = pointerY - pY;
+            
+
+            if( maxigin_isInSprite( pieceSpriteHandles[ t ],
+                                    spritePixX,
+                                    spritePixY ) ) {
+                return p;
+                }
+
+            /* pointer not in sprite */ 
+
+            if( pieceSpriteExtraHandles[ t ][ cIndex ] != -1 ) {
+                /* check if it's in piece's extra sprite */
+
+                pY += pieceExtraOffsetY[ t ][ cIndex ];
+
+                spritePixY = pointerY - pY;
+                
+                if( maxigin_isInSprite(
+                        pieceSpriteExtraHandles[ t ][ cIndex ],
+                        spritePixX,
+                        spritePixY ) ) {
+
+                    return p;
+                    }
+                }
+            }
+        }
+    
+
+    return noPiece;   
     }
 
 

@@ -220,7 +220,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_NUM_SOUND_EFFECTS
-#define  MAXIGIN_MAX_NUM_SOUND_EFFECTS  16
+#define  MAXIGIN_MAX_NUM_SOUND_EFFECTS  20
 #endif
 
 
@@ -2564,6 +2564,28 @@ void maxigin_getSpritePixel( int            inSpriteHandle,
                              int            inPixelX,
                              int            inPixelY,
                              MaxiginColor  *outColor );
+
+
+/* Gets whether a given offset is inside a sprite's non-transparent areas.
+
+   Parameters:
+
+      inSpriteHandle    the sprite to test
+
+      inCenterOffsetX   the pixel x offset from the center of the sprite
+      
+      inCenterOffsetY   the piyel y offset from the center of the sprite
+                 
+  Returns:
+
+      1   if offset hits sprite's non-transparent areas
+
+      0   if not
+   [jumpMaxiginGeneral]  
+ */
+char maxigin_isInSprite( int  inSpriteHandle,
+                         int  inCenterOffsetX,
+                         int  inCenterOffsetY );
 
 
 
@@ -7979,6 +8001,33 @@ void maxigin_getSpritePixel( int            inSpriteHandle,
     outColor->val[3] = mx_spriteBytes[ b++ ];
     }
 
+
+char maxigin_isInSprite( int  inSpriteHandle,
+                         int  inCenterOffsetX,
+                         int  inCenterOffsetY ) {
+    MaxiginSprite  *s       =  &( mx_sprites[ inSpriteHandle ] );
+    int             pixelX  =  s->w / 2 + inCenterOffsetX;
+    int             pixelY  =  s->h / 2 + inCenterOffsetY;
+    int             b;
+    
+    if( pixelX < 0
+        ||
+        pixelX >= s->w
+        ||
+        pixelY < 0
+        ||
+        pixelY >= s->h ) {
+
+        return 0;
+        }
+
+    b = s->startByte + ( pixelY * s->w + pixelX ) * 4;
+
+    /* alpha byte for this pixel */
+    return ( mx_spriteBytes[ b + 3 ] > 0 );
+    }
+
+    
 
 
 void maxigin_drawExplodingSprite( int            inSpriteHandle,

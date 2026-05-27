@@ -24,8 +24,17 @@
 void pieceDescriptionsInit( void );
 
 
+void drawPieceInfoPanel( ChessPiece  inPiece,
+                         int         inCenterX,
+                         int         inCenterY );
+
+
+
 
 #ifdef PIECE_DESCRIPTIONS_IMPLEMENTATION
+
+
+#include "maxigin.h"
 
 
 
@@ -63,8 +72,8 @@ static  int  pieceNameKeys[ NUM_CHESS_PIECES ];
     V( C, 4,   rook,         "rookDesc"         ) \
     V( C, 5,   queen,        "queenDesc"        ) \
     V( C, 6,   king,         "kingDesc"         ) \
-    V( C, 7,   laserRook,    "rookDesc"         ) \
-    V( C, 8,   laserPawn,    "pawnDesc"         ) \
+    V( C, 7,   laserRook,    "laserRookDesc"    ) \
+    V( C, 8,   laserPawn,    "laserPawnDesc"    ) \
     V( C, 9,   doublingPawn, "doublingPawnDesc" ) \
     V( C, 10,  addingRook,   "addingRookDesc"   ) \
     V( C, 11,  rocket,       "rocketDesc"       )
@@ -81,6 +90,8 @@ static  int  pieceDescriptionKeys[ NUM_CHESS_PIECES ];
 
 
 
+
+static  int  infoPanelSprite  =  -1;
 
 
 void pieceDescriptionsInit( void ) {
@@ -100,7 +111,41 @@ void pieceDescriptionsInit( void ) {
         pieceDescriptionKeys[ i ] =
             maxigin_initTranslationKey( pieceDescriptionKeyStrings[i] );
         }
+
+    infoPanelSprite = maxigin_initSprite( "pieceInfoPanel.tga" );
+
+    maxigin_initMakeGlowSprite( infoPanelSprite,
+                                4,
+                                2 );
     }
+
+
+
+void drawPieceInfoPanel( ChessPiece  inPiece,
+                         int         inCenterX,
+                         int         inCenterY ) {
+
+    ChessPiece  c  =  inPiece & CHESS_COLOR_MASK;
+    ChessPiece  t  =  inPiece & CHESS_TYPE_MASK;
+    
+    drawSetPieceColor( c );
+
+    maxigin_drawSprite( infoPanelSprite,
+                        inCenterX,
+                        inCenterY );
+
+    maxigin_drawSetColor( 255,
+                          255,
+                          255,
+                          255 );
+    
+    maxigin_drawLangText( pieceNameKeys[ t ],
+                          inCenterX,
+                          inCenterY - 60,
+                          MAXIGIN_CENTER );
+    
+    }
+
 
 
 #endif

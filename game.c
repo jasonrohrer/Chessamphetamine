@@ -231,6 +231,10 @@ static long           stepSec                     =  0;
 static long           stepMSec                    =  0;
 
 
+static int            boardCenterX;
+static int            boardCenterY;
+static ChessPiece     infoPanelPiece              =  noPiece;
+
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
@@ -241,8 +245,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     int  x;
     int  y;
     int  i;
-    int  boardCenterX;
-    int  boardCenterY;
+    int  spinButtonY;
+    
 
     maxigin_drawSetAlpha( 255 );
     
@@ -434,33 +438,32 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     maxigin_drawResetColor();
 
-    boardCenterX = MAXIGIN_GAME_NATIVE_W / 2 - 10;
-    boardCenterY = MAXIGIN_GAME_NATIVE_H / 2;
-
 
     maxigin_drawResetColor();
 
+    spinButtonY = MAXIGIN_GAME_NATIVE_H - 25;
+    
     maxigin_drawSprite( spinFrameSprite,
                         MAXIGIN_GAME_NATIVE_W - 35,
-                        boardCenterY );
+                        spinButtonY );
 
     if( ! spinning ) {
         maxigin_drawSprite( spinUnpressedSprite,
                             MAXIGIN_GAME_NATIVE_W - 35,
-                            boardCenterY );
+                            spinButtonY );
         }
     else {
         maxigin_drawSprite( spinPressedSprite,
                             MAXIGIN_GAME_NATIVE_W - 35,
-                            boardCenterY );
+                            spinButtonY );
     
         maxigin_drawSprite( spinPressedTextSprite,
                             MAXIGIN_GAME_NATIVE_W - 35,
-                            boardCenterY );
+                            spinButtonY );
 
         maxigin_drawSpriteGlowOnly( spinPressedTextGlowSprite,
                                     MAXIGIN_GAME_NATIVE_W - 35,
-                                    boardCenterY );
+                                    spinButtonY );
         }
 
     if( moveMade ) {
@@ -735,6 +738,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                         boardCenterY + 12 );
     */
 
+    if( infoPanelPiece != noPiece ) {
+        drawPieceInfoPanel( infoPanelPiece,
+                            MAXIGIN_GAME_NATIVE_W - 35,
+                            boardCenterY );
+        }
                 
     
     maxigin_drawGUI( &gameGUI );
@@ -1210,6 +1218,17 @@ void maxiginGame_step( void ) {
             }
         }
 
+    if( ! moveMade ) {
+
+        infoPanelPiece  =  getPointerOverPiece( &boardState,
+                                                       boardCenterX,
+                                                       boardCenterY );
+        }
+    else {
+        infoPanelPiece = noPiece;
+        }
+    
+
     
     if( explodingEndMessageProgress != -1 ) {
         explodingEndMessageProgress += ( 10 * 60 ) / r;
@@ -1631,6 +1650,10 @@ void maxiginGame_init( void ) {
                       1234859 );
 
     
+    boardCenterX = MAXIGIN_GAME_NATIVE_W / 2 - 10;
+    boardCenterY = MAXIGIN_GAME_NATIVE_H / 2;
+
+    
     maxigin_initEnableCRTOverlay();
     
     spriteStrip = maxigin_initSpriteStrip( "stripTest.tga",
@@ -1933,8 +1956,8 @@ void maxiginGame_init( void ) {
 
     boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 12;
 
-    if(0) getStartBoard( &boardState );
-    if(1) getTestBoard( &boardState );
+    if(1) getStartBoard( &boardState );
+    if(0) getTestBoard( &boardState );
 
 
     REGISTER_VAL_MEM( boxPosX );

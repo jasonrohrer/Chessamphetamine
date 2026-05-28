@@ -1620,6 +1620,22 @@ typedef struct MaxiginRand MaxiginRand;
       inNumSparkles          the number of sparkles to draw
       
       inAlphaFade            the fade-out alpha factor
+
+      inStartX               the first x pixel position in the sprite where
+                             the sparkles should appear, or -1 for no lower x
+                             limit
+                             
+      inEndX                 the last x pixel position in the sprite where
+                             the sparkles should appear, or -1 for no upper x
+                             limit
+
+      inStartY               the first y pixel position in the sprite where
+                             the sparkles should appear, or -1 for no lower y
+                             limit
+                             
+      inEndY                 the last y pixel position in the sprite where
+                             the sparkles should appear, or -1 for no upper y
+                             limit                             
       
   [jumpMaxiginDraw]
 */
@@ -1629,7 +1645,11 @@ void maxigin_drawSpriteSparkles( int            inSpriteHandle,
                                  int            inCenterY,
                                  MaxiginRand   *inRand,
                                  int            inNumSparkles,
-                                 unsigned char  inAlphaFade );
+                                 unsigned char  inAlphaFade,
+                                 int            inStartX,
+                                 int            inEndX,
+                                 int            inStartY,
+                                 int            inEndY );
 
 
 
@@ -8107,7 +8127,11 @@ void maxigin_drawSpriteSparkles( int            inSpriteHandle,
                                  int            inCenterY,
                                  MaxiginRand   *inRand,
                                  int            inNumSparkles,
-                                 unsigned char  inAlphaFade ) {
+                                 unsigned char  inAlphaFade,
+                                 int            inStartX,
+                                 int            inEndX,
+                                 int            inStartY,
+                                 int            inEndY ) {
 
     MaxiginSprite  *s         =  &( mx_sprites[ inSpriteHandle ] );
     long            numDrawn  =  0;
@@ -8125,15 +8149,29 @@ void maxigin_drawSpriteSparkles( int            inSpriteHandle,
     if( inAlphaFade < 255 ) {
         alpha = ( alpha * inAlphaFade ) / 255;
         }
+
+    if( inStartX == -1 ) {
+        inStartX = 0;
+        }
+    if( inEndX == -1 ) {
+        inEndX = s->w - 1;
+        }
+
+    if( inStartY == -1 ) {
+        inStartY = 0;
+        }
+    if( inEndY == -1 ) {
+        inEndY = s->h - 1;
+        }
     
     while( numDrawn < inNumSparkles ) {
 
         int            y       =  maxigin_randRange( inRand,
-                                                     0,
-                                                     s->h - 1 );
+                                                     inStartY,
+                                                     inEndY );
         int            x       =  maxigin_randRange( inRand,
-                                                     0,
-                                                     s->w - 1 );
+                                                     inStartX,
+                                                     inEndX );
         
         int            aTweak  =  maxigin_randRange( inRand,
                                                      0,

@@ -2645,8 +2645,10 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                                    [ inMove->startPos[1] ];
         int            thirdPhase  =  rocketUpPhaseLen / 3;
         MaxiginRand    oldRand     =  inMoveProgress->randA;
+        long           smokeFade;
+        long           smokeCutY;
+        long           numSmokeParticles;
         
-
         boardDraw( inBoardCenterX,
                    inBoardCenterY );
 
@@ -2703,6 +2705,83 @@ static void multiPhaseDraw( int            inBoardCenterX,
             /
             thirdPhase;
 
+        
+        /* draw trimmed smoke sparkles under rising rocket as it goes higher */
+        
+        smokeFade  =  255;
+
+        if( smokeFade < 0 ) {
+            smokeFade = 0;
+            }
+        else {
+            /* smoke visible */
+
+            if( smokeFade > 255 ) {
+                smokeFade = 255;
+                }
+
+            if( inMoveProgress->phaseProgress >
+                rocketUpPhaseLen - thirdPhase ) {
+
+                /* in last 1/3, fade back out */
+
+                smokeFade *=
+                    rocketUpPhaseLen - inMoveProgress->phaseProgress;
+
+                smokeFade /= thirdPhase;
+                }
+
+            }
+
+        if( smokeFade > 0
+            &&
+            rocketY > 0 ) {
+            
+            maxigin_drawSetColor( 255,
+                                  255,
+                                  255,
+                                  (unsigned char)smokeFade );
+        
+            maxigin_getSpriteDimensions( rocketPathSprite,
+                                         &pathW,
+                                         &pathH );
+
+            smokeCutY = rocketY;
+
+            if( smokeCutY > pathH ) {
+                numSmokeParticles = 500;
+                smokeCutY = -1;
+                }
+            else {
+                smokeCutY = pathH - smokeCutY;
+
+                numSmokeParticles = ( 500 * (long)rocketY ) / pathH;
+                }
+
+            maxigin_drawSpriteSparkles( rocketPathSprite,
+                                        rocketPathParticleSprite,
+                                        launchPosX,
+                                        launchPosY - pathH / 2,
+                                        &( inMoveProgress->randA ),
+                                        (int)numSmokeParticles,
+                                        255,
+                                        -1,
+                                        -1,
+                                        (int)smokeCutY,
+                                        -1 );
+
+            /* save advanced rand state in B, so we can step to
+               it if we take a step */
+            inMoveProgress->randB = inMoveProgress->randA;
+
+            /* reset our rand state, so if we draw the same frame
+               twice (like when paused), it won't advance */
+
+            inMoveProgress->randA = oldRand;
+
+            }
+        
+        /* draw rocket on top of smoke */
         if( rocketY < launchPosY ) {
             
             maxigin_drawResetColor();
@@ -2722,58 +2801,6 @@ static void multiPhaseDraw( int            inBoardCenterX,
                 }
             
             }
-        else {
-
-            long  smokeFade  =  rocketY - launchPosY;
-
-            if( smokeFade < 0 ) {
-                smokeFade = 0;
-                }
-            else {
-                /* smoke visible */
-
-                if( smokeFade > 255 ) {
-                    smokeFade = 255;
-                    }
-
-                if( inMoveProgress->phaseProgress >
-                    rocketUpPhaseLen - thirdPhase ) {
-
-                    /* in last 1/3, fade back out */
-
-                    smokeFade *=
-                        rocketUpPhaseLen - inMoveProgress->phaseProgress;
-
-                    smokeFade /= thirdPhase;
-                    }
-
-                }
-            maxigin_drawSetAlpha( (unsigned char)smokeFade );
-
-            /* rocket off screen, draw smoke trail */
-            maxigin_getSpriteDimensions( rocketPathSprite,
-                                         &pathW,
-                                         &pathH );
-
-
-            maxigin_drawSpriteSparkles( rocketPathSprite,
-                                        rocketPathParticleSprite,
-                                        launchPosX,
-                                        launchPosY - pathH / 2,
-                                        &( inMoveProgress->randA ),
-                                        500,
-                                        255 );
-
-            /* save advanced rand state in B, so we can step to
-               it if we take a step */
-            inMoveProgress->randB = inMoveProgress->randA;
-
-            /* reset our rand state, so if we draw the same frame
-               twice (like when paused), it won't advance */
-
-            inMoveProgress->randA = oldRand;
-            }
-        
 
         getRowsBelowMask( &mask,
                           inMove->startPos[0] + 1 );

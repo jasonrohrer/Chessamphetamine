@@ -670,7 +670,12 @@ void drawPieceSparkles( ChessPiece     inPiece,
                                 inBaseCenterY + pieceOffsetY[ rawP ],
                                 inRand,
                                 inNumSparkles,
-                                inAlpha );
+                                inAlpha,
+                                /* draw sparkles over full sprite extent */
+                                -1,
+                                -1,
+                                -1,
+                                -1 );
 
     maxigin_drawToggleAdditive( 0 );
     }

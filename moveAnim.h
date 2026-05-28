@@ -187,6 +187,10 @@ static  int          laserPawnTopGlintGlow;
 static  int          rocketBlurSprite;
 static  int          rocketPathSprite;
 static  int          rocketPathParticleSprite;
+
+static  int          rocketPuffSprite;
+static  int          rocketPuffParticleSprite;
+
 static  int          rocketHeadSprite;
 
 
@@ -244,6 +248,9 @@ void moveAnimInit( void ) {
     
     rocketPathSprite = maxigin_initSprite( "rocketPath.tga" );
     rocketPathParticleSprite = maxigin_initSprite( "rocketPathParticle.tga" );
+    
+    rocketPuffSprite = maxigin_initSprite( "rocketPuff.tga" );
+    rocketPuffParticleSprite = maxigin_initSprite( "rocketPuffParticle.tga" );
 
     rocketHeadSprite = maxigin_initSprite( "rocketHeadDownBlur.tga" );
 
@@ -2768,6 +2775,18 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                         -1,
                                         -1,
                                         (int)smokeCutY,
+                                        -1 );
+
+            maxigin_drawSpriteSparkles( rocketPuffSprite,
+                                        rocketPuffParticleSprite,
+                                        launchPosX,
+                                        launchPosY,
+                                        &( inMoveProgress->randA ),
+                                        64,
+                                        255,
+                                        -1,
+                                        -1,
+                                        -1,
                                         -1 );
 
             /* save advanced rand state in B, so we can step to

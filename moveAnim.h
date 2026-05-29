@@ -247,6 +247,10 @@ void moveAnimInit( void ) {
                                 2 );
     
     rocketPathSprite = maxigin_initSprite( "rocketPath.tga" );
+    maxigin_initMakeGlowSprite( rocketPathSprite,
+                                4,
+                                2 );
+    
     rocketPathParticleSprite = maxigin_initSprite( "rocketPathParticle.tga" );
     
     rocketPuffSprite = maxigin_initSprite( "rocketPuff.tga" );
@@ -2741,11 +2745,14 @@ static void multiPhaseDraw( int            inBoardCenterX,
         if( smokeFade > 0
             &&
             rocketY > 0 ) {
+
+            long  centerBlueVal = rocketY;
+
+            if( centerBlueVal > 255 ) {
+                centerBlueVal = 255;
+                }
             
-            maxigin_drawSetColor( 255,
-                                  255,
-                                  255,
-                                  (unsigned char)smokeFade );
+            
         
             maxigin_getSpriteDimensions( rocketPathSprite,
                                          &pathW,
@@ -2753,32 +2760,61 @@ static void multiPhaseDraw( int            inBoardCenterX,
 
             maxigin_drawPushClipRectangle( -1,
                                            -1,
+                                           launchPosY - (int)rocketY + 3,
+                                           -1 );
+
+            /* wing tips*/
+            maxigin_drawSetColor( 255,
+                                  255,
+                                  255,
+                                  (unsigned char)smokeFade / 4 );
+            maxigin_drawBaseSprite(
+                rocketPathSprite,
+                (unsigned char)( launchPosX + 5 + (255 - smokeFade ) / 64 ),
+                launchPosY - pathH / 2  + 2 );
+
+            maxigin_drawBaseSprite(
+                rocketPathSprite,
+                (unsigned char)( launchPosX - 5 - (255 - smokeFade ) / 64 ),
+                launchPosY - pathH / 2 +  2 );
+
+            maxigin_drawPopClipRectangle();
+
+            maxigin_drawPushClipRectangle( -1,
+                                           -1,
                                            launchPosY - (int)rocketY - 9,
                                            -1 );
 
-            maxigin_drawSpriteSparkles( rocketPathSprite,
-                                        rocketPathParticleSprite,
-                                        launchPosX,
-                                        launchPosY - pathH / 2,
-                                        &( inMoveProgress->randA ),
-                                        500,
-                                        255,
-                                        -1,
-                                        -1,
-                                        -1,
-                                        -1 );
+            /* closer to center stream */
+            maxigin_drawSetColor( 255,
+                                  255,
+                                  255,
+                                  (unsigned char)smokeFade / 2 );
+            maxigin_drawBaseSprite(
+                rocketPathSprite,
+                (unsigned char)( launchPosX + 2 + (255 - smokeFade ) / 128 ),
+                launchPosY - pathH / 2 + 1 );
 
-            maxigin_drawSpriteSparkles( rocketPuffSprite,
-                                        rocketPuffParticleSprite,
-                                        launchPosX,
-                                        launchPosY,
-                                        &( inMoveProgress->randA ),
-                                        64,
-                                        255,
-                                        -1,
-                                        -1,
-                                        -1,
-                                        -1 );
+            maxigin_drawBaseSprite(
+                rocketPathSprite,
+                (unsigned char)( launchPosX - 2 - (255 - smokeFade ) / 128 ),
+                launchPosY - pathH / 2  + 1 );
+            
+
+            /* center stream, starts yellow, fades to white */
+
+            maxigin_drawSetColor( 255,
+                                  255,
+                                  (unsigned char)centerBlueVal,
+                                  (unsigned char)smokeFade );
+
+            drawSetPieceColor( inState->nextToMove );
+            maxigin_drawSetAlpha( (unsigned char)smokeFade );
+            
+                                  
+            maxigin_drawSprite( rocketPathSprite,
+                                launchPosX,
+                                launchPosY - pathH / 2 );
 
             maxigin_drawPopClipRectangle();
 

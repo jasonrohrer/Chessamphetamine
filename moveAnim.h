@@ -2653,8 +2653,6 @@ static void multiPhaseDraw( int            inBoardCenterX,
         int            thirdPhase  =  rocketUpPhaseLen / 3;
         MaxiginRand    oldRand     =  inMoveProgress->randA;
         long           smokeFade;
-        long           smokeCutY;
-        long           numSmokeParticles;
         
         boardDraw( inBoardCenterX,
                    inBoardCenterY );
@@ -2753,28 +2751,21 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                          &pathW,
                                          &pathH );
 
-            smokeCutY = rocketY;
-
-            if( smokeCutY > pathH ) {
-                numSmokeParticles = 500;
-                smokeCutY = -1;
-                }
-            else {
-                smokeCutY = pathH - smokeCutY;
-
-                numSmokeParticles = ( 500 * (long)rocketY ) / pathH;
-                }
+            maxigin_drawPushClipRectangle( -1,
+                                           -1,
+                                           launchPosY - (int)rocketY - 9,
+                                           -1 );
 
             maxigin_drawSpriteSparkles( rocketPathSprite,
                                         rocketPathParticleSprite,
                                         launchPosX,
                                         launchPosY - pathH / 2,
                                         &( inMoveProgress->randA ),
-                                        (int)numSmokeParticles,
+                                        500,
                                         255,
                                         -1,
                                         -1,
-                                        (int)smokeCutY,
+                                        -1,
                                         -1 );
 
             maxigin_drawSpriteSparkles( rocketPuffSprite,
@@ -2788,6 +2779,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                         -1,
                                         -1,
                                         -1 );
+
+            maxigin_drawPopClipRectangle();
 
             /* save advanced rand state in B, so we can step to
                it if we take a step */

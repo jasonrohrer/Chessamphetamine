@@ -186,10 +186,6 @@ static  int          laserPawnTopGlintGlow;
 
 static  int          rocketBlurSprite;
 static  int          rocketPathSprite;
-static  int          rocketPathParticleSprite;
-
-static  int          rocketPuffSprite;
-static  int          rocketPuffParticleSprite;
 
 static  int          rocketHeadSprite;
 
@@ -250,11 +246,6 @@ void moveAnimInit( void ) {
     maxigin_initMakeGlowSprite( rocketPathSprite,
                                 4,
                                 2 );
-    
-    rocketPathParticleSprite = maxigin_initSprite( "rocketPathParticle.tga" );
-    
-    rocketPuffSprite = maxigin_initSprite( "rocketPuff.tga" );
-    rocketPuffParticleSprite = maxigin_initSprite( "rocketPuffParticle.tga" );
 
     rocketHeadSprite = maxigin_initSprite( "rocketHeadDownBlur.tga" );
 
@@ -2655,7 +2646,6 @@ static void multiPhaseDraw( int            inBoardCenterX,
         ChessPiece     rocketP     =  inState->grid[ inMove->startPos[0] ]
                                                    [ inMove->startPos[1] ];
         int            thirdPhase  =  rocketUpPhaseLen / 3;
-        MaxiginRand    oldRand     =  inMoveProgress->randA;
         long           smokeFade;
         
         boardDraw( inBoardCenterX,
@@ -2836,16 +2826,6 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                 launchPosY - pathH / 2 );
 
             maxigin_drawPopClipRectangle();
-
-            /* save advanced rand state in B, so we can step to
-               it if we take a step */
-            inMoveProgress->randB = inMoveProgress->randA;
-
-            /* reset our rand state, so if we draw the same frame
-               twice (like when paused), it won't advance */
-
-            inMoveProgress->randA = oldRand;
-
             }
         
         /* draw rocket on top of smoke */

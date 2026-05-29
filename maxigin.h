@@ -377,6 +377,21 @@
 
 
 
+/*
+  How big is the stack of drawing clipping rectangles?
+
+  To make room for 20 clipping rectangels, do this:
+
+      #define  MAXIGIN_MAX_NUM_CLIPPING_RECTANGLES  20 
+
+  [jumpSettings]
+*/
+#ifndef  MAXIGIN_MAX_NUM_CLIPPING_RECTANGLES
+#define  MAXIGIN_MAX_NUM_CLIPPING_RECTANGLES  5
+#endif
+
+
+
 
 
 /*
@@ -1458,6 +1473,64 @@ void maxigin_drawToggleAdditive( char  inAdditiveOn );
   [jumpMaxiginDraw]
 */
 char maxigin_drawGetAdditive( void );
+
+
+
+/*
+  Sets the clipping rectangle for future sprite draw calls.
+
+  Andy sprite pixels that would be drawn outside this rectangle are skipped.
+
+  This intersects with any previously pushed clipping rectangles, allowing
+  for nested areas, where the outside area trims the inner area.
+
+  NOTE:  this doesn't currently clip lines and rectangles.  That will be
+         implemented in the future if needed.
+
+  Parameters:
+  
+      inStartX    the first x pixel position in the native pixel buffer
+                  where drawn pixels should appear, or -1 for no lower x
+                  limit
+                             
+      inEndX      the last x pixel position in the native pixel buffer
+                  where drawn pixels should appear, or -1 for no upper x
+                  limit
+
+      inStartY    the first y pixel position in the native pixel buffer
+                  where drawn pixels should appear, or -1 for no lower y
+                  limit
+                             
+      inEndY      the last y pixel position in the native pixel buffer
+                  where drawn pixels should appear, or -1 for no upper y
+                  limit
+                  
+  [jumpMaxiginDraw]
+*/            
+void maxigin_drawPushClipRectangle( int  inStartX,
+                                    int  inEndX,
+                                    int  inStartY,
+                                    int  inEndY );
+
+
+
+/*
+  Removes the current clip rectangle, returning to any previously pushed
+  clip rectangle.
+                  
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawPopClipRectangle( void );
+
+
+
+/*
+  Clears the entire stack of clip rectangles, returning to drawing in the
+  entire native pixel buffer.
+                  
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawClearClipRectangles( void );
 
 
 
@@ -4189,7 +4262,98 @@ static void mx_dumpSpriteRGBA( int  inSpriteHandle ) {
 
 
 
-        
+typedef struct MaxiginClipRectangle {
+
+        int  startX;
+        int  endX;
+        int  startY;
+        int  endY;
+
+    } MaxiginClipRectangle;
+
+
+
+static  MaxiginClipRectangle  mx_clipStack
+                                  [ MAXIGIN_MAX_NUM_CLIPPING_RECTANGLES ];
+
+static  int                   mx_clipStackDepth  =  0;
+
+
+
+void maxigin_drawPushClipRectangle( int  inStartX,
+                                    int  inEndX,
+                                    int  inStartY,
+                                    int  inEndY ) {
+    
+    MaxiginClipRectangle  curClip;
+
+    int                   nextStackPos;
+
+    if( mx_clipStackDepth > 0 ) {
+        curClip = mx_clipStack[ mx_clipStackDepth - 1 ];
+        }
+    else {
+        /* empty stack, cur is whole screen */
+        curClip.startX = 0;
+        curClip.endX   = MAXIGIN_GAME_NATIVE_W - 1;
+        curClip.startY = 0;
+        curClip.endY   = MAXIGIN_GAME_NATIVE_H - 1;
+        }
+    
+
+    /* trim new clip by current */
+
+    if( inStartX < curClip.startX ) {
+        inStartX = curClip.startX;
+        }
+    if( inEndX > curClip.endX ) {
+        inEndX = curClip.endX;
+        }
+    if( inStartY < curClip.startY ) {
+        inStartY = curClip.startY;
+        }
+    if( inEndY > curClip.endY ) {
+        inEndY = curClip.endY;
+        }
+
+    nextStackPos = mx_clipStackDepth;
+
+    if( nextStackPos >= MAXIGIN_MAX_NUM_CLIPPING_RECTANGLES ) {
+        maxigin_logInt2( "Trying to push clipping rectangle number ",
+                         nextStackPos - 1,
+                         "but there's only room for ",
+                         MAXIGIN_MAX_NUM_CLIPPING_RECTANGLES,
+                         "merging this rectangle with previous one." );
+        nextStackPos = MAXIGIN_MAX_NUM_CLIPPING_RECTANGLES - 1;
+        }
+    else {
+        mx_clipStackDepth ++;
+        }
+    
+    mx_clipStack[ nextStackPos ].startX = inStartX;
+    mx_clipStack[ nextStackPos ].endX = inEndX;
+    mx_clipStack[ nextStackPos ].startY = inStartY;
+    mx_clipStack[ nextStackPos ].endY = inEndY;  
+    }
+
+
+
+void maxigin_drawPopClipRectangle( void ) {
+    mx_clipStackDepth --;
+
+    if( mx_clipStackDepth < 0 ) {
+        mx_clipStackDepth = 0;
+        }
+    }
+
+
+
+void maxigin_drawClearClipRectangles( void ) {
+    mx_clipStackDepth = 0;
+    }
+
+
+
 #define  MAXIGIN_TGA_BUFFER_SIZE  256
 
 static  unsigned char  mx_tgaReadBuffer[ MAXIGIN_TGA_BUFFER_SIZE ];
@@ -7561,6 +7725,11 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
 
     char drawAlphaSet;
     char drawColorSet;
+
+    int  clipStartX     =  0;
+    int  clipEndX       =  MAXIGIN_GAME_NATIVE_W - 1;
+    int  clipStartY     =  0;
+    int  clipEndY       =  MAXIGIN_GAME_NATIVE_H - 1;
     
     
     if( ! mx_areWeInMaxiginGameDrawFunction ) {
@@ -7635,20 +7804,32 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
 
     /* handle case where sprite is cut off by edge of game image */
 
-    if( startImageX < 0 ) {
-        startSpriteX -= startImageX;
-        startImageX = 0;
+    /* also consider clipping rectangle */
+    if( mx_clipStackDepth > 0 ) {
+        int                    clipI  =  mx_clipStackDepth - 1;
+        MaxiginClipRectangle  *clip   =  &( mx_clipStack[ clipI ] );
+        
+        clipStartX = clip->startX;
+        clipEndX = clip->endX;
+        clipStartY = clip->startY;
+        clipEndY = clip->endY;
         }
-    if( startImageY < 0 ) {
-        startSpriteY -= startImageY;
-        startImageY = 0;
+        
+
+    if( startImageX < clipStartX ) {
+        startSpriteX += clipStartX - startImageX;
+        startImageX = clipStartX;
+        }
+    if( startImageY < clipStartY ) {
+        startSpriteY += clipStartY - startImageY;
+        startImageY = clipStartY;
         }
 
-    if( endImageX > imW ) {
-        endSpriteX -= ( endImageX - imW );
+    if( endImageX > clipEndX + 1 ) {
+        endSpriteX -= ( endImageX - ( clipEndX + 1 ) );
         }
-    if( endImageY > imH ) {
-        endSpriteY -= ( endImageY - imH );
+    if( endImageY > clipEndY + 1 ) {
+        endSpriteY -= ( endImageY - ( clipEndY + 1 ) );
         }
 
     if( startImageX >= imW

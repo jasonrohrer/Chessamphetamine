@@ -4301,7 +4301,10 @@ void maxigin_drawPushClipRectangle( int  inStartX,
         }
     
 
-    /* trim new clip by current */
+    /* trim new clip by current
+       
+       since the first clip pushed is trimmed by screen, all
+       clips will also be trimmed by screen, since they are nested */
 
     if( inStartX < curClip.startX ) {
         inStartX = curClip.startX;
@@ -4320,10 +4323,10 @@ void maxigin_drawPushClipRectangle( int  inStartX,
 
     if( nextStackPos >= MAXIGIN_MAX_NUM_CLIPPING_RECTANGLES ) {
         maxigin_logInt2( "Trying to push clipping rectangle number ",
-                         nextStackPos - 1,
-                         "but there's only room for ",
+                         nextStackPos + 1,
+                         ", but there's only room for ",
                          MAXIGIN_MAX_NUM_CLIPPING_RECTANGLES,
-                         "merging this rectangle with previous one." );
+                         ", merging this rectangle with previous one." );
         nextStackPos = MAXIGIN_MAX_NUM_CLIPPING_RECTANGLES - 1;
         }
     else {

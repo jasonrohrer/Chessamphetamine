@@ -2775,13 +2775,13 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                   (unsigned char)smokeFade / 4 );
             maxigin_drawBaseSprite(
                 rocketPathSprite,
-                (unsigned char)( launchPosX + 5 + (255 - smokeFade ) / 64 ),
-                launchPosY - pathH / 2  + 2 );
+                (unsigned char)( launchPosX + 6 + (255 - smokeFade ) / 64 ),
+                launchPosY - pathH / 2 );
 
             maxigin_drawBaseSprite(
                 rocketPathSprite,
-                (unsigned char)( launchPosX - 5 - (255 - smokeFade ) / 64 ),
-                launchPosY - pathH / 2 +  2 );
+                (unsigned char)( launchPosX - 6 - (255 - smokeFade ) / 64 ),
+                launchPosY - pathH / 2 );
 
             maxigin_drawPopClipRectangle();
 
@@ -2797,13 +2797,13 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                   (unsigned char)smokeFade / 2 );
             maxigin_drawBaseSprite(
                 rocketPathSprite,
-                (unsigned char)( launchPosX + 2 + (255 - smokeFade ) / 128 ),
-                launchPosY - pathH / 2 + 1 );
+                (unsigned char)( launchPosX + 1 + (255 - smokeFade ) / 128 ),
+                launchPosY - pathH / 2 );
 
             maxigin_drawBaseSprite(
                 rocketPathSprite,
-                (unsigned char)( launchPosX - 2 - (255 - smokeFade ) / 128 ),
-                launchPosY - pathH / 2  + 1 );
+                (unsigned char)( launchPosX - 1 - (255 - smokeFade ) / 128 ),
+                launchPosY - pathH / 2 );
             
 
             /* center stream, starts piece color, fades to white */

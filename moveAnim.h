@@ -2746,10 +2746,15 @@ static void multiPhaseDraw( int            inBoardCenterX,
             &&
             rocketY > 0 ) {
 
-            long  centerBlueVal = rocketY;
+            unsigned char  centerR;
+            unsigned char  centerG;
+            unsigned char  centerB;
+            unsigned char  centerA;
+            long           centerWhiteVal = rocketY;
+            
 
-            if( centerBlueVal > 255 ) {
-                centerBlueVal = 255;
+            if( centerWhiteVal > 255 ) {
+                centerWhiteVal = 255;
                 }
             
             
@@ -2801,15 +2806,29 @@ static void multiPhaseDraw( int            inBoardCenterX,
                 launchPosY - pathH / 2  + 1 );
             
 
-            /* center stream, starts yellow, fades to white */
-
-            maxigin_drawSetColor( 255,
-                                  255,
-                                  (unsigned char)centerBlueVal,
-                                  (unsigned char)smokeFade );
+            /* center stream, starts piece color, fades to white */
 
             drawSetPieceColor( inState->nextToMove );
-            maxigin_drawSetAlpha( (unsigned char)smokeFade );
+
+            maxigin_drawGetColor( &centerR,
+                                  &centerG,
+                                  &centerB,
+                                  &centerA );
+
+            centerR =
+                ( unsigned char)( ( centerR * ( 255 -centerWhiteVal ) +
+                                    centerWhiteVal * 255 ) /  255 );
+            centerG =
+                ( unsigned char)( ( centerG * ( 255 -centerWhiteVal ) +
+                                    centerWhiteVal * 255 ) / 255 );
+            centerB =
+                ( unsigned char)( ( centerB * ( 255 -centerWhiteVal ) +
+                                    centerWhiteVal * 255 ) / 255 );
+            
+            maxigin_drawSetColor( centerR,
+                                  centerG,
+                                  centerB,
+                                  (unsigned char)smokeFade );
             
                                   
             maxigin_drawSprite( rocketPathSprite,

@@ -4299,7 +4299,21 @@ void maxigin_drawPushClipRectangle( int  inStartX,
         curClip.startY = 0;
         curClip.endY   = MAXIGIN_GAME_NATIVE_H - 1;
         }
+
     
+    /* handle -1 params for defaults, all the way to edge of screen */
+    if( inStartX == -1 ) {
+        inStartX = 0;
+        }
+    if( inEndX == -1 ) {
+        inEndX = MAXIGIN_GAME_NATIVE_W - 1;
+        }
+    if( inStartY == -1 ) {
+        inStartY = 0;
+        }
+    if( inEndY == -1 ) {
+        inEndY = MAXIGIN_GAME_NATIVE_H - 1;
+        }
 
     /* trim new clip by current
        

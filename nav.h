@@ -129,10 +129,10 @@ static void navGetLiveDir( int  *outDeltaX,
         int   pos;
         int   min;
         int   max;
-        char  avail  =  mingin_getStickPosition( NAV_STICK_VERT,
-                                                 &pos,
-                                                 &min,
-                                                 &max );
+        char  avail  =  maxigin_getStickPosition( NAV_STICK_VERT,
+                                                  &pos,
+                                                  &min,
+                                                  &max );
         if( avail ){
             /* up is negative on sticks */
             int   mid     =  ( max - min ) / 2 + min;
@@ -152,10 +152,10 @@ static void navGetLiveDir( int  *outDeltaX,
             }
         
 
-        avail  =  mingin_getStickPosition( NAV_STICK_HOR,
-                                           &pos,
-                                           &min,
-                                           &max );
+        avail  =  maxigin_getStickPosition( NAV_STICK_HOR,
+                                            &pos,
+                                            &min,
+                                            &max );
         if( avail ){
             int   mid     =  ( max - min ) / 2 + min;
             int   thresh  =  ( min - mid ) / 3 + mid;

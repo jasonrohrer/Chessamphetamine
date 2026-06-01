@@ -1752,7 +1752,7 @@ typedef enum{ MAXIGIN_LEFT    =  -1,
                      (inLocationX, inLocationY).
                      The text is always vertically centered on this point.
 
-  Return:
+  Returns:
 
       the horizontal extent of the text, in pixels, or -1 on failure
 
@@ -1785,7 +1785,7 @@ int maxigin_drawText( int           inFontHandle,
                      (inLocationX, inLocationY).
                      The text is always vertically centered on this point.
 
-  Return:
+  Returns:
 
       the horizontal extent of the text, in pixels, or -1 on failure
 
@@ -1795,6 +1795,37 @@ int maxigin_drawLangText( int           inPhraseKey,
                           int           inLocationX,
                           int           inLocationY,
                           MaxiginAlign  inAlign );
+
+
+
+/*
+  Draws language text directly from a string, using the active language's
+  corresponding font, to the game's native pixel buffer.
+
+  Parameters:
+
+      inString       a string that can be printed in the active language's font
+
+      inLocationX    the x position in the game's native pixel buffer of the
+                     drawn text
+ 
+      inLocationY    the y position in the game's native pixel buffer of the
+                     drawn text
+                     
+      inAlign        the horizontal alignment of the text around the point
+                     (inLocationX, inLocationY).
+                     The text is always vertically centered on this point.
+
+  Returns:
+
+      the horizontal extent of the text, in pixels, or -1 on failure
+
+  [jumpMaxiginDraw]
+*/
+int maxigin_drawLangTextString( const char   *inString,
+                                int           inLocationX,
+                                int           inLocationY,
+                                MaxiginAlign  inAlign );
 
 
 
@@ -2027,13 +2058,33 @@ void maxigin_drawButtonHintSprite( int  inButtonHandle,
       inPhraseKey    a phrase key previously registered with
                      maxigin_initTranslationKey()
 
-  Return:
+  Returns:
 
       the horizontal extent of the text, in pixels, or -1 on failure
 
   [jumpMaxiginGeneral]
 */
 int maxigin_measureLangText( int  inPhraseKey );
+
+
+
+/*
+  Gets a ASCII (or UTF8) character string for a phrase in the current language.
+
+  Parameters:
+
+      inPhraseKey    a phrase key previously registered with
+                     maxigin_initTranslationKey()
+
+  Returns:
+
+      the translation of inPhraseKey   on success
+      
+      0                                on failure
+
+  [jumpMaxiginGeneral]
+*/
+const char *maxigin_getLangText( int  inPhraseKey );
 
 
 
@@ -2374,7 +2425,7 @@ char maxigin_guiLangButton( MaxiginGUI  *inGUI,
 
       inFade      the alpha fade of the panel
 
-  Return:
+  Returns:
 
       panel handle   that must be passed to maxigin_guiEndPanel
 
@@ -2537,7 +2588,7 @@ MinginButton maxigin_getPlatformPrimaryButton( int  inButtonHandle );
       outY   pointer to where the y location should be returned
              returned value is in range 0 .. MAXIGIN_GAME_NATIVE_H
 
-  Return:
+  Returns:
 
       1   if pointer location is on-screen and available
 
@@ -2764,7 +2815,7 @@ void maxigin_writeIntSetting( const char  *inSettingName,
 
       inInt   the int value to convert
 
-  Return:
+  Returns:
 
       \0-terminated string   if conversion succeeded
 
@@ -20298,6 +20349,9 @@ typedef struct MaxiginLanguage {
         /* pointers to starts of strings in mx_translationStringBytes, or 0 of
            not present */
         int           stringStartBytes[ MAXIGIN_MAX_NUM_TRANSLATION_KEYS ];
+
+        /* some languages, like Chinese, don't have words separated by spaces */
+        char          hasWords;
         
     } MaxiginLanguage;
 
@@ -20567,10 +20621,12 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
     int               dataLen;
     const char       *langFontName;
     const char       *langFontTextName;
+    const char       *langHasWordsHandle;
     int               fontHeight;
     int               fontCharSpacing;
     int               fontSpaceWidth;
     int               fontFixedWidth;
+    int               langHasWords;
     char              success;
     int               i;
     const char       *nextKey;
@@ -20801,7 +20857,36 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
         
         mx_numLanguageFonts ++;
         }
+    
 
+    langHasWordsHandle = mx_readShortTokenFromBulkData( languageReadHandle );
+
+    if( langHasWordsHandle == 0
+        ||
+        ! maxigin_stringsEqual( langHasWordsHandle,
+                                "langHasWords" ) ) {
+        maxigin_logString( "Failed to read langHasWords tag from language "
+                           "bulk resource: ",
+                           lang->bulkResourceName );
+        
+        mingin_endReadBulkData( languageReadHandle );
+        return;
+        }
+
+    success = mx_readIntTokenFromBulkData( languageReadHandle,
+                                           &langHasWords );
+
+    if( ! success ) {
+        maxigin_logString( "Failed to read langHasWords value from language "
+                           "bulk resource: ",
+                           lang->bulkResourceName );
+        
+        mingin_endReadBulkData( languageReadHandle );
+        return;
+        }
+
+    lang->hasWords = (char)( langHasWords );
+    
 
     /* clear all translation keys */
     for( i = 0;
@@ -20939,15 +21024,52 @@ static int mx_getButtonHintFont( void ) {
 
 static  char  mx_drawLangFailureShown  =  0;
 
+
+
+const char *maxigin_getLangText( int  inPhraseKey ) {
+    
+    MaxiginLanguage  *lang;
+    
+    if( mx_currentLanguage >= mx_numLanguages ) {
+
+        if( ! mx_drawLangFailureShown ) {
+            mingin_log( "maxigin_getLangText called when no "
+                        "languages loaded\n" );
+            mx_drawLangFailureShown = 1;
+            }
+        return 0;
+        }
+
+    lang = &( mx_languages[ mx_currentLanguage ] );
+
+    if( inPhraseKey < 0
+        ||
+        inPhraseKey >= mx_numTranslationKeys ) {
+
+        if( ! mx_drawLangFailureShown ) {
+            maxigin_logInt( "maxigin_getLangText called with phrase key "
+                            "out of range: ",
+                            inPhraseKey );
+            mx_drawLangFailureShown = 1;
+            }
+        return 0;
+        }
+
+
+    return &( mx_translationStringBytes[
+                  lang->stringStartBytes[ inPhraseKey ] ] );
+    }
+
+
+
 /* special behavior on inAlign = MAXIGIN_SKIP_DRAW_AND_MEASURE:
    Don't draw anything, return total pixel width of translated text */
-int maxigin_drawLangText( int           inPhraseKey,
-                          int           inLocationX,
-                          int           inLocationY,
-                          MaxiginAlign  inAlign ) {
+int maxigin_drawLangTextString( const char   *inString,
+                                int           inLocationX,
+                                int           inLocationY,
+                                MaxiginAlign  inAlign ) {
 
     MaxiginLanguage  *lang;
-    char             *langString;
     
     if( mx_currentLanguage >= mx_numLanguages ) {
 
@@ -20960,23 +21082,23 @@ int maxigin_drawLangText( int           inPhraseKey,
         }
 
     lang = &( mx_languages[ mx_currentLanguage ] );
-
-    if( inPhraseKey < 0
-        ||
-        inPhraseKey >= mx_numTranslationKeys ) {
-
-        if( ! mx_drawLangFailureShown ) {
-            maxigin_logInt( "maxigin_drawLangText called with phrase key "
-                            "out of range: ",
-                            inPhraseKey );
-            mx_drawLangFailureShown = 1;
-            }
-        return -1;
-        }
+        
+    return maxigin_drawText( lang->fontHandle,
+                             inString,
+                             inLocationX,
+                             inLocationY,
+                             inAlign );
+    }
 
 
-    langString = &( mx_translationStringBytes[
-                        lang->stringStartBytes[ inPhraseKey ] ] );
+
+int maxigin_drawLangText( int           inPhraseKey,
+                          int           inLocationX,
+                          int           inLocationY,
+                          MaxiginAlign  inAlign ) {
+    
+
+    const char       *langString  =  maxigin_getLangText( inPhraseKey );
 
     if( langString == 0 ) {
         if( ! mx_drawLangFailureShown ) {
@@ -20987,12 +21109,11 @@ int maxigin_drawLangText( int           inPhraseKey,
             }
         return -1;
         }
-        
-    return maxigin_drawText( lang->fontHandle,
-                             langString,
-                             inLocationX,
-                             inLocationY,
-                             inAlign ); 
+
+    return maxigin_drawLangTextString( langString,
+                                       inLocationX,
+                                       inLocationY,
+                                       inAlign );
     }
 
 

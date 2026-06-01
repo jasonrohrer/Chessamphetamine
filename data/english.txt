@@ -5,6 +5,8 @@ latinFont.tga  16 2  8  0
 latinFont.txt
 
 
+langHasWords 1
+
 
 
 

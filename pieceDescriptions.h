@@ -124,19 +124,19 @@ void pieceDescriptionsInit( void ) {
 #define  MAX_NUM_WORDS  100
 #define  MAX_WORD_LEN    20
 
-static  char  pieceWordBuffer[ MAX_NUM_WORDS ][ MAX_WORD_LEN ];
+static  char  pieceWordBuffer[ MAX_NUM_WORDS ][ MAX_WORD_LEN + 1 ];
 
 static  int   pieceNumWords  =  0;
 
-/*
+
 #define  MAX_NUM_LINES  20
 #define  MAX_LINE_LEN   40
 
 
-static  char  pieceLineBuffer[ MAX_NUM_LINES ][ MAX_LINE_LEN ];
+static  char  pieceLineBuffer[ MAX_NUM_LINES ][ MAX_LINE_LEN + 1 ];
 
 static  int   pieceNumLines  =  0;
-*/
+
 
 
 static int findNextSpaceIndex(  const char  *inString ) {
@@ -157,26 +157,11 @@ static int findNextSpaceIndex(  const char  *inString ) {
 
 
 
-static void pieceSplitWordsNoSpaces( const char  *inString ) {
-
-    (void)inString;
-
-    }
-
-
 static void pieceSplitWords( const char  *inString ) {
 
     const char  *working  = inString;
 
     int          i;
-
-    if( 0 ) {
-        /* fixme:
-           check if it's a no-words language */
-        pieceSplitWordsNoSpaces( inString );
-        return;
-        }
-    
 
     pieceNumWords = 0;
 
@@ -186,7 +171,7 @@ static void pieceSplitWords( const char  *inString ) {
 
         int j;
 
-        if( i >= MAX_WORD_LEN ) {
+        if( i > MAX_WORD_LEN ) {
             /* word too long, skip it */
             
             working = &( working[i + 1] );
@@ -223,7 +208,7 @@ static void pieceSplitWords( const char  *inString ) {
 
     while( working[i] != '\0' ) {
 
-        if( i >= MAX_WORD_LEN ) {
+        if( i > MAX_WORD_LEN ) {
             /* last word too long, skip it */
             return;
             }
@@ -241,6 +226,136 @@ static void pieceSplitWords( const char  *inString ) {
 
 
 
+static void pieceSplitLinesNoSpaces( const char  *inString,
+                                     int          inMaxPixelWidth ) {
+
+    (void)inString;
+    (void)inMaxPixelWidth;
+    }
+
+
+
+/* 1 on success
+   0 on failure (no room) */
+static char addWordToLine( int  inLineIndex,
+                           int  inWordIndex ) {
+
+    int  lineLen  =  maxigin_stringLength( pieceLineBuffer[ inLineIndex ] );
+    int  wordLen  =  maxigin_stringLength( pieceWordBuffer[ inWordIndex ] );
+
+    if( lineLen + wordLen + 1 <= MAX_LINE_LEN ) {
+
+        int  i;
+
+        
+        if( lineLen > 0 ) {
+            /* replace previous term with space */
+            pieceLineBuffer[ inLineIndex ][ lineLen ] = ' ';
+            lineLen ++;
+            }
+        
+
+        for( i = 0;
+             i <= wordLen;   /* include \0 term */
+             i ++ ) {
+
+            pieceLineBuffer[ inLineIndex ][ lineLen + i ]
+                = pieceWordBuffer[ inWordIndex ][ i ];
+            }
+
+        return 1;
+        }
+    return 0;
+    }
+
+
+
+static void removeWordFromLine( int  inLineIndex,
+                                int  inWordIndex ) {
+
+    int  lineLen  =  maxigin_stringLength( pieceLineBuffer[ inLineIndex ] );
+    int  wordLen  =  maxigin_stringLength( pieceWordBuffer[ inWordIndex ] );
+
+    if( lineLen >= wordLen ) {
+
+        if( lineLen >= wordLen + 1 ) {
+            /* space was added */
+            lineLen --;
+            }
+
+        pieceLineBuffer[ inLineIndex ][ lineLen - wordLen ] = '\0';
+        }
+
+    }
+
+
+
+static void pieceClearLines( void ) {
+
+    int  i;
+
+
+    for( i = 0;
+         i < MAX_NUM_LINES;
+         i ++ ) {
+        pieceLineBuffer[ i ][ 0 ] = '\0';
+        }
+    pieceNumLines = 0;
+    }
+
+
+
+static void pieceSplitLines( const char  *inString,
+                             int          inMaxPixelWidth ) {
+
+
+    int  nextWord  =  0;
+    
+    if( ! maxigin_doesLanguageHaveWords() ) {
+        
+        pieceSplitLinesNoSpaces( inString,
+                                 inMaxPixelWidth );
+        return;
+        }
+
+    pieceSplitWords( inString );
+
+    pieceClearLines();
+
+
+    while( nextWord < pieceNumWords ) {
+
+        if( addWordToLine( pieceNumLines,
+                           nextWord ) ) {
+
+            int  pixLen =
+                maxigin_measureLangTextString(
+                    pieceLineBuffer[ pieceNumLines ] );
+            
+            if( pixLen > inMaxPixelWidth ) {
+                /* too big, line is full */
+
+                removeWordFromLine( pieceNumLines,
+                                    nextWord );
+
+                pieceNumLines++;
+
+                if( pieceNumLines >= MAX_NUM_LINES ) {
+                    return;
+                    }
+                }
+            else {
+                /* word fits, go on to next */
+                nextWord ++;
+                }
+            }
+        
+        }
+    }
+
+
+
+
 void drawPieceInfoPanel( ChessPiece     inPiece,
                          int            inCenterX,
                          int            inCenterY,
@@ -250,6 +365,7 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
     ChessPiece   t  =  inPiece & CHESS_TYPE_MASK;
 
     const char  *title;
+    const char  *desc;
     
     drawSetPieceColor( c );
 
@@ -278,11 +394,32 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
             
             maxigin_drawLangTextString( pieceWordBuffer[ w ],
                                         inCenterX,
-                                        inCenterY - 60 + 12 * w,
+                                        inCenterY - 60 + 14 * w,
                                         MAXIGIN_CENTER );
             }
         }
+
+
     
+    desc = maxigin_getLangText( pieceDescriptionKeys[ t ] );
+
+    pieceSplitLines( desc,
+                     99 );
+
+    if( pieceNumLines > 0 ) {
+
+        int  n;
+
+        for( n = 0;
+             n < pieceNumLines;
+             n ++ ) {
+            
+            maxigin_drawLangTextString( pieceLineBuffer[ n ],
+                                        inCenterX - 47,
+                                        inCenterY - 60 + 30 + 14 * n,
+                                        MAXIGIN_LEFT);
+            }
+        }
     }
 
 

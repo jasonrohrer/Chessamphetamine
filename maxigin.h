@@ -2069,6 +2069,23 @@ int maxigin_measureLangText( int  inPhraseKey );
 
 
 /*
+  Measures language text string using the active language's corresponding font.
+
+  Parameters:
+
+      inString   a string that can be printed in the active language's font
+
+  Returns:
+
+      the horizontal extent of the text, in pixels, or -1 on failure
+
+  [jumpMaxiginGeneral]
+*/
+int maxigin_measureLangTextString( const char  *inString );
+
+
+
+/*
   Gets a ASCII (or UTF8) character string for a phrase in the current language.
 
   Parameters:
@@ -2085,6 +2102,22 @@ int maxigin_measureLangText( int  inPhraseKey );
   [jumpMaxiginGeneral]
 */
 const char *maxigin_getLangText( int  inPhraseKey );
+
+
+
+/*
+  Gets whether current language has words separated by spaces.  Some languages,
+  like Chinese, do not.
+
+  Returns:
+
+      1   if the current language has words
+      
+      0   if not
+
+  [jumpMaxiginGeneral]
+*/      
+char maxigin_doesLanguageHaveWords( void );
 
 
 
@@ -21026,6 +21059,23 @@ static  char  mx_drawLangFailureShown  =  0;
 
 
 
+char maxigin_doesLanguageHaveWords( void ) {
+
+    if( mx_currentLanguage >= mx_numLanguages ) {
+
+        if( ! mx_drawLangFailureShown ) {
+            mingin_log( "maxigin_doesLanguageHaveWords called when no "
+                        "languages loaded\n" );
+            mx_drawLangFailureShown = 1;
+            }
+        return 0;
+        }
+
+    return mx_languages[ mx_currentLanguage ].hasWords;
+    }
+
+
+
 const char *maxigin_getLangText( int  inPhraseKey ) {
     
     MaxiginLanguage  *lang;
@@ -21123,6 +21173,15 @@ int maxigin_measureLangText( int  inPhraseKey ) {
                                  0,
                                  0,
                                  MAXIGIN_SKIP_DRAW_AND_MEASURE );
+    }
+
+
+
+int maxigin_measureLangTextString( const char  *inString ) {
+    return maxigin_drawLangTextString( inString,
+                                       0,
+                                       0,
+                                       MAXIGIN_SKIP_DRAW_AND_MEASURE );
     }
 
 

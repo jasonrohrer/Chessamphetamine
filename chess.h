@@ -1875,8 +1875,11 @@ void getStartBoard( BoardState  *outState ) {
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[1][i] = rocket | CHESS_BLACK;
+        outState->grid[2][i] = rocket | CHESS_BLACK;
         }
+    outState->grid[2][7] = pawn | CHESS_BLACK;
+    outState->grid[2][6] = doublingPawn | CHESS_BLACK;
+    outState->grid[2][5] = addingRook | CHESS_BLACK;
 
     outState->grid[7][0] = rook      | CHESS_WHITE;
     outState->grid[7][1] = knight    | CHESS_WHITE;
@@ -1890,11 +1893,16 @@ void getStartBoard( BoardState  *outState ) {
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[6][i] = rocket | CHESS_WHITE;
+        outState->grid[5][i] = rocket | CHESS_WHITE;
         }
-
+    outState->grid[5][7] = pawn | CHESS_WHITE;
+    outState->grid[5][6] = doublingPawn | CHESS_WHITE;
+    outState->grid[5][5] = addingRook | CHESS_WHITE;
+    
+    /*
     outState->grid[6][1] = rocket | CHESS_WHITE;
     outState->grid[6][2] = rocket | CHESS_WHITE;
+    */
     
     outState->nextToMove = CHESS_WHITE;
     outState->moveCount  = 0;
@@ -1920,14 +1928,16 @@ void getTestBoard( BoardState  *outState ) {
     outState->grid[3][5] = rook  | CHESS_BLACK;
     
     outState->grid[4][0] = laserRook | CHESS_WHITE;
-    outState->grid[4][2] = pawn | CHESS_WHITE;
+    if(0)outState->grid[4][2] = pawn | CHESS_WHITE;
     outState->grid[3][0] = pawn | CHESS_WHITE;
     outState->grid[6][5] = king | CHESS_WHITE;
 
-    
-    outState->grid[6][4] = doublingPawn  | CHESS_WHITE;
+
+    if(1)outState->grid[4][4] = rocket | CHESS_WHITE;
+    if(0)outState->grid[6][4] = doublingPawn  | CHESS_WHITE;
     outState->grid[5][4] = doublingPawn  | CHESS_WHITE;
-    outState->grid[5][5] = addingRook  | CHESS_WHITE;
+    if(0)outState->grid[5][5] = addingRook  | CHESS_WHITE;
+    outState->grid[5][5] = pawn  | CHESS_WHITE;
     outState->grid[5][6] = addingRook  | CHESS_WHITE;
 
 

@@ -38,3 +38,37 @@ bombDesc       "炸彈"
 press          "按下"
 
 defaults       "恢復預設"
+
+
+pawn           "兵"
+pawnDesc       "向前移动一格或两格，斜向吃子"
+
+bishop         "象"
+bishopDesc     "斜向移动"
+
+knight         "马"
+knightDesc     "以日字形移动"
+
+rook           "车"
+rookDesc       "直线移动"
+
+queen          "后"
+queenDesc      "直线或斜向移动"
+
+king           "王"
+kingDesc       "向任意方向移动一格"
+
+laserRook      "激光车"
+laserRookDesc  "移动后沿直线发射激光，直线移动"
+
+laserPawn      "激光兵"
+laserPawnDesc  "移动后向前发射激光，向前移动一格或两格，斜向吃子"
+
+doublingPawn   "倍增兵"
+doublingPawnDesc  "使前方棋子的特殊能力加倍，向前移动一格或两格，斜向吃子"
+
+addingRook     "增益车"
+addingRookDesc "使相邻棋子的特殊能力加一，直线移动"
+
+rocket         "苏联火箭"
+rocketDesc     "摧毁随机敌方棋子，然后自毁"

@@ -22,7 +22,7 @@
 #define PINCH_IMPLEMENTATION
 #define PARTICLE_SYSTEM_IMPLEMENTATION
 #define PIECE_DESCRIPTIONS_IMPLEMENTATION
-
+#define NAV_IMPLEMENTATION
 
 #include "chess.h"
 
@@ -53,6 +53,8 @@
 #include "particleSystem.h"
 
 #include "pieceDescriptions.h"
+
+#include "nav.h"
 
 
 enum GameUserAction {
@@ -770,7 +772,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             &&
             infoRow [ i ] != -1
             &&
-            infoRow [ i ] != -1 ) {
+            infoCol [ i ] != -1 ) {
             
             drawPieceHighlight( &boardState,
                                 boardCenterX,
@@ -1263,15 +1265,164 @@ void maxiginGame_step( void ) {
 
     if( ! moveMade ) {
 
+        int         mouseX;
+        int         mouseY;
         ChessPiece  oldPiece  =  infoPanelPiece;
-        int         panRow;
-        int         panCol;
+        int         panRow    =  infoRow[ curInfoIndex ];
+        int         panCol    =  infoCol[ curInfoIndex ];
         
-        infoPanelPiece  =  getPointerOverPiece( &boardState,
-                                                boardCenterX,
-                                                boardCenterY,
-                                                &panRow,
-                                                &panCol );
+        if( ! maxigin_getPointerLocation( &mouseX,
+                                          &mouseY ) ) {
+
+            /* pointer not present on this platform */
+            
+            int  curRow = -1;
+            int  curCol = -1;
+            int  dirX;
+            int  dirY;
+
+            navGetDir( &dirX,
+                       &dirY );
+
+            if( dirX != 0
+                ||
+                dirY != 0 ) {
+            
+                if( infoPanelPiece == noPiece ) {
+
+                    /* allow enter based on dir */
+
+
+                    if( dirX == -1 ) {
+                        curCol = BW;
+                        curRow = 0;
+                        }
+                    else if( dirX == 1 ) {
+                        curCol = -1;
+                        curRow =  0;
+                        }
+                    else if( dirY == -1 ) {
+                        curRow = BH;
+                        curCol = 0;
+                        }
+                    else if( dirY == 1 ) {
+                        curRow = -1;
+                        curCol =  0;
+                        }
+                    }
+                else {
+                    /* take current position */
+                    curRow = infoRow[ curInfoIndex ];
+                    curCol = infoCol[ curInfoIndex ];
+                    }
+
+                curRow += dirY;
+                curCol += dirX;
+
+                if( dirX > 0
+                    &&
+                    curCol >= BW ) {
+                    curCol = 0;
+                    curRow ++;
+                    if( curRow >= BH ) {
+                        curRow = 0;
+                        }
+                    }
+                if( dirX < 0
+                    &&
+                    curCol < 0 ) {
+                    curCol =  BW - 1;
+                    curRow --;
+                    if( curRow < 0 ) {
+                        curRow = BH - 1;
+                        }
+                    }
+
+                if( dirY > 0
+                    &&
+                    curRow >= BW ) {
+                    curRow = 0;
+                    curCol ++;
+                    if( curCol >= BW ) {
+                        curCol = 0;
+                        }
+                    }
+                if( dirY < 0
+                    &&
+                    curRow < 0 ) {
+                    curRow =  BH - 1;
+                    curCol --;
+                    if( curCol < 0 ) {
+                        curCol = BW - 1;
+                        }
+                    }
+
+                while( boardState.grid[ curRow ][ curCol ] == noPiece ) {
+
+                    if( dirX != 0 ) {
+                        curCol += dirX;
+
+                        if( dirX > 0
+                            &&
+                            curCol >= BW ) {
+                            curCol = 0;
+                            curRow ++;
+                            if( curRow >= BH ) {
+                                curRow = 0;
+                                }
+                            }
+                        if( dirX < 0
+                            &&
+                            curCol < 0 ) {
+                            curCol =  BW - 1;
+                            curRow --;
+                            if( curRow < 0 ) {
+                                curRow = BH - 1;
+                                }
+                            }
+                        }
+                    else {
+                        /* move in y dir only */
+                        curRow += dirY;
+
+                        if( dirY > 0
+                            &&
+                            curRow >= BH ) {
+                            curRow = 0;
+                            curCol ++;
+                            if( curCol >= BW ) {
+                                curCol = 0;
+                                }
+                            }
+                        if( dirY < 0
+                            &&
+                            curRow < 0 ) {
+                            curRow =  BH - 1;
+                            curCol --;
+                            if( curCol < 0 ) {
+                                curCol = BW - 1;
+                                }
+                            }
+                        }
+                    }
+
+                infoPanelPiece = boardState.grid[ curRow ][ curCol ];
+
+                panRow = curRow;
+                panCol = curCol;
+                
+                }
+            }
+        else {
+            /* mouse available */
+            
+            infoPanelPiece  =  getPointerOverPiece( &boardState,
+                                                    boardCenterX,
+                                                    boardCenterY,
+                                                    &panRow,
+                                                    &panCol );
+            }
+        
 
         if( oldPiece == noPiece
             &&
@@ -2086,6 +2237,8 @@ void maxiginGame_init( void ) {
     pinchInit();
     particleSystemInit();
     pieceDescriptionsInit();
+
+    navInit();
     
 
     if(0)runChessTest();
@@ -2097,8 +2250,8 @@ void maxiginGame_init( void ) {
 
     boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 12;
 
-    if(0) getStartBoard( &boardState );
-    if(1) getTestBoard( &boardState );
+    if(1) getStartBoard( &boardState );
+    if(0) getTestBoard( &boardState );
 
 
     REGISTER_VAL_MEM( boxPosX );

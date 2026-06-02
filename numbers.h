@@ -64,7 +64,8 @@ void numbersInit( void ) {
                                         "modifierFont.txt",
                                         0,
                                         4,
-                                        0 );
+                                        0,
+                                        8 );
         }
     }
 
@@ -93,13 +94,15 @@ void numberDrawText( const char   *inText,
         maxigin_adjustFontSpacing( numbersFont,
                                    0,
                                    4,
-                                   7 );
+                                   7,
+                                   8 );
         }
     else {
         maxigin_adjustFontSpacing( numbersFont,
                                    0,
                                    4,
-                                   0 );
+                                   0,
+                                   8 );
         }
         
     maxigin_drawText( numbersFont,

@@ -485,16 +485,29 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
     if( pieceNumLines > 0 ) {
 
-        int  n;
+        int           n;
+        int           lineSpacing  =  maxigin_getLangLineSpacing();
+        int           xOffset      =  -47;
+        MaxiginAlign  align        =  MAXIGIN_LEFT;
+        
+        if( ! maxigin_doesLanguageHaveWords() ) {
+
+            int  pixLen =
+                     maxigin_measureLangTextString( pieceLineBuffer[ 0 ] );
+            
+            xOffset = - pixLen / 2;
+            }
+        
+            
 
         for( n = 0;
              n < pieceNumLines;
              n ++ ) {
             
             maxigin_drawLangTextString( pieceLineBuffer[ n ],
-                                        inCenterX - 47,
-                                        inCenterY - 60 + 30 + 14 * n,
-                                        MAXIGIN_LEFT);
+                                        inCenterX + xOffset,
+                                        inCenterY - 60 + 30 + lineSpacing * n,
+                                        align );
             }
         }
     }

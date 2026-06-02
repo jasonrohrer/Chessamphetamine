@@ -1,11 +1,10 @@
 "English"
 
-latinFont.tga  16 2  8  0
+latinFont.tga  16 2  8  0 14
 
 latinFont.txt
 
-
-langHasWords 1
+langHasWords  1
 
 
 

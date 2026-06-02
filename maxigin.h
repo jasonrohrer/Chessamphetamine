@@ -952,6 +952,10 @@ void maxigin_initSetLanguageFontGLow( int  inBlurRadius,
       inFixedWidth            0       for variable-width characters
                               n > 0   to force all characters to be n pixels
                                       wide (with inSpacing added in between)
+                                      
+      inLineSpacing           the distance between the vertical center points
+                              of two consecutive lines
+                              
   Returns:
 
       font handle   on success
@@ -964,7 +968,8 @@ int maxigin_initFont( int          inSpriteStripHandle,
                       const char  *inMapBulkResourceName,
                       int          inCharSpacing,
                       int          inSpaceWidth,
-                      int          inFixedWidth );
+                      int          inFixedWidth,
+                      int          inLineSpacing );
 
 
 /*
@@ -2051,6 +2056,19 @@ void maxigin_drawButtonHintSprite( int  inButtonHandle,
 
 
 /*
+  Gets line spacing for current language's font.
+
+  Returns:
+  
+      the distance between the vertical center points of two consecutive lines
+                                                                    
+  [jumpMaxiginGeneral]                                      
+*/
+int maxigin_getLangLineSpacing( void );
+
+
+
+/*
   Measures language text using the active language and corresponding font.
 
   Parameters:
@@ -2141,12 +2159,34 @@ char maxigin_doesLanguageHaveWords( void );
       inFixedWidth            0       for variable-width characters
                               n > 0   to force all characters to be n pixels
                                       wide (with inSpacing added in between)
+                                      
+      inLineSpacing           the distance between the vertical center points
+                              of two consecutive lines
+                                                                    
   [jumpMaxiginGeneral]                                      
 */
 void maxigin_adjustFontSpacing( int  inFont,
                                 int  inCharSpacing,
                                 int  inSpaceWidth,
-                                int  inFixedWidth );
+                                int  inFixedWidth,
+                                int  inLineSpacing );
+
+
+
+/*
+  Gets the line spacing for an already-initialized font.
+
+  Parameters:
+
+      inFont                  handle for font
+
+  Returns:
+  
+      the distance between the vertical center points of two consecutive lines
+                                                                    
+  [jumpMaxiginGeneral]                                      
+*/
+int maxigin_getFontLineSpacing( int  inFont );
 
 
 
@@ -19400,6 +19440,7 @@ typedef struct MaxiginFont {
         int            spacing;
         int            spaceWidth;
         int            fixedWidth;
+        int            lineSpacing;
         
     } MaxiginFont;
 
@@ -19813,7 +19854,8 @@ int maxigin_initFont( int          inSpriteStripHandle,
                       const char  *inMapBulkResourceName,
                       int          inCharSpacing,
                       int          inSpaceWidth,
-                      int          inFixedWidth ) {
+                      int          inFixedWidth,
+                      int          inLineSpacing ) {
 
     int           bulkHandle;
     int           bulkSize;
@@ -19856,10 +19898,11 @@ int maxigin_initFont( int          inSpriteStripHandle,
     f->hashTableNumEntries = hashTableSize;
     f->hashMask = (unsigned long)( hashTableSize - 1 );
 
-    f->spacing = inCharSpacing;
-    f->spaceWidth = inSpaceWidth;
-    f->fixedWidth = inFixedWidth;
-
+    f->spacing     = inCharSpacing;
+    f->spaceWidth  = inSpaceWidth;
+    f->fixedWidth  = inFixedWidth;
+    f->lineSpacing = inLineSpacing;
+    
     /* clear one-byte map */
     for( b = 0;
          b < 128;
@@ -20717,6 +20760,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
     int               fontCharSpacing;
     int               fontSpaceWidth;
     int               fontFixedWidth;
+    int               fontLineSpacing;
     int               langHasWords;
     char              success;
     int               i;
@@ -20851,6 +20895,18 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
         return;
         }
 
+    success = mx_readIntTokenFromBulkData( languageReadHandle,
+                                           &fontLineSpacing );
+
+    if( ! success ) {
+        maxigin_logString( "Failed to read font line spacing from language "
+                           "bulk resource: ",
+                           lang->bulkResourceName );
+        
+        mingin_endReadBulkData( languageReadHandle );
+        return;
+        }
+
     langFontTextName = mx_readShortTokenFromBulkData( languageReadHandle );
 
     if( langFontTextName == 0 ) {
@@ -20874,9 +20930,10 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
            a language file changes without completely re-making the font */
         MaxiginFont  *font  =  &( mx_fonts[ lang->fontHandle ] );
 
-        font->spacing    = fontCharSpacing;
-        font->spaceWidth = fontSpaceWidth;
-        font->fixedWidth = fontFixedWidth;
+        font->spacing     = fontCharSpacing;
+        font->spaceWidth  = fontSpaceWidth;
+        font->fixedWidth  = fontFixedWidth;
+        font->lineSpacing = fontLineSpacing;
         }
         
     if( lang->fontHandle == -1 ) {
@@ -20923,7 +20980,8 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
                                        langFontTextName,
                                        fontCharSpacing,
                                        fontSpaceWidth,
-                                       fontFixedWidth );
+                                       fontFixedWidth,
+                                       fontLineSpacing );
 
         if( fontHandle == -1 ) {
             mingin_log(
@@ -21244,16 +21302,41 @@ int maxigin_measureLangTextString( const char  *inString ) {
 
 
 
+int maxigin_getLangLineSpacing( void ) {
+    MaxiginLanguage  *lang;
+    
+    if( mx_currentLanguage >= mx_numLanguages ) {
+        return -1;
+        }
+
+    lang = &( mx_languages[ mx_currentLanguage ] );
+
+    return maxigin_getFontLineSpacing( lang->fontHandle );
+    }
+
+
+
 void maxigin_adjustFontSpacing( int  inFont,
                                 int  inCharSpacing,
                                 int  inSpaceWidth,
-                                int  inFixedWidth ) {
+                                int  inFixedWidth,
+                                int  inLineSpacing ) {
     
     MaxiginFont  *font  =  &( mx_fonts[ inFont ] );
 
-    font->spacing    = inCharSpacing;
-    font->spaceWidth = inSpaceWidth;
-    font->fixedWidth = inFixedWidth;
+    font->spacing     = inCharSpacing;
+    font->spaceWidth  = inSpaceWidth;
+    font->fixedWidth  = inFixedWidth;
+    font->lineSpacing = inLineSpacing;
+    }
+
+
+
+int maxigin_getFontLineSpacing( int  inFont ) {
+    
+    MaxiginFont  *font  =  &( mx_fonts[ inFont ] );
+
+    return font->lineSpacing;
     }
 
 

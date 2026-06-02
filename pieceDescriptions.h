@@ -293,6 +293,12 @@ static void pieceSplitLinesNoSpaces( const char  *inString,
             
         if( pixLen > inMaxPixelWidth ) {
             /* not enough pixel room on this line */
+            
+            /* terminate BEFORE this final code point, which made the line
+               too long */
+            lineI -= codePointLen;
+            pieceLineBuffer[ pieceNumLines ][ lineI ] = '\0';
+            
             pieceNumLines ++;
 
             if( pieceNumLines >= MAX_NUM_LINES ) {

@@ -226,11 +226,91 @@ static void pieceSplitWords( const char  *inString ) {
 
 
 
+static void pieceClearLines( void ) {
+
+    int  i;
+
+
+    for( i = 0;
+         i < MAX_NUM_LINES;
+         i ++ ) {
+        pieceLineBuffer[ i ][ 0 ] = '\0';
+        }
+    pieceNumLines = 0;
+    }
+
+
+
 static void pieceSplitLinesNoSpaces( const char  *inString,
                                      int          inMaxPixelWidth ) {
 
-    (void)inString;
-    (void)inMaxPixelWidth;
+    char  *workingString  =  (char*)inString;
+    int    lineI          =  0;
+    
+    pieceClearLines();
+
+    while( workingString[0] != '\0' ) {
+
+        int  codePointLen  =
+                 maxigin_getNextUTF8CodePointLength( workingString );
+        int  i;
+        int  pixLen;
+
+        if( codePointLen == -1 ) {
+            /* error */
+            return;
+            }
+
+        if( lineI + codePointLen > MAX_LINE_LEN ) {
+            /* not enough byte room on this line */
+            pieceNumLines ++;
+
+            if( pieceNumLines >= MAX_NUM_LINES ) {
+                /* too many lines */
+                return;
+                }
+            
+            lineI = 0;
+            continue;
+            }
+
+        /* room on line for more bytes */
+            
+
+        for( i = 0;
+             i < codePointLen;
+             i ++ ) {
+
+            pieceLineBuffer[ pieceNumLines ][ lineI ++ ] =
+                workingString[ i ];
+            }
+
+        /* terminate so we can measure it */
+        pieceLineBuffer[ pieceNumLines ][ lineI ] = '\0';
+
+        pixLen = maxigin_measureLangTextString(
+                     pieceLineBuffer[ pieceNumLines ] );
+            
+        if( pixLen > inMaxPixelWidth ) {
+            /* not enough pixel room on this line */
+            pieceNumLines ++;
+
+            if( pieceNumLines >= MAX_NUM_LINES ) {
+                /* too many lines */
+                return;
+                }
+            
+            lineI = 0;
+            continue;
+            }
+
+        /* there's room, skip code point and keep going */
+
+        workingString = &( workingString[ codePointLen ] );
+        }
+
+    /* count last line */
+    pieceNumLines ++;
     }
 
 
@@ -290,18 +370,7 @@ static void removeWordFromLine( int  inLineIndex,
 
 
 
-static void pieceClearLines( void ) {
 
-    int  i;
-
-
-    for( i = 0;
-         i < MAX_NUM_LINES;
-         i ++ ) {
-        pieceLineBuffer[ i ][ 0 ] = '\0';
-        }
-    pieceNumLines = 0;
-    }
 
 
 
@@ -349,8 +418,10 @@ static void pieceSplitLines( const char  *inString,
                 nextWord ++;
                 }
             }
-        
         }
+
+    /* count last line */
+    pieceNumLines ++;
     }
 
 

@@ -2149,6 +2149,28 @@ void maxigin_adjustFontSpacing( int  inFont,
                                 int  inFixedWidth );
 
 
+
+/*
+  Gets the number of bytes in the next UTF8 code point in a text buffer.
+
+  Parameters:
+
+      inBuffer    pointer to next character in text buffer to check.
+
+  Returns:
+
+      the number of bytes in the next UTF8 point
+
+           or
+          
+      -1   on end of string or error
+
+  [jumpMaxiginGeneral]                                      
+*/  
+int maxigin_getNextUTF8CodePointLength( char  *inBuffer );
+
+
+
 /*
   Gets the number of sprites in a sprite strip.
 
@@ -19525,6 +19547,42 @@ static long mx_readNextCodePoint( int  inBulkResourceHandle ) {
         /* we should never get here */
         return -1;
         }
+    }
+
+
+
+
+int maxigin_getNextUTF8CodePointLength( char  *inBuffer ) {
+
+    unsigned char  c0  =  (unsigned char)( inBuffer[ 0 ] );
+
+    if( c0 == '\0' ) {
+        return -1;
+        }
+
+    if( c0 < 128 ) {
+        /* single byte case (ASCII) */
+        return 1;
+        }
+    else if( ( c0 & 0xE0 ) == 0xC0 ) {
+        /* first byte is 110xxxxx
+           2-byte case */
+        return 2;
+        }
+    else if( ( c0 & 0xF0 ) == 0xE0 ) {
+        /* first byte is 1110xxxx
+           3-byte case */
+        return 3;
+        }
+    else if( ( c0 & 0xF8 ) == 0xF0 ) {
+        /* first byte is 11110xxx
+           4-byte case */
+        return 4;
+        }
+
+    /* should never get here */
+
+    return -1;
     }
 
 

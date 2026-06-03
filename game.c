@@ -146,19 +146,20 @@ static int          spriteHandles[ NUM_BULK_FILES ];
 static int          spriteStrip;
 static int          buttonHintStrip;
 
-static int          stripIndex     =   0;
-static int          stripC         =   0;
+static int          stripIndex         =   0;
+static int          stripC             =   0;
 
 static MaxiginGUI   gameGUI;
-static int          sliderValue    =   7;
-static int          sliderValueB   =   7;
-static int          sliderValueC   =   7;
+static int          sliderValue        =   7;
+static int          sliderValueB       =   7;
+static int          sliderValueC       =   7;
 
-static int          plunkSound     =  -1;
-static int          thunkSound     =  -1;
+static int          plunkSound         =  -1;
+static int          thunkSound         =  -1;
+static int          examinePieceSound  =  -1;
 
-static int          checkmateGood  =  -1;
-static int          checkmateBad   =  -1;
+static int          checkmateGood      =  -1;
+static int          checkmateBad       =  -1;
 
 
 
@@ -1015,7 +1016,9 @@ void maxiginGame_step( void ) {
 
     if( ! spinning
         &&
-        maxigin_isButtonDown( JUMP ) ) {
+        ( maxigin_isButtonDown( JUMP )
+          ||
+          maxigin_isButtonDown( SHOOT ) ) ) {
 
         spinning = 1;
 
@@ -1024,7 +1027,9 @@ void maxiginGame_step( void ) {
         }
     else if( spinning
              &&
-             ! maxigin_isButtonDown( JUMP ) ) {
+             ! ( maxigin_isButtonDown( JUMP )
+                 ||
+                 maxigin_isButtonDown( SHOOT ) ) ) {
         spinning = 0;
         maxigin_playSoundEffect( thunkSound,
                                  512 );
@@ -1424,11 +1429,11 @@ void maxiginGame_step( void ) {
             }
         
 
-        if( oldPiece == noPiece
+        if( oldPiece != infoPanelPiece
             &&
             infoPanelPiece != noPiece ) {
-            maxigin_playSoundEffect( plunkSound,
-                                     512 );
+            maxigin_playSoundEffect( examinePieceSound,
+                                     256 );
             }
 
         if( infoPanelPiece != noPiece ) {
@@ -2089,7 +2094,8 @@ void maxiginGame_init( void ) {
                                           "5x6CapsFont.txt",
                                           2,
                                           6,
-                                          0 );
+                                          0,
+                                          6 );
         }
     
     lang_settings      = maxigin_initTranslationKey( "settings" );
@@ -2208,6 +2214,8 @@ void maxiginGame_init( void ) {
     maxigin_initSoundEffect( "hey2.wav" );
     plunkSound = maxigin_initSoundEffect( "plunk1.wav" );
     thunkSound = maxigin_initSoundEffect( "thunk1.wav" );
+
+    examinePieceSound = maxigin_initSoundEffect( "examinePiece_misc_10.wav" );
 
     checkmateGood = maxigin_initSoundEffect( "checkmateGood.wav" );
     checkmateBad = maxigin_initSoundEffect( "checkmateBad.wav" );

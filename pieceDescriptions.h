@@ -241,11 +241,31 @@ static void pieceClearLines( void ) {
 
 
 
+static char isPunctuation( char  * inWorkingString,
+                           int     inCodePointLen ) {
+
+    if( inCodePointLen == 3 ) {
+
+        if( (unsigned char)( inWorkingString[0] ) == 0xEF
+            &&
+            (unsigned char)( inWorkingString[1] ) == 0xBC
+            &&
+            (unsigned char)( inWorkingString[2] ) == 0x8C ) {
+            /* chinese comma */
+            return 1;
+            }
+        }
+    return 0;
+    }
+
+
+
 static void pieceSplitLinesNoSpaces( const char  *inString,
                                      int          inMaxPixelWidth ) {
 
-    char  *workingString  =  (char*)inString;
-    int    lineI          =  0;
+    char  *workingString     =  (char*)inString;
+    int    lineI             =  0;
+    int    prevCodePointLen  =  0;
     
     pieceClearLines();
 
@@ -275,6 +295,39 @@ static void pieceSplitLinesNoSpaces( const char  *inString,
             }
 
         /* room on line for more bytes */
+
+        if( pieceNumLines > 0
+            &&
+            prevCodePointLen > 0
+            &&
+            lineI == 0
+            &&
+            isPunctuation( workingString,
+                           codePointLen ) ) {
+            /* don't ever start subsequent line with a punctuation character */
+
+            /* go back to previous line and snatch last character, and start
+               this line with that character */
+
+            int  prevLinLen =
+                maxigin_stringLength( pieceLineBuffer[ pieceNumLines -  1 ] );
+
+            
+            for( i = 0;
+                 i < prevCodePointLen;
+                 i ++ ) {
+
+                pieceLineBuffer[ pieceNumLines ][ lineI ++ ] =
+                    pieceLineBuffer
+                        [ pieceNumLines - 1 ]
+                        [ prevLinLen - prevCodePointLen + i ];
+                }
+            /* terminate previous line */
+            pieceLineBuffer
+                [ pieceNumLines - 1 ]
+                [ prevLinLen - prevCodePointLen ] = '\0';
+            }
+        
             
 
         for( i = 0;
@@ -313,6 +366,8 @@ static void pieceSplitLinesNoSpaces( const char  *inString,
         /* there's room, skip code point and keep going */
 
         workingString = &( workingString[ codePointLen ] );
+
+        prevCodePointLen = codePointLen;
         }
 
     /* count last line */

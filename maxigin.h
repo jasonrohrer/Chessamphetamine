@@ -20579,6 +20579,8 @@ static void mx_removeTranslationString( int  inStartByte ) {
             }
         
         }
+    
+    mx_numTranslationStringBytes -= len;
     }
 
 

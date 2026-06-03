@@ -1165,9 +1165,9 @@ ChessPiece getPointerOverPiece( BoardState  *inState,
         return noPiece;
         }
 
-    for( y = 0;
-         y < BH;
-         y ++ ) {
+    for( y =  BH - 1;
+         y >= 0;
+         y -- ) {
         
         for( x = 0;
              x < BW;

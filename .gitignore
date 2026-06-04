@@ -5,6 +5,9 @@
 *.dep2
 *~
 *.orig
+*.glow
+*.bin
+*.shadow_0
 
 callgrind.out*
 leak.out*

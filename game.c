@@ -2081,8 +2081,8 @@ void maxiginGame_init( void ) {
                                 4,
                                 2 );
 
-    fontStrip = maxigin_initSpriteStrip( "5x6CapsFont.tga",
-                                         6 );
+    fontStrip = maxigin_initSpriteStrip( "5x9CapsLatinFont.tga",
+                                         9 );
 
     if( fontStrip != -1 ) {
 
@@ -2091,7 +2091,7 @@ void maxiginGame_init( void ) {
                                          2 );
 
         smallCapsFont = maxigin_initFont( fontStrip,
-                                          "5x6CapsFont.txt",
+                                          "latinFont.txt",
                                           2,
                                           6,
                                           0,

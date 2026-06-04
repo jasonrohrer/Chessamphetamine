@@ -372,7 +372,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_NUM_LANGUAGE_FONTS
-#define  MAXIGIN_MAX_NUM_LANGUAGE_FONTS  2
+#define  MAXIGIN_MAX_NUM_LANGUAGE_FONTS  3
 #endif
 
 

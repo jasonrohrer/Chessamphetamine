@@ -516,6 +516,9 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
     pieceSplitWords( title );
 
+    /* large font for title */
+    maxigin_setLanguageFontIndex( 0 );
+    
     if( pieceNumWords > 0 ) {
 
         int  w;
@@ -535,8 +538,11 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
     
     desc = maxigin_getLangText( pieceDescriptionKeys[ t ] );
 
+    /* small font for description, if available */
+    maxigin_setLanguageFontIndex( 1 );
+
     pieceSplitLines( desc,
-                     99 );
+                     95 );
 
     if( pieceNumLines > 0 ) {
 
@@ -565,6 +571,9 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
                                         align );
             }
         }
+
+    /* back to default font */
+    maxigin_setLanguageFontIndex( 0 );
     }
 
 

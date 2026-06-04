@@ -2056,6 +2056,20 @@ void maxigin_drawButtonHintSprite( int  inButtonHandle,
 
 
 /*
+  Sets index of font to use for current language (for languages that
+  have multiple font sizes).
+
+  Parameters:
+
+      inFontIndex   index into language's font list
+                                                    
+  [jumpMaxiginGeneral]                                      
+*/
+void maxigin_setLanguageFontIndex( int  inFontIndex );
+
+
+
+/*
   Gets line spacing for current language's font.
 
   Returns:
@@ -20477,8 +20491,9 @@ typedef struct MaxiginLanguage {
 
         char          displayName     [ MAXIGIN_LANGUAGE_NAME_MAX_LENGTH + 1 ];
         char          bulkResourceName[ MAXIGIN_LANGUAGE_NAME_MAX_LENGTH + 1 ];
-        
-        int           fontHandle;
+
+        int           numFonts;
+        int           fontHandles[  MAXIGIN_MAX_NUM_LANGUAGE_FONTS ];
 
         /* pointers to starts of strings in mx_translationStringBytes, or 0 of
            not present */
@@ -20496,6 +20511,8 @@ static  int              mx_numLanguages            =  0;
 static  int              mx_currentLanguage         =  0;
 static  int              mx_languageBlurRadius      =  0;
 static  int              mx_languageBlurIterations  =  0;
+static  int              mx_languageFontIndex       =  0;
+
 
 
 static void mx_nextLang( void ) {
@@ -20507,6 +20524,26 @@ static void mx_nextLang( void ) {
 
     if( mx_currentLanguage >= mx_numLanguages ) {
         mx_currentLanguage = 0;
+        }
+
+
+    /* set again to perform bounds checking with new language */
+    maxigin_setLanguageFontIndex( mx_languageFontIndex );   
+    }
+
+
+
+void maxigin_setLanguageFontIndex( int  inFontIndex ) {
+    
+    mx_languageFontIndex = inFontIndex;
+
+    if( mx_numLanguages == 0 ) {
+        return;
+        }
+    
+    if( mx_languageFontIndex >= mx_languages[ mx_currentLanguage ].numFonts ) {
+        /* index out of bounds, back to 0, the default font index */
+        mx_languageFontIndex = 0;
         }
     }
 
@@ -20755,6 +20792,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
     MaxiginLanguage  *lang;
     int               languageReadHandle;
     int               dataLen;
+    int               numFonts;
     const char       *langFontName;
     const char       *langFontTextName;
     const char       *langHasWordsHandle;
@@ -20766,6 +20804,7 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
     int               langHasWords;
     char              success;
     int               i;
+    int               f;
     const char       *nextKey;
     char              isNewLangSlot;
     
@@ -20824,36 +20863,12 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
         mingin_endReadBulkData( languageReadHandle );
         return;
         }
-        
-
-    langFontName = mx_readShortTokenFromBulkData( languageReadHandle );
-
-    if( langFontName == 0 ) {
-        maxigin_logString( "Failed to read font TGA name from language "
-                           "bulk resource: ",
-                           lang->bulkResourceName );
-        
-        mingin_endReadBulkData( languageReadHandle );
-        return;
-        }
-
-    if( maxigin_stringLength( langFontName ) >
-        MAXIGIN_LANGUAGE_FONT_MAX_NAME_LENGTH ) {
-
-        maxigin_logString( "Font TGA name too long in language "
-                           "bulk resource: ",
-                           lang->bulkResourceName );
-        
-        mingin_endReadBulkData( languageReadHandle );
-        return;
-        }
-    
 
     success = mx_readIntTokenFromBulkData( languageReadHandle,
-                                           &fontHeight );
+                                           &numFonts );
 
     if( ! success ) {
-        maxigin_logString( "Failed to read font character height from language "
+        maxigin_logString( "Failed to read number of fonts from language "
                            "bulk resource: ",
                            lang->bulkResourceName );
         
@@ -20861,153 +20876,199 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
         return;
         }
 
-    success = mx_readIntTokenFromBulkData( languageReadHandle,
-                                           &fontCharSpacing );
+    lang->numFonts = numFonts;
 
-    if( ! success ) {
-        maxigin_logString( "Failed to read font character spacing from language "
-                           "bulk resource: ",
-                           lang->bulkResourceName );
-        
-        mingin_endReadBulkData( languageReadHandle );
-        return;
-        }
+    for( f = 0;
+         f < numFonts;
+         f ++ ) {
 
-    success = mx_readIntTokenFromBulkData( languageReadHandle,
-                                           &fontSpaceWidth );
+        langFontName = mx_readShortTokenFromBulkData( languageReadHandle );
 
-    if( ! success ) {
-        maxigin_logString( "Failed to read font space width from language "
-                           "bulk resource: ",
-                           lang->bulkResourceName );
-        
-        mingin_endReadBulkData( languageReadHandle );
-        return;
-        }
-
-    success = mx_readIntTokenFromBulkData( languageReadHandle,
-                                           &fontFixedWidth );
-
-    if( ! success ) {
-        maxigin_logString( "Failed to read font fixed width from language "
-                           "bulk resource: ",
-                           lang->bulkResourceName );
-        
-        mingin_endReadBulkData( languageReadHandle );
-        return;
-        }
-
-    success = mx_readIntTokenFromBulkData( languageReadHandle,
-                                           &fontLineSpacing );
-
-    if( ! success ) {
-        maxigin_logString( "Failed to read font line spacing from language "
-                           "bulk resource: ",
-                           lang->bulkResourceName );
-        
-        mingin_endReadBulkData( languageReadHandle );
-        return;
-        }
-
-    langFontTextName = mx_readShortTokenFromBulkData( languageReadHandle );
-
-    if( langFontTextName == 0 ) {
-        maxigin_logString( "Failed to read font TXT name from language "
-                           "bulk resource: ",
-                           lang->bulkResourceName );
-        
-        mingin_endReadBulkData( languageReadHandle );
-        return;
-        }
-
-    
-    lang->fontHandle = mx_findLanguageFont( langFontName );
-
-    if( lang->fontHandle >= 0 ) {
-        /* found one
-           Update it's spacing settings.
-           Note that if multiple languages use the same font,
-           the spacing from the last one loaded (or hot-reloaded) will win.
-           This enables us to hot reload and tweak these settings when
-           a language file changes without completely re-making the font */
-        MaxiginFont  *font  =  &( mx_fonts[ lang->fontHandle ] );
-
-        font->spacing     = fontCharSpacing;
-        font->spaceWidth  = fontSpaceWidth;
-        font->fixedWidth  = fontFixedWidth;
-        font->lineSpacing = fontLineSpacing;
-        }
-        
-    if( lang->fontHandle == -1 ) {
-        /* no matching font found, build a new one */
-
-        int  stripHandle;
-        int  fontHandle;
-
-        if( mx_numLanguageFonts >= MAXIGIN_MAX_NUM_LANGUAGE_FONTS ) {
-            maxigin_logString( "Too many language fonts already when trying "
-                               "to create new one for language: ",
+        if( langFontName == 0 ) {
+            maxigin_logString( "Failed to read font TGA name from language "
+                               "bulk resource: ",
                                lang->bulkResourceName );
-            
-            mingin_endReadBulkData( languageReadHandle );
-            return;
-            }
         
-        stripHandle = maxigin_initSpriteStrip( langFontName,
-                                               fontHeight );
-
-        if( stripHandle == -1 ) {
-            mingin_log(
-                maxigin_stringConcat5(
-                    "Failed to read font strip ",
-                    langFontName,
-                    " specified in language bulk resource: ",
-                    lang->bulkResourceName,
-                    "\n" ) );
-            
             mingin_endReadBulkData( languageReadHandle );
             return;
             }
 
-        if( mx_languageBlurRadius > 0
-            &&
-            mx_languageBlurIterations > 0 ) {
+        if( maxigin_stringLength( langFontName ) >
+            MAXIGIN_LANGUAGE_FONT_MAX_NAME_LENGTH ) {
 
-            maxigin_initMakeGlowSpriteStrip( stripHandle,
-                                             mx_languageBlurRadius,
-                                             mx_languageBlurIterations );
-            }
+            maxigin_logString( "Font TGA name too long in language "
+                               "bulk resource: ",
+                               lang->bulkResourceName );
         
-        fontHandle = maxigin_initFont( stripHandle,
-                                       langFontTextName,
-                                       fontCharSpacing,
-                                       fontSpaceWidth,
-                                       fontFixedWidth,
-                                       fontLineSpacing );
+            mingin_endReadBulkData( languageReadHandle );
+            return;
+            }
+    
 
-        if( fontHandle == -1 ) {
-            mingin_log(
-                maxigin_stringConcat5(
-                    "Failed to read font mapping ",
-                    langFontName,
-                    " specified in language bulk resource: ",
-                    lang->bulkResourceName,
-                    "\n" ) );
-            
+        success = mx_readIntTokenFromBulkData( languageReadHandle,
+                                               &fontHeight );
+
+        if( ! success ) {
+            maxigin_logString(
+                "Failed to read font character height from language "
+                "bulk resource: ",
+                lang->bulkResourceName );
+        
             mingin_endReadBulkData( languageReadHandle );
             return;
             }
 
-        lang->fontHandle = fontHandle;
-        
-        mx_languageFontHandles[ mx_numLanguageFonts ] = fontHandle;
+        success = mx_readIntTokenFromBulkData( languageReadHandle,
+                                               &fontCharSpacing );
 
-        maxigin_stringCopy( langFontName,
-                            mx_languageFontBulkResourceNames
+        if( ! success ) {
+            maxigin_logString(
+                "Failed to read font character spacing from language "
+                "bulk resource: ",
+                lang->bulkResourceName );
+        
+            mingin_endReadBulkData( languageReadHandle );
+            return;
+            }
+
+        success = mx_readIntTokenFromBulkData( languageReadHandle,
+                                               &fontSpaceWidth );
+
+        if( ! success ) {
+            maxigin_logString( "Failed to read font space width from language "
+                               "bulk resource: ",
+                               lang->bulkResourceName );
+        
+            mingin_endReadBulkData( languageReadHandle );
+            return;
+            }
+
+        success = mx_readIntTokenFromBulkData( languageReadHandle,
+                                               &fontFixedWidth );
+
+        if( ! success ) {
+            maxigin_logString( "Failed to read font fixed width from language "
+                               "bulk resource: ",
+                               lang->bulkResourceName );
+        
+            mingin_endReadBulkData( languageReadHandle );
+            return;
+            }
+
+        success = mx_readIntTokenFromBulkData( languageReadHandle,
+                                               &fontLineSpacing );
+
+        if( ! success ) {
+            maxigin_logString( "Failed to read font line spacing from language "
+                               "bulk resource: ",
+                               lang->bulkResourceName );
+        
+            mingin_endReadBulkData( languageReadHandle );
+            return;
+            }
+
+        langFontTextName = mx_readShortTokenFromBulkData( languageReadHandle );
+
+        if( langFontTextName == 0 ) {
+            maxigin_logString( "Failed to read font TXT name from language "
+                               "bulk resource: ",
+                               lang->bulkResourceName );
+        
+            mingin_endReadBulkData( languageReadHandle );
+            return;
+            }
+
+    
+        lang->fontHandles[f] = mx_findLanguageFont( langFontName );
+
+        if( lang->fontHandles[f] >= 0 ) {
+            /* found one
+               Update it's spacing settings.
+               Note that if multiple languages use the same font,
+               the spacing from the last one loaded (or hot-reloaded) will win.
+               This enables us to hot reload and tweak these settings when
+               a language file changes without completely re-making the font */
+            MaxiginFont  *font  =  &( mx_fonts[ lang->fontHandles[f] ] );
+
+            font->spacing     = fontCharSpacing;
+            font->spaceWidth  = fontSpaceWidth;
+            font->fixedWidth  = fontFixedWidth;
+            font->lineSpacing = fontLineSpacing;
+            }
+        
+        if( lang->fontHandles[f] == -1 ) {
+            /* no matching font found, build a new one */
+
+            int  stripHandle;
+            int  fontHandle;
+
+            if( mx_numLanguageFonts >= MAXIGIN_MAX_NUM_LANGUAGE_FONTS ) {
+                maxigin_logString( "Too many language fonts already when trying "
+                                   "to create new one for language: ",
+                                   lang->bulkResourceName );
+            
+                mingin_endReadBulkData( languageReadHandle );
+                return;
+                }
+        
+            stripHandle = maxigin_initSpriteStrip( langFontName,
+                                                   fontHeight );
+
+            if( stripHandle == -1 ) {
+                mingin_log(
+                    maxigin_stringConcat5(
+                        "Failed to read font strip ",
+                        langFontName,
+                        " specified in language bulk resource: ",
+                        lang->bulkResourceName,
+                        "\n" ) );
+            
+                mingin_endReadBulkData( languageReadHandle );
+                return;
+                }
+
+            if( mx_languageBlurRadius > 0
+                &&
+                mx_languageBlurIterations > 0 ) {
+
+                maxigin_initMakeGlowSpriteStrip( stripHandle,
+                                                 mx_languageBlurRadius,
+                                                 mx_languageBlurIterations );
+                }
+        
+            fontHandle = maxigin_initFont( stripHandle,
+                                           langFontTextName,
+                                           fontCharSpacing,
+                                           fontSpaceWidth,
+                                           fontFixedWidth,
+                                           fontLineSpacing );
+
+            if( fontHandle == -1 ) {
+                mingin_log(
+                    maxigin_stringConcat5(
+                        "Failed to read font mapping ",
+                        langFontName,
+                        " specified in language bulk resource: ",
+                        lang->bulkResourceName,
+                        "\n" ) );
+            
+                mingin_endReadBulkData( languageReadHandle );
+                return;
+                }
+
+            lang->fontHandles[f] = fontHandle;
+        
+            mx_languageFontHandles[ mx_numLanguageFonts ] = fontHandle;
+
+            maxigin_stringCopy( langFontName,
+                                mx_languageFontBulkResourceNames
                                 [ mx_numLanguageFonts ] );
         
-        mx_numLanguageFonts ++;
+            mx_numLanguageFonts ++;
+            }
+
         }
+    
     
 
     langHasWordsHandle = mx_readShortTokenFromBulkData( languageReadHandle );
@@ -21155,6 +21216,8 @@ static void mx_initLanguages( void ) {
     mx_currentLanguage = maxigin_readIntSetting( "languageIndex.ini",
                                                  0 );
 
+    mx_languageFontIndex = 0;
+    
     if( mx_currentLanguage >= mx_numLanguages ) {
         mx_currentLanguage = 0;
         }
@@ -21167,8 +21230,12 @@ static int mx_getButtonHintFont( void ) {
     if( mx_numLanguages == 0 ) {
         return -1;
         }
+
+    if( mx_languages[ 0 ].numFonts == 0 ) {
+        return -1;
+        }
     
-    return mx_languages[ 0 ].fontHandle;
+    return mx_languages[ 0 ].fontHandles[ 0 ];
     }
 
 
@@ -21251,7 +21318,7 @@ int maxigin_drawLangTextString( const char   *inString,
 
     lang = &( mx_languages[ mx_currentLanguage ] );
         
-    return maxigin_drawText( lang->fontHandle,
+    return maxigin_drawText( lang->fontHandles[ mx_languageFontIndex ],
                              inString,
                              inLocationX,
                              inLocationY,
@@ -21313,7 +21380,8 @@ int maxigin_getLangLineSpacing( void ) {
 
     lang = &( mx_languages[ mx_currentLanguage ] );
 
-    return maxigin_getFontLineSpacing( lang->fontHandle );
+    return maxigin_getFontLineSpacing(
+        lang->fontHandles[ mx_languageFontIndex ] );
     }
 
 
@@ -21686,7 +21754,7 @@ static void mx_populateLangPanel( void ) {
 
         buttonPressed = maxigin_guiButton( &mx_internalGUI,
                                            &( langButtonHandles[i] ),
-                                           mx_languages[i].fontHandle,
+                                           mx_languages[i].fontHandles[ 0 ],
                                            mx_languages[i].displayName,
                                            -1,
                                            0,
@@ -21697,7 +21765,11 @@ static void mx_populateLangPanel( void ) {
         if( buttonPressed
             ||
             pressI == i ) {
+            
             mx_currentLanguage = i;
+
+            /* re-do bounds-checking */
+            maxigin_setLanguageFontIndex( mx_languageFontIndex );
             
             if( mx_menuDoSound != -1 ) {
                 maxigin_playSoundEffect( mx_menuDoSound,

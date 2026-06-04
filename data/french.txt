@@ -1,8 +1,14 @@
 "Français"
 
-latinFont.tga  16 2  8  0 14
 
+2
+
+latinFont.tga  16 2  8  0 14
 latinFont.txt
+
+5x9CapsLatinFont.tga  9 1  5  0  9
+latinFont.txt
+
 
 langHasWords  1
 

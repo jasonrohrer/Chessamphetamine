@@ -93,6 +93,8 @@ static  int  pieceDescriptionKeys[ NUM_CHESS_PIECES ];
 
 
 static  int  infoPanelSprite  =  -1;
+static  int  miniBoardSprite  =  -1;
+
 
 
 void pieceDescriptionsInit( void ) {
@@ -116,6 +118,12 @@ void pieceDescriptionsInit( void ) {
     infoPanelSprite = maxigin_initSprite( "pieceInfoPanel.tga" );
 
     maxigin_initMakeGlowSprite( infoPanelSprite,
+                                4,
+                                2 );
+    
+    miniBoardSprite = maxigin_initSprite( "miniChessBoard.tga" );
+
+    maxigin_initMakeGlowSprite( miniBoardSprite,
                                 4,
                                 2 );
     }
@@ -507,6 +515,14 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
                         inCenterX,
                         inCenterY );
 
+    colorsApplyBoardColor();
+
+    maxigin_drawSetAlpha( inFade );
+
+    maxigin_drawSprite( miniBoardSprite,
+                        inCenterX,
+                        inCenterY );
+
     maxigin_drawSetColor( 255,
                           255,
                           255,
@@ -516,12 +532,13 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
     pieceSplitWords( title );
 
-    /* large font for title */
-    maxigin_setLanguageFontIndex( 0 );
+    /* small font for title */
+    maxigin_setLanguageFontIndex( 1 );
     
     if( pieceNumWords > 0 ) {
 
         int  w;
+        int  lineSpacing  =  maxigin_getLangLineSpacing();
 
         for( w = 0;
              w < pieceNumWords;
@@ -529,7 +546,7 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
             
             maxigin_drawLangTextString( pieceWordBuffer[ w ],
                                         inCenterX,
-                                        inCenterY - 60 + 14 * w,
+                                        inCenterY - 60 + lineSpacing * w,
                                         MAXIGIN_CENTER );
             }
         }

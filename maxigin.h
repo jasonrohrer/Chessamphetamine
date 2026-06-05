@@ -20257,6 +20257,21 @@ int maxigin_drawText( int           inFontHandle,
                                 if( rowSep > sep ) {
                                     sep = rowSep;
                                     }
+                                
+                                if( y > 0 ) {
+                                    /* look up diagonally too */
+                                    rowSep  = prevRight[y] - thisLeft[y - 1];
+                                    if( rowSep > sep ) {
+                                        sep = rowSep;
+                                        }
+                                    }
+                                if( y < h - 1 ) {
+                                    /* look down diagonally too */
+                                    rowSep  = prevRight[y] - thisLeft[y + 1];
+                                    if( rowSep > sep ) {
+                                        sep = rowSep;
+                                        }
+                                    }
                                 }
                             
                             sep += 1;

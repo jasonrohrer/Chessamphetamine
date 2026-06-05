@@ -519,7 +519,7 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
     maxigin_drawSetAlpha( inFade );
 
-    maxigin_drawSprite( miniBoardSprite,
+    if(0)maxigin_drawSprite( miniBoardSprite,
                         inCenterX,
                         inCenterY );
 
@@ -539,15 +539,22 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
         int  w;
         int  lineSpacing  =  maxigin_getLangLineSpacing();
+        int  startOffset  =  63;
 
+        if( ! maxigin_doesLanguageHaveWords() ) {
+            /* non-word langs are always one line */
+            startOffset   =  59;
+            }
+        
         for( w = 0;
              w < pieceNumWords;
              w ++ ) {
             
-            maxigin_drawLangTextString( pieceWordBuffer[ w ],
-                                        inCenterX,
-                                        inCenterY - 60 + lineSpacing * w,
-                                        MAXIGIN_CENTER );
+            maxigin_drawLangTextString(
+                pieceWordBuffer[ w ],
+                inCenterX,
+                inCenterY - startOffset + lineSpacing * w,
+                MAXIGIN_CENTER );
             }
         }
 
@@ -559,13 +566,14 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
     maxigin_setLanguageFontIndex( 1 );
 
     pieceSplitLines( desc,
-                     95 );
+                     65 );
 
     if( pieceNumLines > 0 ) {
 
         int           n;
         int           lineSpacing  =  maxigin_getLangLineSpacing();
-        int           xOffset      =  -47;
+        int           xOffset      =  -32;
+        int           startOffset  =  70;
         MaxiginAlign  align        =  MAXIGIN_LEFT;
         
         if( ! maxigin_doesLanguageHaveWords() ) {
@@ -574,6 +582,8 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
                      maxigin_measureLangTextString( pieceLineBuffer[ 0 ] );
             
             xOffset = - pixLen / 2;
+
+            startOffset = 66;
             }
         
             
@@ -582,10 +592,11 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
              n < pieceNumLines;
              n ++ ) {
             
-            maxigin_drawLangTextString( pieceLineBuffer[ n ],
-                                        inCenterX + xOffset,
-                                        inCenterY - 60 + 30 + lineSpacing * n,
-                                        align );
+            maxigin_drawLangTextString(
+                pieceLineBuffer[ n ],
+                inCenterX + xOffset,
+                inCenterY - startOffset + 30 + lineSpacing * n,
+                align );
             }
         }
 

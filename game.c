@@ -751,7 +751,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( infoPanelPiece != noPiece ) {
         drawPieceInfoPanel( infoPanelPiece,
-                            MAXIGIN_GAME_NATIVE_W - 55,
+                            MAXIGIN_GAME_NATIVE_W - 42,
                             boardCenterY,
                             infoPanelFade );
         
@@ -760,7 +760,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
              &&
              infoPanelFade > 0 ) {
         drawPieceInfoPanel( infoPanelLastPiece,
-                            MAXIGIN_GAME_NATIVE_W - 55,
+                            MAXIGIN_GAME_NATIVE_W - 42,
                             boardCenterY,
                             infoPanelFade );
         }
@@ -1947,7 +1947,7 @@ void maxiginGame_init( void ) {
                       1234859 );
 
     
-    boardCenterX = MAXIGIN_GAME_NATIVE_W / 2 - 49;
+    boardCenterX = MAXIGIN_GAME_NATIVE_W / 2 - 23;
     boardCenterY = MAXIGIN_GAME_NATIVE_H / 2;
 
     

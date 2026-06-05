@@ -6,7 +6,7 @@
 latinFont.tga  16 2  8  0 14
 latinFont.txt
 
-5x9CapsLatinFont.tga  9 1  6  0  9
+5x9CapsLatinFont.tga  9 1  6  0  10
 latinFont.txt
 
 

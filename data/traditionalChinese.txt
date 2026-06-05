@@ -3,7 +3,7 @@
 
 1
 
-traditionalChineseFont.tga  16  1  8  14 18
+traditionalChineseFont.tga  16  1  8  14 16
 traditionalChineseFont.txt
 
 

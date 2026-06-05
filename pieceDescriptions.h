@@ -95,7 +95,6 @@ static  int  pieceDescriptionKeys[ NUM_CHESS_PIECES ];
 static  int  infoPanelSprite    =  -1;
 static  int  diagramBoardStrip  =  -1;
 static  int  diagramPieceStrip  =  -1;
-static  int  diagramExtraStrip  =  -1;
 
 
 
@@ -135,13 +134,6 @@ void pieceDescriptionsInit( void ) {
                                                  27 );
 
     maxigin_initMakeGlowSpriteStrip( diagramPieceStrip,
-                                     4,
-                                     2 );
-    
-    diagramExtraStrip = maxigin_initSpriteStrip( "moveDiagrams_extra.tga",
-                                                 27 );
-
-    maxigin_initMakeGlowSpriteStrip( diagramExtraStrip,
                                      4,
                                      2 );
     }
@@ -555,19 +547,6 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
                               inFade );
 
         maxigin_drawSprite( maxigin_getSpriteFromStrip( diagramPieceStrip,
-                                                        t ),
-                            inCenterX,
-                            inCenterY + diagramOffset );
-        }
-
-    if( maxigin_getNumSpritesInStrip( diagramExtraStrip ) > t ) {
-
-        maxigin_drawSetColor( 255,
-                              255,
-                              255,
-                              inFade );
-
-        maxigin_drawSprite( maxigin_getSpriteFromStrip( diagramExtraStrip,
                                                         t ),
                             inCenterX,
                             inCenterY + diagramOffset );

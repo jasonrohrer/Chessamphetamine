@@ -92,8 +92,10 @@ static  int  pieceDescriptionKeys[ NUM_CHESS_PIECES ];
 
 
 
-static  int  infoPanelSprite  =  -1;
-static  int  miniBoardSprite  =  -1;
+static  int  infoPanelSprite    =  -1;
+static  int  diagramBoardStrip  =  -1;
+static  int  diagramPieceStrip  =  -1;
+static  int  diagramExtraStrip  =  -1;
 
 
 
@@ -120,12 +122,28 @@ void pieceDescriptionsInit( void ) {
     maxigin_initMakeGlowSprite( infoPanelSprite,
                                 4,
                                 2 );
-    
-    miniBoardSprite = maxigin_initSprite( "miniChessBoard.tga" );
 
-    maxigin_initMakeGlowSprite( miniBoardSprite,
-                                4,
-                                2 );
+
+    diagramBoardStrip = maxigin_initSpriteStrip( "moveDiagrams_boards.tga",
+                                                 27 );
+
+    maxigin_initMakeGlowSpriteStrip( diagramBoardStrip,
+                                     4,
+                                     2 );
+    
+    diagramPieceStrip = maxigin_initSpriteStrip( "moveDiagrams_pieces.tga",
+                                                 27 );
+
+    maxigin_initMakeGlowSpriteStrip( diagramPieceStrip,
+                                     4,
+                                     2 );
+    
+    diagramExtraStrip = maxigin_initSpriteStrip( "moveDiagrams_extra.tga",
+                                                 27 );
+
+    maxigin_initMakeGlowSpriteStrip( diagramExtraStrip,
+                                     4,
+                                     2 );
     }
 
 
@@ -506,6 +524,8 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
     const char  *title;
     const char  *desc;
+    int          diagramOffset  =  52;
+    
     
     drawSetPieceColor( c );
 
@@ -515,13 +535,44 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
                         inCenterX,
                         inCenterY );
 
-    colorsApplyBoardColor();
+    if( maxigin_getNumSpritesInStrip( diagramBoardStrip ) > t ) {
+        
+        colorsApplyBoardColor();
 
-    maxigin_drawSetAlpha( inFade );
+        maxigin_drawSetAlpha( inFade );
 
-    if(0)maxigin_drawSprite( miniBoardSprite,
-                        inCenterX,
-                        inCenterY );
+        maxigin_drawSprite( maxigin_getSpriteFromStrip( diagramBoardStrip,
+                                                        t ),
+                            inCenterX,
+                            inCenterY + diagramOffset );
+        }
+
+    if( maxigin_getNumSpritesInStrip( diagramPieceStrip ) > t ) {
+
+        maxigin_drawSetColor( 255,
+                              255, 
+                              255,
+                              inFade );
+
+        maxigin_drawSprite( maxigin_getSpriteFromStrip( diagramPieceStrip,
+                                                        t ),
+                            inCenterX,
+                            inCenterY + diagramOffset );
+        }
+
+    if( maxigin_getNumSpritesInStrip( diagramExtraStrip ) > t ) {
+
+        maxigin_drawSetColor( 255,
+                              255,
+                              255,
+                              inFade );
+
+        maxigin_drawSprite( maxigin_getSpriteFromStrip( diagramExtraStrip,
+                                                        t ),
+                            inCenterX,
+                            inCenterY + diagramOffset );
+        }
+    
 
     maxigin_drawSetColor( 255,
                           255,

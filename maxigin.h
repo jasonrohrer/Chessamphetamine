@@ -205,7 +205,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_TOTAL_SPRITE_BYTES
-#define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  5000000
+#define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  8000000
 #endif
 
 
@@ -2243,7 +2243,7 @@ int maxigin_getNumSpritesInStrip( int  inSpriteStripHandle );
 
 
 /*
-  Gets the number of sprites in a sprite strip.
+  Gets a sprite from a sprite strip.
 
   Parameters:
     

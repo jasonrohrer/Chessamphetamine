@@ -24,8 +24,14 @@ void navStep( void );
 
 /* gets the direction the user is navigating in.
    returns 0,0 for no navigation, which will also happen if user is holding
-   a given navigation direction and the action repeat timer hasn't expired */
-void navGetDir( int  *outDeltaX,
+   a given navigation direction and the action repeat timer hasn't expired
+
+   if inPrioritizeDir is   0   x is prioritized (no diagonals)
+                           1   y is prioritized (no diagonals)
+                          -1   neither is prioritized (diagonals allowed)
+*/
+void navGetDir( int  inPrioritizeDir,
+                int  *outDeltaX,
                 int  *outDeltaY );
 
 
@@ -176,8 +182,12 @@ static void navGetLiveDir( int  *outDeltaX,
     }
 
 
+static  int   navHeldCount  =  0;
+static  char  navStillHeld  =  0;
 
-void navGetDir( int  *outDeltaX,
+
+void navGetDir( int  inPrioritizeDir,
+                int  *outDeltaX,
                 int  *outDeltaY ) {
 
     int  liveX;
@@ -186,6 +196,33 @@ void navGetDir( int  *outDeltaX,
     navGetLiveDir( &liveX,
                    &liveY );
 
+    if( inPrioritizeDir == 0
+        &&
+        liveX != 0 ) {
+        
+        liveY = 0;
+        }
+    else if( inPrioritizeDir == 1
+             &&
+             liveY != 0 ) {
+        
+        liveX = 0;
+        }
+    
+
+    if( liveX == 0
+        &&
+        liveY == 0 ) {
+        navLastXDir  = 0;
+        navLastYDir  = 0;
+        navStillHeld = 0;
+        navHeldCount = 0;
+
+        *outDeltaX = 0;
+        *outDeltaY = 0;
+        return;
+        }
+        
     if( liveX != navLastXDir
         ||
         liveY != navLastYDir ) {
@@ -195,17 +232,54 @@ void navGetDir( int  *outDeltaX,
 
         *outDeltaX = navLastXDir;
         *outDeltaY = navLastYDir;
+
+        navHeldCount = 0;
+        navStillHeld = 0;
         return;
         }
 
     /* else user is holding same direction */
 
-    /* fixme:  repeat timer */
+    /* repeat on timer */
 
+    if( ! navStillHeld ) {
+        
+        if( navHeldCount > mingin_getStepsPerSecond() / 2 ) {
+            /* long delay on first held repeat */
+
+            *outDeltaX = navLastXDir;
+            *outDeltaY = navLastYDir;
+        
+            navHeldCount = 0;
+            navStillHeld = 1;
+            
+            return;
+            }
+        }
+    else {
+        if( navHeldCount > mingin_getStepsPerSecond() / 10 ) {
+            /* short delay on subsequent repeats */
+            
+            *outDeltaX = navLastXDir;
+            *outDeltaY = navLastYDir;
+            
+            navHeldCount = 0;
+            
+            return;
+            }
+        }
+ 
     *outDeltaX = 0;
     *outDeltaY = 0;
-    
     }
+
+
+void navStep( void ) {
+    navHeldCount ++;
+    }
+
+
+
 
 
 #endif

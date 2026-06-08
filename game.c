@@ -1286,7 +1286,10 @@ void maxiginGame_step( void ) {
             int  dirX;
             int  dirY;
 
-            navGetDir( &dirX,
+            /* prioritize x dir, no diagonals since they are
+               ambiguous in sparse grid */
+            navGetDir( 0,
+                       &dirX,
                        &dirY );
 
             if( dirX != 0
@@ -1371,18 +1374,36 @@ void maxiginGame_step( void ) {
                             &&
                             curCol >= BW ) {
                             curCol = 0;
-                            curRow ++;
-                            if( curRow >= BH ) {
-                                curRow = 0;
+
+                            if( dirY >= 0 ) {
+                                curRow ++;
+                                if( curRow >= BH ) {
+                                    curRow = 0;
+                                    }
+                                }
+                            else {
+                                curRow --;
+                                if( curRow < 0 ) {
+                                    curRow = BH - 1;
+                                    }
                                 }
                             }
                         if( dirX < 0
                             &&
                             curCol < 0 ) {
                             curCol =  BW - 1;
-                            curRow --;
-                            if( curRow < 0 ) {
-                                curRow = BH - 1;
+
+                            if( dirY <= 0 ) {
+                                curRow --;
+                                if( curRow < 0 ) {
+                                    curRow = BH - 1;
+                                    }
+                                }
+                            else {
+                                curRow ++;
+                                if( curRow >= BH ) {
+                                    curRow = 0;
+                                    }
                                 }
                             }
                         }
@@ -1556,7 +1577,8 @@ void maxiginGame_step( void ) {
 
     moneyStep();
     checkDisplayStep();
-    
+
+    navStep();
 
         
     if( ! remappingJump && maxigin_isButtonDown( REMAP ) ) {

@@ -1415,7 +1415,9 @@ void maxiginGame_step( void ) {
 
                 panRow = curRow;
                 panCol = curCol;
-                
+
+                maxigin_playSoundEffect( examinePieceSound,
+                                         256 );
                 }
             }
         else {
@@ -1426,15 +1428,17 @@ void maxiginGame_step( void ) {
                                                     boardCenterY,
                                                     &panRow,
                                                     &panCol );
+
+            if( oldPiece != infoPanelPiece
+                &&
+                infoPanelPiece != noPiece ) {
+                maxigin_playSoundEffect( examinePieceSound,
+                                         256 );
+                }
             }
         
 
-        if( oldPiece != infoPanelPiece
-            &&
-            infoPanelPiece != noPiece ) {
-            maxigin_playSoundEffect( examinePieceSound,
-                                     256 );
-            }
+        
 
         if( infoPanelPiece != noPiece ) {
             infoPanelFade = 255;

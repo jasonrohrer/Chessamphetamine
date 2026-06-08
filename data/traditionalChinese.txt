@@ -42,35 +42,37 @@ press          "按下"
 defaults       "恢復預設"
 
 
+
+
 pawn           "兵"
-pawnDesc       "向前移动一格或两格，斜向吃子"
+pawnDesc       "向前一或兩格，斜前吃子"
 
 bishop         "象"
-bishopDesc     "斜向移动"
+bishopDesc     "走斜線"
 
-knight         "马"
-knightDesc     "以日字形移动"
+knight         "馬"
+knightDesc     "走日字"
 
-rook           "车"
-rookDesc       "直线移动"
+rook           "車"
+rookDesc       "走直線"
 
 queen          "后"
-queenDesc      "直线或斜向移动"
+queenDesc      "直斜皆可走"
 
 king           "王"
-kingDesc       "向任意方向移动一格"
+kingDesc       "每步走一格，方向不限"
 
-laserRook      "激光车"
-laserRookDesc  "移动后沿直线发射激光，直线移动"
+laserRook      "雷射車"
+laserRookDesc  "移動後沿直線發射雷射"
 
-laserPawn      "激光兵"
-laserPawnDesc  "移动后向前发射激光，向前移动一格或两格，斜向吃子"
+laserPawn      "雷射兵"
+laserPawnDesc  "移動後向前發射雷射"
 
 doublingPawn   "倍增兵"
-doublingPawnDesc  "使前方棋子的特殊能力加倍，向前移动一格或两格，斜向吃子"
+doublingPawnDesc  "使正前方棋子的特殊能力加倍"
 
-addingRook     "增益车"
-addingRookDesc "使相邻棋子的特殊能力加一，直线移动"
+addingRook     "加成車"
+addingRookDesc "使相鄰棋子的特殊能力加一"
 
-rocket         "苏联火箭"
-rocketDesc     "摧毁随机敌方棋子，然后自毁"
+rocket         "蘇聯火箭"
+rocketDesc     "隨機摧毀一枚敵方棋子，然後自爆"

@@ -54,7 +54,7 @@ bishop         "Fou"
 bishopDesc     "Se déplace en diagonale"
 
 knight         "Cavalier"
-knightDesc     "Se déplace en forme de L"
+knightDesc     "Se déplace en L"
 
 rook           "Tour"
 rookDesc       "Se déplace en ligne droite"
@@ -63,19 +63,19 @@ queen          "Dame"
 queenDesc      "Se déplace en ligne droite et en diagonale"
 
 king           "Roi"
-kingDesc       "Se déplace de 1 case dans n’importe quelle direction"
+kingDesc       "Se déplace d’une case dans n’importe quelle direction"
 
-laserRook      "Tour Laser"
-laserRookDesc  "Tire des lasers en ligne droite après s’être déplacée, se déplace en ligne droite"
+laserRook      "Tour laser"
+laserRookDesc  "Tire des lasers en ligne droite après s’être déplacée"
 
-laserPawn      "Pion Laser"
-laserPawnDesc  "Tire un laser vers l’avant après s’être déplacé, avance de 1 ou 2 cases, capture en diagonale"
+laserPawn      "Pion laser"
+laserPawnDesc  "Tire un laser vers l’avant après s’être déplacé"
 
-doublingPawn   "Pion Doubleur"
-doublingPawnDesc  "Double les capacités spéciales de toute pièce juste devant lui, avance de 1 ou 2 cases, capture en diagonale"
+doublingPawn   "Pion doubleur"
+doublingPawnDesc  "Double les capacités spéciales de la pièce juste devant lui"
 
-addingRook     "Tour Additionneuse"
-addingRookDesc "Ajoute 1 aux capacités spéciales de toutes les pièces voisines, se déplace en ligne droite"
+addingRook     "Tour additive"
+addingRookDesc "Ajoute 1 aux capacités spéciales des pièces voisines"
 
 rocket         "Fusée CCCP"
-rocketDesc     "Détruit une pièce ennemie au hasard, puis se détruit elle-même"
+rocketDesc     "Détruit une pièce ennemie au hasard, puis s’autodétruit"

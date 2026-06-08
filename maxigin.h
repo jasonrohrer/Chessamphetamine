@@ -154,7 +154,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_NUM_SPRITES
-#define  MAXIGIN_MAX_NUM_SPRITES  1024
+#define  MAXIGIN_MAX_NUM_SPRITES  2048
 #endif
 
 

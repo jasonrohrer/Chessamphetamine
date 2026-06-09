@@ -16147,8 +16147,22 @@ static char mx_playbackStepForward( void ) {
             mx_playbackNumFullSnapshots - 1 ) {
             
             /* reached end */
+
+            if( mx_loopPointHandles[1] == mx_playbackDataLength ) {
+                /* hit end-of-data loop point, reverse direction  */
+
+                mingin_seekPersistData( mx_playbackDataStoreHandle,
+                                        curDataPos );
+                mx_playbackDirection = -1;
+
+                mx_setSoundSpeedAndDirection( mx_playbackSpeed,
+                                              mx_playbackDirection );
+                return 1;
+                }
+            
             maxigin_logInt( "Reached end of playback with num snapshots: ",
                             mx_playbackNumFullSnapshots );
+            
             mx_playbackEnd();
             return 0;
             }
@@ -16284,6 +16298,33 @@ static char mx_playbackStepBackward( void ) {
             0 ) {
             
             /* reached start (reverse end) */
+
+            if( mx_loopPointHandles[0] == 0 ) {
+                /* hit start-of-data loop point, reverse direction  */
+
+                int  oldSpeed  =  mx_playbackSpeed;
+                
+                mx_playbackDirection = 1;
+                mx_playbackCurrentStep = 0;
+
+                /* this is a more difficult case than reaching the end
+                   of the data and reversing, because normally
+                   the first full snapshot is only read upon starting
+                   playback...
+                   so we have to actually fully restart playback here */
+
+                mingin_endReadPersistData( mx_playbackDataStoreHandle );
+                mx_playbackDataStoreHandle = -1;
+
+                mx_initPlayback();
+
+                mx_playbackSpeed = oldSpeed;
+                
+                mx_setSoundSpeedAndDirection( mx_playbackSpeed,
+                                              mx_playbackDirection );
+                return 1;
+                }
+
             mingin_log( "Reached start during reverse playback\n" );
             
             mx_playbackEnd();

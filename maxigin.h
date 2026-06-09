@@ -1078,6 +1078,10 @@ void maxigin_initKeyAndButtonHintSprites( int           inSpriteStripHandle,
 
       inThumbActiveSpriteResource         slider thumb when clicked/active
 
+      inLoopStartSpriteResource           slider loop start marker
+
+      inLoopEndSpriteResource             slider loop end marker
+
   [jumpMaxiginInit]      
 */ 
 void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
@@ -1090,7 +1094,9 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
                                 const char  *inMiddleSliverFullSpriteResource,
                                 const char  *inThumbSpriteResource,
                                 const char  *inThumbHotSpriteResource,
-                                const char  *inThumbActiveSpriteResource );
+                                const char  *inThumbActiveSpriteResource,
+                                const char  *inLoopStartSpriteResource,
+                                const char  *inLoopEndSpriteResource );
 
 
 
@@ -1117,6 +1123,10 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
 
       inThumbActiveSpriteResource   slider thumb when clicked/active
 
+      inLoopStartSpriteResource     slider loop start marker
+
+      inLoopEndSpriteResource       slider loop end marker
+      
   [jumpMaxiginInit]      
 */ 
 void maxigin_initSliderSpritesStatic(
@@ -1124,7 +1134,9 @@ void maxigin_initSliderSpritesStatic(
     const char  **inBarSprites,
     const char   *inThumbSpriteResource,
     const char   *inThumbHotSpriteResource,
-    const char   *inThumbActiveSpriteResource );
+    const char   *inThumbActiveSpriteResource,
+    const char   *inLoopStartSpriteResource,
+    const char   *inLoopEndSpriteResource );
 
 
 
@@ -2362,6 +2374,12 @@ void maxigin_endGUI( MaxiginGUI *inGUI );
 
       inThumbWidth     width of slider thumb (the moving part) in pixels.
                        has no effect if thumb sprite is defined.
+
+      inLoopStart      value of the loop start position, or a value
+                       below inMinValue to hide the loop start
+
+      inLoopEnd        value of the loop end position, or a value
+                       below inMinValue to hide the loop end
                    
   Returns:
 
@@ -2380,7 +2398,9 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                         int          inY,
                         int          inBarHeight,
                         int          inThumbHeight,
-                        int          inThumbWidth );
+                        int          inThumbWidth,
+                        int          inLoopStart,
+                        int          inLoopEnd );
 
 
 /*
@@ -6530,6 +6550,8 @@ typedef struct MaxiginSliderSprites {
         
         /* index 0 for cold, 1 for hot, 2 for active */
         int  thumb [3];
+
+        int  loop  [2];
         
     } MaxiginSliderSprites;
 
@@ -6546,10 +6568,11 @@ static void mx_clearSliderSprites( void ) {
     for( i = 0;
          i < 2;
          i ++ ) {
-        mx_sliderSprites.left[i] = -1;
-        mx_sliderSprites.right[i] = -1;
-        mx_sliderSprites.bar[i] = -1;
+        mx_sliderSprites.left  [i] = -1;
+        mx_sliderSprites.right [i] = -1;
+        mx_sliderSprites.bar   [i] = -1;
         mx_sliderSprites.sliver[i] = -1;
+        mx_sliderSprites.loop  [i] = -1;
         }
     
     for( i = 0;
@@ -6571,7 +6594,9 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
                                 const char  *inMiddleSliverFullSpriteResource,
                                 const char  *inThumbSpriteResource,
                                 const char  *inThumbHotSpriteResource,
-                                const char  *inThumbActiveSpriteResource ) {
+                                const char  *inThumbActiveSpriteResource,
+                                const char  *inLoopStartSpriteResource,
+                                const char  *inLoopEndSpriteResource ) {
 
     mx_clearSliderSprites();
     
@@ -6612,6 +6637,13 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
     mx_sliderSprites.thumb[ 2 ] =
         maxigin_initSprite( inThumbActiveSpriteResource );
 
+    mx_sliderSprites.loop[ 0 ] =
+        maxigin_initSprite( inLoopStartSpriteResource );
+
+    mx_sliderSprites.loop[ 1 ] =
+        maxigin_initSprite( inLoopEndSpriteResource );
+    
+
     mx_sliderSpritesSet =
         ( mx_sliderSprites.left[ 0 ]   >= 0 )
         &&
@@ -6633,7 +6665,11 @@ void maxigin_initSliderSprites( const char  *inLeftEndEmptySpriteResource,
         &&
         ( mx_sliderSprites.thumb[ 1 ]  >= 0 )
         &&
-        ( mx_sliderSprites.thumb[ 2 ]  >= 0 );
+        ( mx_sliderSprites.thumb[ 2 ]  >= 0 )
+        &&
+        ( mx_sliderSprites.loop[ 0 ]   >= 0 )
+        &&
+        ( mx_sliderSprites.loop[ 1 ]   >= 0 );
     }
 
 
@@ -6642,7 +6678,9 @@ void maxigin_initSliderSpritesStatic(
     const char  **inBarSprites,
     const char   *inThumbSpriteResource,
     const char   *inThumbHotSpriteResource,
-    const char   *inThumbActiveSpriteResource ) {
+    const char   *inThumbActiveSpriteResource,
+    const char   *inLoopStartSpriteResource,
+    const char   *inLoopEndSpriteResource ) {
 
     int   i;
     char  success;
@@ -6683,6 +6721,12 @@ void maxigin_initSliderSpritesStatic(
     mx_sliderSprites.thumb[ 2 ] =
         maxigin_initSprite( inThumbActiveSpriteResource );
 
+    mx_sliderSprites.loop[ 0 ] =
+        maxigin_initSprite( inLoopStartSpriteResource );
+
+    mx_sliderSprites.loop[ 1 ] =
+        maxigin_initSprite( inLoopEndSpriteResource );
+
     mx_sliderSpritesSet =
         success
         &&
@@ -6690,7 +6734,11 @@ void maxigin_initSliderSpritesStatic(
         &&
         ( mx_sliderSprites.thumb[ 1 ]  >= 0 )
         &&
-        ( mx_sliderSprites.thumb[ 2 ]  >= 0 );
+        ( mx_sliderSprites.thumb[ 2 ]  >= 0 )
+        &&
+        ( mx_sliderSprites.loop[ 0 ]   >= 0 )
+        &&
+        ( mx_sliderSprites.loop[ 1 ]   >= 0 );
     }
 
 
@@ -10108,7 +10156,9 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                         int          inY,
                         int          inBarHeight,
                         int          inThumbHeight,
-                        int          inThumbWidth ) {
+                        int          inThumbWidth,
+                        int          inLoopStart,
+                        int          inLoopEnd ) {
 
     MaxiginColor  c;
     int           thumbPixelCenter;
@@ -10629,6 +10679,41 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                              inY );
             }
 
+        
+
+        if( inLoopStart >= inMinValue ) {
+
+            int loopPixCenter =
+                ( ( inLoopStart - inMinValue ) *
+                  ( inEndX - inStartX ) )
+                / ( inMaxValue - inMinValue )
+                + inStartX;
+
+            mx_guiAddSprite( inGUI,
+                             0,
+                             255,
+                             mx_sliderSprites.loop[0],
+                             loopPixCenter,
+                             inY );
+            }
+
+        if( inLoopEnd >= inMinValue ) {
+
+            int loopPixCenter =
+                ( ( inLoopEnd - inMinValue ) *
+                  ( inEndX - inStartX ) )
+                / ( inMaxValue - inMinValue )
+                + inStartX;
+
+            mx_guiAddSprite( inGUI,
+                             0,
+                             255,
+                             mx_sliderSprites.loop[1],
+                             loopPixCenter,
+                             inY );
+            }
+        
+
         /* thumb drawn the same for both static and dynamic bars */
 
         if( inGUI->active   == inCurrentValue
@@ -10678,6 +10763,50 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                            inEndX,
                            inY + inBarHeight / 2 );
 
+        
+        if( inLoopStart >= inMinValue ) {
+
+            int loopPixCenter =
+                ( ( inLoopStart - inMinValue ) *
+                  ( inEndX - inStartX ) )
+                / ( inMaxValue - inMinValue )
+                + inStartX;
+
+            c.comp.red = 0;
+            c.comp.green = 255;
+            c.comp.blue = 0;
+            c.comp.alpha = 255;
+
+            mx_guiAddLine( inGUI,
+                           0,
+                           &c,
+                           loopPixCenter,
+                           inY - inThumbHeight,
+                           loopPixCenter,
+                           inY + inThumbHeight );
+            }
+
+        if( inLoopEnd >= inMinValue ) {
+
+            int loopPixCenter =
+                ( ( inLoopEnd - inMinValue ) *
+                  ( inEndX - inStartX ) )
+                / ( inMaxValue - inMinValue )
+                + inStartX;
+
+            c.comp.red = 255;
+            c.comp.green = 0;
+            c.comp.blue = 0;
+            c.comp.alpha = 255;
+
+            mx_guiAddLine( inGUI,
+                           0,
+                           &c,
+                           loopPixCenter,
+                           inY - inThumbHeight,
+                           loopPixCenter,
+                           inY + inThumbHeight );
+            }
 
         /* thumb */
 
@@ -10735,15 +10864,7 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                            thumbPixelCenter + inThumbWidth / 2,
                            inY + inThumbHeight / 2 );
 
-        /* suppress warning for now */
-        if( 0 )
-            mx_guiAddLine( inGUI,
-                           0,
-                           &c,
-                           thumbPixelCenter - inThumbWidth / 2,
-                           inY - inThumbHeight / 2,
-                           thumbPixelCenter + inThumbWidth / 2,
-                           inY + inThumbHeight / 2 );
+
 
         }
     
@@ -12187,7 +12308,9 @@ void minginGame_step( char  inFinalStep ) {
                                MAXIGIN_GAME_NATIVE_H / 2 - 30,
                                10,
                                20,
-                               10 );
+                               10,
+                               mx_loopPointSteps[ 0 ],
+                               mx_loopPointSteps[ 1 ] );
 
         if( ! mx_playbackPaused
             &&
@@ -22582,7 +22705,9 @@ void mx_populateMenuPanel( void ) {
                        -25,
                        10,
                        20,
-                       10 );
+                       10,
+                       -1,
+                       -1 );
     
 
     maxigin_guiLabel( &mx_internalGUI,
@@ -22600,7 +22725,9 @@ void mx_populateMenuPanel( void ) {
                        10,
                        10,
                        20,
-                       10 );
+                       10,
+                       -1,
+                       -1 );
 
     
     if( oldActive != mx_internalGUI.active

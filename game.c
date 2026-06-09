@@ -2174,14 +2174,18 @@ void maxiginGame_init( void ) {
                                    "sliderSliverFull.tga",
                                    "sliderThumbPassive.tga",
                                    "sliderThumbHot.tga",
-                                   "sliderThumbActive.tga" );
+                                   "sliderThumbActive.tga",
+                                   "loopStart.tga",
+                                   "loopEnd.tga" );
         }
     else {
         maxigin_initSliderSpritesStatic( 2,
                                          sliderBarSprites,
                                          "sliderThumbPassive.tga",
                                          "sliderThumbHot.tga",
-                                         "sliderThumbActive.tga" );
+                                         "sliderThumbActive.tga",
+                                         "loopStart.tga",
+                                         "loopEnd.tga" );
         }
     
 

@@ -1374,36 +1374,18 @@ void maxiginGame_step( void ) {
                             &&
                             curCol >= BW ) {
                             curCol = 0;
-
-                            if( dirY >= 0 ) {
-                                curRow ++;
-                                if( curRow >= BH ) {
-                                    curRow = 0;
-                                    }
-                                }
-                            else {
-                                curRow --;
-                                if( curRow < 0 ) {
-                                    curRow = BH - 1;
-                                    }
+                            curRow ++;
+                            if( curRow >= BH ) {
+                                curRow = 0;
                                 }
                             }
                         if( dirX < 0
                             &&
                             curCol < 0 ) {
                             curCol =  BW - 1;
-
-                            if( dirY <= 0 ) {
-                                curRow --;
-                                if( curRow < 0 ) {
-                                    curRow = BH - 1;
-                                    }
-                                }
-                            else {
-                                curRow ++;
-                                if( curRow >= BH ) {
-                                    curRow = 0;
-                                    }
+                            curRow --;
+                            if( curRow < 0 ) {
+                                curRow = BH - 1;
                                 }
                             }
                         }

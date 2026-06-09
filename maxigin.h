@@ -3722,6 +3722,7 @@ typedef enum MaxiginUserAction {
     MAXIGIN_SLIDER_INCREASE,
     MAXIGIN_SLIDER_DECREASE,
     MAXIGIN_HIDE_GUI,
+    MAXIGIN_ADD_LOOP_POINT,
     LAST_MAXIGIN_USER_ACTION
     } MaxiginUserAction;
 
@@ -3774,6 +3775,12 @@ static  int          mx_playbackNumFullSnapshots        =  0;
 static  int          mx_diffsBetweenSnapshots           =  300;
 static  int          mx_playbackTotalSteps              =  0;
 static  int          mx_playbackCurrentStep             =  0;
+
+static  int          mx_loopPointHandles[2]             =  { -1,
+                                                             -1 };
+static  int          mx_loopPointSteps[2]               =  { -1,
+                                                             -1 };
+
 
 static  const char  *mx_recordingDataStoreName          =
                                                    "maxigin_recording.bin";
@@ -11990,7 +11997,72 @@ void minginGame_step( char  inFinalStep ) {
     if( mx_isActionFreshPressed( MAXIGIN_HIDE_GUI ) ) {
         mx_hideGUI = ! mx_hideGUI;
         }
-    
+
+
+    if( mx_playbackRunning
+        &&
+        mx_isActionFreshPressed( MAXIGIN_ADD_LOOP_POINT ) ) {
+
+        int  curDataPos  =
+               mingin_getPersistDataPosition( mx_playbackDataStoreHandle );
+
+        if( curDataPos != -1 ) {
+
+            if( ! mx_playbackPaused ) {
+                
+                if( mx_playbackDirection == 1 ) {
+                    
+                    mx_loopPointHandles[ 1 ] = curDataPos;
+                    mx_loopPointSteps  [ 1 ] = mx_playbackCurrentStep;
+
+                    if( mx_loopPointHandles[ 0 ] == -1 ) {
+                    
+                        mx_loopPointHandles[ 0 ] = 0;
+                        mx_loopPointSteps  [ 0 ] = 0;
+                        }
+                    }
+                else if( mx_playbackDirection == -1 ) {
+                    mx_loopPointHandles[ 0 ] = curDataPos;
+                    mx_loopPointSteps  [ 0 ] = mx_playbackCurrentStep;
+
+                    if( mx_loopPointHandles[ 1 ] == -1 ) {
+                    
+                        mx_loopPointHandles[ 1 ] = mx_playbackDataLength;
+                        mx_loopPointSteps  [ 1 ] = mx_playbackTotalSteps;
+                        }
+                    }
+                }
+            else {
+                /* paused, player might move head with mouse
+                   and we let them set whichever loop point isn't set yet */
+
+                if( mx_loopPointHandles[ 0 ] == -1 ) {
+                    mx_loopPointHandles[ 1 ] = curDataPos;
+                    mx_loopPointSteps  [ 1 ] = mx_playbackCurrentStep;
+                    mx_loopPointHandles[ 0 ] = 0;
+                    mx_loopPointSteps  [ 0 ] = 0;
+                    }
+                else {
+                    /* loop points set... are we before or after second one ?
+                     */
+
+                    if( mx_playbackCurrentStep < mx_loopPointSteps  [ 1 ] ) {
+                        mx_loopPointHandles[ 0 ] = curDataPos;
+                        mx_loopPointSteps  [ 0 ] = mx_playbackCurrentStep;
+                        }
+                    else if( mx_playbackCurrentStep >
+                             mx_loopPointSteps  [ 1 ] ) {
+                        mx_loopPointHandles[ 1 ] = curDataPos;
+                        mx_loopPointSteps  [ 1 ] = mx_playbackCurrentStep;
+                        }
+                    else {
+                        /* right on top of loop point,
+                           leave it alone */
+                        }
+                    }
+                }
+            }
+        }
 
     
     if( ! mx_menuShowing
@@ -12452,6 +12524,10 @@ static  MinginButton  mx_hideGuiMapping[]  = { MGN_KEY_H,
                                                MGN_MAP_END };
 
 
+static  MinginButton  mx_addLoopPointMapping[]  = { MGN_KEY_P,
+                                                    MGN_MAP_END };
+
+
 static  MinginStick  mx_sliderStickMapping[] = { MGN_STICK_LEFT_X,
                                                  MGN_STICK_RIGHT_X,
                                                  MGN_MAP_END };
@@ -12573,6 +12649,9 @@ static void mx_gameInit( void ) {
 
     mingin_registerButtonMapping( MAXIGIN_HIDE_GUI,
                                   mx_hideGuiMapping );
+
+    mingin_registerButtonMapping( MAXIGIN_ADD_LOOP_POINT,
+                                  mx_addLoopPointMapping );
 
     /* all buttons start out unpressed */
     for( p = QUIT;
@@ -15915,6 +15994,18 @@ static char mx_playbackStepForward( void ) {
     */
     curDataPos = mingin_getPersistDataPosition( mx_playbackDataStoreHandle );
 
+    if( mx_loopPointHandles[1] != -1
+        &&
+        curDataPos >= mx_loopPointHandles[1] ) {
+        /* hit loop point, reverse direction  */
+        mx_playbackDirection = -1;
+
+        mx_setSoundSpeedAndDirection( mx_playbackSpeed,
+                                      mx_playbackDirection );
+        return 1;
+        }
+    
+
     if( curDataPos == -1 ) {
         mingin_log( "Playback failed to get current position from playback "
                     "data source.\n" );
@@ -16000,6 +16091,16 @@ static char mx_playbackStepBackward( void ) {
     
     curDataPos = mingin_getPersistDataPosition( mx_playbackDataStoreHandle );
 
+    if( mx_loopPointHandles[0] != -1
+        &&
+        curDataPos <= mx_loopPointHandles[0] ) {
+        /* hit loop start point, reverse direction */
+        mx_playbackDirection = 1;
+        
+        mx_setSoundSpeedAndDirection( mx_playbackSpeed,
+                                      mx_playbackDirection );
+        return 1;
+        }
 
     /* read the start pos from the end of the block before this position */
 

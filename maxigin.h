@@ -11941,6 +11941,12 @@ static void mx_unpauseAllPlayingSoundEffects( void );
 
 
 
+static void mx_updateLoopPoints( void );
+
+static void mx_loadLoopPoints( void );
+
+
+
 void minginGame_step( char  inFinalStep ) {
 
     char  playbackPausedBySlider  =  0;
@@ -12017,6 +12023,13 @@ void minginGame_step( char  inFinalStep ) {
                                      1 );
             maxigin_writeIntSetting( "maxigin_resumePlaybackPos.ini",
                                      mx_playbackCurrentStep );
+
+            maxigin_writeIntSetting( "maxigin_resumePlaybackSpeed.ini",
+                                     mx_playbackSpeed );
+            maxigin_writeIntSetting( "maxigin_resumePlaybackDirection.ini",
+                                     mx_playbackDirection );
+            maxigin_writeIntSetting( "maxigin_resumePlaybackPaused.ini",
+                                     mx_playbackPaused );
             }
         else {
             maxigin_writeIntSetting( "maxigin_resumePlayback.ini",
@@ -12140,6 +12153,7 @@ void minginGame_step( char  inFinalStep ) {
                         mx_loopPointHandles[ 0 ] = 0;
                         mx_loopPointSteps  [ 0 ] = 0;
                         }
+                    mx_updateLoopPoints();
                     }
                 else if( mx_playbackDirection == -1 ) {
                     mx_loopPointHandles[ 0 ] = curDataPos;
@@ -12150,6 +12164,7 @@ void minginGame_step( char  inFinalStep ) {
                         mx_loopPointHandles[ 1 ] = mx_playbackDataLength;
                         mx_loopPointSteps  [ 1 ] = mx_playbackTotalSteps;
                         }
+                    mx_updateLoopPoints();
                     }
                 }
             else {
@@ -12167,6 +12182,7 @@ void minginGame_step( char  inFinalStep ) {
                         mx_loopPointHandles[ 1 ] = mx_playbackDataLength;
                         mx_loopPointSteps  [ 1 ] = mx_playbackTotalSteps;
                         }
+                    mx_updateLoopPoints();
                     }
                 else if( mx_loopPointHandles[ 1 ] == -1
                          ||
@@ -12174,6 +12190,7 @@ void minginGame_step( char  inFinalStep ) {
                     
                     mx_loopPointHandles[ 1 ] = curDataPos;
                     mx_loopPointSteps  [ 1] = mx_playbackCurrentStep;
+                    mx_updateLoopPoints();
                     }
                 else {
                     /* loop points set... are we before first one
@@ -12183,6 +12200,7 @@ void minginGame_step( char  inFinalStep ) {
                     if( mx_playbackCurrentStep < mx_loopPointSteps  [ 0 ] ) {
                         mx_loopPointHandles[ 0 ] = curDataPos;
                         mx_loopPointSteps  [ 0 ] = mx_playbackCurrentStep;
+                        mx_updateLoopPoints();
                         }
                     else if( mx_playbackCurrentStep >
                              mx_loopPointSteps  [ 1 ] ) {
@@ -12212,6 +12230,7 @@ void minginGame_step( char  inFinalStep ) {
                             mx_loopPointHandles[ 1 ] = curDataPos;
                             mx_loopPointSteps  [ 1 ] = mx_playbackCurrentStep;
                             }
+                        mx_updateLoopPoints();
                         }
                     }
                 }
@@ -12231,6 +12250,7 @@ void minginGame_step( char  inFinalStep ) {
             mx_loopPointHandles[ p ] = -1;
             mx_loopPointSteps  [ p ] = -1;
             }
+        mx_updateLoopPoints();
         }
     
     
@@ -14130,14 +14150,32 @@ static void mx_checkStartupPlaybackResume( void ) {
        This is very useful when hot-reloading to tweak the position
        of something mid-move */
 
-    mx_playbackPaused    = 1;
-    mx_playbackDirection = 1;
-    mx_playbackSpeed     = 1;
+    mx_playbackSpeed =
+        maxigin_readIntSetting( "maxigin_resumePlaybackSpeed.ini",
+                                1 );
+    
+    
+    mx_playbackDirection =
+        (char)maxigin_readIntSetting( "maxigin_resumePlaybackDirection.ini",
+                                      1 );
+    
+        
+    mx_playbackPaused =
+        (char)maxigin_readIntSetting( "maxigin_resumePlaybackPaused.ini",
+                                      1 );
+    
 
     /* sound speed to 0 when paused */
-    mx_setSoundSpeedAndDirection( 0,
-                                  mx_playbackDirection );
+    if( mx_playbackPaused ) {
+        mx_setSoundSpeedAndDirection( 0,
+                                      mx_playbackDirection );
+        }
+    else {
+        mx_setSoundSpeedAndDirection( mx_playbackSpeed,
+                                      mx_playbackDirection );
+        }
 
+    mx_loadLoopPoints();
     
     }
 
@@ -16524,6 +16562,7 @@ static void mx_playbackJumpToStep( int inStepNumber ) {
                move it to new one */
             mx_loopPointHandles[1] = curDataPos;
             mx_loopPointSteps  [1] = mx_playbackCurrentStep;
+            mx_updateLoopPoints();
             }
 
         if( mx_loopPointHandles[0] != -1
@@ -16533,6 +16572,7 @@ static void mx_playbackJumpToStep( int inStepNumber ) {
                move it to new one */
             mx_loopPointHandles[0] = curDataPos;
             mx_loopPointSteps  [0] = mx_playbackCurrentStep;
+            mx_updateLoopPoints();
             }
         }
 
@@ -23416,6 +23456,85 @@ int maxigin_getElapsedMilliseconds( MaxiginTimer  inTimer ) {
 
 
     return (int)( curSec * 1000 + curMsec );
+    }
+
+
+
+
+    
+static  const char  *mx_loopDataName  =  "maxigin_playbackLoopPoints.bin";
+    
+
+
+static void mx_updateLoopPoints( void ) {
+
+
+    if( mx_loopPointHandles[0] == -1 ) {
+        /* cleared loop points */
+        mingin_deletePersistData( mx_loopDataName );
+        
+        return;
+        }
+    else {
+        int  handle  =  mingin_startWritePersistData( mx_loopDataName );
+
+        if( handle != -1 ) {
+
+            int  i;
+
+            for( i = 0;
+                 i < 2;
+                 i ++ ) {
+
+                mx_writeIntToPeristentData( handle,
+                                            mx_loopPointHandles[i] );
+                mx_writeIntToPeristentData( handle,
+                                            mx_loopPointSteps[i] );
+                }
+            mingin_endWritePersistData( handle );
+            }
+        }
+    }
+
+
+
+static void mx_loadLoopPoints( void ) {
+
+    int   len;
+    int   handle  =  mingin_startReadPersistData( mx_loopDataName,
+                                                 &len );
+    char  success  =  1;
+    
+    if( handle != -1 ) {
+
+        int  i;
+
+        for( i = 0;
+             i < 2;
+             i ++ ) {
+
+            success  =  success & mx_readIntTokenFromBulkData(
+                                  handle,
+                                  &( mx_loopPointHandles[i] ) );
+            
+            success  =  success & mx_readIntTokenFromBulkData(
+                                  handle,
+                                  &( mx_loopPointSteps  [i] ) );
+            
+            }
+        mingin_endReadPersistData( handle );
+        }
+    else {
+        success = 0;
+        }
+    
+    if( ! success ) {
+
+        mx_loopPointHandles[0] = -1;
+        mx_loopPointHandles[1] = -1;
+        mx_loopPointSteps  [0] = -1;
+        mx_loopPointSteps  [1] = -1;
+        }
     }
 
 

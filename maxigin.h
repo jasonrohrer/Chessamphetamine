@@ -196,8 +196,6 @@
 /*
   Sprites are loaded into a statically allocated memory buffer.
 
-  The default size has room for 10 128x128 RGBA sprites.
-
   To allocate room for 100 16x16 RGBA sprites, do this:
 
       #define  MAXIGIN_MAX_TOTAL_SPRITE_BYTES  102400
@@ -3743,6 +3741,7 @@ typedef enum MaxiginUserAction {
     MAXIGIN_SLIDER_DECREASE,
     MAXIGIN_HIDE_GUI,
     MAXIGIN_ADD_LOOP_POINT,
+    MAXIGIN_CLEAR_LOOP_POINTS,
     LAST_MAXIGIN_USER_ACTION
     } MaxiginUserAction;
 
@@ -12185,6 +12184,21 @@ void minginGame_step( char  inFinalStep ) {
             }
         }
 
+    if( mx_playbackRunning
+        &&
+        mx_isActionFreshPressed( MAXIGIN_CLEAR_LOOP_POINTS ) ) {
+
+        int  p;
+
+        for( p = 0;
+             p < 2;
+             p ++ ) {
+
+            mx_loopPointHandles[ p ] = -1;
+            mx_loopPointSteps  [ p ] = -1;
+            }
+        }
+    
     
     if( ! mx_menuShowing
         &&
@@ -12647,8 +12661,11 @@ static  MinginButton  mx_hideGuiMapping[]  = { MGN_KEY_H,
                                                MGN_MAP_END };
 
 
-static  MinginButton  mx_addLoopPointMapping[]  = { MGN_KEY_P,
-                                                    MGN_MAP_END };
+static  MinginButton  mx_addLoopPointMapping[]     = { MGN_KEY_P,
+                                                       MGN_MAP_END };
+
+static  MinginButton  mx_clearLoopPointsMapping[]  = { MGN_KEY_O,
+                                                       MGN_MAP_END };
 
 
 static  MinginStick  mx_sliderStickMapping[] = { MGN_STICK_LEFT_X,
@@ -12775,6 +12792,9 @@ static void mx_gameInit( void ) {
 
     mingin_registerButtonMapping( MAXIGIN_ADD_LOOP_POINT,
                                   mx_addLoopPointMapping );
+    
+    mingin_registerButtonMapping( MAXIGIN_CLEAR_LOOP_POINTS,
+                                  mx_clearLoopPointsMapping );
 
     /* all buttons start out unpressed */
     for( p = QUIT;

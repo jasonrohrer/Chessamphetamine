@@ -12156,17 +12156,31 @@ void minginGame_step( char  inFinalStep ) {
                 /* paused, player might move head with mouse
                    and we let them set whichever loop point isn't set yet */
 
-                if( mx_loopPointHandles[ 0 ] == -1 ) {
+                if( mx_loopPointHandles[ 0 ] == -1
+                    ||
+                    mx_loopPointHandles[ 0 ] == 0 ) {
+                    
+                    mx_loopPointHandles[ 0 ] = curDataPos;
+                    mx_loopPointSteps  [ 0 ] = mx_playbackCurrentStep;
+
+                    if( mx_loopPointHandles[ 1 ] == -1 ) {
+                        mx_loopPointHandles[ 1 ] = mx_playbackDataLength;
+                        mx_loopPointSteps  [ 1 ] = mx_playbackTotalSteps;
+                        }
+                    }
+                else if( mx_loopPointHandles[ 1 ] == -1
+                         ||
+                         mx_loopPointHandles[ 1 ] == mx_playbackDataLength ) {
+                    
                     mx_loopPointHandles[ 1 ] = curDataPos;
-                    mx_loopPointSteps  [ 1 ] = mx_playbackCurrentStep;
-                    mx_loopPointHandles[ 0 ] = 0;
-                    mx_loopPointSteps  [ 0 ] = 0;
+                    mx_loopPointSteps  [ 1] = mx_playbackCurrentStep;
                     }
                 else {
-                    /* loop points set... are we before or after second one ?
+                    /* loop points set... are we before first one
+                       or after second one ?
                      */
 
-                    if( mx_playbackCurrentStep < mx_loopPointSteps  [ 1 ] ) {
+                    if( mx_playbackCurrentStep < mx_loopPointSteps  [ 0 ] ) {
                         mx_loopPointHandles[ 0 ] = curDataPos;
                         mx_loopPointSteps  [ 0 ] = mx_playbackCurrentStep;
                         }
@@ -12175,9 +12189,29 @@ void minginGame_step( char  inFinalStep ) {
                         mx_loopPointHandles[ 1 ] = curDataPos;
                         mx_loopPointSteps  [ 1 ] = mx_playbackCurrentStep;
                         }
+                    else if( mx_playbackCurrentStep == mx_loopPointSteps[ 0 ]
+                             ||
+                             mx_playbackCurrentStep == mx_loopPointSteps[ 1 ] ) {
+                        /* on an existing point, do nothing */
+                        }
                     else {
-                        /* right on top of loop point,
-                           leave it alone */
+                        /* we're between loop points...
+                           adjust whichever is closest to us
+                        */
+
+                        int  diff0  =  mx_playbackCurrentStep -
+                                       mx_loopPointSteps[ 0 ];
+                        int  diff1  =  mx_loopPointSteps[ 1 ] -
+                                       mx_playbackCurrentStep;
+
+                        if( diff0 <= diff1 ) {
+                            mx_loopPointHandles[ 0 ] = curDataPos;
+                            mx_loopPointSteps  [ 0 ] = mx_playbackCurrentStep;
+                            }
+                        else {
+                            mx_loopPointHandles[ 1 ] = curDataPos;
+                            mx_loopPointSteps  [ 1 ] = mx_playbackCurrentStep;
+                            }
                         }
                     }
                 }
@@ -16137,7 +16171,9 @@ static char mx_playbackStepForward( void ) {
     */
     curDataPos = mingin_getPersistDataPosition( mx_playbackDataStoreHandle );
 
-    if( mx_loopPointHandles[1] != -1
+    if( ! mx_playbackPaused
+        &&
+        mx_loopPointHandles[1] != -1
         &&
         curDataPos >= mx_loopPointHandles[1] ) {
         /* hit loop point, reverse direction  */
@@ -16248,7 +16284,9 @@ static char mx_playbackStepBackward( void ) {
     
     curDataPos = mingin_getPersistDataPosition( mx_playbackDataStoreHandle );
 
-    if( mx_loopPointHandles[0] != -1
+    if( ! mx_playbackPaused
+        &&
+        mx_loopPointHandles[0] != -1
         &&
         curDataPos <= mx_loopPointHandles[0] ) {
         /* hit loop start point, reverse direction */
@@ -16473,6 +16511,32 @@ static void mx_playbackJumpToStep( int inStepNumber ) {
         mx_playbackStepForward();
         }
 
+    
+    if( mx_playbackRunning ) {
+
+        int  curDataPos  =
+            mingin_getPersistDataPosition( mx_playbackDataStoreHandle );
+
+        if( mx_loopPointHandles[1] != -1
+            &&
+            curDataPos > mx_loopPointHandles[1] ) {
+            /* player dragged beyond our loop point
+               move it to new one */
+            mx_loopPointHandles[1] = curDataPos;
+            mx_loopPointSteps  [1] = mx_playbackCurrentStep;
+            }
+
+        if( mx_loopPointHandles[0] != -1
+            &&
+            curDataPos < mx_loopPointHandles[0] ) {
+            /* player dragged beyond our loop point
+               move it to new one */
+            mx_loopPointHandles[0] = curDataPos;
+            mx_loopPointSteps  [0] = mx_playbackCurrentStep;
+            }
+        }
+
+    
     if( ! mx_playbackRunning ) {
         maxigin_logInt( "Playback failed to step forward to step number "
                         "after jumping to full snapshot: ",

@@ -23,6 +23,8 @@
 #define PARTICLE_SYSTEM_IMPLEMENTATION
 #define PIECE_DESCRIPTIONS_IMPLEMENTATION
 #define NAV_IMPLEMENTATION
+#define LEVELS_IMPLEMENTATION
+
 
 #include "chess.h"
 
@@ -55,6 +57,8 @@
 #include "pieceDescriptions.h"
 
 #include "nav.h"
+
+#include "levels.h"
 
 
 enum GameUserAction {
@@ -2260,6 +2264,8 @@ void maxiginGame_init( void ) {
 
     navInit();
     
+    levelsInit();
+    
 
     if(0)runChessTest();
     
@@ -2273,6 +2279,9 @@ void maxiginGame_init( void ) {
     if(1) getStartBoard( &boardState );
     if(0) getTestBoard( &boardState );
 
+    if(1) getLevel( 4,
+                    &boardState );
+    
 
     REGISTER_VAL_MEM( boxPosX );
     REGISTER_VAL_MEM( boxPosY );

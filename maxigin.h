@@ -701,6 +701,43 @@ int maxigin_initSprite( const char  *inBulkResourceName );
 
 
 /*
+  Loads a TGA-formatted sprite from the platform's bulk data store
+  into temporary storage that only remains valid until the next call
+  initialize a sprite (or until the next time a sprite auto-reloads due
+  to being changed in storage).
+
+  Sprites must be in RGBA 32-bit uncompressed TGA format.
+
+  Parameters:
+
+      inBulkResourceName   the name of the bulk data resource to load the sprite
+                           from
+
+      outRGBABytePointer   pointer to where the poitner to the RGBA bytes
+                           should be returned.  This will point to maxigin's
+                           internal sprite byte storage area, which will
+                           have at least outWidth x outHeight * 4 bytes.
+
+      outWidth             pointer to where the sprite width will be returned
+
+      outHeight            pointer to where the sprite heigh will be returned
+
+  Returns:
+
+      1   on load success
+
+      0   on failure;
+
+  [jumpMaxiginInit]      
+*/
+char maxigin_initTempSprite( const char      *inBulkResourceName,
+                             unsigned char  **outRGBABytePointer,
+                             int             *outWidth,
+                             int             *outHeight );
+
+
+
+/*
   Generates a blurred additive glow sprite for a given sprite.
 
   Each sprite can have one glow sprite, so subsequent calls to this
@@ -5217,6 +5254,33 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
 
     return mx_reloadSprite( inBulkResourceName,
                             -1 );
+    }
+
+
+
+char maxigin_initTempSprite( const char      *inBulkResourceName,
+                             unsigned char  **outRGBABytePointer,
+                             int             *outWidth,
+                             int             *outHeight ) {
+
+    int  s  =  maxigin_initSprite( inBulkResourceName );
+
+    if( s == -1 ) {
+        return 0;
+        }
+
+    *outRGBABytePointer = &( mx_spriteBytes[ mx_sprites[ s ].startByte ] );
+
+    *outWidth  = mx_sprites[ s ].w;
+    *outHeight = mx_sprites[ s ].h;
+
+    /* undo loading sprite
+       the bytes will still be valid until next time a sprite is
+       reloaded */
+    mx_numSpriteBytesUsed -= mx_sprites[ s ].w * mx_sprites[ s ].h  *  4;
+    mx_numSprites --;
+
+    return 1;
     }
 
 

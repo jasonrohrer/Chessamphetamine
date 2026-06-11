@@ -514,6 +514,21 @@ void mingin_getRunningTime( long  *outSeconds,
 
 
 /*
+  Gets a seed value from an entropy source.
+
+  A static value might be returned on some platforms.
+
+  Returns:
+
+      a seed value.
+            
+  [jumpMinginProvides]                         
+*/
+unsigned long mingin_getEntropySeed( void );
+
+
+
+/*
   Prevents minginGame_getAudioSamples() from being called until
   mingin_unlockAudio() is called.
 
@@ -2249,6 +2264,12 @@ static const char *mn_getWindowTitle( void ) {
 #define  _POSIX_C_SOURCE  200112L
 #endif
 
+/* we also need syscall from unistd */
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE
+#endif
+
+
 /* for creating an audio thread */
 #include <pthread.h>
 
@@ -2273,6 +2294,7 @@ static const char *mn_getWindowTitle( void ) {
 #include <errno.h>
 #include <sys/time.h>
 #include <time.h>
+#include <sys/syscall.h>
 
 
 /* provide a prototype of rename here,
@@ -2389,6 +2411,23 @@ void mingin_getRunningTime( long  *outSeconds,
         *outSeconds      -=    1;
         }
         
+    }
+
+
+
+unsigned long mingin_getEntropySeed( void ) {
+
+    unsigned  long  v;
+    long            result  = syscall( SYS_getrandom,
+                                       &v,
+                                       sizeof( v ),
+                                       0 );
+    if( result != sizeof( v ) ) {
+
+        v = 0x9E3779B9UL;
+        }
+    
+    return v;
     }
 
 
@@ -8236,6 +8275,22 @@ void mingin_getRunningTime( long  *outSeconds,
 
 
 
+unsigned long mingin_getEntropySeed( void ) {
+    
+    LARGE_INTEGER  currCount;
+    unsigned long  v;
+    
+    QueryPerformanceCounter( &currCount );
+
+    v  = 0x9E3779B9UL;
+    v ^= (unsigned long)currCount.HighPart;
+    v ^= (unsigned long)currCount.LowPart;
+    
+    return v;
+    }
+
+
+
 void mingin_quit( void ) {
     mn_gotQuit = 1;
     }
@@ -10093,6 +10148,12 @@ void mingin_getRunningTime( long  *outSeconds,
                             long  *outMilliseconds ) {
     *outSeconds      = -1;
     *outMilliseconds = -1;
+    }
+
+
+
+unsigned long mingin_getEntropySeed( void ) {
+    return 0x9E3779B9UL;
     }
 
 

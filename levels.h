@@ -18,8 +18,14 @@
 void levelsInit( void );
 
 
-void getLevel( int         inLevelNumber,
-               BoardState *outState );
+/* outState is filled with the enemy pieces and the player's king piece
+   
+   outPlayerPieceSpots is filled with an empty board state with "pawn"
+   pieces where the player's pieces should go
+*/
+void getLevel( int          inLevelNumber,
+               BoardState  *outState,
+               BoardState  *outPlayerPieceSpots );
 
 
 
@@ -395,8 +401,9 @@ static ChessPiece pickRandomLevelPiece( int  inLevelNumber ) {
 
 
 
-void getLevel( int         inLevelNumber,
-               BoardState *outState ) {
+void getLevel( int          inLevelNumber,
+               BoardState  *outState,
+               BoardState  *outPlayerPieceSpots ) {
 
     int  y;
     int  x;
@@ -424,9 +431,10 @@ void getLevel( int         inLevelNumber,
 
             int  p  =  pieceLayouts[ i ][ y ][ x ];
 
-            if( p == 0 ) {
+            outState           ->grid[ y ][ x ] = noPiece;
+            outPlayerPieceSpots->grid[ y ][ x ] = noPiece;
 
-                outState->grid[ y ][ x ] = noPiece;
+            if( p == 0 ) {
                 continue;
                 }
 
@@ -443,10 +451,10 @@ void getLevel( int         inLevelNumber,
                 }
 
             if( p == 3 ) {
-                /* spot for player piece
-                   leave a marker piece there for now */
-                /* fixme */
-                outState->grid[ y ][ x ] = pawn | CHESS_WHITE;
+                /* spot for player piece */
+                
+                outPlayerPieceSpots->grid[ y ][ x ] = pawn;
+                
                 continue;
                 }
             if( p == 4 ) {

@@ -409,13 +409,16 @@ void getLevel( int          inLevelNumber,
     int  x;
     int  i;
 
+    /* if beyond our max number of hand-authored levels, pick
+       a random level from in the second half */
     if( inLevelNumber >= NUM_POSSIBLE_LEVELS ) {
-        inLevelNumber = NUM_POSSIBLE_LEVELS - 1;
+
+        inLevelNumber = maxigin_randRange( &levelsRand,
+                                           NUM_POSSIBLE_LEVELS / 2,
+                                           NUM_POSSIBLE_LEVELS - 1 );
         }
 
     i = inLevelNumber;
-    
-    /* fixme */
 
     outState->kingExists[0] = 0;
     outState->kingExists[1] = 0;

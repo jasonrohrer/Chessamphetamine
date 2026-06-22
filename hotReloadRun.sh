@@ -6,7 +6,7 @@ echo "1" > $enableSetting
 echo "0" > $autoSetting
 echo "0" > $quitFileName
 
-fileList="$quitFileName Chessamphetamine game.c maxigin.h mingin.h board.h pieceSprites.h chess.h memoryRegister.h particleSprite.h gameSize.h simTest.h moveAnim.h money.h numbers.h checkDisplay.h util.h colors.h pinch.h fixedMath.h particleSystem.h chessArrayCheck.h pieceDescriptions.h nav.h levels.h"
+fileList="$quitFileName Chessamphetamine game.c maxigin.h mingin.h board.h pieceSprites.h chess.h memoryRegister.h particleSprite.h gameSize.h simTest.h moveAnim.h money.h numbers.h checkDisplay.h util.h colors.h pinch.h fixedMath.h particleSystem.h chessArrayCheck.h pieceDescriptions.h nav.h levels.h deck.h"
 
 oldQuitModTime=$(stat -c %Y "$quitFileName")
 

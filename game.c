@@ -24,6 +24,7 @@
 #define PIECE_DESCRIPTIONS_IMPLEMENTATION
 #define NAV_IMPLEMENTATION
 #define LEVELS_IMPLEMENTATION
+#define DECK_IMPLEMENTATION
 
 
 #include "chess.h"
@@ -59,6 +60,8 @@
 #include "nav.h"
 
 #include "levels.h"
+
+#include "deck.h"
 
 
 enum GameUserAction {

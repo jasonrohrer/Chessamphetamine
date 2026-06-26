@@ -157,7 +157,9 @@ void drawPieceHighlight( BoardState    *inState,
 
 static  int  pieceBottomHeight  =  6;
 
-static  int          pieceSpriteHandles[ NUM_CHESS_PIECES ];
+/* second index is 0 => white, 1 => black */
+
+static  int          pieceSpriteHandles[ NUM_CHESS_PIECES ][ 2 ];
 static  int          pieceOffsetY      [ NUM_CHESS_PIECES ];
 
 
@@ -241,99 +243,115 @@ CHECK_CHESS_ARRAY( pieceSpriteExtraFiles,
 
 
 
-static  int          slashSpriteHandle      =  -1;
-static  int          whiteFlagSpriteHandle  =  -1;
-static  int          noMoveSpriteHandle     =  -1;
+static  int            slashSpriteHandle      =  -1;
+static  int            whiteFlagSpriteHandle  =  -1;
+static  int            noMoveSpriteHandle     =  -1;
 
 
 void pieceSpritesInit( void ) {
 
     int  i;
-
-
-    maxigin_logInt( "Size of enum: ",
-                    sizeof( ChessPiece ) );
+    int  ci;
+    
+    int  colorMap  =  maxigin_initSprite( "pieceColorMap.tga" );
+    
     
     for( i = FIRST_CHESS_PIECE;
          i < NUM_CHESS_PIECES;
          i ++ ) {
 
-        int   j;
-        char  foundMatch  =  0;
+        for( ci = 0;
+             ci < 2;
+             ci ++ ) {
+            
+            int   j;
+            char  foundMatch  =  0;
         
-        pieceSpriteHandles[ i ] = -1;
-
-        if( maxigin_stringsEqual( pieceSpriteFiles[i],
-                                  "" ) ) {
-            /* skip blank file names */
-            continue;
-            }
-        
-        for( j = FIRST_CHESS_PIECE;
-             j < i;
-             j ++ ) {
+            pieceSpriteHandles[ i ][ ci ] = -1;
 
             if( maxigin_stringsEqual( pieceSpriteFiles[i],
-                                      pieceSpriteFiles[j] ) ) {
-
-                /* we already loaded this file for a previous piece,
-                   re-use it */
-                
-                foundMatch = 1;
-
-                pieceSpriteHandles[ i ] = pieceSpriteHandles[ j ];
-                pieceOffsetY      [ i ] = pieceOffsetY      [ j ];
-
-                break;
+                                      "" ) ) {
+                /* skip blank file names */
+                continue;
                 }
-            }
-
-        if( foundMatch ) {
-            continue;
-            }
         
-        /* else a different sprite data file from what we've already processed */
-        
-        pieceSpriteHandles[ i ] = maxigin_initSprite( pieceSpriteFiles[i] );
+            for( j = FIRST_CHESS_PIECE;
+                 j < i;
+                 j ++ ) {
 
-        pieceOffsetY[ i ] = 0;
-        
-        if( pieceSpriteHandles[i] != -1 ) {
+                if( maxigin_stringsEqual( pieceSpriteFiles[i],
+                                          pieceSpriteFiles[j] ) ) {
 
-            int  w;
-            int  h;
+                    /* we already loaded this file for a previous piece,
+                       re-use it */
                 
-            /* hazy black border around top only */
-            maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i],
-                                              5,
-                                              2,
-                                              0,
-                                              255,
-                                              60,
-                                              30,
-                                              100,
-                                              0 );
+                    foundMatch = 1;
+
+                    pieceSpriteHandles    [ i ][ ci ]   =
+                        pieceSpriteHandles[ j ][ ci ];
+                    
+                    pieceOffsetY          [ i ]         =
+                        pieceOffsetY      [ j ];
+
+                    break;
+                    }
+                }
+
+            if( foundMatch ) {
+                continue;
+                }
+        
+            /* else a different sprite data file from what we've
+               already processed */
+        
+            pieceSpriteHandles[ i ][ ci ] =
+                maxigin_initSprite( pieceSpriteFiles[i] );
+
+            pieceOffsetY[ i ] = 0;
+        
+            if( pieceSpriteHandles[ i ][ ci ] != -1 ) {
+
+                int  w;
+                int  h;
+
+
+                if( colorMap != -1 ) {
+                    maxigin_applyColorMap( pieceSpriteHandles[ i ][ ci ],
+                                           colorMap,
+                                           ci + 1 );
+                    }
+                
+                                       
+                /* hazy black border around top only */
+                maxigin_initMakeDropShadowSprite( pieceSpriteHandles[i][ci],
+                                                  5,
+                                                  2,
+                                                  0,
+                                                  255,
+                                                  60,
+                                                  30,
+                                                  100,
+                                                  0 );
 
             
-            maxigin_initMakeGlowSprite( pieceSpriteHandles[i],
-                                        4,
-                                        2 );
+                if(0)maxigin_initMakeGlowSprite( pieceSpriteHandles[i][ci],
+                                                 4,
+                                                 2 );
 
-            maxigin_getSpriteDimensions( pieceSpriteHandles[i],
-                                         &w,
-                                         &h );
+                maxigin_getSpriteDimensions( pieceSpriteHandles[i][ci],
+                                             &w,
+                                             &h );
 
-            pieceOffsetY[ i ] = -( h / 2 - pieceBottomHeight );
+                pieceOffsetY[ i ] = -( h / 2 - pieceBottomHeight );
+                }
             }
         }
-
+    
 
     
     for( i = FIRST_CHESS_PIECE;
          i < NUM_CHESS_PIECES;
          i ++ ) {
-
-        int  ci;
 
         for( ci = 0;
              ci < 2;
@@ -507,7 +525,7 @@ void drawPiece( ChessPiece  inPiece,
     
     drawSetPieceColor( c );
     
-    maxigin_drawSprite( pieceSpriteHandles[ rawP ],
+    maxigin_drawSprite( pieceSpriteHandles[ rawP ][ cIndex ],
                         inBaseCenterX,
                         inBaseCenterY + pieceOffsetY[ rawP ] );
 
@@ -529,8 +547,10 @@ void drawPieceShadowOnly( ChessPiece  inPiece,
                           int         inBaseCenterY ) {
     
     ChessPiece  rawP          =  inPiece & CHESS_TYPE_MASK;
+    ChessPiece  c             =  inPiece & CHESS_COLOR_MASK;
+    int         cIndex        =  getPieceColorIndex( c );
     
-    maxigin_drawSpriteShadowOnly( pieceSpriteHandles[ rawP ],
+    maxigin_drawSpriteShadowOnly( pieceSpriteHandles[ rawP ][ cIndex ],
                                   inBaseCenterX,
                                   inBaseCenterY + pieceOffsetY[ rawP ] );
     }
@@ -552,11 +572,11 @@ void drawPieceGlowOnly( ChessPiece     inPiece,
 
     maxigin_drawSetAlpha( inAlpha );
     
-    maxigin_drawSpriteGlowOnly( pieceSpriteHandles[ rawP ],
+    maxigin_drawSpriteGlowOnly( pieceSpriteHandles[ rawP ][ cIndex ],
                                 inBaseCenterX,
                                 inBaseCenterY + pieceOffsetY[ rawP ] );
     
-    maxigin_drawSpriteGlowOnly( pieceSpriteHandles[ rawP ],
+    maxigin_drawSpriteGlowOnly( pieceSpriteHandles[ rawP ][ cIndex ],
                                 inBaseCenterX,
                                 inBaseCenterY + pieceOffsetY[ rawP ] );
 
@@ -593,11 +613,11 @@ static void drawPieceBaseAndGlowOnlyInternal( ChessPiece  inPiece,
         drawSetPieceColor( c );
         }
     
-    maxigin_drawBaseSprite( pieceSpriteHandles[ rawP ],
+    maxigin_drawBaseSprite( pieceSpriteHandles[ rawP ][ cIndex ],
                             inBaseCenterX,
                             inBaseCenterY + pieceOffsetY[ rawP ] );
     
-    maxigin_drawSpriteGlowOnly( pieceSpriteHandles[ rawP ],
+    maxigin_drawSpriteGlowOnly( pieceSpriteHandles[ rawP ][ cIndex ],
                                 inBaseCenterX,
                                 inBaseCenterY + pieceOffsetY[ rawP ] );
 
@@ -652,6 +672,7 @@ void drawPieceSparkles( ChessPiece     inPiece,
 
     ChessPiece  rawP            =  inPiece & CHESS_TYPE_MASK;
     ChessPiece  c               =  inPiece & CHESS_COLOR_MASK;
+    int         cIndex          =  getPieceColorIndex( c );
     int         partSprite      =  getStarParticleSprite();
 
     maxigin_drawToggleAdditive( 1 );
@@ -664,7 +685,7 @@ void drawPieceSparkles( ChessPiece     inPiece,
         maxigin_drawSetColorSaturation( 8500 );
         }
 
-    maxigin_drawSpriteSparkles( pieceSpriteHandles[ rawP ],
+    maxigin_drawSpriteSparkles( pieceSpriteHandles[ rawP ][ cIndex ],
                                 partSprite,
                                 inBaseCenterX,
                                 inBaseCenterY + pieceOffsetY[ rawP ],
@@ -789,7 +810,7 @@ void drawExplodingPiece( ChessPiece  inPiece,
 
    
 
-    maxigin_drawExplodingSprite( pieceSpriteHandles[ rawP ],
+    maxigin_drawExplodingSprite( pieceSpriteHandles[ rawP ][ cIndex ],
                                  partSpriteToUse,
                                  x,
                                  baseCenterY,
@@ -1204,7 +1225,7 @@ ChessPiece getPointerOverPiece( BoardState  *inState,
             spritePixY = pointerY - pY;
             
 
-            if( maxigin_isInSprite( pieceSpriteHandles[ t ],
+            if( maxigin_isInSprite( pieceSpriteHandles[ t ][ cIndex ],
                                     spritePixX,
                                     spritePixY ) ) {
                 *outRow = y;

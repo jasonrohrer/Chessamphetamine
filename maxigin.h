@@ -2103,6 +2103,29 @@ void maxigin_drawButtonHintSprite( int  inButtonHandle,
 
 
 /*
+  Applies a color map to a sprite.
+
+  A color map sprite has source colors on row 0 and destination colors
+  on subsequent rows.
+  
+  Parameters:
+
+      inSpriteHandle     the sprite to apply the color map to
+
+      inColorMapHandle   the sprite that contains the color map
+
+      inColorMapRow      the row in the color map to apply
+                         (row 0 is the source row, so passing 0 here will
+                          result in no change)
+  [jumpMaxiginGeneral]  
+*/
+void maxigin_applyColorMap( int  inSpriteHandle,
+                            int  inColorMapHandle,
+                            int  inColorMapRow );
+
+
+
+/*
   Sets index of font to use for current language (for languages that
   have multiple font sizes).
 
@@ -4438,6 +4461,12 @@ typedef struct MaxiginSprite {
         int            glowRadius;
         int            glowIterations;
 
+        /* -1 if this sprite has not had a color map applied */
+        int            colorMapHandle;
+        int            colorMapRow;
+        /* 1 if this sprite is itself a color map */
+        char           isColorMap;
+
         
         int            numShadows;
         int            shadowSpriteHandle [ MAXIGIN_MAX_NUM_DROP_SHADOWS ];
@@ -5094,8 +5123,11 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
         mx_initEmptyShadows( newSpriteHandle );
 
         mx_sprites[ newSpriteHandle ].kerningTableIndex  = -1;
+
+        mx_sprites[ newSpriteHandle ].colorMapHandle     = -1;
+        mx_sprites[ newSpriteHandle ].colorMapRow        = -1;
+        mx_sprites[ newSpriteHandle ].isColorMap         =  0;
         
-            
         mx_numSprites ++;
         }
 
@@ -6598,6 +6630,77 @@ void maxigin_initMakeDropShadowSprite( int            inSpriteHandle,
 
 
 
+static void mx_mapPixel( unsigned char  *inPixelPointer,
+                         unsigned char  *inColorMapStart,
+                         int             inColorMapW,
+                         int             inColorMapDestRow ) {
+
+    int  destCol  =  -1;
+    int  c;
+    int  cb;
+    
+    for( c = 0;
+         c < inColorMapW;
+         c ++ ) {
+
+        cb = c * 4;
+
+        if( inPixelPointer[0] == inColorMapStart[ cb     ]
+            &&
+            inPixelPointer[1] == inColorMapStart[ cb + 1 ]
+            &&
+            inPixelPointer[2] == inColorMapStart[ cb + 2 ] ) {
+
+            /* hit! */
+            destCol = c;
+            break;
+            }
+        }
+
+    if( destCol == -1 ) {
+        /* color not found in source row, leave it alone */
+        return;
+        }
+
+    cb = inColorMapDestRow * inColorMapW * 4 + destCol * 4;
+
+    inPixelPointer[0] = inColorMapStart[ cb     ];
+    inPixelPointer[1] = inColorMapStart[ cb + 1 ];
+    inPixelPointer[2] = inColorMapStart[ cb + 2 ];
+    }
+
+
+
+void maxigin_applyColorMap( int  inSpriteHandle,
+                            int  inColorMapHandle,
+                            int  inColorMapRow ) {
+
+    MaxiginSprite  *s  =  &( mx_sprites[ inSpriteHandle   ] );
+    MaxiginSprite  *c  =  &( mx_sprites[ inColorMapHandle ] );
+
+    int             n  =  s->w * s->h;
+    int             i;
+    unsigned char  *spriteBytes    =  &( mx_spriteBytes[ s->startByte ] );
+    unsigned char  *colorMapBytes  =  &( mx_spriteBytes[ c->startByte ] );
+    
+    for( i = 0;
+         i < n;
+         i ++ ) {
+
+        mx_mapPixel( &( spriteBytes[ i * 4 ] ),
+                     colorMapBytes,
+                     c->w,
+                     inColorMapRow );
+        }
+
+    s->colorMapHandle = inColorMapHandle;
+    s->colorMapRow    = inColorMapRow;
+    
+    c->isColorMap     = 1;
+    }
+
+
+
 #define  MAXIGIN_NUM_STATIC_SLIDER_BARS  10
 
 typedef struct MaxiginSliderSprites {
@@ -7114,6 +7217,16 @@ static void mx_regenerateSpriteKerning( int  inSpriteHandle );
 static void mx_postReloadStep( int  inSpriteHandle ) {
     
     MaxiginSprite  *s  =  &( mx_sprites[ inSpriteHandle ] );
+
+    if( s->colorMapHandle != -1 ) {
+
+        /* re-apply the color map to the newly-loaded sprite,
+           which would have reloaded its source colors */
+
+        maxigin_applyColorMap( inSpriteHandle,
+                               s->colorMapHandle,
+                               s->colorMapRow );
+        }
     
     s->pendingChange       = 0;
     s->retryCount          = 0;
@@ -7161,6 +7274,42 @@ static void mx_postReloadStep( int  inSpriteHandle ) {
 
     if( s->kerningTableIndex != -1 ) {
         mx_regenerateSpriteKerning( inSpriteHandle );
+        }
+
+    
+    if( s->isColorMap ) {
+        /* this sprite is a color map itself
+           and it has changed!
+           Trigger reload of all sprites that use this map */
+
+        int  i;
+
+        for( i = 0;
+             i < mx_numSprites;
+             i ++ ) {
+
+            if( i != inSpriteHandle ) {
+
+                MaxiginSprite  *s2  =  &( mx_sprites[i] );
+
+                if( s2->colorMapHandle == inSpriteHandle
+                    &&
+                    s2->bulkResourceName[0] != '\0' ) {
+
+                    /* don't worry about whether this is a success
+                       or not.
+                       We do that during the file-changed-reload process
+                       because the file may be incomplete for a bit
+                       after it has changed on disk
+                       But in this case, we are triggering a cascade
+                       reload after a separate color map file changed */
+                    mx_reloadSprite( s2->bulkResourceName,
+                                     i );
+                    
+                    mx_postReloadStep( i );
+                    }
+                }
+            }
         }
     }
 

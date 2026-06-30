@@ -1,0 +1,21 @@
+{
+  "type": "curved-hsv-palette-setup",
+  "version": 2,
+  "baseColor": "#21d9d9",
+  "params": {
+    "count": 7,
+    "baseIndex": 3,
+    "hueSpan": 90,
+    "brightReach": 0.85,
+    "brightSpacing": 1,
+    "darkReach": 0.9,
+    "darkSpacing": 1,
+    "gamma": 11.540124685886521,
+    "topHue": 134,
+    "topValue": 0,
+    "topSat": 0,
+    "bottomHue": -134,
+    "bottomValue": 0,
+    "bottomSat": 0
+  }
+}

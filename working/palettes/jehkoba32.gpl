@@ -1,0 +1,36 @@
+GIMP Palette
+#Palette Name: Jehkoba32
+#Description: Working from my Jehkoba64 palette and trimming down to half as many colours (including transparency), this 32-colour selection is perfect for emulating early SNES-style graphics, with vibrant tones and smooth ramping.&nbsp; Guaranteed to satisfy that retro itch. ♥<br>
+#Colors: 32
+0	0	0	000000
+0	2	28	00021c
+28	40	77	1c284d
+52	52	115	343473
+45	82	128	2d5280
+77	122	153	4d7a99
+116	151	166	7497a6
+163	204	217	a3ccd9
+240	237	216	f0edd8
+115	40	102	732866
+166	33	110	a6216e
+217	76	135	d94c87
+217	33	79	d9214f
+242	85	101	f25565
+242	121	97	f27961
+153	54	73	993649
+179	97	89	b36159
+240	156	96	f09c60
+179	143	36	b38f24
+179	179	36	b3b324
+247	201	62	f7c93e
+23	115	95	17735f
+17	153	85	119955
+103	179	27	67b31b
+27	166	131	1ba683
+71	204	169	47cca9
+150	227	201	96e3c9
+36	105	179	2469b3
+11	139	230	0b8be6
+11	175	230	0bafe6
+242	141	133	f28d85
+240	187	144	f0bb90

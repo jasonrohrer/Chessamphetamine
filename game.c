@@ -204,8 +204,6 @@ static BoardState    postMoveState;
 static Move          boardMove;
 static AnimProgress  moveProgress;
 
-static BoardState    tempPlayerPieceSpots;
-
 
 static char         moveMade           =  0;
 static char         chessGameOver      =  0;
@@ -2270,6 +2268,8 @@ void maxiginGame_init( void ) {
     navInit();
     
     levelsInit();
+
+    deckInit();
     
 
     if(0)runChessTest();
@@ -2286,53 +2286,14 @@ void maxiginGame_init( void ) {
 
     if(1) {
 
-        MaxiginRand  playerPieceRand;
-        int          y;
-        int          x;
-
-        maxigin_randSeed( &playerPieceRand,
-                          mingin_getEntropySeed() );
+        Deck  playerDeck;
+        
+        getPlayerStartDeck( &playerDeck );
+        
         
         getLevel( 1,
-                    &boardState,
-                    &tempPlayerPieceSpots );
-
-        for( y = 0;
-             y < BH;
-             y ++ ) {
-
-            for( x = 0;
-                 x < BH;
-                 x ++ ) {
-
-                if( tempPlayerPieceSpots.grid[ y ][ x ] == pawn ) {
-
-                    ChessPiece  p  =  king;
-                    int         t  =  0;
-
-                    while( p == king
-                           &&
-                           t < 100 ) {
-                        
-                        p = (ChessPiece)maxigin_randRange( &playerPieceRand,
-                                                       FIRST_CHESS_PIECE,
-                                                       NUM_CHESS_PIECES - 1 );
-                        t ++;
-                        }
-
-                    if( p == king ) {
-                        /* hit limit above */
-                        p = pawn;
-                        }
-                    
-                    
-                    p |= CHESS_WHITE;
-
-                    boardState.grid[ y ][ x ] = p;
-                    }
-                }
-            }
-
+                  &boardState,
+                  &playerDeck );
         }
     
     

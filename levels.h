@@ -14,18 +14,18 @@
 #ifndef LEVELS_H_INCLUDED
 #define LEVELS_H_INCLUDED
 
+#include "deck.h"
+
 
 void levelsInit( void );
 
 
 /* outState is filled with the enemy pieces and the player's king piece
-   
-   outPlayerPieceSpots is filled with an empty board state with "pawn"
-   pieces where the player's pieces should go
+            and pieces drawn from the player's deck
 */
 void getLevel( int          inLevelNumber,
                BoardState  *outState,
-               BoardState  *outPlayerPieceSpots );
+               Deck        *inDeck );
 
 
 
@@ -403,7 +403,7 @@ static ChessPiece pickRandomLevelPiece( int  inLevelNumber ) {
 
 void getLevel( int          inLevelNumber,
                BoardState  *outState,
-               BoardState  *outPlayerPieceSpots ) {
+               Deck        *inPlayerDeck ) {
 
     int  y;
     int  x;
@@ -435,7 +435,6 @@ void getLevel( int          inLevelNumber,
             int  p  =  pieceLayouts[ i ][ y ][ x ];
 
             outState           ->grid[ y ][ x ] = noPiece;
-            outPlayerPieceSpots->grid[ y ][ x ] = noPiece;
 
             if( p == 0 ) {
                 continue;
@@ -456,7 +455,8 @@ void getLevel( int          inLevelNumber,
             if( p == 3 ) {
                 /* spot for player piece */
                 
-                outPlayerPieceSpots->grid[ y ][ x ] = pawn;
+                outState->grid[ y ][ x ] =
+                    deckDraw( inPlayerDeck ) | CHESS_WHITE;
                 
                 continue;
                 }

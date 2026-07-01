@@ -58,11 +58,11 @@
    is that they go 396 draws without seeing a specific rare piece (and then see
    all 4 copies right at the end).
 */
-#define  DECK_VARIANCE_FACTOR        4
+#define  SHOP_DECK_VARIANCE_FACTOR        4
 
-#define  MAX_DECK_SIZE              ( NUM_CHESS_PIECES             \
-                                      * MAX_DECK_PIECE_OCCURRENCE  \
-                                      * DECK_VARIANCE_FACTOR )
+#define  MAX_DECK_SIZE              ( NUM_CHESS_PIECES              \
+                                      * MAX_DECK_PIECE_OCCURRENCE   \
+                                      * SHOP_DECK_VARIANCE_FACTOR )
 
 typedef struct Deck {
 
@@ -79,13 +79,26 @@ typedef struct Deck {
 
 
 
+void  deckInit( void );
+
+
 /* gets a shuffled player start deck */
 void getPlayerStartDeck( Deck  *outDeck );
 
 
-/* gets a shuffled shop deck */
-void getShopDeck( Deck  *outDeck );
+/* gets a shuffled shop deck
+   inRarityFilter filters out more common pieces by only including
+   pieces with occurrence factor  <=  inRarityFilter
+   passing MAX_DECK_PIECE_OCCURRENCE includes all pieces
+   passing 1  includes only the most rare pieces */
+void getShopDeck( Deck  *outDeck,
+                  int    inRarityFilter );
 
+
+
+/* draws a piece from deck
+   reshuffles deck as-needed */
+ChessPiece deckDraw( Deck  *inDeck );
 
 
 
@@ -113,26 +126,236 @@ void deckReshuffleRemaining( Deck  *inDeck );
 #ifdef DECK_IMPLEMENTATION
 
 
-#define SHOP_OCCURRENCE_LIST( C, V )      \
-    V( C, 0,   noPiece,      0   ) \
-    V( C, 1,   pawn,         10  ) \
-    V( C, 2,   bishop,       8   ) \
-    V( C, 3,   knight,       8   ) \
-    V( C, 4,   rook,         6   ) \
-    V( C, 5,   queen,        4   ) \
-    V( C, 6,   king,         0   ) \
-    V( C, 7,   laserRook,    2   ) \
-    V( C, 8,   laserPawn,    3   ) \
-    V( C, 9,   doublingPawn, 1   ) \
-    V( C, 10,  addingRook,   1   ) \
+#define SHOP_OCCURRENCE_LIST( C, V )  \
+    V( C, 0,   noPiece,      0   )    \
+    V( C, 1,   pawn,         10  )    \
+    V( C, 2,   bishop,       8   )    \
+    V( C, 3,   knight,       8   )    \
+    V( C, 4,   rook,         6   )    \
+    V( C, 5,   queen,        4   )    \
+    V( C, 6,   king,         0   )    \
+    V( C, 7,   laserRook,    2   )    \
+    V( C, 8,   laserPawn,    3   )    \
+    V( C, 9,   doublingPawn, 1   )    \
+    V( C, 10,  addingRook,   1   )    \
     V( C, 11,  rocket,       2   )
 
-static int deckShopOccurrence[] = {
+static  int  deckShopOccurrence[] = {
     MAKE_CHESS_ARRAY( SHOP_OCCURRENCE_LIST )
     };
 
 CHECK_CHESS_ARRAY( deckShopOccurrence,
                    SHOP_OCCURRENCE_LIST );
+
+
+#define PLAYER_DECK_OCCURRENCE_LIST( C, V )  \
+    V( C, 0,   noPiece,      0   )           \
+    V( C, 1,   pawn,         8   )           \
+    V( C, 2,   bishop,       2   )           \
+    V( C, 3,   knight,       2   )           \
+    V( C, 4,   rook,         2   )           \
+    V( C, 5,   queen,        1   )           \
+    V( C, 6,   king,         0   )           \
+    V( C, 7,   laserRook,    0   )           \
+    V( C, 8,   laserPawn,    0   )           \
+    V( C, 9,   doublingPawn, 0   )           \
+    V( C, 10,  addingRook,   0   )           \
+    V( C, 11,  rocket,       0   )
+
+static  int  deckPlayerOccurrence[] = {
+    MAKE_CHESS_ARRAY( PLAYER_DECK_OCCURRENCE_LIST )
+    };
+
+CHECK_CHESS_ARRAY( deckPlayerOccurrence,
+                   PLAYER_DECK_OCCURRENCE_LIST );
+
+
+static  MaxiginRand  deckRand;
+
+
+
+void  deckInit( void ) {
+
+    int  i;
+    
+    maxigin_randSeed( &deckRand,
+                      mingin_getEntropySeed() );
+    REGISTER_VAL_MEM( deckRand );
+
+    for( i = FIRST_CHESS_PIECE;
+         i < NUM_CHESS_PIECES;
+         i ++ ) {
+
+        if( deckShopOccurrence[i] > MAX_DECK_PIECE_OCCURRENCE ) {
+
+            maxigin_logInt( 
+                maxigin_stringConcat3(
+                    "ERROR:  ",
+                    getPieceName( (ChessPiece)i ),
+                    " has larger than MAX_DECK_PIECE_OCCURRENCE"
+                    " in in deckShopOccurrence (deck.h):  " ),
+                deckShopOccurrence[i] );
+
+            deckShopOccurrence[i] = MAX_DECK_PIECE_OCCURRENCE;
+            }
+
+        if( deckPlayerOccurrence[i] > MAX_DECK_PIECE_OCCURRENCE ) {
+
+            maxigin_logInt( 
+                maxigin_stringConcat3(
+                    "ERROR:  ",
+                    getPieceName( (ChessPiece)i ),
+                    " has larger than MAX_DECK_PIECE_OCCURRENCE"
+                    " in deckPlayerOccurrence (deck.h):  " ),
+                deckPlayerOccurrence[i] );
+
+            deckPlayerOccurrence[i] = MAX_DECK_PIECE_OCCURRENCE;
+            }
+        }
+    }
+
+
+
+static void deckReshuffleRange( Deck  *inDeck,
+                                int    inLastIndex ) {
+
+    static  int         shuffleIndices[ MAX_DECK_SIZE ];
+    static  ChessPiece  shuffleTemp   [ MAX_DECK_SIZE ];
+    
+    int  i;
+
+    for( i = 0;
+         i <= inLastIndex;
+         i ++ ) {
+
+        shuffleIndices[i] = i;
+
+        shuffleTemp[ i ] = inDeck->pieces[ i ];
+        }
+
+    maxigin_shuffle( &deckRand,
+                     inLastIndex + 1,
+                     shuffleIndices );
+
+    for( i = 0;
+         i <= inLastIndex;
+         i ++ ) {
+
+        inDeck->pieces[ i ] = shuffleTemp[ shuffleIndices[i] ];
+        }
+    }
+
+
+
+void deckReshuffleAll( Deck  *inDeck ) {
+    inDeck->drawPos = inDeck->numPieces - 1;
+
+    deckReshuffleRemaining( inDeck );
+    }
+
+
+
+void deckReshuffleRemaining( Deck  *inDeck ) {
+    deckReshuffleRange( inDeck,
+                        inDeck->drawPos );
+    }
+
+
+
+void deckAddPiece( Deck        *inDeck,
+                   ChessPiece   inPiece ) {
+
+    int  newIndex;
+
+    if( inDeck->numPieces < MAX_DECK_SIZE ) {
+
+        newIndex = inDeck->numPieces;
+        inDeck->numPieces ++;
+        }
+    else {
+        /* deck already full, replace piece at end */
+        newIndex = MAX_DECK_SIZE - 1;
+        }
+
+    inDeck->pieces[ newIndex ] = inPiece;
+    }
+
+
+
+static void getFreshDeck( Deck  *outDeck,
+                          int   *inOccurenceList,
+                          int    inVarianceFactor,
+                          int    inRarityFilter ) {
+    int  i;
+    int  n  =  0;
+
+    for( i = FIRST_CHESS_PIECE;
+         i < NUM_CHESS_PIECES;
+         i ++ ) {
+
+        if( inOccurenceList[i] <= inRarityFilter ) {
+            
+            int  v;
+
+            for( v = 0;
+                 v < inVarianceFactor;
+                 v ++ ) {
+            
+                int  o;
+
+                for( o = 0;
+                     o < inOccurenceList[i];
+                     o ++ ) {
+
+                    outDeck->pieces[n] = (ChessPiece)i;
+                    n++;
+                    }
+                }
+            }
+        }
+
+    outDeck->numPieces = n;
+    outDeck->drawPos   = 0;
+
+    deckReshuffleAll( outDeck );
+    }
+
+                          
+
+void getPlayerStartDeck( Deck  *outDeck ) {
+    /* no extra copies in player deck */
+    getFreshDeck( outDeck,
+                  deckPlayerOccurrence,
+                  1,
+                  MAX_DECK_PIECE_OCCURRENCE );
+    }
+
+
+
+void getShopDeck( Deck  *outDeck,
+                  int    inRarityFilter ) {
+    getFreshDeck( outDeck,
+                  deckShopOccurrence,
+                  SHOP_DECK_VARIANCE_FACTOR,
+                  inRarityFilter );
+    }
+
+
+
+ChessPiece deckDraw( Deck  *inDeck ) {
+
+    ChessPiece  p  =  inDeck->pieces[ inDeck->drawPos ];
+
+    inDeck->drawPos --;
+
+    if( inDeck->drawPos < 0 ) {
+        deckReshuffleAll( inDeck );
+        }
+
+    return p;
+    }
+
+
 
 #endif
 #endif

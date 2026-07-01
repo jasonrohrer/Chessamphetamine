@@ -277,6 +277,11 @@ char getLoggedState( int          inLogNumber,
                      int         *outBestScore );
 
 
+/* gets the human-readible name of a piece
+   (internal use only, for logs, etc... not translated) */
+const char *getPieceName( ChessPiece  inPiece );
+
+
 
 
 #ifdef CHESS_IMPLEMENTATION
@@ -334,6 +339,35 @@ static char pieceChars[] = {
 CHECK_CHESS_ARRAY( pieceChars,
                    PIECE_CHAR_LIST );
 
+
+
+#define PIECE_NAME_LIST( C, V )               \
+    V( C, 0,   noPiece,      "noPiece"      ) \
+    V( C, 1,   pawn,         "pawn"         ) \
+    V( C, 2,   bishop,       "bishop"       ) \
+    V( C, 3,   knight,       "knight"       ) \
+    V( C, 4,   rook,         "rook"         ) \
+    V( C, 5,   queen,        "queen"        ) \
+    V( C, 6,   king,         "king"         ) \
+    V( C, 7,   laserRook,    "laserRook"    ) \
+    V( C, 8,   laserPawn,    "laserPawn"    ) \
+    V( C, 9,   doublingPawn, "doublingPawn" ) \
+    V( C, 10,  addingRook,   "addingRook"   ) \
+    V( C, 11,  rocket,       "rocket"   )
+
+static char *pieceNames[] = {
+    MAKE_CHESS_ARRAY( PIECE_NAME_LIST )
+    };
+
+CHECK_CHESS_ARRAY( pieceNames,
+                   PIECE_NAME_LIST );
+
+
+
+const char *getPieceName( ChessPiece  inPiece ) {
+    
+    return pieceNames[ inPiece & CHESS_TYPE_MASK ];
+    }
 
 
 
@@ -1895,9 +1929,12 @@ void getStartBoard( BoardState  *outState ) {
          i ++ ) {
         outState->grid[5][i] = rocket | CHESS_WHITE;
         }
-    outState->grid[5][7] = pawn | CHESS_WHITE;
-    outState->grid[5][6] = doublingPawn | CHESS_WHITE;
-    outState->grid[5][5] = addingRook | CHESS_WHITE;
+    outState->grid[6][1] = knight | CHESS_WHITE;
+    outState->grid[6][3] = knight | CHESS_BLACK;
+    outState->grid[6][7] = pawn | CHESS_WHITE;
+    outState->grid[6][6] = doublingPawn | CHESS_WHITE;
+    outState->grid[6
+                   ][5] = addingRook | CHESS_WHITE;
     
     /*
     outState->grid[6][1] = rocket | CHESS_WHITE;

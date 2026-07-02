@@ -21112,8 +21112,8 @@ typedef struct MaxiginLanguage {
         int           numFonts;
         int           fontHandles[  MAXIGIN_MAX_NUM_LANGUAGE_FONTS ];
 
-        /* pointers to starts of strings in mx_translationStringBytes, or 0 of
-           not present */
+        /* pointers to starts of strings in mx_translationStringBytes,
+           or -1 if not present */
         int           stringStartBytes[ MAXIGIN_MAX_NUM_TRANSLATION_KEYS ];
 
         /* some languages, like Chinese, don't have words separated by spaces */
@@ -21960,6 +21960,7 @@ char maxigin_doesLanguageHaveWords( void ) {
 const char *maxigin_getLangText( int  inPhraseKey ) {
     
     MaxiginLanguage  *lang;
+    int               startByte;
     
     if( mx_currentLanguage >= mx_numLanguages ) {
 
@@ -21987,8 +21988,13 @@ const char *maxigin_getLangText( int  inPhraseKey ) {
         }
 
 
-    return &( mx_translationStringBytes[
-                  lang->stringStartBytes[ inPhraseKey ] ] );
+    startByte = lang->stringStartBytes[ inPhraseKey ];
+
+    if( startByte == -1 ) {
+        return "";
+        }
+    
+    return &( mx_translationStringBytes[ startByte ] );
     }
 
 

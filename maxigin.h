@@ -2199,7 +2199,7 @@ int maxigin_measureLangTextString( const char  *inString );
 
       the translation of inPhraseKey   on success
       
-      0                                on failure
+      ""                               on failure
 
   [jumpMaxiginGeneral]
 */
@@ -21968,7 +21968,7 @@ const char *maxigin_getLangText( int  inPhraseKey ) {
                         "languages loaded\n" );
             mx_drawLangFailureShown = 1;
             }
-        return 0;
+        return "";
         }
 
     lang = &( mx_languages[ mx_currentLanguage ] );
@@ -21983,7 +21983,7 @@ const char *maxigin_getLangText( int  inPhraseKey ) {
                             inPhraseKey );
             mx_drawLangFailureShown = 1;
             }
-        return 0;
+        return "";
         }
 
 

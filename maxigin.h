@@ -19222,7 +19222,7 @@ void maxigin_initMusicLoop( const char  *inBulkResourceName ) {
 
 
 
-static char mn_nextBytesEqualString( int          inBulkDataHandle,
+static char mx_nextBytesEqualString( int          inBulkDataHandle,
                                      const char  *inString ) {
     unsigned char  b;
     int            i         =  0;
@@ -19255,7 +19255,81 @@ static char mn_nextBytesEqualString( int          inBulkDataHandle,
     return match;
     }
 
+
+
+/* returns 0 if chunk not found, 1 if found
+   if found, bulk resource position left at start of target chunk size */
+static char mx_skipWavChunkUntilMatch( int          inBulkHandle,
+                                       const char  *inBulkResourceName,
+                                       const char  *inChunkToFind ) {
     
+    while( 1 ) {
+        
+        char           result;
+        int            numRead;
+        int            chunkSize;
+        int            pos;
+        unsigned char  readBuffer[ 4 ];
+        
+        if( mx_nextBytesEqualString( inBulkHandle,
+                                     inChunkToFind ) ) {
+            return 1;
+            }
+
+        /* read chunk size */
+        numRead = mingin_readBulkData( inBulkHandle,
+                                       4,
+                                       readBuffer );
+
+        if( numRead != 4 ) {
+
+            maxigin_logString( "Failed to read chunk size in bulk WAV data: ",
+                               inBulkResourceName );
+        
+            return 0;
+            }
+        
+        chunkSize =
+            ( readBuffer[3] << 24 ) |
+            ( readBuffer[2] << 16 ) |
+            ( readBuffer[1] <<  8 ) |
+            ( readBuffer[0]       );
+
+        pos = mingin_getBulkDataPosition( inBulkHandle );
+
+        if( pos == -1 ) {
+            maxigin_logString( "Failed to get position in bulk WAV data: ",
+                               inBulkResourceName );
+        
+            return 0;
+            }
+
+        /* skip chunk */
+        pos = pos + chunkSize;
+
+        if( ( chunkSize & 1 ) == 1 ) {
+            /* odd chunk size, pad with 1 extra byte according to RIFF
+               chunk format */
+            pos ++;
+            }   
+
+        result = mingin_seekBulkData( inBulkHandle,
+                                      pos );
+
+        if( ! result ) {
+            maxigin_logString( "Failed to seek in bulk WAV data: ",
+                               inBulkResourceName );
+        
+            return 0;
+            }
+        /* ready to examine next chunk */
+        }
+
+    /* should never get here */
+    return 0;
+    }
+
+
 
 /*
   Opens wav data from a bulk resource name for reading.
@@ -19276,7 +19350,6 @@ static char mx_openWavData( const char        *inBulkResourceName,
     int            numRead;
     int            bytesPerBlock;
     int            bitsPerSample;
-    char           foundDataChunk;
     int            chunkSize;
     int            pos;
     
@@ -19289,7 +19362,7 @@ static char mx_openWavData( const char        *inBulkResourceName,
         return 0;
         }
 
-    if( ! mn_nextBytesEqualString( bulkHandle,
+    if( ! mx_nextBytesEqualString( bulkHandle,
                                    "RIFF" ) ) {
 
         maxigin_logString( "Failed to find RIFF header in bulk WAV data: ",
@@ -19314,7 +19387,7 @@ static char mx_openWavData( const char        *inBulkResourceName,
         return 0;
         }
 
-    if( ! mn_nextBytesEqualString( bulkHandle,
+    if( ! mx_nextBytesEqualString( bulkHandle,
                                    "WAVE" ) ) {
 
         maxigin_logString( "Failed to find RIFF 'WAVE' tag in bulk WAV data: ",
@@ -19324,14 +19397,18 @@ static char mx_openWavData( const char        *inBulkResourceName,
         return 0;
         }
 
-    if( ! mn_nextBytesEqualString( bulkHandle,
-                                   "fmt " ) ) {
-        maxigin_logString( "Failed to find 'fmt ' chunk in bulk WAV data: ",
+    /* skip other RIFF chunks until we encounter 'fmt' chunk */
+
+    if( ! mx_skipWavChunkUntilMatch( bulkHandle,
+                                     inBulkResourceName,
+                                     "fmt " ) ) {
+        maxigin_logString( "Failed to find 'fmt ' chunk in WAV data: ",
                            inBulkResourceName );
         
         mingin_endReadBulkData( bulkHandle );
-         
+        return 0;
         }
+
 
     /* read fmt chunk size */
     numRead = mingin_readBulkData( bulkHandle,
@@ -19489,70 +19566,19 @@ static char mx_openWavData( const char        *inBulkResourceName,
         }
 
 
+    
     /* skip other RIFF chunks until we encounter 'data' chunk */
-    foundDataChunk = 0;
 
-    while( !foundDataChunk ) {
-        
-        char  result;
-        
-        if( mn_nextBytesEqualString( bulkHandle,
+    if( ! mx_skipWavChunkUntilMatch( bulkHandle,
+                                     inBulkResourceName,
                                      "data" ) ) {
-            foundDataChunk = 1;
-            break;
-            }
-
-        /* read chunk size */
-        numRead = mingin_readBulkData( bulkHandle,
-                                       4,
-                                       readBuffer );
-
-        if( numRead != 4 ) {
-
-            maxigin_logString( "Failed to read chunk size in bulk WAV data: ",
-                               inBulkResourceName );
+        maxigin_logString( "Failed to find 'data' chunk in WAV data: ",
+                           inBulkResourceName );
         
-            mingin_endReadBulkData( bulkHandle );
-            return 0;
-            }
-        
-        chunkSize =
-            ( readBuffer[3] << 24 ) |
-            ( readBuffer[2] << 16 ) |
-            ( readBuffer[1] <<  8 ) |
-            ( readBuffer[0]       );
-
-        pos = mingin_getBulkDataPosition( bulkHandle );
-
-        if( pos == -1 ) {
-            maxigin_logString( "Failed to get position in bulk WAV data: ",
-                               inBulkResourceName );
-        
-            mingin_endReadBulkData( bulkHandle );
-            return 0;
-            }
-
-        /* skip chunk */
-        pos = pos + chunkSize;
-
-        if( ( chunkSize & 1 ) == 1 ) {
-            /* odd chunk size, pad with 1 extra byte according to RIFF
-               chunk format */
-            pos ++;
-            }   
-
-        result = mingin_seekBulkData( bulkHandle,
-                                      pos );
-
-        if( ! result ) {
-            maxigin_logString( "Failed to seek in bulk WAV data: ",
-                               inBulkResourceName );
-        
-            mingin_endReadBulkData( bulkHandle );
-            return 0;
-            }
-        /* ready to examine next chunk */
+        mingin_endReadBulkData( bulkHandle );
+        return 0;
         }
+        
 
     /* finally found data chunk */
 

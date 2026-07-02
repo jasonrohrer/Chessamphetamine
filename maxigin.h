@@ -21335,7 +21335,7 @@ int maxigin_initTranslationKey( const char  *inPhraseKeyString ) {
 
    inDestBuffer  must have room for inMaxStringLength + 1 bytes (for \0 end)
 
-   closing quote is skipped in
+   closing quote is skipped in bulk resource.
 
    returns 1 on success
            0 on failure
@@ -21396,6 +21396,68 @@ static char mx_readQuotedString( int    inBulkReadHandle,
        In all cases, terminate whatever string we have and return */
 
     inDestBuffer[i] = '\0';
+
+    return 1;
+    }
+
+
+
+/* Skips next quoted string in bulk resource.
+
+   Keeps going until at least two quote characters are found,
+   or until end of rsource.
+   
+   closing quote is skipped in bulk resource.
+
+   returns 1 on success  (quoted string found)
+           0 on failure  (end of resource reached before end of quoted string)
+*/
+static char mx_skipQuotedString( int  inBulkReadHandle ) {
+    
+    int           readNum;
+    char          c;
+    
+
+    /* consume up past first " mark */
+    
+    readNum = mingin_readBulkData( inBulkReadHandle,
+                                   1,
+                                   (unsigned char *)&( c ) );
+    
+    while( readNum == 1
+           &&
+           c != '"' ) {
+        readNum = mingin_readBulkData( inBulkReadHandle,
+                                       1,
+                                       (unsigned char *)&( c ) );
+        }
+
+    if( readNum != 1 ) {
+        mingin_log( "Failed to find first quote mark when scanning "
+                    "to skip quoted string in bulk resource\n" );
+        return 0;
+        }
+
+    
+    /* now consume until closing " */
+    
+    readNum = mingin_readBulkData( inBulkReadHandle,
+                                   1,
+                                   (unsigned char *)&( c ) );
+
+    while( readNum == 1
+           &&
+           c != '"' ) {
+        readNum = mingin_readBulkData( inBulkReadHandle,
+                                       1,
+                                       (unsigned char *)&( c ) );
+        }
+
+    if( readNum != 1 ) {
+        mingin_log( "Failed to find closing quote mark when scanning "
+                    "to skip quoted string in bulk resource\n" );
+        return 0;
+        }
 
     return 1;
     }
@@ -21732,6 +21794,8 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
         int  key  =  mx_findTranslationKey( nextKey );
 
         if( key == -1 ) {
+            char  skipResult;
+            
             mingin_log(
                 maxigin_stringConcat5(
                     "Failed to find translation key ",
@@ -21741,8 +21805,23 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
                     " (game needs to call maxigin_initTranslationKey for "
                     "each valid key during maxiginGame_init() )\n" ) );
 
-            mingin_endReadBulkData( languageReadHandle );
-            return;
+            skipResult = mx_skipQuotedString( languageReadHandle );
+
+            if( ! skipResult ) {
+                maxigin_logString( "Failed to read translation string "
+                                   "when loading language: ",
+                                   lang->bulkResourceName );
+            
+                mingin_endReadBulkData( languageReadHandle );
+                return;
+                }
+            
+            /* bad key found in language file, but keep going with
+               remaining keys */
+            
+            nextKey = mx_readShortTokenFromBulkData( languageReadHandle );
+            
+            continue;
             }
         
         if( mx_numTranslationStringBytes ==

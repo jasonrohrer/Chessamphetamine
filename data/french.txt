@@ -37,7 +37,7 @@ controls       "Commandes"
 back           "Retour"
 
 
-shootDesc      "Tirer"
+actionDesc     "Tirer"
 bombDesc       "Bombe"
 
 
@@ -45,7 +45,7 @@ press          "appuyez"
 
 defaults       "Par défaut"
 
-
+drawInstruct   "Pick pieces to redraw"
 
 pawn           "Pion"
 pawnDesc       "Avance de 1 ou 2 cases, capture en diagonale"

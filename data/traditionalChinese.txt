@@ -34,7 +34,7 @@ controls       "控制"
 back           "返回"
 
 
-shootDesc      "射擊"
+actionDesc     "射擊"
 bombDesc       "炸彈"
 
 press          "按下"
@@ -42,6 +42,7 @@ press          "按下"
 defaults       "恢復預設"
 
 
+drawInstruct   "Pick pieces to redraw"
 
 
 pawn           "兵"

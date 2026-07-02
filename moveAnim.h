@@ -117,6 +117,12 @@ void drawMoveAnimation( int            inBoardCenterX,
 
 
 
+void playBeepUpSound  ( void );
+void playBeepDownSound( void );
+
+
+
+
 #ifdef MOVE_ANIM_IMPLEMENTATION
 
 #include "money.h"
@@ -254,6 +260,21 @@ void moveAnimInit( void ) {
                                 2 );
 
     particleInstanceCount = 0;
+    }
+
+
+
+void playBeepUpSound  ( void ) {
+    maxigin_playSoundEffect( beepUp,
+                             256 );
+    }
+
+
+
+void playBeepDownSound( void ) {
+
+    maxigin_playSoundEffect( beepDown,
+                             256 );
     }
 
 
@@ -495,12 +516,10 @@ static char defaultPieceStep( BoardState    *inState,
                 /* play sound at end of piece move */
 
                 if( inState->nextToMove == CHESS_WHITE ) {
-                    maxigin_playSoundEffect( beepUp,
-                                             256 );
+                    playBeepUpSound();
                     }
                 else {
-                    maxigin_playSoundEffect( beepDown,
-                                             256 );
+                    playBeepDownSound();
                     }
 
 

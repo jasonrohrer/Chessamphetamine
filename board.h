@@ -27,6 +27,12 @@ void boardDraw( int  inCenterX,
                 int  inCenterY );
 
 
+void boardDrawMarkers( int   inCenterX,
+                       int   inCenterY,
+                       char  inMarkers[ BH ][ BW ] );
+
+
+
 /* row and col are 0,0 at top left corner (a8) */
 void boardGetSquareCenter( int   inBoardCenterX,
                            int   inBoardCenterY,
@@ -56,6 +62,9 @@ static  int  borderSpriteV;
 
 static  int  squareSpriteWhite;
 static  int  squareSpriteBlack;
+
+static  int  drawMarkerSprite;
+
 
 static  int  squareSize          =  BOARD_SQUARE_SIZE;
 
@@ -91,7 +100,10 @@ void boardInit( void ) {
     maxigin_initMakeGlowSprite( squareSpriteBlack,
                                 4,
                                 2 );
+
+    drawMarkerSprite = maxigin_initSprite( "drawX.tga" );
     }
+
 
 
 void boardDraw( int  inCenterX,
@@ -166,6 +178,42 @@ void boardDraw( int  inCenterX,
 
     maxigin_drawResetColor();
     }
+
+
+
+void boardDrawMarkers( int   inCenterX,
+                       int   inCenterY,
+                       char  inMarkers[ BH ][ BW ] ) {
+
+    int  y;
+    int  x;
+    
+    int  yOff  =  ( squareSize * BH ) / 2;
+    int  xOff  =  ( squareSize * BW ) / 2;
+
+    maxigin_drawResetColor();
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+
+        for( x = 0;
+             x < BW;
+             x ++  ) {
+
+            if( inMarkers[ y ][ x ] ) {
+                
+                int  yPos  =  inCenterY - yOff + y * squareSize + squareSize / 2;
+                int  xPos  =  inCenterX - xOff + x * squareSize + squareSize / 2;
+
+                maxigin_drawSprite( drawMarkerSprite,
+                                    xPos,
+                                    yPos );
+                }
+            }
+        }
+    }
+
 
 
 

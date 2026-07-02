@@ -66,7 +66,7 @@
 
 enum GameUserAction {
     JUMP,
-    SHOOT,
+    ACTION,
     BOMB,
     REMAP,
     CRASH,
@@ -83,6 +83,8 @@ enum GameUserAction {
     PRINT_COLORS,
     BOX_THICK
     };
+
+static char actionHeldDown = 0;
 
 
 #define  MAX_NUM_BULLETS  20
@@ -164,6 +166,7 @@ static int          sliderValueC       =   7;
 static int          plunkSound         =  -1;
 static int          thunkSound         =  -1;
 static int          examinePieceSound  =  -1;
+static int          pickFailedSound    =  -1;
 
 static int          checkmateGood      =  -1;
 static int          checkmateBad       =  -1;
@@ -193,9 +196,11 @@ static int          lang_musicVolume;
 static int          lang_effectsVolume;
 static int          lang_fullscreen;
 
-static int          lang_shoot;
+static int          lang_action;
 
 static int          lang_bomb;
+
+static int          lang_drawInstruct;
 
 
 static BoardState    boardState;
@@ -203,6 +208,8 @@ static Captured      postMoveCaptured;
 static BoardState    postMoveState;
 static Move          boardMove;
 static AnimProgress  moveProgress;
+
+static char          boardMarkers[ BH ][ BW ];
 
 
 static char         moveMade           =  0;
@@ -252,6 +259,26 @@ static int            infoRow [ INFO_HIGHLIGHT_BUFFER_SIZE ];
 static int            infoCol [ INFO_HIGHLIGHT_BUFFER_SIZE ];
 static unsigned char  infoFade[ INFO_HIGHLIGHT_BUFFER_SIZE ];
 static int            curInfoIndex                =  0;
+
+
+
+static void clearDrawMarkers( void ) {
+    int  y;
+    int  x;
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            boardMarkers[y][x] = 0;
+            }
+        }
+    }
+
 
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
@@ -546,10 +573,19 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             }
         }
     else {
-        /* draw non-moving board */
+        /* draw regular board (no move log) */
 
         boardDraw( boardCenterX,
                    boardCenterY);
+
+        if( ! spinning
+            &&
+            ! chessGameOver ) {
+
+            boardDrawMarkers( boardCenterX,
+                              boardCenterY,
+                              boardMarkers );
+            }
 
         drawBoardState( &boardState,
                         checkmate,
@@ -618,6 +654,29 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                             boardCenterY );
 
         }
+
+    if( ! spinning
+        &&
+        ! chessGameOver ) {
+
+        const char  *drawString;
+        
+        maxigin_drawResetColor();
+
+        /* fixme */
+
+        drawString = maxigin_getLangText( lang_drawInstruct );
+
+        maxigin_setLanguageFontIndex( 1 );
+    
+        maxigin_drawLangTextString(
+                drawString,
+                MAXIGIN_GAME_NATIVE_W / 2,
+                MAXIGIN_GAME_NATIVE_H - 10,
+                MAXIGIN_RIGHT );
+        maxigin_setLanguageFontIndex( 0 );
+        }
+    
     
 
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
@@ -802,35 +861,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
 
-static void fireBullet( int  inX,
-                        int  inY ) {
-
-    int  i;
-
-    for( i = 0;
-         i < MAX_NUM_BULLETS;
-         i ++ ) {
-
-        if( ! bulletOn[ i ] ) {
-            /* found empty bullet slot */
-
-            bulletOn[ i ] = 1;
-
-            bulletPos[ i ].x = inX;
-            bulletPos[ i ].y = inY;
-
-            bulletSpeed[ i ].x = 0;
-            bulletSpeed[ i ].y = -2;
-            
-            bulletFade[ i ] = 255;
-            
-            break;
-            }
-        }
-    
-    
-    }
-
 
 static void fireBomb( int  inX,
                       int  inY ) {
@@ -871,8 +901,6 @@ static void fireBomb( int  inX,
 
 
 static char  remappingJump = 0;
-
-static int   loudnessToggle = 512;
 
 static char  randColorsDown = 0;
 
@@ -1023,21 +1051,12 @@ void maxiginGame_step( void ) {
 
     if( ! spinning
         &&
-        ( maxigin_isButtonDown( JUMP )
-          ||
-          maxigin_isButtonDown( SHOOT ) ) ) {
+        ! chessGameOver
+        &&
+        ( maxigin_isButtonDown( JUMP ) ) ) {
 
         spinning = 1;
 
-        maxigin_playSoundEffect( thunkSound,
-                                 512 );
-        }
-    else if( spinning
-             &&
-             ! ( maxigin_isButtonDown( JUMP )
-                 ||
-                 maxigin_isButtonDown( SHOOT ) ) ) {
-        spinning = 0;
         maxigin_playSoundEffect( thunkSound,
                                  512 );
         }
@@ -1272,10 +1291,14 @@ void maxiginGame_step( void ) {
                        &postMoveState );
             
             moveMade = 0;
+
+            if( chessGameOver ) {
+                spinning = 0;
+                }
             }
         }
 
-    if( ! moveMade ) {
+    if( ! spinning ) {
 
         int         mouseX;
         int         mouseY;
@@ -1445,10 +1468,42 @@ void maxiginGame_step( void ) {
                 maxigin_playSoundEffect( examinePieceSound,
                                          256 );
                 }
+
+            
+                
             }
         
 
-        
+        if( ! chessGameOver
+            &&
+            infoPanelPiece != noPiece
+            &&
+            maxigin_isButtonDown( ACTION )
+            &&
+            ! actionHeldDown ) {
+
+            if( ( infoPanelPiece & CHESS_COLOR_MASK ) == CHESS_WHITE
+                &&
+                ( infoPanelPiece & CHESS_TYPE_MASK  ) != king ) {
+
+                if( ! boardMarkers[ panRow ][ panCol ] ) {
+                    playBeepDownSound();
+                    }
+                else {
+                    playBeepUpSound();
+                    }
+                
+                boardMarkers[ panRow ][ panCol ] =
+                    ! boardMarkers[ panRow ][ panCol ];
+                }
+            else {
+                /* tried to click on an unpickable piece */
+                maxigin_playSoundEffect( pickFailedSound,
+                                         256 );
+                }
+            actionHeldDown = 1;
+            }
+            
 
         if( infoPanelPiece != noPiece ) {
             infoPanelFade = 255;
@@ -1478,6 +1533,10 @@ void maxiginGame_step( void ) {
         }
     else {
         infoPanelPiece = noPiece;
+        }
+
+    if( ! maxigin_isButtonDown( ACTION ) ) {
+        actionHeldDown = 0;
         }
 
     deltaFade = ( 20 * 60 ) / r;
@@ -1576,26 +1635,6 @@ void maxiginGame_step( void ) {
         remappingJump = 1;
         }
 
-    if( 0 )
-    if( maxigin_isButtonDown( SHOOT ) ) {
-        int  msSinceLastBullet  =  (stepsSinceLastBullet * 1000 ) / r;
-
-        if( msSinceLastBullet > msBetweenBullets ) {
-            stepsSinceLastBullet = 0;
-
-            fireBullet( boxPosX, boxPosY );
-
-            maxigin_playSoundEffect( plunkSound,
-                                     loudnessToggle );
-
-            if( loudnessToggle == 512 ) {
-                loudnessToggle = 128;
-                }
-            else {
-                loudnessToggle = 512;
-                }
-            }
-        }
 
     if( maxigin_isButtonDown( BOMB ) ) {
         int  msSinceLastBullet  =  (stepsSinceLastBullet * 1000 ) / r;
@@ -1815,11 +1854,10 @@ static MinginButton rotColorsAllMapping[] = { MGN_KEY_4,  MGN_MAP_END };
 static MinginButton printColorsMapping[] = { MGN_KEY_5,  MGN_MAP_END };
 
 
-static MinginButton shootMapping[]  =  { MGN_KEY_V,
-                                         MGN_BUTTON_MOUSE_LEFT,
-                                         MGN_BUTTON_PS_X,
-                                         MGN_BUTTON_XBOX_A,
-                                         MGN_MAP_END };
+static MinginButton actionMapping[]  =  { MGN_BUTTON_MOUSE_LEFT,
+                                          MGN_BUTTON_PS_X,
+                                          MGN_BUTTON_XBOX_A,
+                                          MGN_MAP_END };
 static MinginButton bombMapping[]  =  { MGN_KEY_B,
                                         MGN_BUTTON_MOUSE_RIGHT,
                                         MGN_BUTTON_PS_TRIANGLE,
@@ -2120,8 +2158,9 @@ void maxiginGame_init( void ) {
     lang_effectsVolume = maxigin_initTranslationKey( "effectsVolume" );
     lang_fullscreen    = maxigin_initTranslationKey( "fullscreen" );
 
-    lang_shoot         = maxigin_initTranslationKey( "shootDesc" );
+    lang_action        = maxigin_initTranslationKey( "actionDesc" );
     lang_bomb          = maxigin_initTranslationKey( "bombDesc" );
+    lang_drawInstruct  = maxigin_initTranslationKey( "drawInstruct" );
     
     
     maxigin_registerButtonMapping( JUMP,   jumpMapping );
@@ -2151,9 +2190,9 @@ void maxiginGame_init( void ) {
                                    printColorsMapping );
     
     maxigin_registerDynamicButtonMapping(
-        SHOOT,
-        shootMapping,
-        lang_shoot  );
+        ACTION,
+        actionMapping,
+        lang_action  );
 
     maxigin_registerDynamicButtonMapping(
         BOMB,
@@ -2163,8 +2202,8 @@ void maxiginGame_init( void ) {
     maxigin_registerButtonMapping( REMAP,  remapMapping );
     maxigin_registerButtonMapping( CRASH,  crashMapping );
 
-    maxigin_logInt( "Primary button for SHOOT is: ",
-                    maxigin_getPlatformPrimaryButton( SHOOT ) );
+    maxigin_logInt( "Primary button for ACTION is: ",
+                    maxigin_getPlatformPrimaryButton( ACTION ) );
 
     mingin_registerStickAxis( BOX_THICK,  thickMapping );
 
@@ -2236,6 +2275,8 @@ void maxiginGame_init( void ) {
 
     examinePieceSound = maxigin_initSoundEffect( "examinePiece_misc_10.wav" );
 
+    pickFailedSound = maxigin_initSoundEffect( "pickFailed_sd_3.wav" );
+
     checkmateGood = maxigin_initSoundEffect( "checkmateGood.wav" );
     checkmateBad = maxigin_initSoundEffect( "checkmateBad.wav" );
 
@@ -2270,6 +2311,9 @@ void maxiginGame_init( void ) {
     levelsInit();
 
     deckInit();
+
+
+    clearDrawMarkers();
     
 
     if(0)runChessTest();
@@ -2281,7 +2325,7 @@ void maxiginGame_init( void ) {
 
     boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 12;
 
-    if(1) getStartBoard( &boardState );
+    if(0) getStartBoard( &boardState );
     if(0) getTestBoard( &boardState );
 
     if(1) {
@@ -2291,7 +2335,7 @@ void maxiginGame_init( void ) {
         getPlayerStartDeck( &playerDeck );
         
         
-        getLevel( 1,
+        getLevel( 0,
                   &boardState,
                   &playerDeck );
         }

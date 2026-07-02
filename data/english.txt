@@ -37,7 +37,7 @@ controls       "Controls"
 back           "Back"
 
 
-shootDesc      "Shoot"
+actionDesc     "Action"
 bombDesc       "Bomb"
 
 
@@ -45,6 +45,8 @@ press          "press"
 
 defaults       "Defaults"
 
+
+drawInstruct   "Pick pieces to redraw"
 
 
 pawn           "Pawn"

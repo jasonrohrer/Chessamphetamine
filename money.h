@@ -15,13 +15,16 @@
 #define MONEY_H_INCLUDED
 
 
-void moneyInit( int inStartVal );
+void moneyInit( int  inStartVal,
+                int  inSpendSound);
 
 
 void moneyAdd( int inValToAdd );
 
 
 void moneyAddCapture( ChessPiece inPiece );
+
+int  moneyGetTotal( void );
 
 
 /* adds captured money value that is delayed until later */
@@ -86,7 +89,7 @@ CHECK_CHESS_ARRAY( pieceCaptureMoney,
 static int   coinSprite;
 
 static int   coinSound;
-
+static int   spendSound;
 
 static int   moneyVal;
 static int   moneyToAdd            =  0;
@@ -98,7 +101,8 @@ static char  moneyProgressMidPeak  =  0;
 
 
 
-void moneyInit( int inStartVal ) {
+void moneyInit( int inStartVal,
+                int inSpendSound ) {
     
     coinSprite = maxigin_initSprite( "coin.tga" );
 
@@ -114,6 +118,8 @@ void moneyInit( int inStartVal ) {
     moneyProgressMidPeak = 0;
 
     coinSound = maxigin_initSoundEffect( "coin_sd_4.wav" );
+
+    spendSound = inSpendSound;
     
     REGISTER_VAL_MEM( moneyVal );
     REGISTER_VAL_MEM( moneyToAdd );
@@ -201,12 +207,22 @@ void moneyStep( void ) {
         &&
         moneyAddProgress >= moneyAddProgressMax / 2 ) {
 
-        moneyVal += 1;
+        if( moneyToAdd > 0 ) {
+            moneyVal += 1;
 
-        moneyToAdd -= 1;
+            moneyToAdd -= 1;
     
-        maxigin_playSoundEffect( coinSound,
-                                 256 );
+            maxigin_playSoundEffect( coinSound,
+                                     256 );
+            }
+        else {
+            moneyVal -= 1;
+
+            moneyToAdd += 1;
+    
+            maxigin_playSoundEffect( spendSound,
+                                     256 );
+            }
 
         moneyProgressMidPeak = 1;
         }
@@ -224,6 +240,12 @@ void moneyStep( void ) {
 
 void moneyAdd( int  inValToAdd ) {
     moneyToAdd += inValToAdd;
+    }
+
+
+
+int moneyGetTotal( void ) {
+    return  moneyVal + moneyToAdd;
     }
 
 

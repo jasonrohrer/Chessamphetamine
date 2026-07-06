@@ -184,8 +184,14 @@ static int          drawButtonSprite           = -1;
 static int          drawButtonFrameSprite      = -1;
 static int          drawButtonBackSprite       = -1;
 static char         drawButtonPressed          =  0;
+static int          drawPrice                  =  1;
 static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
 static int          drawButtonPosX             =  MAXIGIN_GAME_NATIVE_W / 2 + 25;
+
+static int          redrawRemoveProgress       =  -1;
+static int          redrawAddProgress          =  -1;
+static int          redrawProgressMax          =  MAXIGIN_GAME_NATIVE_H;
+
 
 static int          logoSprite                 = -1;
 static int          logoSubSprite              = -1;
@@ -217,6 +223,8 @@ static Captured      postMoveCaptured;
 static BoardState    postMoveState;
 static Move          boardMove;
 static AnimProgress  moveProgress;
+
+static Deck          playerDeck;
 
 static char          boardMarkers[ BH ][ BW ];
 static int           boardMarkersDownCount      = 0;
@@ -709,6 +717,12 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             maxigin_drawButtonHintSprite( DRAW,
                                           drawButtonPosX + 30,
                                           drawButtonPosY );
+            
+            numberDraw( drawPrice,
+                        drawButtonPosX + 50,
+                        drawButtonPosY,
+                        0 );
+            
             }
         }
     
@@ -1660,13 +1674,81 @@ void maxiginGame_step( void ) {
                 }
 
             if( drawButtonPressed ) {
-                maxigin_playSoundEffect( examinePieceSound,
-                                         256 );
+
+                /* press attempt */
+                if( moneyGetTotal() < drawPrice ) {
+                    /* fail */
+                    maxigin_playSoundEffect( pickFailedSound,
+                                             256 );
+                    }
+                else {
+                    maxigin_playSoundEffect( examinePieceSound,
+                                             256 );
+                    redrawRemoveProgress = 0;
+                    redrawAddProgress    = -1;
+
+                    moneyAdd( - drawPrice );
+                    }
                 }
             }
         }
     
 
+    if( drawButtonPressed ) {
+
+        if( redrawRemoveProgress != -1 ) {
+
+            redrawRemoveProgress += ( 10 * 60 ) / r;
+
+            if( redrawRemoveProgress >= redrawProgressMax ) {
+
+                /* swap pieces while off screen */
+
+                int  y;
+                int  x;
+
+                for( y = 0;
+                     y < BH;
+                     y ++ ) {
+                    for( x = 0;
+                         x < BW;
+                         x ++ ) {
+
+                        if( boardMarkers[y][x] ) {
+                            
+                            boardState.grid[y][x] = deckDraw( &playerDeck );
+                            }
+                        }
+                    }
+                
+                clearDrawMarkers();
+                
+                redrawRemoveProgress = -1;
+                redrawAddProgress = 0;
+                }
+            }
+        if( redrawAddProgress != -1 ) {
+
+            redrawAddProgress += ( 10 * 60 ) / r;
+
+            if( redrawAddProgress >= redrawProgressMax ) {
+                redrawAddProgress = -1;
+
+                /* done with redraw */
+                maxigin_playSoundEffect( examinePieceSound,
+                                         256 );
+                drawButtonPressed = 0;
+
+                /* price goes up for future redraws */
+                drawPrice += 1;
+                }
+            }
+        }
+    
+    /* fixme
+       pieces need to fly off screen during redrawRemove progress
+       and new pieces should come back during add progress
+    */
             
 
     
@@ -2389,7 +2471,8 @@ void maxiginGame_init( void ) {
     pieceSpritesInit();
     particleSpriteInit();
     moveAnimInit();
-    moneyInit( 10 );
+    moneyInit( 10,
+               plunkSound );
     numbersInit();
     checkDisplayInit();
     colorsInit();
@@ -2419,13 +2502,10 @@ void maxiginGame_init( void ) {
 
     if(0) getStartBoard( &boardState );
     if(0) getTestBoard( &boardState );
-
+    
+    getPlayerStartDeck( &playerDeck );
+    
     if(1) {
-
-        Deck  playerDeck;
-        
-        getPlayerStartDeck( &playerDeck );
-        
         
         getLevel( 0,
                   &boardState,
@@ -2508,6 +2588,10 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( boardMarkersDownCount );
     REGISTER_ARRAY_MEM( boardMarkers );
+
+    REGISTER_VAL_MEM( playerDeck );
+
+    REGISTER_VAL_MEM( drawPrice );
     
 
     maxigin_initRestoreStaticMemoryFromLastRun();

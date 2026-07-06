@@ -38,6 +38,8 @@ back           "Back"
 
 
 actionDesc     "Action"
+drawDesc       "Draw"
+
 bombDesc       "Bomb"
 
 

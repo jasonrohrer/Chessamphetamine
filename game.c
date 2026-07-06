@@ -67,6 +67,7 @@
 enum GameUserAction {
     JUMP,
     ACTION,
+    DRAW,
     BOMB,
     REMAP,
     CRASH,
@@ -179,6 +180,13 @@ static int          spinPressedSprite          = -1;
 static int          spinPressedTextSprite      = -1;
 static int          spinPressedTextGlowSprite  = -1;
 
+static int          drawButtonSprite           = -1;
+static int          drawButtonFrameSprite      = -1;
+static int          drawButtonBackSprite       = -1;
+static char         drawButtonPressed          =  0;
+static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
+static int          drawButtonPosX             =  MAXIGIN_GAME_NATIVE_W / 2 + 25;
+
 static int          logoSprite                 = -1;
 static int          logoSubSprite              = -1;
 static int          microdoseSprite            = -1;
@@ -197,6 +205,7 @@ static int          lang_effectsVolume;
 static int          lang_fullscreen;
 
 static int          lang_action;
+static int          lang_draw;
 
 static int          lang_bomb;
 
@@ -210,7 +219,7 @@ static Move          boardMove;
 static AnimProgress  moveProgress;
 
 static char          boardMarkers[ BH ][ BW ];
-
+static int           boardMarkersDownCount      = 0;
 
 static char         moveMade           =  0;
 static char         chessGameOver      =  0;
@@ -277,6 +286,7 @@ static void clearDrawMarkers( void ) {
             boardMarkers[y][x] = 0;
             }
         }
+    boardMarkersDownCount = 0;
     }
 
 
@@ -661,9 +671,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         const char  *drawString;
         
+        int           buttonSink  =  0;
+        
         maxigin_drawResetColor();
 
-        /* fixme */
 
         drawString = maxigin_getLangText( lang_drawInstruct );
 
@@ -672,11 +683,34 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         maxigin_drawLangTextString(
                 drawString,
                 MAXIGIN_GAME_NATIVE_W / 2,
-                MAXIGIN_GAME_NATIVE_H - 10,
+                drawButtonPosY,
                 MAXIGIN_RIGHT );
         maxigin_setLanguageFontIndex( 0 );
+
+
+        if( drawButtonPressed ) {
+            buttonSink = 3;
+            }
+
+        if( boardMarkersDownCount > 0 ) {
+            
+            maxigin_drawSprite( drawButtonBackSprite,
+                                drawButtonPosX,
+                                drawButtonPosY - 9 );
+
+            maxigin_drawSprite( drawButtonSprite,
+                                drawButtonPosX,
+                                drawButtonPosY - 2 + buttonSink );
+        
+            maxigin_drawSprite( drawButtonFrameSprite,
+                                drawButtonPosX,
+                                drawButtonPosY );
+
+            maxigin_drawButtonHintSprite( DRAW,
+                                          drawButtonPosX + 30,
+                                          drawButtonPosY );
+            }
         }
-    
     
 
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
@@ -1488,9 +1522,11 @@ void maxiginGame_step( void ) {
 
                 if( ! boardMarkers[ panRow ][ panCol ] ) {
                     playBeepDownSound();
+                    boardMarkersDownCount ++;
                     }
                 else {
                     playBeepUpSound();
+                    boardMarkersDownCount --;
                     }
                 
                 boardMarkers[ panRow ][ panCol ] =
@@ -1587,6 +1623,49 @@ void maxiginGame_step( void ) {
         }
     
 
+    if( boardMarkersDownCount > 0 ) {
+
+        
+        if( ! drawButtonPressed ) {
+
+            
+
+            if( maxigin_isButtonDown( DRAW ) ) {
+                
+                                         
+                drawButtonPressed = 1;
+                }
+            else if( maxigin_isButtonDown( ACTION ) ) {
+
+                if( maxigin_getPointerLocation( &pointerX,
+                                                &pointerY ) ) {
+
+                    int  buttonW;
+                    int  buttonH;
+                    
+                    maxigin_getSpriteDimensions( drawButtonSprite,
+                                                 &buttonW,
+                                                 &buttonH );
+                    if( pointerX >= drawButtonPosX - buttonW / 2
+                        &&
+                        pointerX <= drawButtonPosX + buttonW / 2 - 1
+                        &&
+                        pointerY >= drawButtonPosY - buttonH / 2 - 2
+                        &&
+                        pointerY <= drawButtonPosY + buttonH / 2 - 2 ) {
+
+                        drawButtonPressed = 1;
+                        }
+                    }
+                }
+
+            if( drawButtonPressed ) {
+                maxigin_playSoundEffect( examinePieceSound,
+                                         256 );
+                }
+            }
+        }
+    
 
             
 
@@ -1858,10 +1937,12 @@ static MinginButton actionMapping[]  =  { MGN_BUTTON_MOUSE_LEFT,
                                           MGN_BUTTON_PS_X,
                                           MGN_BUTTON_XBOX_A,
                                           MGN_MAP_END };
-static MinginButton bombMapping[]  =  { MGN_KEY_B,
-                                        MGN_BUTTON_MOUSE_RIGHT,
-                                        MGN_BUTTON_PS_TRIANGLE,
+
+static MinginButton drawMapping[]  =  { MGN_BUTTON_PS_TRIANGLE,
                                         MGN_BUTTON_XBOX_Y,
+                                        MGN_MAP_END };
+
+static MinginButton bombMapping[]  =  { MGN_KEY_B,
                                         MGN_MAP_END };
 
 static MinginButton hintMapping[]   =  { MGN_BUTTON_MOUSE_LEFT,
@@ -2071,6 +2152,11 @@ void maxiginGame_init( void ) {
                                 5,
                                 3 );
 
+    drawButtonSprite = maxigin_initSprite( "drawButton.tga" );
+    drawButtonFrameSprite = maxigin_initSprite( "drawButtonFrame.tga" );
+    drawButtonBackSprite = maxigin_initSprite( "drawButtonFrameBack.tga" );
+    
+
     logoSprite = maxigin_initSprite( "logo.tga" );
     logoSubSprite = maxigin_initSprite( "logoSub.tga" );
 
@@ -2159,6 +2245,7 @@ void maxiginGame_init( void ) {
     lang_fullscreen    = maxigin_initTranslationKey( "fullscreen" );
 
     lang_action        = maxigin_initTranslationKey( "actionDesc" );
+    lang_draw          = maxigin_initTranslationKey( "drawDesc" );
     lang_bomb          = maxigin_initTranslationKey( "bombDesc" );
     lang_drawInstruct  = maxigin_initTranslationKey( "drawInstruct" );
     
@@ -2193,6 +2280,11 @@ void maxiginGame_init( void ) {
         ACTION,
         actionMapping,
         lang_action  );
+
+    maxigin_registerDynamicButtonMapping(
+        DRAW,
+        drawMapping,
+        lang_draw  );
 
     maxigin_registerDynamicButtonMapping(
         BOMB,
@@ -2411,6 +2503,12 @@ void maxiginGame_init( void ) {
     REGISTER_ARRAY_MEM( infoFade );
     
     REGISTER_VAL_MEM( curInfoIndex );
+
+    REGISTER_VAL_MEM( drawButtonPressed );
+
+    REGISTER_VAL_MEM( boardMarkersDownCount );
+    REGISTER_ARRAY_MEM( boardMarkers );
+    
 
     maxigin_initRestoreStaticMemoryFromLastRun();
     }

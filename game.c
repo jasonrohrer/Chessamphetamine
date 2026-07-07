@@ -1762,7 +1762,10 @@ void maxiginGame_step( void ) {
         int  y;
         int  x;
         int  smoothLift;
-        int  scaleFactor  =  ( redrawProgressMax * redrawProgressMax )
+        int  stagger =  10 * boardMarkersDownCount;
+        
+        int  scaleFactor  =  ( ( redrawProgressMax - stagger) *
+                               ( redrawProgressMax - stagger ) )
                              / MAXIGIN_GAME_NATIVE_H;
         
         if( redrawRemoveProgress != -1 ) {
@@ -1774,8 +1777,16 @@ void maxiginGame_step( void ) {
             liftAmount = redrawProgressMax - redrawAddProgress;
             }
 
-        smoothLift = (liftAmount * liftAmount ) / scaleFactor;
+        /* fixme
 
+           The per-piece stagger using a single progress counter for
+           the whole process isn't working, b/c we have a variable number
+           of pieces to lift, and the whole thing speeds up as we get more
+           pieces.   We actually need to progress separately per piece
+           being lifted, and play sounds for each one taking off and landing
+           the lift structure itself should track the progress.
+
+        */
 
         for( y = 0;
              y < BH;
@@ -1785,6 +1796,15 @@ void maxiginGame_step( void ) {
                  x ++ ) {
 
                 if( boardMarkers[y][x] ) {
+
+                    int  thisLift =  liftAmount - stagger;
+
+                    stagger -= 10;
+                    
+                    if( thisLift < 0 ) {
+                        thisLift = 0;
+                        }
+                    smoothLift = ( thisLift * thisLift ) / scaleFactor;
                             
                     redrawLift.grid[y][x] = smoothLift;
                     }

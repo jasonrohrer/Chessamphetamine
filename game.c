@@ -190,7 +190,7 @@ static int          drawButtonPosX             =  MAXIGIN_GAME_NATIVE_W / 2 + 25
 
 static int          redrawRemoveProgress       =  -1;
 static int          redrawAddProgress          =  -1;
-static int          redrawProgressMax          =  MAXIGIN_GAME_NATIVE_H;
+static int          redrawProgressMax          =  100;
 
 
 static int          logoSprite                 = -1;
@@ -1703,7 +1703,7 @@ void maxiginGame_step( void ) {
 
         if( redrawRemoveProgress != -1 ) {
 
-            redrawRemoveProgress += ( 10 * 60 ) / r;
+            redrawRemoveProgress += ( 3 * 60 ) / r;
 
             if( redrawRemoveProgress >= redrawProgressMax ) {
 
@@ -1732,7 +1732,7 @@ void maxiginGame_step( void ) {
             }
         if( redrawAddProgress != -1 ) {
 
-            redrawAddProgress += ( 10 * 60 ) / r;
+            redrawAddProgress += ( 3 * 60 ) / r;
 
             if( redrawAddProgress >= redrawProgressMax ) {
                 redrawAddProgress = -1;
@@ -1761,7 +1761,10 @@ void maxiginGame_step( void ) {
         int  liftAmount  =  0;
         int  y;
         int  x;
-
+        int  smoothLift;
+        int  scaleFactor  =  ( redrawProgressMax * redrawProgressMax )
+                             / MAXIGIN_GAME_NATIVE_H;
+        
         if( redrawRemoveProgress != -1 ) {
 
             liftAmount = redrawRemoveProgress;
@@ -1770,6 +1773,8 @@ void maxiginGame_step( void ) {
             /* they come back down as add progress advances */
             liftAmount = redrawProgressMax - redrawAddProgress;
             }
+
+        smoothLift = (liftAmount * liftAmount ) / scaleFactor;
 
 
         for( y = 0;
@@ -1781,7 +1786,7 @@ void maxiginGame_step( void ) {
 
                 if( boardMarkers[y][x] ) {
                             
-                    redrawLift.grid[y][x] = liftAmount;
+                    redrawLift.grid[y][x] = smoothLift;
                     }
                 }
             }

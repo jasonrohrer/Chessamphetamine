@@ -318,16 +318,16 @@ void colorsSetRandom( void ) {
 
 
 static void colorsApplyColor( ColorsColor  *inColor ) {
-    maxigin_drawSetColor( 255,
+    if(0)maxigin_drawSetColor( 255,
                           255,
                           255,
                           255 );
     (void)inColor;
-    /*maxigin_drawSetColor( inColor->c.comp.red,
+    maxigin_drawSetColor( inColor->c.comp.red,
                           inColor->c.comp.green,
                           inColor->c.comp.blue,
                           255 );
-    */
+    
     }
 
 

@@ -218,16 +218,19 @@ static int          lang_bomb;
 static int          lang_drawInstruct;
 
 
-static BoardState    boardState;
-static Captured      postMoveCaptured;
-static BoardState    postMoveState;
-static Move          boardMove;
-static AnimProgress  moveProgress;
+static BoardState     boardState;
+static Captured       postMoveCaptured;
+static BoardState     postMoveState;
+static Move           boardMove;
+static AnimProgress   moveProgress;
 
-static Deck          playerDeck;
+static Deck           playerDeck;
 
-static char          boardMarkers[ BH ][ BW ];
-static int           boardMarkersDownCount      = 0;
+static char           boardMarkers[ BH ][ BW ];
+static int            boardMarkersDownCount      = 0;
+
+static DrawBoardLift  redrawLift;
+
 
 static char         moveMade           =  0;
 static char         chessGameOver      =  0;
@@ -587,6 +590,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                             0,
                             boardCenterX,
                             boardCenterY,
+                            0,
                             0 );
             }
         }
@@ -615,7 +619,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                         0,
                         boardCenterX,
                         boardCenterY,
-                        0 );
+                        0,
+                        &redrawLift );
         }
     
 
@@ -1721,8 +1726,6 @@ void maxiginGame_step( void ) {
                         }
                     }
                 
-                clearDrawMarkers();
-                
                 redrawRemoveProgress = -1;
                 redrawAddProgress = 0;
                 }
@@ -1741,6 +1744,9 @@ void maxiginGame_step( void ) {
 
                 /* price goes up for future redraws */
                 drawPrice += 1;
+
+                clearDrawMarkers();
+                clearDrawLift( &redrawLift );
                 }
             }
         }
@@ -1749,6 +1755,37 @@ void maxiginGame_step( void ) {
        pieces need to fly off screen during redrawRemove progress
        and new pieces should come back during add progress
     */
+
+    if( drawButtonPressed ) {
+
+        int  liftAmount  =  0;
+        int  y;
+        int  x;
+
+        if( redrawRemoveProgress != -1 ) {
+
+            liftAmount = redrawRemoveProgress;
+            }
+        else if( redrawAddProgress != -1 ) {
+            /* they come back down as add progress advances */
+            liftAmount = redrawProgressMax - redrawAddProgress;
+            }
+
+
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
+
+                if( boardMarkers[y][x] ) {
+                            
+                    redrawLift.grid[y][x] = liftAmount;
+                    }
+                }
+            }
+        }
             
 
     
@@ -2489,7 +2526,8 @@ void maxiginGame_init( void ) {
 
 
     clearDrawMarkers();
-    
+
+    clearDrawLift( &redrawLift );
 
     if(0)runChessTest();
     
@@ -2500,12 +2538,12 @@ void maxiginGame_init( void ) {
 
     boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 12;
 
-    if(0) getStartBoard( &boardState );
+    if(1) getStartBoard( &boardState );
     if(0) getTestBoard( &boardState );
     
     getPlayerStartDeck( &playerDeck );
     
-    if(1) {
+    if(0) {
         
         getLevel( 0,
                   &boardState,
@@ -2592,6 +2630,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( playerDeck );
 
     REGISTER_VAL_MEM( drawPrice );
+
+    REGISTER_VAL_MEM( redrawLift );
     
 
     maxigin_initRestoreStaticMemoryFromLastRun();

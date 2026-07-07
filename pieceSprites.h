@@ -109,10 +109,25 @@ void clearMaskRow( DrawBoardMask  *inMask,
 
 
 
+/* used to alter the vertical y position of certain pieces */
+typedef struct DrawBoardLift{
+
+        /* 1 to draw, 0 to skip */
+        int  grid[BH][BW];
+
+    } DrawBoardLift;
+
+
+
+void clearDrawLift( DrawBoardLift  *inLift );
+
+
+
 /* inMoveProgress goes from 0 to inMoveProgressMax
    if inMoveProgressMax is 0, inMove is ignored
 
    if inMask is 0 (null), it is ignored
+   if inLift is 0 (null), it is ignored
 */
 void drawBoardState( BoardState     *inState,
                      char            inCheckmate,
@@ -124,7 +139,8 @@ void drawBoardState( BoardState     *inState,
                      int             inMoveProgressMax,
                      int             inBoardCenterX,
                      int             inBoardCenterY,
-                     DrawBoardMask  *inMask );
+                     DrawBoardMask  *inMask,
+                     DrawBoardLift  *inLift );
 
 
 
@@ -334,7 +350,7 @@ void pieceSpritesInit( void ) {
                                                   0 );
 
             
-                if(0)maxigin_initMakeGlowSprite( pieceSpriteHandles[i][ci],
+                if(1)maxigin_initMakeGlowSprite( pieceSpriteHandles[i][ci],
                                                  4,
                                                  2 );
 
@@ -852,7 +868,8 @@ void drawBoardState( BoardState     *inState,
                      int             inMoveProgressMax,
                      int             inBoardCenterX,
                      int             inBoardCenterY,
-                     DrawBoardMask  *inMask ) {
+                     DrawBoardMask  *inMask,
+                     DrawBoardLift  *inLift ) {
 
     int         x;
     int         y;
@@ -1032,6 +1049,10 @@ void drawBoardState( BoardState     *inState,
                        draw it separately */
                     }
                 else {
+
+                    if( inLift != 0 ) {
+                        pY -= inLift->grid[y][x];
+                        }
                     
                     drawPiece( p,
                                pX,
@@ -1167,6 +1188,25 @@ void clearMaskRow( DrawBoardMask  *inMask,
         }
     }
 
+
+
+void clearDrawLift( DrawBoardLift  *inLift ) {
+    
+    int  x;
+    int  y;
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            inLift->grid[y][x] = 0;
+            }
+        }
+    }
 
 
 ChessPiece getPointerOverPiece( BoardState  *inState,

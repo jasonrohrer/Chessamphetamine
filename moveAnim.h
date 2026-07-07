@@ -646,6 +646,7 @@ static void defaultPieceDraw( int            inBoardCenterX,
                         pixDist,
                         inBoardCenterX,
                         inBoardCenterY,
+                        0,
                         0 );
         }
     else {
@@ -660,6 +661,7 @@ static void defaultPieceDraw( int            inBoardCenterX,
                         0,
                         inBoardCenterX,
                         inBoardCenterY,
+                        0,
                         0 );
 
         if( inCaptured->num > 0 ) {
@@ -2154,6 +2156,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         0,
                         inBoardCenterX,
                         inBoardCenterY,
+                        0,
                         0 );
         return;
         }
@@ -2236,7 +2239,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
                             0,
                             inBoardCenterX,
                             inBoardCenterY,
-                            &mask );
+                            &mask,
+                            0 );
             }
 
 
@@ -2287,7 +2291,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         0,
                         inBoardCenterX,
                         inBoardCenterY,
-                        &mask );
+                        &mask,
+                        0 );
 
         /* now draw main piece in row on top of shadow drawn before */
 
@@ -2350,7 +2355,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
                             0,
                             inBoardCenterX,
                             inBoardCenterY,
-                            &mask );
+                            &mask,
+                            0 );
             }
             
 
@@ -2416,7 +2422,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                 0,
                                 inBoardCenterX,
                                 inBoardCenterY,
-                                &mask );
+                                &mask,
+                                0 );
 
                 /* now draw rest of piece, above shadow drawn behind
                    laser before */
@@ -2456,7 +2463,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                     0,
                                     inBoardCenterX,
                                     inBoardCenterY,
-                                    &mask );
+                                    &mask,
+                                    0 );
                     } 
                 }
             
@@ -2495,6 +2503,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         0,
                         inBoardCenterX,
                         inBoardCenterY,
+                        0,
                         0 );
 
             
@@ -2624,6 +2633,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         0,
                         inBoardCenterX,
                         inBoardCenterY,
+                        0,
                         0 );
         
         
@@ -2684,7 +2694,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         0,
                         inBoardCenterX,
                         inBoardCenterY,
-                        &mask );
+                        &mask,
+                        0 );
 
         getRowMask( &mask,
                     inMove->startPos[0] );
@@ -2703,7 +2714,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         0,
                         inBoardCenterX,
                         inBoardCenterY,
-                        &mask );
+                        &mask,
+                        0 );
 
         /* now draw launch smoke */
 
@@ -2881,7 +2893,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         0,
                         inBoardCenterX,
                         inBoardCenterY,
-                        &mask );
+                        &mask,
+                        0 );
         }
     else if( p == rocketDown ) {
 
@@ -2925,7 +2938,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         0,
                         inBoardCenterX,
                         inBoardCenterY,
-                        &mask );
+                        &mask,
+                        0 );
 
         /* draw rocket coming down */
 
@@ -2980,7 +2994,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         0,
                         inBoardCenterX,
                         inBoardCenterY,
-                        &mask );
+                        &mask,
+                        0 );
         
         }
     

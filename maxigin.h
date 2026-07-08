@@ -18170,6 +18170,8 @@ void mx_playSoundEffectWithPos( int  inSoundEffectHandle,
                 mx_soundEffects[ inSoundEffectHandle ].startByte +
                 mx_soundEffects[ inSoundEffectHandle ].numSampleFrames * 4
                 - 4 ) {
+
+            mingin_unlockAudio();
             
             maxigin_logInt( "Skipping playing sound effect because "
                             "supplied data position is out of range: ",

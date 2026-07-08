@@ -1694,7 +1694,6 @@ void maxiginGame_step( void ) {
                                              256 );
                     redrawRemoveRunning = 1;
                     redrawAddRunning    = 0;
-                    boardMarkersHidden  = 1;
 
                     moneyAdd( - drawPrice );
                     }
@@ -1711,15 +1710,19 @@ void maxiginGame_step( void ) {
         
         int   minLiftForNextStart  =  30;
         int   stepSize             =  ( 4 * 60 ) / r;
+
         
-        if( redrawRemoveRunning ) {
+        if( redrawRemoveRunning
+            &&
+            moneyIsSettled() ) {
 
             int   y;
             int   x;
 
             char  foundStarting        =  0;
             char  allAtEnd             =  1;
-
+            
+            boardMarkersHidden  = 1;
             
             for( y = 0;
                  y < BH;

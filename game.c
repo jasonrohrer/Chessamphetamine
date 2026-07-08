@@ -230,7 +230,7 @@ static char           boardMarkers[ BH ][ BW ];
 static int            boardMarkersDownCount      = 0;
 
 static DrawBoardLift  redrawLift;
-
+static DrawBoardLift  redrawSmoothLift;
 
 static char         moveMade           =  0;
 static char         chessGameOver      =  0;
@@ -620,7 +620,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                         boardCenterX,
                         boardCenterY,
                         0,
-                        &redrawLift );
+                        &redrawSmoothLift );
         }
     
 
@@ -1701,16 +1701,70 @@ void maxiginGame_step( void ) {
 
     if( drawButtonPressed ) {
 
+        
+        int  scaleFactor  =  ( redrawProgressMax * redrawProgressMax )
+            / MAXIGIN_GAME_NATIVE_H;
+        
+        int   minLiftForNextStart  =  30;
+        int   stepSize             =  ( 4 * 60 ) / r;
+        
         if( redrawRemoveProgress != -1 ) {
 
-            redrawRemoveProgress += ( 3 * 60 ) / r;
+            int   y;
+            int   x;
 
-            if( redrawRemoveProgress >= redrawProgressMax ) {
+            char  foundStarting        =  0;
+            char  allAtEnd             =  1;
+
+            
+            for( y = 0;
+                 y < BH;
+                 y ++ ) {
+                
+                for( x = 0;
+                     x < BW;
+                     x ++ ) {
+
+                    if( ! boardMarkers[y][x] ) {
+                        continue;
+                        }
+
+                    if( redrawLift.grid[y][x] < redrawProgressMax ) {
+                        
+                        int  val;
+
+                        allAtEnd = 0;
+
+                        if( redrawLift.grid[y][x] == 0 ) {
+                            maxigin_playSoundEffect( examinePieceSound,
+                                                     256 );
+                            }
+                        
+                        redrawLift.grid[y][x] += stepSize;
+                        
+                        if( redrawLift.grid[y][x] > redrawProgressMax ) {
+                            redrawLift.grid[y][x] = redrawProgressMax;
+                            }
+
+                        val = redrawLift.grid[y][x];
+                        
+                        redrawSmoothLift.grid[y][x] =
+                            ( val * val ) / scaleFactor;
+                        
+                        if( redrawLift.grid[y][x] < minLiftForNextStart ) {
+                            foundStarting = 1;
+                            break;
+                            }
+                        }
+                    }
+                if( foundStarting ) {
+                    break;
+                    }
+                }
+            
+            if( allAtEnd ) {
 
                 /* swap pieces while off screen */
-
-                int  y;
-                int  x;
 
                 for( y = 0;
                      y < BH;
@@ -1730,16 +1784,65 @@ void maxiginGame_step( void ) {
                 redrawAddProgress = 0;
                 }
             }
+            
         if( redrawAddProgress != -1 ) {
+            
+            int   y;
+            int   x;
 
-            redrawAddProgress += ( 3 * 60 ) / r;
+            char  foundStarting        =  0;
+            char  allAtEnd             =  1;
+            
+            for( y = 0;
+                 y < BH;
+                 y ++ ) {
+                
+                for( x = 0;
+                     x < BW;
+                     x ++ ) {
 
-            if( redrawAddProgress >= redrawProgressMax ) {
+                    if( ! boardMarkers[y][x] ) {
+                        continue;
+                        }
+
+                    if( redrawLift.grid[y][x] > 0 ) {
+
+                        int  val;
+
+                        allAtEnd = 0;
+                        
+                        redrawLift.grid[y][x] -= stepSize;
+                        
+                        if( redrawLift.grid[y][x] < 0 ) {
+                            redrawLift.grid[y][x] = 0;
+                            }
+
+                        val = redrawLift.grid[y][x];
+                        
+                        redrawSmoothLift.grid[y][x] =
+                            ( val * val ) / scaleFactor;
+
+                        if( val == 0 ) {
+                            maxigin_playSoundEffect( examinePieceSound,
+                                                     256 );
+                            }
+                        
+                        if( redrawLift.grid[y][x] >
+                            redrawProgressMax - minLiftForNextStart ) {
+                            
+                            foundStarting = 1;
+                            break;
+                            }
+                        }
+                    }
+                if( foundStarting ) {
+                    break;
+                    }
+                }
+
+            if( allAtEnd ) {
                 redrawAddProgress = -1;
 
-                /* done with redraw */
-                maxigin_playSoundEffect( examinePieceSound,
-                                         256 );
                 drawButtonPressed = 0;
 
                 /* price goes up for future redraws */
@@ -1747,70 +1850,11 @@ void maxiginGame_step( void ) {
 
                 clearDrawMarkers();
                 clearDrawLift( &redrawLift );
+                clearDrawLift( &redrawSmoothLift );
                 }
             }
-        }
+        }    
     
-    /* fixme
-       pieces need to fly off screen during redrawRemove progress
-       and new pieces should come back during add progress
-    */
-
-    if( drawButtonPressed ) {
-
-        int  liftAmount  =  0;
-        int  y;
-        int  x;
-        int  smoothLift;
-        int  stagger =  10 * boardMarkersDownCount;
-        
-        int  scaleFactor  =  ( ( redrawProgressMax - stagger) *
-                               ( redrawProgressMax - stagger ) )
-                             / MAXIGIN_GAME_NATIVE_H;
-        
-        if( redrawRemoveProgress != -1 ) {
-
-            liftAmount = redrawRemoveProgress;
-            }
-        else if( redrawAddProgress != -1 ) {
-            /* they come back down as add progress advances */
-            liftAmount = redrawProgressMax - redrawAddProgress;
-            }
-
-        /* fixme
-
-           The per-piece stagger using a single progress counter for
-           the whole process isn't working, b/c we have a variable number
-           of pieces to lift, and the whole thing speeds up as we get more
-           pieces.   We actually need to progress separately per piece
-           being lifted, and play sounds for each one taking off and landing
-           the lift structure itself should track the progress.
-
-        */
-
-        for( y = 0;
-             y < BH;
-             y ++ ) {
-            for( x = 0;
-                 x < BW;
-                 x ++ ) {
-
-                if( boardMarkers[y][x] ) {
-
-                    int  thisLift =  liftAmount - stagger;
-
-                    stagger -= 10;
-                    
-                    if( thisLift < 0 ) {
-                        thisLift = 0;
-                        }
-                    smoothLift = ( thisLift * thisLift ) / scaleFactor;
-                            
-                    redrawLift.grid[y][x] = smoothLift;
-                    }
-                }
-            }
-        }
             
 
     
@@ -2553,6 +2597,7 @@ void maxiginGame_init( void ) {
     clearDrawMarkers();
 
     clearDrawLift( &redrawLift );
+    clearDrawLift( &redrawSmoothLift );
 
     if(0)runChessTest();
     
@@ -2656,7 +2701,8 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( drawPrice );
 
-    REGISTER_VAL_MEM( redrawLift );
+    /* only need to record the final smooth lift of each piece */
+    REGISTER_VAL_MEM( redrawSmoothLift );
     
 
     maxigin_initRestoreStaticMemoryFromLastRun();

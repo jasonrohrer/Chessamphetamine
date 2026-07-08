@@ -1781,8 +1781,23 @@ void maxiginGame_step( void ) {
                          x ++ ) {
 
                         if( boardMarkers[y][x] ) {
-                            
-                            boardState.grid[y][x] = deckDraw( &playerDeck );
+                            deckReturnPiece( &playerDeck,
+                                             boardState.grid[y][x] );
+                            }
+                        }
+                    }
+                
+                for( y = 0;
+                     y < BH;
+                     y ++ ) {
+                    for( x = 0;
+                         x < BW;
+                         x ++ ) {
+
+                        if( boardMarkers[y][x] ) {
+
+                            boardState.grid[y][x] =
+                                CHESS_WHITE | deckDraw( &playerDeck );
                             }
                         }
                     }
@@ -2585,7 +2600,7 @@ void maxiginGame_init( void ) {
     pieceSpritesInit();
     particleSpriteInit();
     moveAnimInit();
-    moneyInit( 10,
+    moneyInit( 50,
                plunkSound );
     numbersInit();
     checkDisplayInit();

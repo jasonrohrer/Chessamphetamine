@@ -74,6 +74,16 @@ typedef struct Deck {
         int  drawPos;
 
         ChessPiece  pieces[ MAX_DECK_SIZE ];
+
+        /* this tracks whether a piece in the deck is present or not
+           for the player deck in particular, pieces can be "out"
+           on the board, and shouldn't be redrawable, even if the deck
+           needs to be reshuffled.
+        */
+        char        present[ MAX_DECK_SIZE ];
+
+        /* presence in deck can be ignored for shop deck */
+        char        trackPresent;
         
     } Deck;
 
@@ -99,6 +109,16 @@ void getShopDeck( Deck  *outDeck,
 /* draws a piece from deck
    reshuffles deck as-needed */
 ChessPiece deckDraw( Deck  *inDeck );
+
+
+/* returns a piece that has been drawn to the deck
+   (piece won't be drawable again until deck gets reshuffled when it reaches
+   end )
+
+   Only has an effect on decks that have trackPresent enabled.
+*/
+void deckReturnPiece( Deck        *inDeck,
+                      ChessPiece   inPiece );
 
 
 
@@ -219,8 +239,9 @@ void  deckInit( void ) {
 static void deckReshuffleRange( Deck  *inDeck,
                                 int    inLastIndex ) {
 
-    static  int         shuffleIndices[ MAX_DECK_SIZE ];
-    static  ChessPiece  shuffleTemp   [ MAX_DECK_SIZE ];
+    static  int         shuffleIndices    [ MAX_DECK_SIZE ];
+    static  ChessPiece  shuffleTemp       [ MAX_DECK_SIZE ];
+    static  char        shuffleTempPresent[ MAX_DECK_SIZE ];
     
     int  i;
 
@@ -230,7 +251,8 @@ static void deckReshuffleRange( Deck  *inDeck,
 
         shuffleIndices[i] = i;
 
-        shuffleTemp[ i ] = inDeck->pieces[ i ];
+        shuffleTemp       [ i ] = inDeck->pieces [ i ];
+        shuffleTempPresent[ i ] = inDeck->present[ i ];
         }
 
     maxigin_shuffle( &deckRand,
@@ -241,7 +263,8 @@ static void deckReshuffleRange( Deck  *inDeck,
          i <= inLastIndex;
          i ++ ) {
 
-        inDeck->pieces[ i ] = shuffleTemp[ shuffleIndices[i] ];
+        inDeck->pieces [ i ] = shuffleTemp       [ shuffleIndices[i] ];
+        inDeck->present[ i ] = shuffleTempPresent[ shuffleIndices[i] ];
         }
     }
 
@@ -251,6 +274,65 @@ void deckReshuffleAll( Deck  *inDeck ) {
     inDeck->drawPos = inDeck->numPieces - 1;
 
     deckReshuffleRemaining( inDeck );
+
+    if( inDeck->trackPresent ) {
+
+        /* put all non-present pieces at end */
+
+        static  ChessPiece  tempDeck   [ MAX_DECK_SIZE ];
+        static  char        tempPresent[ MAX_DECK_SIZE ];
+
+        int  i;
+        int  tempPos = 0;
+
+        int  numPresent  = 0;
+
+        /* first present pieces */
+        for( i = 0;
+             i < inDeck->numPieces;
+             i ++ ) {
+
+            if( inDeck->present[i] ) {
+
+                tempDeck   [ tempPos ] = inDeck->pieces [i];
+                tempPresent[ tempPos ] = inDeck->present[i];
+
+                tempPos ++;
+                numPresent ++;
+                }
+            }
+
+        /* now non-present pieces at end */
+        for( i = 0;
+             i < inDeck->numPieces;
+             i ++ ) {
+
+            if( ! inDeck->present[i] ) {
+
+                tempDeck   [ tempPos ] = inDeck->pieces [i];
+                tempPresent[ tempPos ] = inDeck->present[i];
+
+                tempPos ++;
+                }
+            }
+
+        /* now copy back to main deck */
+        for( i = 0;
+             i < inDeck->numPieces;
+             i ++ ) {
+
+            inDeck->pieces [i] = tempDeck   [ i ];
+            inDeck->present[i] = tempPresent[ i ];
+            }
+
+        /* skip non-present when drawing,
+           but only if we can
+           if all pieces are not present, leave drawPos alone
+           and allow redrawing of non-present pieces */
+        if( numPresent > 0 ) {
+            inDeck->drawPos = numPresent - 1;
+            }
+        }
     }
 
 
@@ -308,14 +390,16 @@ static void getFreshDeck( Deck  *outDeck,
                      o ++ ) {
 
                     outDeck->pieces[n] = (ChessPiece)i;
+                    outDeck->present[n] = 1;
                     n++;
                     }
                 }
             }
         }
 
-    outDeck->numPieces = n;
-    outDeck->drawPos   = 0;
+    outDeck->numPieces    = n;
+    outDeck->drawPos      = 0;
+    outDeck->trackPresent = 0;
 
     deckReshuffleAll( outDeck );
     }
@@ -328,6 +412,10 @@ void getPlayerStartDeck( Deck  *outDeck ) {
                   deckPlayerOccurrence,
                   1,
                   MAX_DECK_PIECE_OCCURRENCE );
+
+    /* player's deck tracks card presence, only allows drawing of
+       cards that are present in deck, even after reshuffle */
+    outDeck->trackPresent = 1;
     }
 
 
@@ -344,8 +432,22 @@ void getShopDeck( Deck  *outDeck,
 
 ChessPiece deckDraw( Deck  *inDeck ) {
 
+    /* we can assume, even if our deck tracks present
+       that the present pieces are always in a block at drawPost
+       and lower.
+
+       During reshuffle, we stick all non-present pieces at end
+
+       In case where all pieces non-present, we allow redrawing of
+       non-present pieces.
+    */
+    
     ChessPiece  p  =  inDeck->pieces[ inDeck->drawPos ];
 
+    if( inDeck->trackPresent ) {
+        inDeck->present[ inDeck->drawPos ] = 0;
+        }
+    
     inDeck->drawPos --;
 
     if( inDeck->drawPos < 0 ) {
@@ -354,6 +456,33 @@ ChessPiece deckDraw( Deck  *inDeck ) {
 
     return p;
     }
+
+
+
+void deckReturnPiece( Deck        *inDeck,
+                      ChessPiece   inPiece ) {
+
+    ChessPiece  pieceType  =  inPiece & CHESS_TYPE_MASK;
+
+    if( inDeck->trackPresent ) {
+        
+        int  i;
+
+        for( i =  inDeck->numPieces - 1;
+             i >= 0;
+             i -- ) {
+
+            if( ! inDeck->present[ i ]
+                &&
+                inDeck->pieces[ i ] == pieceType ) {
+
+                inDeck->present[ i ] = 1;
+                return;
+                }
+            }
+        }
+    }
+
 
 
 

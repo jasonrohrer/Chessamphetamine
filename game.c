@@ -2631,14 +2631,14 @@ void maxiginGame_init( void ) {
 
     boxH = ( MAXIGIN_GAME_NATIVE_H * 3 ) / 12;
 
-    if(1) getStartBoard( &boardState );
+    if(0) getStartBoard( &boardState );
     if(0) getTestBoard( &boardState );
     
     getPlayerStartDeck( &playerDeck );
     
-    if(0) {
+    if(1) {
         
-        getLevel( 0,
+        getLevel( 16,
                   &boardState,
                   &playerDeck );
         }

@@ -259,9 +259,10 @@ CHECK_CHESS_ARRAY( pieceSpriteExtraFiles,
 
 
 
-static  int            slashSpriteHandle      =  -1;
-static  int            whiteFlagSpriteHandle  =  -1;
-static  int            noMoveSpriteHandle     =  -1;
+static  int            slashSpriteHandle       =  -1;
+static  int            whiteFlagSpriteHandle   =  -1;
+static  int            noMoveSpriteHandle      =  -1;
+static  int            liftShadowSpriteHandle  =  -1;
 
 
 void pieceSpritesInit( void ) {
@@ -504,6 +505,8 @@ void pieceSpritesInit( void ) {
                                           100,
                                           0 );
         }
+
+    liftShadowSpriteHandle = maxigin_initSprite( "liftShadow.tga" );
     }
 
 
@@ -1051,7 +1054,32 @@ void drawBoardState( BoardState     *inState,
                 else {
 
                     if( inLift != 0 ) {
-                        pY -= inLift->grid[y][x];
+                        int  liftVal = inLift->grid[y][x];
+
+                        if( liftVal != 0 ) {
+
+                            if( liftVal > 0 ) {
+
+                                int  shadowFade = 255 - 2 * liftVal;
+
+                                if( shadowFade > 0 ) {
+
+                                    maxigin_drawResetColor();
+                                    
+                                    maxigin_drawSetAlpha(
+                                        (unsigned char)shadowFade );
+
+                                    maxigin_drawSprite( liftShadowSpriteHandle,
+                                                        pX,
+                                                        pY );
+
+                                    maxigin_drawSetAlpha( 255 );
+                                    }
+
+                                }
+                            
+                            pY -= liftVal;
+                            }
                         }
                     
                     drawPiece( p,

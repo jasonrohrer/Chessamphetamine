@@ -188,8 +188,8 @@ static int          drawPrice                  =  1;
 static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
 static int          drawButtonPosX             =  MAXIGIN_GAME_NATIVE_W / 2 + 25;
 
-static int          redrawRemoveProgress       =  -1;
-static int          redrawAddProgress          =  -1;
+static char         redrawRemoveRunning        =  0;
+static char         redrawAddRunning           =  0;
 static int          redrawProgressMax          =  100;
 
 
@@ -227,7 +227,8 @@ static AnimProgress   moveProgress;
 static Deck           playerDeck;
 
 static char           boardMarkers[ BH ][ BW ];
-static int            boardMarkersDownCount      = 0;
+static int            boardMarkersDownCount      =  0;
+static char           boardMarkersHidden         =  0;
 
 static DrawBoardLift  redrawLift;
 static DrawBoardLift  redrawSmoothLift;
@@ -602,7 +603,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         if( ! spinning
             &&
-            ! chessGameOver ) {
+            ! chessGameOver
+            &&
+            ! boardMarkersHidden ) {
 
             boardDrawMarkers( boardCenterX,
                               boardCenterY,
@@ -1689,8 +1692,9 @@ void maxiginGame_step( void ) {
                 else {
                     maxigin_playSoundEffect( examinePieceSound,
                                              256 );
-                    redrawRemoveProgress = 0;
-                    redrawAddProgress    = -1;
+                    redrawRemoveRunning = 1;
+                    redrawAddRunning    = 0;
+                    boardMarkersHidden  = 1;
 
                     moneyAdd( - drawPrice );
                     }
@@ -1708,7 +1712,7 @@ void maxiginGame_step( void ) {
         int   minLiftForNextStart  =  30;
         int   stepSize             =  ( 4 * 60 ) / r;
         
-        if( redrawRemoveProgress != -1 ) {
+        if( redrawRemoveRunning ) {
 
             int   y;
             int   x;
@@ -1780,12 +1784,12 @@ void maxiginGame_step( void ) {
                         }
                     }
                 
-                redrawRemoveProgress = -1;
-                redrawAddProgress = 0;
+                redrawRemoveRunning = 0;
+                redrawAddRunning    = 1;
                 }
             }
             
-        if( redrawAddProgress != -1 ) {
+        if( redrawAddRunning ) {
             
             int   y;
             int   x;
@@ -1841,7 +1845,7 @@ void maxiginGame_step( void ) {
                 }
 
             if( allAtEnd ) {
-                redrawAddProgress = -1;
+                redrawAddRunning = 0;
 
                 drawButtonPressed = 0;
 
@@ -1849,6 +1853,7 @@ void maxiginGame_step( void ) {
                 drawPrice += 1;
 
                 clearDrawMarkers();
+                boardMarkersHidden = 0;
                 clearDrawLift( &redrawLift );
                 clearDrawLift( &redrawSmoothLift );
                 }
@@ -2701,9 +2706,13 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( drawPrice );
 
-    /* only need to record the final smooth lift of each piece */
+    /* need to register both, in case we stop playback during a lift */
+    REGISTER_VAL_MEM( redrawLift );
     REGISTER_VAL_MEM( redrawSmoothLift );
-    
+
+    REGISTER_VAL_MEM( redrawRemoveRunning );
+    REGISTER_VAL_MEM( redrawAddRunning );
+    REGISTER_VAL_MEM( boardMarkersHidden );
 
     maxigin_initRestoreStaticMemoryFromLastRun();
     }

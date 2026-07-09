@@ -25,6 +25,7 @@
 #define NAV_IMPLEMENTATION
 #define LEVELS_IMPLEMENTATION
 #define DECK_IMPLEMENTATION
+#define SHOP_IMPLEMENTATION
 
 
 #include "chess.h"
@@ -62,6 +63,8 @@
 #include "levels.h"
 
 #include "deck.h"
+
+#include "shop.h"
 
 
 enum GameUserAction {
@@ -190,6 +193,10 @@ static long           stepMSec                    =  0;
 
 static int            boardCenterX;
 static int            boardCenterY;
+static int            boardSlideUp                =  0;
+static int            boardSlideUpMax             =  100;
+static char           shopShowing                 =  0;
+
 static ChessPiece     infoPanelPiece              =  noPiece;
 static ChessPiece     infoPanelLastPiece          =  noPiece;
 static unsigned char  infoPanelFade               =  0;
@@ -269,6 +276,14 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                     spinButtonY );
         }
 
+
+    if( shopShowing ) {
+        /* draw shop under any board, so board can slide away to reveal it */
+        shopDraw( boardCenterX,
+                  boardCenterY );
+        }
+
+    
     if( moveMade ) {
         drawMoveAnimation( boardCenterX,
                            boardCenterY,
@@ -334,8 +349,23 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     else {
         /* draw regular board (no move log) */
 
+        
+        int  boardLiveCenterY =  boardCenterY;
+
+        if( boardSlideUp > 0 ) {
+
+            int  boardSlideUpY    =  0;
+            int  scaleFactor  =  ( boardSlideUpMax * boardSlideUpMax )
+                / MAXIGIN_GAME_NATIVE_H;
+
+            boardSlideUpY = ( boardSlideUp * boardSlideUp ) / scaleFactor;
+
+            boardLiveCenterY -= boardSlideUpY;
+            }
+        
+
         boardDraw( boardCenterX,
-                   boardCenterY);
+                   boardLiveCenterY);
 
         if( ! spinning
             &&
@@ -344,7 +374,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             ! boardMarkersHidden ) {
 
             boardDrawMarkers( boardCenterX,
-                              boardCenterY,
+                              boardLiveCenterY,
                               boardMarkers );
             }
 
@@ -357,7 +387,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                         0,
                         0,
                         boardCenterX,
-                        boardCenterY,
+                        boardLiveCenterY,
                         0,
                         &redrawSmoothLift );
         }
@@ -1463,12 +1493,23 @@ void maxiginGame_step( void ) {
 
             if( newFade < 0 ) {
                 endMessageFade = 0;
+
+                shopShowing = 1;
                 }
             else {
                 endMessageFade = (unsigned char)newFade;
                 }
             }
         }
+
+
+    if( shopShowing
+        &&
+        boardSlideUp < boardSlideUpMax ) {
+        
+        boardSlideUp += ( 4 * 60 ) / r;
+        }
+    
 
 
     moneyStep();
@@ -1908,6 +1949,8 @@ void maxiginGame_init( void ) {
 
     deckInit();
 
+    shopInit();
+
 
     clearDrawMarkers();
 
@@ -1982,6 +2025,11 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( redrawRemoveRunning );
     REGISTER_VAL_MEM( redrawAddRunning );
     REGISTER_VAL_MEM( boardMarkersHidden );
+
+    REGISTER_VAL_MEM( boardSlideUp );
+
+    REGISTER_VAL_MEM( shopShowing );
+    
 
     maxigin_initRestoreStaticMemoryFromLastRun();
     }

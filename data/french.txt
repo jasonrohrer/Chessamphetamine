@@ -38,7 +38,6 @@ back           "Retour"
 
 
 actionDesc     "Tirer"
-bombDesc       "Bombe"
 
 
 press          "appuyez"

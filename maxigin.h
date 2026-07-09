@@ -14176,7 +14176,9 @@ static char mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
         }
     
     fingerprint = mx_getMemRecordsFingerprint( &numTotalBytes );
-    
+
+    maxigin_logInt( "Registered live static memory total bytes:  ",
+                    numTotalBytes );
  
     success = mx_readIntFromPersistData( inStoreReadHandle,
                                          &readNumTotalBytes );

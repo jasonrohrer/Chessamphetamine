@@ -96,11 +96,14 @@ void  deckInit( void );
 void getPlayerStartDeck( Deck  *outDeck );
 
 
-/* gets a shuffled shop deck
-   inRarityFilter filters out more common pieces by only including
-   pieces with occurrence factor  <=  inRarityFilter
-   passing MAX_DECK_PIECE_OCCURRENCE includes all pieces
-   passing 1  includes only the most rare pieces */
+/*
+  gets a shuffled shop deck
+  inRarityFilter filters out more common pieces by only including
+  pieces with occurrence factor  <=  inRarityFilter
+  
+  passing  MAX_DECK_PIECE_OCCURRENCE  includes all pieces
+  passing  1                          includes only the most rare pieces
+*/
 void getShopDeck( Deck  *outDeck,
                   int    inRarityFilter );
 
@@ -111,7 +114,7 @@ void getShopDeck( Deck  *outDeck,
 ChessPiece deckDraw( Deck  *inDeck );
 
 
-/* returns a piece that has been drawn to the deck
+/* returns a piece that has been drawn before back to the deck
    (piece won't be drawable again until deck gets reshuffled when it reaches
    end )
 
@@ -145,7 +148,11 @@ void deckReshuffleRemaining( Deck  *inDeck );
 
 #ifdef DECK_IMPLEMENTATION
 
-
+/*
+  rarity of pieces in the shop decks
+  Lower numbers are more rare (a piece with rarity 10 will occur 10x more
+  often than a piece with rarity 1)
+*/
 #define SHOP_OCCURRENCE_LIST( C, V )  \
     V( C, 0,   noPiece,      0   )    \
     V( C, 1,   pawn,         10  )    \
@@ -168,6 +175,10 @@ CHECK_CHESS_ARRAY( deckShopOccurrence,
                    SHOP_OCCURRENCE_LIST );
 
 
+/*
+  Player's starting deck contains the 15 usual chess pieces,
+  except for the king
+*/
 #define PLAYER_DECK_OCCURRENCE_LIST( C, V )  \
     V( C, 0,   noPiece,      0   )           \
     V( C, 1,   pawn,         8   )           \

@@ -96,6 +96,7 @@ static int          pickFailedSound    =  -1;
 static int          checkmateGood      =  -1;
 static int          checkmateBad       =  -1;
 
+static int          boardSlideSound    =  -1;
 
 
 static int          spinFrameSprite            = -1;
@@ -1495,6 +1496,8 @@ void maxiginGame_step( void ) {
                 endMessageFade = 0;
 
                 shopShowing = 1;
+                maxigin_playSoundEffect( boardSlideSound,
+                                         356 );
                 }
             else {
                 endMessageFade = (unsigned char)newFade;
@@ -1917,6 +1920,7 @@ void maxiginGame_init( void ) {
     checkmateGood = maxigin_initSoundEffect( "checkmateGood.wav" );
     checkmateBad = maxigin_initSoundEffect( "checkmateBad.wav" );
 
+    boardSlideSound = maxigin_initSoundEffect( "boardSlide_sd_11.wav" );
 
     maxigin_initSetMenuSounds( plunkSound,
                                256,

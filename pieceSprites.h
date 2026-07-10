@@ -158,12 +158,27 @@ ChessPiece getPointerOverPiece( BoardState  *inState,
 
 
 
-void drawPieceHighlight( BoardState    *inState,
-                         int            inBoardCenterX,
-                         int            inBoardCenterY,
-                         int            inPieceRow,
-                         int            inPieceCol,
-                         unsigned char  inFade );
+char getPixelOverPiece( ChessPiece  inPiece,
+                        int         inBaseCenterX,
+                        int         inBaseCenterY,
+                        int         inNativeScreenX,
+                        int         inNativeScreenY );
+
+
+
+void drawPieceHightlight( ChessPiece     inPiece,
+                          int            inBaseCenterX,
+                          int            inBaseCenterY,
+                          unsigned char  inFade );
+
+
+
+void drawBoardPieceHighlight( BoardState    *inState,
+                              int            inBoardCenterX,
+                              int            inBoardCenterY,
+                              int            inPieceRow,
+                              int            inPieceCol,
+                              unsigned char  inFade );
 
 
 
@@ -1237,6 +1252,52 @@ void clearDrawLift( DrawBoardLift  *inLift ) {
     }
 
 
+char getPixelOverPiece( ChessPiece  inPiece,
+                        int         inBaseCenterX,
+                        int         inBaseCenterY,
+                        int         inNativeScreenX,
+                        int         inNativeScreenY ) {
+
+    ChessPiece  t       =  inPiece & CHESS_TYPE_MASK;
+    ChessPiece  c       =  inPiece & CHESS_COLOR_MASK;
+    int         cIndex  =  getPieceColorIndex( c );
+    int         spritePixX;
+    int         spritePixY;
+
+    inBaseCenterY += pieceOffsetY[ t ];
+
+    spritePixX = inNativeScreenX - inBaseCenterX;
+    spritePixY = inNativeScreenY - inBaseCenterY;
+            
+
+    if( maxigin_isInSprite( pieceSpriteHandles[ t ][ cIndex ],
+                            spritePixX,
+                            spritePixY ) ) {
+        return 1;
+        }
+
+    /* pixel not in sprite */ 
+
+    if( pieceSpriteExtraHandles[ t ][ cIndex ] != -1 ) {
+        /* check if it's in piece's extra sprite */
+
+        inBaseCenterY += pieceExtraOffsetY[ t ][ cIndex ];
+
+        spritePixY = inNativeScreenY - inBaseCenterY;
+                
+        if( maxigin_isInSprite(
+                pieceSpriteExtraHandles[ t ][ cIndex ],
+                spritePixX,
+                spritePixY ) ) {
+            return 1;
+            }
+        }
+    return 0;
+    }
+
+
+
+
 ChessPiece getPointerOverPiece( BoardState  *inState,
                                 int          inBoardCenterX,
                                 int          inBoardCenterY,
@@ -1263,22 +1324,14 @@ ChessPiece getPointerOverPiece( BoardState  *inState,
              x ++ ) {
 
             ChessPiece  p  =  inState->grid[y][x];
-            ChessPiece  t;
-            ChessPiece  c;
-            int         cIndex;
+
             int         pX;
             int         pY;
-
-            int         spritePixX;
-            int         spritePixY;
             
             if( p == noPiece ) {
                 continue;
                 }
-
-            t      = p & CHESS_TYPE_MASK;
-            c      = p & CHESS_COLOR_MASK;
-            cIndex = getPieceColorIndex( c );
+            
 
             boardGetSquareCenter( inBoardCenterX,
                                   inBoardCenterY,
@@ -1287,38 +1340,14 @@ ChessPiece getPointerOverPiece( BoardState  *inState,
                                   &pX,
                                   &pY );
 
-            pY += pieceOffsetY[ t ];
-
-            spritePixX = pointerX - pX;
-            spritePixY = pointerY - pY;
-            
-
-            if( maxigin_isInSprite( pieceSpriteHandles[ t ][ cIndex ],
-                                    spritePixX,
-                                    spritePixY ) ) {
+            if( getPixelOverPiece( p,
+                                   pX,
+                                   pY,
+                                   pointerX,
+                                   pointerY ) ) {
                 *outRow = y;
                 *outCol = x;
                 return p;
-                }
-
-            /* pointer not in sprite */ 
-
-            if( pieceSpriteExtraHandles[ t ][ cIndex ] != -1 ) {
-                /* check if it's in piece's extra sprite */
-
-                pY += pieceExtraOffsetY[ t ][ cIndex ];
-
-                spritePixY = pointerY - pY;
-                
-                if( maxigin_isInSprite(
-                        pieceSpriteExtraHandles[ t ][ cIndex ],
-                        spritePixX,
-                        spritePixY ) ) {
-
-                    *outRow = y;
-                    *outCol = x;
-                    return p;
-                    }
                 }
             }
         }
@@ -1328,14 +1357,25 @@ ChessPiece getPointerOverPiece( BoardState  *inState,
     }
 
 
+void drawPieceHightlight( ChessPiece     inPiece,
+                          int            inBaseCenterX,
+                          int            inBaseCenterY,
+                          unsigned char  inFade ) {
+    
+    drawPieceGlowOnly( inPiece,
+                       inBaseCenterX,
+                       inBaseCenterY,
+                       inFade );
+    }
 
 
-void drawPieceHighlight( BoardState    *inState,
-                         int            inBoardCenterX,
-                         int            inBoardCenterY,
-                         int            inPieceRow,
-                         int            inPieceCol,
-                         unsigned char  inFade ) {
+
+void drawBoardPieceHighlight( BoardState    *inState,
+                              int            inBoardCenterX,
+                              int            inBoardCenterY,
+                              int            inPieceRow,
+                              int            inPieceCol,
+                              unsigned char  inFade ) {
 
     int  pX;
     int  pY;
@@ -1347,10 +1387,10 @@ void drawPieceHighlight( BoardState    *inState,
                           &pX,
                           &pY );
 
-    drawPieceGlowOnly( inState->grid[ inPieceRow ][ inPieceCol ],
-                       pX,
-                       pY,
-                       inFade );
+    drawPieceHightlight( inState->grid[ inPieceRow ][ inPieceCol ],
+                         pX,
+                         pY,
+                         inFade );
     }
 
 

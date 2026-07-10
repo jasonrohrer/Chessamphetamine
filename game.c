@@ -655,12 +655,12 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             &&
             infoCol [ i ] != -1 ) {
             
-            drawPieceHighlight( &boardState,
-                                boardCenterX,
-                                boardCenterY,
-                                infoRow[ i ],
-                                infoCol[ i  ],
-                                infoFade[ i ] );
+            drawBoardPieceHighlight( &boardState,
+                                     boardCenterX,
+                                     boardCenterY,
+                                     infoRow[ i ],
+                                     infoCol[ i  ],
+                                     infoFade[ i ] );
             }
         }
     
@@ -1180,7 +1180,7 @@ void maxiginGame_step( void ) {
             infoPanelLastPiece = oldPiece;
             }                       
         }
-    else {
+    else if( ! shopShowing ) {
         infoPanelPiece = noPiece;
         }
 
@@ -1521,6 +1521,25 @@ void maxiginGame_step( void ) {
     checkDisplayStep();
 
     navStep();
+
+
+    if( shopShowing ) {
+        ChessPiece  newInfoPiece  =  shopStep( boardCenterX,
+                                               boardCenterY ); 
+
+        if( newInfoPiece != infoPanelPiece ) {
+            infoPanelLastPiece = infoPanelPiece;
+            infoPanelPiece = newInfoPiece;
+
+            if( infoPanelPiece != noPiece ) {
+                maxigin_playSoundEffect( examinePieceSound,
+                                         256 );
+                }
+            }
+        if( infoPanelPiece != noPiece ) {
+            infoPanelFade = 255;
+            }
+        }
     }
 
 

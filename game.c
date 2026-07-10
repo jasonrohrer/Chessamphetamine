@@ -347,7 +347,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                             0 );
             }
         }
-    else {
+    else if( boardSlideUp < boardSlideUpMax ) {
         /* draw regular board (no move log) */
 
         

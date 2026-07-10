@@ -943,7 +943,9 @@ void maxiginGame_step( void ) {
             }
         }
 
-    if( ! spinning ) {
+    if( ! spinning
+        &&
+        ! shopShowing ) {
 
         int         mouseX;
         int         mouseY;

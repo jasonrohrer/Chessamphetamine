@@ -452,19 +452,14 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         &&
         ! chessGameOver ) {
 
-        const char  *drawString;
-        
         int           buttonSink  =  0;
         
         maxigin_drawResetColor();
 
-
-        drawString = maxigin_getLangText( lang_drawInstruct );
-
         maxigin_setLanguageFontIndex( 1 );
     
-        maxigin_drawLangTextString(
-                drawString,
+        maxigin_drawLangText(
+                lang_drawInstruct,
                 MAXIGIN_GAME_NATIVE_W / 2,
                 drawButtonPosY,
                 MAXIGIN_RIGHT );
@@ -1524,8 +1519,11 @@ void maxiginGame_step( void ) {
 
 
     if( shopShowing ) {
-        ChessPiece  newInfoPiece  =  shopStep( boardCenterX,
-                                               boardCenterY ); 
+        ChessPiece  newInfoPiece  =  shopStep( &playerDeck,
+                                               boardCenterX,
+                                               boardCenterY,
+                                               ACTION,
+                                               pickFailedSound ); 
 
         if( newInfoPiece != infoPanelPiece ) {
             infoPanelLastPiece = infoPanelPiece;
@@ -1958,7 +1956,7 @@ void maxiginGame_init( void ) {
     pieceSpritesInit();
     particleSpriteInit();
     moveAnimInit();
-    moneyInit( 50,
+    moneyInit( 5,
                plunkSound );
     numbersInit();
     checkDisplayInit();
@@ -1991,7 +1989,7 @@ void maxiginGame_init( void ) {
     
     if(1) {
         
-        getLevel( 16,
+        getLevel( 1,
                   &boardState,
                   &playerDeck );
         }

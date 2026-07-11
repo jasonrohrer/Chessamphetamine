@@ -35,9 +35,15 @@ void shopDraw( int  inPosX,
 
 
 /* returns moused-over piece in shop (for display on external info panel)
-   or noPiece if nothing moused over */
-ChessPiece shopStep( int  inPosX,
-                     int  inPosY  );
+   or noPiece if nothing moused over
+
+   inActionHandle is a maxigin button action handle
+*/
+ChessPiece shopStep( Deck  *inPlayerDeck,
+                     int  inPosX,
+                     int  inPosY,
+                     int  inActionHandle,
+                     int  inPickFailedSound );
 
 
 
@@ -49,31 +55,40 @@ ChessPiece shopStep( int  inPosX,
 #include "pieceSprites.h"
 
 #include "memoryRegister.h"
+#include "mingin.h"
 
 
 /* one free deck, one paid deck with everything
    and two paid decks with more and more rarity */
-#define                NUM_SHOP_DECKS  5
+#define                NUM_SHOP_DECKS  6
 
 
 static  Deck           shopDecks             [ NUM_SHOP_DECKS ];
-static  int            shopStartingPrices    [ NUM_SHOP_DECKS ]  =  {  0,
-                                                                       1,
-                                                                       2,
-                                                                       4,
-                                                                       8 };
+static  int            shopStartingPrices    [ NUM_SHOP_DECKS ]   =  {  0,
+                                                                        1,
+                                                                        2,
+                                                                        4,
+                                                                        8,
+                                                                        16 };
 static  int            shopCurrentPrices     [ NUM_SHOP_DECKS ];
 static  ChessPiece     shopItems             [ NUM_SHOP_DECKS ];
 
-static  int            shopPriceIncrements   [ NUM_SHOP_DECKS ]  =  {  0,
-                                                                       1,
-                                                                       1,
-                                                                       1,
-                                                                       2 };
+static  int            shopPriceIncrements   [ NUM_SHOP_DECKS ]   =  {  0,
+                                                                        1,
+                                                                        1,
+                                                                        1,
+                                                                        2,
+                                                                        2 };
 static  int            shopSlotPosX          [ NUM_SHOP_DECKS ];
 static  int            shopSlotPosY          [ NUM_SHOP_DECKS ];
-static  int            shopSelectedSlot                          =  -1;
+static  int            shopSelectedSlot                           =  -1;
 static  unsigned char  shopSlotHighlightFade [ NUM_SHOP_DECKS ];
+static  char           shopActionDown                             =   0;
+
+
+static  int            purchaseSound                              =  -1;
+
+static  int            lang_shopTitle                             =  -1;
 
 
 
@@ -142,6 +157,10 @@ void shopInit( void ) {
     int  startHop      =  hopSize * numStartHops;
     int  curPos;
 
+    purchaseSound = maxigin_initSoundEffect( "purchase_sd_30.wav" );
+
+    lang_shopTitle  = maxigin_initTranslationKey( "shopTitle" );
+    
     getShopDeck( &( shopDecks[ 0 ] ),
                     rarityFilter );
     
@@ -207,6 +226,7 @@ void shopReroll( void ) {
 
     shopSelectedSlot = -1;
     shopResetHightlighFades();
+    shopActionDown = 0;
     }
 
 
@@ -225,6 +245,7 @@ void shopReset( void ) {
         }
 
     shopSelectedSlot = -1;
+    shopActionDown   =  0;
     }
 
 
@@ -235,6 +256,15 @@ void shopDraw( int  inPosX,
     int  i;
 
     maxigin_drawResetColor();
+
+    maxigin_setLanguageFontIndex( 1 );
+    
+    maxigin_drawLangText( lang_shopTitle,
+                          inPosX,
+                          inPosY - 60,
+                          MAXIGIN_CENTER );
+    
+    maxigin_setLanguageFontIndex( 0 );
 
     for( i = 0;
          i < NUM_SHOP_DECKS;
@@ -270,8 +300,11 @@ void shopDraw( int  inPosX,
 
 
 
-ChessPiece shopStep( int  inPosX,
-                     int  inPosY ) {
+ChessPiece shopStep( Deck  *inPlayerDeck,
+                     int  inPosX,
+                     int  inPosY,
+                     int  inActionHandle,
+                     int  inPickFailedSound ) {
 
     /* fixme
        react to mouse and controller
@@ -339,6 +372,44 @@ ChessPiece shopStep( int  inPosX,
 
     if( shopSelectedSlot == -1 ) {
         return noPiece;
+        }
+
+    if( ! shopActionDown
+        &&
+        maxigin_isButtonDown( inActionHandle ) ) {
+
+        if( shopItems[ shopSelectedSlot ] != noPiece ) {
+
+            /* picking a piece to buy */
+
+            if( shopCurrentPrices[ shopSelectedSlot ]
+                <=
+                moneyGetTotal() ) {
+
+                /* can afford */
+
+                moneyAdd( - shopCurrentPrices[ shopSelectedSlot ] );
+
+                deckAddPiece( inPlayerDeck,
+                              shopItems[ shopSelectedSlot ] );
+
+                shopItems[ shopSelectedSlot ] = noPiece;
+
+                maxigin_playSoundEffect( purchaseSound,
+                                         256 );
+                }
+            else {
+                /* can't afford */
+
+                maxigin_playSoundEffect( inPickFailedSound,
+                                         256 );
+                }
+            }
+        shopActionDown = 1;
+        }
+
+    if( ! maxigin_isButtonDown( inActionHandle ) ) {
+        shopActionDown = 0;
         }
 
     return shopItems[ shopSelectedSlot ];

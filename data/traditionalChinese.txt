@@ -43,6 +43,9 @@ defaults       "恢復預設"
 
 drawInstruct   "Pick pieces to redraw"
 
+shopTitle      "Shop!"
+
+
 
 pawn           "兵"
 pawnDesc       "向前一或兩格，斜前吃子"

@@ -49,6 +49,8 @@ defaults       "Defaults"
 
 drawInstruct   "Pick pieces to redraw"
 
+shopTitle      "Shop!"
+
 
 pawn           "Pawn"
 pawnDesc       "Moves 1 or 2 spaces forward, captures diagonally"

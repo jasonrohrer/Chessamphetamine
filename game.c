@@ -106,8 +106,7 @@ static int          spinPressedTextSprite      = -1;
 static int          spinPressedTextGlowSprite  = -1;
 
 static int          drawButtonSprite           = -1;
-static int          drawButtonFrameSprite      = -1;
-static int          drawButtonBackSprite       = -1;
+static int          drawButtonPressedSprite    = -1;
 static char         drawButtonPressed          =  0;
 static int          drawPrice                  =  1;
 static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
@@ -451,8 +450,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     if( ! spinning
         &&
         ! chessGameOver ) {
-
-        int           buttonSink  =  0;
         
         maxigin_drawResetColor();
 
@@ -466,23 +463,21 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         maxigin_setLanguageFontIndex( 0 );
 
 
-        if( drawButtonPressed ) {
-            buttonSink = 3;
-            }
-
         if( boardMarkersDownCount > 0 ) {
             
-            maxigin_drawSprite( drawButtonBackSprite,
-                                drawButtonPosX,
-                                drawButtonPosY - 9 );
-
-            maxigin_drawSprite( drawButtonSprite,
-                                drawButtonPosX,
-                                drawButtonPosY - 2 + buttonSink );
-        
-            maxigin_drawSprite( drawButtonFrameSprite,
-                                drawButtonPosX,
-                                drawButtonPosY );
+            if( drawButtonPressed ) {
+                
+                maxigin_drawSprite( drawButtonPressedSprite,
+                                    drawButtonPosX,
+                                    drawButtonPosY );
+                }
+            else {
+                
+                maxigin_drawSprite( drawButtonSprite,
+                                    drawButtonPosX,
+                                    drawButtonPosY );
+                }
+            
 
             maxigin_drawButtonHintSprite( DRAW,
                                           drawButtonPosX + 30,
@@ -1732,8 +1727,7 @@ void maxiginGame_init( void ) {
                                 3 );
 
     drawButtonSprite = maxigin_initSprite( "drawButton.tga" );
-    drawButtonFrameSprite = maxigin_initSprite( "drawButtonFrame.tga" );
-    drawButtonBackSprite = maxigin_initSprite( "drawButtonFrameBack.tga" );
+    drawButtonPressedSprite = maxigin_initSprite( "drawButtonPressed.tga" );
     
 
     logoSprite = maxigin_initSprite( "logo.tga" );

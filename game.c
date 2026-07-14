@@ -71,7 +71,7 @@
 
 
 enum GameUserAction {
-    JUMP,
+    SPIN,
     ACTION,
     DRAW,
     TOGGLE_MOVE_LOG,
@@ -678,8 +678,37 @@ void maxiginGame_step( void ) {
         &&
         ! chessGameOver
         &&
-        ( maxigin_isButtonDown( JUMP ) ) ) {
+        ( maxigin_isButtonDown( SPIN ) ) ) {
 
+        int  y;
+        int  x;
+
+        /* whatever pieces the player actually has on the board get put
+           back in their deck now */
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+        
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
+
+                ChessPiece  p  =  boardState.grid[y][x];
+                ChessPiece  t  =  p & CHESS_TYPE_MASK;
+                ChessPiece  c  =  p & CHESS_COLOR_MASK;
+
+                if( t != noPiece
+                    &&
+                    t != king
+                    &&
+                    c == CHESS_WHITE ) {
+
+                    deckReturnPiece( &playerDeck,
+                                     p );
+                    }
+                }
+            }
+        
         clearDrawMarkers();
 
         buttonReset( drawButton );
@@ -1545,7 +1574,7 @@ void maxiginGame_step( void ) {
 
 
 
-static MinginButton jumpMapping[]    =  { MGN_KEY_SPACE,     MGN_MAP_END };
+static MinginButton spinMapping[]    =  { MGN_KEY_SPACE,     MGN_MAP_END };
 
 static MinginButton moveLogMapping[] =  { MGN_KEY_Y,     MGN_MAP_END };
 static MinginButton moveLogAdvMapping[] =  { MGN_KEY_I,     MGN_MAP_END };
@@ -1837,7 +1866,7 @@ void maxiginGame_init( void ) {
     lang_drawInstruct  = maxigin_initTranslationKey( "drawInstruct" );
     
     
-    maxigin_registerButtonMapping( JUMP,   jumpMapping );
+    maxigin_registerButtonMapping( SPIN,   spinMapping );
 
     maxigin_registerButtonMapping( TOGGLE_MOVE_LOG,
                                    moveLogMapping );

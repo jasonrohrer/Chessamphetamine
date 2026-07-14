@@ -189,9 +189,9 @@ CHECK_CHESS_ARRAY( deckShopOccurrence,
     V( C, 6,   king,         0   )           \
     V( C, 7,   laserRook,    0   )           \
     V( C, 8,   laserPawn,    0   )           \
-    V( C, 9,   doublingPawn, 4   )           \
+    V( C, 9,   doublingPawn, 0   )           \
     V( C, 10,  addingRook,   0   )           \
-    V( C, 11,  rocket,       4   )
+    V( C, 11,  rocket,       0   )
 
 static  int  deckPlayerOccurrence[] = {
     MAKE_CHESS_ARRAY( PLAYER_DECK_OCCURRENCE_LIST )

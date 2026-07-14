@@ -197,6 +197,7 @@ static int            boardCenterY;
 static int            boardSlideUp                =  0;
 static int            boardSlideUpMax             =  100;
 static char           shopShowing                 =  0;
+static char           shopDone                    =  0;
 
 static ChessPiece     infoPanelPiece              =  noPiece;
 static ChessPiece     infoPanelLastPiece          =  noPiece;
@@ -280,8 +281,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( shopShowing ) {
         /* draw shop under any board, so board can slide away to reveal it */
-        shopDraw( boardCenterX,
-                  boardCenterY );
+        shopDraw();
         }
 
     
@@ -1442,6 +1442,8 @@ void maxiginGame_step( void ) {
                 endMessageFade = 0;
 
                 shopShowing = 1;
+                shopDone    = 0;
+                
                 maxigin_playSoundEffect( boardSlideSound,
                                          356 );
                 }
@@ -1454,10 +1456,27 @@ void maxiginGame_step( void ) {
 
     if( shopShowing
         &&
+        ! shopDone
+        &&
         boardSlideUp < boardSlideUpMax ) {
         
         boardSlideUp += ( 4 * 60 ) / r;
         }
+    else if( shopShowing
+             &&
+             shopDone
+             &&
+             boardSlideUp > 0 ) {
+
+        boardSlideUp -= ( 4 * 60 ) / r;
+
+        if( boardSlideUp <= 0 ) {
+            boardSlideUp = 0;
+
+            shopShowing = 0;
+            }
+        }
+        
     
 
 
@@ -1468,24 +1487,33 @@ void maxiginGame_step( void ) {
 
 
     if( shopShowing ) {
-        ChessPiece  newInfoPiece  =  shopStep( &playerDeck,
-                                               boardCenterX,
-                                               boardCenterY,
-                                               ACTION,
-                                               pickFailedSound ); 
 
-        if( newInfoPiece != infoPanelPiece ) {
-            infoPanelLastPiece = infoPanelPiece;
-            infoPanelPiece = newInfoPiece;
+        if( ! shopDone ) {
+            
+            ChessPiece  newInfoPiece  =  shopStep( &playerDeck,
+                                                   pickFailedSound ); 
 
+            if( newInfoPiece != infoPanelPiece ) {
+                infoPanelLastPiece = infoPanelPiece;
+                infoPanelPiece = newInfoPiece;
+
+                if( infoPanelPiece != noPiece ) {
+                    maxigin_playSoundEffect( examinePieceSound,
+                                             256 );
+                    }
+                }
             if( infoPanelPiece != noPiece ) {
-                maxigin_playSoundEffect( examinePieceSound,
-                                         256 );
+                infoPanelFade = 255;
+                }
+
+            if( isShoppingDone() ) {
+                
+                maxigin_playSoundEffect( boardSlideSound,
+                                         356 );
+                shopDone = 1;
                 }
             }
-        if( infoPanelPiece != noPiece ) {
-            infoPanelFade = 255;
-            }
+        
         }
     }
 
@@ -1927,7 +1955,9 @@ void maxiginGame_init( void ) {
 
     deckInit();
 
-    shopInit();
+    shopInit( ACTION,
+              boardCenterX,
+              boardCenterY );
 
 
     clearDrawMarkers();

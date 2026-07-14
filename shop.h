@@ -15,7 +15,9 @@
 #define SHOP_H_INCLUDED
 
 
-void shopInit( void );
+void shopInit( int  inPointerActionHandle,
+               int  inCenterX,
+               int  inCenterY );
 
 
 
@@ -30,20 +32,19 @@ void shopReset( void );
 
 
 
-void shopDraw( int  inPosX,
-               int  inPosY );
+void shopDraw( void );
 
 
 /* returns moused-over piece in shop (for display on external info panel)
    or noPiece if nothing moused over
 
-   inActionHandle is a maxigin button action handle
 */
 ChessPiece shopStep( Deck  *inPlayerDeck,
-                     int  inPosX,
-                     int  inPosY,
-                     int  inActionHandle,
                      int  inPickFailedSound );
+
+
+char isShoppingDone( void );
+
 
 
 
@@ -56,6 +57,9 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
 
 #include "memoryRegister.h"
 #include "mingin.h"
+
+#include "button.h"
+
 
 
 /* one free deck, one paid deck with everything
@@ -89,6 +93,15 @@ static  char           shopActionDown                             =   0;
 static  int            purchaseSound                              =  -1;
 
 static  int            lang_shopTitle                             =  -1;
+
+static  char           shoppingDone                               =   0;
+
+static  int            doneButton                                 =  -1;
+
+static  int            shopPointerActionHandle                    =  -1;
+
+static  int            shopCenterX;
+static  int            shopCenterY;
 
 
 
@@ -145,7 +158,9 @@ static void shopIncrementPrices( void ) {
 
 
 
-void shopInit( void ) {
+void shopInit( int  inPointerActionHandle,
+               int  inCenterX,
+               int  inCenterY ) {
 
     /* each more expensive deck focuses on double the rarity of
        the base two decks */
@@ -156,6 +171,12 @@ void shopInit( void ) {
     int  numStartHops  =  NUM_SHOP_DECKS / 2;
     int  startHop      =  hopSize * numStartHops;
     int  curPos;
+
+    shopPointerActionHandle = inPointerActionHandle;
+
+    shopCenterX = inCenterX;
+    shopCenterY = inCenterY;
+    
 
     purchaseSound = maxigin_initSoundEffect( "purchase_sd_30.wav" );
 
@@ -210,6 +231,17 @@ void shopInit( void ) {
 
     shopResetHightlighFades();
 
+
+    doneButton = buttonInit( maxigin_initSprite( "doneButton.tga" ),
+                             -1,
+                             maxigin_initSprite( "doneButtonPressed.tga" ),
+                             shopCenterX,
+                             shopCenterY + 50,
+                             1,
+                             shopPointerActionHandle,
+                             /* fixme... need controller mapping for this */
+                             -1 );
+
     REGISTER_ARRAY_MEM( shopDecks );
 
     REGISTER_ARRAY_MEM( shopCurrentPrices );
@@ -227,6 +259,8 @@ void shopReroll( void ) {
     shopSelectedSlot = -1;
     shopResetHightlighFades();
     shopActionDown = 0;
+
+    buttonReset( doneButton );
     }
 
 
@@ -246,12 +280,12 @@ void shopReset( void ) {
 
     shopSelectedSlot = -1;
     shopActionDown   =  0;
+    shoppingDone     =  0;
     }
 
 
 
-void shopDraw( int  inPosX,
-               int  inPosY ) {
+void shopDraw( void ) {
 
     int  i;
 
@@ -260,8 +294,8 @@ void shopDraw( int  inPosX,
     maxigin_setLanguageFontIndex( 1 );
     
     maxigin_drawLangText( lang_shopTitle,
-                          inPosX,
-                          inPosY - 60,
+                          shopCenterX,
+                          shopCenterY - 60,
                           MAXIGIN_CENTER );
     
     maxigin_setLanguageFontIndex( 0 );
@@ -275,13 +309,13 @@ void shopDraw( int  inPosX,
         if( p != noPiece ) {
             
             drawPiece( p | CHESS_WHITE,
-                       inPosX + shopSlotPosX[i],
-                       inPosY + shopSlotPosY[i] );
+                       shopCenterX + shopSlotPosX[i],
+                       shopCenterY + shopSlotPosY[i] );
 
             if( shopSlotHighlightFade[i] > 0 ) {
                 drawPieceHightlight( p | CHESS_WHITE,
-                                     inPosX + shopSlotPosX[i],
-                                     inPosY + shopSlotPosY[i],
+                                     shopCenterX + shopSlotPosX[i],
+                                     shopCenterY + shopSlotPosY[i],
                                      shopSlotHighlightFade[i] );
                 }
             
@@ -289,21 +323,20 @@ void shopDraw( int  inPosX,
             maxigin_drawResetColor();
             
             numberDrawCenter( shopCurrentPrices[ i ],
-                              inPosX + shopSlotPosX[i],
-                              inPosY + shopSlotPosY[i] + 12,
+                              shopCenterX + shopSlotPosX[i],
+                              shopCenterY + shopSlotPosY[i] + 12,
                               1 );
             }
 
         }
+
+    buttonDraw( doneButton );
     
     }
 
 
 
 ChessPiece shopStep( Deck  *inPlayerDeck,
-                     int  inPosX,
-                     int  inPosY,
-                     int  inActionHandle,
                      int  inPickFailedSound ) {
 
     /* fixme
@@ -319,6 +352,11 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
     int  i;
     int  r          =  mingin_getStepsPerSecond();
     int  deltaFade  =  ( 20 * 60 ) / r;
+
+    if( buttonIsNewPressed( doneButton ) ) {
+        shoppingDone = 1;
+        return noPiece;
+        }
     
     if( ! maxigin_getPointerLocation( &pointerX,
                                       &pointerY ) ) {
@@ -338,8 +376,8 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
         if( p != noPiece ) {
 
             if( getPixelOverPiece( p | CHESS_WHITE,
-                                   inPosX + shopSlotPosX[i],
-                                   inPosY + shopSlotPosY[i],
+                                   shopCenterX + shopSlotPosX[i],
+                                   shopCenterY + shopSlotPosY[i],
                                    pointerX,
                                    pointerY ) ) {
 
@@ -376,7 +414,7 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
 
     if( ! shopActionDown
         &&
-        maxigin_isButtonDown( inActionHandle ) ) {
+        maxigin_isButtonDown( shopPointerActionHandle ) ) {
 
         if( shopItems[ shopSelectedSlot ] != noPiece ) {
 
@@ -408,11 +446,17 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
         shopActionDown = 1;
         }
 
-    if( ! maxigin_isButtonDown( inActionHandle ) ) {
+    if( ! maxigin_isButtonDown( shopPointerActionHandle ) ) {
         shopActionDown = 0;
         }
 
     return shopItems[ shopSelectedSlot ];
+    }
+
+
+
+char isShoppingDone( void ) {
+    return shoppingDone;
     }
 
 

@@ -150,7 +150,7 @@ static void shopIncrementPrices( void ) {
     for( i = 0;
          i < NUM_SHOP_DECKS;
          i ++ ) {
-        shopCurrentPrices[ i ] = shopPriceIncrements[ i ];
+        shopCurrentPrices[ i ] += shopPriceIncrements[ i ];
         }
     }
 

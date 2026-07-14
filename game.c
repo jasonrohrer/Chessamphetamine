@@ -680,6 +680,8 @@ void maxiginGame_step( void ) {
         &&
         ( maxigin_isButtonDown( JUMP ) ) ) {
 
+        clearDrawMarkers();
+
         spinning = 1;
 
         maxigin_playSoundEffect( thunkSound,

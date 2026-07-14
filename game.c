@@ -682,6 +682,8 @@ void maxiginGame_step( void ) {
 
         clearDrawMarkers();
 
+        buttonReset( drawButton );
+
         spinning = 1;
 
         maxigin_playSoundEffect( thunkSound,

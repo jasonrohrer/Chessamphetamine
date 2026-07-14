@@ -26,6 +26,7 @@
 #define LEVELS_IMPLEMENTATION
 #define DECK_IMPLEMENTATION
 #define SHOP_IMPLEMENTATION
+#define BUTTON_IMPLEMENTATION
 
 
 #include "chess.h"
@@ -66,6 +67,8 @@
 
 #include "shop.h"
 
+#include "button.h"
+
 
 enum GameUserAction {
     JUMP,
@@ -105,10 +108,8 @@ static int          spinPressedSprite          = -1;
 static int          spinPressedTextSprite      = -1;
 static int          spinPressedTextGlowSprite  = -1;
 
-static int          drawButtonSprite           = -1;
-static int          drawButtonPressedSprite    = -1;
-static char         drawButtonPressed          =  0;
 static int          drawPrice                  =  1;
+static int          drawButton                 = -1;
 static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
 static int          drawButtonPosX             =  MAXIGIN_GAME_NATIVE_W / 2 + 25;
 
@@ -464,19 +465,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
         if( boardMarkersDownCount > 0 ) {
-            
-            if( drawButtonPressed ) {
-                
-                maxigin_drawSprite( drawButtonPressedSprite,
-                                    drawButtonPosX,
-                                    drawButtonPosY );
-                }
-            else {
-                
-                maxigin_drawSprite( drawButtonSprite,
-                                    drawButtonPosX,
-                                    drawButtonPosY );
-                }
+
+            buttonDraw( drawButton );
             
 
             maxigin_drawButtonHintSprite( DRAW,
@@ -672,9 +662,6 @@ void maxiginGame_step( void ) {
 
 
     int   deltaFade;
-
-    int   pointerX;
-    int   pointerY;
     
     
     mingin_getRunningTime( &stepSec,
@@ -1227,63 +1214,30 @@ void maxiginGame_step( void ) {
     
 
     if( boardMarkersDownCount > 0 ) {
-
         
-        if( ! drawButtonPressed ) {
-
+        if( buttonIsNewPressed( drawButton ) ) {
             
-
-            if( maxigin_isButtonDown( DRAW ) ) {
-                
-                                         
-                drawButtonPressed = 1;
+            /* press attempt */
+            if( moneyGetTotal() < drawPrice ) {
+                /* fail */
+                maxigin_playSoundEffect( pickFailedSound,
+                                         256 );
                 }
-            else if( maxigin_isButtonDown( ACTION ) ) {
+            else {
+                maxigin_playSoundEffect( examinePieceSound,
+                                         256 );
+                redrawRemoveRunning = 1;
+                redrawAddRunning    = 0;
 
-                if( maxigin_getPointerLocation( &pointerX,
-                                                &pointerY ) ) {
-
-                    int  buttonW;
-                    int  buttonH;
-                    
-                    maxigin_getSpriteDimensions( drawButtonSprite,
-                                                 &buttonW,
-                                                 &buttonH );
-                    if( pointerX >= drawButtonPosX - buttonW / 2
-                        &&
-                        pointerX <= drawButtonPosX + buttonW / 2 - 1
-                        &&
-                        pointerY >= drawButtonPosY - buttonH / 2 - 2
-                        &&
-                        pointerY <= drawButtonPosY + buttonH / 2 - 2 ) {
-
-                        drawButtonPressed = 1;
-                        }
-                    }
-                }
-
-            if( drawButtonPressed ) {
-
-                /* press attempt */
-                if( moneyGetTotal() < drawPrice ) {
-                    /* fail */
-                    maxigin_playSoundEffect( pickFailedSound,
-                                             256 );
-                    }
-                else {
-                    maxigin_playSoundEffect( examinePieceSound,
-                                             256 );
-                    redrawRemoveRunning = 1;
-                    redrawAddRunning    = 0;
-
-                    moneyAdd( - drawPrice );
-                    }
+                moneyAdd( - drawPrice );
                 }
             }
         }
     
 
-    if( drawButtonPressed ) {
+    if( redrawRemoveRunning
+        ||
+        redrawAddRunning ) {
 
         
         int  scaleFactor  =  ( redrawProgressMax * redrawProgressMax )
@@ -1446,7 +1400,7 @@ void maxiginGame_step( void ) {
             if( allAtEnd ) {
                 redrawAddRunning = 0;
 
-                drawButtonPressed = 0;
+                buttonReset( drawButton );
 
                 /* price goes up for future redraws */
                 drawPrice += 1;
@@ -1726,8 +1680,15 @@ void maxiginGame_init( void ) {
                                 5,
                                 3 );
 
-    drawButtonSprite = maxigin_initSprite( "drawButton.tga" );
-    drawButtonPressedSprite = maxigin_initSprite( "drawButtonPressed.tga" );
+
+    drawButton = buttonInit( maxigin_initSprite( "drawButton.tga" ),
+                             -1,
+                             maxigin_initSprite( "drawButtonPressed.tga" ),
+                             drawButtonPosX,
+                             drawButtonPosY,
+                             1,
+                             ACTION,
+                             DRAW );
     
 
     logoSprite = maxigin_initSprite( "logo.tga" );
@@ -2025,8 +1986,6 @@ void maxiginGame_init( void ) {
     REGISTER_ARRAY_MEM( infoFade );
     
     REGISTER_VAL_MEM( curInfoIndex );
-
-    REGISTER_VAL_MEM( drawButtonPressed );
 
     REGISTER_VAL_MEM( boardMarkersDownCount );
     REGISTER_ARRAY_MEM( boardMarkers );

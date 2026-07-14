@@ -4183,6 +4183,7 @@ static void mx_generateCRTOverlay( int  inW,
     int            storageHandle;
     int            storeLen;
     const char    *resName;
+    const char    *nativeResName;
     
     long           r2Max           =  (long)( 255 * 255 ) + (long)( 255 * 255 );
 
@@ -4212,10 +4213,18 @@ static void mx_generateCRTOverlay( int  inW,
 
     /* check for cached version */
 
-    resName = maxigin_stringConcat5( "maxigin_crtOverlay_",
+    nativeResName =
+        maxigin_stringConcat4(
+        "__",
+        maxigin_intToString( MAXIGIN_GAME_NATIVE_W ),
+        "x",
+        maxigin_intToString( MAXIGIN_GAME_NATIVE_H ) );
+
+    resName = maxigin_stringConcat6( "maxigin_crtOverlay_",
                                      maxigin_intToString( inW ),
                                      "x",
                                      maxigin_intToString( inH ),
+                                     nativeResName,
                                      ".bin" );
     
     storageHandle = mingin_startReadPersistData( resName,

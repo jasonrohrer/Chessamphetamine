@@ -259,6 +259,7 @@ void shopReroll( void ) {
     shopSelectedSlot = -1;
     shopResetHightlighFades();
     shopActionDown = 0;
+    shoppingDone   = 0;
 
     buttonReset( doneButton );
     }

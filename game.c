@@ -210,6 +210,9 @@ static unsigned char  infoFade[ INFO_HIGHLIGHT_BUFFER_SIZE ];
 static int            curInfoIndex                =  0;
 
 
+static int            currentLevel                =  0;
+
+
 
 static void clearDrawMarkers( void ) {
     int  y;
@@ -1474,6 +1477,9 @@ void maxiginGame_step( void ) {
             boardSlideUp = 0;
 
             shopShowing = 0;
+            shopDone    = 0;
+
+            shopReroll();
             }
         }
         
@@ -1511,6 +1517,22 @@ void maxiginGame_step( void ) {
                 maxigin_playSoundEffect( boardSlideSound,
                                          356 );
                 shopDone = 1;
+
+                /* go on to next level */
+
+                chessGameOver    = 0;
+                checkmate        = 0;
+                stalemate        = 0;
+                drawGame         = 0;
+                noScoreMoveCount = 0;
+
+                drawPrice        = 1;
+
+                currentLevel ++;
+                        
+                getLevel( currentLevel,
+                          &boardState,
+                          &playerDeck );
                 }
             }
         
@@ -1974,7 +1996,7 @@ void maxiginGame_init( void ) {
     
     if(1) {
         
-        getLevel( 1,
+        getLevel( currentLevel,
                   &boardState,
                   &playerDeck );
         }
@@ -2035,6 +2057,9 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( boardSlideUp );
 
     REGISTER_VAL_MEM( shopShowing );
+    REGISTER_VAL_MEM( shopDone );
+
+    REGISTER_VAL_MEM( currentLevel );
     
 
     maxigin_initRestoreStaticMemoryFromLastRun();

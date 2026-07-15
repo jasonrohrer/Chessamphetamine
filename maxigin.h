@@ -20983,9 +20983,22 @@ int maxigin_drawText( int           inFontHandle,
     switch( inAlign ) {
         case MAXIGIN_LEFT:
             startX = inLocationX;
+
+            if( fixed ) {
+                /* additional 1-pixel tweak to make sure we align right
+                   to our widest character */
+                startX -= 1;
+                }
+            
             break;
         case MAXIGIN_RIGHT:
             startX = inLocationX - totalPixWidth;
+
+            if( fixed ) {
+                /* additional 1-pixel tweak to make sure we align right
+                   to our widest character */
+                startX += 1;
+                }
             break;
         default:
             /* center */

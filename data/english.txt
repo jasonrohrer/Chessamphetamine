@@ -51,6 +51,9 @@ drawInstruct   "Pick pieces to redraw"
 
 shopTitle      "Shop!"
 
+level          "Level"
+
+
 
 pawn           "Pawn"
 pawnDesc       "Moves 1 or 2 spaces forward, captures diagonally"

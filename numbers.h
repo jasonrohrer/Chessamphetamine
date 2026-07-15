@@ -30,6 +30,11 @@ void numberDrawCenter( int   inValue,
                        int   inPosY,
                        char  inFixedWidth );
 
+void numberDrawLeft( int   inValue,
+                     int   inPosX,
+                     int   inPosY,
+                     char  inFixedWidth );
+
 
 void numberDrawText( const char   *inText,
                      int           inPosX,
@@ -102,6 +107,19 @@ void numberDrawCenter( int   inValue,
                     inPosY,
                     inFixedWidth,
                     MAXIGIN_CENTER );
+    }
+
+
+void numberDrawLeft( int   inValue,
+                     int   inPosX,
+                     int   inPosY,
+                     char  inFixedWidth ) {
+
+    numberDrawText( maxigin_intToString( inValue ),
+                    inPosX,
+                    inPosY,
+                    inFixedWidth,
+                    MAXIGIN_LEFT );
     }
 
 

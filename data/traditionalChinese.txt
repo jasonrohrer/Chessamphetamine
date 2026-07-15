@@ -45,6 +45,7 @@ drawInstruct   "Pick pieces to redraw"
 
 shopTitle      "Shop!"
 
+level          "Level"
 
 
 pawn           "兵"

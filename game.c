@@ -139,6 +139,7 @@ static int          lang_action;
 static int          lang_draw;
 
 static int          lang_drawInstruct;
+static int          lang_level;
 
 
 static BoardState     boardState;
@@ -450,6 +451,23 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                             boardCenterY );
 
         }
+
+
+    maxigin_setLanguageFontIndex( 1 );
+    
+    maxigin_drawLangText(
+        lang_level,
+        30,
+        10,
+        MAXIGIN_RIGHT );
+    maxigin_setLanguageFontIndex( 0 );
+
+    numberDraw( currentLevel,
+                30,
+                20,
+                1);
+
+    
 
     if( ! spinning
         &&
@@ -1864,6 +1882,7 @@ void maxiginGame_init( void ) {
     lang_action        = maxigin_initTranslationKey( "actionDesc" );
     lang_draw          = maxigin_initTranslationKey( "drawDesc" );
     lang_drawInstruct  = maxigin_initTranslationKey( "drawInstruct" );
+    lang_level         = maxigin_initTranslationKey( "level" );
     
     
     maxigin_registerButtonMapping( SPIN,   spinMapping );

@@ -974,7 +974,12 @@ void maxiginGame_step( void ) {
             }
         }
 
-    if( ! spinning
+
+    if( ! redrawRemoveRunning
+        &&
+        ! redrawAddRunning
+        &&
+        ! spinning
         &&
         ! shopShowing ) {
 

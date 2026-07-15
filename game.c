@@ -27,6 +27,7 @@
 #define DECK_IMPLEMENTATION
 #define SHOP_IMPLEMENTATION
 #define BUTTON_IMPLEMENTATION
+#define HEARTS_IMPLEMENTATION
 
 
 #include "chess.h"
@@ -68,6 +69,9 @@
 #include "shop.h"
 
 #include "button.h"
+
+#include "hearts.h"
+
 
 
 enum GameUserAction {
@@ -508,6 +512,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     checkDisplayDraw( boardCenterX,
                       boardCenterY );
+
+    heartsDraw( 18,
+                MAXIGIN_GAME_NATIVE_H - 18 );
+    
 
     if( 0 ) {
 
@@ -1547,6 +1555,8 @@ void maxiginGame_step( void ) {
 
     navStep();
 
+    heartsStep();
+
 
     if( shopShowing ) {
 
@@ -2037,6 +2047,8 @@ void maxiginGame_init( void ) {
     shopInit( ACTION,
               boardCenterX,
               boardCenterY );
+
+    heartsInit();
 
 
     clearDrawMarkers();

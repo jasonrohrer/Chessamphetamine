@@ -301,6 +301,13 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
     
+    moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
+               30 );
+    
+    heartsDraw( 18,
+                MAXIGIN_GAME_NATIVE_H - 18 );
+
+    
     if( moveMade ) {
         drawMoveAnimation( boardCenterX,
                            boardCenterY,
@@ -542,14 +549,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
     
 
-    moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
-               30 );
 
     checkDisplayDraw( boardCenterX,
                       boardCenterY );
 
-    heartsDraw( 18,
-                MAXIGIN_GAME_NATIVE_H - 18 );
+
     
 
     if( 0 ) {

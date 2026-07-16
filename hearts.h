@@ -40,32 +40,52 @@ void heartsStep( void );
 
 
 #include "maxigin.h"
-
 #include "memoryRegister.h"
+#include "util.h"
 
 
+#define                HEARTS_MAX                          8
 
+static  int            heartsHousingSprite             =  -1;
+static  int            heartsGlintSprite               =  -1;
+static  int            heartsShineSprite               =  -1;
 
-static  int  heartsHousingSprite        =  -1;
-static  int  heartsGlintSprite          =  -1;
-static  int  heartsShineSprite          =  -1;
-
-static  int  heartsSkullHousingSprite   =  -1;
-static  int  heartsSkullGlintSprite     =  -1;
-static  int  heartsSkullShineSprite     =  -1;
-static  int  heartsSkullDarkEyesSprite  =  -1;
+static  int            heartsSkullHousingSprite        =  -1;
+static  int            heartsSkullGlintSprite          =  -1;
+static  int            heartsSkullShineSprite          =  -1;
+static  int            heartsSkullDarkEyesSprite       =  -1;
 
 /* no sound for losing a hear, b/c that happens during checkmate,
    which already has a sound */
-static  int  heartsGainSound       =  -1;
+static  int            heartsGainSound                 =  -1;
+
+static  int            heartsCount                     =   0;
+static  int            heartsStarting                  =   3;
+
+static  int            stepCount                       =   0;
+
+static  unsigned char  heartsShineFade[ HEARTS_MAX ];
+static  unsigned char  heartsSkullShineFade            =   0;
 
 
-static  int  heartsCount           =   0;
-static  int  heartsStarting        =   3;
-static  int  heartsMax             =   8;
+static void heartsResetFade( void ) {
 
-static  int  stepCount             =   0;
+    int  i;
 
+    for( i = 0;
+         i < heartsCount;
+         i ++ ) {
+
+        heartsShineFade[ i ] = 255;
+        }
+    for( i = heartsCount;
+         i < HEARTS_MAX;
+         i ++ ) {
+
+        heartsShineFade[ i ] = 0;
+        }
+    heartsSkullShineFade = 0;
+    }
 
 
 void heartsInit( void ) {
@@ -92,6 +112,13 @@ void heartsInit( void ) {
     heartsSkullDarkEyesSprite = maxigin_initSprite( "skullLightDarkEyes.tga" );
 
     heartsGainSound = maxigin_initSoundEffect( "heartGain_sd_2.wav" );
+
+    heartsResetFade();
+    
+    REGISTER_VAL_MEM  ( heartsCount          );
+    REGISTER_VAL_MEM  ( stepCount            );
+    REGISTER_ARRAY_MEM( heartsShineFade      );
+    REGISTER_VAL_MEM  ( heartsSkullShineFade );
     }
 
 
@@ -102,7 +129,7 @@ void heartsReset( void ) {
 
 
 void heartsGain( void ) {
-    if( heartsCount < heartsMax ) {
+    if( heartsCount < HEARTS_MAX ) {
 
         maxigin_playSoundEffect( heartsGainSound,
                                  256 );
@@ -129,9 +156,9 @@ void heartsDraw( int  inPosX,
 
     int  i;
     int  j;
-    int  offset   = 15;
-    int  glowRep  =  3;
-    
+    int  offset     =  15;
+    int  glowRep    =   3;
+    int  glintFade  = 255;
 
     maxigin_drawResetColor();
 
@@ -139,26 +166,38 @@ void heartsDraw( int  inPosX,
                             inPosX,
                             inPosY );
 
-    if( heartsCount == 0 ) {
+    if( heartsSkullShineFade >  0 ) {
+
+        maxigin_drawSetAlpha( heartsSkullShineFade );
+        
         maxigin_drawSprite( heartsSkullShineSprite,
                             inPosX,
                             inPosY );
-maxigin_drawSprite( heartsSkullDarkEyesSprite,
+        maxigin_drawSprite( heartsSkullDarkEyesSprite,
                             inPosX,
                             inPosY );
 
         for( j = 0;
              j < glowRep - 1;
-             j ++ )
+             j ++ ) {
             maxigin_drawSpriteGlowOnly( heartsSkullShineSprite,
                                         inPosX,
                                         inPosY );
+            }
         
         maxigin_drawSpriteGlowOnly( heartsSkullShineSprite,
-                                        inPosX,
-                                        inPosY );
+                                    inPosX,
+                                    inPosY );
+
+        if( heartsSkullShineFade > 127 ) {
+            glintFade = ( ( 255 - heartsSkullShineFade ) * 255 ) / 127;
+            }
         }
-    else {
+
+    
+    if( glintFade > 0 ) {
+        maxigin_drawSetAlpha( (unsigned char)glintFade );
+            
         maxigin_drawSprite( heartsSkullGlintSprite,
                             inPosX,
                             inPosY );
@@ -169,14 +208,20 @@ maxigin_drawSprite( heartsSkullDarkEyesSprite,
     inPosY -= offset;
 
     for( i = 0;
-         i < heartsMax;
+         i < HEARTS_MAX;
          i ++ ) {
+
+        glintFade = 255;
+        
+        maxigin_drawResetColor();
 
         maxigin_drawSprite( heartsHousingSprite,
                             inPosX,
                             inPosY );
 
-        if( i < heartsCount ) {
+        if( heartsShineFade[ i ] > 0 ) {
+
+            maxigin_drawSetAlpha( heartsShineFade[i] );
             
             maxigin_drawSprite( heartsShineSprite,
                                 inPosX,
@@ -184,13 +229,22 @@ maxigin_drawSprite( heartsSkullDarkEyesSprite,
 
             for( j = 0;
                  j < glowRep;
-                 j ++ )
-            maxigin_drawSpriteGlowOnly( heartsShineSprite,
-                                        inPosX,
-                                        inPosY );
+                 j ++ ) {
+                
+                maxigin_drawSpriteGlowOnly( heartsShineSprite,
+                                            inPosX,
+                                            inPosY );
+                }
 
+            if( heartsShineFade[i] > 127 ) {
+
+                glintFade = ( ( 255 - heartsShineFade[i] ) * 255 ) / 127;
+                }
             }
-        else {
+
+        if( glintFade > 0 ) {
+            maxigin_drawSetAlpha( (unsigned char)glintFade );
+            
             maxigin_drawSprite( heartsGlintSprite,
                                 inPosX,
                                 inPosY );
@@ -206,27 +260,76 @@ maxigin_drawSprite( heartsSkullDarkEyesSprite,
 static  int  testDir  = 1;
 
 
+
+
+    
+
 void heartsStep( void ) {
 
+    static  unsigned char  targetFade[ HEARTS_MAX ];
+    
+    int            i;
+    unsigned char  targetSkullFade;
+    int            r;
+    int            d;
+    
     /* fixme:  animate gain and loss */
 
+    for( i = 0;
+         i < HEARTS_MAX;
+         i ++ ) {
+        if( i < heartsCount ) {
+            targetFade[ i ] = 255;
+            }
+        else {
+            targetFade[ i ] = 0;
+            }
+        }
+    if( heartsCount == 0 ) {
+        targetSkullFade = 255;
+        }
+    else {
+        targetSkullFade = 0;
+        }
+
+    r = mingin_getStepsPerSecond();
+
+    d = ( 20 * 60 ) / r;
+    
+
+    for( i = 0;
+         i < HEARTS_MAX;
+         i ++ ) {
+
+        heartsShineFade[i] = tweenToByte( heartsShineFade[i],
+                                          targetFade[i],
+                                          d );
+        }
+
+    heartsSkullShineFade = tweenToByte( heartsSkullShineFade,
+                                        targetSkullFade,
+                                        d );
+    
     stepCount ++;
 
     if( stepCount % 15 == 0 ) {
 
-        heartsCount += testDir;
 
-        if( heartsCount > heartsMax ) {
-            testDir = - testDir;
-
-            heartsCount = heartsMax - 1;
+        if( testDir > 0 ) {
+            heartsGain();
+            if( heartsCount == HEARTS_MAX ) {
+                testDir = - testDir;
+                }
             }
-        else if( heartsCount < 0 ) {
-            testDir = - testDir;
-
-            heartsCount = 1;
+        else {
+            heartsLose();
+            if( heartsCount == 0 ) {
+                testDir = - testDir;
+                }
             }
         }
+
+    
         
     }
 

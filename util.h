@@ -22,6 +22,12 @@ int parabola( int  inT,
               int  inPeak );
 
 
+/* tweens current value to target value with step size, returns new value */
+unsigned char tweenToByte( unsigned char  inCurrentVal,
+                           unsigned char  inTargetVal,
+                           int            inStepSize );
+
+
 
 #ifdef UTIL_IMPLEMENTATION
 
@@ -44,6 +50,36 @@ int parabola( int  inT,
     long  y      =  4 * inPeak * ( t * (inTMax - t ) );
 
     return (int)( y / tMax2 );
+    }
+
+
+
+unsigned char tweenToByte( unsigned char  inCurrentVal,
+                           unsigned char  inTargetVal,
+                           int            inStepSize ) {
+
+    int  newVal  =  inCurrentVal;
+    
+    if( newVal < inTargetVal ) {
+
+        if( newVal < inTargetVal - inStepSize ) {
+            newVal += inStepSize;
+            }
+        else {
+            newVal = inTargetVal;
+            }
+        }
+    else if( newVal > inTargetVal ) {
+
+        if( newVal > inTargetVal + inStepSize ) {
+            newVal -= inStepSize;
+            }
+        else {
+            newVal = inTargetVal;
+            }
+        }
+
+    return (unsigned char)newVal;
     }
 
 

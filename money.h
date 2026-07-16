@@ -16,7 +16,7 @@
 
 
 void moneyInit( int  inStartVal,
-                int  inSpendSound);
+                int  inSpendSound );
 
 
 void moneyAdd( int inValToAdd );
@@ -44,6 +44,10 @@ void moneyStep( void );
 
 /* returns 1 if all money adding animations are settled and done */
 char moneyIsSettled( void );
+
+
+void moneyForce( int  inVal );
+
 
 
 
@@ -126,6 +130,15 @@ void moneyInit( int inStartVal,
     REGISTER_VAL_MEM( moneyAddProgress );
     REGISTER_VAL_MEM( moneyProgressMidPeak );
     }
+
+
+
+void moneyForce( int  inVal ) {
+    moneyVal = inVal;
+    moneyToAdd = 0;
+    delayedMoneyToAdd = 0;
+    }
+    
 
 
 

@@ -117,6 +117,10 @@ static int          drawButton                 = -1;
 static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
 static int          drawButtonPosX             =  MAXIGIN_GAME_NATIVE_W / 2 + 25;
 
+static int          newGameButton              = -1;
+static int          newGameButtonPosY          =  MAXIGIN_GAME_NATIVE_H - 10;
+static int          newGameButtonPosX          =  MAXIGIN_GAME_NATIVE_W / 2 + 25;
+
 static char         redrawRemoveRunning        =  0;
 static char         redrawAddRunning           =  0;
 static int          redrawProgressMax          =  100;
@@ -144,7 +148,7 @@ static int          lang_draw;
 
 static int          lang_drawInstruct;
 static int          lang_level;
-
+static int          lang_gameOverInstruct;
 
 static BoardState     boardState;
 static Captured       postMoveCaptured;
@@ -216,6 +220,10 @@ static int            curInfoIndex                =  0;
 
 
 static int            currentLevel                =  0;
+
+static char           gameOver                    =  0;
+
+static int            startingMoney               =  5;
 
 
 
@@ -457,6 +465,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
 
+    maxigin_drawResetColor();
     maxigin_setLanguageFontIndex( 1 );
     
     maxigin_drawLangText(
@@ -483,7 +492,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
         maxigin_drawLangText(
                 lang_drawInstruct,
-                MAXIGIN_GAME_NATIVE_W / 2,
+                drawButtonPosX - 30,
                 drawButtonPosY,
                 MAXIGIN_RIGHT );
         maxigin_setLanguageFontIndex( 0 );
@@ -504,6 +513,32 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                         0 );
             
             }
+        }
+
+    
+    if( gameOver
+        &&
+        ! redrawRemoveRunning
+        &&
+        ! redrawAddRunning ) {
+        
+        maxigin_drawResetColor();
+
+        maxigin_setLanguageFontIndex( 1 );
+    
+        maxigin_drawLangText(
+                lang_gameOverInstruct,
+                newGameButtonPosX - 40,
+                newGameButtonPosY,
+                MAXIGIN_RIGHT );
+        maxigin_setLanguageFontIndex( 0 );
+
+        buttonDraw( newGameButton );
+            
+
+        maxigin_drawButtonHintSprite( DRAW,
+                                      drawButtonPosX + 30,
+                                      drawButtonPosY );
         }
     
 
@@ -880,6 +915,7 @@ void maxiginGame_step( void ) {
                                              512 );
                     endMessageColor = CHESS_BLACK;
                     gameLoserColor  = CHESS_WHITE;
+                    heartsLose();
                     }
 
                 /* start TRAPPED explosion */
@@ -920,6 +956,7 @@ void maxiginGame_step( void ) {
                     maxigin_playSoundEffect( checkmateBad,
                                              512 );
                     endMessageColor = CHESS_BLACK;
+                    heartsLose();
                     }
 
                 checkmate = 1;
@@ -956,6 +993,7 @@ void maxiginGame_step( void ) {
                                                  512 );
                         endMessageColor = CHESS_BLACK;
                         gameLoserColor  = CHESS_WHITE;
+                        heartsLose();
                         }
 
                     /* start OVERRUN explosion */
@@ -1375,31 +1413,77 @@ void maxiginGame_step( void ) {
 
                 /* swap pieces while off screen */
 
-                for( y = 0;
-                     y < BH;
-                     y ++ ) {
-                    for( x = 0;
-                         x < BW;
-                         x ++ ) {
+                if( gameOver ) {
+                    /* special case, we're going back to level 0 with a
+                       fresh start */
 
-                        if( boardMarkers[y][x] ) {
-                            deckReturnPiece( &playerDeck,
-                                             boardState.grid[y][x] );
+                    checkmate = 0;
+                    stalemate = 0;
+                    drawGame  = 0;
+
+                    getLevel( 0,
+                              &boardState,
+                              &playerDeck );
+
+                    /* mark the new spots where pieces go as lifted,
+                       rest as not */
+                    for( y = 0;
+                         y < BH;
+                         y ++ ) {
+                        for( x = 0;
+                             x < BW;
+                             x ++ ) {
+
+                            if( boardState.grid[y][x] != noPiece ) {
+                                
+                                int  val;
+                                
+                                boardMarkers[y][x] = 1;
+
+                                redrawLift.grid[y][x] = redrawProgressMax;
+
+                                val = redrawLift.grid[y][x];
+                        
+                                redrawSmoothLift.grid[y][x] =
+                                    ( val * val ) / scaleFactor;
+                                }
+                            else {
+                                boardMarkers[y][x] = 0;
+
+                                redrawLift.grid[y][x] = 0;
+                                redrawSmoothLift.grid[y][x] = 0;
+                                }
                             }
                         }
                     }
+                else {
+
+                    for( y = 0;
+                         y < BH;
+                         y ++ ) {
+                        for( x = 0;
+                             x < BW;
+                             x ++ ) {
+
+                            if( boardMarkers[y][x] ) {
+                                deckReturnPiece( &playerDeck,
+                                                 boardState.grid[y][x] );
+                                }
+                            }
+                        }
                 
-                for( y = 0;
-                     y < BH;
-                     y ++ ) {
-                    for( x = 0;
-                         x < BW;
-                         x ++ ) {
+                    for( y = 0;
+                         y < BH;
+                         y ++ ) {
+                        for( x = 0;
+                             x < BW;
+                             x ++ ) {
 
-                        if( boardMarkers[y][x] ) {
+                            if( boardMarkers[y][x] ) {
 
-                            boardState.grid[y][x] =
-                                CHESS_WHITE | deckDraw( &playerDeck );
+                                boardState.grid[y][x] =
+                                    CHESS_WHITE | deckDraw( &playerDeck );
+                                }
                             }
                         }
                     }
@@ -1469,8 +1553,15 @@ void maxiginGame_step( void ) {
 
                 buttonReset( drawButton );
 
-                /* price goes up for future redraws */
-                drawPrice += 1;
+                if( ! gameOver ) {
+                    /* price goes up for future redraws */
+                    drawPrice += 1;
+                    }
+                else {
+                    gameOver = 0;
+                    chessGameOver = 0;
+                    }
+                
 
                 clearDrawMarkers();
                 boardMarkersHidden = 0;
@@ -1506,13 +1597,19 @@ void maxiginGame_step( void ) {
             int  newFade = endMessageFade - ( 5 * 60 ) / r;
 
             if( newFade < 0 ) {
+
                 endMessageFade = 0;
 
-                shopShowing = 1;
-                shopDone    = 0;
+                if( ! heartsIsDead() ) {
+                    shopShowing = 1;
+                    shopDone    = 0;
                 
-                maxigin_playSoundEffect( boardSlideSound,
-                                         356 );
+                    maxigin_playSoundEffect( boardSlideSound,
+                                             356 );
+                    }
+                else {
+                    gameOver = 1;
+                    }
                 }
             else {
                 endMessageFade = (unsigned char)newFade;
@@ -1544,6 +1641,44 @@ void maxiginGame_step( void ) {
             shopDone    = 0;
 
             shopReroll();
+            }
+        }
+
+    if( gameOver ) {
+
+        if( buttonIsNewPressed( newGameButton ) ) {
+
+            int  x;
+            int  y;
+
+            /* reset everything for new game */
+            drawPrice = 1;
+            currentLevel = 0;
+
+            moneyForce( startingMoney );
+
+            heartsReset();
+
+            getPlayerStartDeck( &playerDeck );
+
+            shopReset();
+
+            /* mark all remaining pieces as ready to be lifted */
+            for( y = 0;
+                 y < BH;
+                 y ++ ) {
+                for( x = 0;
+                     x < BW;
+                     x ++ ) {
+
+                    if( boardState.grid[y][x] != noPiece ) {
+
+                        boardMarkers[y][x] = 1;
+                        }
+                    }
+                }
+            redrawRemoveRunning = 1;
+            redrawAddRunning = 0;
             }
         }
         
@@ -1807,6 +1942,16 @@ void maxiginGame_init( void ) {
                              DRAW );
     
 
+    newGameButton = buttonInit( maxigin_initSprite( "newGameButton.tga" ),
+                                -1,
+                                maxigin_initSprite( "newGameButtonPressed.tga" ),
+                                newGameButtonPosX,
+                                newGameButtonPosY,
+                                0,
+                                ACTION,
+                                DRAW );
+    
+
     logoSprite = maxigin_initSprite( "logo.tga" );
     logoSubSprite = maxigin_initSprite( "logoSub.tga" );
 
@@ -1887,18 +2032,18 @@ void maxiginGame_init( void ) {
                                           6 );
         }
     
-    lang_settings      = maxigin_initTranslationKey( "settings" );
-    lang_newGame       = maxigin_initTranslationKey( "newGame"  );
-    lang_quit          = maxigin_initTranslationKey( "quit" );
-    lang_musicVolume   = maxigin_initTranslationKey( "musicVolume" );
-    lang_effectsVolume = maxigin_initTranslationKey( "effectsVolume" );
-    lang_fullscreen    = maxigin_initTranslationKey( "fullscreen" );
+    lang_settings         = maxigin_initTranslationKey( "settings" );
+    lang_newGame          = maxigin_initTranslationKey( "newGame"  );
+    lang_quit             = maxigin_initTranslationKey( "quit" );
+    lang_musicVolume      = maxigin_initTranslationKey( "musicVolume" );
+    lang_effectsVolume    = maxigin_initTranslationKey( "effectsVolume" );
+    lang_fullscreen       = maxigin_initTranslationKey( "fullscreen" );
 
-    lang_action        = maxigin_initTranslationKey( "actionDesc" );
-    lang_draw          = maxigin_initTranslationKey( "drawDesc" );
-    lang_drawInstruct  = maxigin_initTranslationKey( "drawInstruct" );
-    lang_level         = maxigin_initTranslationKey( "level" );
-    
+    lang_action           = maxigin_initTranslationKey( "actionDesc" );
+    lang_draw             = maxigin_initTranslationKey( "drawDesc" );
+    lang_drawInstruct     = maxigin_initTranslationKey( "drawInstruct" );
+    lang_level            = maxigin_initTranslationKey( "level" );
+    lang_gameOverInstruct = maxigin_initTranslationKey( "gameOverInstruct" );
     
     maxigin_registerButtonMapping( SPIN,   spinMapping );
 
@@ -2028,7 +2173,7 @@ void maxiginGame_init( void ) {
     pieceSpritesInit();
     particleSpriteInit();
     moveAnimInit();
-    moneyInit( 5,
+    moneyInit( startingMoney,
                plunkSound );
     numbersInit();
     checkDisplayInit();
@@ -2129,6 +2274,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( shopDone );
 
     REGISTER_VAL_MEM( currentLevel );
+
+    REGISTER_VAL_MEM( gameOver );
     
 
     maxigin_initRestoreStaticMemoryFromLastRun();

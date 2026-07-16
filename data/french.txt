@@ -50,6 +50,8 @@ shopTitle      "Shop!"
 
 level          "Level"
 
+gameOverInstruct  "Please Play Again:"
+
 
 pawn           "Pion"
 pawnDesc       "Avance de 1 ou 2 cases, capture en diagonale"

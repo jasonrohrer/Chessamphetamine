@@ -44,25 +44,23 @@ void heartsStep( void );
 #include "util.h"
 
 
-#define                HEARTS_MAX                           8
+#define                HEARTS_MAX                            8
 
-static  int            heartsHousingSprite              =  -1;
-static  int            heartsGlintSprite                =  -1;
-static  int            heartsShineSprite                =  -1;
+static  int            heartsHousingSprite               =  -1;
+static  int            heartsGlintSprite                 =  -1;
+static  int            heartsShineSprite                 =  -1;
 
-static  int            heartsSkullHousingSprite         =  -1;
-static  int            heartsSkullGlintSprite           =  -1;
-static  int            heartsSkullShineSprite           =  -1;
-static  int            heartsSkullDarkEyesSprite        =  -1;
+static  int            heartsSkullHousingSprite          =  -1;
+static  int            heartsSkullGlintSprite            =  -1;
+static  int            heartsSkullShineSprite            =  -1;
+static  int            heartsSkullDarkEyesSprite         =  -1;
 
 /* no sound for losing a hear, b/c that happens during checkmate,
    which already has a sound */
-static  int            heartsGainSound                  =  -1;
+static  int            heartsGainSound                   =  -1;
 
-static  int            heartsCount                      =   0;
-static  int            heartsStarting                   =   3;
-
-static  int            stepCount                        =   0;
+static  int            heartsCount                       =   0;
+static  int            heartsStarting                    =   3;
 
 static  unsigned char  heartsFlashCount[ HEARTS_MAX ];
 static  unsigned char  heartsShineFade [ HEARTS_MAX ];
@@ -118,10 +116,10 @@ void heartsInit( void ) {
 
     heartsGainSound = maxigin_initSoundEffect( "heartGain_sd_2.wav" );
 
+    heartsReset();
     heartsResetFade();
     
     REGISTER_VAL_MEM  ( heartsCount           );
-    REGISTER_VAL_MEM  ( stepCount             );
     REGISTER_ARRAY_MEM( heartsShineFade       );
     REGISTER_VAL_MEM  ( heartsSkullShineFade  );
 
@@ -132,7 +130,16 @@ void heartsInit( void ) {
 
 
 void heartsReset( void ) {
-    heartsCount = heartsStarting;
+    while( heartsCount < heartsStarting ) {
+        heartsFlashCount[ heartsCount ] = 3;
+        
+        heartsCount ++;
+        }
+    while( heartsCount > heartsStarting ) {
+        heartsFlashCount[ heartsCount - 1 ] = 3;
+        
+        heartsCount --;
+        }
     }
 
 
@@ -155,12 +162,12 @@ void heartsLose( void ) {
     if( heartsCount > 0 ) {
 
         if( heartsCount > 1 ) {
-            heartsFlashCount[ heartsCount - 1 ] = 5;
+            heartsFlashCount[ heartsCount - 1 ] = 11;
             }
         else {
             /* going to 0, don't make last heart flash, but make skull
                flash as it comes on */
-            heartsSkullFlashCount = 5;
+            heartsSkullFlashCount = 11;
             }
         
         heartsCount --;
@@ -279,12 +286,6 @@ void heartsDraw( int  inPosX,
 
     }
 
-
-static  int  testDir  = 1;
-
-
-
-
     
 
 void heartsStep( void ) {
@@ -367,29 +368,8 @@ void heartsStep( void ) {
         heartsSkullShineFade == targetSkullFade ) {
         heartsSkullFlashCount --;
         }
-    
-    
-    stepCount ++;
 
-    if( stepCount % 30 == 0 ) {
-
-
-        if( testDir > 0 ) {
-            heartsGain();
-            if( heartsCount == HEARTS_MAX ) {
-                testDir = - testDir;
-                }
-            }
-        else {
-            heartsLose();
-            if( heartsCount == 0 ) {
-                testDir = - testDir;
-                }
-            }
-        }
-
-    
-        
+    return;     
     }
 
 

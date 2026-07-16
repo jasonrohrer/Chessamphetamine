@@ -47,6 +47,8 @@ shopTitle      "Shop!"
 
 level          "Level"
 
+gameOverInstruct  "Please Play Again:"
+
 
 pawn           "兵"
 pawnDesc       "向前一或兩格，斜前吃子"

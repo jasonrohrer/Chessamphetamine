@@ -53,6 +53,7 @@ shopTitle      "Shop!"
 
 level          "Level"
 
+gameOverInstruct  "Please Play Again:"
 
 
 pawn           "Pawn"

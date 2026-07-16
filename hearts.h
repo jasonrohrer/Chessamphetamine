@@ -44,28 +44,30 @@ void heartsStep( void );
 #include "util.h"
 
 
-#define                HEARTS_MAX                          8
+#define                HEARTS_MAX                           8
 
-static  int            heartsHousingSprite             =  -1;
-static  int            heartsGlintSprite               =  -1;
-static  int            heartsShineSprite               =  -1;
+static  int            heartsHousingSprite              =  -1;
+static  int            heartsGlintSprite                =  -1;
+static  int            heartsShineSprite                =  -1;
 
-static  int            heartsSkullHousingSprite        =  -1;
-static  int            heartsSkullGlintSprite          =  -1;
-static  int            heartsSkullShineSprite          =  -1;
-static  int            heartsSkullDarkEyesSprite       =  -1;
+static  int            heartsSkullHousingSprite         =  -1;
+static  int            heartsSkullGlintSprite           =  -1;
+static  int            heartsSkullShineSprite           =  -1;
+static  int            heartsSkullDarkEyesSprite        =  -1;
 
 /* no sound for losing a hear, b/c that happens during checkmate,
    which already has a sound */
-static  int            heartsGainSound                 =  -1;
+static  int            heartsGainSound                  =  -1;
 
-static  int            heartsCount                     =   0;
-static  int            heartsStarting                  =   3;
+static  int            heartsCount                      =   0;
+static  int            heartsStarting                   =   3;
 
-static  int            stepCount                       =   0;
+static  int            stepCount                        =   0;
 
-static  unsigned char  heartsShineFade[ HEARTS_MAX ];
-static  unsigned char  heartsSkullShineFade            =   0;
+static  unsigned char  heartsFlashCount[ HEARTS_MAX ];
+static  unsigned char  heartsShineFade [ HEARTS_MAX ];
+static  unsigned char  heartsSkullShineFade              =   0;
+static  unsigned char  heartsSkullFlashCount             =   0;
 
 
 static void heartsResetFade( void ) {
@@ -76,15 +78,18 @@ static void heartsResetFade( void ) {
          i < heartsCount;
          i ++ ) {
 
-        heartsShineFade[ i ] = 255;
+        heartsShineFade [ i ] = 255;
+        heartsFlashCount[ i ] = 0;
         }
     for( i = heartsCount;
          i < HEARTS_MAX;
          i ++ ) {
 
-        heartsShineFade[ i ] = 0;
+        heartsShineFade [ i ] = 0;
+        heartsFlashCount[ i ] = 0;
         }
-    heartsSkullShineFade = 0;
+    heartsSkullShineFade  = 0;
+    heartsSkullFlashCount = 0;
     }
 
 
@@ -115,10 +120,13 @@ void heartsInit( void ) {
 
     heartsResetFade();
     
-    REGISTER_VAL_MEM  ( heartsCount          );
-    REGISTER_VAL_MEM  ( stepCount            );
-    REGISTER_ARRAY_MEM( heartsShineFade      );
-    REGISTER_VAL_MEM  ( heartsSkullShineFade );
+    REGISTER_VAL_MEM  ( heartsCount           );
+    REGISTER_VAL_MEM  ( stepCount             );
+    REGISTER_ARRAY_MEM( heartsShineFade       );
+    REGISTER_VAL_MEM  ( heartsSkullShineFade  );
+
+    REGISTER_ARRAY_MEM( heartsFlashCount      );
+    REGISTER_VAL_MEM  ( heartsSkullFlashCount );
     }
 
 
@@ -128,18 +136,33 @@ void heartsReset( void ) {
     }
 
 
+
 void heartsGain( void ) {
     if( heartsCount < HEARTS_MAX ) {
 
         maxigin_playSoundEffect( heartsGainSound,
                                  256 );
 
+        heartsFlashCount[ heartsCount ] = 3;
+        
         heartsCount ++;
         }
     }
 
+
+
 void heartsLose( void ) {
     if( heartsCount > 0 ) {
+
+        if( heartsCount > 1 ) {
+            heartsFlashCount[ heartsCount - 1 ] = 5;
+            }
+        else {
+            /* going to 0, don't make last heart flash, but make skull
+               flash as it comes on */
+            heartsSkullFlashCount = 5;
+            }
+        
         heartsCount --;
         }
     }
@@ -284,12 +307,35 @@ void heartsStep( void ) {
         else {
             targetFade[ i ] = 0;
             }
+        if( heartsFlashCount[i] > 0 ) {
+            /* invert dir on even flashes */
+            if( heartsFlashCount[i] % 2 == 0 ) {
+                if( targetFade[i] == 0 ) {
+                    targetFade[i] = 255;
+                    }
+                else {
+                    targetFade[i] = 0;
+                    }
+                }
+            }
         }
     if( heartsCount == 0 ) {
         targetSkullFade = 255;
         }
     else {
         targetSkullFade = 0;
+        }
+
+    if( heartsSkullFlashCount > 0 ) {
+        /* invert dir on even flashes */
+        if( heartsSkullFlashCount % 2 == 0 ) {
+            if( targetSkullFade == 0 ) {
+                targetSkullFade = 255;
+                }
+            else {
+                targetSkullFade = 0;
+                }
+            }
         }
 
     r = mingin_getStepsPerSecond();
@@ -304,15 +350,28 @@ void heartsStep( void ) {
         heartsShineFade[i] = tweenToByte( heartsShineFade[i],
                                           targetFade[i],
                                           d );
+
+        if( heartsFlashCount[i] > 0 ) {
+            if( heartsShineFade[i] == targetFade[i] ) {
+                heartsFlashCount[i] --;
+                }
+            }
+            
         }
 
     heartsSkullShineFade = tweenToByte( heartsSkullShineFade,
                                         targetSkullFade,
                                         d );
+    if( heartsSkullFlashCount > 0
+        &&
+        heartsSkullShineFade == targetSkullFade ) {
+        heartsSkullFlashCount --;
+        }
+    
     
     stepCount ++;
 
-    if( stepCount % 15 == 0 ) {
+    if( stepCount % 30 == 0 ) {
 
 
         if( testDir > 0 ) {

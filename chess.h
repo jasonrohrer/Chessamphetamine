@@ -1784,6 +1784,10 @@ static char isKingInCheckGetMove( BoardState  *inState,
             int         n;
             int         i;
 
+            if( p == noPiece ) {
+                continue;
+                }
+            
             if( pColor == inVictimKingColor ) {
                 /* victim's king's color can't move to capture him, skip */
                 continue;

@@ -363,6 +363,13 @@ CHECK_CHESS_ARRAY( pieceNames,
                    PIECE_NAME_LIST );
 
 
+/* maps all chess pieces, both black and white, to positive and negative
+   scores.
+   This lookup table speeds up the board scoring function.
+*/
+static int  pieceScores[ 255 ];
+
+
 
 const char *getPieceName( ChessPiece  inPiece ) {
     
@@ -1862,11 +1869,26 @@ void chessSeed( unsigned long  inSeed ) {
 
 void chessInit( void ) {
 
+    int  i;
+
     /* stalemate */
-    chessSeed( 12036704 );
+    chessSeed( 12036707 );
 
     /* draw */
     if(0)chessSeed( 12035857 );
+
+
+    /* precompute piece score lookup table */
+    for( i = FIRST_CHESS_PIECE;
+         i < NUM_CHESS_PIECES;
+         i ++ ) {
+
+        ChessPiece  p   =  (ChessPiece)i;
+        int         v   =  pieceValue[ p ];
+
+        pieceScores[ p |  CHESS_WHITE ] =  v;
+        pieceScores[ p |  CHESS_BLACK ] = -v;
+        }
 
     
     REGISTER_VAL_MEM( chessRand );
@@ -2360,22 +2382,7 @@ int getScore( BoardState *inState ) {
              x < BW;
              x ++ ) {
 
-            ChessPiece p   =  inState->grid[ y ][ x ];
-            ChessPiece c;
-            ChessPiece t;
-            
-            if( p == noPiece ) {
-                continue;
-                }
-            c =  p & CHESS_COLOR_MASK;
-            t =  p & CHESS_TYPE_MASK;
-            
-            if( c == CHESS_BLACK ) {
-                score -= pieceValue[ t ];
-                }
-            else {
-                score += pieceValue[ t ];
-                }
+            score += pieceScores[ inState->grid[ y ][ x ] ];
             }
 
         }

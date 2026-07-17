@@ -2397,8 +2397,8 @@ static char getGreedyDepthMove( BoardState  *inState,
                                 Captured    *outCaptured,
                                 BoardState  *outNewState,
                                 int         *outScore,
-                                int          inBailAboveScore,
-                                int          inBailBelowScore,
+                                int          inAlpha,
+                                int          inBeta,
                                 int          inDepthLeft,
                                 int          inOurDepth ) {
     
@@ -2586,35 +2586,7 @@ static char getGreedyDepthMove( BoardState  *inState,
                         int   nextDepth  =  inDepthLeft - 1;
                         char  nextFound;
                         int   nextScore;
-                        int   bailAbove  =  MAX_SCORE + 1;
-                        int   bailBelow  =  - MAX_SCORE - 1;
 
-                        if( foundBest ) {
-
-                            /* setup limits for alpha-beta pruning */
-
-                            if( colorToMove == CHESS_WHITE ) {
-                                /* our best score so far is a high water mark
-                                   ignore any moves that lead to ANY next
-                                   move that is lower than that */
-                                bailBelow = bestScore;
-                                }
-                            else {
-                                /* we're black, and best move is a low
-                                   water mark */
-                                bailAbove = bestScore;
-                                }
-                            }
-                        
-
-                        /* also carry any limits from further up */
-                        if( bailAbove > inBailAboveScore ) {
-                            bailAbove = inBailAboveScore;
-                            }
-                        if( bailBelow < inBailBelowScore ) {
-                            bailBelow = inBailBelowScore;
-                            }
-                            
                         
                         /* avoid check at first when looking at next move */
                         nextFound =
@@ -2625,8 +2597,8 @@ static char getGreedyDepthMove( BoardState  *inState,
                                 &( nextMoveCaptured[ nextDepth ] ),
                                 &( nextMoveState   [ nextDepth ] ),
                                 &nextScore,
-                                bailAbove,
-                                bailBelow,
+                                inAlpha,
+                                inBeta,
                                 nextDepth,
                                 inOurDepth + 1 );
                         
@@ -2680,15 +2652,25 @@ static char getGreedyDepthMove( BoardState  *inState,
                     *outCaptured         = possibleCaptured[ inDepthLeft ][m];
                     *outNewState         = possibleStates  [ inDepthLeft ][m];
 
-                    if( bestScore >= inBailAboveScore
-                        ||
-                        bestScore <= inBailBelowScore ) {
+                    if( colorToMove == CHESS_WHITE
+                        &&
+                        score > inAlpha ) {
+                        inAlpha = score;
+                        }
+                    else if( colorToMove == CHESS_BLACK
+                             &&
+                             score < inBeta ) {
+                        inBeta = score;
+                        }
 
+                    if( inBeta <= inAlpha ) {
+                        
                         /* prune rest of search */
                         *outScore = bestScore;
                         
                         return 1;
                         }
+                    
                     
                     /* code for debugging, to peek at board states
                     if( inDepthLeft == 1 ) {

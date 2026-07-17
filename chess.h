@@ -1776,66 +1776,65 @@ static char isKingInCheckGetMove( BoardState  *inState,
         for( x = 0;
              x < BW;
              x ++ ) {
-            
+
+            if( inState->grid[ y ][ x ] != noPiece ) {
     
-            ChessPiece  p       =  inState->grid[ y ][ x ];
-            ChessPiece  pType   =  p & CHESS_TYPE_MASK;
-            ChessPiece  pColor  =  p & CHESS_COLOR_MASK;
-            int         n;
-            int         i;
+                ChessPiece  p       =  inState->grid[ y ][ x ];
+                ChessPiece  pType   =  p & CHESS_TYPE_MASK;
+                ChessPiece  pColor  =  p & CHESS_COLOR_MASK;
+                int         n;
+                int         i;
 
-            if( p == noPiece ) {
-                continue;
-                }
             
-            if( pColor == inVictimKingColor ) {
-                /* victim's king's color can't move to capture him, skip */
-                continue;
-                }
+                if( pColor == inVictimKingColor ) {
+                    /* victim's king's color can't move to capture him, skip */
+                    continue;
+                    }
 
-            /* check if any resulting states of moving this piece
-               result in the king being captured */
+                /* check if any resulting states of moving this piece
+                   result in the king being captured */
             
-            n = moveFunctions[ pType ]( inState,
-                                        pColor,
-                                        y,
-                                        x,
-                                        /* may skip non-captures
-                                           since we only care about
-                                           king capture detection */
-                                        1,
-                                        destRows,
-                                        destCols,
-                                        resultCaptured,
-                                        resultStates );
-            for( i = 0;
-                 i < n;
-                 i ++ ) {
+                n = moveFunctions[ pType ]( inState,
+                                            pColor,
+                                            y,
+                                            x,
+                                            /* may skip non-captures
+                                               since we only care about
+                                               king capture detection */
+                                            1,
+                                            destRows,
+                                            destCols,
+                                            resultCaptured,
+                                            resultStates );
+                for( i = 0;
+                     i < n;
+                     i ++ ) {
 
-                if( ! doesKingExist( &( resultStates[i] ),
-                                     inVictimKingColor ) ) {
-                    /* king was present, but gone one move later
-                       he was in check */
+                    if( ! doesKingExist( &( resultStates[i] ),
+                                         inVictimKingColor ) ) {
+                        /* king was present, but gone one move later
+                           he was in check */
 
-                    if( outMove != 0 ) {
-                        outMove->startPos[0] = y;
-                        outMove->startPos[1] = x;
-                        outMove->endPos[0] = destRows[i];
-                        outMove->endPos[1] = destCols[i];
-                        }
-                    if( outKingX != 0
-                        &&
-                        outKingY != 0 ) {
+                        if( outMove != 0 ) {
+                            outMove->startPos[0] = y;
+                            outMove->startPos[1] = x;
+                            outMove->endPos[0] = destRows[i];
+                            outMove->endPos[1] = destCols[i];
+                            }
+                        if( outKingX != 0
+                            &&
+                            outKingY != 0 ) {
 
-                        findKing( inState,
-                                  inVictimKingColor,
-                                  outKingX,
-                                  outKingY );
+                            findKing( inState,
+                                      inVictimKingColor,
+                                      outKingX,
+                                      outKingY );
                         
-                        }
+                            }
                     
 
-                    return 1;
+                        return 1;
+                        }
                     }
                 }
             }

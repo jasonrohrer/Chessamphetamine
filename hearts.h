@@ -79,12 +79,16 @@ static void heartsResetFade( void ) {
         heartsShineFade [ i ] = 255;
         heartsFlashCount[ i ] = 0;
         }
-    for( i = heartsCount;
-         i < HEARTS_MAX;
-         i ++ ) {
+    if( heartsCount >= 0
+        &&
+        heartsCount < HEARTS_MAX ) {
+        for( i = heartsCount;
+             i < HEARTS_MAX;
+             i ++ ) {
 
-        heartsShineFade [ i ] = 0;
-        heartsFlashCount[ i ] = 0;
+            heartsShineFade [ i ] = 0;
+            heartsFlashCount[ i ] = 0;
+            }
         }
     heartsSkullShineFade  = 0;
     heartsSkullFlashCount = 0;
@@ -129,15 +133,27 @@ void heartsInit( void ) {
 
 
 
+static void heartsStartFlash( int            inIndex,
+                              unsigned char  inFlashCount ) {
+    if( inIndex >= 0
+        &&
+        inIndex < HEARTS_MAX ) {
+        heartsFlashCount[ inIndex ] = inFlashCount;
+        }
+    }
+
+
+
 void heartsReset( void ) {
     while( heartsCount < heartsStarting ) {
-        heartsFlashCount[ heartsCount ] = 3;
+        heartsStartFlash( heartsCount,
+                          3 );
         
         heartsCount ++;
         }
     while( heartsCount > heartsStarting ) {
-        heartsFlashCount[ heartsCount - 1 ] = 3;
-        
+        heartsStartFlash( heartsCount - 1,
+                          3 );
         heartsCount --;
         }
     }
@@ -150,7 +166,8 @@ void heartsGain( void ) {
         maxigin_playSoundEffect( heartsGainSound,
                                  256 );
 
-        heartsFlashCount[ heartsCount ] = 3;
+        heartsStartFlash( heartsCount,
+                          3 );
         
         heartsCount ++;
         }
@@ -162,7 +179,8 @@ void heartsLose( void ) {
     if( heartsCount > 0 ) {
 
         if( heartsCount > 1 ) {
-            heartsFlashCount[ heartsCount - 1 ] = 11;
+            heartsStartFlash( heartsCount - 1,
+                              11 );
             }
         else {
             /* going to 0, don't make last heart flash, but make skull

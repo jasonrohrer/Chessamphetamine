@@ -1934,11 +1934,8 @@ void getStartBoard( BoardState  *outState ) {
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[2][i] = rocket | CHESS_BLACK;
+        outState->grid[1][i] = pawn | CHESS_BLACK;
         }
-    outState->grid[2][7] = pawn | CHESS_BLACK;
-    outState->grid[2][6] = doublingPawn | CHESS_BLACK;
-    outState->grid[2][5] = addingRook | CHESS_BLACK;
 
     outState->grid[7][0] = rook      | CHESS_WHITE;
     outState->grid[7][1] = knight    | CHESS_WHITE;
@@ -1947,19 +1944,13 @@ void getStartBoard( BoardState  *outState ) {
     outState->grid[7][4] = king      | CHESS_WHITE;
     outState->grid[7][5] = bishop    | CHESS_WHITE;
     outState->grid[7][6] = knight    | CHESS_WHITE;
-    outState->grid[7][7] = rook | CHESS_WHITE;
+    outState->grid[7][7] = rook      | CHESS_WHITE;
 
     for( i = 0;
          i < 8;
          i ++ ) {
-        outState->grid[5][i] = rocket | CHESS_WHITE;
+        outState->grid[6][i] = pawn | CHESS_WHITE;
         }
-    outState->grid[6][1] = knight | CHESS_WHITE;
-    outState->grid[6][3] = knight | CHESS_BLACK;
-    outState->grid[6][7] = pawn | CHESS_WHITE;
-    outState->grid[6][6] = doublingPawn | CHESS_WHITE;
-    outState->grid[6
-                   ][5] = addingRook | CHESS_WHITE;
     
     /*
     outState->grid[6][1] = rocket | CHESS_WHITE;
@@ -1977,11 +1968,19 @@ void getStartBoard( BoardState  *outState ) {
 
 void getTestBoard( BoardState  *outState ) {
 
-    int  i;
+    /*int  i;*/
 
     clearBoard( outState );
 
-    outState->grid[0][4] = king   | CHESS_BLACK;
+    outState->grid[2][4] = king   | CHESS_BLACK;
+
+    outState->grid[7][4] = king   | CHESS_WHITE;
+
+    outState->grid[7][0] = queen  | CHESS_WHITE;
+
+    outState->grid[7][7] = noPiece   | CHESS_WHITE;
+    
+    /*
     outState->grid[1][4] = pawn   | CHESS_BLACK;
     outState->grid[2][4] = pawn   | CHESS_BLACK;
     outState->grid[2][5] = rook  | CHESS_BLACK;
@@ -2008,7 +2007,7 @@ void getTestBoard( BoardState  *outState ) {
          i ++ ) {
         outState->grid[7][i] = addingRook  | CHESS_WHITE;
         }
-    
+    */
 
     outState->nextToMove = CHESS_WHITE;
     outState->moveCount  = 0;
@@ -2731,9 +2730,9 @@ char getGreedyMove( BoardState  *inState,
                                   outCaptured,
                                   outNewState,
                                   &nextScore,
-                                  MAX_SCORE + 1,
                                   - MAX_SCORE - 1,
-                                  1,
+                                  MAX_SCORE + 1,
+                                  2,
                                   0 );
 
     if( ! canMove ) {

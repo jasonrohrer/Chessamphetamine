@@ -190,6 +190,7 @@ static int            endMessagePreFadeSteps       =  0;
 
 
 static char           spinning                    =  0;
+static char           spinningPaused              =  0;
 
 static char           showingMoveLog              =  0;
 static char           moveLogButtonDown           =  1;
@@ -275,7 +276,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                         MAXIGIN_GAME_NATIVE_W - 35,
                         spinButtonY );
 
-    if( ! spinning ) {
+    if( ! spinning
+        ||
+        spinningPaused ) {
         maxigin_drawSprite( spinUnpressedSprite,
                             MAXIGIN_GAME_NATIVE_W - 35,
                             spinButtonY );
@@ -472,20 +475,25 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
 
-    maxigin_drawResetColor();
-    maxigin_setLanguageFontIndex( 1 );
+    if( ! showingMoveLog ) {
+        /* level display overlaps with move log display */
+        
+        maxigin_drawResetColor();
+        maxigin_setLanguageFontIndex( 1 );
     
-    maxigin_drawLangText(
-        lang_level,
-        30,
-        10,
-        MAXIGIN_RIGHT );
-    maxigin_setLanguageFontIndex( 0 );
+        maxigin_drawLangText(
+            lang_level,
+            30,
+            10,
+            MAXIGIN_RIGHT );
+        maxigin_setLanguageFontIndex( 0 );
 
-    numberDraw( currentLevel,
-                30,
-                20,
-                1);
+        numberDraw( currentLevel,
+                    30,
+                    20,
+                    1);
+        }
+    
 
     
 
@@ -779,12 +787,32 @@ void maxiginGame_step( void ) {
         buttonReset( drawButton );
 
         spinning = 1;
+        spinningPaused = 0;
 
         maxigin_playSoundEffect( thunkSound,
                                  512 );
         }
 
-    if( ! spinning ) {
+    if( spinning
+        &&
+        ! maxigin_isButtonDown( SPIN ) ) {
+
+        spinningPaused = 1;
+        }
+    
+    if( spinning
+        &&
+        spinningPaused
+        &&
+        maxigin_isButtonDown( SPIN ) ) {
+        spinningPaused = 0;
+        }
+    
+
+    if( ! spinning
+        ||
+        spinningPaused ) {
+        
         if( ! moveLogButtonDown ) {
 
             if( maxigin_isButtonDown( TOGGLE_MOVE_LOG ) ) {
@@ -879,7 +907,9 @@ void maxiginGame_step( void ) {
         }
     
     
-    if( spinning ) {
+    if( spinning
+        &&
+        ! spinningPaused ) {
 
         if( ! moveMade
             &&

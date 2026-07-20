@@ -2721,8 +2721,47 @@ char getGreedyMove( BoardState  *inState,
                     BoardState  *outNewState ) {
 
     int   nextScore;
-
     char  canMove;
+    int   depth        =  2;
+    int   countOpLeft  =  0;
+    int   countUsLeft  =  0;
+    int   y;
+    int   x;
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            if( inState->grid[y][x] != noPiece ) {
+
+                if( ( inState->grid[y][x] & CHESS_COLOR_MASK )
+                    !=
+                    inState->nextToMove ) {
+
+                    /* opponent piece! */
+                    countOpLeft ++;
+                    }
+                else {
+                    /* our piece */
+                    countUsLeft ++;
+                    }
+                }
+            }
+        }
+
+    if( countOpLeft == 1
+        &&
+        countUsLeft <= 4 ) {
+
+        /* lone king left, with small team trying to get him
+           increase depth by 1 to give them a better chance of mating him */
+        depth = 3;
+        }        
+    
     
     canMove = getGreedyDepthMove( inState,
                                   1,
@@ -2732,7 +2771,7 @@ char getGreedyMove( BoardState  *inState,
                                   &nextScore,
                                   - MAX_SCORE - 1,
                                   MAX_SCORE + 1,
-                                  2,
+                                  depth,
                                   0 );
 
     if( ! canMove ) {
@@ -2769,7 +2808,7 @@ char getMixedMove( BoardState  *inState,
                                      1,
                                      100 );
 
-    if( pick <= 75 ) {
+    if( 1 || pick <= 75 ) {
 
         return getGreedyMove( inState,
                               outMove,

@@ -61,6 +61,20 @@ typedef struct BoardState{
         
         ChessPiece  grid[BH][BW];
 
+        /* numbers from 1 up to BH * BW (max) indicating the order
+           in which the pieces should move,
+           indexed separately by color (white first, black second)
+           these start at 1 so we can wrap around back to 0 and look
+           for the next piece to move beyond that */
+        unsigned char  moveOrder[2][BH][BW];
+
+        /* last move order used for each color, white then black */
+        unsigned char  lastMoveOrder[2];
+        
+
+        /* note that the next piece to move can be inferred from moveCount */
+
+        
         int         nextToMove;
 
         int         moveCount;
@@ -1910,9 +1924,74 @@ static void clearBoard( BoardState  *outState ) {
              x ++ ) {
 
             outState->grid[y][x] = noPiece;
+            outState->moveOrder[0][y][x] = 255;
+            outState->moveOrder[1][y][x] = 255;
             }
         }
+    outState->lastMoveOrder[0] = 0;
+    outState->lastMoveOrder[0] = 0;
     }
+
+
+
+static void setupStartingMoveOrder( BoardState  *outState ) {
+
+    int            x;
+    int            y;
+
+    /* start both colors at 1
+       so lastMoveOrder can be 0, and we can wrap back around to 0 */
+    unsigned char  moveOrder[2]  =  { 1,
+                                      1 };
+
+    /* back to front for white */
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+
+        /* left to right */
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            if( outState->grid[y][x] != noPiece
+                &&
+                ( outState->grid[y][x] & CHESS_COLOR_MASK ) == CHESS_WHITE
+                &&
+                outState->moveOrder[0][y][x] == 255 ) {
+
+                outState->moveOrder[0][y][x] = moveOrder[0];
+                    
+                moveOrder[0] ++;
+                }
+            }
+        }
+    
+    /* front to back for black */
+    for( y =  BH - 1;
+         y >= 0;
+         y -- ) {
+
+        /* left to right */
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            if( outState->grid[y][x] != noPiece
+                &&
+                ( outState->grid[y][x] & CHESS_COLOR_MASK ) == CHESS_BLACK
+                &&
+                outState->moveOrder[1][y][x] == 255 ) {
+
+                outState->moveOrder[1][y][x] = moveOrder[1];
+                    
+                moveOrder[1] ++;
+                }
+            }
+        }
+        
+    }
+
 
     
 void getStartBoard( BoardState  *outState ) {
@@ -1962,6 +2041,8 @@ void getStartBoard( BoardState  *outState ) {
 
     outState->kingExists[0] = 1;
     outState->kingExists[1] = 1;
+
+    setupStartingMoveOrder( outState );
     }
 
 
@@ -2013,6 +2094,8 @@ void getTestBoard( BoardState  *outState ) {
     outState->moveCount  = 0;
     outState->kingExists[0] = 1;
     outState->kingExists[1] = 1;
+
+    setupStartingMoveOrder( outState );
     }
 
 /*
@@ -2082,14 +2165,29 @@ static int getPiecePossibleMoves( BoardState     *inState,
     static  unsigned char  resultCols    [BN];
     static  Captured       resultCaptured[BN];
     
-    ChessPiece  p             =  inState->grid[ inPieceRow ][ inPieceCol ];
-    ChessPiece  pType         =  p & CHESS_TYPE_MASK;
-    ChessPiece  pColor        =  p & CHESS_COLOR_MASK;
-    int         numMoves;
-    int         numGoodMoves  =  0;
-    int         m;
+    ChessPiece     p           =  inState->grid[ inPieceRow ][ inPieceCol ];
+    ChessPiece     pType       =  p & CHESS_TYPE_MASK;
+    ChessPiece     pColor      =  p & CHESS_COLOR_MASK;
+    unsigned char  pMoveOrderC;
+    unsigned char  oMoveOrderC;
+    unsigned char  pMoveOrder;
     
-        
+    int            numMoves;
+    int            numGoodMoves  =  0;
+    int            m;
+
+    
+    if( pColor == CHESS_WHITE ) {
+        pMoveOrderC = 0;
+        oMoveOrderC = 1;
+        }
+    else {
+        pMoveOrderC = 1;
+        oMoveOrderC = 0;
+        }
+
+    pMoveOrder = inState->moveOrder[ pMoveOrderC ][ inPieceRow][ inPieceCol ];
+    
     numMoves = moveFunctions[ pType ]( inState,
                                        pColor,
                                        inPieceRow,
@@ -2116,6 +2214,43 @@ static int getPiecePossibleMoves( BoardState     *inState,
             outStates  [ numGoodMoves ] = resultStates  [ m ];
             outRows    [ numGoodMoves ] = resultRows    [ m ];
             outCols    [ numGoodMoves ] = resultCols    [ m ];
+
+            if( outStates[ numGoodMoves ].
+                grid[ inPieceRow ][ inPieceCol ] == noPiece ) {
+
+                /* piece left empty space behind */
+                outStates[ numGoodMoves ].
+                    moveOrder[ pMoveOrderC ][ inPieceRow ][ inPieceCol ] = 255;
+
+                if( outStates[ numGoodMoves].
+                    grid[ resultRows[m] ][ resultCols[m] ]  != noPiece ) {
+                    
+                    /* piece moved to dest location */
+                    outStates[ numGoodMoves ].
+                        moveOrder[ pMoveOrderC   ]
+                                 [ resultRows[m] ]
+                                 [ resultCols[m] ] = pMoveOrder;
+
+                    /* any opponent piece in that spot destroyed */
+                    outStates[ numGoodMoves ].
+                        moveOrder[ oMoveOrderC   ]
+                                 [ resultRows[m] ]
+                                 [ resultCols[m] ] = 255;
+                    }
+                else {
+                    /* piece destroyed itself */
+                    outStates[ numGoodMoves ].
+                        moveOrder[ pMoveOrderC   ]
+                                 [ resultRows[m] ]
+                                 [ resultCols[m] ] = 255;
+                    /* any opponent piece in that spot destroyed */
+                    outStates[ numGoodMoves ].
+                        moveOrder[ oMoveOrderC   ]
+                                 [ resultRows[m] ]
+                                 [ resultCols[m] ] = 255;
+                    }
+                }
+            
 
             numGoodMoves ++;
             }
@@ -2443,6 +2578,9 @@ static char getGreedyDepthMove( BoardState  *inState,
     int             colorToMove        =  inState->nextToMove;
     int             i;
     Move            nextMove;
+    char            useMoveOrder       =  1;
+    unsigned char   newLastMoveOrder   =  255;
+    
 
     if( colorToMove == CHESS_BLACK ) {
         bestScore = MAX_SCORE + 1;
@@ -2451,26 +2589,104 @@ static char getGreedyDepthMove( BoardState  *inState,
     if( inDepthLeft == 1 ) {
         bestTopLevelScore = bestScore;
         }
-    
-    for( y = 0;
-         y < BH;
-         y ++ ) {
+
+    if( useMoveOrder ) {
+        /* look for the next piece on our side to move */
+        int            cIndex           =  0;
+        int            lastMoveOrder;
+        unsigned char  smallestFound    =  255;
+        unsigned char  smallestFoundX;
+        unsigned char  smallestFoundY;
+        int            tryCount         =  0;
         
-        for( x = 0;
-             x < BW;
-             x ++ ) {
+        if( colorToMove == CHESS_BLACK ) {
+            cIndex = 1;
+            }
 
-            if( inState->grid[y][x] != noPiece ) {
+        lastMoveOrder = inState->lastMoveOrder[ cIndex ];
 
-                if( ( inState->grid[y][x] & CHESS_COLOR_MASK ) == colorToMove ) {
+        while( tryCount < 2 ) {
+            tryCount ++;
+            
+            for( y = 0;
+                 y < BH;
+                 y ++ ) {
+        
+                for( x = 0;
+                     x < BW;
+                     x ++ ) {
+
+                    unsigned char  o  =  inState->moveOrder[ cIndex ][ y ][ x ];
+
+                    if( o > lastMoveOrder
+                        &&
+                        o < smallestFound ) {
+
+                        static  unsigned char  rows[ BN ];
+                        static  unsigned char  cols[ BN ];
+                        static  Captured       cap [ BN ];
+                        static  BoardState     sta [ BN ];
+
+                        int  num  =
+                            getPiecePossibleMoves( inState,
+                                                   y,
+                                                   x,
+                                                   inAvoidCheck,
+                                                   rows,
+                                                   cols,
+                                                   cap,
+                                                   sta );
+
+                        if( num > 0 ) {
+                            smallestFound  = o;
+                            smallestFoundY = y;
+                            smallestFoundX = x;
+                            }
+                        }
+                    }
+                }
+            if( smallestFound == 255 ) {
+                /* try a second time, wrapping around */
+                lastMoveOrder = 0;
+                }
+            }
+
+        if( smallestFound != 255 ) {
+            possiblePieceRow[ inDepthLeft ][ numPossiblePieces ] =
+                smallestFoundY;
+            possiblePieceCol[ inDepthLeft ][ numPossiblePieces ] =
+                smallestFoundX;
+            numPossiblePieces ++;
+
+            newLastMoveOrder = smallestFound;
+            }
+        /* else none found, no pieces left? */
+        }
+    else {
+        /* consider all pieces on our side as candidates */
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+        
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
+
+                if( inState->grid[y][x] != noPiece ) {
+
+                    if( ( inState->grid[y][x] & CHESS_COLOR_MASK )
+                          ==
+                          colorToMove ) {
                 
-                    possiblePieceRow[ inDepthLeft ][ numPossiblePieces ] = y;
-                    possiblePieceCol[ inDepthLeft ][ numPossiblePieces ] = x;
-                    numPossiblePieces ++;
+                        possiblePieceRow[ inDepthLeft ][ numPossiblePieces ] = y;
+                        possiblePieceCol[ inDepthLeft ][ numPossiblePieces ] = x;
+                        numPossiblePieces ++;
+                        }
                     }
                 }
             }
         }
+    
 
     if( numPossiblePieces == 0 ) {
         return 0;
@@ -2660,6 +2876,13 @@ static char getGreedyDepthMove( BoardState  *inState,
                     outMove->endPos[1]   = possibleDestCol [ inDepthLeft ][m];
                     *outCaptured         = possibleCaptured[ inDepthLeft ][m];
                     *outNewState         = possibleStates  [ inDepthLeft ][m];
+
+                    if( colorToMove == CHESS_WHITE ) {
+                        outNewState->lastMoveOrder[0] = newLastMoveOrder;
+                        }
+                    else {
+                        outNewState->lastMoveOrder[1] = newLastMoveOrder;
+                        }
 
                     if( colorToMove == CHESS_WHITE
                         &&

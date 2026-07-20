@@ -624,7 +624,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         maxigin_drawResetColor();
 
-        if( 1 ) {
+        if( 0 ) {
             /*const  char  *phrase  =  "CHECKMATE IN ONE... ROCKET?";*/
             const  char  *phrase  =  "TRADING ROCKETS";
             
@@ -635,12 +635,13 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                               cY,
                               MAXIGIN_CENTER );
             }
-        else if( 0 ) {
+        else if( 1 ) {
             
             maxigin_drawSprite( logoSprite,
                                 cX,
                                 cY );
 
+            /*
             maxigin_drawSetColor( 255,
                                   0,
                                   0,
@@ -648,8 +649,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             maxigin_drawSprite( logoSubSprite,
                                 cX,
                                 cY + 11 );
+            */
 
-            if( 1 ) {
+            if( 0 ) {
                 maxigin_drawResetColor();
                 
                 maxigin_drawSprite( jasonBylineSprite,

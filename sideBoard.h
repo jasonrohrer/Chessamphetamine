@@ -38,12 +38,12 @@ ChessPiece sideBoardSwap( ChessPiece  inNewPiece );
 
 /* initiates lift, which happens over sideBoardSteps
    call again to check if lift is done */
-char  sideBoardLift( void );
+char sideBoardLift( void );
 
 
 /* initiates return back down from lift
    call again to check if done */
-char  sideBoardUnlift( void );
+char sideBoardUnlift( void );
 
 
 void sideBoardShowRedraw( char  inShow );
@@ -58,7 +58,9 @@ ChessPiece sideBoardStep( int  inPieceLiftSound );
 void sideBoardDraw( void );
 
 
-char  sideBoardIsMouseOver( void );
+char sideBoardIsMouseOver( void );
+
+void sideBoardClearPick( void );
 
 
 
@@ -178,7 +180,7 @@ ChessPiece sideBoardSwap( ChessPiece  inNewPiece ) {
 
         retVal = sideBoard[ sbPickedIndex ];
         
-        sideBoard[ sbPickedIndex ] = inNewPiece;
+        sideBoard[ sbPickedIndex ] = inNewPiece & CHESS_TYPE_MASK;
         }
 
     return retVal;
@@ -474,6 +476,9 @@ char sideBoardUnlift( void ) {
     }
 
 
+void sideBoardClearPick( void ) {
+    sbPickedIndex = -1;
+    }
 
 
 #endif

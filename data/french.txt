@@ -44,7 +44,7 @@ press          "appuyez"
 
 defaults       "Par défaut"
 
-drawInstruct   "Pick pieces to redraw"
+drawInstruct   "Pick pieces to swap"
 
 shopTitle      "Shop!"
 

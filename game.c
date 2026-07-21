@@ -777,6 +777,68 @@ static void dropNewLevelPiecesIn( void ) {
     }
 
 
+
+static void swapMarkedPieces( void ) {
+
+    int  rows[2];
+    int  cols[2];
+    int  i         =  0;
+
+    if( boardMarkersDownCount == 2
+        ||
+        boardMarkersDownCount == 1 ) {
+        /* find them */
+        int  y;
+        int  x;
+        
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+        
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
+
+                if( boardMarkers[y][x] ) {
+
+                    rows[i] = y;
+                    cols[i] = x;
+                    i ++;
+                    }
+                }
+            }
+        }
+    
+    if( i == 2 ) {
+        /* found both, swap them */
+        ChessPiece  temp  =  boardState.grid[ rows[0] ][ cols[0] ];
+
+        boardState.grid[ rows[0] ][ cols[0] ] =
+            boardState.grid[ rows[1] ][ cols[1] ];
+
+        boardState.grid[ rows[1] ][ cols[1] ] = temp;
+
+
+        clearDrawMarkers();     
+        }
+    else if( i == 1 ) {
+        /* try swapping with side board */
+
+        ChessPiece  newPiece =
+            sideBoardSwap( boardState.grid[ rows[0] ][ cols[0] ] );
+
+        if( newPiece != noPiece ) {
+            boardState.grid[ rows[0] ][ cols[0] ] = newPiece | CHESS_WHITE;
+
+            clearDrawMarkers();
+            sideBoardClearPick();
+            }
+        }
+    }
+    
+    
+
+
 static char  randColorsDown = 0;
 
 static char  printColorsDown = 0;
@@ -1318,6 +1380,8 @@ void maxiginGame_step( void ) {
                 
                 boardMarkers[ panRow ][ panCol ] =
                     ! boardMarkers[ panRow ][ panCol ];
+                
+                swapMarkedPieces();
                 }
             else {
                 /* tried to click on an unpickable piece */
@@ -1813,6 +1877,8 @@ void maxiginGame_step( void ) {
                 buttonReset( drawButton );
                 }
             }
+
+        swapMarkedPieces();
         }
 
 

@@ -210,6 +210,7 @@ static int            boardSlideUp                =  0;
 static int            boardSlideUpMax             =  100;
 static char           shopShowing                 =  0;
 static char           shopDone                    =  0;
+static char           sideBoardShowing            =  0;
 
 static ChessPiece     infoPanelPiece              =  noPiece;
 static ChessPiece     infoPanelLastPiece          =  noPiece;
@@ -308,9 +309,14 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
                30 );
-    
-    heartsDraw( 18,
-                MAXIGIN_GAME_NATIVE_H - 18 );
+
+    if( sideBoardShowing ) {
+        sideBoardDraw();
+        }
+    else {
+        heartsDraw( 18,
+                    MAXIGIN_GAME_NATIVE_H - 18 );
+        }
 
     
     if( moveMade ) {
@@ -767,6 +773,9 @@ static void dropNewLevelPiecesIn( void ) {
                 }
             }
         }
+
+    /* this gets incremented to 1 when pieces are done being dropped in */
+    drawPrice = 0;
     }
 
 
@@ -1106,7 +1115,11 @@ void maxiginGame_step( void ) {
         &&
         ! spinning
         &&
-        ! shopShowing ) {
+        ! shopShowing
+        &&
+        !( sideBoardShowing
+           &&
+           sideBoardIsMouseOver() ) ) {
 
         int         mouseX;
         int         mouseY;
@@ -1341,7 +1354,11 @@ void maxiginGame_step( void ) {
             infoPanelLastPiece = oldPiece;
             }                       
         }
-    else if( ! shopShowing ) {
+    else if( ! shopShowing
+             &&
+             ! ( sideBoardShowing
+                &&
+                sideBoardIsMouseOver() ) ) {
         infoPanelPiece = noPiece;
         }
 
@@ -1503,9 +1520,12 @@ void maxiginGame_step( void ) {
                     getLevel( 0,
                               &boardState,
                               &playerDeck );
+                    
+                    sideBoardRedraw( &playerDeck );
 
+                    sideBoardShowing = 1;
+                    
                     dropNewLevelPiecesIn();
-
                     }
                 else {
 
@@ -1742,6 +1762,28 @@ void maxiginGame_step( void ) {
     navStep();
 
     heartsStep();
+
+    if( sideBoardShowing ) {
+        
+        ChessPiece  newInfoPiece  =  sideBoardStep();
+
+        if( sideBoardIsMouseOver() ) {
+            
+            if( newInfoPiece != infoPanelPiece ) {
+                
+                infoPanelLastPiece = infoPanelPiece;
+                infoPanelPiece = newInfoPiece;
+
+                if( infoPanelPiece != noPiece ) {
+                    maxigin_playSoundEffect( examinePieceSound,
+                                             256 );
+                    }
+                }
+            if( infoPanelPiece != noPiece ) {
+                infoPanelFade = 255;
+                }
+            }
+        }
 
 
     if( shopShowing ) {
@@ -2251,6 +2293,10 @@ void maxiginGame_init( void ) {
 
     heartsInit();
 
+    sideBoardInit( ACTION,
+                   18,
+                   MAXIGIN_GAME_NATIVE_H - 18 );
+
 
     clearDrawMarkers();
 
@@ -2270,6 +2316,8 @@ void maxiginGame_init( void ) {
                   &boardState,
                   &playerDeck );
         }
+    sideBoardRedraw( &playerDeck );
+    sideBoardShowing = 1;
     dropNewLevelPiecesIn();
     boardMarkersHidden  = 1;
     redrawRemoveRunning = 0;
@@ -2333,6 +2381,8 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( shopShowing );
     REGISTER_VAL_MEM( shopDone );
+
+    REGISTER_VAL_MEM( sideBoardShowing );
 
     REGISTER_VAL_MEM( currentLevel );
 

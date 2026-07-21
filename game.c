@@ -838,6 +838,8 @@ void maxiginGame_step( void ) {
 
         buttonReset( drawButton );
 
+        sideBoardShowing = 0;
+
         spinning = 1;
         spinningPaused = 0;
 
@@ -1743,7 +1745,7 @@ void maxiginGame_step( void ) {
 
     if( sideBoardShowing ) {
         
-        ChessPiece  newInfoPiece  =  sideBoardStep();
+        ChessPiece  newInfoPiece  =  sideBoardStep( examinePieceSound );
 
         if( sideBoardIsMouseOver() ) {
             
@@ -1847,6 +1849,7 @@ void maxiginGame_step( void ) {
                 stalemate        = 0;
                 drawGame         = 0;
                 noScoreMoveCount = 0;
+                sideBoardShowing = 1;
 
                 drawPrice        = 1;
 

@@ -52,7 +52,7 @@ void sideBoardShowRedraw( char  inShow );
 
 
 /* returns piece being moused over */
-ChessPiece sideBoardStep( void );
+ChessPiece sideBoardStep( int  inPieceLiftSound );
 
 
 void sideBoardDraw( void );
@@ -67,17 +67,19 @@ char  sideBoardIsMouseOver( void );
 
 static  ChessPiece     sideBoard      [ SIDE_BOARD_MAX_SLOTS ];
 static  int            sbLift         [ SIDE_BOARD_MAX_SLOTS ];
+static  int            sbSmoothLift   [ SIDE_BOARD_MAX_SLOTS ];
 static  unsigned char  sbHighlightFade[ SIDE_BOARD_MAX_SLOTS ];
 static  int            sbSlotPosX     [ SIDE_BOARD_MAX_SLOTS ];
 static  int            sbSlotPosY     [ SIDE_BOARD_MAX_SLOTS ];
 
 static  int            sbNumSlots             =  5;
-static  int            sbMaxLift              =  MAXIGIN_GAME_NATIVE_H;
+static  int            sbMaxLift              =  100;
 
 
 static  int            sbPointerActionHandle  =  -1;
 static  int            sbPickedIndex          =  -1;
 static  char           sbLifting              =   0;
+static  char           sbDropping             =   0;
 
 static  int            sbSlotSprite           =  -1;
 static  int            sbSlotPickedSprite     =  -1;
@@ -114,6 +116,7 @@ void sideBoardInit( int  inPointerActionHandle,
         
         sideBoard      [ i ] = noPiece;
         sbLift         [ i ] = 0;
+        sbSmoothLift   [ i ] = 0;
         sbSlotPosX     [ i ] = inCenterX;
         sbSlotPosY     [ i ] = yPos;
         sbHighlightFade[ i ] = 0;
@@ -126,6 +129,7 @@ void sideBoardInit( int  inPointerActionHandle,
     REGISTER_ARRAY_MEM( sbLift );
     REGISTER_VAL_MEM( sbNumSlots );
     REGISTER_VAL_MEM( sbLifting );
+    REGISTER_VAL_MEM( sbDropping );
 
     REGISTER_ARRAY_MEM( sbHighlightFade );
 
@@ -183,7 +187,7 @@ ChessPiece sideBoardSwap( ChessPiece  inNewPiece ) {
 
 
 
-ChessPiece sideBoardStep( void ) {
+ChessPiece sideBoardStep( int  inPieceLiftSound ) {
 
     /* fixme
        react to mouse and controller
@@ -249,37 +253,71 @@ ChessPiece sideBoardStep( void ) {
             }
         }
 
-    if( sbLifting ) {
-
-        int  liftRate = ( 5 * 60 ) / r;
+    if( sbLifting
+        ||
+        sbDropping ) {
         
-        for( i = 0;
-             i < sbNumSlots;
-             i ++ ) {
-            if( sbLift[i] < sbMaxLift ) {
-                sbLift[i] += liftRate;
+        int  scaleFactor  =  ( sbMaxLift * sbMaxLift )
+            / MAXIGIN_GAME_NATIVE_H;
+        
+        int   minLiftForNextStart  =  30;
+        int   stepSize             =  ( 4 * 60 ) / r;
 
-                if( sbLift[i] > sbMaxLift ) {
-                    sbLift[i] = sbMaxLift;
+        if( sbLifting ) {
+
+            for( i = sbNumSlots - 1;
+                 i >= 0;
+                 i -- ) {
+                if( sbLift[i] == 0 ) {
+                    /* skip sound for first one
+                       since button press makes sound */
+                    if( i != sbNumSlots - 1 ) {
+                        maxigin_playSoundEffect( inPieceLiftSound,
+                                                 256 );
+                        }
+                    }
+                if( sbLift[i] < sbMaxLift ) {
+                    sbLift[i] += stepSize;
+
+                    if( sbLift[i] > sbMaxLift ) {
+                        sbLift[i] = sbMaxLift;
+                        }
+
+                    sbSmoothLift[i] = ( sbLift[i] * sbLift[i] ) / scaleFactor;
+
+                    if( sbLift[i] < minLiftForNextStart ) {
+                        /* stagger lift */
+                        break;
+                        }
+                    }
+                }
+            }
+        else if( sbDropping ) {
+        
+            for( i = sbNumSlots - 1;
+                 i >= 0;
+                 i -- ) {
+            
+                if( sbLift[i] > 0  ) {
+                    sbLift[i] -= stepSize;
+
+                    if( sbLift[i] <= 0  ) {
+                        sbLift[i] = 0;
+                        maxigin_playSoundEffect( inPieceLiftSound,
+                                                 256 );
+                        }
+
+                    sbSmoothLift[i] = ( sbLift[i] * sbLift[i] ) / scaleFactor;
+
+                    if( sbLift[i] > sbMaxLift - minLiftForNextStart ) {
+                        /* stagger drop */
+                        break;
+                        }
                     }
                 }
             }
         }
-    else {
-        int  dropRate = ( 5 * 60 ) / r;
-
-        for( i = 0;
-             i < sbNumSlots;
-             i ++ ) {
-            if( sbLift[i] > 0 ) {
-                sbLift[i] -= dropRate;
-
-                if( sbLift[i] < 0 ) {
-                    sbLift[i] = 0;
-                    }
-                }
-            }
-        }
+    
 
     if( overSlot == -1 ) {
         return noPiece;
@@ -351,12 +389,12 @@ void sideBoardDraw( void ) {
             
             drawPiece( sideBoard [i] | CHESS_WHITE,
                        sbSlotPosX[i],
-                       sbSlotPosY[i] - sbLift[i] );
+                       sbSlotPosY[i] - sbSmoothLift[i] );
             
             if( sbHighlightFade[i] > 0 ) {
                 drawPieceHightlight( sideBoard      [i] | CHESS_WHITE,
                                      sbSlotPosX     [i],
-                                     sbSlotPosY     [i] - sbLift[i],
+                                     sbSlotPosY     [i] - sbSmoothLift[i],
                                      sbHighlightFade[i] );
                 }
             }
@@ -399,7 +437,8 @@ char sideBoardLift( void ) {
 
     int   i;
     
-    sbLifting = 1;
+    sbLifting  = 1;
+    sbDropping = 0;
     
     for( i = 0;
          i < sbNumSlots;
@@ -419,7 +458,8 @@ char sideBoardUnlift( void ) {
     
     int   i;
     
-    sbLifting = 0;
+    sbLifting  = 0;
+    sbDropping = 1;
     
     for( i = 0;
          i < sbNumSlots;

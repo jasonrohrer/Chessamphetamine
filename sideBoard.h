@@ -46,6 +46,9 @@ char  sideBoardLift( void );
 char  sideBoardUnlift( void );
 
 
+void sideBoardShowRedraw( char  inShow );
+
+
 
 
 /* returns piece being moused over */
@@ -69,14 +72,20 @@ static  int            sbSlotPosX     [ SIDE_BOARD_MAX_SLOTS ];
 static  int            sbSlotPosY     [ SIDE_BOARD_MAX_SLOTS ];
 
 static  int            sbNumSlots             =  5;
+static  int            sbMaxLift              =  MAXIGIN_GAME_NATIVE_H;
 
 
 static  int            sbPointerActionHandle  =  -1;
 static  int            sbPickedIndex          =  -1;
 static  char           sbLifting              =   0;
+
 static  int            sbSlotSprite           =  -1;
 static  int            sbSlotPickedSprite     =  -1;
+static  int            sbSlotRedrawSprite     =  -1;
+
 static  char           sbActionDown           =   0;
+static  char           sbRedrawShowing        =   0;
+
 
 void sideBoardInit( int  inPointerActionHandle,
                     int  inCenterX,
@@ -87,8 +96,13 @@ void sideBoardInit( int  inPointerActionHandle,
 
     sbSlotSprite       = maxigin_initSprite( "sideBoardSlot.tga"       );
     sbSlotPickedSprite = maxigin_initSprite( "sideBoardSlotPicked.tga" );
+    sbSlotRedrawSprite = maxigin_initSprite( "sideBoardSlotRedraw.tga" );
 
     maxigin_initMakeGlowSprite( sbSlotPickedSprite,
+                                4,
+                                2 );
+
+    maxigin_initMakeGlowSprite( sbSlotRedrawSprite,
                                 4,
                                 2 );
     
@@ -114,6 +128,8 @@ void sideBoardInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( sbLifting );
 
     REGISTER_ARRAY_MEM( sbHighlightFade );
+
+    REGISTER_VAL_MEM( sbRedrawShowing );
     }
     
 
@@ -233,6 +249,37 @@ ChessPiece sideBoardStep( void ) {
             }
         }
 
+    if( sbLifting ) {
+
+        int  liftRate = ( 5 * 60 ) / r;
+        
+        for( i = 0;
+             i < sbNumSlots;
+             i ++ ) {
+            if( sbLift[i] < sbMaxLift ) {
+                sbLift[i] += liftRate;
+
+                if( sbLift[i] > sbMaxLift ) {
+                    sbLift[i] = sbMaxLift;
+                    }
+                }
+            }
+        }
+    else {
+        int  dropRate = ( 5 * 60 ) / r;
+
+        for( i = 0;
+             i < sbNumSlots;
+             i ++ ) {
+            if( sbLift[i] > 0 ) {
+                sbLift[i] -= dropRate;
+
+                if( sbLift[i] < 0 ) {
+                    sbLift[i] = 0;
+                    }
+                }
+            }
+        }
 
     if( overSlot == -1 ) {
         return noPiece;
@@ -273,7 +320,6 @@ ChessPiece sideBoardStep( void ) {
 void sideBoardDraw( void ) {
 
     int  i;
-
     
 
     for( i = sbNumSlots -  1;
@@ -281,28 +327,36 @@ void sideBoardDraw( void ) {
          i -- ) {
 
         maxigin_drawResetColor();
-        
-        if( sbPickedIndex == i ) {
-            maxigin_drawSprite( sbSlotPickedSprite,
-                                sbSlotPosX[i],
-                                sbSlotPosY[i] );
+
+        if( sbRedrawShowing ) {
+            maxigin_drawSprite( sbSlotRedrawSprite,
+                                    sbSlotPosX[i],
+                                    sbSlotPosY[i] );
             }
         else {
-            maxigin_drawSprite( sbSlotSprite,
-                                sbSlotPosX[i],
-                                sbSlotPosY[i] );
+            
+            if( sbPickedIndex == i ) {
+                maxigin_drawSprite( sbSlotPickedSprite,
+                                    sbSlotPosX[i],
+                                    sbSlotPosY[i] );
+                }
+            else {
+                maxigin_drawSprite( sbSlotSprite,
+                                    sbSlotPosX[i],
+                                    sbSlotPosY[i] );
+                }
             }
         
         if( sideBoard[i] != noPiece ) {
             
             drawPiece( sideBoard [i] | CHESS_WHITE,
                        sbSlotPosX[i],
-                       sbSlotPosY[i] );
+                       sbSlotPosY[i] - sbLift[i] );
             
             if( sbHighlightFade[i] > 0 ) {
                 drawPieceHightlight( sideBoard      [i] | CHESS_WHITE,
                                      sbSlotPosX     [i],
-                                     sbSlotPosY     [i],
+                                     sbSlotPosY     [i] - sbLift[i],
                                      sbHighlightFade[i] );
                 }
             }
@@ -332,6 +386,51 @@ char  sideBoardIsMouseOver( void ) {
         }
     
     return 0;
+    }
+
+
+
+void sideBoardShowRedraw( char  inShow ) {
+    sbRedrawShowing = inShow;
+    }
+
+
+char sideBoardLift( void ) {
+
+    int   i;
+    
+    sbLifting = 1;
+    
+    for( i = 0;
+         i < sbNumSlots;
+         i ++ ) {
+
+        if( sbLift[ i ] < sbMaxLift ) {
+            return 0;
+            }
+        }
+    
+    return 1;
+    }
+
+
+
+char sideBoardUnlift( void ) {
+    
+    int   i;
+    
+    sbLifting = 0;
+    
+    for( i = 0;
+         i < sbNumSlots;
+         i ++ ) {
+
+        if( sbLift[ i ] > 0 ) {
+            return 0;
+            }
+        }
+    
+    return 1;
     }
 
 

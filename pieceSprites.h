@@ -112,7 +112,6 @@ void clearMaskRow( DrawBoardMask  *inMask,
 /* used to alter the vertical y position of certain pieces */
 typedef struct DrawBoardLift{
 
-        /* 1 to draw, 0 to skip */
         int  grid[BH][BW];
 
     } DrawBoardLift;

@@ -117,7 +117,7 @@ static int          spinPressedTextGlowSprite  = -1;
 static int          drawPrice                  =  1;
 static int          drawButton                 = -1;
 static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
-static int          drawButtonPosX             =  MAXIGIN_GAME_NATIVE_W / 2 + 25;
+static int          drawButtonPosX             =  19;
 
 static int          newGameButton              = -1;
 static int          newGameButtonPosY          =  MAXIGIN_GAME_NATIVE_H - 10;
@@ -211,6 +211,8 @@ static int            boardSlideUpMax             =  100;
 static char           shopShowing                 =  0;
 static char           shopDone                    =  0;
 static char           sideBoardShowing            =  0;
+static char           sideBoardRedrawDone         =  0;
+static char           sideBoardRedrawBlocked      =  0;
 
 static ChessPiece     infoPanelPiece              =  noPiece;
 static ChessPiece     infoPanelLastPiece          =  noPiece;
@@ -312,6 +314,18 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( sideBoardShowing ) {
         sideBoardDraw();
+
+        buttonDraw( drawButton );
+            
+
+        maxigin_drawButtonHintSprite( DRAW,
+                                      drawButtonPosX + 30,
+                                      drawButtonPosY );
+            
+        numberDraw( drawPrice,
+                    drawButtonPosX + 50,
+                    drawButtonPosY,
+                    0 );
         }
     else {
         heartsDraw( 18,
@@ -515,27 +529,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
         maxigin_drawLangText(
                 lang_drawInstruct,
-                drawButtonPosX - 30,
+                boardCenterX,
                 drawButtonPosY,
-                MAXIGIN_RIGHT );
+                MAXIGIN_CENTER );
         maxigin_setLanguageFontIndex( 0 );
 
-
-        if( boardMarkersDownCount > 0 ) {
-
-            buttonDraw( drawButton );
-            
-
-            maxigin_drawButtonHintSprite( DRAW,
-                                          drawButtonPosX + 30,
-                                          drawButtonPosY );
-            
-            numberDraw( drawPrice,
-                        drawButtonPosX + 50,
-                        drawButtonPosY,
-                        0 );
-            
-            }
         }
 
     
@@ -1414,26 +1412,6 @@ void maxiginGame_step( void ) {
         }
     
 
-    if( boardMarkersDownCount > 0 ) {
-        
-        if( buttonIsNewPressed( drawButton ) ) {
-            
-            /* press attempt */
-            if( moneyGetTotal() < drawPrice ) {
-                /* fail */
-                maxigin_playSoundEffect( pickFailedSound,
-                                         256 );
-                }
-            else {
-                maxigin_playSoundEffect( examinePieceSound,
-                                         256 );
-                redrawRemoveRunning = 1;
-                redrawAddRunning    = 0;
-
-                moneyAdd( - drawPrice );
-                }
-            }
-        }
     
 
     if( redrawRemoveRunning
@@ -1781,6 +1759,56 @@ void maxiginGame_step( void ) {
                 }
             if( infoPanelPiece != noPiece ) {
                 infoPanelFade = 255;
+                }
+            }
+
+        if( buttonIsHover( drawButton )
+            &&
+            ! buttonIsStuck( drawButton ) ) {
+            sideBoardShowRedraw( 1 );
+            }
+        else {
+            sideBoardShowRedraw( 0 );
+            }
+
+        if( buttonIsNewPressed( drawButton ) ) {
+            
+            /* press attempt */
+            if( moneyGetTotal() < drawPrice ) {
+                /* fail */
+                maxigin_playSoundEffect( pickFailedSound,
+                                         256 );
+                sideBoardRedrawBlocked = 1;
+                }
+            else {
+                maxigin_playSoundEffect( examinePieceSound,
+                                         256 );
+
+                moneyAdd( - drawPrice );
+
+                sideBoardLift();
+                sideBoardRedrawBlocked = 0;
+                }
+            }
+        else if( ! sideBoardRedrawBlocked
+                 &&
+                 buttonIsStuck( drawButton ) ) {
+
+            if( ! sideBoardRedrawDone ) {
+                
+                if( sideBoardLift() ) {
+                    /* lifting done */
+                    sideBoardRedraw( &playerDeck );
+                    sideBoardRedrawDone = 1;
+                    sideBoardUnlift();
+                    }
+                }
+            else if( sideBoardUnlift() ) {
+                /* pieces on side board have come back down */
+                drawPrice += 1;
+                sideBoardRedrawDone = 0;
+                
+                buttonReset( drawButton );
                 }
             }
         }
@@ -2295,7 +2323,7 @@ void maxiginGame_init( void ) {
 
     sideBoardInit( ACTION,
                    18,
-                   MAXIGIN_GAME_NATIVE_H - 18 );
+                   MAXIGIN_GAME_NATIVE_H - 30 );
 
 
     clearDrawMarkers();
@@ -2383,6 +2411,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( shopDone );
 
     REGISTER_VAL_MEM( sideBoardShowing );
+    REGISTER_VAL_MEM( sideBoardRedrawDone );
+    REGISTER_VAL_MEM( sideBoardRedrawBlocked );
 
     REGISTER_VAL_MEM( currentLevel );
 

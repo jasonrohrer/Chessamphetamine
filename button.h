@@ -43,6 +43,12 @@ void buttonDraw( int  inButtonHandle );
    internal stepping  to check for events */
 char buttonIsNewPressed( int  inButtonHandle );
 
+char buttonIsHover( int  inButtonHandle );
+
+
+char buttonIsStuck( int  inButtonHandle );
+
+
 
 /* only affects sticky buttons */
 void buttonReset( int  inButtonHandle );
@@ -151,6 +157,8 @@ void buttonDraw( int  inButtonHandle ) {
     
 
     if( s != -1 ) {
+
+        maxigin_drawResetColor();
         
         maxigin_drawSprite( s,
                             b->centerX,
@@ -189,7 +197,19 @@ static char pointerInButton( Button  *b ) {
     }
 
 
-    
+
+char buttonIsHover( int  inButtonHandle ) {
+    Button  *b;
+    if( inButtonHandle == -1 ) {
+        return 0;
+        }
+
+    b = &( buttonRecords[ inButtonHandle ] );
+
+    return pointerInButton( b );
+    }
+
+
 
 char buttonIsNewPressed( int  inButtonHandle ) {
     
@@ -257,6 +277,25 @@ void buttonReset( int  inButtonHandle ) {
     b = &( buttonRecords[ inButtonHandle ] );
 
     b->pressed = 0;
+    }
+
+
+char buttonIsStuck( int  inButtonHandle ) {
+
+    Button  *b;
+
+    if( inButtonHandle == -1 ) {
+        return 0;
+        }
+
+    b = &( buttonRecords[ inButtonHandle ] );
+    
+    if( b->pressed
+        &&
+        b->sticky ) {
+        return 1;
+        }
+    return 0;
     }
 
 

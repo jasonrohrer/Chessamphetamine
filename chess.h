@@ -657,7 +657,7 @@ static int pawnMove( BoardState     *inState,
                 addCapturedPiece( &( outCaptured[n] ),
                                   &( outStates[n]   ),
                                   newRow,
-                                  inPieceCol );
+                                  newCol );
                 
                 outStates[n].grid[ newRow ][ newCol ] = inPieceColor | queen;
                 }

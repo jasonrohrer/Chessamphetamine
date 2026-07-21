@@ -143,6 +143,10 @@ void deckReshuffleAll( Deck  *inDeck );
 void deckReshuffleRemaining( Deck  *inDeck );
 
 
+void deckDrawDebugInfo( Deck  *inDeck,
+                        int    inFontHandle,
+                        int    inCenterX,
+                        int    inCenterY );
 
 
 
@@ -370,7 +374,8 @@ void deckAddPiece( Deck        *inDeck,
         newIndex = MAX_DECK_SIZE - 1;
         }
 
-    inDeck->pieces[ newIndex ] = inPiece;
+    inDeck->pieces[ newIndex ]  = inPiece;
+    inDeck->present[ newIndex ] = 1;
     }
 
 
@@ -492,6 +497,57 @@ void deckReturnPiece( Deck        *inDeck,
                 }
             }
         }
+    }
+
+
+
+void deckDrawDebugInfo( Deck  *inDeck,
+                        int    inFontHandle,
+                        int    inCenterX,
+                        int    inCenterY ) {
+    int  i;
+
+    int  y  =  inCenterY;
+    
+
+    for( i =  inDeck->numPieces - 1;
+         i >= 0;
+         i -- ) {
+
+        const char *name = getPieceName( inDeck->pieces[i] );
+
+        if( i <= inDeck->drawPos ) {
+
+            maxigin_drawSetColor( 255,
+                                  255,
+                                  255,
+                                  255 );
+            }
+        else {
+            
+            if( inDeck->present[ i ] ) {
+                maxigin_drawSetColor( 0,
+                                      255,
+                                      0,
+                                      255 );
+                }
+            else {
+                maxigin_drawSetColor( 255,
+                                      0,
+                                      0,
+                                      255 );
+                }
+            }
+
+        maxigin_drawText( inFontHandle,
+                          name,
+                          inCenterX,
+                          y,
+                          MAXIGIN_CENTER );
+
+        y += 8;
+        }
+
     }
 
 

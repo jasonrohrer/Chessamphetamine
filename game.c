@@ -691,6 +691,12 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         
         }
 
+
+    if(0)
+    deckDrawDebugInfo( &playerDeck,
+                       smallCapsFont,
+                       MAXIGIN_GAME_NATIVE_W - 42,
+                       50 );
     
 
     if( infoPanelPiece != noPiece ) {

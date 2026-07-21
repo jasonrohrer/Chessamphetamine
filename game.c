@@ -28,6 +28,7 @@
 #define SHOP_IMPLEMENTATION
 #define BUTTON_IMPLEMENTATION
 #define HEARTS_IMPLEMENTATION
+#define SIDE_BOARD_IMPLEMENTATION
 
 
 #include "chess.h"
@@ -72,6 +73,7 @@
 
 #include "hearts.h"
 
+#include "sideBoard.h"
 
 
 enum GameUserAction {
@@ -725,6 +727,47 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     pinchApply( inRGBBuffer );
     }
 
+
+
+static void dropNewLevelPiecesIn( void ) {
+
+    int  y;
+    int  x;
+
+    int  scaleFactor  =  ( redrawProgressMax * redrawProgressMax )
+        / MAXIGIN_GAME_NATIVE_H;
+    
+    /* mark the new spots where pieces go as lifted,
+       rest as not */
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            if( boardState.grid[y][x] != noPiece ) {
+                                
+                int  val;
+                                
+                boardMarkers[y][x] = 1;
+
+                redrawLift.grid[y][x] = redrawProgressMax;
+
+                val = redrawLift.grid[y][x];
+                        
+                redrawSmoothLift.grid[y][x] =
+                    ( val * val ) / scaleFactor;
+                }
+            else {
+                boardMarkers[y][x] = 0;
+
+                redrawLift.grid[y][x] = 0;
+                redrawSmoothLift.grid[y][x] = 0;
+                }
+            }
+        }
+    }
 
 
 static char  randColorsDown = 0;
@@ -1461,36 +1504,8 @@ void maxiginGame_step( void ) {
                               &boardState,
                               &playerDeck );
 
-                    /* mark the new spots where pieces go as lifted,
-                       rest as not */
-                    for( y = 0;
-                         y < BH;
-                         y ++ ) {
-                        for( x = 0;
-                             x < BW;
-                             x ++ ) {
+                    dropNewLevelPiecesIn();
 
-                            if( boardState.grid[y][x] != noPiece ) {
-                                
-                                int  val;
-                                
-                                boardMarkers[y][x] = 1;
-
-                                redrawLift.grid[y][x] = redrawProgressMax;
-
-                                val = redrawLift.grid[y][x];
-                        
-                                redrawSmoothLift.grid[y][x] =
-                                    ( val * val ) / scaleFactor;
-                                }
-                            else {
-                                boardMarkers[y][x] = 0;
-
-                                redrawLift.grid[y][x] = 0;
-                                redrawSmoothLift.grid[y][x] = 0;
-                                }
-                            }
-                        }
                     }
                 else {
 
@@ -1770,6 +1785,11 @@ void maxiginGame_step( void ) {
                 getLevel( currentLevel,
                           &boardState,
                           &playerDeck );
+
+                dropNewLevelPiecesIn();
+                boardMarkersHidden  = 1;
+                redrawRemoveRunning = 0;
+                redrawAddRunning    = 1;
                 }
             }
         
@@ -2250,6 +2270,11 @@ void maxiginGame_init( void ) {
                   &boardState,
                   &playerDeck );
         }
+    dropNewLevelPiecesIn();
+    boardMarkersHidden  = 1;
+    redrawRemoveRunning = 0;
+    redrawAddRunning    = 1;
+    
 
     REGISTER_VAL_MEM( boardState );
     REGISTER_VAL_MEM( postMoveCaptured );
@@ -2312,6 +2337,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( currentLevel );
 
     REGISTER_VAL_MEM( gameOver );
+
+    REGISTER_VAL_MEM( noScoreMoveCount );
     
 
     maxigin_initRestoreStaticMemoryFromLastRun();

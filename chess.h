@@ -2808,7 +2808,7 @@ char getMixedMove( BoardState  *inState,
                                      1,
                                      100 );
 
-    if( 1 || pick <= 75 ) {
+    if( pick <= 75 ) {
 
         return getGreedyMove( inState,
                               outMove,

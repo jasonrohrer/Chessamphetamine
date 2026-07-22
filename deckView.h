@@ -131,11 +131,33 @@ void deckViewInit(  int  inCenterX,
     }
 
 
+/* show deck in order for debugging */
+static void deckViewSetDebug( Deck *inDeck ) {
+
+    int  p;
+    
+    for( p = 0;
+         p < inDeck->numPieces;
+         p ++ ) {
+
+        deckViewSlots[p].piece   = inDeck->pieces[p];
+        deckViewSlots[p].present = inDeck->present[p];
+        }
+
+    deckViewNumFullSlots = inDeck->numPieces;
+    }
+    
+
 
 void deckViewSet( Deck *inDeck ) {
 
     int  i;
     int  n   =  0;
+
+    if( 0 ) {
+        deckViewSetDebug( inDeck );
+        return;
+        }
 
     deckViewPageNumber   = 0;
     deckViewNumFullSlots = inDeck->numPieces;
@@ -161,7 +183,17 @@ void deckViewSet( Deck *inDeck ) {
                  p < inDeck->numPieces;
                  p ++ ) {
 
-                if( inDeck->present[p] == present ) {
+                char  piecePresence  =  inDeck->present[p];
+
+                if( piecePresence
+                    &&
+                    inDeck->drawPos < p ) {
+                    /* pieces present in discard pile are still
+                       marked as dark in deck view */
+                    piecePresence = 0;
+                    }
+
+                if( piecePresence == present ) {
                     
                     ChessPiece  thisPiece  =  inDeck->pieces[p];
 

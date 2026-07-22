@@ -394,10 +394,10 @@ void sideBoardDraw( void ) {
                        sbSlotPosY[i] - sbSmoothLift[i] );
             
             if( sbHighlightFade[i] > 0 ) {
-                drawPieceHightlight( sideBoard      [i] | CHESS_WHITE,
-                                     sbSlotPosX     [i],
-                                     sbSlotPosY     [i] - sbSmoothLift[i],
-                                     sbHighlightFade[i] );
+                drawPieceHighlight( sideBoard      [i] | CHESS_WHITE,
+                                    sbSlotPosX     [i],
+                                    sbSlotPosY     [i] - sbSmoothLift[i],
+                                    sbHighlightFade[i] );
                 }
             }
 

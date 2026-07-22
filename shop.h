@@ -314,10 +314,10 @@ void shopDraw( void ) {
                        shopCenterY + shopSlotPosY[i] );
 
             if( shopSlotHighlightFade[i] > 0 ) {
-                drawPieceHightlight( p | CHESS_WHITE,
-                                     shopCenterX + shopSlotPosX[i],
-                                     shopCenterY + shopSlotPosY[i],
-                                     shopSlotHighlightFade[i] );
+                drawPieceHighlight( p | CHESS_WHITE,
+                                    shopCenterX + shopSlotPosX[i],
+                                    shopCenterY + shopSlotPosY[i],
+                                    shopSlotHighlightFade[i] );
                 }
             
 

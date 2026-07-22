@@ -165,10 +165,10 @@ char getPixelOverPiece( ChessPiece  inPiece,
 
 
 
-void drawPieceHightlight( ChessPiece     inPiece,
-                          int            inBaseCenterX,
-                          int            inBaseCenterY,
-                          unsigned char  inFade );
+void drawPieceHighlight( ChessPiece     inPiece,
+                         int            inBaseCenterX,
+                         int            inBaseCenterY,
+                         unsigned char  inFade );
 
 
 
@@ -1356,10 +1356,10 @@ ChessPiece getPointerOverPiece( BoardState  *inState,
     }
 
 
-void drawPieceHightlight( ChessPiece     inPiece,
-                          int            inBaseCenterX,
-                          int            inBaseCenterY,
-                          unsigned char  inFade ) {
+void drawPieceHighlight( ChessPiece     inPiece,
+                         int            inBaseCenterX,
+                         int            inBaseCenterY,
+                         unsigned char  inFade ) {
     
     drawPieceGlowOnly( inPiece,
                        inBaseCenterX,
@@ -1386,10 +1386,10 @@ void drawBoardPieceHighlight( BoardState    *inState,
                           &pX,
                           &pY );
 
-    drawPieceHightlight( inState->grid[ inPieceRow ][ inPieceCol ],
-                         pX,
-                         pY,
-                         inFade );
+    drawPieceHighlight( inState->grid[ inPieceRow ][ inPieceCol ],
+                        pX,
+                        pY,
+                        inFade );
     }
 
 

@@ -1906,6 +1906,10 @@ void maxiginGame_step( void ) {
                     sideBoardRedraw( &playerDeck );
                     sideBoardRedrawDone = 1;
                     sideBoardUnlift();
+
+                    if( deckViewShowing ) {
+                        deckViewSet( &playerDeck );
+                        }
                     }
                 }
             else if( sideBoardUnlift() ) {
@@ -1984,7 +1988,30 @@ void maxiginGame_step( void ) {
                 redrawAddRunning    = 1;
                 }
             }
-        
+        }
+
+    if( deckViewShowing
+        &&
+        ! deckViewDone
+        &&
+        ! sideBoardIsMouseOver() ) {
+
+        ChessPiece  newInfoPiece  =  deckViewStep(); 
+
+        if( newInfoPiece != infoPanelPiece ) {
+            infoPanelLastPiece = infoPanelPiece;
+            infoPanelPiece = newInfoPiece;
+
+            if( infoPanelPiece != noPiece ) {
+                maxigin_playSoundEffect( examinePieceSound,
+                                         256 );
+                }
+            }
+        if( infoPanelPiece != noPiece ) {
+            infoPanelFade = 255;
+            }
+
+        deckViewStep();
         }
     }
 

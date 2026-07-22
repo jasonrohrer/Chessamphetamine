@@ -38,6 +38,8 @@ back           "Retour"
 
 
 actionDesc     "Tirer"
+drawDesc       "Draw"
+deckDesc       "View Deck"
 
 
 press          "appuyez"

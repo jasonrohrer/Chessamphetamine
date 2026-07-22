@@ -35,6 +35,9 @@ back           "返回"
 
 
 actionDesc     "射擊"
+drawDesc       "Draw"
+deckDesc       "View Deck"
+
 
 press          "按下"
 

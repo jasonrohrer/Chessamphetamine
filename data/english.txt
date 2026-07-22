@@ -39,6 +39,7 @@ back           "Back"
 
 actionDesc     "Action"
 drawDesc       "Draw"
+deckDesc       "View Deck"
 
 
 

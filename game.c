@@ -29,6 +29,7 @@
 #define BUTTON_IMPLEMENTATION
 #define HEARTS_IMPLEMENTATION
 #define SIDE_BOARD_IMPLEMENTATION
+#define DECK_VIEW_IMPLEMENTATION
 
 
 #include "chess.h"
@@ -75,11 +76,15 @@
 
 #include "sideBoard.h"
 
+#include "deckView.h"
+
+
 
 enum GameUserAction {
     SPIN,
     ACTION,
     DRAW,
+    DECK,
     TOGGLE_MOVE_LOG,
     ADVANCE_MOVE_LOG,
     BACK_MOVE_LOG,
@@ -119,6 +124,10 @@ static int          drawButton                 = -1;
 static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
 static int          drawButtonPosX             =  19;
 
+static int          deckButton                 = -1;
+static int          deckButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
+static int          deckButtonPosX             =  MAXIGIN_GAME_NATIVE_W - 90;
+
 static int          newGameButton              = -1;
 static int          newGameButtonPosY          =  MAXIGIN_GAME_NATIVE_H - 10;
 static int          newGameButtonPosX          =  MAXIGIN_GAME_NATIVE_W / 2 + 25;
@@ -147,6 +156,7 @@ static int          lang_fullscreen;
 
 static int          lang_action;
 static int          lang_draw;
+static int          lang_deck;
 
 static int          lang_drawInstruct;
 static int          lang_level;
@@ -213,6 +223,8 @@ static char           shopDone                    =  0;
 static char           sideBoardShowing            =  0;
 static char           sideBoardRedrawDone         =  0;
 static char           sideBoardRedrawBlocked      =  0;
+static char           deckViewShowing             =  0;
+static char           deckViewDone                =  0;
 
 static ChessPiece     infoPanelPiece              =  noPiece;
 static ChessPiece     infoPanelLastPiece          =  noPiece;
@@ -308,6 +320,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         shopDraw();
         }
 
+    if( deckViewShowing ) {
+        deckViewDraw();
+        }
+
     
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
                30 );
@@ -331,6 +347,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         heartsDraw( 18,
                     MAXIGIN_GAME_NATIVE_H - 18 );
         }
+
+    buttonDraw( deckButton );
 
     
     if( moveMade ) {
@@ -1185,6 +1203,8 @@ void maxiginGame_step( void ) {
         &&
         ! shopShowing
         &&
+        ! deckViewShowing
+        &&
         !( sideBoardShowing
            &&
            sideBoardIsMouseOver() ) ) {
@@ -1425,6 +1445,8 @@ void maxiginGame_step( void ) {
             }                       
         }
     else if( ! shopShowing
+             &&
+             ! deckViewShowing
              &&
              ! ( sideBoardShowing
                 &&
@@ -1739,17 +1761,25 @@ void maxiginGame_step( void ) {
         }
 
 
-    if( shopShowing
-        &&
-        ! shopDone
+    if( ( ( shopShowing
+            &&
+            ! shopDone )
+          ||
+          ( deckViewShowing
+            &&
+            ! deckViewDone ) )
         &&
         boardSlideUp < boardSlideUpMax ) {
         
         boardSlideUp += ( 4 * 60 ) / r;
         }
-    else if( shopShowing
-             &&
-             shopDone
+    else if( ( ( shopShowing
+                 &&
+                 shopDone )
+               ||
+               ( deckViewShowing
+                 &&
+                 deckViewDone ) )
              &&
              boardSlideUp > 0 ) {
 
@@ -1760,6 +1790,9 @@ void maxiginGame_step( void ) {
 
             shopShowing = 0;
             shopDone    = 0;
+
+            deckViewShowing = 0;
+            deckViewDone    = 0;
 
             shopReroll();
             }
@@ -1887,6 +1920,20 @@ void maxiginGame_step( void ) {
         swapMarkedPieces();
         }
 
+    if( buttonIsNewPressed( deckButton ) ) {
+
+        if( ! deckViewShowing ) {
+            deckViewSet( &playerDeck );
+            deckViewShowing = 1;
+            deckViewDone    = 0;
+            }
+        else {
+            deckViewDone = 1;
+            }
+        maxigin_playSoundEffect( boardSlideSound,
+                                             356 );
+        }
+
 
     if( shopShowing ) {
 
@@ -1966,6 +2013,9 @@ static MinginButton actionMapping[]  =  { MGN_BUTTON_MOUSE_LEFT,
 
 static MinginButton drawMapping[]  =  { MGN_BUTTON_PS_TRIANGLE,
                                         MGN_BUTTON_XBOX_Y,
+                                        MGN_MAP_END };
+
+static MinginButton deckMapping[]  =  { MGN_BUTTON_L1,
                                         MGN_MAP_END };
 
 static MinginButton hintMapping[]   =  { MGN_BUTTON_MOUSE_LEFT,
@@ -2141,6 +2191,15 @@ void maxiginGame_init( void ) {
                              1,
                              ACTION,
                              DRAW );
+
+    deckButton = buttonInit( maxigin_initSprite( "deckButton.tga" ),
+                             -1,
+                             maxigin_initSprite( "deckButtonPressed.tga" ),
+                             deckButtonPosX,
+                             deckButtonPosY,
+                             0,
+                             ACTION,
+                             DECK );
     
 
     newGameButton = buttonInit( maxigin_initSprite( "newGameButton.tga" ),
@@ -2242,6 +2301,7 @@ void maxiginGame_init( void ) {
 
     lang_action           = maxigin_initTranslationKey( "actionDesc" );
     lang_draw             = maxigin_initTranslationKey( "drawDesc" );
+    lang_deck             = maxigin_initTranslationKey( "deckDesc" );
     lang_drawInstruct     = maxigin_initTranslationKey( "drawInstruct" );
     lang_level            = maxigin_initTranslationKey( "level" );
     lang_gameOverInstruct = maxigin_initTranslationKey( "gameOverInstruct" );
@@ -2281,6 +2341,11 @@ void maxiginGame_init( void ) {
         DRAW,
         drawMapping,
         lang_draw  );
+
+    maxigin_registerDynamicButtonMapping(
+        DECK,
+        deckMapping,
+        lang_deck  );
 
     
     maxigin_logInt( "Primary button for ACTION is: ",
@@ -2400,6 +2465,9 @@ void maxiginGame_init( void ) {
                    18,
                    MAXIGIN_GAME_NATIVE_H - 30 );
 
+    deckViewInit( boardCenterX,
+                  boardCenterY );
+    
 
     clearDrawMarkers();
 
@@ -2488,6 +2556,9 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( sideBoardShowing );
     REGISTER_VAL_MEM( sideBoardRedrawDone );
     REGISTER_VAL_MEM( sideBoardRedrawBlocked );
+
+    REGISTER_VAL_MEM( deckViewShowing );
+    REGISTER_VAL_MEM( deckViewDone );
 
     REGISTER_VAL_MEM( currentLevel );
 

@@ -315,7 +315,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
 
-    if( shopShowing ) {
+    if( shopShowing
+        &&
+        ! deckViewShowing ) {
         /* draw shop under any board, so board can slide away to reveal it */
         shopDraw();
         }
@@ -1933,6 +1935,10 @@ void maxiginGame_step( void ) {
             }
         else {
             deckViewDone = 1;
+
+            if( shopShowing ) {
+                deckViewShowing = 0;
+                }
             }
         maxigin_playSoundEffect( boardSlideSound,
                                              356 );

@@ -61,32 +61,44 @@ char isShoppingDone( void );
 #include "button.h"
 
 
+#define SHOP_PRICE_LIST( C, V )  \
+    V( C, 0,   noPiece,      0   )    \
+    V( C, 1,   pawn,         2   )    \
+    V( C, 2,   bishop,       5   )    \
+    V( C, 3,   knight,       5   )    \
+    V( C, 4,   rook,         6   )    \
+    V( C, 5,   queen,        7   )    \
+    V( C, 6,   king,         0   )    \
+    V( C, 7,   laserRook,    10  )    \
+    V( C, 8,   laserPawn,    6   )    \
+    V( C, 9,   doublingPawn, 6   )    \
+    V( C, 10,  addingRook,   7   )    \
+    V( C, 11,  rocket,       7   )
+
+static  int  shopPrices[] = {
+    MAKE_CHESS_ARRAY( SHOP_PRICE_LIST )
+    };
+
+CHECK_CHESS_ARRAY( shopPrices,
+                   SHOP_PRICE_LIST );
+
 
 /* one free deck, one paid deck with everything
    and two paid decks with more and more rarity */
-#define                NUM_SHOP_DECKS  6
+#define                NUM_SHOP_SLOTS  6
 
 
-static  Deck           shopDecks             [ NUM_SHOP_DECKS ];
-static  int            shopStartingPrices    [ NUM_SHOP_DECKS ]   =  {  0,
-                                                                        1,
-                                                                        2,
-                                                                        4,
-                                                                        8,
-                                                                        16 };
-static  int            shopCurrentPrices     [ NUM_SHOP_DECKS ];
-static  ChessPiece     shopItems             [ NUM_SHOP_DECKS ];
+static  Deck           shopDeck;
 
-static  int            shopPriceIncrements   [ NUM_SHOP_DECKS ]   =  {  0,
-                                                                        1,
-                                                                        1,
-                                                                        1,
-                                                                        2,
-                                                                        2 };
-static  int            shopSlotPosX          [ NUM_SHOP_DECKS ];
-static  int            shopSlotPosY          [ NUM_SHOP_DECKS ];
+static  char           shopIsOnSale          [ NUM_SHOP_SLOTS ];
+static  int            shopDiscountPercent   [ NUM_SHOP_SLOTS ];
+static  int            shopSlotPrices        [ NUM_SHOP_SLOTS ];
+static  ChessPiece     shopItems             [ NUM_SHOP_SLOTS ];
+
+static  int            shopSlotPosX          [ NUM_SHOP_SLOTS ];
+static  int            shopSlotPosY          [ NUM_SHOP_SLOTS ];
 static  int            shopSelectedSlot                           =  -1;
-static  unsigned char  shopSlotHighlightFade [ NUM_SHOP_DECKS ];
+static  unsigned char  shopSlotHighlightFade [ NUM_SHOP_SLOTS ];
 static  char           shopActionDown                             =   0;
 
 
@@ -105,24 +117,12 @@ static  int            shopCenterY;
 
 
 
-static void shopSetStartingPrices( void ) {
-    int  i;
-
-    for( i = 0;
-         i < NUM_SHOP_DECKS;
-         i ++ ) {
-
-        shopCurrentPrices[ i ] = shopStartingPrices[ i ];
-        }
-    }
-
-
 
 static void shopResetHightlighFades( void ) {
     int  i;
 
     for( i = 0;
-         i < NUM_SHOP_DECKS;
+         i < NUM_SHOP_SLOTS;
          i ++ ) {
 
         shopSlotHighlightFade[ i ] = 0;
@@ -131,26 +131,24 @@ static void shopResetHightlighFades( void ) {
 
 
 
-/* rerolls without updating prices */
+/* rerolls and updates prices */
 static void shopInternalReroll( void ) {
     int  i;
 
     for( i = 0;
-         i < NUM_SHOP_DECKS;
+         i < NUM_SHOP_SLOTS;
          i ++ ) {
-        shopItems[ i ] = deckDraw( &( shopDecks[i] ) );
-        }
-    }
+        shopItems[ i ] = deckDraw( &shopDeck );
 
+        shopSlotPrices[ i ] = shopPrices[ shopItems[ i ] ];
 
+        if( shopIsOnSale[ i ] ) {
+            int  discount  =  shopDiscountPercent[ i ] * shopSlotPrices[ i ];
 
-static void shopIncrementPrices( void ) {
-    int  i;
+            discount /= 100;
 
-    for( i = 0;
-         i < NUM_SHOP_DECKS;
-         i ++ ) {
-        shopCurrentPrices[ i ] += shopPriceIncrements[ i ];
+            shopSlotPrices[ i ] -= discount;
+            }
         }
     }
 
@@ -168,7 +166,7 @@ void shopInit( int  inPointerActionHandle,
     int  rarityFilter  =  MAX_DECK_PIECE_OCCURRENCE;
     int  i;
     int  hopSize       =  30;
-    int  numStartHops  =  NUM_SHOP_DECKS / 2;
+    int  numStartHops  =  NUM_SHOP_SLOTS / 2;
     int  startHop      =  hopSize * numStartHops;
     int  curPos;
 
@@ -182,24 +180,18 @@ void shopInit( int  inPointerActionHandle,
 
     lang_shopTitle  = maxigin_initTranslationKey( "shopTitle" );
     
-    getShopDeck( &( shopDecks[ 0 ] ),
-                    rarityFilter );
-    
-    getShopDeck( &( shopDecks[ 1 ] ),
-                    rarityFilter );
+    getShopDeck( &shopDeck,
+                 rarityFilter );
 
-    for( i = 2;
-         i < NUM_SHOP_DECKS;
+    shopIsOnSale[ 0 ] = 1;
+    shopDiscountPercent[ 0 ] = 50;
+
+    for( i = 1;
+         i < NUM_SHOP_SLOTS;
          i ++ ) {
 
-        rarityFilter /= 2;
-
-        if( rarityFilter <= 0 ) {
-            rarityFilter = 1;
-            }
-        
-        getShopDeck( &( shopDecks[ i ] ),
-                    rarityFilter );
+        shopIsOnSale[ i ] = 0;
+        shopDiscountPercent[ i ] = 0;
         }
 
 
@@ -207,7 +199,7 @@ void shopInit( int  inPointerActionHandle,
     /* set up slot positions */
  
     
-    if( ( NUM_SHOP_DECKS % 2 ) == 0 ) {
+    if( ( NUM_SHOP_SLOTS % 2 ) == 0 ) {
         /* center between two middle slots */
         startHop -= hopSize / 2;
         }
@@ -215,7 +207,7 @@ void shopInit( int  inPointerActionHandle,
     curPos  = - startHop;
 
     for( i = 0;
-         i < NUM_SHOP_DECKS;
+         i < NUM_SHOP_SLOTS;
          i ++ ) {
 
         shopSlotPosX[ i ] =  curPos;
@@ -224,8 +216,6 @@ void shopInit( int  inPointerActionHandle,
         curPos += hopSize;
         }
     
-
-    shopSetStartingPrices();
 
     shopInternalReroll();
 
@@ -242,9 +232,9 @@ void shopInit( int  inPointerActionHandle,
                              /* fixme... need controller mapping for this */
                              -1 );
 
-    REGISTER_ARRAY_MEM( shopDecks );
+    REGISTER_VAL_MEM( shopDeck );
 
-    REGISTER_ARRAY_MEM( shopCurrentPrices );
+    REGISTER_ARRAY_MEM( shopSlotPrices );
     
     REGISTER_ARRAY_MEM( shopItems );
     }
@@ -253,8 +243,6 @@ void shopInit( int  inPointerActionHandle,
 
 void shopReroll( void ) {
     shopInternalReroll();
-
-    shopIncrementPrices();
 
     shopSelectedSlot = -1;
     shopResetHightlighFades();
@@ -268,16 +256,9 @@ void shopReroll( void ) {
 
 void shopReset( void ) {
 
-    int  i;
-    
-    shopSetStartingPrices();
+    deckReshuffleAll( &shopDeck );
 
-    for( i = 0;
-         i < NUM_SHOP_DECKS;
-         i ++ ) {
-
-        deckReshuffleAll( &( shopDecks[ i ] ) );
-        }
+    shopInternalReroll();
 
     shopSelectedSlot = -1;
     shopActionDown   =  0;
@@ -302,7 +283,7 @@ void shopDraw( void ) {
     maxigin_setLanguageFontIndex( 0 );
 
     for( i = 0;
-         i < NUM_SHOP_DECKS;
+         i < NUM_SHOP_SLOTS;
          i ++ ) {
 
         ChessPiece  p  =  shopItems[ i ];
@@ -323,7 +304,7 @@ void shopDraw( void ) {
 
             maxigin_drawResetColor();
             
-            numberDrawCenter( shopCurrentPrices[ i ],
+            numberDrawCenter( shopSlotPrices[ i ],
                               shopCenterX + shopSlotPosX[i],
                               shopCenterY + shopSlotPosY[i] + 12,
                               1 );
@@ -369,7 +350,7 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
     shopSelectedSlot = -1;
     
     for( i = 0;
-         i < NUM_SHOP_DECKS;
+         i < NUM_SHOP_SLOTS;
          i ++ ) {
 
         ChessPiece  p  =  shopItems[ i ];
@@ -390,7 +371,7 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
         }
 
     for( i = 0;
-         i < NUM_SHOP_DECKS;
+         i < NUM_SHOP_SLOTS;
          i ++ ) {
 
         if( i != shopSelectedSlot
@@ -421,13 +402,13 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
 
             /* picking a piece to buy */
 
-            if( shopCurrentPrices[ shopSelectedSlot ]
+            if( shopSlotPrices[ shopSelectedSlot ]
                 <=
                 moneyGetTotal() ) {
 
                 /* can afford */
 
-                moneyAdd( - shopCurrentPrices[ shopSelectedSlot ] );
+                moneyAdd( - shopSlotPrices[ shopSelectedSlot ] );
 
                 deckAddPiece( inPlayerDeck,
                               shopItems[ shopSelectedSlot ] );

@@ -18,7 +18,8 @@
 
 
 void deckViewInit(  int  inCenterX,
-                    int  inCenterY );
+                    int  inCenterY,
+                    int  inPointerActionHandle );
 
 
 void deckViewSet( Deck *inDeck );
@@ -57,7 +58,7 @@ static  DeckViewSlot   deckViewSlots[ MAX_DECK_SIZE ];
 static  int            deckViewNumFullSlots              =  0;
 
 #define  DECK_VIEW_ROWS       4
-#define  DECK_VIEW_COLS       6
+#define  DECK_VIEW_COLS       5
 #define  DECK_VIEW_VIS_SLOTS  ( DECK_VIEW_ROWS * DECK_VIEW_COLS )
 
 
@@ -69,6 +70,9 @@ static  int            deckViewCellSizeX                =  BOARD_SQUARE_SIZE;
 static  int            deckViewCellSizeY                =  2 * BOARD_SQUARE_SIZE;
 static  int            deckViewPageNumber               =  0;
 
+static  int            nextButton                       =  -1;
+static  int            prevButton                       =  -1;
+
 
 static void deckViewClear( void ) {
     deckViewNumFullSlots = 0;
@@ -78,7 +82,8 @@ static void deckViewClear( void ) {
 
 
 void deckViewInit(  int  inCenterX,
-                    int  inCenterY ) {
+                    int  inCenterY,
+                    int  inPointerActionHandle ) {
 
     int  x;
     int  y;
@@ -122,6 +127,29 @@ void deckViewInit(  int  inCenterX,
          i ++ ) {
         deckViewHighlightFade[i] = 0;
         }
+
+    nextButton = buttonInit( maxigin_initSprite( "nextButton.tga" ),
+                             -1,
+                             maxigin_initSprite( "nextButtonPressed.tga" ),
+                             inCenterX
+                             + ( DECK_VIEW_COLS - 1 ) * deckViewCellSizeX / 2
+                             + 31,
+                             inCenterY,
+                             0,
+                             inPointerActionHandle,
+                             /* fixme... need controller mapping for this */
+                             -1 );
+    prevButton = buttonInit( maxigin_initSprite( "prevButton.tga" ),
+                             -1,
+                             maxigin_initSprite( "prevButtonPressed.tga" ),
+                             inCenterX
+                             - ( DECK_VIEW_COLS - 1 ) * deckViewCellSizeX / 2
+                             - 31,
+                             inCenterY,
+                             0,
+                             inPointerActionHandle,
+                             /* fixme... need controller mapping for this */
+                             -1 );
     
     REGISTER_ARRAY_MEM( deckViewSlots        );
     REGISTER_ARRAY_MEM( deckViewHighlightFade );
@@ -165,9 +193,9 @@ void deckViewSet( Deck *inDeck ) {
 
     /* show in order
        so we don't give away shuffled order */
-    for( i = FIRST_CHESS_PIECE;
-         i < NUM_CHESS_PIECES;
-         i ++ ) {
+    for( i = NUM_CHESS_PIECES - 1;
+         i >= FIRST_CHESS_PIECE;
+         i -- ) {
         
         char  present;
 
@@ -218,6 +246,13 @@ void deckViewDraw( void ) {
 
     int  y;
     int  x;
+
+    if( deckViewPageNumber > 0 ) {
+        buttonDraw( prevButton );
+        }
+    if( skip + DECK_VIEW_VIS_SLOTS < deckViewNumFullSlots ) {
+        buttonDraw( nextButton );
+        }
     
 
     for( y = 0;
@@ -232,8 +267,8 @@ void deckViewDraw( void ) {
              i < deckViewNumFullSlots;
              x ++ ) {
 
-            int  xPos  =  deckViewSlotPosX[i];
-            int  yPos  =  deckViewSlotPosY[i];
+            int  xPos  =  deckViewSlotPosX[ i - skip ];
+            int  yPos  =  deckViewSlotPosY[ i - skip ];
             
             drawPiece( deckViewSlots[i].piece,
                        xPos,
@@ -281,6 +316,17 @@ ChessPiece deckViewStep( void ) {
     int  deltaFade  =  ( 20 * 60 ) / r;
     int  overSlot   =  -1;
 
+
+    if( deckViewPageNumber > 0 ) {
+        if( buttonIsNewPressed( prevButton ) ) {
+            deckViewPageNumber--;
+            }
+        }
+    if( skip + DECK_VIEW_VIS_SLOTS < deckViewNumFullSlots ) {
+        if( buttonIsNewPressed( nextButton ) ) {
+            deckViewPageNumber ++;
+            }
+        }
     
     if( ! maxigin_getPointerLocation( &pointerX,
                                       &pointerY ) ) {

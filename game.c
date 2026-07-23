@@ -2499,7 +2499,8 @@ void maxiginGame_init( void ) {
                    MAXIGIN_GAME_NATIVE_H - 30 );
 
     deckViewInit( boardCenterX,
-                  boardCenterY );
+                  boardCenterY,
+                  ACTION );
     
 
     clearDrawMarkers();

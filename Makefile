@@ -18,6 +18,5 @@ maxigin_imp.o: maxigin.h mingin.h maxigin_imp.c gameSize.h
 
 mingin_imp.o: mingin.h mingin_imp.c
 
-game.o: maxigin.h mingin.h board.h game.c pieceSprites.h chess.h memoryRegister.h particleSprite.h gameSize.h simTest.h moveAnim.h money.h numbers.h checkDisplay.h util.h colors.h pinch.h fixedMath.h particleSystem.h chessArrayCheck.h pieceDescriptions.h nav.h levels.h deck.h shop.h button.h hearts.h sideBoard.h deckView.h
-
+game.o: maxigin.h mingin.h board.h game.c pieceSprites.h chess.h memoryRegister.h particleSprite.h gameSize.h simTest.h moveAnim.h money.h numbers.h checkDisplay.h util.h colors.h pinch.h fixedMath.h particleSystem.h chessArrayCheck.h pieceDescriptions.h nav.h levels.h deck.h shop.h button.h hearts.h sideBoard.h deckView.h cost.h
 

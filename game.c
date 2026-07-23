@@ -30,6 +30,7 @@
 #define HEARTS_IMPLEMENTATION
 #define SIDE_BOARD_IMPLEMENTATION
 #define DECK_VIEW_IMPLEMENTATION
+#define COST_IMPLEMENTATION
 
 
 #include "chess.h"
@@ -77,6 +78,8 @@
 #include "sideBoard.h"
 
 #include "deckView.h"
+
+#include "cost.h"
 
 
 

@@ -239,7 +239,10 @@ int costResetIncrement( int  inCostHandle ) {
     costList[ inCostHandle ].currentIncrementedVal =
         costList[ inCostHandle ].currentVal;
     
-    costList[ inCostHandle ].incrementCount          = 0;
+    costList[ inCostHandle ].incrementCount        = 0;
+    
+    costList[ inCostHandle ].fixedIncrement        =
+        costList[ inCostHandle ].startingIncrement;
 
     return costGet( inCostHandle );
     }

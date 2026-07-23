@@ -122,7 +122,7 @@ static int          spinPressedSprite          = -1;
 static int          spinPressedTextSprite      = -1;
 static int          spinPressedTextGlowSprite  = -1;
 
-static int          drawPrice                  =  1;
+static int          drawCost                   = -1;
 static int          drawButton                 = -1;
 static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
 static int          drawButtonPosX             =  19;
@@ -343,7 +343,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                       drawButtonPosX + 30,
                                       drawButtonPosY );
             
-        numberDraw( drawPrice,
+        numberDraw( costGet( drawCost ),
                     drawButtonPosX + 50,
                     drawButtonPosY,
                     0 );
@@ -807,8 +807,7 @@ static void dropNewLevelPiecesIn( void ) {
             }
         }
 
-    /* this gets incremented to 1 when pieces are done being dropped in */
-    drawPrice = 0;
+    costResetIncrement( drawCost );
     }
 
 
@@ -1712,11 +1711,7 @@ void maxiginGame_step( void ) {
 
                 buttonReset( drawButton );
 
-                if( ! gameOver ) {
-                    /* price goes up for future redraws */
-                    drawPrice += 1;
-                    }
-                else {
+                if( gameOver ) {
                     gameOver = 0;
                     chessGameOver = 0;
                     }
@@ -1826,7 +1821,7 @@ void maxiginGame_step( void ) {
             int  y;
 
             /* reset everything for new game */
-            drawPrice = 1;
+            costFullReset( drawCost );
             currentLevel = 0;
 
             moneyForce( startingMoney );
@@ -1902,7 +1897,7 @@ void maxiginGame_step( void ) {
         if( buttonIsNewPressed( drawButton ) ) {
             
             /* press attempt */
-            if( moneyGetTotal() < drawPrice ) {
+            if( moneyGetTotal() < costGet( drawCost ) ) {
                 /* fail */
                 maxigin_playSoundEffect( pickFailedSound,
                                          256 );
@@ -1912,10 +1907,11 @@ void maxiginGame_step( void ) {
                 maxigin_playSoundEffect( examinePieceSound,
                                          256 );
 
-                moneyAdd( - drawPrice );
+                moneyAdd( - costGet( drawCost ) );
 
                 sideBoardLift();
                 sideBoardRedrawBlocked = 0;
+                costIncrement( drawCost );
                 }
             }
         else if( ! sideBoardRedrawBlocked
@@ -1937,7 +1933,6 @@ void maxiginGame_step( void ) {
                 }
             else if( sideBoardUnlift() ) {
                 /* pieces on side board have come back down */
-                drawPrice += 1;
                 sideBoardRedrawDone = 0;
                 
                 buttonReset( drawButton );
@@ -2007,7 +2002,7 @@ void maxiginGame_step( void ) {
                 noScoreMoveCount = 0;
                 sideBoardShowing = 1;
 
-                drawPrice        = 1;
+                costResetIncrement( drawCost );
 
                 currentLevel ++;
                         
@@ -2528,6 +2523,18 @@ void maxiginGame_init( void ) {
     deckViewInit( boardCenterX,
                   boardCenterY,
                   ACTION );
+
+
+    drawCost = costInit( 5,
+                         1,
+                         -1,
+                         -1,
+                         1,
+                         0,
+                         -1,
+                         -1,
+                         0 );
+                         
     
 
     clearDrawMarkers();
@@ -2600,8 +2607,6 @@ void maxiginGame_init( void ) {
     REGISTER_ARRAY_MEM( boardMarkers );
 
     REGISTER_VAL_MEM( playerDeck );
-
-    REGISTER_VAL_MEM( drawPrice );
 
     /* need to register both, in case we stop playback during a lift */
     REGISTER_VAL_MEM( redrawLift );

@@ -350,7 +350,13 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                     MAXIGIN_GAME_NATIVE_H - 18 );
         }
 
-    buttonDraw( deckButton );
+    if( ! gameOver
+        &&
+        ( sideBoardShowing
+          ||
+          shopShowing ) ) {
+        buttonDraw( deckButton );
+        }
 
     
     if( moveMade ) {
@@ -1693,6 +1699,11 @@ void maxiginGame_step( void ) {
                     }
                 }
 
+            if( ! foundStarting ) {
+                /* interleave side board drop-in at end */
+                sideBoardUnlift();
+                }
+
             if( allAtEnd ) {
                 redrawAddRunning = 0;
 
@@ -1754,6 +1765,10 @@ void maxiginGame_step( void ) {
                     }
                 else {
                     gameOver = 1;
+
+                    if( deckViewShowing ) {
+                        deckViewDone = 1;
+                        }
                     }
                 }
             else {
@@ -1835,6 +1850,9 @@ void maxiginGame_step( void ) {
                 }
             redrawRemoveRunning = 1;
             redrawAddRunning = 0;
+
+            sideBoardRedraw( &playerDeck );
+            sideBoardForceFullLift();
             }
         }
         
@@ -1926,7 +1944,13 @@ void maxiginGame_step( void ) {
         swapMarkedPieces();
         }
 
-    if( buttonIsNewPressed( deckButton ) ) {
+    if( ! gameOver
+        &&
+        ( sideBoardShowing
+          ||
+          shopShowing )
+        &&
+        buttonIsNewPressed( deckButton ) ) {
 
         if( ! deckViewShowing ) {
             deckViewSet( &playerDeck );
@@ -2527,6 +2551,8 @@ void maxiginGame_init( void ) {
     boardMarkersHidden  = 1;
     redrawRemoveRunning = 0;
     redrawAddRunning    = 1;
+
+    sideBoardForceFullLift();
     
 
     REGISTER_VAL_MEM( boardState );

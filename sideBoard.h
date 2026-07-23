@@ -40,6 +40,8 @@ ChessPiece sideBoardSwap( ChessPiece  inNewPiece );
    call again to check if lift is done */
 char sideBoardLift( void );
 
+void sideBoardForceFullLift( void );
+
 
 /* initiates return back down from lift
    call again to check if done */
@@ -129,6 +131,7 @@ void sideBoardInit( int  inPointerActionHandle,
 
     REGISTER_ARRAY_MEM( sideBoard );
     REGISTER_ARRAY_MEM( sbLift );
+    REGISTER_ARRAY_MEM( sbSmoothLift );
     REGISTER_VAL_MEM( sbNumSlots );
     REGISTER_VAL_MEM( sbLifting );
     REGISTER_VAL_MEM( sbDropping );
@@ -452,6 +455,24 @@ char sideBoardLift( void ) {
         }
     
     return 1;
+    }
+
+
+
+void sideBoardForceFullLift( void ) {
+
+    int   i;
+    
+    sbLifting  = 1;
+    sbDropping = 0;
+    
+    for( i = 0;
+         i < sbNumSlots;
+         i ++ ) {
+
+        sbLift[ i ] = sbMaxLift;
+        sbSmoothLift[ i ] = MAXIGIN_GAME_NATIVE_H;
+        }
     }
 
 

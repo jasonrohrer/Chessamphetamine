@@ -159,10 +159,10 @@ void deckDrawDebugInfo( Deck  *inDeck,
 */
 #define SHOP_OCCURRENCE_LIST( C, V )  \
     V( C, 0,   noPiece,      0   )    \
-    V( C, 1,   pawn,         10  )    \
-    V( C, 2,   bishop,       8   )    \
-    V( C, 3,   knight,       8   )    \
-    V( C, 4,   rook,         6   )    \
+    V( C, 1,   pawn,         2   )    \
+    V( C, 2,   bishop,       10  )    \
+    V( C, 3,   knight,       10  )    \
+    V( C, 4,   rook,         8   )    \
     V( C, 5,   queen,        4   )    \
     V( C, 6,   king,         0   )    \
     V( C, 7,   laserRook,    2   )    \

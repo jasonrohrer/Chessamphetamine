@@ -334,9 +334,7 @@ void shopDraw( void ) {
 
             if( shopIsOnSale[ i ] ) {
 
-                const  char  *discountString;
-
-                 numberDrawCenter( shopPrices[p],
+                numberDrawCenter( shopPrices[p],
                                   shopCenterX + shopSlotPosX[i],
                                   shopCenterY + shopSlotPosY[i] + 22,
                                   1 );
@@ -354,13 +352,6 @@ void shopDraw( void ) {
     
                 maxigin_setLanguageFontIndex( 0 );
 
-
-               
-                
-                discountString =
-                    maxigin_stringConcat(
-                        maxigin_intToString( - shopDiscountPercent[i] ),
-                        "%" );
                 numberDrawText( "\\",
                                 shopCenterX + shopSlotPosX[i],
                                 shopCenterY + shopSlotPosY[i] + 22,

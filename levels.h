@@ -58,6 +58,8 @@ static  char         pieceLayouts[ NUM_POSSIBLE_LEVELS ][ BH ][ BW ];
 
 static  MaxiginRand  levelsRand;
 
+static  const char  *levelsFile   =  "levels.tga";
+
 
 
 static void makeDefaultLayouts( void ) {
@@ -122,8 +124,7 @@ static void makeDefaultLayouts( void ) {
     }
 
 
-
-void levelsInit( void ) {
+static void levelsReload( void ) {
 
     /* layouts are represented by blocks of pixels */
     int             layoutPixelHeight  =  BH + 1;
@@ -134,14 +135,11 @@ void levelsInit( void ) {
     char            loaded;
     int             numLoadedLayouts;
     int             i;
-
-
-    maxigin_randSeed( &levelsRand,
-                      mingin_getEntropySeed() );
+    
     
     makeDefaultLayouts();
     
-    loaded = maxigin_initTempSprite( "levels.tga",
+    loaded = maxigin_loadTempSprite( levelsFile,
                                      &loadedBytes,
                                      &w,
                                      &h );
@@ -232,8 +230,20 @@ void levelsInit( void ) {
                 }
             }
         }
+    }
+
+    
 
 
+
+void levelsInit( void ) {
+
+    int  i;
+
+    maxigin_randSeed( &levelsRand,
+                      mingin_getEntropySeed() );
+
+    levelsReload();
     
 
     for( i = 0;
@@ -408,6 +418,12 @@ void getLevel( int          inLevelNumber,
     int  y;
     int  x;
     int  i;
+
+
+    if( mingin_getBulkDataChanged( levelsFile ) ) {
+        levelsReload();
+        }
+    
 
     /* if beyond our max number of hand-authored levels, pick
        a random level from in the second half */

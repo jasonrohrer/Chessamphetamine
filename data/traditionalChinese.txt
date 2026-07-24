@@ -47,6 +47,7 @@ defaults       "恢復預設"
 drawInstruct   "Pick pieces to swap"
 
 shopTitle      "Shop!"
+sale           "Sale!"
 
 level          "Level"
 

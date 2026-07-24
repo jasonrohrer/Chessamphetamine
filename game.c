@@ -1757,6 +1757,8 @@ void maxiginGame_step( void ) {
                 if( ! heartsIsDead() ) {
                     shopShowing = 1;
                     shopDone    = 0;
+
+                    shopReroll();
                 
                     maxigin_playSoundEffect( boardSlideSound,
                                              356 );
@@ -1808,8 +1810,6 @@ void maxiginGame_step( void ) {
 
             deckViewShowing = 0;
             deckViewDone    = 0;
-
-            shopReroll();
             }
         }
 

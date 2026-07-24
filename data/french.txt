@@ -49,6 +49,7 @@ defaults       "Par défaut"
 drawInstruct   "Pick pieces to swap"
 
 shopTitle      "Shop!"
+sale           "Sale!"
 
 level          "Level"
 

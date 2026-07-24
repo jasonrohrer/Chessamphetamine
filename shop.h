@@ -105,6 +105,7 @@ static  char           shopActionDown                             =   0;
 static  int            purchaseSound                              =  -1;
 
 static  int            lang_shopTitle                             =  -1;
+static  int            lang_sale                                  =  -1;
 
 static  char           shoppingDone                               =   0;
 
@@ -115,6 +116,8 @@ static  int            shopPointerActionHandle                    =  -1;
 static  int            shopCenterX;
 static  int            shopCenterY;
 
+static  MaxiginRand    shopRand;
+static  int            shopOnSaleChanceIn100                      =  10;
 
 
 
@@ -142,6 +145,18 @@ static void shopInternalReroll( void ) {
 
         shopSlotPrices[ i ] = shopPrices[ shopItems[ i ] ];
 
+
+        if( maxigin_randRange( &shopRand,
+                               1,
+                               100 )
+            <= shopOnSaleChanceIn100 ) {
+            
+            shopIsOnSale[ i ] = 1;
+            }
+        else {
+            shopIsOnSale[ i ] = 0;
+            }
+        
         if( shopIsOnSale[ i ] ) {
             int  discount  =  shopDiscountPercent[ i ] * shopSlotPrices[ i ];
 
@@ -170,6 +185,9 @@ void shopInit( int  inPointerActionHandle,
     int  startHop      =  hopSize * numStartHops;
     int  curPos;
 
+    maxigin_randSeed( &shopRand,
+                      mingin_getEntropySeed() );
+
     shopPointerActionHandle = inPointerActionHandle;
 
     shopCenterX = inCenterX;
@@ -179,11 +197,13 @@ void shopInit( int  inPointerActionHandle,
     purchaseSound = maxigin_initSoundEffect( "purchase_sd_30.wav" );
 
     lang_shopTitle  = maxigin_initTranslationKey( "shopTitle" );
+    lang_sale  = maxigin_initTranslationKey( "sale" );
     
     getShopDeck( &shopDeck,
                  rarityFilter );
 
-    shopIsOnSale[ 0 ] = 1;
+    /* all have discount turned off, but potential 50 % discount for now */
+    shopIsOnSale[ 0 ] = 0;
     shopDiscountPercent[ 0 ] = 50;
 
     for( i = 1;
@@ -191,7 +211,7 @@ void shopInit( int  inPointerActionHandle,
          i ++ ) {
 
         shopIsOnSale[ i ] = 0;
-        shopDiscountPercent[ i ] = 0;
+        shopDiscountPercent[ i ] = 50;
         }
 
 
@@ -232,9 +252,12 @@ void shopInit( int  inPointerActionHandle,
                              /* fixme... need controller mapping for this */
                              -1 );
 
+    REGISTER_VAL_MEM( shopRand );
+    
     REGISTER_VAL_MEM( shopDeck );
 
     REGISTER_ARRAY_MEM( shopSlotPrices );
+    REGISTER_ARRAY_MEM( shopIsOnSale );
     
     REGISTER_ARRAY_MEM( shopItems );
     }
@@ -308,6 +331,42 @@ void shopDraw( void ) {
                               shopCenterX + shopSlotPosX[i],
                               shopCenterY + shopSlotPosY[i] + 12,
                               1 );
+
+            if( shopIsOnSale[ i ] ) {
+
+                const  char  *discountString;
+
+                 numberDrawCenter( shopPrices[p],
+                                  shopCenterX + shopSlotPosX[i],
+                                  shopCenterY + shopSlotPosY[i] + 22,
+                                  1 );
+
+                maxigin_drawSetColor( 255,
+                                      0,
+                                      0,
+                                      255 );
+                maxigin_setLanguageFontIndex( 1 );
+    
+                maxigin_drawLangText( lang_sale,
+                                      shopCenterX + shopSlotPosX[i],
+                                      shopCenterY + shopSlotPosY[i] - 40,
+                                      MAXIGIN_CENTER );
+    
+                maxigin_setLanguageFontIndex( 0 );
+
+
+               
+                
+                discountString =
+                    maxigin_stringConcat(
+                        maxigin_intToString( - shopDiscountPercent[i] ),
+                        "%" );
+                numberDrawText( "\\",
+                                shopCenterX + shopSlotPosX[i],
+                                shopCenterY + shopSlotPosY[i] + 22,
+                                0,
+                                MAXIGIN_CENTER );
+                }
             }
 
         }

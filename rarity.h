@@ -95,41 +95,19 @@ int rarityGet( ChessPiece  inPiece ) {
 
 void raritySetDrawColor( ChessPiece  inPiece ) {
 
-    int  r  =  rarityGet( inPiece );
+    MaxiginColor  c;
 
-    switch( r ) {
-        case contraband:
-            maxigin_drawSetColor( 189,
-                                  31,
-                                  63,
-                                  255 );
-            break;
-        case common:
-            maxigin_drawSetColor( 94,
-                                  150,
-                                  221,
-                                  255 );
-            break;
-        case uncommon:
-            maxigin_drawSetColor( 70,
-                                  198,
-                                  87,
-                                  255 );
-            break;
-        case rare:
-            maxigin_drawSetColor( 195,
-                                  75,
-                                  145,
-                                  255 );
-            break;
-        case legendary:
-            maxigin_drawSetColor( 244,
-                                  176,
-                                  60,
-                                  255 );
-            break;
-        }
+    maxigin_getSpritePixel( rarityColorMapSprite,
+                            rarityGet( inPiece ),
+                            0,
+                            &c );
+
+    maxigin_drawSetColor( c.comp.red,
+                          c.comp.green,
+                          c.comp.blue,
+                          c.comp.alpha );
     }
+
 
 
 int rarityGetLangKey( ChessPiece  inPiece ) {

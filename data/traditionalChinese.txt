@@ -54,6 +54,14 @@ level          "Level"
 gameOverInstruct  "Please Play Again:"
 
 
+contraband     "XXX"
+common         "Common"
+uncommon       "Uncommon"
+rare           "Rare"
+legendary      "Legendary"
+
+
+
 pawn           "兵"
 pawnDesc       "向前一或兩格，斜前吃子"
 

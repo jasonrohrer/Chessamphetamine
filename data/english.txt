@@ -58,6 +58,14 @@ level          "Level"
 gameOverInstruct  "Please Play Again:"
 
 
+contraband     "XXX"
+common         "Common"
+uncommon       "Uncommon"
+rare           "Rare"
+legendary      "Legendary"
+
+
+
 pawn           "Pawn"
 pawnDesc       "Moves 1 or 2 spaces forward, captures diagonally"
 

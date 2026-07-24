@@ -17,7 +17,6 @@
 
 
 #include "chess.h"
-#include "particleSprite.h"
 
 
 
@@ -36,7 +35,8 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
 
 #include "maxigin.h"
-
+#include "particleSprite.h"
+#include "rarity.h"
 
 
 #define PIECE_NAME_KEY_STRING_LIST( C, V )    \
@@ -510,22 +510,37 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
                          int            inCenterX,
                          int            inCenterY,
                          unsigned char  inFade ) {
-
-    ChessPiece   c  =  inPiece & CHESS_COLOR_MASK;
+    
     ChessPiece   t  =  inPiece & CHESS_TYPE_MASK;
 
     const char  *title;
     const char  *desc;
     int          diagramOffset  =  52;
+    int          pW;
+    int          pH;
     
     
-    drawSetPieceColor( c );
+    raritySetDrawColor( inPiece );
 
     maxigin_drawSetAlpha( inFade );
 
     maxigin_drawSprite( infoPanelSprite,
                         inCenterX,
                         inCenterY );
+
+    maxigin_getSpriteDimensions( infoPanelSprite,
+                                 &pW,
+                                 &pH );
+
+    maxigin_setLanguageFontIndex( 1 );
+
+    maxigin_drawLangText( rarityGetLangKey( inPiece ),
+                          inCenterX,
+                          inCenterY - pH / 2 - 3,
+                          MAXIGIN_CENTER );
+    maxigin_setLanguageFontIndex( 0 );
+    
+    
 
     if( maxigin_getNumSpritesInStrip( diagramBoardStrip ) > t ) {
         

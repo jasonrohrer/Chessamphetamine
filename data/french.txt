@@ -56,6 +56,13 @@ level          "Level"
 gameOverInstruct  "Please Play Again:"
 
 
+contraband     "XXX"
+common         "Common"
+uncommon       "Uncommon"
+rare           "Rare"
+legendary      "Legendary"
+
+
 pawn           "Pion"
 pawnDesc       "Avance de 1 ou 2 cases, capture en diagonale"
 

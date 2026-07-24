@@ -2512,6 +2512,8 @@ void maxiginGame_init( void ) {
 
     deckInit();
 
+    rarityInit();
+
     shopInit( ACTION,
               boardCenterX,
               boardCenterY );

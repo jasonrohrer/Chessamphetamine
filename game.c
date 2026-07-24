@@ -31,6 +31,7 @@
 #define SIDE_BOARD_IMPLEMENTATION
 #define DECK_VIEW_IMPLEMENTATION
 #define COST_IMPLEMENTATION
+#define RARITY_IMPLEMENTATION
 
 
 #include "chess.h"
@@ -81,6 +82,7 @@
 
 #include "cost.h"
 
+#include "rarity.h"
 
 
 enum GameUserAction {

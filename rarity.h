@@ -15,13 +15,17 @@
 #define RARITY_H_INCLUDED
 
 
-/* enum defining all possible rarities */
+/* enum defining all possible rarities
+   must be in order from least rare to most rare
+   (contraband never occurs)
+*/
 enum{
     contraband = 0,
     common,
     uncommon,
     rare,
     legendary,
+    impossible,
     NUM_RARITIES };
 
 #define  FIRST_RARITY  contraband
@@ -37,6 +41,14 @@ void raritySetDrawColor( ChessPiece  inPiece );
 
 
 int rarityGetLangKey( ChessPiece  inPiece );
+
+
+/* gets how often a given rarity should occur
+   once in X rolls
+
+   -1 means never
+*/
+int rarityGetOneInCount( int  inRarity );
 
 
 
@@ -72,6 +84,8 @@ CHECK_CHESS_ARRAY( pieceRarity,
 
 static  int  rarityLangKeys[ NUM_RARITIES ];
 
+static  int  rarityOneInCount[ NUM_RARITIES ];
+
 
 void rarityInit( void ) {
 
@@ -82,6 +96,14 @@ void rarityInit( void ) {
     rarityLangKeys[ uncommon   ]  =  maxigin_initTranslationKey( "uncommon"   );
     rarityLangKeys[ rare       ]  =  maxigin_initTranslationKey( "rare"       );
     rarityLangKeys[ legendary  ]  =  maxigin_initTranslationKey( "legendary"  );
+    rarityLangKeys[ impossible ]  =  maxigin_initTranslationKey( "impossible" );
+
+    rarityOneInCount[ contraband ] =   -1;
+    rarityOneInCount[ common     ] =    1;
+    rarityOneInCount[ uncommon   ] =    4;
+    rarityOneInCount[ rare       ] =   20;
+    rarityOneInCount[ legendary  ] =  100;
+    rarityOneInCount[ impossible ] = 1000;
     }
 
 
@@ -117,6 +139,10 @@ int rarityGetLangKey( ChessPiece  inPiece ) {
     return rarityLangKeys[ r ];
     }
 
+
+int rarityGetOneInCount( int  inRarity ) {
+    return rarityOneInCount[ inRarity ];
+    }
 
 
 

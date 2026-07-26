@@ -63,6 +63,7 @@ common         "Common"
 uncommon       "Uncommon"
 rare           "Rare"
 legendary      "Legendary"
+impossible     "Impossible"
 
 
 

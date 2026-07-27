@@ -404,7 +404,6 @@ int  rollItem( int  inRollPoolHandle ) {
     int        i;
     int        cumulativeWeight  =   0;
     int        pick              =  -1;
-    int        oldTotalWeight    =   0;
     
     
     if( inRollPoolHandle == -1 ) {
@@ -442,9 +441,6 @@ int  rollItem( int  inRollPoolHandle ) {
     p->totalWeight               -=  p->weights[ pick ];
     p->weights   [ pick ]         =  1;
     p->totalWeight               +=  1;
-    
-
-    oldTotalWeight = p->totalWeight;
 
     
     /* now handle any that have missed the expected number of times */
@@ -456,7 +452,9 @@ int  rollItem( int  inRollPoolHandle ) {
         if( p->missCounts[ i ]
             >=
             ( p->flatnessNumerator * p->missCountTriggers[ i ] )
-            / p->flatnessDenominator ) {
+            / p->flatnessDenominator
+            &&
+            p->missCountTriggers[ i ] > 2 ) {
             
             /* we've gone the expected number of trials for this item
                given its share of the total weight */
@@ -471,20 +469,26 @@ int  rollItem( int  inRollPoolHandle ) {
                 newTrigger = 2;
                 }
 
-            /* compute new weight of item, to achieve newTrigger
-               expectation, relative to total weight of all items
+            /* If we compute true new weight for item so that it
+               has newTrigger expected rolls before hit, taking account
+               of weight of all other items, the weight can blow up
+               as missed items chase each other, competing for weight.
 
-               use ( newTrigger - 1 ) here so we get the fraction of
-               weight outside this item that we need to match
+               Also, we can't double the weight of a missed item,
+               because in large pools with a large group of missed items,
+               it could take a long time to roll all of the missed ones,
+               even if they collectively dominate the weight of the pool.
 
-               (If newTrigger is 2, and we want 2 rolls to hit,
-                then this item's weight need to equal the weight of
-                all other items.)
+               In that case, they may double dozens of times, resulting
+               in int overflow.
+
+               Instead, just give our item an appropriate fraction
+               of the base weight of the pool
             */
             
             p->totalWeight   -=  p->weights[ i ];
 
-            p->weights[ i ]   =  oldTotalWeight / ( newTrigger - 1 );
+            p->weights[ i ]   =  p->numItems / newTrigger;
             
             p->totalWeight   +=  p->weights[ i ];
 

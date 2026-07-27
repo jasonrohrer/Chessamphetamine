@@ -5778,6 +5778,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
                             mainSprite->glowRadius = inBlurRadius;
                             mainSprite->glowIterations = inBlurIterations;
                             
+                            if(0)
                             maxigin_logString( "Successfully read cached glow "
                                                "sprite from perisistent data "
                                                "store for ",
@@ -6205,7 +6206,8 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
                             mainSprite->shadowTopPercent [si] = inTopPercent;
                             mainSprite->shadowDarkness   [si] = inDarkness;
                             mainSprite->shadowGrayValue  [si] = inGrayValue;
-                            
+
+                            if(0)
                             maxigin_logString( "Successfully read cached shadow "
                                                "sprite from perisistent data "
                                                "store for ",

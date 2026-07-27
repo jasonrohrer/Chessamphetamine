@@ -15,6 +15,9 @@
 #define ROLL_H_INCLUDED
 
 
+void rollInit( void );
+
+
 typedef struct RollInfo {
         
         int  baseOneInCount;
@@ -27,8 +30,8 @@ typedef struct RollInfo {
 
 
 /* initializes a roll that will happen, on average, once in inOneInCount rolls */
-void rollInit( RollInfo  *inRoll,
-              int        inOneInCount );
+void rollSetup( RollInfo  *inRoll,
+                int        inOneInCount );
 
 
 /* returns 1 on hit, 0 on miss */
@@ -40,15 +43,19 @@ void rollReset( RollInfo  *inRoll );
 void rollTest( void );
 
 
-
 /* initialize a roll pool of items that are all equally likely.
 
    returns handle to pool
  */
-int  rollPoolInit( int  inNumItems,
+int rollPoolSetup( int  inNumItems,
                    int  inItems[] );
 
-int  rollItem( int  inRollPoolHandle );
+int rollItem( int  inRollPoolHandle );
+
+void rollPoolReset( int  inRollPoolHandle );
+
+
+void rollPoolTest( void );
 
 
 
@@ -56,22 +63,79 @@ int  rollItem( int  inRollPoolHandle );
 
 
 static  MaxiginRand  rollRand;
-static  char         rollRandReady  =  0;
+
+
+#define  ROLL_MAX_TOTAL_POOL_ITEMS  128
+
+#define  ROLL_MAX_POOLS              16
+
+
+static  int  rollPoolItems            [ ROLL_MAX_TOTAL_POOL_ITEMS ];
+static  int  rollPoolMissCounts       [ ROLL_MAX_TOTAL_POOL_ITEMS ];
+static  int  rollPoolMissCountTriggers[ ROLL_MAX_TOTAL_POOL_ITEMS ];
+static  int  rollPoolWeights          [ ROLL_MAX_TOTAL_POOL_ITEMS ];
+
+
+static  int  rollPoolNumTotalItems  =  0;
+
+
+typedef struct RollPool {
+
+        int  numItems;
+
+        /* pointer into rollPoolItems */
+        int  *items;
+
+        /* pointer into rollPoolMissCounts */
+        int  *missCounts;
+
+        /* pointer into rollPoolMissCountTriggers */
+        int  *missCountTriggers;
+
+        int  *weights;
+
+        int  totalWeight;
+        
+    } RollPool;
 
 
 
+static  RollPool  rollPools[ ROLL_MAX_POOLS ];
 
-void rollInit( RollInfo  *inRoll,
-              int        inOneInCount ) {
+static  int       rollNumPools  =  0;
 
-    if( ! rollRandReady ) {
 
-        maxigin_randSeed( &rollRand,
-                          mingin_getEntropySeed() );
-        REGISTER_VAL_MEM( rollRand );
 
-        rollRandReady = 1;
+void rollInit( void ) {
+
+    int  i;
+    
+    maxigin_randSeed( &rollRand,
+                      mingin_getEntropySeed() );
+
+    for( i = 0;
+         i < ROLL_MAX_TOTAL_POOL_ITEMS;
+         i ++ ) {
+
+        rollPoolItems            [ i ] = -1;
+        rollPoolMissCounts       [ i ] = 0;
+        rollPoolMissCountTriggers[ i ] = 1;
+        rollPoolWeights          [ i ] = 1;
         }
+    
+    REGISTER_VAL_MEM( rollRand );
+
+    REGISTER_ARRAY_MEM( rollPoolItems      );
+    REGISTER_ARRAY_MEM( rollPoolMissCounts );
+    REGISTER_ARRAY_MEM( rollPoolMissCountTriggers );
+    REGISTER_ARRAY_MEM( rollPoolWeights    );
+    }
+
+
+
+void rollSetup( RollInfo  *inRoll,
+                int        inOneInCount ) {
+
     
     inRoll->baseOneInCount = inOneInCount;
 
@@ -94,7 +158,7 @@ char roll( RollInfo  *inRoll ) {
     else {
         inRoll->missCount ++;
 
-        if( inRoll->missCount >= inRoll->currentOneInCount ) {
+        if( 0 && inRoll->missCount >= inRoll->currentOneInCount ) {
             /* reached our expected wait time
                if we kept going with the same hit chance, we'd expect to
                go on for currentOneInCount rolls again from here before hitting.
@@ -153,13 +217,15 @@ void rollTest( void ) {
 
     RollInfo  r;
 
-    int       hitInCounts[ 1000 ];
+    int       hitInCounts[ 2000 ];
     int       i;
     int       numTrials             =  1000000;
-    int       maxHitCount           =  1000;
+    int       maxHitCount           =  2000;
+    int       sum                   =  0;
+    int       worst                 =  0;
     
-    rollInit( &r,
-              100 );
+    rollSetup( &r,
+               19 );
 
     for( i = 0;
          i < maxHitCount;
@@ -184,9 +250,312 @@ void rollTest( void ) {
         if( c < maxHitCount ) {
             hitInCounts[c] ++;
             }
+        if( c > worst ) {
+            worst = c;
+            }
+        }
+    
+    
+    for( i = 0;
+         i < maxHitCount;
+         i ++ ) {
+
+        sum += hitInCounts[ i ];
+
+       
+        
+        if( hitInCounts[ i ] > 0 ) {
+
+            if( 0)
+            maxigin_logInt( "Percent: ",
+                            ( sum * 100 ) / numTrials );
+             
+            maxigin_logInt2( "",
+                             i,
+                             " ",
+                             hitInCounts[ i ],
+                             "" );
+            }
+        
+        }
+    }
+
+
+
+int  rollPoolSetup( int  inNumItems,
+                    int  inItems[] ) {
+
+    int        handle  =  rollNumPools;
+    RollPool  *p;
+    int        i;
+    
+    if( rollNumPools
+        >=
+        ROLL_MAX_POOLS ) {
+        
+        mingin_log( "Already too many roll pools to add more in "
+                    "rollPoolSetup in roll.h\n" );
+        
+        return -1;
         }
 
     
+    if( inNumItems + rollPoolNumTotalItems
+        >
+        ROLL_MAX_TOTAL_POOL_ITEMS ) {
+
+        mingin_log( "Already too many roll pool items to add more in "
+                    "rollPoolSetup in roll.h\n" );
+
+        return -1;
+        }
+
+    p = &( rollPools[ handle ] );
+
+    rollNumPools++;
+
+    p->numItems    = inNumItems;
+    p->items       = &( rollPoolItems            [ rollPoolNumTotalItems ] );
+    p->missCounts  = &( rollPoolMissCounts       [ rollPoolNumTotalItems ] );
+    p->missCountTriggers
+                   = &( rollPoolMissCountTriggers[ rollPoolNumTotalItems ] );
+    p->weights     = &( rollPoolWeights          [ rollPoolNumTotalItems ] );
+
+    
+    
+    p->totalWeight = inNumItems;
+    
+    for( i = 0;
+         i < inNumItems;
+         i ++ ) {
+
+        rollPoolItems[ rollPoolNumTotalItems ] = inItems[ i ];
+
+        rollPoolNumTotalItems ++;
+        }
+    
+    rollPoolReset( handle );
+    
+    return handle;
+    }
+
+
+/*
+static void checkWeight( RollPool *p ) {
+    
+    int  i;
+    int  checkWeight = 0;
+    
+    for( i = 0;
+         i < p->numItems;
+         i ++ ) {
+        checkWeight += p->weights[ i ];
+        }
+
+    if( p->totalWeight != checkWeight ) {
+        mingin_log( "Hey\n" );
+        }
+    }
+*/     
+
+int  rollItem( int  inRollPoolHandle ) {
+    
+    RollPool  *p;
+    int        weightPick;
+    int        i;
+    int        cumulativeWeight  =   0;
+    int        pick              =  -1;
+    
+    if( inRollPoolHandle == -1 ) {
+        return 0;
+        }
+
+    p = &( rollPools[ inRollPoolHandle ] );
+
+    weightPick = maxigin_randRange( &rollRand,
+                                    1,
+                                    p->totalWeight );
+    
+    for( i = 0;
+         i < p->numItems;
+         i ++ ) {
+
+        cumulativeWeight += p->weights[i];
+
+        if( pick == -1
+            &&
+            cumulativeWeight >= weightPick ) {
+
+            pick = i;
+            
+            }
+        else {
+            p->missCounts[i] ++;
+            }
+        }
+
+    
+    /* reset count and weight of hit item */
+    p->missCounts[ pick ]         =  0;
+    p->missCountTriggers[ pick ]  =  p->numItems;
+    p->totalWeight               -=  p->weights[ pick ];
+    p->weights   [ pick ]         =  1;
+    p->totalWeight               +=  1;
+    
+    
+    /* now handle any that have missed the expected number of times */
+    if( 1 )
+    for( i = 0;
+         i < p->numItems;
+         i ++ ) {
+
+        if( p->missCounts[ i ] >= p->missCountTriggers[ i ] ) {
+            
+            /* we've gone the expected number of trials for this item
+               given its share of the total weight */
+
+            /* want half the expected rolls before hit of what we
+               had before */
+            int  newTrigger      =  p->missCountTriggers[ i ] / 2;
+            
+            if( newTrigger < 2 ) {
+                /* don't ever go below a 1/2 chance of hitting
+                   never a sure thing */
+                newTrigger = 2;
+                }
+
+            /* don't compute true new weight of item,
+               relative to actual total weight, because
+               that can result in total weight spiraling out of control,
+               as missed items try to grab larger shares of a larger
+               total weight */
+
+            /* instead, just compute the weight for this item
+               relative to the total baseline weight, which is
+               the number of items in the pool */
+            
+            p->totalWeight   -=  p->weights[ i ];
+
+            p->weights[ i ]   =  p->numItems / newTrigger;
+            
+            p->totalWeight   +=  p->weights[ i ];
+
+            /* reset the miss count, so we can start counting again
+               until we reach the new, smaller expected miss count going forward
+            */
+            p->missCounts[ i ] = 0;
+
+            /* remember the new, smaller miss count trigger */
+            p->missCountTriggers[ i ] = newTrigger;
+            }
+        }
+
+
+
+    return p->items[ pick ];
+    }
+
+
+
+void  rollPoolReset( int  inRollPoolHandle ) {
+
+    RollPool  *p;
+    int        i;
+    
+    if( inRollPoolHandle == -1 ) {
+        return;
+        }
+
+    p = &( rollPools[ inRollPoolHandle ] );
+
+
+    for( i = 0;
+         i < p->numItems;
+         i ++ ) {
+
+        p->missCounts       [ i ] = 0;
+        p->missCountTriggers[ i ] = p->numItems;
+        p->weights          [ i ] = 1;
+        }
+    p->totalWeight = p->numItems;
+    }
+
+
+
+void rollPoolTest( void ) {
+
+    int       items[ 100 ];
+    int       hitInCounts[ 5000 ];
+    int       i;
+    int       j;
+    int       numTrials             =  100000;
+    int       numItems              =  20;
+    int       maxHitCount           =  5000;
+    
+    int  poolHandle;
+
+    for( i = 0;
+         i < numItems;
+         i ++ ) {
+        items[ i ] = i;
+        }
+
+    poolHandle = rollPoolSetup( numItems,
+                                items );
+
+    for( i = 0;
+         i < maxHitCount;
+         i ++ ) {
+
+        hitInCounts[ i ] = 0;
+        }
+
+    
+    for( i = 0;
+         i < numTrials;
+         i ++ ) {
+
+        char  itemsHit[ 100 ];
+        char  allHit            =  0;
+        int   c                 =  0;
+
+        for( j = 0;
+             j < numItems;
+             j ++ ) {
+            itemsHit[ j ] = 0;
+            }
+        
+        rollPoolReset( poolHandle );
+
+        while( ! allHit ) {
+
+            int  item  =  rollItem( poolHandle );
+
+            if( ! itemsHit[ item ] ) {
+
+                itemsHit[ item ] = 1;
+
+                allHit = 1;
+                for( j = 0;
+                     j < numItems;
+                     j ++ ) {
+                    if( ! itemsHit[ j ] ) {
+                        allHit = 0;
+                        break;
+                        }
+                    }
+                }
+            
+            c ++;
+            }
+
+        if( c < maxHitCount ) {
+            hitInCounts[c] ++;
+            }
+        }
+
+
+    mingin_log( "Roll pool test results:\n" );
     for( i = 0;
          i < maxHitCount;
          i ++ ) {
@@ -201,12 +570,7 @@ void rollTest( void ) {
             }
         
         }
-
-
     }
-
-
-
 
 
 

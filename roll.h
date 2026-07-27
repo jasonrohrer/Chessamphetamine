@@ -365,6 +365,8 @@ int  rollItem( int  inRollPoolHandle ) {
     int        i;
     int        cumulativeWeight  =   0;
     int        pick              =  -1;
+    int        oldTotalWeight    =   0;
+    
     
     if( inRollPoolHandle == -1 ) {
         return 0;
@@ -402,6 +404,9 @@ int  rollItem( int  inRollPoolHandle ) {
     p->weights   [ pick ]         =  1;
     p->totalWeight               +=  1;
     
+
+    oldTotalWeight = p->totalWeight;
+
     
     /* now handle any that have missed the expected number of times */
     if( 1 )
@@ -424,19 +429,20 @@ int  rollItem( int  inRollPoolHandle ) {
                 newTrigger = 2;
                 }
 
-            /* don't compute true new weight of item,
-               relative to actual total weight, because
-               that can result in total weight spiraling out of control,
-               as missed items try to grab larger shares of a larger
-               total weight */
+            /* compute new weight of item, to achieve newTrigger
+               expectation, relative to total weight of all items
 
-            /* instead, just compute the weight for this item
-               relative to the total baseline weight, which is
-               the number of items in the pool */
+               use ( newTrigger - 1 ) here so we get the fraction of
+               weight outside this item that we need to match
+
+               (If newTrigger is 2, and we want 2 rolls to hit,
+                then this item's weight need to equal the weight of
+                all other items.)
+            */
             
             p->totalWeight   -=  p->weights[ i ];
 
-            p->weights[ i ]   =  p->numItems / newTrigger;
+            p->weights[ i ]   =  oldTotalWeight / ( newTrigger - 1 );
             
             p->totalWeight   +=  p->weights[ i ];
 
@@ -502,6 +508,40 @@ void rollPoolTest( void ) {
 
     poolHandle = rollPoolSetup( numItems,
                                 items );
+
+    for( i = 0;
+         i < maxHitCount;
+         i ++ ) {
+
+        hitInCounts[ i ] = 0;
+        }
+
+    for( i = 0;
+         i < 40;
+         i ++ ) {
+
+        int  item  =  rollItem( poolHandle );
+        
+        mingin_log( maxigin_intToString( item ) );
+        mingin_log( " " );
+
+        hitInCounts[ item ] ++;
+        }
+
+    mingin_log( "\n\n" );
+
+    for( i = 0;
+         i < numItems;
+         i ++ ) {
+
+        maxigin_logInt2( "",
+                         i,
+                         " ",
+                         hitInCounts[ i ],
+                         "" );
+        }
+    mingin_log( "\n\n" );
+    
 
     for( i = 0;
          i < maxHitCount;

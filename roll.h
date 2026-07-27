@@ -25,13 +25,31 @@ typedef struct RollInfo {
         int  currentOneInCount;
 
         int  missCount;
+
+        int  flatnessNumerator;
+        int  flatnessDenominator;
         
     } RollInfo;
 
 
-/* initializes a roll that will happen, on average, once in inOneInCount rolls */
+/*
+  initializes a roll that will happen, on average, once in inOneInCount rolls
+
+  Fraction defined by ( inFlatnessNumerator/inFlatnessDenominator )
+  determines flattening effect, where smaller values rein in long miss
+  streaks sooner, and larger values allow longer miss streaks
+
+  Passing 1/1 for these make bad luck mitigation kick in after
+  inOneInCount misses.
+
+  Passing 2/1 doesn't mitigate until (2 * inOneInCount) misses.
+
+  Passing 1/2 mitigates after (inOneInCount / 2)  misses
+*/
 void rollSetup( RollInfo  *inRoll,
-                int        inOneInCount );
+                int        inOneInCount,
+                int        inFlatnessNumerator,
+                int        inFlatnessDenominator );
 
 
 /* returns 1 on hit, 0 on miss */
@@ -48,7 +66,9 @@ void rollTest( void );
    returns handle to pool
  */
 int rollPoolSetup( int  inNumItems,
-                   int  inItems[] );
+                   int  inItems[],
+                   int  inFlatnessNumerator,
+                   int  inFlatnessDenominator );
 
 int rollItem( int  inRollPoolHandle );
 
@@ -95,6 +115,9 @@ typedef struct RollPool {
         int  *weights;
 
         int  totalWeight;
+
+        int  flatnessNumerator;
+        int  flatnessDenominator;
         
     } RollPool;
 
@@ -134,10 +157,14 @@ void rollInit( void ) {
 
 
 void rollSetup( RollInfo  *inRoll,
-                int        inOneInCount ) {
+                int        inOneInCount,
+                int        inFlatnessNumerator,
+                int        inFlatnessDenominator ) {
 
     
-    inRoll->baseOneInCount = inOneInCount;
+    inRoll->baseOneInCount      = inOneInCount;
+    inRoll->flatnessNumerator   = inFlatnessNumerator;
+    inRoll->flatnessDenominator = inFlatnessDenominator;
 
     rollReset( inRoll );
     }
@@ -158,7 +185,13 @@ char roll( RollInfo  *inRoll ) {
     else {
         inRoll->missCount ++;
 
-        if( 0 && inRoll->missCount >= inRoll->currentOneInCount ) {
+        if(1)
+        if( inRoll->missCount
+            >=
+            ( inRoll->flatnessNumerator
+              * inRoll->currentOneInCount )
+            / inRoll->flatnessDenominator ) {
+            
             /* reached our expected wait time
                if we kept going with the same hit chance, we'd expect to
                go on for currentOneInCount rolls again from here before hitting.
@@ -225,7 +258,9 @@ void rollTest( void ) {
     int       worst                 =  0;
     
     rollSetup( &r,
-               19 );
+               100,
+               1,
+               1 );
 
     for( i = 0;
          i < maxHitCount;
@@ -283,7 +318,9 @@ void rollTest( void ) {
 
 
 int  rollPoolSetup( int  inNumItems,
-                    int  inItems[] ) {
+                    int  inItems[],
+                    int  inFlatnessNumerator,
+                    int  inFlatnessDenominator ) {
 
     int        handle  =  rollNumPools;
     RollPool  *p;
@@ -323,7 +360,9 @@ int  rollPoolSetup( int  inNumItems,
 
     
     
-    p->totalWeight = inNumItems;
+    p->totalWeight         = inNumItems;
+    p->flatnessNumerator   = inFlatnessNumerator;
+    p->flatnessDenominator = inFlatnessDenominator;
     
     for( i = 0;
          i < inNumItems;
@@ -414,7 +453,10 @@ int  rollItem( int  inRollPoolHandle ) {
          i < p->numItems;
          i ++ ) {
 
-        if( p->missCounts[ i ] >= p->missCountTriggers[ i ] ) {
+        if( p->missCounts[ i ]
+            >=
+            ( p->flatnessNumerator * p->missCountTriggers[ i ] )
+            / p->flatnessDenominator ) {
             
             /* we've gone the expected number of trials for this item
                given its share of the total weight */
@@ -507,7 +549,9 @@ void rollPoolTest( void ) {
         }
 
     poolHandle = rollPoolSetup( numItems,
-                                items );
+                                items,
+                                1,
+                                1 );
 
     for( i = 0;
          i < maxHitCount;
@@ -530,6 +574,7 @@ void rollPoolTest( void ) {
 
     mingin_log( "\n\n" );
 
+    
     for( i = 0;
          i < numItems;
          i ++ ) {
@@ -541,7 +586,9 @@ void rollPoolTest( void ) {
                          "" );
         }
     mingin_log( "\n\n" );
+
     
+    return;
 
     for( i = 0;
          i < maxHitCount;

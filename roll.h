@@ -45,6 +45,8 @@ typedef struct RollInfo {
   Passing 2/1 doesn't mitigate until (2 * inOneInCount) misses.
 
   Passing 1/2 mitigates after (inOneInCount / 2)  misses
+
+  Passing 20/1 turns mitigation off in practice.
 */
 void rollSetup( RollInfo  *inRoll,
                 int        inOneInCount,
@@ -379,23 +381,6 @@ int  rollPoolSetup( int  inNumItems,
     }
 
 
-/*
-static void checkWeight( RollPool *p ) {
-    
-    int  i;
-    int  checkWeight = 0;
-    
-    for( i = 0;
-         i < p->numItems;
-         i ++ ) {
-        checkWeight += p->weights[ i ];
-        }
-
-    if( p->totalWeight != checkWeight ) {
-        mingin_log( "Hey\n" );
-        }
-    }
-*/     
 
 int  rollItem( int  inRollPoolHandle ) {
     

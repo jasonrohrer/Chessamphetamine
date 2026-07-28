@@ -105,16 +105,9 @@ typedef struct RollPool {
 
         int  numItems;
 
-        /* pointer into rollPoolItems */
-        int  *items;
+        /* index into rollPoolItems, MissCounts, Triggers, Weights, etc.*/
+        int  itemsIndex;
 
-        /* pointer into rollPoolMissCounts */
-        int  *missCounts;
-
-        /* pointer into rollPoolMissCountTriggers */
-        int  *missCountTriggers;
-
-        int  *weights;
 
         int  totalWeight;
 
@@ -354,13 +347,7 @@ int  rollPoolSetup( int  inNumItems,
     rollNumPools++;
 
     p->numItems    = inNumItems;
-    p->items       = &( rollPoolItems            [ rollPoolNumTotalItems ] );
-    p->missCounts  = &( rollPoolMissCounts       [ rollPoolNumTotalItems ] );
-    p->missCountTriggers
-                   = &( rollPoolMissCountTriggers[ rollPoolNumTotalItems ] );
-    p->weights     = &( rollPoolWeights          [ rollPoolNumTotalItems ] );
-
-    
+    p->itemsIndex  = rollPoolNumTotalItems;
     
     p->totalWeight         = inNumItems;
     p->flatnessNumerator   = inFlatnessNumerator;
@@ -376,6 +363,13 @@ int  rollPoolSetup( int  inNumItems,
         }
     
     rollPoolReset( handle );
+
+    /* register the structure for each pool,
+       which ensures that the pools remain functional and consistent across
+       state reloads, even when the code changes rarities for items
+       ( so the pool sizes should change, but we restore the old pools )
+    */
+    REGISTER_VAL_MEM( rollPools[ handle ] );
     
     return handle;
     }
@@ -405,27 +399,29 @@ int  rollItem( int  inRollPoolHandle ) {
          i < p->numItems;
          i ++ ) {
 
-        cumulativeWeight += p->weights[i];
+        int  index  =  p->itemsIndex + i;
+
+        cumulativeWeight += rollPoolWeights[ index ];
 
         if( pick == -1
             &&
             cumulativeWeight >= weightPick ) {
 
-            pick = i;
+            pick = index;
             
             }
         else {
-            p->missCounts[i] ++;
+            rollPoolMissCounts[ index ] ++;
             }
         }
 
     
     /* reset count and weight of hit item */
-    p->missCounts[ pick ]         =  0;
-    p->missCountTriggers[ pick ]  =  p->numItems;
-    p->totalWeight               -=  p->weights[ pick ];
-    p->weights   [ pick ]         =  1;
-    p->totalWeight               +=  1;
+    rollPoolMissCounts       [ pick ]  =  0;
+    rollPoolMissCountTriggers[ pick ]  =  p->numItems;
+    p->totalWeight                    -=  rollPoolWeights[ pick ];
+    rollPoolWeights          [ pick ]  =  1;
+    p->totalWeight                    +=  1;
 
     
     /* now handle any that have missed the expected number of times */
@@ -434,19 +430,21 @@ int  rollItem( int  inRollPoolHandle ) {
          i < p->numItems;
          i ++ ) {
 
-        if( p->missCounts[ i ]
+        int  index  =  p->itemsIndex + i;
+
+        if( rollPoolMissCounts[ index ]
             >=
-            ( p->flatnessNumerator * p->missCountTriggers[ i ] )
+            ( p->flatnessNumerator * rollPoolMissCountTriggers[ index ] )
             / p->flatnessDenominator
             &&
-            p->missCountTriggers[ i ] > 2 ) {
+            rollPoolMissCountTriggers[ index ] > 2 ) {
             
             /* we've gone the expected number of trials for this item
                given its share of the total weight */
 
             /* want half the expected rolls before hit of what we
                had before */
-            int  newTrigger      =  p->missCountTriggers[ i ] / 2;
+            int  newTrigger      =  rollPoolMissCountTriggers[ index ] / 2;
             
             if( newTrigger < 2 ) {
                 /* don't ever go below a 1/2 chance of hitting
@@ -471,25 +469,25 @@ int  rollItem( int  inRollPoolHandle ) {
                of the base weight of the pool
             */
             
-            p->totalWeight   -=  p->weights[ i ];
+            p->totalWeight            -=  rollPoolWeights[ index ];
 
-            p->weights[ i ]   =  p->numItems / newTrigger;
+            rollPoolWeights[ index ]   =  p->numItems / newTrigger;
             
-            p->totalWeight   +=  p->weights[ i ];
+            p->totalWeight            +=  rollPoolWeights[ index ];
 
             /* reset the miss count, so we can start counting again
                until we reach the new, smaller expected miss count going forward
             */
-            p->missCounts[ i ] = 0;
+            rollPoolMissCounts[ index ] = 0;
 
             /* remember the new, smaller miss count trigger */
-            p->missCountTriggers[ i ] = newTrigger;
+            rollPoolMissCountTriggers[ index ] = newTrigger;
             }
         }
 
 
 
-    return p->items[ pick ];
+    return rollPoolItems[ pick ];
     }
 
 
@@ -510,9 +508,11 @@ void  rollPoolReset( int  inRollPoolHandle ) {
          i < p->numItems;
          i ++ ) {
 
-        p->missCounts       [ i ] = 0;
-        p->missCountTriggers[ i ] = p->numItems;
-        p->weights          [ i ] = 1;
+        int  index = p->itemsIndex + i;
+
+        rollPoolMissCounts       [ index ] = 0;
+        rollPoolMissCountTriggers[ index ] = p->numItems;
+        rollPoolWeights          [ index ] = 1;
         }
     p->totalWeight = p->numItems;
     }

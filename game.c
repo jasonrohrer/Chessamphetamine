@@ -2511,6 +2511,10 @@ void maxiginGame_init( void ) {
     pieceDescriptionsInit();
 
     navInit();
+
+    rollInit();
+    
+    
     
     levelsInit();
 

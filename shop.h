@@ -117,7 +117,8 @@ static  int            shopCenterX;
 static  int            shopCenterY;
 
 static  MaxiginRand    shopRand;
-static  int            shopOnSaleChanceIn100                      =  10;
+static  int            shopOnSaleOneIn                            =  10;
+static  RollInfo       shopOnSaleRoll;
 
 
 
@@ -141,15 +142,13 @@ static void shopInternalReroll( void ) {
     for( i = 0;
          i < NUM_SHOP_SLOTS;
          i ++ ) {
-        shopItems[ i ] = deckDraw( &shopDeck );
+        
+        shopItems[ i ] = rarityRollPiece();
 
         shopSlotPrices[ i ] = shopPrices[ shopItems[ i ] ];
 
 
-        if( maxigin_randRange( &shopRand,
-                               1,
-                               100 )
-            <= shopOnSaleChanceIn100 ) {
+        if( roll( &shopOnSaleRoll ) ) {
             
             shopIsOnSale[ i ] = 1;
             }
@@ -187,6 +186,11 @@ void shopInit( int  inPointerActionHandle,
 
     maxigin_randSeed( &shopRand,
                       mingin_getEntropySeed() );
+
+    rollSetup( &shopOnSaleRoll,
+               shopOnSaleOneIn,
+               1,
+               1 );
 
     shopPointerActionHandle = inPointerActionHandle;
 
@@ -255,6 +259,8 @@ void shopInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( shopRand );
     
     REGISTER_VAL_MEM( shopDeck );
+
+    REGISTER_VAL_MEM( shopOnSaleRoll );
 
     REGISTER_ARRAY_MEM( shopSlotPrices );
     REGISTER_ARRAY_MEM( shopIsOnSale );

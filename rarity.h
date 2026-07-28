@@ -131,7 +131,15 @@ void rarityInit( void ) {
                    1,
                    1 );
 
-        REGISTER_VAL_MEM( rarityRolls[ i ] );
+        /* special name for these, so saved game breaks if the weights change
+           we roll the weight right into the discription, which is checked
+           to match at load time */
+        maxigin_initRegisterStaticMemory(
+            &( rarityRolls[ i ] ),
+            sizeof( RollInfo ),
+            maxigin_stringConcat(
+                "rarityRolls=",
+                maxigin_intToString( rarityOneInCount[ i ] ) ) );
         }
 
     for( i = FIRST_ROLLABLE_RARITY;
@@ -157,19 +165,6 @@ void rarityInit( void ) {
                                           1,
                                           1 );
         }
-
-
-    /* the rarity of pieces is saved and restored,
-       ensuring rarity pools in saved game states continue to
-       function even if whe change piece rarity in the code (the old
-       rarities, from the saved state, will be reloaded, and the changes
-       in the code will be ignored.
-
-       This also causes saved game states to break when we add a new piece to the
-       game, which is necessary, since the rollPools will change as a result,
-       and the states of the rollPools are part of the saved game state
-    */
-    REGISTER_ARRAY_MEM( pieceRarity );
     }
 
 

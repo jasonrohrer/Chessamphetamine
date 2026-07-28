@@ -376,6 +376,28 @@ int  rollPoolSetup( int  inNumItems,
         }
     
     rollPoolReset( handle );
+
+    /* special case:
+       register size of each roll pool, baked into its description string
+       which forces saved game states to break if the pool composition changes
+
+       We don't actually save the contents of the RollPool structures (which
+       contain pointers), since the
+       whole state arrays (rollPoolItems, etc) are being saved.
+
+       However, if the roll pools change size, the layout of those arrays
+       won't be sensible anymore.
+
+       We're not actually trying to save/restore/record/playback this value
+       but it serves as a kind of checksum... if the pool sizes changes,
+       or we add new pools, these description strings will change.
+    */
+    maxigin_initRegisterStaticMemory(
+        &( rollPools[ handle ].numItems ),
+        sizeof( rollPools[ handle ].numItems ),
+        maxigin_stringConcat(
+            "rarityPool=",
+            maxigin_intToString( rollPools[ handle ].numItems ) ) );
     
     return handle;
     }

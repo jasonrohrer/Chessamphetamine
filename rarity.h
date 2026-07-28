@@ -28,10 +28,15 @@ enum{
     impossible,
     NUM_RARITIES };
 
-#define  FIRST_RARITY  contraband
+#define  FIRST_RARITY           contraband
+#define  FIRST_ROLLABLE_RARITY  common
+#define  MOST_RARE_RARITY       impossible
 
 
 void rarityInit( void );
+
+
+ChessPiece rarityRollPiece( void );
 
 
 int rarityGet( ChessPiece  inPiece );
@@ -54,6 +59,10 @@ int rarityGetOneInCount( int  inRarity );
 
 
 #ifdef RARITY_IMPLEMENTATION
+
+
+#include "memoryRegister.h"
+#include "roll.h"
 
 
 static  int  rarityColorMapSprite  =  -1;
@@ -82,12 +91,20 @@ CHECK_CHESS_ARRAY( pieceRarity,
                    PIECE_RARITY );
 
 
-static  int  rarityLangKeys[ NUM_RARITIES ];
+static  int       rarityLangKeys  [ NUM_RARITIES ];
 
-static  int  rarityOneInCount[ NUM_RARITIES ];
+static  int       rarityOneInCount[ NUM_RARITIES ];
+
+static  RollInfo  rarityRolls     [ NUM_RARITIES ];
+
+static  int       rarityPools     [ NUM_RARITIES ];
 
 
 void rarityInit( void ) {
+
+    int  i;
+
+    int  tempPoolItems[ NUM_CHESS_PIECES ];
 
     rarityColorMapSprite = maxigin_initSprite( "rarityColorMap.tga" );
 
@@ -104,6 +121,55 @@ void rarityInit( void ) {
     rarityOneInCount[ rare       ] =   20;
     rarityOneInCount[ legendary  ] =  100;
     rarityOneInCount[ impossible ] = 1000;
+
+    for( i = FIRST_ROLLABLE_RARITY;
+         i < NUM_RARITIES;
+         i ++ ) {
+
+        rollSetup( &( rarityRolls[ i ] ),
+                   rarityOneInCount[ i ],
+                   1,
+                   1 );
+
+        REGISTER_VAL_MEM( rarityRolls[ i ] );
+        }
+
+    for( i = FIRST_ROLLABLE_RARITY;
+         i < NUM_RARITIES;
+         i ++ ) {
+
+        int  numItems = 0;
+        int  p;
+
+        for( p = FIRST_CHESS_PIECE;
+             p < NUM_CHESS_PIECES;
+             p ++ ) {
+
+            if( pieceRarity[ p ] == i ) {
+
+                tempPoolItems[ numItems ] = p;
+                numItems ++;
+                }
+            }
+        
+        rarityPools[ i ] = rollPoolSetup( numItems,
+                                          tempPoolItems,
+                                          1,
+                                          1 );
+        }
+
+
+    /* the rarity of pieces is saved and restored,
+       ensuring rarity pools in saved game states continue to
+       function even if whe change piece rarity in the code (the old
+       rarities, from the saved state, will be reloaded, and the changes
+       in the code will be ignored.
+
+       This also causes saved game states to break when we add a new piece to the
+       game, which is necessary, since the rollPools will change as a result,
+       and the states of the rollPools are part of the saved game state
+    */
+    REGISTER_ARRAY_MEM( pieceRarity );
     }
 
 
@@ -144,6 +210,34 @@ int rarityGetOneInCount( int  inRarity ) {
     return rarityOneInCount[ inRarity ];
     }
 
+
+ChessPiece rarityRollPiece( void ) {
+
+    int  i;
+
+    int  pickedRarity = FIRST_ROLLABLE_RARITY;
+
+    /* start with most rare, see if that hits
+       if not, fall through to next, less-rare tier
+       
+       if we hit nothing, we leave pickedRarity set at FIRST_ROLLABLE_RARITY
+       which is the default
+    */
+    for( i = MOST_RARE_RARITY;
+         i > FIRST_ROLLABLE_RARITY;
+         i -- ) {
+
+        if( roll( &( rarityRolls[i] ) ) ) {
+            pickedRarity = i;
+            break;
+            }
+        }
+
+    /* now that we have a rarity, roll a piece from that pool */
+
+    return (ChessPiece)( rollItem( rarityPools[ pickedRarity ] ) );
+    }
+        
 
 
 

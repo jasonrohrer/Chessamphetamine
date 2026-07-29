@@ -91,13 +91,22 @@ CHECK_CHESS_ARRAY( pieceRarity,
                    PIECE_RARITY );
 
 
-static  int       rarityLangKeys  [ NUM_RARITIES ];
+static  int          rarityLangKeys          [ NUM_RARITIES ];
 
-static  int       rarityOneInCount[ NUM_RARITIES ];
+static  int          rarityOneInCount        [ NUM_RARITIES ];
 
-static  RollInfo  rarityRolls     [ NUM_RARITIES ];
+static  RollInfo     rarityRolls             [ NUM_RARITIES ];
 
-static  int       rarityPools     [ NUM_RARITIES ];
+static  int          rarityPools             [ NUM_RARITIES ];
+
+static  const char  *rarityNames             [ NUM_RARITIES ] = { "contraband",
+                                                                  "common",
+                                                                  "uncommon",
+                                                                  "rare",
+                                                                  "legendary",
+                                                                  "impossible" };
+
+static  char         rarityDescriptionBuffers[ NUM_RARITIES ][ 32 ];
 
 
 void rarityInit( void ) {
@@ -108,12 +117,11 @@ void rarityInit( void ) {
 
     rarityColorMapSprite = maxigin_initSprite( "rarityColorMap.tga" );
 
-    rarityLangKeys[ contraband ]  =  maxigin_initTranslationKey( "contraband" );
-    rarityLangKeys[ common     ]  =  maxigin_initTranslationKey( "common"     );
-    rarityLangKeys[ uncommon   ]  =  maxigin_initTranslationKey( "uncommon"   );
-    rarityLangKeys[ rare       ]  =  maxigin_initTranslationKey( "rare"       );
-    rarityLangKeys[ legendary  ]  =  maxigin_initTranslationKey( "legendary"  );
-    rarityLangKeys[ impossible ]  =  maxigin_initTranslationKey( "impossible" );
+    for( i = FIRST_RARITY;
+         i < NUM_RARITIES;
+         i ++ ) {
+        rarityLangKeys[ i ]  =  maxigin_initTranslationKey( rarityNames[ i ] );
+        }
 
     rarityOneInCount[ contraband ] =   -1;
     rarityOneInCount[ common     ] =    1;
@@ -134,12 +142,20 @@ void rarityInit( void ) {
         /* special name for these, so saved game breaks if the weights change
            we roll the weight right into the discription, which is checked
            to match at load time */
+
+        /* store this in the static rarityDescriptionBuffers area,
+           so it doesn't get overwritten by future stringConcat calls */
+        maxigin_stringCopy(
+            maxigin_stringConcat3(
+                rarityNames[ i ],
+                "_roll=",
+                maxigin_intToString( rarityOneInCount[ i ] ) ),
+            rarityDescriptionBuffers[ i ] );
+        
         maxigin_initRegisterStaticMemory(
             &( rarityRolls[ i ] ),
             sizeof( RollInfo ),
-            maxigin_stringConcat(
-                "rarityRolls=",
-                maxigin_intToString( rarityOneInCount[ i ] ) ) );
+            rarityDescriptionBuffers[ i ] );
         }
 
     for( i = FIRST_ROLLABLE_RARITY;
@@ -163,7 +179,8 @@ void rarityInit( void ) {
         rarityPools[ i ] = rollPoolSetup( numItems,
                                           tempPoolItems,
                                           1,
-                                          1 );
+                                          1,
+                                          rarityNames[ i ] );
         }
     }
 

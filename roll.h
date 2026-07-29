@@ -67,10 +67,11 @@ void rollTest( void );
 
    returns handle to pool
  */
-int rollPoolSetup( int  inNumItems,
-                   int  inItems[],
-                   int  inFlatnessNumerator,
-                   int  inFlatnessDenominator );
+int rollPoolSetup( int          inNumItems,
+                   int          inItems[],
+                   int          inFlatnessNumerator,
+                   int          inFlatnessDenominator,
+                   const char  *inPoolName );
 
 int rollItem( int  inRollPoolHandle );
 
@@ -103,23 +104,25 @@ static  int  rollPoolNumTotalItems  =  0;
 
 typedef struct RollPool {
 
-        int  numItems;
+        int   numItems;
 
         /* pointer into rollPoolItems */
-        int  *items;
+        int   *items;
 
         /* pointer into rollPoolMissCounts */
-        int  *missCounts;
+        int   *missCounts;
 
         /* pointer into rollPoolMissCountTriggers */
-        int  *missCountTriggers;
+        int   *missCountTriggers;
 
-        int  *weights;
+        int   *weights;
 
-        int  totalWeight;
+        int   totalWeight;
 
-        int  flatnessNumerator;
-        int  flatnessDenominator;
+        int   flatnessNumerator;
+        int   flatnessDenominator;
+
+        char  descriptionBuffer[32];
         
     } RollPool;
 
@@ -319,10 +322,11 @@ void rollTest( void ) {
 
 
 
-int  rollPoolSetup( int  inNumItems,
-                    int  inItems[],
-                    int  inFlatnessNumerator,
-                    int  inFlatnessDenominator ) {
+int  rollPoolSetup( int          inNumItems,
+                    int          inItems[],
+                    int          inFlatnessNumerator,
+                    int          inFlatnessDenominator,
+                    const char  *inPoolName ) {
 
     int        handle  =  rollNumPools;
     RollPool  *p;
@@ -392,12 +396,21 @@ int  rollPoolSetup( int  inNumItems,
        but it serves as a kind of checksum... if the pool sizes changes,
        or we add new pools, these description strings will change.
     */
+
+    /* we store this in the static descriptionBuffer space in each
+       RollPool structure
+       so it doesn't get overwritten by future calls to stringConcat */
+    maxigin_stringCopy(
+        maxigin_stringConcat3(
+            inPoolName,
+            "_poolSize=",
+            maxigin_intToString( p->numItems ) ),
+        p->descriptionBuffer );
+    
     maxigin_initRegisterStaticMemory(
         &( rollPools[ handle ].numItems ),
         sizeof( rollPools[ handle ].numItems ),
-        maxigin_stringConcat(
-            "rarityPool=",
-            maxigin_intToString( rollPools[ handle ].numItems ) ) );
+        p->descriptionBuffer );
     
     return handle;
     }
@@ -562,7 +575,8 @@ void rollPoolTest( void ) {
     poolHandle = rollPoolSetup( numItems,
                                 items,
                                 1,
-                                1 );
+                                1,
+                                "testPool" );
 
     for( i = 0;
          i < maxHitCount;

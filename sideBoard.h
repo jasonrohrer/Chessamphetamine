@@ -206,10 +206,10 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
     int  pointerX;
     int  pointerY;
     int  i;
-    int  r          =  mingin_getStepsPerSecond();
-    int  deltaFade  =  ( 20 * 60 ) / r;
-    int  overSlot   =  -1;
-
+    int  r              =  mingin_getStepsPerSecond();
+    int  deltaFade      =  ( 20 * 60 ) / r;
+    int  overSlot       =  -1;
+    char liftPhaseDone  =  0;
     
     if( ! maxigin_getPointerLocation( &pointerX,
                                       &pointerY ) ) {
@@ -258,69 +258,20 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
             }
         }
 
-    if( sbLifting
-        ||
+
+    liftPhaseDone = slotLiftStep( sbLifting,
+                                  sbDropping,
+                                  sbMaxLift,
+                                  sbNumSlots,
+                                  sbLift,
+                                  sbSmoothLift,
+                                  inPieceLiftSound );
+
+    if( liftPhaseDone
+        &&
         sbDropping ) {
         
-        int  scaleFactor  =  ( sbMaxLift * sbMaxLift )
-            / MAXIGIN_GAME_NATIVE_H;
-        
-        int   minLiftForNextStart  =  30;
-        int   stepSize             =  ( 4 * 60 ) / r;
-
-        if( sbLifting ) {
-
-            for( i = sbNumSlots - 1;
-                 i >= 0;
-                 i -- ) {
-                if( sbLift[i] == 0 ) {
-                    /* skip sound for first one
-                       since button press makes sound */
-                    if( i != sbNumSlots - 1 ) {
-                        maxigin_playSoundEffect( inPieceLiftSound,
-                                                 256 );
-                        }
-                    }
-                if( sbLift[i] < sbMaxLift ) {
-                    sbLift[i] += stepSize;
-
-                    if( sbLift[i] > sbMaxLift ) {
-                        sbLift[i] = sbMaxLift;
-                        }
-
-                    sbSmoothLift[i] = ( sbLift[i] * sbLift[i] ) / scaleFactor;
-
-                    if( sbLift[i] < minLiftForNextStart ) {
-                        /* stagger lift */
-                        break;
-                        }
-                    }
-                }
-            }
-        else if( sbDropping ) {
-        
-            for( i = sbNumSlots - 1;
-                 i >= 0;
-                 i -- ) {
-            
-                if( sbLift[i] > 0  ) {
-                    sbLift[i] -= stepSize;
-
-                    if( sbLift[i] <= 0  ) {
-                        sbLift[i] = 0;
-                        maxigin_playSoundEffect( inPieceLiftSound,
-                                                 256 );
-                        }
-
-                    sbSmoothLift[i] = ( sbLift[i] * sbLift[i] ) / scaleFactor;
-
-                    if( sbLift[i] > sbMaxLift - minLiftForNextStart ) {
-                        /* stagger drop */
-                        break;
-                        }
-                    }
-                }
-            }
+        sbDropping = 0;
         }
     
 

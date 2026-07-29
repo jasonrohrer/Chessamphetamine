@@ -40,7 +40,8 @@ void shopDraw( void );
 
 */
 ChessPiece shopStep( Deck  *inPlayerDeck,
-                     int  inPickFailedSound );
+                     int    inPickFailedSound,
+                     int    inPieceLiftSound );
 
 
 char isShoppingDone( void );
@@ -59,6 +60,7 @@ char isShoppingDone( void );
 #include "mingin.h"
 
 #include "button.h"
+#include "slotLift.h"
 
 
 #define SHOP_PRICE_LIST( C, V )  \
@@ -95,6 +97,11 @@ static  ChessPiece     shopItems             [ NUM_SHOP_SLOTS ];
 
 static  int            shopSlotPosX          [ NUM_SHOP_SLOTS ];
 static  int            shopSlotPosY          [ NUM_SHOP_SLOTS ];
+static  int            shopSlotLift          [ NUM_SHOP_SLOTS ];
+static  int            shopSlotSmoothLift    [ NUM_SHOP_SLOTS ];
+static  char           shopSlotsLifting                           =  0;
+static  char           shopSlotsDropping                          =  0;
+
 static  int            shopSelectedSlot                           =  -1;
 static  unsigned char  shopSlotHighlightFade [ NUM_SHOP_SLOTS ];
 static  char           shopActionDown                             =   0;
@@ -108,6 +115,7 @@ static  int            lang_sale                                  =  -1;
 static  char           shoppingDone                               =   0;
 
 static  int            doneButton                                 =  -1;
+static  int            rerollButton                               =  -1;
 
 static  int            shopPointerActionHandle                    =  -1;
 
@@ -206,10 +214,15 @@ void shopInit( int  inPointerActionHandle,
          i < NUM_SHOP_SLOTS;
          i ++ ) {
 
-        shopIsOnSale[ i ] = 0;
+        shopIsOnSale       [ i ] =  0;
         shopDiscountPercent[ i ] = 50;
+
+        shopSlotLift       [ i ] =  0;
+        shopSlotSmoothLift [ i ] =  0;
         }
 
+    shopSlotsLifting = 0;
+    shopSlotsDropping = 0;
 
 
     /* set up slot positions */
@@ -238,11 +251,21 @@ void shopInit( int  inPointerActionHandle,
     shopResetHightlighFades();
 
 
+    rerollButton = buttonInit( maxigin_initSprite( "rerollButton.tga" ),
+                               -1,
+                               maxigin_initSprite( "rerollButtonPressed.tga" ),
+                               shopCenterX,
+                               shopCenterY + 50,
+                               1,
+                               shopPointerActionHandle,
+                               /* fixme... need controller mapping for this */
+                               -1 );
+    
     doneButton = buttonInit( maxigin_initSprite( "doneButton.tga" ),
                              -1,
                              maxigin_initSprite( "doneButtonPressed.tga" ),
-                             shopCenterX,
-                             shopCenterY + 50,
+                             shopCenterX + 70,
+                             shopCenterY + 70,
                              1,
                              shopPointerActionHandle,
                              /* fixme... need controller mapping for this */
@@ -306,56 +329,62 @@ void shopDraw( void ) {
         ChessPiece  p  =  shopItems[ i ];
 
         if( p != noPiece ) {
+
+            int  pieceYBase    =  shopCenterY + shopSlotPosY[i];
+            int  pieceYLifted  =  pieceYBase - shopSlotSmoothLift[i];
             
             drawPiece( p | CHESS_WHITE,
                        shopCenterX + shopSlotPosX[i],
-                       shopCenterY + shopSlotPosY[i] );
+                       pieceYLifted );
 
             if( shopSlotHighlightFade[i] > 0 ) {
                 drawPieceHighlight( p | CHESS_WHITE,
                                     shopCenterX + shopSlotPosX[i],
-                                    shopCenterY + shopSlotPosY[i],
+                                    pieceYLifted,
                                     shopSlotHighlightFade[i] );
                 }
             
 
-            maxigin_drawResetColor();
+            if( ! shopSlotsLifting ) {
+                
+                maxigin_drawResetColor();
             
-            numberDrawCenter( shopSlotPrices[ i ],
-                              shopCenterX + shopSlotPosX[i],
-                              shopCenterY + shopSlotPosY[i] + 12,
-                              1 );
-
-            if( shopIsOnSale[ i ] ) {
-
-                numberDrawCenter( shopPrices[p],
+                numberDrawCenter( shopSlotPrices[ i ],
                                   shopCenterX + shopSlotPosX[i],
-                                  shopCenterY + shopSlotPosY[i] + 22,
+                                  pieceYBase + 12,
                                   1 );
 
-                maxigin_drawSetColor( 255,
-                                      0,
-                                      0,
-                                      255 );
-                maxigin_setLanguageFontIndex( 1 );
-    
-                maxigin_drawLangText( lang_sale,
-                                      shopCenterX + shopSlotPosX[i],
-                                      shopCenterY + shopSlotPosY[i] - 40,
-                                      MAXIGIN_CENTER );
-    
-                maxigin_setLanguageFontIndex( 0 );
+                if( shopIsOnSale[ i ] ) {
 
-                numberDrawText( "\\",
-                                shopCenterX + shopSlotPosX[i],
-                                shopCenterY + shopSlotPosY[i] + 22,
-                                0,
-                                MAXIGIN_CENTER );
+                    numberDrawCenter( shopPrices[p],
+                                      shopCenterX + shopSlotPosX[i],
+                                      pieceYBase + 22,
+                                      1 );
+
+                    maxigin_drawSetColor( 255,
+                                          0,
+                                          0,
+                                          255 );
+                    maxigin_setLanguageFontIndex( 1 );
+    
+                    maxigin_drawLangText( lang_sale,
+                                          shopCenterX + shopSlotPosX[i],
+                                          pieceYBase - 40,
+                                          MAXIGIN_CENTER );
+    
+                    maxigin_setLanguageFontIndex( 0 );
+
+                    numberDrawText( "\\",
+                                    shopCenterX + shopSlotPosX[i],
+                                    pieceYBase + 22,
+                                    0,
+                                    MAXIGIN_CENTER );
+                    }
                 }
             }
-
         }
 
+    buttonDraw( rerollButton );
     buttonDraw( doneButton );
     
     }
@@ -363,7 +392,8 @@ void shopDraw( void ) {
 
 
 ChessPiece shopStep( Deck  *inPlayerDeck,
-                     int  inPickFailedSound ) {
+                     int  inPickFailedSound,
+                     int  inPieceLiftSound ) {
 
     /* fixme
        react to mouse and controller
@@ -376,13 +406,49 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
     int  pointerX;
     int  pointerY;
     int  i;
-    int  r          =  mingin_getStepsPerSecond();
-    int  deltaFade  =  ( 20 * 60 ) / r;
+    int  r              =  mingin_getStepsPerSecond();
+    int  deltaFade      =  ( 20 * 60 ) / r;
+    int  liftPhaseDone  =  0;
 
     if( buttonIsNewPressed( doneButton ) ) {
         shoppingDone = 1;
         return noPiece;
         }
+
+    if( buttonIsNewPressed( rerollButton ) ) {
+
+        shopSlotsLifting = 1;
+        }
+
+
+
+    liftPhaseDone = slotLiftStep( shopSlotsLifting,
+                                  shopSlotsDropping,
+                                  100,
+                                  NUM_SHOP_SLOTS,
+                                  shopSlotLift,
+                                  shopSlotSmoothLift,
+                                  inPieceLiftSound );
+
+    if( liftPhaseDone ) {
+        
+        if( shopSlotsLifting ) {
+
+            /* reroll while they are lifted off screen */
+            shopReroll();
+            
+            shopSlotsLifting = 0;
+            shopSlotsDropping = 1;
+            }
+        else if( shopSlotsDropping ) {
+            shopSlotsDropping = 0;
+
+            buttonReset( rerollButton );
+            }
+        }
+    
+
+    
     
     if( ! maxigin_getPointerLocation( &pointerX,
                                       &pointerY ) ) {

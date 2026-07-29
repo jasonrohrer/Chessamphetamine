@@ -33,6 +33,7 @@
 #define COST_IMPLEMENTATION
 #define RARITY_IMPLEMENTATION
 #define ROLL_IMPLEMENTATION
+#define SLOT_LIFT_IMPLEMENTATION
 
 
 #include "chess.h"
@@ -87,6 +88,7 @@
 
 #include "roll.h"
 
+#include "slotLift.h"
 
 
 enum GameUserAction {
@@ -1978,7 +1980,8 @@ void maxiginGame_step( void ) {
         if( ! shopDone ) {
             
             ChessPiece  newInfoPiece  =  shopStep( &playerDeck,
-                                                   pickFailedSound ); 
+                                                   pickFailedSound,
+                                                   examinePieceSound ); 
 
             if( newInfoPiece != infoPanelPiece ) {
                 infoPanelLastPiece = infoPanelPiece;

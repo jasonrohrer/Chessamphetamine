@@ -14,55 +14,10 @@
 #ifndef DECK_H_INCLUDED
 #define DECK_H_INCLUDED
 
-/* use decks for two things:
-
-   1.  The player's growing deck, which starts as a starter deck and adds
-       pieces from the shop.
-
-   2.  The game deck used to populate pieces from the shop.
-
-   It's this second use that is more complicated, because we populate
-   the shop deck based on rarities and draw from it, and then re-shuffle
-   when it's empty.
-*/
 
 
+#define  MAX_DECK_SIZE   256
 
-/* this controls the max rarity possible,
-   because some pieces can be 10x less common as a piece that occurs 10x more
-   often */
-#define  MAX_DECK_PIECE_OCCURRENCE  10
-
-/* if we just filled the deck one time, based on piece occurrence,
-   there would be exactly 1 of each of the rarest pieces in the deck.
-   
-   If the deck had 100 pieces, you would be waiting 100 draws to see a repeat
-   of those rarest pieces (ignoring the effect of re-shuffling when the deck
-   runs out).
-   
-   A single deck like this is the utlimate variance reducer, where you draw the
-   1/100 piece exactly once every 100 draws, and you draw the 1/10 piece exactly
-   10 times across the deck of 100 pieces.  I.e., the player is never waiting
-   forever for a specific rare piece to drop (which can happen if we just
-   draw pieces based on rarity using an RNG without a deck of pieces).
-   
-   We can add more variance back in by shuffling multiple decks together, so
-   across 100 draws, we sometimes see more clustering of rare pieces, larger
-   gaps, etc.
-
-   The expected values are still the same (the rare piece is expected to
-   be drawn in 1/100 draws), but the variance is larger.
-
-   And yet in the worst case, the player never waits forever for a specific
-   rare piece to drop (worst case, if we shuffle 4 decks of 100 pieces together,
-   is that they go 396 draws without seeing a specific rare piece (and then see
-   all 4 copies right at the end).
-*/
-#define  SHOP_DECK_VARIANCE_FACTOR        4
-
-#define  MAX_DECK_SIZE              ( NUM_CHESS_PIECES              \
-                                      * MAX_DECK_PIECE_OCCURRENCE   \
-                                      * SHOP_DECK_VARIANCE_FACTOR )
 
 typedef struct Deck {
 
@@ -92,20 +47,9 @@ typedef struct Deck {
 void  deckInit( void );
 
 
+
 /* gets a shuffled player start deck */
 void getPlayerStartDeck( Deck  *outDeck );
-
-
-/*
-  gets a shuffled shop deck
-  inRarityFilter filters out more common pieces by only including
-  pieces with occurrence factor  <=  inRarityFilter
-  
-  passing  MAX_DECK_PIECE_OCCURRENCE  includes all pieces
-  passing  1                          includes only the most rare pieces
-*/
-void getShopDeck( Deck  *outDeck,
-                  int    inRarityFilter );
 
 
 
@@ -152,31 +96,6 @@ void deckDrawDebugInfo( Deck  *inDeck,
 
 #ifdef DECK_IMPLEMENTATION
 
-/*
-  rarity of pieces in the shop decks
-  Lower numbers are more rare (a piece with rarity 10 will occur 10x more
-  often than a piece with rarity 1)
-*/
-#define SHOP_OCCURRENCE_LIST( C, V )  \
-    V( C, 0,   noPiece,      0   )    \
-    V( C, 1,   pawn,         2   )    \
-    V( C, 2,   bishop,       10  )    \
-    V( C, 3,   knight,       10  )    \
-    V( C, 4,   rook,         8   )    \
-    V( C, 5,   queen,        4   )    \
-    V( C, 6,   king,         0   )    \
-    V( C, 7,   laserRook,    2   )    \
-    V( C, 8,   laserPawn,    3   )    \
-    V( C, 9,   doublingPawn, 1   )    \
-    V( C, 10,  addingRook,   1   )    \
-    V( C, 11,  rocket,       2   )
-
-static  int  deckShopOccurrence[] = {
-    MAKE_CHESS_ARRAY( SHOP_OCCURRENCE_LIST )
-    };
-
-CHECK_CHESS_ARRAY( deckShopOccurrence,
-                   SHOP_OCCURRENCE_LIST );
 
 
 /*
@@ -211,42 +130,10 @@ static  MaxiginRand  deckRand;
 
 void  deckInit( void ) {
 
-    int  i;
-    
     maxigin_randSeed( &deckRand,
                       mingin_getEntropySeed() );
     REGISTER_VAL_MEM( deckRand );
-
-    for( i = FIRST_CHESS_PIECE;
-         i < NUM_CHESS_PIECES;
-         i ++ ) {
-
-        if( deckShopOccurrence[i] > MAX_DECK_PIECE_OCCURRENCE ) {
-
-            maxigin_logInt( 
-                maxigin_stringConcat3(
-                    "ERROR:  ",
-                    getPieceName( (ChessPiece)i ),
-                    " has larger than MAX_DECK_PIECE_OCCURRENCE"
-                    " in in deckShopOccurrence (deck.h):  " ),
-                deckShopOccurrence[i] );
-
-            deckShopOccurrence[i] = MAX_DECK_PIECE_OCCURRENCE;
-            }
-
-        if( deckPlayerOccurrence[i] > MAX_DECK_PIECE_OCCURRENCE ) {
-
-            maxigin_logInt( 
-                maxigin_stringConcat3(
-                    "ERROR:  ",
-                    getPieceName( (ChessPiece)i ),
-                    " has larger than MAX_DECK_PIECE_OCCURRENCE"
-                    " in deckPlayerOccurrence (deck.h):  " ),
-                deckPlayerOccurrence[i] );
-
-            deckPlayerOccurrence[i] = MAX_DECK_PIECE_OCCURRENCE;
-            }
-        }
+    
     }
 
 
@@ -381,9 +268,7 @@ void deckAddPiece( Deck        *inDeck,
 
 
 static void getFreshDeck( Deck  *outDeck,
-                          int   *inOccurenceList,
-                          int    inVarianceFactor,
-                          int    inRarityFilter ) {
+                          int   *inOccurenceList  ) {
     int  i;
     int  n  =  0;
 
@@ -391,25 +276,15 @@ static void getFreshDeck( Deck  *outDeck,
          i < NUM_CHESS_PIECES;
          i ++ ) {
 
-        if( inOccurenceList[i] <= inRarityFilter ) {
-            
-            int  v;
+        int  o;
 
-            for( v = 0;
-                 v < inVarianceFactor;
-                 v ++ ) {
-            
-                int  o;
+        for( o = 0;
+             o < inOccurenceList[i];
+             o ++ ) {
 
-                for( o = 0;
-                     o < inOccurenceList[i];
-                     o ++ ) {
-
-                    outDeck->pieces[n] = (ChessPiece)i;
-                    outDeck->present[n] = 1;
-                    n++;
-                    }
-                }
+            outDeck->pieces[n] = (ChessPiece)i;
+            outDeck->present[n] = 1;
+            n++;
             }
         }
 
@@ -425,23 +300,11 @@ static void getFreshDeck( Deck  *outDeck,
 void getPlayerStartDeck( Deck  *outDeck ) {
     /* no extra copies in player deck */
     getFreshDeck( outDeck,
-                  deckPlayerOccurrence,
-                  1,
-                  MAX_DECK_PIECE_OCCURRENCE );
+                  deckPlayerOccurrence  );
 
     /* player's deck tracks card presence, only allows drawing of
        cards that are present in deck, even after reshuffle */
     outDeck->trackPresent = 1;
-    }
-
-
-
-void getShopDeck( Deck  *outDeck,
-                  int    inRarityFilter ) {
-    getFreshDeck( outDeck,
-                  deckShopOccurrence,
-                  SHOP_DECK_VARIANCE_FACTOR,
-                  inRarityFilter );
     }
 
 

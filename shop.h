@@ -88,8 +88,6 @@ CHECK_CHESS_ARRAY( shopPrices,
 #define                NUM_SHOP_SLOTS  6
 
 
-static  Deck           shopDeck;
-
 static  char           shopIsOnSale          [ NUM_SHOP_SLOTS ];
 static  int            shopDiscountPercent   [ NUM_SHOP_SLOTS ];
 static  int            shopSlotPrices        [ NUM_SHOP_SLOTS ];
@@ -173,11 +171,7 @@ static void shopInternalReroll( void ) {
 void shopInit( int  inPointerActionHandle,
                int  inCenterX,
                int  inCenterY ) {
-
-    /* each more expensive deck focuses on double the rarity of
-       the base two decks */
-
-    int  rarityFilter  =  MAX_DECK_PIECE_OCCURRENCE;
+    
     int  i;
     int  hopSize       =  30;
     int  numStartHops  =  NUM_SHOP_SLOTS / 2;
@@ -203,8 +197,6 @@ void shopInit( int  inPointerActionHandle,
     lang_shopTitle  = maxigin_initTranslationKey( "shopTitle" );
     lang_sale  = maxigin_initTranslationKey( "sale" );
     
-    getShopDeck( &shopDeck,
-                 rarityFilter );
 
     /* all have discount turned off, but potential 50 % discount for now */
     shopIsOnSale[ 0 ] = 0;
@@ -257,8 +249,6 @@ void shopInit( int  inPointerActionHandle,
                              -1 );
 
     REGISTER_VAL_MEM( shopRand );
-    
-    REGISTER_VAL_MEM( shopDeck );
 
     REGISTER_VAL_MEM( shopOnSaleRoll );
 
@@ -284,8 +274,6 @@ void shopReroll( void ) {
 
 
 void shopReset( void ) {
-
-    deckReshuffleAll( &shopDeck );
 
     shopInternalReroll();
 

@@ -73,6 +73,8 @@ int rollPoolSetup( int          inNumItems,
                    int          inFlatnessDenominator,
                    const char  *inPoolName );
 
+int rollPoolGetSize( int  inRollPoolHandle );
+
 int rollItem( int  inRollPoolHandle );
 
 void rollPoolReset( int  inRollPoolHandle );
@@ -413,6 +415,17 @@ int  rollPoolSetup( int          inNumItems,
         p->descriptionBuffer );
     
     return handle;
+    }
+
+
+
+int rollPoolGetSize( int  inRollPoolHandle ) {
+
+    if( inRollPoolHandle == -1 ) {
+        return 0;
+        }
+
+    return rollPools[ inRollPoolHandle ].numItems;
     }
 
 

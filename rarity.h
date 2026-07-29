@@ -239,7 +239,11 @@ ChessPiece rarityRollPiece( void ) {
          i > FIRST_ROLLABLE_RARITY;
          i -- ) {
 
-        if( roll( &( rarityRolls[i] ) ) ) {
+        /* skip empty pools */
+        if( rollPoolGetSize( rarityPools[ i ] ) > 0
+            &&
+            roll( &( rarityRolls[i] ) ) ) {
+            
             pickedRarity = i;
             break;
             }

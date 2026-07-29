@@ -172,7 +172,7 @@ int  costInit( int  inBaseCost,
     costList[ handle ].levelIncrementIncrement = inLevelIncrementIncrement;
 
     costList[ handle ].startingIncrement       = inFixedIncrement;
-    costList[ handle ].startingLevelIncrement  = inLevelIncrementIncrement;
+    costList[ handle ].startingLevelIncrement  = inLevelFixedIncrement;
     
     costFullReset( handle );
 

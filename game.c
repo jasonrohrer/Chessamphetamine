@@ -1766,7 +1766,10 @@ void maxiginGame_step( void ) {
                     shopShowing = 1;
                     shopDone    = 0;
 
-                    shopReroll();
+                    if( currentLevel > 0 ) {
+                        /* don't reroll the shop until level 1 */
+                        shopReroll();
+                        }
                 
                     maxigin_playSoundEffect( boardSlideSound,
                                              356 );

@@ -61,6 +61,7 @@ char isShoppingDone( void );
 
 #include "button.h"
 #include "slotLift.h"
+#include "cost.h"
 
 
 #define SHOP_PRICE_LIST( C, V )  \
@@ -126,6 +127,7 @@ static  MaxiginRand    shopRand;
 static  int            shopOnSaleOneIn                            =  10;
 static  RollInfo       shopOnSaleRoll;
 
+static  int            shopRerollCost;
 
 
 static void shopResetHightlighFades( void ) {
@@ -186,6 +188,18 @@ void shopInit( int  inPointerActionHandle,
     int  startHop      =  hopSize * numStartHops;
     int  curPos;
 
+
+    shopRerollCost = costInit( 5,
+                               1,
+                               -1,
+                               -1,
+                               1,
+                               0,
+                               -1,
+                               -1,
+                               0 );
+    
+    
     maxigin_randSeed( &shopRand,
                       mingin_getEntropySeed() );
 
@@ -291,6 +305,9 @@ void shopReroll( void ) {
     shopActionDown = 0;
     shoppingDone   = 0;
 
+    costResetIncrement( shopRerollCost );
+    costLevelIncrement( shopRerollCost );
+
     buttonReset( doneButton );
     }
 
@@ -303,6 +320,8 @@ void shopReset( void ) {
     shopSelectedSlot = -1;
     shopActionDown   =  0;
     shoppingDone     =  0;
+
+    costFullReset( shopRerollCost );
     }
 
 
@@ -386,7 +405,13 @@ void shopDraw( void ) {
 
     buttonDraw( rerollButton );
     buttonDraw( doneButton );
-    
+
+    maxigin_drawResetColor();
+            
+    numberDraw( costGet( shopRerollCost ),
+                    shopCenterX - 35,
+                    shopCenterY + 50,
+                    1 );
     }
 
 
@@ -417,7 +442,18 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
 
     if( buttonIsNewPressed( rerollButton ) ) {
 
-        shopSlotsLifting = 1;
+        if( moneyGetTotal() < costGet( shopRerollCost ) ) {
+            /* fail */
+            maxigin_playSoundEffect( inPickFailedSound,
+                                     256 );
+            }
+        else {
+            moneyAdd( - costGet( shopRerollCost ) );
+
+            shopSlotsLifting = 1;
+
+            costIncrement( shopRerollCost );
+            }
         }
 
 
@@ -435,7 +471,7 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
         if( shopSlotsLifting ) {
 
             /* reroll while they are lifted off screen */
-            shopReroll();
+            shopInternalReroll();
             
             shopSlotsLifting = 0;
             shopSlotsDropping = 1;

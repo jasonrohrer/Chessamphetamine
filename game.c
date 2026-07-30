@@ -101,6 +101,7 @@ enum GameUserAction {
     BACK_MOVE_LOG,
     SHIFT,
     CTRL,
+    TAB,
     RAND_COLORS,
     ROT_COLORS_0,
     ROT_COLORS_1,
@@ -402,20 +403,24 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                   20 );
 
             maxigin_drawResetColor();
-
-            numberDraw( testedState.moveCount,
+            numberDraw( moveLogProgress,
                         40,
                         10,
+                        1 );
+            
+            numberDraw( testedState.moveCount,
+                        40,
+                        20,
                         1 );
 
             numberDraw( testedBestScore,
                         40,
-                        30,
+                        40,
                         1 );
             
             numberDraw( getScore( &testedState ),
                         40,
-                        40,
+                        50,
                         1 );
             
             drawBoardState( &testedState,
@@ -1020,25 +1025,87 @@ void maxiginGame_step( void ) {
     moveLogButtonDown = maxigin_isButtonDown( TOGGLE_MOVE_LOG );
 
     if( showingMoveLog ) {
-        int  amount = 1;
 
-        if( maxigin_isButtonDown( CTRL ) ) {
-            amount = 10;
+        if( maxigin_isButtonDown( TAB ) ) {
+
+            /* tab means keep jumping until we see the same
+               move depth that we're at */
+
+            BoardState  testedState;
+            int         testedBestScore;
+            char        logGood;
+            int         curDepth;
+
+            logGood = getLoggedState( moveLogProgress,
+                                      &testedState,
+                                      &testedBestScore );
+            if( logGood ) {
+
+                int   dir;
+                char  found  =  0;
+                
+                
+                curDepth = testedState.moveCount;
+
+                if( ! moveLogAdvDown
+                    &&
+                    maxigin_isButtonDown( ADVANCE_MOVE_LOG ) ) {
+                    moveLogAdvDown = 1;
+                    dir = 1;
+                    }
+                if( ! moveLogBackDown
+                    &&
+                    maxigin_isButtonDown( BACK_MOVE_LOG ) ) {
+                    moveLogBackDown = 1;
+                    dir = -1;
+                    }
+
+                while( ! found ) {
+
+                    moveLogProgress += dir;
+
+                    if( moveLogProgress < 0 ) {
+                        moveLogProgress = 0;
+                        break;
+                        }
+
+                    logGood = getLoggedState( moveLogProgress,
+                                              &testedState,
+                                              &testedBestScore );
+
+                    if( ! logGood ) {
+                        moveLogProgress -= dir;
+                        break;
+                        }
+
+                    if( testedState.moveCount == curDepth ) {
+                        found = 1;
+                        }
+                    }
+                }
             }
+        else {
+            
+            int  amount = 1;
+
+            if( maxigin_isButtonDown( CTRL ) ) {
+                amount = 10;
+                }
         
-        if( ! moveLogAdvDown
-            &&
-            maxigin_isButtonDown( ADVANCE_MOVE_LOG ) ) {
-            moveLogAdvDown = 1;
-            moveLogProgress += amount;
-            }
-        if( ! moveLogBackDown
-            &&
-            maxigin_isButtonDown( BACK_MOVE_LOG ) ) {
-            moveLogBackDown = 1;
-            moveLogProgress -= amount;
-            if( moveLogProgress < 0 ) {
-                moveLogProgress = 0;
+            if( ! moveLogAdvDown
+                &&
+                maxigin_isButtonDown( ADVANCE_MOVE_LOG ) ) {
+                moveLogAdvDown = 1;
+                moveLogProgress += amount;
+                }
+            if( ! moveLogBackDown
+                &&
+                maxigin_isButtonDown( BACK_MOVE_LOG ) ) {
+                moveLogBackDown = 1;
+                moveLogProgress -= amount;
+                if( moveLogProgress < 0 ) {
+                    moveLogProgress = 0;
+                    }
                 }
             }
         }
@@ -2064,6 +2131,7 @@ static MinginButton moveLogAdvMapping[] =  { MGN_KEY_I,     MGN_MAP_END };
 static MinginButton moveLogBackMapping[] =  { MGN_KEY_U,     MGN_MAP_END };
 static MinginButton shiftMapping[] =  { MGN_KEY_SHIFT_L,     MGN_MAP_END };
 static MinginButton ctrlMapping[] =  { MGN_KEY_CONTROL_L,     MGN_MAP_END };
+static MinginButton tabMapping[] =  { MGN_KEY_TAB,     MGN_MAP_END };
 
 static MinginButton randColorsMapping[] = { MGN_KEY_R,  MGN_MAP_END };
 static MinginButton rotColors0Mapping[] = { MGN_KEY_1,  MGN_MAP_END };
@@ -2385,6 +2453,8 @@ void maxiginGame_init( void ) {
                                    shiftMapping );
     maxigin_registerButtonMapping( CTRL,
                                    ctrlMapping );
+    maxigin_registerButtonMapping( TAB,
+                                   tabMapping );
 
     maxigin_registerButtonMapping( RAND_COLORS,
                                    randColorsMapping );

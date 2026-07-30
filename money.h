@@ -19,16 +19,21 @@ void moneyInit( int  inStartVal,
                 int  inSpendSound );
 
 
-void moneyAdd( int inValToAdd );
+void moneyAdd( int  inValToAdd );
+
+void moneyAddDelayed( int  inValToAdd );
+
+void moneyAddOverrunDelayed( void );
 
 
-void moneyAddCapture( ChessPiece inPiece );
+
+void moneyAddCapture( ChessPiece  inPiece );
 
 int  moneyGetTotal( void );
 
 
 /* adds captured money value that is delayed until later */
-void moneyAddCaptureDelayed( ChessPiece inPiece );
+void moneyAddCaptureDelayed( ChessPiece  inPiece );
 
 
 void moneyReleaseDelayed( void );
@@ -61,6 +66,14 @@ void moneyForce( int  inVal );
 #include "numbers.h"
 #include "util.h"
 
+
+/* how much money you get for winning by overrun
+   The cheapest pieces in shop are 2, so you can always
+   buy something, and you're never totally stuck
+*/
+#define  OVERRUN_MONEY_VALUE  2
+
+
 /*
   how much money you get for capturing a given piece
   pawns are 1
@@ -70,16 +83,16 @@ void moneyForce( int  inVal );
 #define PIECE_CAPTURE_MONEY_LIST( C, V )   \
     V( C, 0,   noPiece,      0   ) \
     V( C, 1,   pawn,         1   ) \
-    V( C, 2,   bishop,       2   ) \
-    V( C, 3,   knight,       2   ) \
-    V( C, 4,   rook,         2   ) \
-    V( C, 5,   queen,        2   ) \
-    V( C, 6,   king,         4 ) \
-    V( C, 7,   laserRook,    2   ) \
-    V( C, 8,   laserPawn,    2   ) \
-    V( C, 9,   doublingPawn, 2   ) \
-    V( C, 10,  addingRook,   2   ) \
-    V( C, 11,  rocket,       2   )
+    V( C, 2,   bishop,       1   ) \
+    V( C, 3,   knight,       1   ) \
+    V( C, 4,   rook,         1   ) \
+    V( C, 5,   queen,        1   ) \
+    V( C, 6,   king,         6   ) \
+    V( C, 7,   laserRook,    1   ) \
+    V( C, 8,   laserPawn,    1   ) \
+    V( C, 9,   doublingPawn, 1   ) \
+    V( C, 10,  addingRook,   1   ) \
+    V( C, 11,  rocket,       1   )
 
 static int pieceCaptureMoney[] = {
     MAKE_CHESS_ARRAY( PIECE_CAPTURE_MONEY_LIST )
@@ -257,8 +270,19 @@ void moneyAdd( int  inValToAdd ) {
 
 
 
+void moneyAddDelayed( int  inValToAdd ) {
+    delayedMoneyToAdd += inValToAdd;
+    }
+
+
 int moneyGetTotal( void ) {
     return  moneyVal + moneyToAdd;
+    }
+
+
+
+void moneyAddOverrunDelayed( void ) {
+    moneyAddDelayed( OVERRUN_MONEY_VALUE );
     }
 
 
@@ -269,7 +293,7 @@ static int getCaptureValue( ChessPiece  inPiece ) {
     ChessPiece  t    =  inPiece & CHESS_TYPE_MASK;
     
     if( c == CHESS_BLACK ) {
-       return pieceCaptureMoney[ t ];
+        return pieceCaptureMoney[ t ];
         }
     return 0;
     }

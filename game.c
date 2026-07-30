@@ -1246,6 +1246,8 @@ void maxiginGame_step( void ) {
                                                  512 );
                         endMessageColor = CHESS_WHITE;
                         gameLoserColor  = CHESS_BLACK;
+
+                        moneyAddOverrunDelayed();
                         }
                     else {
                         maxigin_playSoundEffect( checkmateBad,
@@ -2613,7 +2615,7 @@ void maxiginGame_init( void ) {
                   ACTION );
 
 
-    drawCost = costInit( 5,
+    drawCost = costInit( 2,
                          1,
                          -1,
                          -1,

@@ -76,7 +76,7 @@ static  unsigned char  sbHighlightFade[ SIDE_BOARD_MAX_SLOTS ];
 static  int            sbSlotPosX     [ SIDE_BOARD_MAX_SLOTS ];
 static  int            sbSlotPosY     [ SIDE_BOARD_MAX_SLOTS ];
 
-static  int            sbNumSlots             =  5;
+static  int            sbNumSlots             =  3;
 static  int            sbMaxLift              =  100;
 
 
@@ -211,33 +211,30 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
     int  overSlot       =  -1;
     char liftPhaseDone  =  0;
     
-    if( ! maxigin_getPointerLocation( &pointerX,
-                                      &pointerY ) ) {
-        /* pointer not available */
-        return noPiece;
-        }
-    
+    if( maxigin_getPointerLocation( &pointerX,
+                                    &pointerY ) ) {
+        for( i = 0;
+             i < sbNumSlots;
+             i ++ ) {
 
-    for( i = 0;
-         i < sbNumSlots;
-         i ++ ) {
+            ChessPiece  p  =  sideBoard[ i ];
 
-        ChessPiece  p  =  sideBoard[ i ];
+            if( p != noPiece ) {
 
-        if( p != noPiece ) {
+                if( getPixelOverPiece( p | CHESS_WHITE,
+                                       sbSlotPosX[i],
+                                       sbSlotPosY[i],
+                                       pointerX,
+                                       pointerY ) ) {
 
-            if( getPixelOverPiece( p | CHESS_WHITE,
-                                   sbSlotPosX[i],
-                                   sbSlotPosY[i],
-                                   pointerX,
-                                   pointerY ) ) {
-
-                overSlot = i;
-                sbHighlightFade[ i ] = 255;
-                break;
+                    overSlot = i;
+                    sbHighlightFade[ i ] = 255;
+                    break;
+                    }
                 }
             }
         }
+    
 
     for( i = 0;
          i < sbNumSlots;

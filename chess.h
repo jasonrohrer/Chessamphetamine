@@ -302,7 +302,7 @@ static  MaxiginRand  chessRand;
 #define PIECE_VALUE_LIST( C, V )   \
     V( C, 0,   noPiece,       0   ) \
     V( C, 1,   pawn,         10   ) \
-    V( C, 2,   bishop,       30   ) \
+    V( C, 2,   bishop,       32   ) \
     V( C, 3,   knight,       30   ) \
     V( C, 4,   rook,         50   ) \
     V( C, 5,   queen,        90   ) \
@@ -2616,6 +2616,22 @@ static char getGreedyDepthMove( BoardState  *inState,
                 else {
                     
                     score = getScore( &( possibleStates[ inDepthLeft ][m] ) );
+
+                    /* weaken scores by search depth, so that distant
+                       possibilities with the same score are worth
+                       less than immediate possibilities with that same score.
+                       Just like we prefer checkmate NOW to LATER, we also
+                       prefer improving the score NOW to making the
+                       same improvement later.
+                    */
+                    if( inOurDepth > 0 ) {
+                        if( colorToMove == CHESS_WHITE ) {
+                            score -= inOurDepth;
+                            }
+                        else {
+                            score += inOurDepth;
+                            }
+                        }
 
                     if( inDepthLeft > 0 ) {
                         /* not in checkmate or forced checkmate state after

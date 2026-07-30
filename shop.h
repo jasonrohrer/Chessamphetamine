@@ -323,6 +323,8 @@ void shopReset( void ) {
     shoppingDone     =  0;
 
     costFullReset( shopRerollCost );
+
+    buttonReset( doneButton );
     }
 
 

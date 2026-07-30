@@ -1904,6 +1904,8 @@ void maxiginGame_step( void ) {
             costFullReset( drawCost );
             currentLevel = 0;
 
+            noScoreMoveCount = 0;
+
             moneyForce( startingMoney );
 
             heartsReset();

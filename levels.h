@@ -151,8 +151,10 @@ static void levelsReload( void ) {
          i < numLoadedLayouts;
          i ++ ) {
 
-        int  startPixel  =  i * layoutPixelHeight * BW;
-        int  p           =  startPixel * 4;
+        /* image w might be bigger than BW
+           there can be comments, etc off to right side */
+        int  startPixel  =  i * layoutPixelHeight * w;
+        
         
         int  y;
         int  x;
@@ -160,6 +162,8 @@ static void levelsReload( void ) {
         for( y = 0;
              y < BH;
              y ++ ) {
+            
+            int  p           =  startPixel * 4;
 
             for( x = 0;
                  x < BW;
@@ -220,6 +224,10 @@ static void levelsReload( void ) {
                     }
                 
                 }
+
+            /* go to start of next row, skipping any extra
+               pixels beyond BW */
+            startPixel += w;
             }
         }
     }
@@ -282,6 +290,40 @@ void getLevel( int          inLevelNumber,
         deckAddPiece( &enemyDeck,
                       rook );
         }
+    if( inLevelNumber >= 2 ) {
+        deckAddPiece( &enemyDeck,
+                      rook );
+        }
+
+    if( inLevelNumber >= 3 ) {
+        deckAddPiece( &enemyDeck,
+                      knight );
+        }
+    
+    if( inLevelNumber >= 4 ) {
+        deckAddPiece( &enemyDeck,
+                      queen );
+        }
+
+    if( inLevelNumber == 8 ) {
+        /* special case for 8
+           standard set of pieces
+           but don't add 8 pawns for future levels */
+        int  p;
+        
+        for( p = 0;
+             p < 7;
+             p ++ ) {
+            deckAddPiece( &enemyDeck,
+                          pawn );
+            }
+        deckAddPiece( &enemyDeck,
+                      bishop );
+        deckAddPiece( &enemyDeck,
+                      knight );
+        }
+        
+            
 
     if( inLevelNumber >= NUM_POSSIBLE_LEVELS ) {
 

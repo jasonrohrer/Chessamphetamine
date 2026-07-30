@@ -2085,6 +2085,8 @@ void maxiginGame_step( void ) {
 
                 costResetIncrement( drawCost );
 
+                costLevelIncrement( drawCost );
+                
                 currentLevel ++;
                         
                 getLevel( currentLevel,
@@ -2615,14 +2617,14 @@ void maxiginGame_init( void ) {
                   ACTION );
 
 
-    drawCost = costInit( 2,
-                         1,
+    drawCost = costInit( 2,   /* cost starts at 2 */
+                         1,   /* every redraw, cost goes up by inc=1 */
                          -1,
                          -1,
-                         1,
+                         1,   /* every redraw, we add 1 to inc */
                          0,
                          -1,
-                         -1,
+                         3,   /* every 3 levels, base cost goes up by 1 */
                          0 );
                          
     

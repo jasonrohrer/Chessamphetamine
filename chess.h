@@ -2846,6 +2846,31 @@ char getGreedyMove( BoardState  *inState,
 
 
 
+static char  getRandomMoveInternal( BoardState  *inState,
+                                    Move        *outMove,
+                                    Captured    *outCaptured,
+                                    BoardState  *outNewState ) {
+    char  canMove =  getRandomMove( inState,
+                                    1,
+                                    outMove,
+                                    outCaptured,
+                                    outNewState );
+
+    if( ! canMove ) {
+        /* stuck with no moves that don't move into check */
+
+        /* try again, allowing moving into check */
+        canMove = getRandomMove( inState,
+                                 0,
+                                 outMove,
+                                 outCaptured,
+                                 outNewState );
+        }
+    return canMove;
+    }
+
+    
+
 char getMixedMove( BoardState  *inState,
                    Move        *outMove,
                    Captured    *outCaptured,
@@ -2855,7 +2880,7 @@ char getMixedMove( BoardState  *inState,
                                      1,
                                      100 );
 
-    if( 1 || pick <= 75 ) {
+    if( pick <= 75 ) {
 
         return getGreedyMove( inState,
                               outMove,
@@ -2863,26 +2888,47 @@ char getMixedMove( BoardState  *inState,
                               outNewState );
         }
     else {
-        char  canMove =  getRandomMove( inState,
-                                        1,
-                                        outMove,
-                                        outCaptured,
-                                        outNewState );
 
-        if( ! canMove ) {
-            /* stuck with no moves that don't move into check */
-
-            /* try again, allowing moving into check */
-            canMove = getRandomMove( inState,
-                                     0,
-                                     outMove,
-                                     outCaptured,
-                                     outNewState );
-            }
-        return canMove;
+        return getRandomMoveInternal( inState,
+                                      outMove,
+                                      outCaptured,
+                                      outNewState );
         }
     }
 
+
+
+static char chessBoardStatesEqual( BoardState *inA,
+                                   BoardState *inB ) {
+    int  y;
+    int  x;
+
+    if( inA->nextToMove != inB->nextToMove ) {
+        return 0;
+        }
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            if( inA->grid[ y ][ x ] != inB->grid[ y ][ x ] ) {
+                return 0;
+                }
+            }
+        }
+    return 1;
+    }
+
+
+
+static  BoardState  chessRepeatCheckState;
+static  char        chessRepeatCheckStateSet     =  0;
+static  int         chessRepeatCheckStateAge     =  0;
+static  int         chessRepeatCheckStateMaxAge  =  6;
 
 
 static char getChessMoveInternal( BoardState  *inState,
@@ -2895,10 +2941,40 @@ static char getChessMoveInternal( BoardState  *inState,
     bestTopLevelScore    = 0;
     
     if( inState->nextToMove == CHESS_BLACK ) {
-        return getMixedMove( inState,
-                             outMove,
-                             outCaptured,
-                             outNewState );
+        char  retVal = getGreedyMove( inState,
+                                      outMove,
+                                      outCaptured,
+                                      outNewState );
+
+        if( ! chessRepeatCheckStateSet
+            ||
+            chessRepeatCheckStateAge >= chessRepeatCheckStateMaxAge ) {
+            
+            chessRepeatCheckState = *outNewState;
+            chessRepeatCheckStateSet = 1;
+            chessRepeatCheckStateAge = 0;
+            }
+        else {
+
+            if( chessBoardStatesEqual( outNewState,
+                                       & chessRepeatCheckState ) ) {
+                
+                /* repeat hit, switch to random move */
+                retVal = getRandomMoveInternal( inState,
+                                                outMove,
+                                                outCaptured,
+                                                outNewState );
+
+                /* clear the repeat check state */
+                chessRepeatCheckStateSet = 0;
+                }
+            else {
+                /* not a repeat, keep the age count going */
+                chessRepeatCheckStateAge ++;
+                }
+            }
+        
+        return retVal;
         }
     else {
         /* white always makes greedy move,

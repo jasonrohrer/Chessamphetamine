@@ -25,7 +25,7 @@ void levelsInit( void );
 */
 void getLevel( int          inLevelNumber,
                BoardState  *outState,
-               Deck        *inDeck );
+               Deck        *inPlayerDeck );
 
 
 
@@ -38,14 +38,6 @@ void getLevel( int          inLevelNumber,
 
 
 #define NUM_POSSIBLE_LEVELS  256
-
-
-/* list of possible pieces per level, terminated with noPiece
-   never contains a King, because all levels have a king */
-static  ChessPiece  possiblePieces  [ NUM_POSSIBLE_LEVELS ][ NUM_CHESS_PIECES ];
-
-/* if all likelihoods are the same, then all pieces drawn with equal chance */
-static  int         pieceLikelihoods[ NUM_POSSIBLE_LEVELS ][ NUM_CHESS_PIECES ];
 
 
 /* starting piece locations
@@ -238,175 +230,12 @@ static void levelsReload( void ) {
 
 void levelsInit( void ) {
 
-    int  i;
-
     maxigin_randSeed( &levelsRand,
                       mingin_getEntropySeed() );
 
     levelsReload();
-    
-
-    for( i = 0;
-         i < NUM_POSSIBLE_LEVELS;
-         i ++ ) {
-        int  p;
-
-        for( p = 0;
-             p < NUM_CHESS_PIECES;
-             p ++ ) {
-            possiblePieces[i][p] = noPiece;
-            }
-
-        /* all levels can have pawns */
-        possiblePieces[i][0] = pawn;
-
-        /* bishop introduced on level 1 */
-        if( i > 0 ) {
-            possiblePieces[i][1] = bishop;
-            }
-
-        /* knight introduced on level 3 */
-        if( i > 2 ) {
-            possiblePieces[i][2] = bishop;
-            }
-
-        /* rook introduced on level 8 */
-        if( i > 7 ) {
-            possiblePieces[i][3] = bishop;
-            }
-        
-        /* queen on level 16 */
-        if( i > 15 ) {
-            possiblePieces[i][4] = queen;
-            }
-
-        /* laserPawn on level 25 */
-        if( i > 24 ) {
-            possiblePieces[i][5] = laserPawn;
-            }
-
-        /* adding rook on level 32 */
-        if( i > 31 ) {
-            possiblePieces[i][6] = addingRook;
-            }
-        
-        /* doubling pawn on level 48 */
-        if( i > 47 ) {
-            possiblePieces[i][7] = doublingPawn;
-            }
-        
-        /* laser rook on level 64 */
-        if( i > 63 ) {
-            possiblePieces[i][8] = laserRook;
-            }
-        }
-
-
-    /* use standardized likelihoods for now, based on starting pieces
-       on normal chess board */
-    
-    for( i = 0;
-         i < NUM_POSSIBLE_LEVELS;
-         i ++ ) {
-        
-        int  p;
-
-        for( p = 0;
-             p < NUM_CHESS_PIECES;
-             p ++ ) {
-
-            int  r = 0;
-
-            switch( possiblePieces[i][p] ) {
-                case noPiece:
-                    r = 0;
-                    break;
-                case pawn:
-                    r = 8;
-                    break;
-                case bishop:
-                case knight:
-                case rook:
-                    r = 2;
-                    break;
-                case queen:
-                    r = 1;
-                    break;
-                default:
-                    /* all special pieces have same likelihood as queen
-                       for now */
-                    r = 1;
-                }
-
-            pieceLikelihoods[i][p] = r;
-                
-            }
-        }
-
 
     REGISTER_VAL_MEM( levelsRand );
-    }
-
-
-
-static ChessPiece pickRandomLevelPiece( int  inLevelNumber ) {
-
-    /* fixme */
-
-    int  likelihoodSum  =  0;
-    int  p;
-    int  i              =  inLevelNumber;
-    int  pick;
-
-    for( p = 0;
-         p < NUM_CHESS_PIECES;
-         p ++ ) {
-
-        if( possiblePieces[ i ][ p ] == noPiece ) {
-            /* end of list */
-            break;
-            }
-
-        likelihoodSum += pieceLikelihoods[ i ][ p ];
-        }
-
-    if( likelihoodSum == 0 ) {
-        /* this should never happen */
-        mingin_log( "likelihoodSum is zero "
-                    "in pickRandomEnemyPiece in levels.h\n" );
-        return pawn;
-        }
-
-    pick = (int)( maxigin_randRange( &levelsRand,
-                                     0,
-                                     likelihoodSum - 1 ) );
-
-    likelihoodSum = 0;
-    for( p = 0;
-         p < NUM_CHESS_PIECES;
-         p ++ ) {
-
-        if( possiblePieces[ i ][ p ] == noPiece ) {
-            /* end of list ?? */
-            mingin_log( "walked end of list when looking for chosen bin "
-                        "in pickRandomEnemyPiece in levels.h\n" );
-            return pawn;
-            }
-
-        likelihoodSum += pieceLikelihoods[ i ][ p ];
-
-        if( likelihoodSum > pick ) {
-            /* just added a bin that took us over the top
-               pick is in that bin */
-
-            return possiblePieces[ i ][ p ];
-            }
-        }
-
-    mingin_log( "got to end of loop without ever finding pick "
-                "in pickRandomEnemyPiece in levels.h\n" );
-    
-    return pawn;
     }
 
 
@@ -415,10 +244,11 @@ void getLevel( int          inLevelNumber,
                BoardState  *outState,
                Deck        *inPlayerDeck ) {
 
-    int  y;
-    int  x;
-    int  i;
+    int   y;
+    int   x;
 
+    Deck  enemyDeck;
+    
 
     if( mingin_getBulkDataChanged( levelsFile ) ) {
         levelsReload();
@@ -434,8 +264,46 @@ void getLevel( int          inLevelNumber,
                                            NUM_POSSIBLE_LEVELS - 1 );
         }
 
-    i = inLevelNumber;
 
+    getEmptyDeck( &enemyDeck,
+                  0 );
+
+    if( inLevelNumber >= 0 ) {
+        deckAddPiece( &enemyDeck,
+                      pawn );
+        deckAddPiece( &enemyDeck,
+                      bishop );
+        deckAddPiece( &enemyDeck,
+                      bishop );
+        deckAddPiece( &enemyDeck,
+                      knight );
+        }
+    if( inLevelNumber >= 1 ) {
+        deckAddPiece( &enemyDeck,
+                      rook );
+        }
+
+    if( inLevelNumber >= NUM_POSSIBLE_LEVELS ) {
+
+        /* add random pieces to enemy deck for beyond levels */
+        int          extra       =  inLevelNumber - NUM_POSSIBLE_LEVELS + 1;
+        int          i;
+        for( i = 0;
+             i < extra;
+             i ++ ) {
+            
+            deckAddPiece(
+                &enemyDeck,
+                (ChessPiece)( maxigin_randRange( &levelsRand,
+                                                 FIRST_CHESS_PIECE,
+                                                 LAST_CHESS_PIECE ) ) );
+            }
+        }
+
+    deckReshuffleAll( &enemyDeck );
+    
+    
+    
     outState->kingExists[0] = 0;
     outState->kingExists[1] = 0;
     
@@ -448,9 +316,9 @@ void getLevel( int          inLevelNumber,
              x < BW;
              x ++ ) {
 
-            int  p  =  pieceLayouts[ i ][ y ][ x ];
+            int  p  =  pieceLayouts[ inLevelNumber ][ y ][ x ];
 
-            outState           ->grid[ y ][ x ] = noPiece;
+            outState->grid[ y ][ x ] = noPiece;
 
             if( p == 0 ) {
                 continue;
@@ -478,9 +346,10 @@ void getLevel( int          inLevelNumber,
                 }
             if( p == 4 ) {
                 /* enemy piece */
+                ChessPiece enemyPiece = deckDraw( &enemyDeck );
 
                 outState->grid[ y ][ x ] =
-                    pickRandomLevelPiece( i ) | CHESS_BLACK;
+                    enemyPiece | CHESS_BLACK;
                 }
             }
         }

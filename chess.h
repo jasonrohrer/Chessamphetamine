@@ -37,7 +37,7 @@ enum{
     NUM_CHESS_PIECES };
 
 #define  FIRST_CHESS_PIECE  pawn
-
+#define  LAST_CHESS_PIECE   ( NUM_CHESS_PIECES - 1 )
 
 
 
@@ -2808,7 +2808,7 @@ char getMixedMove( BoardState  *inState,
                                      1,
                                      100 );
 
-    if( pick <= 75 ) {
+    if( 1 || pick <= 75 ) {
 
         return getGreedyMove( inState,
                               outMove,

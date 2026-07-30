@@ -37,7 +37,7 @@ typedef struct Deck {
         */
         char        present[ MAX_DECK_SIZE ];
 
-        /* presence in deck can be ignored for shop deck */
+        /* presence in deck can be ignored for enemy deck */
         char        trackPresent;
         
     } Deck;
@@ -50,6 +50,10 @@ void  deckInit( void );
 
 /* gets a shuffled player start deck */
 void getPlayerStartDeck( Deck  *outDeck );
+
+
+void getEmptyDeck( Deck  *outDeck,
+                   char   inTrackPresent );
 
 
 
@@ -306,6 +310,17 @@ void getPlayerStartDeck( Deck  *outDeck ) {
        cards that are present in deck, even after reshuffle */
     outDeck->trackPresent = 1;
     }
+
+
+void getEmptyDeck( Deck  *outDeck,
+                   char   inTrackPresent ) {
+    
+    outDeck->numPieces    = 0;
+    outDeck->drawPos      = 0;
+    outDeck->trackPresent = inTrackPresent;
+    }
+
+
 
 
 

@@ -294,20 +294,24 @@ const char *getPieceName( ChessPiece  inPiece );
 static  MaxiginRand  chessRand;
 
 
-
+/*
+  using 10x values (instead of traditional values) allows us to have
+  more nuance, for special pieces, and also for pawns that advance
+  up the field (they can be worth slightly more as they advance)
+*/
 #define PIECE_VALUE_LIST( C, V )   \
-    V( C, 0,   noPiece,      0   ) \
-    V( C, 1,   pawn,         1   ) \
-    V( C, 2,   bishop,       3   ) \
-    V( C, 3,   knight,       3   ) \
-    V( C, 4,   rook,         5   ) \
-    V( C, 5,   queen,        9   ) \
-    V( C, 6,   king,         999 ) \
-    V( C, 7,   laserRook,    7   ) \
-    V( C, 8,   laserPawn,    2   ) \
-    V( C, 9,   doublingPawn, 2   ) \
-    V( C, 10,  addingRook,   6   ) \
-    V( C, 11,  rocket,       2   )
+    V( C, 0,   noPiece,       0   ) \
+    V( C, 1,   pawn,         10   ) \
+    V( C, 2,   bishop,       30   ) \
+    V( C, 3,   knight,       30   ) \
+    V( C, 4,   rook,         50   ) \
+    V( C, 5,   queen,        90   ) \
+    V( C, 6,   king,         999  ) \
+    V( C, 7,   laserRook,    70   ) \
+    V( C, 8,   laserPawn,    20   ) \
+    V( C, 9,   doublingPawn, 20   ) \
+    V( C, 10,  addingRook,   60   ) \
+    V( C, 11,  rocket,       20   )
 
 static int pieceValue[] = {
     MAKE_CHESS_ARRAY( PIECE_VALUE_LIST )
@@ -366,8 +370,12 @@ CHECK_CHESS_ARRAY( pieceNames,
 /* maps all chess pieces, both black and white, to positive and negative
    scores.
    This lookup table speeds up the board scoring function.
+
+   Further indexing by row and col allows pieces to vary in value
+   based on board position, which is mostly useful for pawns as they
+   advance up the board.
 */
-static int  pieceScores[ 255 ];
+static int  pieceScores[ 255 ][ BH ][ BW ];
 
 
 
@@ -1886,8 +1894,29 @@ void chessInit( void ) {
         ChessPiece  p   =  (ChessPiece)i;
         int         v   =  pieceValue[ p ];
 
-        pieceScores[ p |  CHESS_WHITE ] =  v;
-        pieceScores[ p |  CHESS_BLACK ] = -v;
+        int         y;
+        int         x;
+
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+            
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
+        
+                pieceScores[ p |  CHESS_WHITE ][y][x] =  v;
+                pieceScores[ p |  CHESS_BLACK ][y][x] = -v;
+
+                if( 0 && p == pawn ) {
+                    /* pawns get 1 point bonus per square
+                       as they advance farther */
+                    pieceScores[ p |  CHESS_BLACK ][y][x] -= y;
+
+                    pieceScores[ p |  CHESS_WHITE ][y][x] += ( BH - y - 1 );
+                    }
+                }
+            }
         }
 
     
@@ -2381,7 +2410,9 @@ int getScore( BoardState *inState ) {
              x < BW;
              x ++ ) {
 
-            score += pieceScores[ inState->grid[ y ][ x ] ];
+            ChessPiece  p  =  inState->grid[ y ][ x ];
+
+            score += pieceScores[ p ][ y ][ x ];
             }
 
         }

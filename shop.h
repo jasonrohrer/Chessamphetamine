@@ -190,6 +190,8 @@ void shopInit( int  inPointerActionHandle,
     int  curPos;
 
 
+    /* reroll costs are 5, 6, 8, 11, 15, etc. */
+    /* don't increase as levels go up */
     shopRerollCost = costInit( 5,
                                1,
                                -1,

@@ -1247,7 +1247,9 @@ void maxiginGame_step( void ) {
                         endMessageColor = CHESS_WHITE;
                         gameLoserColor  = CHESS_BLACK;
 
-                        moneyAddOverrunDelayed();
+                        /* no longer give them overrun money
+                           since they get a shop allowance anyway */
+                        /* moneyAddOverrunDelayed(); */
                         }
                     else {
                         maxigin_playSoundEffect( checkmateBad,
@@ -1842,6 +1844,9 @@ void maxiginGame_step( void ) {
                 
                     maxigin_playSoundEffect( boardSlideSound,
                                              356 );
+
+                    /* give them an allowance of 3 every time shop appears */
+                    moneyAddDelayed( 3 );
                     }
                 else {
                     gameOver = 1;
@@ -1869,6 +1874,14 @@ void maxiginGame_step( void ) {
         boardSlideUp < boardSlideUpMax ) {
         
         boardSlideUp += ( 4 * 60 ) / r;
+
+        if( boardSlideUp >= boardSlideUpMax
+            &&
+            shopShowing ) {
+            /* release shop allowance money now that it's showing */
+            moneyReleaseDelayed();
+            }
+            
         }
     else if( ( ( shopShowing
                  &&
@@ -1884,6 +1897,11 @@ void maxiginGame_step( void ) {
 
         if( boardSlideUp <= 0 ) {
             boardSlideUp = 0;
+
+            if( shopShowing ) {
+                /* release next level allowance money */
+                moneyReleaseDelayed();
+                }
 
             shopShowing = 0;
             shopDone    = 0;
@@ -2084,6 +2102,9 @@ void maxiginGame_step( void ) {
                 drawGame         = 0;
                 noScoreMoveCount = 0;
                 sideBoardShowing = 1;
+
+                /* give them an allowance for each level */
+                moneyAddDelayed( 5 );
 
                 costResetIncrement( drawCost );
 
@@ -2619,14 +2640,15 @@ void maxiginGame_init( void ) {
                   ACTION );
 
 
-    drawCost = costInit( 2,   /* cost starts at 2 */
+    /* redraw costs are 1, 2, 3, 6, 10, etc */
+    drawCost = costInit( 1,   /* cost starts at 1 */
                          1,   /* every redraw, cost goes up by inc=1 */
                          -1,
                          -1,
                          1,   /* every redraw, we add 1 to inc */
                          0,
                          -1,
-                         3,   /* every 3 levels, base cost goes up by 1 */
+                         -1,  /* cost never increases as levels rise*/
                          0 );
                          
     

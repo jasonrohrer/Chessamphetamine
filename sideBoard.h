@@ -76,7 +76,7 @@ static  unsigned char  sbHighlightFade[ SIDE_BOARD_MAX_SLOTS ];
 static  int            sbSlotPosX     [ SIDE_BOARD_MAX_SLOTS ];
 static  int            sbSlotPosY     [ SIDE_BOARD_MAX_SLOTS ];
 
-static  int            sbNumSlots             =  2;
+static  int            sbNumSlots             =  3;
 static  int            sbMaxLift              =  100;
 
 

@@ -1908,7 +1908,11 @@ void chessInit( void ) {
                 pieceScores[ p |  CHESS_WHITE ][y][x] =  v;
                 pieceScores[ p |  CHESS_BLACK ][y][x] = -v;
 
-                if( p == pawn ) {
+                if( p == pawn
+                    ||
+                    p == laserPawn
+                    ||
+                    p == doublingPawn ) {
                     /* pawns get 1 point bonus per square
                        as they advance farther */
                     pieceScores[ p |  CHESS_BLACK ][y][x] -= y;

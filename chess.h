@@ -294,6 +294,13 @@ const char *getPieceName( ChessPiece  inPiece );
 static  MaxiginRand  chessRand;
 
 
+static  BoardState  chessRepeatCheckState;
+static  char        chessRepeatCheckStateSet     =  0;
+static  int         chessRepeatCheckStateAge     =  0;
+static  int         chessRepeatCheckStateMaxAge  =  6;
+
+
+
 /*
   using 10x values (instead of traditional values) allows us to have
   more nuance, for special pieces, and also for pawns that advance
@@ -1925,6 +1932,10 @@ void chessInit( void ) {
 
     
     REGISTER_VAL_MEM( chessRand );
+
+    REGISTER_VAL_MEM( chessRepeatCheckState );
+    REGISTER_VAL_MEM( chessRepeatCheckStateSet );
+    REGISTER_VAL_MEM( chessRepeatCheckStateAge );
     }
 
 
@@ -2927,12 +2938,6 @@ static char chessBoardStatesEqual( BoardState *inA,
     return 1;
     }
 
-
-
-static  BoardState  chessRepeatCheckState;
-static  char        chessRepeatCheckStateSet     =  0;
-static  int         chessRepeatCheckStateAge     =  0;
-static  int         chessRepeatCheckStateMaxAge  =  6;
 
 
 static char getChessMoveInternal( BoardState  *inState,

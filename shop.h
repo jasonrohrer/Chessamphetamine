@@ -296,6 +296,12 @@ void shopInit( int  inPointerActionHandle,
     REGISTER_ARRAY_MEM( shopIsOnSale );
     
     REGISTER_ARRAY_MEM( shopItems );
+
+    REGISTER_ARRAY_MEM( shopSlotLift );
+    REGISTER_ARRAY_MEM( shopSlotSmoothLift );
+
+    REGISTER_VAL_MEM( shopSlotsLifting );
+    REGISTER_VAL_MEM( shopSlotsDropping );
     }
 
 

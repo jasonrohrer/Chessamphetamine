@@ -58,6 +58,7 @@ static  int            heartsSkullDarkEyesSprite         =  -1;
 /* no sound for losing a hear, b/c that happens during checkmate,
    which already has a sound */
 static  int            heartsGainSound                   =  -1;
+static  int            heartsLossPulseSound              =  -1;
 
 static  int            heartsCount                       =   0;
 static  int            heartsStarting                    =   3;
@@ -66,6 +67,8 @@ static  unsigned char  heartsFlashCount[ HEARTS_MAX ];
 static  unsigned char  heartsShineFade [ HEARTS_MAX ];
 static  unsigned char  heartsSkullShineFade              =   0;
 static  unsigned char  heartsSkullFlashCount             =   0;
+
+static  char           heartsJustLost                    =   0;
 
 
 static void heartsResetFade( void ) {
@@ -119,7 +122,8 @@ void heartsInit( void ) {
     heartsSkullDarkEyesSprite = maxigin_initSprite( "skullLightDarkEyes.tga" );
 
     heartsGainSound = maxigin_initSoundEffect( "heartGain_sd_2.wav" );
-
+    heartsLossPulseSound = maxigin_initSoundEffect( "heartLossPulse_sd_14.wav" );
+    
     heartsReset();
     heartsResetFade();
     
@@ -145,6 +149,8 @@ static void heartsStartFlash( int            inIndex,
 
 
 void heartsReset( void ) {
+    heartsJustLost = 0;
+    
     while( heartsCount < heartsStarting ) {
         heartsStartFlash( heartsCount,
                           3 );
@@ -161,6 +167,7 @@ void heartsReset( void ) {
 
 
 void heartsGain( void ) {
+    heartsJustLost = 0;
     if( heartsCount < HEARTS_MAX ) {
 
         maxigin_playSoundEffect( heartsGainSound,
@@ -177,6 +184,7 @@ void heartsGain( void ) {
 
 void heartsLose( void ) {
     if( heartsCount > 0 ) {
+        heartsJustLost = 1;
 
         if( heartsCount > 1 ) {
             heartsStartFlash( heartsCount - 1,
@@ -372,6 +380,15 @@ void heartsStep( void ) {
 
         if( heartsFlashCount[i] > 0 ) {
             if( heartsShineFade[i] == targetFade[i] ) {
+
+                if( targetFade[i] == 255
+                    &&
+                    heartsJustLost ) {
+                    /* hit flash peak during lost */
+                    maxigin_playSoundEffect( heartsLossPulseSound,
+                                             128 );
+                    }
+                
                 heartsFlashCount[i] --;
                 }
             }
@@ -384,6 +401,15 @@ void heartsStep( void ) {
     if( heartsSkullFlashCount > 0
         &&
         heartsSkullShineFade == targetSkullFade ) {
+
+        if( targetSkullFade == 255
+            &&
+            heartsJustLost ) {
+            /* hit flash peak during lost */
+            maxigin_playSoundEffect( heartsLossPulseSound,
+                                     128 );
+            }
+        
         heartsSkullFlashCount --;
         }
 

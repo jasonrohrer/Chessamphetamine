@@ -157,6 +157,29 @@ int  costInit( int  inBaseCost,
         return -1;
         }
 
+
+    if( inIncrementCurrentDivisor == 0 ) {
+        mingin_log(
+            "Warning, inIncrementCurrentDivisor can't be 0 in costInit\n" );
+        inIncrementCurrentDivisor = -1;
+        }
+    if( inIncrementCountDivisor == 0 ) {
+        mingin_log(
+            "Warning, inIncrementCountDivisor can't be 0 in costInit\n" );
+        inIncrementCountDivisor = -1;
+        }
+
+    if( inLevelCurrentDivisor == 0 ) {
+        mingin_log(
+            "Warning, inLevelCurrentDivisor can't be 0 in costInit\n" );
+        inLevelCurrentDivisor = -1;
+        }
+    if( inLevelCountDivisor == 0 ) {
+        mingin_log(
+            "Warning, inLevelCountDivisor can't be 0 in costInit\n" );
+        inLevelCountDivisor = -1;
+        } 
+    
     handle = numCosts;
     numCosts ++;
 

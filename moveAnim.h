@@ -266,7 +266,7 @@ void moveAnimInit( void ) {
 
 void playBeepUpSound  ( void ) {
     maxigin_playSoundEffect( beepUp,
-                             256 );
+                             128 );
     }
 
 
@@ -274,7 +274,7 @@ void playBeepUpSound  ( void ) {
 void playBeepDownSound( void ) {
 
     maxigin_playSoundEffect( beepDown,
-                             256 );
+                             128 );
     }
 
 

@@ -300,6 +300,14 @@ static  int         chessRepeatCheckStateAge     =  0;
 static  int         chessRepeatCheckStateMaxAge  =  6;
 
 
+/* this is enabled to force rockets and other random-target pieces
+   to pick the worst (lowest value) target on deeper plies of the search,
+   which prevents "future good moves" being predicted in a way that
+   warps multi-layer decision making.
+*/
+static  char        chessRandomPiecesShouldPickWorstMove  =  0;
+
+
 
 /*
   using 10x values (instead of traditional values) allows us to have
@@ -1593,13 +1601,58 @@ static int rocketMove( BoardState     *inState,
         shuffle[ i ] = i;
         }
 
-    maxigin_shuffle( &chessRand,
-                     numEnemy,
-                     shuffle );
+    
 
     if( repeatVal > numEnemy ) {
         repeatVal = numEnemy;
         }
+
+    if( chessRandomPiecesShouldPickWorstMove ) {
+        /* find the repeatVal lowest-value pieces
+           and have the first indices of the shuffle point to them */
+        
+        int  n  =  0;
+
+        while( n < repeatVal ) {
+            
+            int  lowestValue  =  pieceValue[ king ] + 1;
+            int  lowestIndex  =  -1;
+
+            /* consider only nth position and beyond,
+               so we don't reconsider lowest-value pieces that we've
+               already swapped into [0 .. n-1]
+            */
+            int  startIndex   =  n;
+            
+            for( i = startIndex;
+                 i < numEnemy;
+                 i ++ ) {
+                
+                ChessPiece  t  =  enemy[ shuffle[ i ] ].p  &  CHESS_TYPE_MASK;
+                
+                int  v  =  pieceValue[ t ];
+
+                if( v < lowestValue ) {
+                    lowestValue = v;
+                    lowestIndex = shuffle[ i ];
+                    }
+                }
+
+            /* swap lowest index with n'th position */
+            shuffle[ n ] = lowestIndex;
+            shuffle[ lowestIndex ] = n;
+            
+            n ++;
+            }
+        }
+    else {
+        /* shuffle all target pieces and consider a random choice */
+        
+        maxigin_shuffle( &chessRand,
+                         numEnemy,
+                         shuffle );
+        }
+    
 
     pick = shuffle[ 0 ];
 
@@ -2490,6 +2543,18 @@ static char getGreedyDepthMove( BoardState  *inState,
     int             i;
     Move            nextMove;
 
+    if( inOurDepth == 0 ) {
+        /* consider all moves for random-target pieces */
+        chessRandomPiecesShouldPickWorstMove = 0;
+        }
+    else {
+        /* on deeper plies of search, only consider worst move
+           that random-target pieces can make, so it doesn't warp
+           our decision-making
+        */
+        chessRandomPiecesShouldPickWorstMove = 1;
+        }
+
     if( colorToMove == CHESS_BLACK ) {
         bestScore = MAX_SCORE + 1;
         }
@@ -3032,7 +3097,11 @@ char getChessMove( BoardState  *inState,
         int  numMoves;
         
 
-        
+        /* disable this, so that we make sure to always
+           consider all possible moves (not just worst ones)
+           when repicking */
+        chessRandomPiecesShouldPickWorstMove = 0;
+
 
         numMoves = getPiecePossibleMoves( inState,
                                           outMove->startPos[0],

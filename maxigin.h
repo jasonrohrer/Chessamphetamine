@@ -5378,7 +5378,7 @@ static void mx_writeSpriteToOpenData( int  inSpriteHandle,
     w = mx_sprites[ inSpriteHandle ].w;
     h = mx_sprites[ inSpriteHandle ].h;
 
-    numPixels = w * h * 4;
+    numPixels = w * h;
 
     /* empty ID field */
     tgaHeader[ 0 ] = 0;

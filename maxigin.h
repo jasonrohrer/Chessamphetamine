@@ -12059,7 +12059,7 @@ static char mx_guiButtonBody( MaxiginGUI  *inGUI,
                     spriteLeftR =
                         mx_sprites[ hintSprite ].leftVisibleRadius;
                             
-                    mx_guiAddText( &mx_internalGUI,
+                    mx_guiAddText( inGUI,
                                    &fc,
                                    fontHandle,
                                    (char*)s,

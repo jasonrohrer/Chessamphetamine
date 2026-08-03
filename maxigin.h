@@ -10905,10 +10905,16 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
 
     if( ( inEndX - inStartX )
         >
-        2 * ( inMaxValue - inMinValue ) ) {
+        2 * ( inMaxValue - inMinValue )
+        ||
+        inGUI->forceHot == inCurrentValue ) {
 
         /* bar has way more pixels than legal values
            thumb should snap to legal values */
+
+        /* OR
+           We're in force-hot mode, so slider thumb should insta-update
+           to changing value */
         
         thumbPixelCenter =
             ( ( v - inMinValue ) *

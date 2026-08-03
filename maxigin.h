@@ -6344,8 +6344,12 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
         mx_sprites[ shadowSpriteHandle ].stripParentHandle   = -1;
         mx_sprites[ shadowSpriteHandle ].stripIndex          = -1;
         mx_sprites[ shadowSpriteHandle ].stripChildHandle    = -1;
+
+        if( shadowSpriteHandle == mx_numSprites ) {
+            /* adding a new sprite to end of list */
+            mx_numSprites ++;
+            }
         
-        mx_numSprites ++;
         mx_numSpriteBytesUsed += neededShadowBytes;
 
 

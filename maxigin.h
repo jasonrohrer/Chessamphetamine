@@ -4531,11 +4531,14 @@ static  int            mx_numSprites          =  0;
 
 static void mx_dumpSpriteRGBA( int  inSpriteHandle ) {
 
-    MaxiginSprite  *s  =  &( mx_sprites[ inSpriteHandle ] );
+    if( inSpriteHandle >= 0 ) {
+        
+        MaxiginSprite  *s  =  &( mx_sprites[ inSpriteHandle ] );
 
-    mx_dumpRGBAPixels( &( mx_spriteBytes[ s->startByte ] ),
-                       s->w,
-                       s->h );
+        mx_dumpRGBAPixels( &( mx_spriteBytes[ s->startByte ] ),
+                           s->w,
+                           s->h );
+        }
     }
 
 
@@ -4731,8 +4734,14 @@ static void mx_removeSpriteData( int  inSpriteHandle ) {
 
     int  b;
     int  s;
-    int  oldSpriteBytes  =  mx_sprites[ inSpriteHandle ].w *
-                            mx_sprites[ inSpriteHandle ].h * 4;
+    int  oldSpriteBytes;
+
+    if( inSpriteHandle < 0 ) {
+        return;
+        }
+
+    oldSpriteBytes = mx_sprites[ inSpriteHandle ].w *
+                     mx_sprites[ inSpriteHandle ].h * 4;
 
 
     if( mx_sprites[ inSpriteHandle ].startByte == -1 ) {
@@ -4775,78 +4784,84 @@ static void mx_removeSpriteData( int  inSpriteHandle ) {
 
 static void mx_recomputeSpriteAttributes( int  inSpriteHandle ) {
 
-    MaxiginSprite  *s            =  &( mx_sprites[ inSpriteHandle ] );
+    if( inSpriteHandle < 0 ) {
+        return;
+        }
+    else {
+        
+        MaxiginSprite  *s            =  &( mx_sprites[ inSpriteHandle ] );
     
-    int             leftRadius      =  0;
-    int             rightRadius     =  0;
-    int             upperRadius     =  0;
-    int             lowerRadius     =  0;
-    int             w               =  s->w;
-    int             h               =  s->h;
-    int             xCenter         =  w / 2;
-    int             yCenter         =  h / 2;
-    int             y;
-    int             startByte       =  s->startByte;
-    int             numSpriteBytes  =  w * h * 4;
+        int             leftRadius      =  0;
+        int             rightRadius     =  0;
+        int             upperRadius     =  0;
+        int             lowerRadius     =  0;
+        int             w               =  s->w;
+        int             h               =  s->h;
+        int             xCenter         =  w / 2;
+        int             yCenter         =  h / 2;
+        int             y;
+        int             startByte       =  s->startByte;
+        int             numSpriteBytes  =  w * h * 4;
     
-    /* find left/right visible extents */
+        /* find left/right visible extents */
     
-    for( y = 0;
-         y < h;
-         y ++ ) {
+        for( y = 0;
+             y < h;
+             y ++ ) {
 
-        int   curByte  =  startByte + y * w * 4;
-        int   x;
-        char  someVis  =  0;
+            int   curByte  =  startByte + y * w * 4;
+            int   x;
+            char  someVis  =  0;
         
         
-        for( x = 0;
-             x < w;
-             x ++ ) {
+            for( x = 0;
+                 x < w;
+                 x ++ ) {
 
-            unsigned char  a  =  mx_spriteBytes[ curByte + 3 ];
+                unsigned char  a  =  mx_spriteBytes[ curByte + 3 ];
 
-            if( a > 0 ) {
+                if( a > 0 ) {
 
-                if( x - xCenter > rightRadius ) {
-                    rightRadius = x - xCenter;
+                    if( x - xCenter > rightRadius ) {
+                        rightRadius = x - xCenter;
+                        }
+                    else if( xCenter - x > leftRadius ) {
+                        leftRadius = xCenter - x;
+                        }
+                    someVis = 1;
                     }
-                else if( xCenter - x > leftRadius ) {
-                    leftRadius = xCenter - x;
-                    }
-                someVis = 1;
-                }
             
-            /* on to next pixel */
-            curByte += 4;
+                /* on to next pixel */
+                curByte += 4;
+                }
+
+            if( someVis ) {
+                /* some pixels in this row are visible */  
+                if( y - yCenter > lowerRadius ) {
+                    lowerRadius =  y - yCenter;
+                    }
+                else if( yCenter - y > upperRadius ) {
+                    upperRadius = yCenter - y;
+                    }
+                }       
             }
 
-        if( someVis ) {
-            /* some pixels in this row are visible */  
-            if( y - yCenter > lowerRadius ) {
-                lowerRadius =  y - yCenter;
-                }
-            else if( yCenter - y > upperRadius ) {
-                upperRadius = yCenter - y;
-                }
-            }       
-        }
+        s->leftVisibleRadius  = leftRadius;
 
-    s->leftVisibleRadius  = leftRadius;
+        /* center position is actually off by 1 in favor of left radius */
+        s->rightVisibleRadius = rightRadius + 1;
 
-    /* center position is actually off by 1 in favor of left radius */
-    s->rightVisibleRadius = rightRadius + 1;
-
-    s->upperVisibleRadius = upperRadius;
-    s->lowerVisibleRadius = lowerRadius + 1;
+        s->upperVisibleRadius = upperRadius;
+        s->lowerVisibleRadius = lowerRadius + 1;
     
 
-    /* hash bytes after origin flip and BGRA conversion */
+        /* hash bytes after origin flip and BGRA conversion */
 
-    maxigin_flexHash( numSpriteBytes,
-                      &( mx_spriteBytes[ startByte ] ),
-                      MAXIGIN_SPRITE_HASH_LENGTH,
-                      s->hash );
+        maxigin_flexHash( numSpriteBytes,
+                          &( mx_spriteBytes[ startByte ] ),
+                          MAXIGIN_SPRITE_HASH_LENGTH,
+                          s->hash );
+        }
     }
 
 
@@ -4854,6 +4869,10 @@ static void mx_recomputeSpriteAttributes( int  inSpriteHandle ) {
 static void mx_initEmptyShadows( int  inSpriteHandle ) {
 
     int  i;
+
+    if( inSpriteHandle < 0 ) {
+        return;
+        }
 
     mx_sprites[ inSpriteHandle ].numShadows = 0;
 
@@ -5376,7 +5395,10 @@ static void mx_writeSpriteToOpenData( int  inSpriteHandle,
     int            numPixels;
     char           success;
     unsigned char  tgaHeader[18];
-    
+
+    if( inSpriteHandle < 0 ) {
+        return;
+        }
 
     w = mx_sprites[ inSpriteHandle ].w;
     h = mx_sprites[ inSpriteHandle ].h;
@@ -5456,9 +5478,9 @@ static void mx_blurSprite( int  inSpriteHandle,
                            int  inRadius,
                            int  inIterations ) {
 
-    int  w                 =  mx_sprites[ inSpriteHandle ].w;
-    int  h                 =  mx_sprites[ inSpriteHandle ].h;
-    int  startByte         =  mx_sprites[ inSpriteHandle ].startByte;
+    int  w;
+    int  h;
+    int  startByte;
     int  tempStartByte;
     int  sourceStartByte;
     int  destStartByte;
@@ -5466,7 +5488,16 @@ static void mx_blurSprite( int  inSpriteHandle,
     int  b;
     int  y;
     int  x;
-    int  neededExtraBytes  =  w * h * 4;
+    int  neededExtraBytes;
+
+    if( inSpriteHandle < 0 ) {
+        return;
+        }
+    
+    w                =  mx_sprites[ inSpriteHandle ].w;
+    h                =  mx_sprites[ inSpriteHandle ].h;
+    startByte        =  mx_sprites[ inSpriteHandle ].startByte;
+    neededExtraBytes =  w * h * 4;
     
     if( mx_numSpriteBytesUsed + neededExtraBytes >
         MAXIGIN_MAX_TOTAL_SPRITE_BYTES ) {
@@ -6731,28 +6762,34 @@ void maxigin_applyColorMap( int  inSpriteHandle,
                             int  inColorMapHandle,
                             int  inColorMapRow ) {
 
-    MaxiginSprite  *s  =  &( mx_sprites[ inSpriteHandle   ] );
-    MaxiginSprite  *c  =  &( mx_sprites[ inColorMapHandle ] );
-
-    int             n  =  s->w * s->h;
-    int             i;
-    unsigned char  *spriteBytes    =  &( mx_spriteBytes[ s->startByte ] );
-    unsigned char  *colorMapBytes  =  &( mx_spriteBytes[ c->startByte ] );
-    
-    for( i = 0;
-         i < n;
-         i ++ ) {
-
-        mx_mapPixel( &( spriteBytes[ i * 4 ] ),
-                     colorMapBytes,
-                     c->w,
-                     inColorMapRow );
+    if( inSpriteHandle < 0 ) {
+        return;
         }
+    else {
 
-    s->colorMapHandle = inColorMapHandle;
-    s->colorMapRow    = inColorMapRow;
+        MaxiginSprite  *s  =  &( mx_sprites[ inSpriteHandle   ] );
+        MaxiginSprite  *c  =  &( mx_sprites[ inColorMapHandle ] );
+
+        int             n  =  s->w * s->h;
+        int             i;
+        unsigned char  *spriteBytes    =  &( mx_spriteBytes[ s->startByte ] );
+        unsigned char  *colorMapBytes  =  &( mx_spriteBytes[ c->startByte ] );
     
-    c->isColorMap     = 1;
+        for( i = 0;
+             i < n;
+             i ++ ) {
+
+            mx_mapPixel( &( spriteBytes[ i * 4 ] ),
+                         colorMapBytes,
+                         c->w,
+                         inColorMapRow );
+            }
+
+        s->colorMapHandle = inColorMapHandle;
+        s->colorMapRow    = inColorMapRow;
+    
+        c->isColorMap     = 1;
+        }
     }
 
 
@@ -7276,7 +7313,13 @@ static void mx_regenerateSpriteKerning( int  inSpriteHandle );
 
 static void mx_postReloadStep( int  inSpriteHandle ) {
     
-    MaxiginSprite  *s  =  &( mx_sprites[ inSpriteHandle ] );
+    MaxiginSprite  *s;
+
+    if( inSpriteHandle < 0 ) {
+        return;
+        }
+
+    s =  &( mx_sprites[ inSpriteHandle ] );
 
     if( s->colorMapHandle != -1 ) {
 
@@ -7529,7 +7572,7 @@ int maxigin_initSpriteStrip( const char  *inBulkResourceName,
     
     mainSpriteHandle = maxigin_initSprite( inBulkResourceName );
 
-    if( mainSpriteHandle == -1 ) {
+    if( mainSpriteHandle < 0 ) {
         return -1;
         }
 
@@ -7790,6 +7833,9 @@ static int mx_regenSpriteStripChildren( int  inMainSpriteHandle,
 
 
 int maxigin_getNumSpritesInStrip( int  inSpriteStripHandle ) {
+    if( inSpriteStripHandle < 0 ) {
+        return 0;
+        }
     return mx_spriteStrips[ inSpriteStripHandle ].numSubSprites;
     }
 
@@ -7797,6 +7843,11 @@ int maxigin_getNumSpritesInStrip( int  inSpriteStripHandle ) {
 
 int maxigin_getSpriteFromStrip( int  inSpriteStripHandle,
                                 int  inSpriteIndex ) {
+    
+    if( inSpriteStripHandle < 0 ) {
+        return -1;
+        }
+    
     return mx_stripSubSprites[
         mx_spriteStrips[ inSpriteStripHandle ].startIndex + inSpriteIndex ];
     }
@@ -7807,7 +7858,15 @@ void maxigin_getSpriteDimensions( int   inSpriteHandle,
                                   int  *outWide,
                                   int  *outHigh ) {
     
-    MaxiginSprite *s  =  &( mx_sprites[ inSpriteHandle ] );
+    MaxiginSprite *s;
+
+    if( inSpriteHandle < 0 ) {
+        *outWide = 0;
+        *outHigh = 0;
+        return;
+        }
+
+    s = &( mx_sprites[ inSpriteHandle ] );
 
     *outWide = s->w;
     *outHigh = s->h;
@@ -8243,7 +8302,7 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
         return;
         }
 
-    if( inSpriteHandle == -1 ) {
+    if( inSpriteHandle < 0 ) {
         /* trying to draw a sprite that failed to load
            draw a place-holder rect so that it's not totally invisible*/
 
@@ -8571,6 +8630,10 @@ static void mx_drawGlowSprite( int  inSpriteHandle,
                             inCenterX,
                             inCenterY );
 
+    if( inSpriteHandle < 0 ) {
+        return;
+        }
+
     if( mx_sprites[ inSpriteHandle ].glowSpriteHandle != -1 ) {
 
         maxigin_drawToggleAdditive( 1 );
@@ -8588,6 +8651,10 @@ static void mx_drawGlowSprite( int  inSpriteHandle,
 void maxigin_drawSprite( int  inSpriteHandle,
                          int  inCenterX,
                          int  inCenterY ) {
+
+    if( inSpriteHandle < 0 ) {
+        return;
+        }
 
     if( mx_sprites[ inSpriteHandle ].numShadows > 0 ) {
 
@@ -8629,6 +8696,10 @@ void maxigin_drawSprite( int  inSpriteHandle,
 void maxigin_drawSpriteGlowOnly( int  inSpriteHandle,
                                  int  inCenterX,
                                  int  inCenterY ) {
+
+    if( inSpriteHandle < 0 ) {
+        return;
+        }
     
     if( mx_sprites[ inSpriteHandle ].glowSpriteHandle != -1 ) {
         
@@ -8649,6 +8720,10 @@ void maxigin_drawSpriteGlowOnly( int  inSpriteHandle,
 void maxigin_drawSpriteShadowOnly( int  inSpriteHandle,
                                    int  inCenterX,
                                    int  inCenterY ) {
+
+    if( inSpriteHandle < 0 ) {
+        return;
+        }
     
     if( mx_sprites[ inSpriteHandle ].numShadows > 0 ) {
 
@@ -8680,8 +8755,18 @@ void maxigin_getSpritePixel( int            inSpriteHandle,
                              int            inPixelY,
                              MaxiginColor  *outColor ) {
 
-    MaxiginSprite  *s  =  &( mx_sprites[ inSpriteHandle ] );
+    MaxiginSprite  *s;
     int             b;
+
+    if( inSpriteHandle < 0 ) {
+        outColor->val[0] = 0;
+        outColor->val[1] = 0;
+        outColor->val[2] = 0;
+        outColor->val[3] = 0;
+        return;
+        }
+
+    s =  &( mx_sprites[ inSpriteHandle ] );
     
     if( inPixelX < 0
         ||
@@ -8707,29 +8792,36 @@ void maxigin_getSpritePixel( int            inSpriteHandle,
     }
 
 
+
 char maxigin_isInSprite( int  inSpriteHandle,
                          int  inCenterOffsetX,
                          int  inCenterOffsetY ) {
-    MaxiginSprite  *s       =  &( mx_sprites[ inSpriteHandle ] );
-    int             pixelX  =  s->w / 2 + inCenterOffsetX;
-    int             pixelY  =  s->h / 2 + inCenterOffsetY;
-    int             b;
-    
-    if( pixelX < 0
-        ||
-        pixelX >= s->w
-        ||
-        pixelY < 0
-        ||
-        pixelY >= s->h ) {
 
+    if( inSpriteHandle < 0 ) {
         return 0;
         }
+    else {
+        MaxiginSprite  *s       =  &( mx_sprites[ inSpriteHandle ] );
+        int             pixelX  =  s->w / 2 + inCenterOffsetX;
+        int             pixelY  =  s->h / 2 + inCenterOffsetY;
+        int             b;
+    
+        if( pixelX < 0
+            ||
+            pixelX >= s->w
+            ||
+            pixelY < 0
+            ||
+            pixelY >= s->h ) {
 
-    b = s->startByte + ( pixelY * s->w + pixelX ) * 4;
+            return 0;
+            }
 
-    /* alpha byte for this pixel */
-    return ( mx_spriteBytes[ b + 3 ] > 0 );
+        b = s->startByte + ( pixelY * s->w + pixelX ) * 4;
+
+        /* alpha byte for this pixel */
+        return ( mx_spriteBytes[ b + 3 ] > 0 );
+        }
     }
 
     
@@ -8745,61 +8837,69 @@ void maxigin_drawExplodingSprite( int            inSpriteHandle,
                                   int            inExplodeProgress,
                                   int            inExplodeProgressMax,
                                   unsigned char  inAlphaFade ) {
+
+    if( inSpriteHandle < 0 ) {
+        return;
+        }
+    else {
+        
+        MaxiginSprite  *s         =  &( mx_sprites[ inSpriteHandle ] );
+        int             x;
+        int             y;
+        int             b         =  s->startByte;
+        int             ex        =  inExplosionCenterX - inCenterX;
+        int             ey        =  inExplosionCenterY - inCenterY;
+        int             cx        =  s->w / 2;
+        int             cy        =  s->h / 2;
+
+        long             d;
+        int              pSprite  =  inParticleHandle;
+
+        long             red      =  mx_drawColor.comp.red;
+        long             green    =  mx_drawColor.comp.green;
+        long             blue     =  mx_drawColor.comp.blue;
+        long             alpha    =  mx_drawColor.comp.alpha;
+
+        alpha = ( alpha * inAlphaFade ) / 255;
     
-    MaxiginSprite  *s         =  &( mx_sprites[ inSpriteHandle ] );
-    int             x;
-    int             y;
-    int             b         =  s->startByte;
-    int             ex        =  inExplosionCenterX - inCenterX;
-    int             ey        =  inExplosionCenterY - inCenterY;
-    int             cx        =  s->w / 2;
-    int             cy        =  s->h / 2;
-
-    long             d;
-    int              pSprite  =  inParticleHandle;
-
-    long             red      =  mx_drawColor.comp.red;
-    long             green    =  mx_drawColor.comp.green;
-    long             blue     =  mx_drawColor.comp.blue;
-    long             alpha    =  mx_drawColor.comp.alpha;
-
-    alpha = ( alpha * inAlphaFade ) / 255;
     
-    
-    /* d is scaled by a factor of 100 */
-    d = ( (long)inMaxDistance * 100 * (long) inExplodeProgress )
-        / inExplodeProgressMax;
+        /* d is scaled by a factor of 100 */
+        d = ( (long)inMaxDistance * 100 * (long) inExplodeProgress )
+            / inExplodeProgressMax;
     
 
-    for( y = 0;
-         y < s->h;
-         y ++ ) {
+        for( y = 0;
+             y < s->h;
+             y ++ ) {
 
-        int  dy     =  y - cy;
-        int  drawY  =  (int)( ( d * ( dy - ey ) ) / 100 ) + inCenterY + dy;
+            int  dy     =  y - cy;
+            int  drawY  =  (int)( ( d * ( dy - ey ) ) / 100 )
+                                + inCenterY + dy;
 
-        for( x = 0;
-             x < s->w;
-             x ++ ) {
+            for( x = 0;
+                 x < s->w;
+                 x ++ ) {
 
-            int dx      = x - cx;
-            int  drawX  =  (int)( ( d * ( dx - ex ) ) / 100 ) + inCenterX + dx;
+                int dx      = x - cx;
+                int  drawX  =  (int)( ( d * ( dx - ex ) ) / 100 )
+                                    + inCenterX + dx;
 
-            maxigin_drawSetColor(
-                (unsigned char)( ( mx_spriteBytes[ b     ] * red )
-                                 / 255 ),
-                (unsigned char)( ( mx_spriteBytes[ b + 1 ] * green )
-                                 / 255 ),
-                (unsigned char)( ( mx_spriteBytes[ b + 2 ] * blue )
-                                 / 255 ),
-                (unsigned char)( ( mx_spriteBytes[ b + 3 ] * alpha )
-                                 / 255 ) );
+                maxigin_drawSetColor(
+                    (unsigned char)( ( mx_spriteBytes[ b     ] * red )
+                                     / 255 ),
+                    (unsigned char)( ( mx_spriteBytes[ b + 1 ] * green )
+                                     / 255 ),
+                    (unsigned char)( ( mx_spriteBytes[ b + 2 ] * blue )
+                                     / 255 ),
+                    (unsigned char)( ( mx_spriteBytes[ b + 3 ] * alpha )
+                                     / 255 ) );
 
-            b += 4;
+                b += 4;
             
-            maxigin_drawSprite( pSprite,
-                                drawX,
-                                drawY );
+                maxigin_drawSprite( pSprite,
+                                    drawX,
+                                    drawY );
+                }
             }
         }
     }
@@ -8818,92 +8918,95 @@ void maxigin_drawSpriteSparkles( int            inSpriteHandle,
                                  int            inStartY,
                                  int            inEndY ) {
 
-    MaxiginSprite  *s         =  &( mx_sprites[ inSpriteHandle ] );
-    long            numDrawn  =  0;
-    int             pSprite   =  inParticleHandle;
-    int             numFail   =  0;
-    int             cx        =  s->w / 2;
-    int             cy        =  s->h / 2;
-    long            red       =  mx_drawColor.comp.red;
-    long            green     =  mx_drawColor.comp.green;
-    long            blue      =  mx_drawColor.comp.blue;
-    long            alpha     =  mx_drawColor.comp.alpha;
-
-
-    /* compound alpha here */
-    if( inAlphaFade < 255 ) {
-        alpha = ( alpha * inAlphaFade ) / 255;
+    if( inSpriteHandle < 0 ) {
+        return;
         }
-
-    if( inStartX == -1 ) {
-        inStartX = 0;
-        }
-    if( inEndX == -1 ) {
-        inEndX = s->w - 1;
-        }
-
-    if( inStartY == -1 ) {
-        inStartY = 0;
-        }
-    if( inEndY == -1 ) {
-        inEndY = s->h - 1;
-        }
-    
-    while( numDrawn < inNumSparkles ) {
-
-        int            y       =  maxigin_randRange( inRand,
-                                                     inStartY,
-                                                     inEndY );
-        int            x       =  maxigin_randRange( inRand,
-                                                     inStartX,
-                                                     inEndX );
+    else {
         
-        int            aTweak  =  maxigin_randRange( inRand,
-                                                     0,
-                                                     255 );
-        int            drawY;
-        int            drawX;
+        MaxiginSprite  *s         =  &( mx_sprites[ inSpriteHandle ] );
+        long            numDrawn  =  0;
+        int             pSprite   =  inParticleHandle;
+        int             numFail   =  0;
+        int             cx        =  s->w / 2;
+        int             cy        =  s->h / 2;
+        long            red       =  mx_drawColor.comp.red;
+        long            green     =  mx_drawColor.comp.green;
+        long            blue      =  mx_drawColor.comp.blue;
+        long            alpha     =  mx_drawColor.comp.alpha;
 
-        int            b       =  s->startByte + y * 4 * s->w + x * 4;
 
-        unsigned char  a       =  mx_spriteBytes[ b + 3 ];
-
-        if( a == 0 ) {
-            numFail ++;
-
-            if( numFail < 10 ) {
-                continue;
-                }
-            else {
-                /* 10 failures in a row looking for non-transparent pixel */
-                break;
-                }
+        /* compound alpha here */
+        if( inAlphaFade < 255 ) {
+            alpha = ( alpha * inAlphaFade ) / 255;
             }
-        numFail = 0;
 
-        drawY = inCenterY + ( y - cy );
-        drawX = inCenterX + ( x - cx );
+        if( inStartX == -1 ) {
+            inStartX = 0;
+            }
+        if( inEndX == -1 ) {
+            inEndX = s->w - 1;
+            }
 
-        maxigin_drawSetColor(
-            (unsigned char)( ( mx_spriteBytes[ b     ] * red )
-                             / 255 ),
-            (unsigned char)( ( mx_spriteBytes[ b + 1 ] * green )
-                             / 255 ),
-            (unsigned char)( ( mx_spriteBytes[ b + 2 ] * blue )
-                             / 255 ),
-            (unsigned char)( ( a * alpha * aTweak )
-                             / 65025 ) );
+        if( inStartY == -1 ) {
+            inStartY = 0;
+            }
+        if( inEndY == -1 ) {
+            inEndY = s->h - 1;
+            }
+    
+        while( numDrawn < inNumSparkles ) {
+
+            int            y       =  maxigin_randRange( inRand,
+                                                         inStartY,
+                                                         inEndY );
+            int            x       =  maxigin_randRange( inRand,
+                                                         inStartX,
+                                                         inEndX );
+        
+            int            aTweak  =  maxigin_randRange( inRand,
+                                                         0,
+                                                         255 );
+            int            drawY;
+            int            drawX;
+
+            int            b       =  s->startByte + y * 4 * s->w + x * 4;
+
+            unsigned char  a       =  mx_spriteBytes[ b + 3 ];
+
+            if( a == 0 ) {
+                numFail ++;
+
+                if( numFail < 10 ) {
+                    continue;
+                    }
+                else {
+                    /* 10 failures in a row looking for non-transparent pixel */
+                    break;
+                    }
+                }
+            numFail = 0;
+
+            drawY = inCenterY + ( y - cy );
+            drawX = inCenterX + ( x - cx );
+
+            maxigin_drawSetColor(
+                (unsigned char)( ( mx_spriteBytes[ b     ] * red )
+                                 / 255 ),
+                (unsigned char)( ( mx_spriteBytes[ b + 1 ] * green )
+                                 / 255 ),
+                (unsigned char)( ( mx_spriteBytes[ b + 2 ] * blue )
+                                 / 255 ),
+                (unsigned char)( ( a * alpha * aTweak )
+                                 / 65025 ) );
 
             
-        maxigin_drawSprite( pSprite,
-                            drawX,
-                            drawY );
+            maxigin_drawSprite( pSprite,
+                                drawX,
+                                drawY );
 
-        numDrawn ++;
-        }
-    
-        
-        
+            numDrawn ++;
+            }
+        } 
     }
 
 
@@ -10228,6 +10331,7 @@ static void mx_guiAddFillRect( MaxiginGUI    *inGUI,
                    inEndY,
                    MX_GUI_FILL_RECT );
     }
+
 
 
 static void mx_guiAddSprite( MaxiginGUI    *inGUI,
@@ -19770,6 +19874,10 @@ void maxigin_initKeyAndButtonHintSprites( int           inSpriteStripHandle,
                                           MinginButton  inMapping[] ) {
 
     int  i;
+
+    if( inSpriteStripHandle < 0 ) {
+        return;
+        }
     
     mx_buttonHintStripHandle = inSpriteStripHandle;
     
@@ -20573,7 +20681,10 @@ int maxigin_initFont( int          inSpriteStripHandle,
     MaxiginFont  *f;
     int           h;
     int           b;
-    
+
+    if( inSpriteStripHandle < 0 ) {
+        return -1;
+        }
     
     if( mx_numFonts >= MAXIGIN_MAX_NUM_FONTS ) {
         maxigin_logString( "Too many fonts already loaded, "
@@ -20815,20 +20926,30 @@ int maxigin_drawText( int           inFontHandle,
                       int           inLocationY,
                       MaxiginAlign  inAlign ) {
 
-    MaxiginFont  *f               =  &( mx_fonts[ inFontHandle ] );
+    MaxiginFont  *f;
     char         *nextText        =  (char*)inText;
     int           numSprites      =  0;
     int           totalPixWidth   =  0;
     int           startX;
     int           s;
-    char          fixed           =  ( f->fixedWidth > 0 );
-    int           spaceW          =  f->spaceWidth;
-    int           halfSpaceW      =  spaceW / 2;
-    int           charSpaceW      =  f->spacing;
+    char          fixed;
+    int           spaceW;
+    int           halfSpaceW;
+    int           charSpaceW;
     enum{         BUFFER_LEN      =  256 };
     
     static  int  spriteHandles[ BUFFER_LEN ];
     static  int  charCenterOffsetFromPrev[ BUFFER_LEN ];
+
+    if( inFontHandle < 0 ) {
+        return  0;
+        }
+
+    f          = &( mx_fonts[ inFontHandle ] );
+    fixed      = ( f->fixedWidth > 0 );
+    spaceW     = f->spaceWidth;
+    halfSpaceW = spaceW / 2;
+    charSpaceW = f->spacing;
 
     if( ! mx_kerningCacheInitialized ) {
         mx_clearKerningCache();
@@ -21082,13 +21203,23 @@ static  char  mx_tooTallKerningWarningPrinted  =  0;
 
 static void mx_regenerateSpriteKerning( int  inSpriteHandle ) {
     
-    MaxiginSprite  *s            =  &( mx_sprites[ inSpriteHandle ] );
+    MaxiginSprite  *s;
     
-    int             w               =  s->w;
-    int             h               =  s->h;
+    int             w;
+    int             h;
     int             y;
-    int             startByte       =  s->startByte;
-    int             kerningIndex    =  s->kerningTableIndex;
+    int             startByte;
+    int             kerningIndex;
+
+    if( inSpriteHandle < 0 ) {
+        return;
+        }
+
+    s            =  &( mx_sprites[ inSpriteHandle ] );
+    w            =  s->w;
+    h            =  s->h;
+    startByte    =  s->startByte;
+    kerningIndex =  s->kerningTableIndex;
 
 
     if( h > MAXIGIN_MAX_FONT_SPRITE_HEIGHT ) {

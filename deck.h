@@ -316,7 +316,7 @@ void getEmptyDeck( Deck  *outDeck,
                    char   inTrackPresent ) {
     
     outDeck->numPieces    = 0;
-    outDeck->drawPos      = 0;
+    outDeck->drawPos      = -1;
     outDeck->trackPresent = inTrackPresent;
     }
 
@@ -327,7 +327,7 @@ void getEmptyDeck( Deck  *outDeck,
 ChessPiece deckDraw( Deck  *inDeck ) {
 
     /* we can assume, even if our deck tracks present
-       that the present pieces are always in a block at drawPost
+       that the present pieces are always in a block at drawPos
        and lower.
 
        During reshuffle, we stick all non-present pieces at end
@@ -336,7 +336,18 @@ ChessPiece deckDraw( Deck  *inDeck ) {
        non-present pieces.
     */
     
-    ChessPiece  p  =  inDeck->pieces[ inDeck->drawPos ];
+    ChessPiece  p;
+
+    if( inDeck->drawPos < 0 ) {
+        deckReshuffleAll( inDeck );
+        }
+
+    if( inDeck->drawPos < 0 ) {
+        /* empty deck */
+        return noPiece;
+        }
+
+    p = inDeck->pieces[ inDeck->drawPos ];
 
     if( inDeck->trackPresent ) {
         inDeck->present[ inDeck->drawPos ] = 0;

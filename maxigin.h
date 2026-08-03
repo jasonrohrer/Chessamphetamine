@@ -10793,7 +10793,8 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
                     int  startBinSize  =  binSize /  2;
                     int  xOffset       =  x - inStartX;
 
-                    v = ( xOffset + startBinSize ) / binSize;
+                    v = ( xOffset + startBinSize ) / binSize
+                        + inMinValue;
                     }
                 
 

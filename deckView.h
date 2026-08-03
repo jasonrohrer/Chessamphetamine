@@ -197,7 +197,7 @@ void deckViewSet( Deck *inDeck ) {
          i >= FIRST_CHESS_PIECE;
          i -- ) {
         
-        char  present;
+        signed char  present;
 
         /* show present pieces of this type first,
            followed by non-present ones */
@@ -287,11 +287,11 @@ void deckViewDraw( void ) {
                                      yPos + BOARD_SQUARE_SIZE / 2 );
                 }
 
-            if( deckViewHighlightFade[i - skip] > 0 ) {
+            if( deckViewHighlightFade[ i - skip ] > 0 ) {
                 drawPieceHighlight( deckViewSlots[i].piece,
                                      xPos,
                                      yPos,
-                                     deckViewHighlightFade[i] );
+                                     deckViewHighlightFade[ i -  skip ] );
                 }
             
             i ++;

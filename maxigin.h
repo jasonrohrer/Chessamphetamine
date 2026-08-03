@@ -6194,7 +6194,7 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
 
                 headerLength = MAXIGIN_SPRITE_HASH_LENGTH
                                +
-                               5 * MAXIGIN_PADDED_INT_LENGTH;
+                               8 * MAXIGIN_PADDED_INT_LENGTH;
                 
                 if( success ) {
                     if( mainSprite->shadowSpriteHandle[ si ] ==

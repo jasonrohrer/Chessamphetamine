@@ -1285,6 +1285,9 @@ void maxigin_initPanelSprites( const char  *inTopLeftSpriteResource,
   All parameters are names of TGA resource name in platform's bulk data
   store.
 
+  Note that static-sized panels, if defined, override dynamic sized panels,
+  regardless of which initPanelSprites funciton is called first.
+
   Parameters:
   
       inNumFullPanelSprites   number of full panel sprites

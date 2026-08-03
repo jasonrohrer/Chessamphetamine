@@ -5232,8 +5232,8 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
              r ++ ) {
 
             int  otherRow        =  ( h - 1 ) - r;
-            int  rStartByte      =  r        * w * 4;
-            int  otherStartByte  =  otherRow * w * 4;
+            int  rStartByte      =  r        * w * 4 + startByte;
+            int  otherStartByte  =  otherRow * w * 4 + startByte;
             int  rowBytes        =  w * 4;
 
             for( b = 0;

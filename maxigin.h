@@ -11287,6 +11287,8 @@ int maxigin_guiStartPanel( MaxiginGUI    *inGUI,
     inGUI->drawComponents[i].drawParams.panelStart.plusY = inCenterY;
 
     inGUI->drawComponents[i].drawParams.panelStart.oldFade = inGUI->fade;
+
+    inGUI->drawComponents[i].additiveBlend = 0;
         
     /* compound the fades,
        so fading subpanels in fading panels get doubly faded */
@@ -11594,6 +11596,8 @@ void maxigin_guiEndPanel( MaxiginGUI  *inGUI,
     inGUI->drawComponents[i].drawParams.panelEnd.plusX   = -cX;
     inGUI->drawComponents[i].drawParams.panelEnd.plusY   = -cY;
     inGUI->drawComponents[i].drawParams.panelEnd.oldFade = oldFade;
+
+    inGUI->drawComponents[i].additiveBlend = 0;
 
     inGUI->numDrawComponents ++;
     }

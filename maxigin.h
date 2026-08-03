@@ -9813,11 +9813,17 @@ void maxigin_drawRect( int  inStartX,
                           inEndY - 1,    /* no overlap */
                           inEndX,
                           inStartY );
- 
-        maxigin_drawLine( inEndX - 1,    /* no overlap */
-                          inStartY,
-                          inStartX + 1,  /* no overlap */
-                          inStartY );
+
+        if( inStartX < inEndX - 1 ) {
+            /* last edge is 2 shorter than other edges...
+               is there room for it?
+            */
+            
+            maxigin_drawLine( inEndX - 1,    /* no overlap */
+                              inStartY,
+                              inStartX + 1,  /* no overlap */
+                              inStartY );
+            }
         }
     }
 

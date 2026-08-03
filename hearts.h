@@ -133,6 +133,8 @@ void heartsInit( void ) {
 
     REGISTER_ARRAY_MEM( heartsFlashCount      );
     REGISTER_VAL_MEM  ( heartsSkullFlashCount );
+
+    REGISTER_VAL_MEM  ( heartsJustLost        );
     }
 
 

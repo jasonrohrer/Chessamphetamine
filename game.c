@@ -2152,8 +2152,6 @@ void maxiginGame_step( void ) {
         if( infoPanelPiece != noPiece ) {
             infoPanelFade = 255;
             }
-
-        deckViewStep();
         }
     }
 

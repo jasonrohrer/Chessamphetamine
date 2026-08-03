@@ -9798,21 +9798,27 @@ void maxigin_drawRect( int  inStartX,
                       inStartY,
                       inStartX,
                       inEndY );
-    
-    maxigin_drawLine( inStartX + 1,  /* no overlap */
-                      inEndY,
-                      inEndX,
-                      inEndY );
-    
-    maxigin_drawLine( inEndX,
-                      inEndY - 1,    /* no overlap */
-                      inEndX,
-                      inStartY );
-    
-    maxigin_drawLine( inEndX - 1,    /* no overlap */
-                      inStartY,
-                      inStartX + 1,  /* no overlap */
-                      inStartY );
+
+    if( inStartX != inEndX ) {
+        maxigin_drawLine( inStartX + 1,  /* no overlap */
+                          inEndY,
+                          inEndX,
+                          inEndY );
+        }
+
+    if( inStartY != inEndY
+        &&
+        inStartX != inEndX ) {
+        maxigin_drawLine( inEndX,
+                          inEndY - 1,    /* no overlap */
+                          inEndX,
+                          inStartY );
+ 
+        maxigin_drawLine( inEndX - 1,    /* no overlap */
+                          inStartY,
+                          inStartX + 1,  /* no overlap */
+                          inStartY );
+        }
     }
 
 

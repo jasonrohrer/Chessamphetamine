@@ -104,6 +104,9 @@ int costFullReset( int  inCostHandle );
 
 #ifdef COST_IMPLEMENTATION
 
+#ifndef COST_IMPLEMENTATION_INCLUDED
+#define COST_IMPLEMENTATION_INCLUDED
+
 
 #include "memoryRegister.h"
 
@@ -353,5 +356,7 @@ int costFullReset( int  inCostHandle ) {
     }
     
 
+
+#endif
 
 #endif

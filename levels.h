@@ -50,8 +50,9 @@ static  char         pieceLayouts[ NUM_POSSIBLE_LEVELS ][ BH ][ BW ];
 
 static  MaxiginRand  levelsRand;
 
-static  const char  *levelsFile   =  "levels.tga";
+static  const char  *levelsFile       =  "levels.tga";
 
+static  int          numLoadedLevels  =  0;
 
 
 static void makeDefaultLayouts( void ) {
@@ -230,6 +231,8 @@ static void levelsReload( void ) {
             startPixel += w;
             }
         }
+
+    numLoadedLevels = numLoadedLayouts;
     }
 
     
@@ -256,6 +259,8 @@ void getLevel( int          inLevelNumber,
     int   x;
 
     Deck  enemyDeck;
+
+    int   layoutIndex  =  inLevelNumber;
     
 
     if( mingin_getBulkDataChanged( levelsFile ) ) {
@@ -265,11 +270,11 @@ void getLevel( int          inLevelNumber,
 
     /* if beyond our max number of hand-authored levels, pick
        a random level from in the second half */
-    if( inLevelNumber >= NUM_POSSIBLE_LEVELS ) {
+    if( layoutIndex >= numLoadedLevels ) {
 
-        inLevelNumber = maxigin_randRange( &levelsRand,
-                                           NUM_POSSIBLE_LEVELS / 2,
-                                           NUM_POSSIBLE_LEVELS - 1 );
+        layoutIndex = maxigin_randRange( &levelsRand,
+                                         numLoadedLevels / 2,
+                                         numLoadedLevels - 1 );
         }
 
 
@@ -325,10 +330,10 @@ void getLevel( int          inLevelNumber,
         
             
 
-    if( inLevelNumber >= NUM_POSSIBLE_LEVELS ) {
+    if( inLevelNumber >= numLoadedLevels ) {
 
         /* add random pieces to enemy deck for beyond levels */
-        int          extra       =  inLevelNumber - NUM_POSSIBLE_LEVELS + 1;
+        int          extra       =  inLevelNumber - numLoadedLevels + 1;
         int          i;
         for( i = 0;
              i < extra;
@@ -358,7 +363,7 @@ void getLevel( int          inLevelNumber,
              x < BW;
              x ++ ) {
 
-            int  p  =  pieceLayouts[ inLevelNumber ][ y ][ x ];
+            int  p  =  pieceLayouts[ layoutIndex ][ y ][ x ];
 
             outState->grid[ y ][ x ] = noPiece;
 

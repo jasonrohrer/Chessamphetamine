@@ -12623,6 +12623,7 @@ void minginGame_step( char  inFinalStep ) {
                              mx_loopPointSteps  [ 1 ] ) {
                         mx_loopPointHandles[ 1 ] = curDataPos;
                         mx_loopPointSteps  [ 1 ] = mx_playbackCurrentStep;
+                        mx_updateLoopPoints();
                         }
                     else if( mx_playbackCurrentStep == mx_loopPointSteps[ 0 ]
                              ||

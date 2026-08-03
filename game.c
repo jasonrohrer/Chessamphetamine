@@ -1835,7 +1835,7 @@ void maxiginGame_step( void ) {
 
             int  newFade = endMessageFade - ( 5 * 60 ) / r;
 
-            if( newFade < 0 ) {
+            if( newFade <= 0 ) {
 
                 endMessageFade = 0;
 

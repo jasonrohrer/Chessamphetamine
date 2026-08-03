@@ -8321,6 +8321,7 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
     if( inSpriteHandle >= mx_numSprites ) {
         maxigin_logInt( "Game tried to draw an unknown sprite handle: ",
                         inSpriteHandle );
+        return;
         }
 
     

@@ -4963,6 +4963,16 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
     h = mx_tgaReadBuffer[ 15 ] << 8
         |
         mx_tgaReadBuffer[ 14 ];
+
+    
+    neededSpriteBytes = w * h * 4;
+
+    if( mx_tgaReadBuffer[16] == 32 ) {
+        neededFileSpriteBytes = w * h * 4;
+        }
+    else {
+        neededFileSpriteBytes = w * h * 3;
+        }
     
 
     /* image descriptor byte, with bit 5 indicating image vertical flip */
@@ -4992,14 +5002,6 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
     
     /* TGA pixels are in BGRA order */
 
-    neededSpriteBytes = w * h * 4;
-
-    if( mx_tgaReadBuffer[16] == 32 ) {
-        neededFileSpriteBytes = w * h * 4;
-        }
-    else {
-        neededFileSpriteBytes = w * h * 3;
-        }
         
     if( numBytes - mx_getDataPosition( inReadHandle )
         < neededFileSpriteBytes ) {

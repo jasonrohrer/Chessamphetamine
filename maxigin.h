@@ -7168,6 +7168,10 @@ void maxigin_initMakeCheckboxGlow( int  inBlurRadius,
                                    int  inBlurIterations ) {
 
     int  i;
+
+    if( ! mx_checkboxSpritesSet ) {
+        return;
+        }
     
     for( i = 0;
          i < 2;

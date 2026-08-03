@@ -4188,7 +4188,8 @@ static void mx_generateCRTOverlay( int  inW,
     long           r2Max           =  (long)( 255 * 255 ) + (long)( 255 * 255 );
 
     long           cube255         =  (long)255 * (long)255 * (long)255;
-
+    long           square255       =  (long)255 * (long)255;
+    
     MaxiginRand    rand;
     
     int            scanlineH       =  inH / MAXIGIN_GAME_NATIVE_H;
@@ -4337,9 +4338,22 @@ static void mx_generateCRTOverlay( int  inW,
                 mx_crtOverlayPixelBuffer[i] = 255;
                 }
             else {
+
+                /* we want this, but it can overflow a 32-bit int:
+                   
+                   mx_crtOverlayPixelBuffer[i] =
+                       (unsigned char)(
+                           ( ( cube255 - r2 * r2 * r2 ) * 255 ) / cube255 );
+
+                   Instead, we can divide by (cube255 / 255), so we avoid
+                   that extra 255 multiplication in the numerator
+
+                   Note that (cube255 / 255) = square255.
+                */
+
                 mx_crtOverlayPixelBuffer[i] =
                     (unsigned char)(
-                        ( ( cube255 - r2 * r2 * r2 ) * 255 ) / cube255 );
+                        ( cube255 - r2 * r2 * r2 ) / square255 );
                 }
 
 

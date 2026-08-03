@@ -12549,9 +12549,9 @@ void minginGame_step( char  inFinalStep ) {
         }
 
 
-    if( mx_playbackRunning
+    if( mx_isActionFreshPressed( MAXIGIN_ADD_LOOP_POINT )
         &&
-        mx_isActionFreshPressed( MAXIGIN_ADD_LOOP_POINT ) ) {
+        mx_playbackRunning ) {
 
         int  curDataPos  =
                mingin_getPersistDataPosition( mx_playbackDataStoreHandle );

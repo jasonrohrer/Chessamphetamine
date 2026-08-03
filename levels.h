@@ -322,10 +322,6 @@ void getLevel( int          inLevelNumber,
             deckAddPiece( &enemyDeck,
                           pawn );
             }
-        deckAddPiece( &enemyDeck,
-                      bishop );
-        deckAddPiece( &enemyDeck,
-                      knight );
         }
         
             

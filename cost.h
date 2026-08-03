@@ -98,6 +98,9 @@ int costLevelIncrement( int  inCostHandle );
 int costFullReset( int  inCostHandle );
 
 
+#endif
+
+
 
 #ifdef COST_IMPLEMENTATION
 
@@ -207,10 +210,27 @@ int  costInit( int  inBaseCost,
 
 
 int costGet( int  inCostHandle ) {
+
+    int  val;
+    
     if( inCostHandle == -1 ) {
         return 0;
         }
-    return costList[ inCostHandle ].currentIncrementedVal;
+    val = costList[ inCostHandle ].currentIncrementedVal;
+
+    if( costList[ inCostHandle ].incrementCountDivisor != -1 ) {
+        val +=
+            costList  [ inCostHandle ].incrementCount
+            / costList[ inCostHandle ].incrementCountDivisor;
+        }
+
+    if( costList[ inCostHandle ].levelCountDivisor != -1 ) {
+        val +=
+            costList  [ inCostHandle ].levelRiseCount
+            / costList[ inCostHandle ].levelCountDivisor;
+        }
+
+    return val;
     }
 
     
@@ -235,12 +255,7 @@ int costIncrement( int  inCostHandle ) {
             curIncrVal
             / costList[ inCostHandle ].incrementCurrentDivisor;
         }
-
-    if( costList[ inCostHandle ].incrementCountDivisor != -1 ) {
-        newIncrVal +=
-            costList  [ inCostHandle ].incrementCount
-            / costList[ inCostHandle ].incrementCountDivisor;
-        }
+    
 
     costList[ inCostHandle ].incrementCount ++;
         
@@ -297,15 +312,6 @@ int costLevelIncrement( int  inCostHandle ) {
         newIncrVal += curIncrVal / costList[ inCostHandle ].levelCurrentDivisor;
         }
 
-    if( costList[ inCostHandle ].levelCountDivisor != -1 ) {
-        newVal     +=
-            costList  [ inCostHandle ].levelRiseCount
-            / costList[ inCostHandle ].levelCountDivisor;
-        
-        newIncrVal +=
-            costList  [ inCostHandle ].levelRiseCount
-            / costList[ inCostHandle ].incrementCountDivisor;
-        }
 
     costList[ inCostHandle ].levelRiseCount ++;
     
@@ -348,5 +354,4 @@ int costFullReset( int  inCostHandle ) {
     
 
 
-#endif
 #endif

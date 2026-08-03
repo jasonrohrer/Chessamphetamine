@@ -2073,7 +2073,9 @@ void maxiginGame_step( void ) {
         }
 
 
-    if( shopShowing ) {
+    if( shopShowing
+        &&
+        ! deckViewShowing ) {
 
         if( ! shopDone ) {
             

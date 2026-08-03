@@ -175,12 +175,14 @@ static char pointerInButton( Button  *b ) {
     if( maxigin_getPointerLocation( &pointerX,
                                     &pointerY ) ) {
 
-        int  buttonW;
-        int  buttonH;
-                    
-        maxigin_getSpriteDimensions( b->baseSprite,
-                                     &buttonW,
-                                     &buttonH );
+        int  buttonW  =  0;
+        int  buttonH  =  0;
+
+        if( b->baseSprite != -1 ) {
+            maxigin_getSpriteDimensions( b->baseSprite,
+                                         &buttonW,
+                                         &buttonH );
+            }
             
         if( pointerX >= b->centerX - buttonW / 2
             &&

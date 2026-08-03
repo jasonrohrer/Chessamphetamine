@@ -600,8 +600,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             
 
         maxigin_drawButtonHintSprite( DRAW,
-                                      drawButtonPosX + 30,
-                                      drawButtonPosY );
+                                      newGameButtonPosX + 30,
+                                      newGameButtonPosY );
         }
     
 
@@ -1041,7 +1041,7 @@ void maxiginGame_step( void ) {
                                       &testedBestScore );
             if( logGood ) {
 
-                int   dir;
+                int   dir    =  0;
                 char  found  =  0;
                 
                 
@@ -1060,26 +1060,28 @@ void maxiginGame_step( void ) {
                     dir = -1;
                     }
 
-                while( ! found ) {
+                if( dir != 0 ) {
+                    while( ! found ) {
 
-                    moveLogProgress += dir;
+                        moveLogProgress += dir;
 
-                    if( moveLogProgress < 0 ) {
-                        moveLogProgress = 0;
-                        break;
-                        }
+                        if( moveLogProgress < 0 ) {
+                            moveLogProgress = 0;
+                            break;
+                            }
 
-                    logGood = getLoggedState( moveLogProgress,
-                                              &testedState,
-                                              &testedBestScore );
+                        logGood = getLoggedState( moveLogProgress,
+                                                  &testedState,
+                                                  &testedBestScore );
 
-                    if( ! logGood ) {
-                        moveLogProgress -= dir;
-                        break;
-                        }
+                        if( ! logGood ) {
+                            moveLogProgress -= dir;
+                            break;
+                            }
 
-                    if( testedState.moveCount == curDepth ) {
-                        found = 1;
+                        if( testedState.moveCount == curDepth ) {
+                            found = 1;
+                            }
                         }
                     }
                 }
@@ -1376,7 +1378,7 @@ void maxiginGame_step( void ) {
 
                 if( dirY > 0
                     &&
-                    curRow >= BW ) {
+                    curRow >= BH ) {
                     curRow = 0;
                     curCol ++;
                     if( curCol >= BW ) {
@@ -1478,7 +1480,11 @@ void maxiginGame_step( void ) {
             &&
             maxigin_isButtonDown( ACTION )
             &&
-            ! actionHeldDown ) {
+            ! actionHeldDown
+            &&
+            panRow != -1
+            &&
+            panCol != -1 ) {
 
             if( ( infoPanelPiece & CHESS_COLOR_MASK ) == CHESS_WHITE
                 &&

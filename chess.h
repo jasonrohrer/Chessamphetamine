@@ -1464,7 +1464,7 @@ static int laserPawnMove( BoardState     *inState,
     (void)inMaySkipNonKingCaptureMoves;
     
 
-    if( inState->nextToMove == CHESS_BLACK ) {
+    if( inPieceColor == CHESS_BLACK ) {
         dirY = 1;
         }
 
@@ -1617,6 +1617,7 @@ static int rocketMove( BoardState     *inState,
             
             int  lowestValue  =  pieceValue[ king ] + 1;
             int  lowestIndex  =  -1;
+            int  lowestSpot   =  -1;
 
             /* consider only nth position and beyond,
                so we don't reconsider lowest-value pieces that we've
@@ -1635,12 +1636,13 @@ static int rocketMove( BoardState     *inState,
                 if( v < lowestValue ) {
                     lowestValue = v;
                     lowestIndex = shuffle[ i ];
+                    lowestSpot  = i;
                     }
                 }
 
             /* swap lowest index with n'th position */
-            shuffle[ n ] = lowestIndex;
-            shuffle[ lowestIndex ] = n;
+            shuffle[ n          ] = lowestIndex;
+            shuffle[ lowestSpot ] = n;
             
             n ++;
             }
@@ -2737,6 +2739,14 @@ static char getGreedyDepthMove( BoardState  *inState,
                                 inBeta,
                                 nextDepth,
                                 inOurDepth + 1 );
+
+                        /* restore these after recursion returns */
+                        if( inOurDepth == 0 ) {
+                            chessRandomPiecesShouldPickWorstMove = 0;
+                            }
+                        else {
+                            chessRandomPiecesShouldPickWorstMove = 1;
+                            }
                         
                         if( nextFound ) {
                             score = nextScore;
@@ -2915,8 +2925,8 @@ char getGreedyMove( BoardState  *inState,
                                       outCaptured,
                                       outNewState,
                                       &nextScore,
-                                      MAX_SCORE + 1,
                                       - MAX_SCORE - 1,
+                                      MAX_SCORE + 1,
                                       0,
                                       0 );
         }

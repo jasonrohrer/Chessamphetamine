@@ -11826,6 +11826,12 @@ static int mx_getButtonHintFont( void );
 
 
 
+/* this guard is used around our internal menu panel so that
+   hint button handles are not pushed up into external user button space */
+static  char  mx_isInternalGUI  =  0;
+
+
+
 static char mx_guiButtonBody( MaxiginGUI  *inGUI,
                               int         *inHandle,
                               int          inHintButtonHandle,
@@ -11845,6 +11851,11 @@ static char mx_guiButtonBody( MaxiginGUI  *inGUI,
     char          avail      =   maxigin_getPointerLocation( &x,
                                                              &y );
     char          returnV    =   0;
+
+    if( ! mx_isInternalGUI ) {
+        /* push up into external user button handle space */
+        inHintButtonHandle += LAST_MAXIGIN_USER_ACTION;
+        }
 
     if( mx_buttonSpritesSet ) {
         MaxiginSprite  *s  = &( mx_sprites[ mx_buttonSprites.cool ] );
@@ -12993,7 +13004,9 @@ void minginGame_step( char  inFinalStep ) {
         ySlideInPos =
             - MAXIGIN_GAME_NATIVE_H * ( mx_menuFadeMax - mx_menuFade )
             / mx_menuFadeMax;
-            
+
+        mx_isInternalGUI = 1;
+        
         menuPanel = maxigin_guiStartPanel( &mx_internalGUI,
                                            0,
                                            ySlideInPos,
@@ -13005,6 +13018,8 @@ void minginGame_step( char  inFinalStep ) {
         
         maxigin_guiEndPanel( &mx_internalGUI,
                              menuPanel );
+
+        mx_isInternalGUI = 0;
 
         if( mx_menuShowing
             &&

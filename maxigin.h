@@ -4883,6 +4883,8 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
     
     int   b;
     int   startByte;
+    int   headerStartPos;
+    int   headerTotalBytes;
 
     char  makingNewSprite     =  0;
 
@@ -4911,8 +4913,7 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
         }
 
     
-    numBytes       = inNumBytesLeft;
-    
+    numBytes = inNumBytesLeft;
 
     if( numBytes < 18 ) {
         if( inReloadHandle == -1 ) {
@@ -4923,6 +4924,13 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
         return -1;
         }
 
+
+    /* we might not be reading from a raw tga file, but instead
+       tga data embedded in other data
+       so header might not start at 0 position in data */
+    headerStartPos = mx_getDataPosition( inReadHandle );
+
+    
     numRead = mx_readData( inReadHandle,
                            18,
                            mx_tgaReadBuffer );
@@ -5002,8 +5010,10 @@ static int mx_reloadSpriteFromOpenData( const char      *inBulkResourceName,
     
     /* TGA pixels are in BGRA order */
 
+    headerTotalBytes  =  mx_getDataPosition( inReadHandle ) - headerStartPos;
+    
         
-    if( numBytes - mx_getDataPosition( inReadHandle )
+    if( numBytes - headerTotalBytes
         < neededFileSpriteBytes ) {
 
         if( inReloadHandle == -1 ) {

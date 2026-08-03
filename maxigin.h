@@ -10625,12 +10625,18 @@ char maxigin_guiSlider( MaxiginGUI  *inGUI,
     c.comp.green = 255;
     c.comp.blue  = 255;
     c.comp.alpha = 255;
-    
-    thumbPixelCenter =
-        ( ( v - inMinValue ) *
-          ( inEndX - inStartX ) )
-        / ( inMaxValue - inMinValue )
-        + inStartX;
+
+    if( inMaxValue == inMinValue ) {
+        /* avoid divide by 0 if range zero */
+        thumbPixelCenter = inStartX + ( inEndX - inStartX ) / 2;
+        }
+    else {
+        thumbPixelCenter =
+            ( ( v - inMinValue ) *
+              ( inEndX - inStartX ) )
+            / ( inMaxValue - inMinValue )
+            + inStartX;
+        }
     
     mx_getSliderThumbRadius( inThumbWidth,
                              &thumbLeftR,

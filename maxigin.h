@@ -4307,7 +4307,7 @@ static void mx_generateCRTOverlay( int  inW,
         
         /* normalize to 255 range before squaring
            this makes an oval vignette that matches our screen aspect ratio */
-        dY = ( dY * 256 ) / halfH;
+        dY = ( dY * 255 ) / halfH;
         
         dY2 = dY * dY;
         

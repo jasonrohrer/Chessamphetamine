@@ -5844,6 +5844,7 @@ static void mx_regenerateGlowSprite( int  inMainSpriteHandle,
 
         if( glowSpriteHandle != -1 ) {
             mx_removeSpriteData( glowSpriteHandle );
+            mainSprite->glowSpriteHandle = -1;
             }
         else {
             /* stick new glow sprite at end of sprite list */

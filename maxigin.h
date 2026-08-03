@@ -6284,6 +6284,7 @@ static void mx_regenerateDropShadowSprite( int            inMainSpriteHandle,
 
         if( shadowSpriteHandle != -1 ) {
             mx_removeSpriteData( shadowSpriteHandle );
+            mainSprite->shadowSpriteHandle[ si ] = -1;
             }
         else {
             /* stick new shadow sprite at end of sprite list */

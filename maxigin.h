@@ -129,8 +129,7 @@
   This static memory is ONLY compiled into the program if
   MAXIGIN_ENABLE_RECORDING is set to 1 (which is the default).
 
-  If the game registers MORE than this amount, recording will still work,
-  but incremental diff recording will be disabled.
+  If the game registers MORE than this amount, recording will be disabled.
 
   To set the max static size to 256, do this:
 

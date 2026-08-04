@@ -5313,6 +5313,8 @@ static int mx_reloadSprite( const char  *inBulkResourceName,
     }
 
 
+static  char  mx_spriteTempOnly  =  0;
+
 
 int maxigin_initSprite( const char  *inBulkResourceName ) {
 
@@ -5322,7 +5324,11 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
         return -1;
         }
 
-    if( mx_spriteCacheLoaded ) {
+    /* don't look for temp sprites in the sprite cache, always
+       load them from scratch */
+    if( mx_spriteCacheLoaded
+        &&
+        ! mx_spriteTempOnly ) {
 
         if( mx_nextCachedSpriteHandle < mx_numSprites ) {
 
@@ -5358,9 +5364,11 @@ char maxigin_loadTempSprite( const char      *inBulkResourceName,
 
     /* force this to allow temp sprite loading outside of init function */
     mx_areWeInMaxiginGameInitFunction = 1;
+    mx_spriteTempOnly = 1;
 
     s = maxigin_initSprite( inBulkResourceName );
 
+    mx_spriteTempOnly = 0;
     mx_areWeInMaxiginGameInitFunction = oldInitFlag;
     
 

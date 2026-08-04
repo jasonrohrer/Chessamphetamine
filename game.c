@@ -2757,5 +2757,14 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( noScoreMoveCount );
     
 
-    maxigin_initRestoreStaticMemoryFromLastRun();
+    if( ! maxigin_initRestoreStaticMemoryFromLastRun() ) {
+        mingin_log( "\n\nRAM in BAD STATE\n\n" );
+
+        /* fixme:
+           show the user some kind of message here
+        */
+
+        maxigin_enableHotReloadSaving( 0 );
+        }
+    
     }

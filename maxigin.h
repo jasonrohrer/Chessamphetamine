@@ -672,9 +672,21 @@ void maxigin_initRegisterStaticMemory( void        *inPointer,
   If the registered descriptions and sizes have changed since last run
   (due to a code change), this call has no effect.
 
+  Returns:
+
+      1    on successeful load, or mismatch/stale load that left static
+           memory untouched
+
+      0    on a partial load from a corrupted save file where static
+           memory is left in an inconsisten state.
+
   [jumpMaxiginInit]
 */
-void maxigin_initRestoreStaticMemoryFromLastRun( void );
+char maxigin_initRestoreStaticMemoryFromLastRun( void );
+
+
+
+
 
 
 
@@ -2065,6 +2077,23 @@ void maxigin_drawGUI( MaxiginGUI *inGUI );
 void maxigin_drawButtonHintSprite( int  inButtonHandle,
                                    int  inCenterX,
                                    int  inCenterY );
+
+
+
+/*
+  By default, if static memory is registered, it's final state is saved
+  to disk automatically right before quitting.
+
+  This behaviore is ENABLED by default.
+
+  Parameters:
+
+      inEnable       1  to enable (default)
+                     0  to disable
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_enableHotReloadSaving( char  inEnable );
 
 
 
@@ -12306,6 +12335,7 @@ static  char           mx_langPanelShowing                 =  0;
 static  char           mx_controlsPanelShowing             =  0;
 static  void          *mx_menuReturnForceHot               =  0;
 static  char           mx_blockMenuClose                   =  0;
+static  char           mx_hotReloadSavingEnabled           =  1;
 
 
 
@@ -12370,6 +12400,12 @@ static void mx_unpauseAllPlayingSoundEffects( void );
 static void mx_updateLoopPoints( void );
 
 static void mx_loadLoopPoints( void );
+
+
+
+void maxigin_enableHotReloadSaving( char  inEnable ) {
+    mx_hotReloadSavingEnabled = inEnable;
+    }
 
 
 
@@ -14315,8 +14351,8 @@ static char mx_saveGameToDataStore( int  inStoreWriteHandle ) {
         
 MAXIGIN_SAVED_GAME_WRITE_FAILURE:
         
-        maxigin_logString( "Failed to write to saved game data: ",
-                           mx_saveGameDataStoreName );
+        mingin_log( "Failed to write to saved game data to data store.\n" );
+        
         return 0;
         }
 
@@ -14383,6 +14419,13 @@ MAXIGIN_SAVED_GAME_WRITE_FAILURE:
 static void mx_saveGame( void ) {
     
     int  outHandle;
+
+    if( ! mx_hotReloadSavingEnabled ) {
+
+        mingin_log( "Saving game state disabled, skipping\n" );
+        return;
+        }
+        
     
     if( mx_numMemRecords == 0 ) {
         return;
@@ -14405,8 +14448,8 @@ static void mx_saveGame( void ) {
 
 
 
-/* returns 1 on success, 0 on failure */
-static char mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
+/* returns 1 on success, 0 on failure, -1 on corruption */
+static int mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
     
     char        *fingerprint;
     int          numTotalBytes;
@@ -14565,10 +14608,26 @@ static char mx_restoreStaticMemoryFromDataStore( int inStoreReadHandle ) {
             (unsigned char*)mx_memRecords[i].pointer );
         
         if( numRead !=  mx_memRecords[i].numBytes ) {
+            /* Note that in this failure case, we may have partially
+               written over the default starting value in the memory,
+               since the save file was truncated.  There's not much we
+               can do about this case.  Even if we were to record
+               and restore the original value before attempting to load,
+               we could still end up in an inconsistent state (since
+               other already-loaded values may depend on this value),
+               and we don't want to keep a whole snapshot of the complete
+               default memory state (do we?) and waste RAM like that.
+
+               We should return a hard error condition in this case,
+               and let the game preset the situation to the user.
+            */
+            
             maxigin_logInt(
                 "Failed to read memory data from save data for record # = ", i );
 
-            return 0;
+            /* corruption error condition
+               memory is now in an incosistent state */
+            return -1;
             }
         }
 
@@ -14641,18 +14700,23 @@ static void mx_checkStartupPlaybackResume( void ) {
 
 
 
+/* returns a unique recovery file name in a static buffer */
+static const char *mx_getBadSaveRecoveryFileName( void );
 
-void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
-    char success;
 
-    int storeSize;
-    int readHandle;
+
+char maxigin_initRestoreStaticMemoryFromLastRun( void ) {
+    
+    int  success;
+
+    int  storeSize;
+    int  readHandle;
     
     if( ! mx_areWeInMaxiginGameInitFunction ) {
         mingin_log( "Game tried to call "
                     "maxigin_initRestoreStaticMemoryFromLastRun "
                     "from outside of maxiginGame_init\n" );
-        return;
+        return 1;
         }
     
     readHandle = mingin_startReadPersistData( mx_saveGameDataStoreName,
@@ -14661,21 +14725,43 @@ void maxigin_initRestoreStaticMemoryFromLastRun( void ) {
     if( readHandle == -1 ) {
         maxigin_logString( "Failed to open saved game for reading: ",
                            mx_saveGameDataStoreName );
-        return;
+        return 1;
         }
 
     success = mx_restoreStaticMemoryFromDataStore( readHandle );
 
     mingin_endReadPersistData( readHandle );
+    
 
+    if( success != 1 ) {
 
-    if( !success ) {
-        return;
+        const char  *backupString  =  mx_getBadSaveRecoveryFileName();
+        
+        maxigin_logString( "Saved game file mismatch, moving it to: ",
+                           backupString );
+        
+        if( ! mingin_renamePersistData( mx_saveGameDataStoreName,
+                                        backupString ) ) {
+            mingin_log( "Moving saved game file failed, trying to delete\n" );
+
+            mingin_deletePersistData( mx_saveGameDataStoreName );
+            }
+
+        if( success == -1 ) {
+            mingin_log( "Corrupted saved game file left us with "
+                        "an inconsistent memory state\n" );
+            return 0;
+            }
+        else {
+            return 1;
+            }
         }
     mingin_log( "Restored live memory from saved game data.\n" );
 
 
     mx_checkStartupPlaybackResume();
+
+    return 1;
     }
 
 
@@ -16017,6 +16103,31 @@ static const char *mx_getRecordingRecoveryFileName( void ) {
 
 
 
+/* returns a unique recovery file name in a static buffer */
+static const char *mx_getBadSaveRecoveryFileName( void ) {
+    int          recoveryNumber;
+    const char  *settingName      =  "maxigin_nextRecoveryNumber.ini";
+
+    const char  *returnVal;
+    
+    recoveryNumber = maxigin_readIntSetting( settingName, 0 );
+
+
+    returnVal = maxigin_stringConcat(
+        maxigin_stringConcat( "maxigin_badSave_",
+                              maxigin_intToString( recoveryNumber ) ),
+        ".bin" );
+    
+
+    recoveryNumber++;
+
+    maxigin_writeIntSetting( settingName, recoveryNumber );
+
+    return returnVal;
+    }
+
+
+
 /* returns -1 on failure */
 static int mx_getMaxStepNumber( int  inRecordingReadHandle,
                                 int  inStartSeekPos ) {
@@ -16336,7 +16447,7 @@ void mx_recordingCrashRecovery( void ) {
 
 static char mx_initPlayback( void ) {
     
-    char   success;
+    int    success;
     int    indexLengthDataPos;
     int    totalStepsDataPos;
     int    indexLength;
@@ -16390,7 +16501,9 @@ static char mx_initPlayback( void ) {
     
     success = mx_restoreStaticMemoryFromDataStore( mx_playbackDataStoreHandle );
 
-    if( ! success ) {
+    if( success != 1 ) {
+        /* don't handle -1 corruption case separately here
+           end-users won't be using playback features */
         mingin_log( "Failed to restore state from saved data "
                     "in playback data store." );
         mingin_endReadPersistData( mx_playbackDataStoreHandle );

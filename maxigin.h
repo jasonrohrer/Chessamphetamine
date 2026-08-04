@@ -14659,7 +14659,8 @@ static void mx_checkStartupPlaybackResume( void ) {
     char  resume  =  maxigin_readFlagSetting( "maxigin_resumePlayback.ini",
                                               0 );
     int   pos;
-
+    char  playbackSuccess;
+    
     if( ! resume ) {
         return;
         }
@@ -14673,8 +14674,13 @@ static void mx_checkStartupPlaybackResume( void ) {
 
     
     mx_playbackBlockForwardSounds = 1;
-                    
-    mx_initPlayback();
+    
+    playbackSuccess = mx_initPlayback();
+
+    if( ! playbackSuccess ) {
+        mx_playbackBlockForwardSounds = 0;
+        return;
+        }
 
     /* jump to saved step */
     mx_playbackJumpToStep( pos );

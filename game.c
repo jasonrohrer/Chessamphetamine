@@ -110,6 +110,12 @@ enum GameUserAction {
     PRINT_COLORS
     };
 
+
+
+static char         saveCorrupted      =   0;
+static int          autoQuitFrameCount =   0;
+static int          autoQuitStepsPerSecond;
+
 static char         actionHeldDown     =   0;
 
 static int          buttonHintStrip    =  -1;
@@ -173,6 +179,9 @@ static int          lang_deck;
 static int          lang_drawInstruct;
 static int          lang_level;
 static int          lang_gameOverInstruct;
+
+static int          lang_corrupted[3];
+
 
 static BoardState     boardState;
 static Captured       postMoveCaptured;
@@ -298,6 +307,40 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     
     maxigin_drawResetColor();
+
+    if( saveCorrupted ) {
+
+        /* display message with count-down to quit */
+        maxigin_setLanguageFontIndex( 1 );
+        
+        maxigin_drawLangText(
+            lang_corrupted[0],
+            MAXIGIN_GAME_NATIVE_W / 2,
+            MAXIGIN_GAME_NATIVE_H / 2,
+            MAXIGIN_CENTER );
+        
+        maxigin_drawLangText(
+            lang_corrupted[1],
+            MAXIGIN_GAME_NATIVE_W / 2,
+            MAXIGIN_GAME_NATIVE_H / 2 + 20,
+            MAXIGIN_CENTER );
+        
+        maxigin_drawLangText(
+            lang_corrupted[2],
+            MAXIGIN_GAME_NATIVE_W / 2,
+            MAXIGIN_GAME_NATIVE_H / 2 + 40,
+            MAXIGIN_CENTER );
+
+        numberDraw( autoQuitFrameCount / autoQuitStepsPerSecond,
+                    MAXIGIN_GAME_NATIVE_W / 2,
+                    MAXIGIN_GAME_NATIVE_H / 2 + 60,
+                    1 );
+        
+        maxigin_setLanguageFontIndex( 0 );
+
+        return;
+        }
+    
 
     spinButtonY = MAXIGIN_GAME_NATIVE_H - 25;
     
@@ -899,6 +942,16 @@ void maxiginGame_step( void ) {
 
 
     int   deltaFade;
+
+    if( saveCorrupted ) {
+        if( autoQuitFrameCount > 0 ) { 
+            autoQuitFrameCount --;
+
+            if( autoQuitFrameCount == 0 ) {
+                maxigin_quit();
+                }
+            }
+        }
     
     
     mingin_getRunningTime( &stepSec,
@@ -2473,6 +2526,10 @@ void maxiginGame_init( void ) {
     lang_drawInstruct     = maxigin_initTranslationKey( "drawInstruct" );
     lang_level            = maxigin_initTranslationKey( "level" );
     lang_gameOverInstruct = maxigin_initTranslationKey( "gameOverInstruct" );
+
+    lang_corrupted[0]     = maxigin_initTranslationKey( "corruptedA" );
+    lang_corrupted[1]     = maxigin_initTranslationKey( "corruptedB" );
+    lang_corrupted[2]     = maxigin_initTranslationKey( "corruptedC" );
     
     maxigin_registerButtonMapping( SPIN,   spinMapping );
 
@@ -2758,12 +2815,16 @@ void maxiginGame_init( void ) {
     
 
     if( ! maxigin_initRestoreStaticMemoryFromLastRun() ) {
-        mingin_log( "\n\nRAM in BAD STATE\n\n" );
-
-        /* fixme:
-           show the user some kind of message here
+        /*
+           show the user an auto-quit message instead of letting
+           them play with a corrupted state
         */
+        saveCorrupted = 1;
 
+        autoQuitStepsPerSecond = mingin_getStepsPerSecond();
+        
+        autoQuitFrameCount = autoQuitStepsPerSecond * 10;
+        
         maxigin_enableHotReloadSaving( 0 );
         }
     

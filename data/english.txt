@@ -14,6 +14,11 @@ langHasWords  1
 
 
 
+corruptedA     "Saved game data corrupted."
+corruptedB     "Please re-launch the game."
+corruptedC     "Auto-quitting in:"
+
+
 
 settings       "Settings"
 

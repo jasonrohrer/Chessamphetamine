@@ -2081,6 +2081,18 @@ void maxigin_drawButtonHintSprite( int  inButtonHandle,
 
 
 /*
+  Initiates the quitting the game.
+
+  A few more steps may execute, as maxigin waits for sound to fade out
+  nicely, etc.
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_quit( void );
+
+
+    
+/*
   By default, if static memory is registered, it's final state is saved
   to disk automatically right before quitting.
 
@@ -12405,6 +12417,12 @@ static void mx_loadLoopPoints( void );
 
 void maxigin_enableHotReloadSaving( char  inEnable ) {
     mx_hotReloadSavingEnabled = inEnable;
+    }
+
+
+
+void maxigin_quit( void ) {
+    mx_quitting = 1;
     }
 
 

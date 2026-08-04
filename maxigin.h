@@ -15767,6 +15767,11 @@ static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
            in the diff */
 
         unsigned char  xorValue;
+
+        if( readInt < 0 ) {
+            /* negative values forbidden */
+            return 0;
+            }
         
         curRecordByte += readInt;
 
@@ -15778,7 +15783,7 @@ static char mx_restoreFromMemoryDiff( int inStoreReadHandle ) {
             curRecord ++;
             if( curRecord >= mx_numMemRecords ) {
                 /* diff includes offsets that go beyond our last
-                   live memory recor */
+                   live memory record */
                 return 0;
                 }
             curRecordPointer =

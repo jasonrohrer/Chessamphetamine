@@ -13574,6 +13574,8 @@ static char *mx_getMemRecordsFingerprint( int  *outTotalMemBytes ) {
         }
     *outTotalMemBytes = totalNumBytes;
 
+    maxigin_flexHashFinish( &s );
+
     maxigin_hexEncode( FINGERPRINT_LENGTH,
                        fingerprintBuffer, 
                        hexBuffer );

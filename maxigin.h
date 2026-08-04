@@ -3784,7 +3784,6 @@ typedef enum MaxiginUserAction {
     MENU_BACK,
     MENU_UP,
     MENU_DOWN,
-    MENU_STICK_NAV,
     MENU_PICK,
     FULLSCREEN_TOGGLE,
     CRT_TOGGLE,
@@ -3812,6 +3811,7 @@ typedef enum MaxiginUserAction {
 /* all of the sticks that Maxigin registers internally */
 typedef enum MaxiginSticks {
     MAXIGIN_STICK_SLIDER,
+    MENU_STICK_NAV,
     LAST_MAXIGIN_STICK
     } MaxiginSticks;
 

@@ -18535,7 +18535,9 @@ void mx_playSoundEffectWithPos( int  inSoundEffectHandle,
         mx_soundEffects[ inSoundEffectHandle ].startByte;
 
     mx_playingSoundEffects[ mx_numPlayingSoundEffects ].recordable =
-        ! mx_menuShowing;
+        ! mx_menuShowing
+        &&
+        ! mx_playbackRunning;
 
     mx_playingSoundEffects[ mx_numPlayingSoundEffects ].paused           = 0;
     mx_playingSoundEffects[ mx_numPlayingSoundEffects ].pausedRampDone   = 1;
@@ -18577,9 +18579,15 @@ void mx_playSoundEffectWithPos( int  inSoundEffectHandle,
     
     mingin_unlockAudio();
 
-    if( ! mx_menuShowing ) {
+    if( ! mx_menuShowing
+        &&
+        ! mx_playbackRunning ) {
+        
         /* don't include menu sound effects in recorded sound effects
            lists, because recording is paused while menu is open */
+
+        /* also don't include sound effects generated during playback itself,
+           since no recording is running then, and they pile up, unconsumed */
         
         if( mx_numJustStartedSoundEffects <
             MAXIGIN_MAX_NUM_PLAYING_SOUND_EFFECTS ) {

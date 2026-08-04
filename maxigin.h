@@ -12737,7 +12737,13 @@ void minginGame_step( char  inFinalStep ) {
                 /* not paused, faster adjusts speed */
             
                 if( mx_playbackSpeed >= 1 ) {
-                    mx_playbackSpeed ++;
+
+                    if( mx_playbackSpeed < 4096 ) {
+                        /* max possible playback speed,
+                           avoid overflow, which is unlikely that
+                           they would speed it up 2 billion times, but... */
+                        mx_playbackSpeed ++;
+                        }
                     }
                 else if( mx_playbackSpeed == -2 ) {
                     /* coming out of half-speed mode */
@@ -12759,8 +12765,13 @@ void minginGame_step( char  inFinalStep ) {
                 mx_playbackSpeed = -2;
                 }
             else if( mx_playbackSpeed < 0 ) {
-                /* twice as slow */
-                mx_playbackSpeed *= 2;
+
+                /* lower cut-off on slowest speed, so we can't
+                   keep doubling and overflow negative */
+                if( mx_playbackSpeed > -4096 ) {
+                    /* twice as slow */
+                    mx_playbackSpeed *= 2;
+                    }
                 }
             }
 

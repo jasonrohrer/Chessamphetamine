@@ -13451,10 +13451,14 @@ char maxigin_getPointerLocation( int  *outX,
                        & offsetY );
 
     rawX -= offsetX;
-    rawX /= scaleFactor;
-
     rawY -= offsetY;
-    rawY /= scaleFactor;
+
+    /* if scaleFactor is 0, screen is not big enough for our game image
+       and will be cut off */
+    if( scaleFactor > 0 ) {
+        rawX /= scaleFactor;
+        rawY /= scaleFactor;
+        }
 
     *outX = rawX;
     *outY = rawY;

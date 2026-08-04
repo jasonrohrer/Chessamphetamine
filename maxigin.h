@@ -14047,6 +14047,16 @@ static void mx_initSpriteCache( void ) {
             mx_spriteCacheReadFailed( readHandle );
             return;
             }
+
+        if( mx_numSpriteBytesUsed < 0
+            ||
+            mx_numSpriteBytesUsed > MAXIGIN_MAX_TOTAL_SPRITE_BYTES ) {
+            maxigin_logInt(
+                "Read num sprite bytes from sprite cache out of range: ",
+                mx_numSpriteBytesUsed );
+            mx_spriteCacheReadFailed( readHandle );
+            return;
+            }
         
         if( mx_numSpriteBytesUsed
             !=

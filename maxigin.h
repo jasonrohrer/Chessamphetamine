@@ -13738,8 +13738,8 @@ static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
              c == '\t' ) ) {
 
         readNum = mingin_readBulkData( inBulkReadHandle,
-                                   1,
-                                   (unsigned char *)&( c ) );
+                                       1,
+                                       (unsigned char *)&( c ) );
         }
 
     if( readNum != 1 ) {
@@ -13755,9 +13755,9 @@ static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
     
     /* now continue filling buffer with non-whitespace tokens */
     
-    readNum = mingin_readPersistData( inBulkReadHandle,
-                                          1,
-                                          (unsigned char *)&( buffer[n][i] ) );
+    readNum = mingin_readBulkData( inBulkReadHandle,
+                                   1,
+                                   (unsigned char *)&( buffer[n][i] ) );
     
     while( readNum == 1
            &&
@@ -13773,9 +13773,9 @@ static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
            &&
            buffer[n][i] != '\t' ) {
         i++;
-        readNum = mingin_readPersistData( inBulkReadHandle,
-                                          1,
-                                          (unsigned char *)&( buffer[n][i] ) );
+        readNum = mingin_readBulkData( inBulkReadHandle,
+                                       1,
+                                       (unsigned char *)&( buffer[n][i] ) );
         }
 
     if( readNum == 0

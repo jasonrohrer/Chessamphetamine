@@ -16029,9 +16029,8 @@ static void mx_finalizeRecording( void ) {
         if( recordingIndexReadHandle == -1 ) {
             mingin_log( "Failed to re-open recording index data at end "
                         "of recording data.\n" );
-            
-            mingin_endWritePersistData( mx_recordingDataStoreHandle );
-            mx_recordingDataStoreHandle = -1;
+
+            mx_closeRecordingDataStores();
             return;
             }
         
@@ -16044,9 +16043,8 @@ static void mx_finalizeRecording( void ) {
         if( ! success ) {
             mingin_log( "Failed to copy recording index into end "
                         "of recording data.\n" );
-            mingin_endWritePersistData( mx_recordingDataStoreHandle );
-            mx_recordingDataStoreHandle = -1;
-            
+
+            mx_closeRecordingDataStores();
             return;
             }
 
@@ -16063,9 +16061,8 @@ static void mx_finalizeRecording( void ) {
         if( ! success ) {
             mingin_log( "Failed write length of index into end "
                         "of recording data.\n" );
-            mingin_endWritePersistData( mx_recordingDataStoreHandle );
-            mx_recordingDataStoreHandle = -1;
-            
+
+            mx_closeRecordingDataStores();
             return;
             }
 
@@ -16077,9 +16074,8 @@ static void mx_finalizeRecording( void ) {
         if( ! success ) {
             mingin_log( "Failed write total step count into end "
                         "of recording data.\n" );
-            mingin_endWritePersistData( mx_recordingDataStoreHandle );
-            mx_recordingDataStoreHandle = -1;
-            
+
+            mx_closeRecordingDataStores();
             return;
             }
 
@@ -16093,9 +16089,8 @@ static void mx_finalizeRecording( void ) {
         if( ! success ) {
             mingin_log( "Failed write magic footer into end "
                         "of recording data.\n" );
-            mingin_endWritePersistData( mx_recordingDataStoreHandle );
-            mx_recordingDataStoreHandle = -1;
-            
+
+            mx_closeRecordingDataStores();
             return;
             }
             

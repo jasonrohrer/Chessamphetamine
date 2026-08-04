@@ -16157,6 +16157,66 @@ static const char *mx_getBadSaveRecoveryFileName( void ) {
 
 
 
+static char mx_skipMusicAndSoundInfo( int  inRecordingReadHandle ) {
+
+    int   b;
+    int   s;
+    int   readInt;
+    char  success;
+    
+    /* skip music pos */
+    success = mx_readIntFromPersistData( inRecordingReadHandle,
+                                         &readInt );
+    if( ! success ) {
+        return 0;
+        }
+
+    /* starting and ending and live sounds */
+    for( b = 0;
+         b < 3;
+         b ++ ) {
+
+        int  numSounds;
+        
+        success = mx_readIntFromPersistData( inRecordingReadHandle,
+                                             &numSounds );
+        if( ! success ) {
+            return -1;
+            }
+
+        for( s = 0;
+             s < numSounds;
+             s ++ ) {
+
+            /* handle and loudness for each */
+
+            success = mx_readIntFromPersistData( inRecordingReadHandle,
+                                                 &readInt );
+            if( ! success ) {
+                return 0;
+                }
+
+            success = mx_readIntFromPersistData( inRecordingReadHandle,
+                                                 &readInt );
+            if( ! success ) {
+                return 0;
+                }
+
+            if( b == 2 ) {
+                /* live sounds have extra pos integer */
+                success = mx_readIntFromPersistData( inRecordingReadHandle,
+                                                     &readInt );
+                if( ! success ) {
+                    return 0;
+                    }
+                }
+            }
+        }
+    return 1;
+    }
+
+
+
 /* returns -1 on failure */
 static int mx_getMaxStepNumber( int  inRecordingReadHandle,
                                 int  inStartSeekPos ) {
@@ -16189,6 +16249,12 @@ static int mx_getMaxStepNumber( int  inRecordingReadHandle,
     maxStepNumber = readInt;
 
 
+    if( ! mx_skipMusicAndSoundInfo( inRecordingReadHandle ) ) {
+        /* failed to read all music/sound params */
+        return -1;
+        }
+
+
     /* now skip over the data from this full block */
     curPos = mingin_getPersistDataPosition( inRecordingReadHandle );
     
@@ -16204,7 +16270,15 @@ static int mx_getMaxStepNumber( int  inRecordingReadHandle,
     success = mingin_seekPersistData( inRecordingReadHandle, curPos );
 
     if( ! success ) {
-        /* failed to seek to end of full block position */
+        /* failed to seek to end of full data block position */
+        return -1;
+        }
+
+    
+    /* after data block, skip starPos padded int */
+    success = mx_readPaddedIntFromPeristentData( inRecordingReadHandle,
+                                                 &readInt );
+    if( ! success ) {
         return -1;
         }
 
@@ -16227,6 +16301,13 @@ static int mx_getMaxStepNumber( int  inRecordingReadHandle,
             }
 
         maxStepNumber = readInt;
+
+        if( ! mx_skipMusicAndSoundInfo( inRecordingReadHandle ) ) {
+            /* failed to read all music/sound params */
+            maxStepNumber --;
+            success = 0;
+            break;
+            }
         
 
         /* now skip over the data from this diff */
@@ -16235,6 +16316,7 @@ static int mx_getMaxStepNumber( int  inRecordingReadHandle,
         if( ! success ) {
             /* must have at least 1 int, at least the -1 at the end,
                even if diff is empty with no changes */
+            maxStepNumber --;
             break;
             }
         
@@ -16250,6 +16332,7 @@ static int mx_getMaxStepNumber( int  inRecordingReadHandle,
 
             if( numRead != 1 ) {
                 success = 0;
+                maxStepNumber --;
                 break;
                 }
 
@@ -16258,12 +16341,24 @@ static int mx_getMaxStepNumber( int  inRecordingReadHandle,
                                                  &readInt );
 
             if( ! success ) {
+                maxStepNumber --;
                 break;
                 }
+            }
+
+        if( success ) {
+            /* read a correct block so far,
+               now try to read padded startPos for it */
+            success = mx_readPaddedIntFromPeristentData( inRecordingReadHandle,
+                                                         &readInt );
             }
         }
     
 
+    maxigin_logInt( "\n\nMAX STEP ON RECOVERY:  ",
+                    maxStepNumber );
+    mingin_log( "\n\n" );
+    
     return maxStepNumber;
     }
 

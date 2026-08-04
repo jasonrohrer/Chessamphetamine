@@ -15938,6 +15938,12 @@ static void mx_stepRecording( void ) {
         /* always record a diff right before our snapshot so that
            we can play the change recorded in our snapshot backwards */
         mx_recordMemoryDiff();
+
+        if( ! mx_recordingRunning ) {
+            /* recording the memory diff failed
+               don't try to record the full snapshot */
+            return;
+            }
         
         mx_recordFullMemorySnapshot();
         mx_totalStepsRecorded ++;

@@ -18480,9 +18480,9 @@ static int mx_getLiveSoundEffects( int *outHandleBuffer,
          i ++ ) {
 
         if( ! mx_playingSoundEffects[i].done ) {
-            outHandleBuffer[i] = mx_playingSoundEffects[i].soundHandle;
-            outLoudnessBuffer[i] = mx_playingSoundEffects[i].loudness;
-            outDataPosBuffer[i] = mx_playingSoundEffects[i].dataPos;
+            outHandleBuffer  [num] = mx_playingSoundEffects[i].soundHandle;
+            outLoudnessBuffer[num] = mx_playingSoundEffects[i].loudness;
+            outDataPosBuffer [num] = mx_playingSoundEffects[i].dataPos;
 
             num ++;
             }

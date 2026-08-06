@@ -16803,6 +16803,8 @@ static char mx_initPlayback( void ) {
         maxigin_logInt( "Failed to restore first full memory snapshot from "
                         "playback data store at this position: ",
                         firstFullSnapshotDataPos );
+        
+        mingin_endReadPersistData( mx_playbackDataStoreHandle );
         return 0;
         }
 

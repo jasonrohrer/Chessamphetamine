@@ -18339,6 +18339,7 @@ int maxigin_initSoundEffect( const char  *inBulkResourceName ) {
     mx_numSoundEffect ++;
     mx_numSoundBytes += sampleBytes;
 
+    mingin_endReadBulkData( wavFormat.bulkResourceHandle );
     
     return newHandle;
     }

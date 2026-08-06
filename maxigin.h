@@ -21757,7 +21757,10 @@ void maxigin_setLanguageFontIndex( int  inFontIndex ) {
         return;
         }
     
-    if( mx_languageFontIndex >= mx_languages[ mx_currentLanguage ].numFonts ) {
+    if( mx_languageFontIndex >= mx_languages[ mx_currentLanguage ].numFonts
+        ||
+        mx_languageFontIndex < 0 ) {
+        
         /* index out of bounds, back to 0, the default font index */
         mx_languageFontIndex = 0;
         }

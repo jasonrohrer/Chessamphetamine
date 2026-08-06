@@ -16823,6 +16823,9 @@ static char mx_initPlayback( void ) {
 
 
 static void mx_playbackEnd( void ) {
+
+    int  p;
+    
     if( mx_playbackDataStoreHandle != -1 ) {
         mingin_endReadPersistData( mx_playbackDataStoreHandle );
         mx_playbackDataStoreHandle = -1;
@@ -16831,6 +16834,15 @@ static void mx_playbackEnd( void ) {
 
     mx_setSoundSpeedAndDirection( 1,
                                   1 );
+
+    for( p = 0;
+         p < 2;
+         p ++ ) {
+
+        mx_loopPointHandles[ p ] = -1;
+        mx_loopPointSteps  [ p ] = -1;
+        }
+    mx_updateLoopPoints();
     }
 
 

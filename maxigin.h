@@ -21216,9 +21216,9 @@ static void mx_clearKerningCache( void ) {
 
         MaxiginKerningRecord  *r  =  &( mx_kerningCache[ i ] );
 
-        r->prevSpriteHandle = 0;
-        r->nextSpriteHandle = 0;
-        r->sep              = 0;
+        r->prevSpriteHandle = -1;
+        r->nextSpriteHandle = -1;
+        r->sep              =  0;
         }
 
     mx_kerningCacheInitialized = 1;

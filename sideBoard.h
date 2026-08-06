@@ -135,6 +135,7 @@ void sideBoardInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( sbNumSlots );
     REGISTER_VAL_MEM( sbLifting );
     REGISTER_VAL_MEM( sbDropping );
+    REGISTER_VAL_MEM( sbPickedIndex );
 
     REGISTER_ARRAY_MEM( sbHighlightFade );
 

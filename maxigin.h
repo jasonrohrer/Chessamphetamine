@@ -18562,6 +18562,10 @@ static void mx_processDoneSoundEffects( void ) {
 
                 mx_playingSoundEffects[ i ] =
                     mx_playingSoundEffects[ mx_numPlayingSoundEffects - 1 ];
+
+                /* since we're moving an un-checked sound into this
+                   spot, we need to check this spot again */
+                i --;
                 }
              
             mx_numPlayingSoundEffects --;

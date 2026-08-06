@@ -20051,6 +20051,15 @@ static char mx_openWavData( const char        *inBulkResourceName,
 
     bytesPerBlock = ( readBuffer[1] << 8 ) | readBuffer[0];
 
+    
+    if( bytesPerBlock == 0 ) {
+        maxigin_logString( "Bytes per block zero in bulk WAV data: ",
+                           inBulkResourceName );
+        
+        mingin_endReadBulkData( bulkHandle );
+        return 0;
+        }
+
 
     /* read bits per sample */
     numRead = mingin_readBulkData( bulkHandle,

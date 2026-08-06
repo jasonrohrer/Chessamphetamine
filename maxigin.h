@@ -16527,7 +16527,7 @@ void mx_recordingCrashRecovery( void ) {
         recoveryWriteHandle,
         totalSteps );
 
-    if( totalSteps == -1 ) {
+    if( ! success ) {
         mingin_log( "Failed to write total step count during"
                     "recording recovery.\n" );
         mingin_endWritePersistData( recoveryWriteHandle );

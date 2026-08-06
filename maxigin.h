@@ -21417,46 +21417,60 @@ int maxigin_drawText( int           inFontHandle,
                                     mx_sprites[ prevHandle   ].kerningTableIndex;
                             int   thisI      =
                                     mx_sprites[ spriteHandle ].kerningTableIndex;
-                            int  *prevRight  =
+
+                            /* kerningTableIndex can be -1 if font too tall,
+                               or kerning table didn't have room */
+
+                            if( prevI != -1
+                                &&
+                                thisI != -1 ) {
+                                
+                                int  *prevRight  =
                                     mx_fontKerningTable[ prevI ][ 1 ];
-                            int  *thisLeft   =
+                                int  *thisLeft   =
                                     mx_fontKerningTable[ thisI ][ 0 ];
                         
-                            int  y;
+                                int  y;
                         
-                            sep = -w;
+                                sep = -w;
 
-                            for( y = 0;
-                                 y < h;
-                                 y ++ ) {
+                                for( y = 0;
+                                     y < h;
+                                     y ++ ) {
 
-                                int  rowSep  = prevRight[y] - thisLeft[y];
+                                    int  rowSep  = prevRight[y] - thisLeft[y];
 
-                                if( rowSep > sep ) {
-                                    sep = rowSep;
-                                    }
+                                    if( rowSep > sep ) {
+                                        sep = rowSep;
+                                        }
                                 
-                                if( y > 0 ) {
-                                    /* look up diagonally too */
-                                    rowSep  = prevRight[y] - thisLeft[y - 1];
-                                    if( rowSep > sep ) {
-                                        sep = rowSep;
+                                    if( y > 0 ) {
+                                        /* look up diagonally too */
+                                        rowSep  = prevRight[y] - thisLeft[y - 1];
+                                        if( rowSep > sep ) {
+                                            sep = rowSep;
+                                            }
+                                        }
+                                    if( y < h - 1 ) {
+                                        /* look down diagonally too */
+                                        rowSep  = prevRight[y] - thisLeft[y + 1];
+                                        if( rowSep > sep ) {
+                                            sep = rowSep;
+                                            }
                                         }
                                     }
-                                if( y < h - 1 ) {
-                                    /* look down diagonally too */
-                                    rowSep  = prevRight[y] - thisLeft[y + 1];
-                                    if( rowSep > sep ) {
-                                        sep = rowSep;
-                                        }
-                                    }
+                            
+                                sep += 1;
+                            
+                                mx_kerningCacheInsert( prevHandle,
+                                                       spriteHandle,
+                                                       sep );
                                 }
-                            
-                            sep += 1;
-                            
-                            mx_kerningCacheInsert( prevHandle,
-                                                   spriteHandle,
-                                                   sep );
+                            else {
+                                /* no kerning table entry for this character
+                                   default to using full width */
+                                sep = w;
+                                }
                             }
 
                         sep += charSpaceW;

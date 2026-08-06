@@ -17214,8 +17214,9 @@ static int mx_getSnapshotStepNumber( int inSnapshotNumber ) {
 static void mx_playbackJumpToStep( int inStepNumber ) {
 
     /* find closest snapshot before or at inStepNumber */
-    int  snapshotGuess  =  inStepNumber / ( mx_diffsBetweenSnapshots + 1 );
-    int  snapshotStepNumber;
+    int   snapshotGuess  =  inStepNumber / ( mx_diffsBetweenSnapshots + 1 );
+    int   snapshotStepNumber;
+    char  oldPaused;
 
     snapshotStepNumber = mx_getSnapshotStepNumber( snapshotGuess );
 
@@ -17238,12 +17239,25 @@ static void mx_playbackJumpToStep( int inStepNumber ) {
         return;
         }
 
+    /* step forward will honor loop points if not paused,
+       and if inStepNumber is beyond our loop point,
+       this could potentially make this loop forever.
+       However, we never call mx_playbackJumpToStep when we are unpaused
+       and also jump beyond our loop point (we only do that when clicking
+       on slider, and we always temporarily pause playback when doing that).
+       Still, just to be safe, we can temporarily pause before this loop */
+    oldPaused         = mx_playbackPaused;
+    mx_playbackPaused = 1;
+    
     while( mx_playbackRunning
            &&
            mx_playbackCurrentStep < inStepNumber ) {
         
         mx_playbackStepForward();
         }
+    
+    mx_playbackPaused = oldPaused;
+
 
     
     if( mx_playbackRunning ) {

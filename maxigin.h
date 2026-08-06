@@ -17092,7 +17092,8 @@ static char mx_playbackStepBackward( void ) {
             if( mx_loopPointHandles[0] == 0 ) {
                 /* hit start-of-data loop point, reverse direction  */
 
-                int  oldSpeed  =  mx_playbackSpeed;
+                int   oldSpeed   =  mx_playbackSpeed;
+                char  oldPaused  =  mx_playbackPaused;
                 
                 mx_playbackDirection = 1;
                 mx_playbackCurrentStep = 0;
@@ -17108,7 +17109,8 @@ static char mx_playbackStepBackward( void ) {
 
                 mx_initPlayback();
 
-                mx_playbackSpeed = oldSpeed;
+                mx_playbackSpeed  = oldSpeed;
+                mx_playbackPaused = oldPaused;
                 
                 mx_setSoundSpeedAndDirection( mx_playbackSpeed,
                                               mx_playbackDirection );

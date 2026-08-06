@@ -16991,14 +16991,9 @@ static char mx_playbackStepForward( void ) {
            instead, we should go on to the NEXT diff and apply it now
            to actually take a step. */
 
-        success = mx_restoreFromMemoryDiff( mx_playbackDataStoreHandle );
-
-        if( !success ) {
-            mingin_log( "Failed to restore from the next diff after "
-                        "our just-played snapshot." );
-            mx_playbackEnd();
-            return 0;
-            }
+        /* stepping forward again will accomplish this
+           and handle all error checking, etc., if that diff isn't found */
+        return mx_playbackStepForward();
         }
     
     

@@ -22660,9 +22660,9 @@ int maxigin_drawLangText( int           inPhraseKey,
                           MaxiginAlign  inAlign ) {
     
 
-    const char       *langString  =  maxigin_getLangText( inPhraseKey );
+    const char  *langString  =  maxigin_getLangText( inPhraseKey );
 
-    if( langString == 0 ) {
+    if( langString[0] == '\0' ) {
         if( ! mx_drawLangFailureShown ) {
             maxigin_logString( "Translation string for phrase key "
                                "not found for current language: ",

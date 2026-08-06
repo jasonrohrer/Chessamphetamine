@@ -16941,7 +16941,7 @@ static char mx_playbackStepForward( void ) {
             
             /* reached end */
 
-            if( mx_loopPointHandles[1] == mx_playbackDataLength ) {
+            if( mx_loopPointSteps[1] == mx_playbackTotalSteps - 1 ) {
                 /* hit end-of-data loop point, reverse direction  */
 
                 mingin_seekPersistData( mx_playbackDataStoreHandle,

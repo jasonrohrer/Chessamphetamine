@@ -22159,6 +22159,29 @@ static void mx_initLanguage( const char  *inLanguageBulkResourceName,
 
     lang->numFonts = numFonts;
 
+    if( lang->numFonts > MAXIGIN_MAX_NUM_LANGUAGE_FONTS ) {
+
+        maxigin_logString( "Too many fonts (",
+                           maxigin_stringConcat3( 
+                               maxigin_intToString( lang->numFonts ),
+                               ") specified in language bulk resource: ",
+                               lang->bulkResourceName ) );
+        
+        mingin_endReadBulkData( languageReadHandle );
+        return;
+        }
+
+    if( lang->numFonts < 1 ) {
+        maxigin_logString( "No fonts (",
+                           maxigin_stringConcat3( 
+                               maxigin_intToString( lang->numFonts ),
+                               ") specified in language bulk resource: ",
+                               lang->bulkResourceName ) );
+        
+        mingin_endReadBulkData( languageReadHandle );
+        return;
+        }
+
     for( f = 0;
          f < numFonts;
          f ++ ) {

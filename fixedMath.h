@@ -21,7 +21,16 @@ unsigned long longSquareRoot( unsigned long  inVal );
 
 
 
-#ifdef FIXED_MATH_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  FIXED_MATH_IMPLEMENTATION
+
+#ifndef FIXED_MATH_IMPLEMENTATION_INCLUDED
+#define FIXED_MATH_IMPLEMENTATION_INCLUDED
+
+
 
 
 unsigned long longSquareRoot( unsigned long  inVal ) {

@@ -35,7 +35,16 @@ char checkDisplayIsSettled( void );
 
 
 
-#ifdef CHECK_DISPLAY_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  CHECK_DISPLAY_IMPLEMENTATION
+
+#ifndef CHECK_DISPLAY_IMPLEMENTATION_INCLUDED
+#define CHECK_DISPLAY_IMPLEMENTATION_INCLUDED
+
+
 
 #include "memoryRegister.h"
 #include "util.h"

@@ -98,7 +98,16 @@ void deckDrawDebugInfo( Deck  *inDeck,
 
 
 
-#ifdef DECK_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  DECK_IMPLEMENTATION
+
+#ifndef DECK_IMPLEMENTATION_INCLUDED
+#define DECK_IMPLEMENTATION_INCLUDED
+
+
 
 
 

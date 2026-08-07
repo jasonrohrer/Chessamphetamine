@@ -284,7 +284,16 @@ const char *getPieceName( ChessPiece  inPiece );
 
 
 
-#ifdef CHESS_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  CHESS_IMPLEMENTATION
+
+#ifndef CHESS_IMPLEMENTATION_INCLUDED
+#define CHESS_IMPLEMENTATION_INCLUDED
+
+
 
 #include "arraySizeCheck.h"
 #include "maxigin.h"

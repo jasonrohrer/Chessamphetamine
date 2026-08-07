@@ -41,7 +41,16 @@ void pinchApply( unsigned char *inRGBBuffer );
 
 
 
-#ifdef PINCH_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  PINCH_IMPLEMENTATION
+
+#ifndef PINCH_IMPLEMENTATION_INCLUDED
+#define PINCH_IMPLEMENTATION_INCLUDED
+
+
 
 #include "memoryRegister.h"
 #include "gameSize.h"

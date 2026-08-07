@@ -43,7 +43,16 @@ void numberDrawText( const char   *inText,
                      MaxiginAlign  inAlign );
 
 
-#ifdef NUMBERS_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  NUMBERS_IMPLEMENTATION
+
+#ifndef NUMBERS_IMPLEMENTATION_INCLUDED
+#define NUMBERS_IMPLEMENTATION_INCLUDED
+
+
 
 
 static  int  numbersFont  =  -1;

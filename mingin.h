@@ -1580,7 +1580,16 @@ char mingin_getBulkDataChanged( const char  *inBulkName );
 
 
 
-#ifdef MINGIN_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  MINGIN_IMPLEMENTATION
+
+#ifndef MINGIN_IMPLEMENTATION_INCLUDED
+#define MINGIN_IMPLEMENTATION_INCLUDED
+
+
 
 
 /*

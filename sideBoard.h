@@ -66,7 +66,16 @@ void sideBoardClearPick( void );
 
 
 
-#ifdef SIDE_BOARD_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  SIDE_BOARD_IMPLEMENTATION
+
+#ifndef SIDE_BOARD_IMPLEMENTATION_INCLUDED
+#define SIDE_BOARD_IMPLEMENTATION_INCLUDED
+
+
 
 
 static  ChessPiece     sideBoard      [ SIDE_BOARD_MAX_SLOTS ];

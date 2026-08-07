@@ -49,7 +49,16 @@ char isShoppingDone( void );
 
 
 
-#ifdef SHOP_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  SHOP_IMPLEMENTATION
+
+#ifndef SHOP_IMPLEMENTATION_INCLUDED
+#define SHOP_IMPLEMENTATION_INCLUDED
+
+
 
 
 #include "deck.h"

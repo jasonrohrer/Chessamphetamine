@@ -182,7 +182,16 @@ void drawBoardPieceHighlight( BoardState    *inState,
 
 
 
-#ifdef PIECE_SPRITES_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  PIECE_SPRITES_IMPLEMENTATION
+
+#ifndef PIECE_SPRITES_IMPLEMENTATION_INCLUDED
+#define PIECE_SPRITES_IMPLEMENTATION_INCLUDED
+
+
 
 
 static  int  pieceBottomHeight  =  6;

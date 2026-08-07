@@ -39,7 +39,16 @@ void colorsApplyBoardColor     ( void );
 
 
 
-#ifdef COLORS_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  COLORS_IMPLEMENTATION
+
+#ifndef COLORS_IMPLEMENTATION_INCLUDED
+#define COLORS_IMPLEMENTATION_INCLUDED
+
+
 
 #include "maxigin.h"
 #include "memoryRegister.h"

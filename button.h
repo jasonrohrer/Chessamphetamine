@@ -54,7 +54,16 @@ char buttonIsStuck( int  inButtonHandle );
 void buttonReset( int  inButtonHandle );
 
 
-#ifdef BUTTON_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  BUTTON_IMPLEMENTATION
+
+#ifndef BUTTON_IMPLEMENTATION_INCLUDED
+#define BUTTON_IMPLEMENTATION_INCLUDED
+
+
 
 
 #include "memoryRegister.h"

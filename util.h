@@ -29,7 +29,16 @@ unsigned char tweenToByte( unsigned char  inCurrentVal,
 
 
 
-#ifdef UTIL_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  UTIL_IMPLEMENTATION
+
+#ifndef UTIL_IMPLEMENTATION_INCLUDED
+#define UTIL_IMPLEMENTATION_INCLUDED
+
+
 
 
 

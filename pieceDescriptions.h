@@ -31,7 +31,16 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
 
 
-#ifdef PIECE_DESCRIPTIONS_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  PIECE_DESCRIPTIONS_IMPLEMENTATION
+
+#ifndef PIECE_DESCRIPTIONS_IMPLEMENTATION_INCLUDED
+#define PIECE_DESCRIPTIONS_IMPLEMENTATION_INCLUDED
+
+
 
 
 #include "maxigin.h"

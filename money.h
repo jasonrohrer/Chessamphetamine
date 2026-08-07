@@ -57,7 +57,16 @@ void moneyForce( int  inVal );
 
 
 
-#ifdef MONEY_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  MONEY_IMPLEMENTATION
+
+#ifndef MONEY_IMPLEMENTATION_INCLUDED
+#define MONEY_IMPLEMENTATION_INCLUDED
+
+
 
 
 #include "chess.h"

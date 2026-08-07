@@ -58,7 +58,16 @@ int rarityGetOneInCount( int  inRarity );
 
 
 
-#ifdef RARITY_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  RARITY_IMPLEMENTATION
+
+#ifndef RARITY_IMPLEMENTATION_INCLUDED
+#define RARITY_IMPLEMENTATION_INCLUDED
+
+
 
 
 #include "memoryRegister.h"

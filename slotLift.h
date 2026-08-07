@@ -29,7 +29,16 @@ char slotLiftStep( char  inLifting,
                    int   inPieceHitSound  );
 
 
-#ifdef SLOT_LIFT_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  SLOT_LIFT_IMPLEMENTATION
+
+#ifndef SLOT_LIFT_IMPLEMENTATION_INCLUDED
+#define SLOT_LIFT_IMPLEMENTATION_INCLUDED
+
+
 
 
 char slotLiftStep( char  inLifting,

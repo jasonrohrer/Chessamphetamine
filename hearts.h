@@ -36,7 +36,16 @@ void heartsStep( void );
 
 
 
-#ifdef HEARTS_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  HEARTS_IMPLEMENTATION
+
+#ifndef HEARTS_IMPLEMENTATION_INCLUDED
+#define HEARTS_IMPLEMENTATION_INCLUDED
+
+
 
 
 #include "maxigin.h"

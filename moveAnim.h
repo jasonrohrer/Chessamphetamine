@@ -123,7 +123,16 @@ void playBeepDownSound( void );
 
 
 
-#ifdef MOVE_ANIM_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  MOVE_ANIM_IMPLEMENTATION
+
+#ifndef MOVE_ANIM_IMPLEMENTATION_INCLUDED
+#define MOVE_ANIM_IMPLEMENTATION_INCLUDED
+
+
 
 #include "money.h"
 

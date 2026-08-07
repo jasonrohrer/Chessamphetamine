@@ -25,7 +25,16 @@ int getStarParticleSprite( void );
 
 
 
-#ifdef PIECE_SPRITES_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  PARTICLE_SPRITES_IMPLEMENTATION
+
+#ifndef PARTICLE_SPRITES_IMPLEMENTATION_INCLUDED
+#define PARTICLE_SPRITES_IMPLEMENTATION_INCLUDED
+
+
 
 static  int          particleSpriteHandle        =  -1;
 static  int          noGlowParticleSpriteHandle  =  -1;

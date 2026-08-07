@@ -50,7 +50,16 @@ int boardGetPixelDistance( int  inRowA,
 
 
 
-#ifdef BOARD_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  BOARD_IMPLEMENTATION
+
+#ifndef BOARD_IMPLEMENTATION_INCLUDED
+#define BOARD_IMPLEMENTATION_INCLUDED
+
+
 
 #include "colors.h"
 

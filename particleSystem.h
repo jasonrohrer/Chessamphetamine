@@ -47,7 +47,16 @@ void drawParticles( ParticleState  *inState,
 
 
 
-#ifdef PARTICLE_SYSTEM_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  PARTICLE_SYSTEM_IMPLEMENTATION
+
+#ifndef PARTICLE_SYSTEM_IMPLEMENTATION_INCLUDED
+#define PARTICLE_SYSTEM_IMPLEMENTATION_INCLUDED
+
+
 
 
 static  int  pixelParticleSprite  =  -1;

@@ -33,7 +33,16 @@ ChessPiece deckViewStep( void );
 
 
 
-#ifdef DECK_VIEW_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  DECK_VIEW_IMPLEMENTATION
+
+#ifndef DECK_VIEW_IMPLEMENTATION_INCLUDED
+#define DECK_VIEW_IMPLEMENTATION_INCLUDED
+
+
 
 
 #include "memoryRegister.h"

@@ -31,7 +31,16 @@ void getLevel( int          inLevelNumber,
 
 
 
-#ifdef LEVELS_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  LEVELS_IMPLEMENTATION
+
+#ifndef LEVELS_IMPLEMENTATION_INCLUDED
+#define LEVELS_IMPLEMENTATION_INCLUDED
+
+
 
 
 #include "memoryRegister.h"

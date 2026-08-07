@@ -36,7 +36,16 @@ void navGetDir( int  inPrioritizeDir,
 
 
 
-#ifdef NAV_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  NAV_IMPLEMENTATION
+
+#ifndef NAV_IMPLEMENTATION_INCLUDED
+#define NAV_IMPLEMENTATION_INCLUDED
+
+
 
 /* avoid game's mappings */
 enum {

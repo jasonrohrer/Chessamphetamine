@@ -84,7 +84,16 @@ void rollPoolTest( void );
 
 
 
-#ifdef ROLL_IMPLEMENTATION
+#endif
+
+
+
+#ifdef  ROLL_IMPLEMENTATION
+
+#ifndef ROLL_IMPLEMENTATION_INCLUDED
+#define ROLL_IMPLEMENTATION_INCLUDED
+
+
 
 
 static  MaxiginRand  rollRand;

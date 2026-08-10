@@ -216,7 +216,6 @@
 
                                        
       void minginGame_getAudioSamples( int             inNumSamples,
-                                       int             inNumChannels,
                                        int             inSamplesPerSecond,
                                        unsigned char  *inSampleBuffer );
   
@@ -2014,6 +2013,13 @@ static const char *mn_intToString( int  inInt ) {
         buffer[c] = '-';
         c++;
         inInt *= -1;
+
+        if( inInt < 0 ) {
+            /* still less than zero after mult by -1
+               might be lowest-possible negative value, which can't
+               itself be negated */
+            return formatError;
+            }  
         }
     while( divisor >= 1 ) {
         
@@ -2134,9 +2140,12 @@ static char mn_getFlagSetting( const char  *inFlagName,
                                                            &numBytes );
     unsigned char  s[1];
 
-    if( handle == -1
-        ||
-        numBytes < 1 ) {
+    if( handle == -1 ) {
+        return inDefault;
+        }
+
+    if( numBytes < 1 ) {
+        mingin_endReadPersistData( handle );
         
         return inDefault;
         }
@@ -2145,11 +2154,11 @@ static char mn_getFlagSetting( const char  *inFlagName,
                                        1,
                                        s );
 
+    mingin_endReadPersistData( handle ); 
+
     if( numBytes != 1 ) {
         return inDefault;
         }
-
-    mingin_endReadPersistData( handle );
 
     if( s[0] == '1' ) {
         return 1;
@@ -2175,9 +2184,12 @@ static const char *mn_getShortStringSetting( const char  *inFlagName,
     handle = mingin_startReadPersistData( inFlagName,
                                           &numBytes );
 
-    if( handle == -1
-        ||
-        numBytes < 1 ) {
+    if( handle == -1 ) {
+        return inDefault;
+        }
+
+    if( numBytes < 1 ) {
+        mingin_endReadPersistData( handle );
         
         return inDefault;
         }
@@ -2190,11 +2202,11 @@ static const char *mn_getShortStringSetting( const char  *inFlagName,
                                       numBytes,
                                       buffer );
 
+    mingin_endReadPersistData( handle );
+
     if( numRead != numBytes ) {
         return inDefault;
         }
-
-    mingin_endReadPersistData( handle );
 
     buffer[ numRead ] = '\0';
     
@@ -2804,6 +2816,13 @@ static char mn_doesActiveGamepadHaveButton( MinginButton inButton ) {
 MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
 
     int i;
+
+    if( inButtonHandle < 0
+        ||
+        inButtonHandle >= MINGIN_NUM_BUTTON_MAPPINGS ) {
+        
+        return MGN_BUTTON_NONE;
+        }
     
     if( mn_activeGamepad != MGN_NO_GAMEPAD ) {
         /* gamepad active */
@@ -3160,12 +3179,13 @@ static void mn_xSetFullscreen( Display  *inXDisplay,
                                              "_NET_WM_STATE_FULLSCREEN",
                                              False );
     ev.xclient.data.l[1]     =  (long int)atom;
-    ev.xclient.data.l[2]     =  (long int)atom;
+    ev.xclient.data.l[2]     =  0;
+    ev.xclient.data.l[2]     =  1;
     
     XSendEvent( inXDisplay,
                 DefaultRootWindow( inXDisplay ),
                 False,
-                ClientMessage,
+                SubstructureNotifyMask | SubstructureRedirectMask,
                 &ev );
     }
 

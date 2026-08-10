@@ -322,7 +322,8 @@ void minginGame_step( char  inFinalStep );
   
   Will not necessarily be called.
 
-  If called, it will be called after at least one call to minginGame_step().
+  If called, it will be called before any calls to minginGame_step,
+  minginGame_getScreenPixels, or minginGame_getAudioSamples.
 
   Parameters:
  
@@ -3327,6 +3328,11 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
     
     s->xDisplay = XOpenDisplay( NULL );
 
+    if( s->xDisplay == NULL ) {
+        mingin_log( "Failed to open X display with XOpenDisplay\n" );
+        return 0;
+        }
+
     mn_reconfigureWindowSize( s->xDisplay );
 
     
@@ -3470,8 +3476,8 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
             if( xrrOutput ) {
                 XRRFreeOutputInfo( xrrOutput );
                 xrrOutput = 0;
-                continue;
                 }
+            continue;   
             }
         
 
@@ -4055,7 +4061,7 @@ int main( void ) {
             nextFrameTime.tv_nsec += frameNS;
 
             /* watch out for nsec overflow */
-            while( nextFrameTime.tv_nsec > 1000000000L ) {
+            while( nextFrameTime.tv_nsec >= 1000000000L ) {
                 nextFrameTime.tv_nsec   -= 1000000000L;
                 nextFrameTime.tv_sec ++;
                 }

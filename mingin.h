@@ -6524,7 +6524,7 @@ static void mn_stepSound( void ) {
             mingin_log( "ALSA reporting that audio suspended\n" );
 
             snd_pcm_recover( mn_alsaPCMHandle,
-                             (int)result,
+                             (int)framesNeededResult,
                              1 );
             return;
             }
@@ -6588,7 +6588,10 @@ static char mn_checkEnv( const char  *inVarName ) {
             }
 
         
-        if( env[c] == '=' ) {
+        if( env[c] == '='
+            &&
+            inVarName[c] == '\0' ) {
+            
             /* our name matched! */
             
             if( env[ c + 1 ] == '1' ) {
@@ -7140,6 +7143,9 @@ static void mn_getRefreshRate( void ) {
 
     if( GetMonitorInfoA( monitor,
                          (MONITORINFO*)( &monitorInfo ) ) ) {
+        
+        ZeroMemory( &devMode,
+                    sizeof( devMode ) );
 
         devMode.dmSize = sizeof( devMode );
 
@@ -7357,7 +7363,7 @@ static  char                mn_gamepadTouched         =  0;
 static  int                 mn_triggerMin             =  0;
 static  int                 mn_triggerMax             =  255;
 static  int                 mn_triggerPressThreshold  =  10;
-static  int                 mn_stickMin               =  -32768;
+static  int                 mn_stickMin               =  -32767;
 static  int                 mn_stickMax               =  32767;
 
 /* these are indexed as 0 => left, 1 => right */
@@ -7572,6 +7578,8 @@ static void mn_openSound( void ) {
     if( mn_audioThread == NULL ) {
         mingin_log( "Failed to start audio thread.\n" );
 
+        mn_soundOpen = 0;
+
         waveOutClose( mn_waveOut );
         CloseHandle( mn_audioEvent );
 
@@ -7757,18 +7765,20 @@ static void mn_setupWindowsKeyMap( void ) {
     mn_buttonToWindowsKeyMap[ MGN_KEY_F33 ]           =  MN_NO_WIN_KEY;
     mn_buttonToWindowsKeyMap[ MGN_KEY_F34 ]           =  MN_NO_WIN_KEY;
     mn_buttonToWindowsKeyMap[ MGN_KEY_F35 ]           =  MN_NO_WIN_KEY;
-    
-    mn_buttonToWindowsKeyMap[ MGN_KEY_SHIFT_L ]       =  VK_LSHIFT;
-    mn_buttonToWindowsKeyMap[ MGN_KEY_SHIFT_R ]       =  VK_RSHIFT;
-    mn_buttonToWindowsKeyMap[ MGN_KEY_CONTROL_L ]     =  VK_LCONTROL;
-    mn_buttonToWindowsKeyMap[ MGN_KEY_CONTROL_R ]     =  VK_RCONTROL;
+
+    /* no difference between codes produced by left and right shift, ctrl,
+       etc. on Windows */
+    mn_buttonToWindowsKeyMap[ MGN_KEY_SHIFT_L ]       =  VK_SHIFT;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_SHIFT_R ]       =  VK_SHIFT;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_CONTROL_L ]     =  VK_CONTROL;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_CONTROL_R ]     =  VK_CONTROL;
     mn_buttonToWindowsKeyMap[ MGN_KEY_CAPS_LOCK ]     =  VK_CAPITAL;
     mn_buttonToWindowsKeyMap[ MGN_KEY_META_L ]        =  MN_NO_WIN_KEY;
     mn_buttonToWindowsKeyMap[ MGN_KEY_META_R ]        =  MN_NO_WIN_KEY;
-    mn_buttonToWindowsKeyMap[ MGN_KEY_ALT_L ]         =  VK_LMENU;
-    mn_buttonToWindowsKeyMap[ MGN_KEY_ALT_R ]         =  VK_RMENU;
-    mn_buttonToWindowsKeyMap[ MGN_KEY_SUPER_L ]       =  VK_LWIN;
-    mn_buttonToWindowsKeyMap[ MGN_KEY_SUPER_R ]       =  VK_RWIN;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_ALT_L ]         =  VK_MENU;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_ALT_R ]         =  VK_MENU;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_SUPER_L ]       =  VK_WIN;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_SUPER_R ]       =  VK_WIN;
 
     mn_buttonToWindowsKeyMap[ MGN_KEY_SPACE ]         =  VK_SPACE;
 
@@ -7886,7 +7896,9 @@ static void mn_setButtonDown( MinginButton  inButton,
 
 static void mn_pollControllers( void ) {
 
-    int  i;
+    int   i;
+    char  wasActiveBefore  =  mn_gamepadActive;
+    
 
     mn_gamepadActive = 0;
     
@@ -8013,6 +8025,16 @@ static void mn_pollControllers( void ) {
             mn_stickYValues[0] =  - controllerState.Gamepad.sThumbLY;
             mn_stickYValues[1] =  - controllerState.Gamepad.sThumbRY;
 
+            /* because we're inverting these, they can end up outside
+               of our stated min/max range of -32768 to +32767
+               but only on the positive end, so cap them there */
+            if( mn_stickYValues[0] > mn_stickMax ) {
+                mn_stickYValues[0] = mn_stickMax;
+                }
+            if( mn_stickYValues[1] > mn_stickMax ) {
+                mn_stickYValues[1] = mn_stickMax;
+                }
+
             /* bail after getting info from first connected controller.
                Thus, if user plugs/unplugs controllers, we always take input
                from the lowest-index live controller */
@@ -8024,6 +8046,13 @@ static void mn_pollControllers( void ) {
     /* if all have been unplugged, revert back to gamepad being untouched
        even if it was touched before */
     mn_gamepadTouched = 0;
+
+    if( ! mn_gamepadActive
+        &&
+        wasActiveBefore ) {
+        
+        mn_releaseAllButtons();
+        }
     }
 
 
@@ -8295,8 +8324,16 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
             }
         }
 
-    /* final step */
-    minginGame_step( 1 );
+    
+    if( ! mn_gotQuit ) {
+
+        /* if quit not set, that means user clicked the close box
+           on the window or the OS forced us to quit */
+        
+        /* final step */
+        minginGame_step( 1 );
+        }
+    
 
     mn_closeSound();
 
@@ -8307,7 +8344,9 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     mn_destroyWindow( hInstance );
 
     CloseHandle( frameTimer );
-    
+
+    /* fixme
+       this is just for testing, remove it from shipping code */
     MessageBox( NULL,
                 L"Quitting...",
                 L"Quitting",
@@ -8317,8 +8356,14 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
         mingin_endWritePersistData( mn_logFileHandle );
         }
 
-    /* game asked to quit ! */
-    return (int)( msg.wParam );
+    if( mn_gotQuit ) {
+        /* game asked for the quit */
+        return 0;
+        }
+    else {
+        /* window or OS asked for the quit */
+        return (int)( msg.wParam );
+        }
     }
 
 
@@ -8461,6 +8506,13 @@ static char minginPlatform_isButtonDown( MinginButton  inButton ) {
 MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
 
     int  i;
+
+    if( inButtonHandle < 0
+        ||
+        inButtonHandle >= MINGIN_NUM_BUTTON_MAPPINGS ) {
+        
+        return MGN_BUTTON_NONE;
+        }
 
     if( mn_gamepadActive ) {
 

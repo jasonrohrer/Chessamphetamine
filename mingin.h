@@ -2084,6 +2084,41 @@ static char mn_stringsEqual( const char  *inStringA,
 
 
 
+/* 0 for no limit */
+static char mn_stringsEqualLimit( const char  *inStringA,
+                                  const char  *inStringB,
+                                  int          inLimit ) {
+    
+    int i  =  0;
+
+    if( inLimit <= 0 ) {
+        return mn_stringsEqual( inStringA,
+                                inStringB );
+        }
+    
+    
+    while( i < inLimit
+           &&
+           inStringA[i] == inStringB[i]
+           &&
+           inStringA[i] != '\0' ) {
+        i++;
+        }
+
+    if( i == inLimit ) {
+        /* hit limit without finding any mismatch */
+        return 1;
+        }
+    
+    if( inStringA[i] == inStringB[i] ) {
+        /* didn't hit limit, but both terminated */
+        return 1;
+        }
+    return 0;
+    }
+
+
+
 static char mn_stringStartsWith( const char  *inString,
                                  const char  *inPrefix ) {
     
@@ -3546,6 +3581,12 @@ static char mn_openXWindow( MinginXWindowSetup  *inSetup ) {
 
         XRRFreeScreenConfigInfo( conf );
         }
+
+    
+    if( mn_screenRefreshRate <= 0 ) {
+        mn_screenRefreshRate = 60;
+        }
+    
     
     if( xrrCrtc ) {
         XRRFreeCrtcInfo( xrrCrtc );
@@ -3772,10 +3813,6 @@ int main( void ) {
     if( ! mn_openXWindow( & mn_XSetup ) ) {
         mingin_log( "Opening X Window failed\n" );
         return 1;
-        }
-
-    if( mn_screenRefreshRate < 1 ) {
-        mn_screenRefreshRate = 60;
         }
     
     
@@ -4140,7 +4177,7 @@ int main( void ) {
         gamepadFD = -1;
         }
     
-    return 1;
+    return 0;
     }
 
 
@@ -4998,15 +5035,16 @@ static void mn_logModTime( const char  *inBulkName ) {
     if( fileStat.st_mtime > mn_latestBulkChangeModTime ) {
         mn_latestBulkChangeModTime = fileStat.st_mtime;
         }
-    
+
     
     for( i = 0;
          i < mn_numBulkChangeRecords;
          i ++ ) {
 
-        if( mn_stringsEqual(
+        if( mn_stringsEqualLimit(
                 inBulkName,
-                mn_bulkChangeRecords[ i ].bulkName ) ) {
+                mn_bulkChangeRecords[ i ].bulkName,
+                MINGIN_BULK_NAME_MAX_LENGTH ) ) {
 
             foundI = i;
             break;
@@ -6943,6 +6981,17 @@ static void mn_setupWindowSize( void ) {
         mn_getMonitorSpecs( &mn_realWindowW,
                             &mn_realWindowH,
                             &mn_screenRefreshRate );
+
+        if( mn_realWindowW == -1 ) {
+            mn_windowW = -1;
+            mn_windowH = -1;
+            return;
+            }
+
+        if( mn_screenRefreshRate <= 0 ) {
+            mn_screenRefreshRate = 60;
+            }
+            
         mn_windowW = mn_realWindowW;
         mn_windowH = mn_realWindowH;
         }
@@ -6962,6 +7011,10 @@ static void mn_setupWindowSize( void ) {
             mn_windowW = -1;
             mn_windowH = -1;
             return;
+            }
+
+        if( mn_screenRefreshRate <= 0 ) {
+            mn_screenRefreshRate = 60;
             }
         
         minginGame_getMinimumViableScreenSize( &gameW,

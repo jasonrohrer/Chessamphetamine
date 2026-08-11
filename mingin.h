@@ -8599,6 +8599,17 @@ char mingin_getPointerLocation( int  *outX,
         
         if( GetCursorPos( &p ) ) {
             ScreenToClient( mn_windowHandle, &p );
+
+            if( p.x < 0
+                ||
+                p.x > mn_realWindowW
+                ||
+                p.y < 0
+                ||
+                p.y > mn_realWindowH ) {
+
+                return 0;
+                }
             
             *outX = p.x;
             *outY = p.y;
@@ -8618,6 +8629,10 @@ char minginPlatform_getStickPosition( MinginStick   inStick,
                                       int          *outPosition,
                                       int          *outLowerLimit,
                                       int          *outUpperLimit ) {
+
+    if( ! mn_gamepadActive ) {
+        return 0;
+        }
 
     switch( inStick ) {
         case MGN_STICK_LEFT_TRIGGER:
@@ -8669,7 +8684,11 @@ char mingin_hasAnyGamepadBeenTouched( void ) {
 
 
 
-void mingin_log( const char  *inString ) {
+/* two internal buffers, one for regular mingin_log calls
+   and the other for calls from the bulk reading thread */
+void mingin_logWithBufferNumber( const char  *inString,
+                                 int          inBufferNumber ) {
+    
     if( mn_logFileHandle != -1 ) {
 
         /* on windows, we do \n -> \r\n conversion */
@@ -8681,7 +8700,7 @@ void mingin_log( const char  *inString ) {
         
         enum{  bufferLength  =  255  };
 
-        static  char  buffer[ bufferLength + 1 ];
+        static  char  buffer[2][ bufferLength + 1 ];
 
         int  origLen  =  mn_stringLength( inString );
         int  i;
@@ -8696,19 +8715,33 @@ void mingin_log( const char  *inString ) {
             char  c  =  inString[i];
             
             if( c == '\n' ) {
-                buffer[ newI++ ] = '\r';
-                buffer[ newI++ ] = '\n';
+                buffer[ inBufferNumber ][ newI++ ] = '\r';
+                buffer[ inBufferNumber ][ newI++ ] = '\n';
                 }
             else {
-                buffer[ newI++ ] = c;
+                buffer[ inBufferNumber ][ newI++ ] = c;
                 }
             }
         
         mingin_writePersistData( mn_logFileHandle,
                                  newI,
-                                 (unsigned char *)buffer );
+                                 (unsigned char *)( buffer[ inBufferNumber ] ) );
         }
     return;
+    }
+
+
+
+void mingin_log( const char  *inString ) {
+    mingin_logWithBufferNumber( inString,
+                                0 );
+    }
+
+
+
+void mingin_logBulkThread( const char  *inString ) {
+    mingin_logWithBufferNumber( inString,
+                                1 );
     }
 
 
@@ -8872,6 +8905,9 @@ static int mn_windowsFileOpenRead( const char  *inFolderName,
     if( fileSize == INVALID_FILE_SIZE ) {
         /* failed to get size, OR file is bigger than 4 GB,
            which is not supported */
+
+        CloseHandle( fileHandle->h );
+        
         return -1;
         }
 
@@ -8949,7 +8985,13 @@ static char mn_windowsFileWrite( int                   inFD,
                                  const unsigned char  *inByteBuffer ) {
     
     int                numWritten  =  0;
-    MinginFileHandle  *fileHandle  =  &( mn_fileHandles[ inFD ] );
+    MinginFileHandle  *fileHandle;
+
+    if( inFD < 0 ) {
+        return 0;
+        }
+
+    fileHandle = &( mn_fileHandles[ inFD ] );
 
     if( ! fileHandle->live ) {
         return 0;
@@ -8981,7 +9023,13 @@ static int mn_windowsFileRead( int             inFD,
                                unsigned char  *inByteBuffer ) {
     
     int                numRead     =  0;
-    MinginFileHandle  *fileHandle  =  &( mn_fileHandles[ inFD ] );
+    MinginFileHandle  *fileHandle;
+
+    if( inFD < 0 ) {
+        return -1;
+        }
+
+    fileHandle = &( mn_fileHandles[ inFD ] );
     
     if( ! fileHandle->live ) {
         return -1;
@@ -9018,8 +9066,14 @@ static int mn_windowsFileRead( int             inFD,
 static char mn_windowsFileSeek( int  inFD,
                                 int  inAbsoluteBytePosition ) {
 
-    MinginFileHandle  *fileHandle  =  &( mn_fileHandles[ inFD ] );
+    MinginFileHandle  *fileHandle;
     DWORD              result;
+
+    if( inFD < 0 ) {
+        return 0;
+        }
+
+    fileHandle = &( mn_fileHandles[ inFD ] );
     
     if( ! fileHandle->live ) {
         return 0;
@@ -9040,11 +9094,17 @@ static char mn_windowsFileSeek( int  inFD,
 
 static int mn_windowsFileGetPos( int  inFD ) {
 
-    MinginFileHandle  *fileHandle  =  &( mn_fileHandles[ inFD ] );
+    MinginFileHandle  *fileHandle;
     DWORD              result;
+
+    if( inFD < 0 ) {
+        return -1;
+        }
+
+    fileHandle = &( mn_fileHandles[ inFD ] );
     
     if( ! fileHandle->live ) {
-        return 0;
+        return -1;
         }
 
     result = SetFilePointer( fileHandle->h,
@@ -9158,8 +9218,9 @@ char mingin_renamePersistData( const char  *inStoreName,
     char  *pathNew  =  mn_windowsGetFilePath( mn_settingsDirName,
                                               inStoreNewName );
 
-    int    result   =  MoveFileA( pathOld,
-                                  pathNew );
+    int    result   =  MoveFileExA( pathOld,
+                                    pathNew,
+                                    MOVEFILE_REPLACE_EXISTING );
 
     if( result == 0 ) {
         return 0;
@@ -9525,7 +9586,8 @@ static char mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
     truePos = mn_windowsFileGetPos( bulkDataHandle );
 
     if( truePos == -1 ) {
-        mingin_log( "Failed to get position from buffered bulk resource.\n" );
+        mingin_logBulkThread(
+            "Failed to get position from buffered bulk resource.\n" );
         mn_unlockBulkFileOps();
         return 0;
         }
@@ -9536,7 +9598,8 @@ static char mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
         if( ! mn_windowsFileSeek( bulkDataHandle,
                                   ourDesiredResourcePos ) ) {
 
-            mingin_log( "Failed to seek in buffered bulk resource.\n" );
+            mingin_logBulkThread(
+                "Failed to seek in buffered bulk resource.\n" );
             mn_unlockBulkFileOps();
             return 0;
             }
@@ -9547,7 +9610,8 @@ static char mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
                                   buffer );
 
     if( numRead == -1 ) {
-        mingin_log( "Failed to read from buffered bulk resource.\n" );
+        mingin_logBulkThread(
+            "Failed to read from buffered bulk resource.\n" );
         mn_unlockBulkFileOps();
         return 0;
         }

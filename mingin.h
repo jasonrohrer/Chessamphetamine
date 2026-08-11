@@ -9345,9 +9345,10 @@ static void mn_logModTime( const char  *inBulkName ) {
          i < mn_numBulkChangeRecords;
          i ++ ) {
 
-        if( mn_stringsEqual(
+        if( mn_stringsEqualLimit(
                 inBulkName,
-                mn_bulkChangeRecords[ i ].bulkName ) ) {
+                mn_bulkChangeRecords[ i ].bulkName,
+                MINGIN_BULK_NAME_MAX_LENGTH ) ) {
 
             foundI = i;
             break;
@@ -9929,9 +9930,10 @@ static void mn_removeBulkDataReadBuffer( int  inBulkDataHandle ) {
                     mn_bulkReadBuffers[ mn_numBulkReadBuffers - 1 ];
                 }
 
+            mn_numBulkReadBuffers --;
+
             mn_unlockBulkBuffers();
             
-            mn_numBulkReadBuffers --;
             return;
             }
         }
@@ -10446,12 +10448,11 @@ char minginPlatform_getStickPosition( MinginStick   inStick,
                                       int          *outLowerLimit,
                                       int          *outUpperLimit ) {
     /* suppress warning */
-    if( inStick ||
-        *outPosition ||
-        *outUpperLimit ||
-        *outLowerLimit ) {
-        return 0;
-        }
+    (void)inStick;
+    (void)outPosition;
+    (void)outUpperLimit;
+    (void)outLowerLimit;
+
     return 0;
     }
 
@@ -10639,7 +10640,7 @@ int mingin_getBulkDataPosition( int  inBulkDataHandle ) {
     /* suppress warning */
     if( inBulkDataHandle > 0 ) {
         }
-    return 0;
+    return -1;
     }
 
 

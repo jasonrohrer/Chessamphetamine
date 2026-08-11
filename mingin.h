@@ -5296,13 +5296,16 @@ static char mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
         maxNumReadBytes = BUFFER_SIZE;
         }
 
- 
+
+    /* keep this lock while thread is working with bulkDataHandle
+       to make sure it isn't seeked or read or closed out from under us */
+    mn_lockBulkFileOps();
+    
     bulkDataHandle = inBuffer->bulkDataHandle;
     
     mn_unlockBulkBuffers();
 
-
-    mn_lockBulkFileOps();
+    
     
     truePos = mn_linuxFileGetPos( bulkDataHandle );
 
@@ -5432,9 +5435,9 @@ static void *mn_bulkReadThreadFunction( void *inArg ) {
 
             /* we must hold lock when calling */
             anyProgress =
-                anyProgress
+                mn_processBulkReadBuffer( &( mn_bulkReadBuffers[ i ] ) )
                 ||
-                mn_processBulkReadBuffer( &( mn_bulkReadBuffers[ i ] ) );
+                anyProgress;
             /* it unlocks when it returns */
 
             /* re-lock before we check mn_numBulkReadBuffers limit again */
@@ -5688,9 +5691,10 @@ static void mn_removeBulkDataReadBuffer( int  inBulkDataHandle ) {
                     mn_bulkReadBuffers[ mn_numBulkReadBuffers - 1 ];
                 }
 
+            mn_numBulkReadBuffers --;
+            
             mn_unlockBulkBuffers();
             
-            mn_numBulkReadBuffers --;
             return;
             }
         }
@@ -5979,9 +5983,18 @@ void mingin_endReadBulkData( int  inBulkDataHandle ) {
            already been removed */
         
         mn_removeBulkDataReadBuffer( inBulkDataHandle );
+
+        
+        /* wait to close until thread is done manipulating inBulkDataHandle */
+        mn_lockBulkFileOps();
+        
+        close( inBulkDataHandle );
+
+        mn_unlockBulkFileOps();
         }
-    
-    close( inBulkDataHandle );
+    else {
+        close( inBulkDataHandle );
+        }
     }
 
 
@@ -9446,13 +9459,16 @@ static char mn_processBulkReadBuffer( MinginBulkReadBuffer *inBuffer ) {
         maxNumReadBytes = BUFFER_SIZE;
         }
 
- 
+
+    /* keep this lock while thread is working with bulkDataHandle
+       to make sure it isn't seeked or read or closed out from under us */
+    mn_lockBulkFileOps();
+    
     bulkDataHandle = inBuffer->bulkDataHandle;
     
     mn_unlockBulkBuffers();
-
-
-    mn_lockBulkFileOps();
+    
+    
     
     truePos = mn_windowsFileGetPos( bulkDataHandle );
 
@@ -9582,9 +9598,9 @@ static DWORD WINAPI mn_bulkReadThreadFunction( LPVOID inArg ) {
 
             /* we must hold lock when calling */
             anyProgress =
-                anyProgress
+                mn_processBulkReadBuffer( &( mn_bulkReadBuffers[ i ] ) )
                 ||
-                mn_processBulkReadBuffer( &( mn_bulkReadBuffers[ i ] ) );
+                anyProgress;
             /* it unlocks when it returns */
 
             /* re-lock before we check mn_numBulkReadBuffers limit again */
@@ -10088,9 +10104,17 @@ void mingin_endReadBulkData( int  inBulkDataHandle ) {
            already been removed */
         
         mn_removeBulkDataReadBuffer( inBulkDataHandle );
-        }
 
-    mn_windowsCloseFile( inBulkDataHandle );
+        /* wait to close until thread is done manipulating inBulkDataHandle */
+        mn_lockBulkFileOps();
+        
+        mn_windowsCloseFile( inBulkDataHandle );
+
+        mn_unlockBulkFileOps();
+        }
+    else {
+        mn_windowsCloseFile( inBulkDataHandle );
+        }
     }
 
 

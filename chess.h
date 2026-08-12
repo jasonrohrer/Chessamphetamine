@@ -2874,6 +2874,14 @@ static char getGreedyDepthMove( BoardState  *inState,
     int             i;
     Move            nextMove;
 
+    /* if we're at a leaf node, and WE are a lone king,
+       we only need to compute our reachable square count one time,
+       because no move we make will change how many squares we can
+       reach.... this is an 8x savings */
+    int             kingReachableCount;
+    char            kingReachableCountValid  =  0;
+    
+
     if( inOurDepth == 0 ) {
         /* consider all moves for random-target pieces */
         chessRandomPiecesShouldPickWorstMove = 0;
@@ -3167,14 +3175,29 @@ static char getGreedyDepthMove( BoardState  *inState,
                                        might change something, so
                                        compute it.  Otherwise skip
                                        this expensive computation */
-                                
-                                    reachable =
-                                        getKingReachableSquares(
-                                            &( possibleStates[ inDepthLeft ]
-                                                             [ m ] ),
-                                            kX,
-                                            kY,
-                                            loneColorFound );
+
+                                    if( kingReachableCountValid ) {
+                                        /* use cached version */
+                                        reachable = kingReachableCount;
+                                        }
+                                    else {
+                                        /* compute it */
+                                        reachable =
+                                            getKingReachableSquares(
+                                                &( possibleStates[ inDepthLeft ]
+                                                   [ m ] ),
+                                                kX,
+                                                kY,
+                                                loneColorFound );
+                                        
+                                        /* see if we should cache it */
+                                        if( colorToMove == loneColorFound ) {
+                                            /* we are the lone king! */
+                                            kingReachableCount = reachable;
+                                            kingReachableCountValid = 1;
+                                            }
+                                        }
+                                        
                                     
                                     /* turn this into a positive bonus,
                                        so scores don't suddenly get worse

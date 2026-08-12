@@ -1953,6 +1953,8 @@ void chessInit( void ) {
     /* stalemate */
     chessSeed( 12036707 );
 
+    chessSeed( mingin_getEntropySeed() );
+
     /* draw */
     if(0)chessSeed( 12035857 );
 
@@ -2501,6 +2503,268 @@ int getScore( BoardState *inState ) {
 
 
 
+/* returns color of lone king, or -1 if neither/both alone */
+static int isKingAlone( BoardState  *inState,
+                        int         *outKingX,
+                        int         *outKingY ) {
+
+    char  whiteKingFound   =  0;
+    char  blackKingFound   =  0;
+    char  otherWhiteFound  =  0;
+    char  otherBlackFound  =  0;
+    int   whiteKingX       =  0;
+    int   whiteKingY       =  0;
+    int   blackKingX       =  0;
+    int   blackKingY       =  0;
+    
+    int   y;
+    int   x;
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            ChessPiece  p  =  inState->grid[ y ][ x ];
+            ChessPiece  t  =  p & CHESS_TYPE_MASK;
+            ChessPiece  c  =  p & CHESS_COLOR_MASK;
+
+            if( p == noPiece ) {
+                continue;
+                }
+            
+            if( t == king ) {
+                if( c == CHESS_WHITE ) {
+                    whiteKingFound = 1;
+                    whiteKingX = x;
+                    whiteKingY = y;
+                    }
+                else {
+                    blackKingFound = 1;
+                    blackKingX = x;
+                    blackKingY = y;
+                    }
+                }
+            else {
+                if( c == CHESS_WHITE ) {
+                    otherWhiteFound= 1;
+                    if( otherBlackFound ) {
+                        return -1;
+                        }   
+                    }
+                else {
+                    otherBlackFound = 1;
+                    if( otherWhiteFound ) {
+                        return -1;
+                        }
+                    }
+                }
+            }
+        }
+
+    if( whiteKingFound
+        &&
+        ! otherWhiteFound
+        &&
+          otherBlackFound
+        &&
+        blackKingFound ) {
+
+        *outKingX = whiteKingX;
+        *outKingY = whiteKingY;
+        
+        return CHESS_WHITE;
+        }
+    
+    if( blackKingFound
+        &&
+        ! otherBlackFound
+        &&
+        otherWhiteFound
+        &&
+        whiteKingFound ) {
+
+        *outKingX = blackKingX;
+        *outKingY = blackKingY;
+        
+        return CHESS_BLACK;
+        }
+
+    return -1;
+    }
+
+
+
+static char findPiece( BoardState  *inState,
+                       ChessPiece   inPiece,
+                       int         *outRow,
+                       int         *outCol ) {
+    int  y;
+    int  x;
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            if( inState->grid[ y ][ x ] == inPiece ) {
+                *outRow = y;
+                *outCol = x;
+                return 1;
+                }
+            }
+        }
+    return 0;
+    }
+
+
+
+
+/* helper function that can be called from debugger */
+void printState( BoardState  *inState );
+
+
+
+/* gets count of reachable squares for a king */
+static int getKingReachableSquares( BoardState  *inState,
+                                    int          inKingX,
+                                    int          inKingY,
+                                    int          inKingColor ) {
+
+    static  BoardState     workingState;
+    static  unsigned char  workingDestRows  [BN];
+    static  unsigned char  workingDestCols  [BN];
+    static  Captured       workingCaptured  [BN];
+    static  BoardState     workingOutStates [BN];
+    static  char           reachable        [BH][BW];
+    static  unsigned char  newReachableRows [BN];
+    static  unsigned char  newReachableCols [BN];
+    static  unsigned char  newReachableRowsB[BN];
+    static  unsigned char  newReachableColsB[BN];
+    
+    int  i;
+    int  y;
+    int  x;
+    int  numNewReachable;
+    int  numTotalReachable = 0;
+    
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            reachable   [ y ][ x ] = 0;
+            }
+        }
+
+    reachable[ inKingY ][ inKingX ] = 1;
+    numTotalReachable = 1;
+    
+    newReachableRows[ 0 ] = (unsigned char)inKingY;
+    newReachableCols[ 0 ] = (unsigned char)inKingX;
+    numNewReachable       = 1;
+
+    workingState = *inState;
+    
+    workingState.nextToMove = inKingColor;
+    workingState.grid[ inKingY ][ inKingX ] = noPiece;
+
+    
+    while( numNewReachable > 0 ) {
+
+        int  numBrandNewReachable = 0;
+        
+        for( i = 0;
+             i < numNewReachable;
+             i ++ ) {
+
+            int  numPossibleMoves  =  0;
+            int  m;
+            
+            /* test king at this spot */
+            workingState.grid[ newReachableRows[ i ] ][ newReachableCols[ i ] ]
+                = (ChessPiece)( king | inKingColor );
+
+
+            numPossibleMoves = kingMove( &workingState,
+                                         (unsigned char)inKingColor,
+                                         newReachableRows[ i ],
+                                         newReachableCols[ i ],
+                                         0,
+                                         workingDestRows,
+                                         workingDestCols,
+                                         workingCaptured,
+                                         workingOutStates );
+
+            for( m = 0;
+                 m < numPossibleMoves;
+                 m ++ ) {
+                
+                /* skip any where king captures something
+                   don't count king moving through pieces as reachable */
+                if( workingCaptured[ m ].num > 0 ) {
+                    continue;
+                    }
+                if( isKingInCheck( &( workingOutStates[ m ] ), inKingColor ) ) {
+                    /* moving into check doesn't count as reachable */
+                    continue;
+                    }
+
+                
+                if( ! reachable[ workingDestRows[ m ] ]
+                               [ workingDestCols[ m ] ] ) {
+
+                    /* found a dest square for the king that we
+                       haven't reached before */
+                    
+                    reachable[ workingDestRows[ m ] ]
+                             [ workingDestCols[ m ] ] = 1;
+
+                    newReachableRowsB[ numBrandNewReachable ] =
+                        workingDestRows[ m ];
+                    newReachableColsB[ numBrandNewReachable ] =
+                        workingDestCols[ m ];
+                    
+                    numBrandNewReachable ++;
+
+                    numTotalReachable ++;
+                    }
+                }
+            
+
+            /* remove king from this spot after testing */
+            workingState.grid[ newReachableRows[ i ] ][ newReachableCols[ i ] ]
+                = noPiece;
+            }
+
+        numNewReachable = 0;
+        for( i = 0;
+             i < numBrandNewReachable;
+             i ++ ) {
+            
+            newReachableRows[ i ] = newReachableRowsB[ i ];
+            newReachableCols[ i ] = newReachableColsB[ i ];
+
+            numNewReachable++;
+            }
+        }
+
+    return numTotalReachable;
+    }
+
+
+
+
 #define  MAX_DEPTH  5
 #define  MAX_SCORE  9999
 
@@ -2779,6 +3043,118 @@ static char getGreedyDepthMove( BoardState  *inState,
                                 }
                             else {
                                 score =  - ( checkmateScore - 2 - inOurDepth );
+                                }
+                            }
+                        }
+
+
+                    /* check for lone enemy king
+                       decrease score by how much room king has,
+                       and how far away his is from edges,
+                       and how far our king is away from him,
+                       so we favor trying to cut him off */
+
+                    /* don't bother with this bonus if score is huge,
+                       meaning that we've found a checkmate in a few moves */
+                    if( ( colorToMove == CHESS_WHITE
+                          &&
+                          score < checkmateScore / 2 )
+                        ||
+                        ( colorToMove == CHESS_BLACK
+                          &&
+                          score > - checkmateScore / 2 ) ) {
+
+                        int  kX;
+                        int  kY;
+                        int  loneColorFound  =
+                            isKingAlone(
+                                &( possibleStates[ inDepthLeft ][ m ] ),
+                                &kX,
+                                &kY );
+
+                        if( loneColorFound != -1
+                            &&
+                            ( ( loneColorFound == CHESS_WHITE
+                                &&
+                                colorToMove == CHESS_BLACK )
+                              ||
+                              ( loneColorFound == CHESS_BLACK
+                                &&
+                                colorToMove == CHESS_WHITE ) ) ) {
+
+                            int  edgeYDist;
+                            int  edgeXDist;
+                            int  edgeScoreFactor;
+                            int  ourKingX;
+                            int  ourKingY;
+                            
+                            if( inOurDepth == 0 ) {
+                                
+                                int  reachable =
+                                    getKingReachableSquares(
+                                        &( possibleStates[ inDepthLeft ][ m ] ),
+                                        kX,
+                                        kY,
+                                        loneColorFound );
+
+                                /* fewer squares reachable is better */
+                                if( colorToMove == CHESS_WHITE ) {
+                                    score -= reachable;
+                                    }
+                                else {
+                                    score += reachable;
+                                    }
+                                }
+
+                            if( kY < BH / 2 ) {
+                                edgeYDist = kY;
+                                }
+                            else {
+                                edgeYDist = BH - kY - 1;
+                                }
+                            if( kX < BW / 2 ) {
+                                edgeXDist = kX;
+                                }
+                            else {
+                                edgeXDist = BW - kX - 1;
+                                }
+                                
+                            edgeScoreFactor =
+                                edgeXDist * edgeXDist +
+                                edgeYDist * edgeYDist;
+
+                            /* closer to edges of board is better */
+                            if( colorToMove == CHESS_WHITE ) {
+                                score -= edgeScoreFactor;
+                                }
+                            else {
+                                score += edgeScoreFactor;
+                                }
+
+                            if( findPiece(
+                                    &( possibleStates[ inDepthLeft ][ m ] ),
+                                    (ChessPiece)( colorToMove | king ),
+                                    &ourKingY,
+                                    &ourKingX ) ) {
+
+                                /* give score bonus as our king gets
+                                   closer to help out */
+
+                                int  kingDistX = ourKingX - kX;
+                                int  kingDistY = ourKingY - kY;
+
+                                int  kingDist =
+                                    kingDistX * kingDistX +
+                                    kingDistY * kingDistY;
+
+                                kingDist /= 2;
+
+                                if( colorToMove == CHESS_WHITE ) {
+                                    score -= kingDist;
+                                    }
+                                else {
+                                    score += kingDist;
+                                    }
                                 }
                             }
                         }
@@ -3193,8 +3569,7 @@ void applyMove( BoardState  *inState,
 
 
 
-/* helper function that can be called from debugger */
-void printState( BoardState  *inState );
+
 
 
 

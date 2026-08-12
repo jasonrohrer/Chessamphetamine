@@ -1953,7 +1953,7 @@ void chessInit( void ) {
     /* stalemate */
     chessSeed( 12036707 );
 
-    chessSeed( mingin_getEntropySeed() );
+    if( 0 ) chessSeed( mingin_getEntropySeed() );
 
     /* draw */
     if(0)chessSeed( 12035857 );
@@ -2086,9 +2086,10 @@ void getTestBoard( BoardState  *outState ) {
 
     outState->grid[7][4] = king   | CHESS_WHITE;
 
-    outState->grid[7][0] = queen  | CHESS_WHITE;
+    outState->grid[7][0] = rook | CHESS_WHITE;
 
-    outState->grid[7][7] = noPiece   | CHESS_WHITE;
+    if(0)outState->grid[7][6] = rook  | CHESS_WHITE;
+    if(0)outState->grid[7][7] = rook  | CHESS_WHITE;
     
     /*
     outState->grid[1][4] = pawn   | CHESS_BLACK;
@@ -2709,6 +2710,12 @@ static int getKingReachableSquares( BoardState  *inState,
             for( m = 0;
                  m < numPossibleMoves;
                  m ++ ) {
+
+                if( reachable[ workingDestRows[ m ] ]
+                             [ workingDestCols[ m ] ] ) {
+                    /* already examined this spot before */
+                    continue;
+                    }
                 
                 /* skip any where king captures something
                    don't count king moving through pieces as reachable */
@@ -2720,25 +2727,20 @@ static int getKingReachableSquares( BoardState  *inState,
                     continue;
                     }
 
-                
-                if( ! reachable[ workingDestRows[ m ] ]
-                               [ workingDestCols[ m ] ] ) {
-
-                    /* found a dest square for the king that we
-                       haven't reached before */
+                /* found a dest square for the king that we
+                   haven't reached before */
                     
-                    reachable[ workingDestRows[ m ] ]
-                             [ workingDestCols[ m ] ] = 1;
+                reachable[ workingDestRows[ m ] ]
+                    [ workingDestCols[ m ] ] = 1;
 
-                    newReachableRowsB[ numBrandNewReachable ] =
-                        workingDestRows[ m ];
-                    newReachableColsB[ numBrandNewReachable ] =
-                        workingDestCols[ m ];
+                newReachableRowsB[ numBrandNewReachable ] =
+                    workingDestRows[ m ];
+                newReachableColsB[ numBrandNewReachable ] =
+                    workingDestCols[ m ];
                     
-                    numBrandNewReachable ++;
+                numBrandNewReachable ++;
 
-                    numTotalReachable ++;
-                    }
+                numTotalReachable ++;  
                 }
             
 
@@ -3271,44 +3273,51 @@ char getGreedyMove( BoardState  *inState,
     int   nextScore;
     char  canMove;
     int   depth        =  2;
-    int   countOpLeft  =  0;
-    int   countUsLeft  =  0;
-    int   y;
-    int   x;
 
-    for( y = 0;
-         y < BH;
-         y ++ ) {
+
+    /* no longer need to make depth larger in endgame, since
+       we have new king-trapping heuristics now */
+    if( 0 ) {
         
-        for( x = 0;
-             x < BW;
-             x ++ ) {
+        int   countOpLeft  =  0;
+        int   countUsLeft  =  0;
+        int   y;
+        int   x;
 
-            if( inState->grid[y][x] != noPiece ) {
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+        
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
 
-                if( ( inState->grid[y][x] & CHESS_COLOR_MASK )
-                    !=
-                    inState->nextToMove ) {
+                if( inState->grid[y][x] != noPiece ) {
 
-                    /* opponent piece! */
-                    countOpLeft ++;
-                    }
-                else {
-                    /* our piece */
-                    countUsLeft ++;
+                    if( ( inState->grid[y][x] & CHESS_COLOR_MASK )
+                        !=
+                        inState->nextToMove ) {
+
+                        /* opponent piece! */
+                        countOpLeft ++;
+                        }
+                    else {
+                        /* our piece */
+                        countUsLeft ++;
+                        }
                     }
                 }
             }
+
+        if( countOpLeft == 1
+            &&
+            countUsLeft <= 4 ) {
+
+            /* lone king left, with small team trying to get him
+               increase depth by 1 to give them a better chance of mating him */
+            depth = 3;
+            }
         }
-
-    if( countOpLeft == 1
-        &&
-        countUsLeft <= 4 ) {
-
-        /* lone king left, with small team trying to get him
-           increase depth by 1 to give them a better chance of mating him */
-        depth = 3;
-        }        
     
     
     canMove = getGreedyDepthMove( inState,

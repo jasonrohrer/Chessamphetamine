@@ -2639,7 +2639,7 @@ static int getKingReachableSquares( BoardState  *inState,
                                     int          inKingColor ) {
 
     static  BoardState     workingState;
-    static  char           reachable        [BH][BW];
+    static  char           examined         [BH][BW];
     
     static  unsigned char  workingDestRows  [4];
     static  unsigned char  workingDestCols  [4];
@@ -2664,11 +2664,11 @@ static int getKingReachableSquares( BoardState  *inState,
              x < BW;
              x ++ ) {
 
-            reachable   [ y ][ x ] = 0;
+            examined [ y ][ x ] = 0;
             }
         }
-
-    reachable[ inKingY ][ inKingX ] = 1;
+    
+    examined [ inKingY ][ inKingX ] = 1;
     numTotalReachable = 1;
     
     newReachableRows[ 0 ] = (unsigned char)inKingY;
@@ -2731,11 +2731,14 @@ static int getKingReachableSquares( BoardState  *inState,
 
                 char  check  =  0;
                 
-                if( reachable[ workingDestRows[ m ] ]
-                             [ workingDestCols[ m ] ] ) {
+                if( examined[ workingDestRows[ m ] ]
+                            [ workingDestCols[ m ] ] ) {
                     /* already examined this spot before */
                     continue;
                     }
+
+                examined[ workingDestRows[ m ] ]
+                        [ workingDestCols[ m ] ] = 1;
 
                 if( workingState.grid[ workingDestRows[ m ] ]
                                      [ workingDestCols[ m ] ] != noPiece ) {
@@ -2764,9 +2767,6 @@ static int getKingReachableSquares( BoardState  *inState,
                 /* found a dest square for the king that we
                    haven't reached before */
                     
-                reachable[ workingDestRows[ m ] ]
-                         [ workingDestCols[ m ] ] = 1;
-
                 newReachableRowsB[ numBrandNewReachable ] =
                     workingDestRows[ m ];
                 newReachableColsB[ numBrandNewReachable ] =

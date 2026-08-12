@@ -439,6 +439,8 @@ char isForcedCheckmate( BoardState  *inState,
    whole point of this call is to reduce computation when possible, for
    calls to this function that don't care about non-king-capture moves (such as
    king-in-check detection)
+   If this flag is 1, then the piece can actually return after finding the
+   very first king-capturing move.
 
    Returns the number of moves.
 */
@@ -695,6 +697,14 @@ static int pawnMove( BoardState     *inState,
                 }
             
             n++;
+
+            if( inMaySkipNonKingCaptureMoves
+                &&
+                ( targetP & CHESS_TYPE_MASK ) != king ) {
+                /* we can bail after first move discovered
+                   that captures king */
+                return n;
+                }
             }
         
         }
@@ -816,6 +826,15 @@ static int bishopMove( BoardState     *inState,
                 n++;
 
                 if( destP != noPiece ) {
+
+                    if( inMaySkipNonKingCaptureMoves
+                        &&
+                        ( destP & CHESS_TYPE_MASK ) != king ) {
+                        /* we can bail after first move discovered
+                           that captures king */
+                        return n;
+                        }
+                    
                     /* can't move to spots on this diag
                        beyond capturable piece */
                     break;
@@ -925,6 +944,16 @@ static int knightMove( BoardState     *inState,
             outStates[n].nextToMove = otherColor;
 
             n++;
+
+            if( destP != noPiece ) {
+                if( inMaySkipNonKingCaptureMoves
+                    &&
+                    ( destP & CHESS_TYPE_MASK ) != king ) {
+                    /* we can bail after first move discovered
+                       that captures king */
+                    return n;
+                    }
+                }
             }
         }
     
@@ -1044,7 +1073,17 @@ static int rookMove( BoardState     *inState,
                 
                 n++;
 
+
                 if( destP != noPiece ) {
+
+                    if( inMaySkipNonKingCaptureMoves
+                        &&
+                        ( destP & CHESS_TYPE_MASK ) != king ) {
+                        /* we can bail after first move discovered
+                           that captures king */
+                        return n;
+                        }
+                    
                     /* can't move to spots on this move dir
                        beyond capturable piece */
                     break;
@@ -1177,6 +1216,15 @@ static int queenMove( BoardState     *inState,
                 n++;
 
                 if( destP != noPiece ) {
+                    
+                    if( inMaySkipNonKingCaptureMoves
+                        &&
+                        ( destP & CHESS_TYPE_MASK ) != king ) {
+                        /* we can bail after first move discovered
+                           that captures king */
+                        return n;
+                        }
+                    
                     /* can't move to spots on this move dir
                        beyond capturable piece */
                     break;
@@ -1284,6 +1332,16 @@ static int kingMove( BoardState     *inState,
             outStates[n].nextToMove = otherColor;
 
             n++;
+
+            if( destP != noPiece ) {
+                if( inMaySkipNonKingCaptureMoves
+                    &&
+                    ( destP & CHESS_TYPE_MASK ) != king ) {
+                    /* we can bail after first move discovered
+                       that captures king */
+                    return n;
+                    }
+                }
             }
         }
     

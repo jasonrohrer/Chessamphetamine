@@ -2639,11 +2639,11 @@ static int getKingReachableSquares( BoardState  *inState,
                                     int          inKingColor ) {
 
     static  BoardState     workingState;
-    static  unsigned char  workingDestRows  [BN];
-    static  unsigned char  workingDestCols  [BN];
-    static  Captured       workingCaptured  [BN];
-    static  BoardState     workingOutStates [BN];
     static  char           reachable        [BH][BW];
+    
+    static  unsigned char  workingDestRows  [4];
+    static  unsigned char  workingDestCols  [4];
+    
     static  unsigned char  newReachableRows [BN];
     static  unsigned char  newReachableCols [BN];
     static  unsigned char  newReachableRowsB[BN];
@@ -2676,8 +2676,14 @@ static int getKingReachableSquares( BoardState  *inState,
     numNewReachable       = 1;
 
     workingState = *inState;
+
+    if( inKingColor == CHESS_WHITE ) {
+        workingState.nextToMove = CHESS_BLACK;
+        }
+    else {
+        workingState.nextToMove = CHESS_WHITE;
+        }
     
-    workingState.nextToMove = inKingColor;
     workingState.grid[ inKingY ][ inKingX ] = noPiece;
 
     
@@ -2692,37 +2698,65 @@ static int getKingReachableSquares( BoardState  *inState,
             int  numPossibleMoves  =  0;
             int  m;
             
-            /* test king at this spot */
-            workingState.grid[ newReachableRows[ i ] ][ newReachableCols[ i ] ]
-                = (ChessPiece)( king | inKingColor );
+            /* test king moves at this spot */
 
+            /* possible moves are NSEW, watching out for board edges */
+            if( newReachableRows[ i ] > 0 ) {
+                workingDestRows[ numPossibleMoves ] = newReachableRows[ i ] - 1;
+                workingDestCols[ numPossibleMoves ] = newReachableCols[ i ];
+                numPossibleMoves++;
+                }
 
-            numPossibleMoves = kingMove( &workingState,
-                                         (unsigned char)inKingColor,
-                                         newReachableRows[ i ],
-                                         newReachableCols[ i ],
-                                         0,
-                                         workingDestRows,
-                                         workingDestCols,
-                                         workingCaptured,
-                                         workingOutStates );
+            if( newReachableCols[ i ] > 0 ) {
+                workingDestRows[ numPossibleMoves ] = newReachableRows[ i ];
+                workingDestCols[ numPossibleMoves ] = newReachableCols[ i ] - 1;
+                numPossibleMoves++;
+                }
+
+            if( newReachableRows[ i ] < BH - 1 ) {
+                workingDestRows[ numPossibleMoves ] = newReachableRows[ i ] + 1;
+                workingDestCols[ numPossibleMoves ] = newReachableCols[ i ];
+                numPossibleMoves++;
+                }
+
+            if( newReachableCols[ i ] < BW - 1 ) {
+                workingDestRows[ numPossibleMoves ] = newReachableRows[ i ];
+                workingDestCols[ numPossibleMoves ] = newReachableCols[ i ] + 1;
+                numPossibleMoves++;
+                }
 
             for( m = 0;
                  m < numPossibleMoves;
                  m ++ ) {
 
+                char  check  =  0;
+                
                 if( reachable[ workingDestRows[ m ] ]
                              [ workingDestCols[ m ] ] ) {
                     /* already examined this spot before */
                     continue;
                     }
-                
-                /* skip any where king captures something
-                   don't count king moving through pieces as reachable */
-                if( workingCaptured[ m ].num > 0 ) {
+
+                if( workingState.grid[ workingDestRows[ m ] ]
+                                     [ workingDestCols[ m ] ] != noPiece ) {
+                    /* assume king can't move to non-empty squares
+                       for simplicity */
                     continue;
                     }
-                if( isKingInCheck( &( workingOutStates[ m ] ), inKingColor ) ) {
+
+                /* make this state to test it */
+                workingState.grid[ workingDestRows[ m ] ]
+                                 [ workingDestCols[ m ] ]
+                    = (ChessPiece)( king | inKingColor );
+                
+                check = isKingInCheck( &workingState, inKingColor );
+
+                /* back to no-king state to be ready for next test */
+                workingState.grid[ workingDestRows[ m ] ]
+                                 [ workingDestCols[ m ] ]
+                    = noPiece;
+
+                if( check ) {
                     /* moving into check doesn't count as reachable */
                     continue;
                     }
@@ -2731,7 +2765,7 @@ static int getKingReachableSquares( BoardState  *inState,
                    haven't reached before */
                     
                 reachable[ workingDestRows[ m ] ]
-                    [ workingDestCols[ m ] ] = 1;
+                         [ workingDestCols[ m ] ] = 1;
 
                 newReachableRowsB[ numBrandNewReachable ] =
                     workingDestRows[ m ];

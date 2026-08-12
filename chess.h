@@ -2646,15 +2646,13 @@ static int getKingReachableSquares( BoardState  *inState,
     static  char           workingDeltaCols [8]
                                             = { -1,  1,  0,  0, -1,  1,  1, -1 };
     
-    static  unsigned char  newReachableRows [BN];
-    static  unsigned char  newReachableCols [BN];
-    static  unsigned char  newReachableRowsB[BN];
-    static  unsigned char  newReachableColsB[BN];
+    static  unsigned char  reachableRows [BN];
+    static  unsigned char  reachableCols [BN];
     
     int  i;
     int  y;
     int  x;
-    int  numNewReachable;
+    int  numDoneReachable  = 0;
     int  numTotalReachable = 0;
     
 
@@ -2673,9 +2671,8 @@ static int getKingReachableSquares( BoardState  *inState,
     examined [ inKingY ][ inKingX ] = 1;
     numTotalReachable = 1;
     
-    newReachableRows[ 0 ] = (unsigned char)inKingY;
-    newReachableCols[ 0 ] = (unsigned char)inKingX;
-    numNewReachable       = 1;
+    reachableRows[ 0 ] = (unsigned char)inKingY;
+    reachableCols[ 0 ] = (unsigned char)inKingX;
 
     workingState = *inState;
 
@@ -2689,93 +2686,74 @@ static int getKingReachableSquares( BoardState  *inState,
     workingState.grid[ inKingY ][ inKingX ] = noPiece;
 
     
-    while( numNewReachable > 0 ) {
-
-        int  numBrandNewReachable = 0;
+    while( numDoneReachable < numTotalReachable ) {
         
-        for( i = 0;
-             i < numNewReachable;
-             i ++ ) {
+        int  m;
 
-            int  m;
+        i = numDoneReachable;
+        
+        numDoneReachable ++;
             
-            /* test king moves at this spot */
+        /* test king moves at this spot */
 
-            for( m = 0;
-                 m < 8;
-                 m ++ ) {
+        for( m = 0;
+             m < 8;
+             m ++ ) {
 
-                char  check  =  0;
-                int   mY     =  newReachableRows[ i ] + workingDeltaRows[ m ];
-                int   mX     =  newReachableCols[ i ] + workingDeltaCols[ m ];
+            char  check  =  0;
+            int   mY     =  reachableRows[ i ] + workingDeltaRows[ m ];
+            int   mX     =  reachableCols[ i ] + workingDeltaCols[ m ];
 
-                /* skip off edge of board */
-                if( mY < 0 ) {
-                    continue;
-                    }
-                if( mY >= BH ) {
-                    continue;
-                    }
-                if( mX < 0 ) {
-                    continue;
-                    }
-                if( mX >= BW ) {
-                    continue;
-                    }
-                
-                if( examined[ mY ][ mX ] ) {
-                    /* already examined this spot before */
-                    continue;
-                    }
-
-                examined[ mY ][ mX ] = 1;
-
-                if( workingState.grid[ mY ][ mX ] != noPiece ) {
-                    /* assume king can't move to non-empty squares
-                       for simplicity */
-                    continue;
-                    }
-
-                /* make this state to test it */
-                workingState.grid[ mY ][ mX ]
-                    = (ChessPiece)( king | inKingColor );
-                
-                check = isKingInCheck( &workingState, inKingColor );
-
-                /* back to no-king state to be ready for next test */
-                workingState.grid[ mY ][ mX ]= noPiece;
-
-                if( check ) {
-                    /* moving into check doesn't count as reachable */
-                    continue;
-                    }
-
-                /* found a dest square for the king that we
-                   haven't reached before */
-                    
-                newReachableRowsB[ numBrandNewReachable ] = (unsigned char)mY;
-                newReachableColsB[ numBrandNewReachable ] = (unsigned char)mX;
-                    
-                numBrandNewReachable ++;
-
-                numTotalReachable ++;  
+            /* skip off edge of board */
+            if( mY < 0 ) {
+                continue;
                 }
-            
+            if( mY >= BH ) {
+                continue;
+                }
+            if( mX < 0 ) {
+                continue;
+                }
+            if( mX >= BW ) {
+                continue;
+                }
+                
+            if( examined[ mY ][ mX ] ) {
+                /* already examined this spot before */
+                continue;
+                }
 
-            /* remove king from this spot after testing */
-            workingState.grid[ newReachableRows[ i ] ][ newReachableCols[ i ] ]
-                = noPiece;
-            }
+            examined[ mY ][ mX ] = 1;
 
-        numNewReachable = 0;
-        for( i = 0;
-             i < numBrandNewReachable;
-             i ++ ) {
-            
-            newReachableRows[ i ] = newReachableRowsB[ i ];
-            newReachableCols[ i ] = newReachableColsB[ i ];
+            if( workingState.grid[ mY ][ mX ] != noPiece ) {
+                /* assume king can't move to non-empty squares
+                   for simplicity */
+                continue;
+                }
 
-            numNewReachable++;
+            /* make this state to test it */
+            workingState.grid[ mY ][ mX ]
+                = (ChessPiece)( king | inKingColor );
+                
+            check = isKingInCheck( &workingState, inKingColor );
+
+            /* back to no-king state to be ready for next test */
+            workingState.grid[ mY ][ mX ]= noPiece;
+
+            if( check ) {
+                /* moving into check doesn't count as reachable */
+                continue;
+                }
+
+            /* found a dest square for the king that we
+               haven't reached before */
+
+            /* add them to the end of the list */
+                    
+            reachableRows[ numTotalReachable ] = (unsigned char)mY;
+            reachableCols[ numTotalReachable ] = (unsigned char)mX;
+                    
+            numTotalReachable ++;
             }
         }
 

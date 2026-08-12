@@ -2690,11 +2690,13 @@ void printState( BoardState  *inState );
 
 
 
-/* gets count of reachable squares for a king */
+/* gets count of reachable squares for a king
+   inMaxSquaresToFind cuts off search after we hit that count */
 static int getKingReachableSquares( BoardState  *inState,
                                     int          inKingX,
                                     int          inKingY,
-                                    int          inKingColor ) {
+                                    int          inKingColor,
+                                    int          inMaxSquaresToFind ) {
 
     static  BoardState     workingState;
     static  char           examined         [BH][BW];
@@ -2812,6 +2814,10 @@ static int getKingReachableSquares( BoardState  *inState,
             reachableCols[ numTotalReachable ] = (unsigned char)mX;
                     
             numTotalReachable ++;
+
+            if( numTotalReachable >= inMaxSquaresToFind ) {
+                return numTotalReachable;
+                }
             }
         }
 
@@ -3074,7 +3080,8 @@ static char getGreedyDepthMove( BoardState  *inState,
 
                                 int  attackerColor;
                                 int  reachable;
-
+                                int  r;
+                                
                                 /* don't bother computing the expensive
                                    king reachability test if the possible
                                    bonus from it won't surpass bestScore */
@@ -3172,9 +3179,52 @@ static char getGreedyDepthMove( BoardState  *inState,
                                       maxBonuScore < bestScore ) ) {
 
                                     /* the possible bonus from reachability
-                                       might change something, so
+                                       might give us a new best score, so
                                        compute it.  Otherwise skip
                                        this expensive computation */
+
+
+                                    /* and we don't need to compute ALL
+                                       reachable squares for the king,
+                                       which is expensive.  As soon
+                                       as we've seen enough squares to know
+                                       that this isn't our best score,
+                                       we can stop */
+                                    int  maxSquares  =  BN;
+
+                                    /* cheap loop to compute
+                                       how many maxSquares we might
+                                       care about */
+                                    for( r  = 1;
+                                         r <= BN;
+                                         r ++ ) {
+
+                                        int  testBonus = BN - r;
+                                        int  testScore;
+                                        
+                                        if( attackerColor == CHESS_WHITE ) {
+                                            testScore = score + testBonus;
+                                            }
+                                        else {
+                                            testScore = score - testBonus;
+                                            }
+
+                                        if( colorToMove == CHESS_WHITE
+                                            &&
+                                            testScore < bestScore ) {
+                                            
+                                            maxSquares = r - 1;
+                                            break;
+                                            }
+                                        
+                                        if( colorToMove == CHESS_BLACK
+                                            &&
+                                            testScore > bestScore ) {
+                                            maxSquares = r - 1;
+                                            break;
+                                            }
+                                        }
+                                    
 
                                     if( kingReachableCountValid ) {
                                         /* use cached version */
@@ -3188,7 +3238,8 @@ static char getGreedyDepthMove( BoardState  *inState,
                                                    [ m ] ),
                                                 kX,
                                                 kY,
-                                                loneColorFound );
+                                                loneColorFound,
+                                                maxSquares );
                                         
                                         /* see if we should cache it */
                                         if( colorToMove == loneColorFound ) {

@@ -3066,35 +3066,21 @@ static char getGreedyDepthMove( BoardState  *inState,
 
                                 int  attackerColor;
                                 int  reachable;
-                            
+
+                                /* don't bother computing the expensive
+                                   king reachability test if the possible
+                                   bonus from it won't surpass bestScore */
+                                int  maxReachableBonus = BN;
+                                int  maxBonuScore;
+                                
+                                
                                 if( loneColorFound ==  CHESS_WHITE ) {
                                     attackerColor = CHESS_BLACK;
                                     }
                                 else {
                                     attackerColor = CHESS_WHITE;
                                     }
-                            
-                                reachable =
-                                    getKingReachableSquares(
-                                        &( possibleStates[ inDepthLeft ][ m ] ),
-                                        kX,
-                                        kY,
-                                        loneColorFound );
 
-                                /* turn this into a positive bonus,
-                                   so scores don't suddenly get worse
-                                   when we capture the last piece before
-                                   leaving a lone king */
-                                reachable = BN - reachable;
-
-                                /* fewer squares reachable is better */
-                                if( attackerColor == CHESS_WHITE ) {
-                                    score += reachable;
-                                    }
-                                else {
-                                    score -= reachable;
-                                    }
-                                
 
                                 if( kY < BH / 2 ) {
                                     edgeYDist = kY;
@@ -3128,6 +3114,8 @@ static char getGreedyDepthMove( BoardState  *inState,
                                     score -= edgeScoreFactor;
                                     }
 
+                                
+                                
                                 if( findPiece(
                                         &( possibleStates[ inDepthLeft ][ m ] ),
                                         (ChessPiece)( attackerColor | king ),
@@ -3156,6 +3144,52 @@ static char getGreedyDepthMove( BoardState  *inState,
                                     else {
                                         score -= kingDist;
                                         }
+                                    }
+
+                                
+                                if( attackerColor == CHESS_WHITE ) {
+                                    maxBonuScore = score + maxReachableBonus;
+                                    }
+                                else {
+                                    maxBonuScore = score - maxReachableBonus;
+                                    }
+
+
+                                if( ( colorToMove == CHESS_WHITE
+                                      &&
+                                      maxBonuScore > bestScore )
+                                    ||
+                                    ( colorToMove == CHESS_BLACK
+                                      &&
+                                      maxBonuScore < bestScore ) ) {
+
+                                    /* the possible bonus from reachability
+                                       might change something, so
+                                       compute it.  Otherwise skip
+                                       this expensive computation */
+                                
+                                    reachable =
+                                        getKingReachableSquares(
+                                            &( possibleStates[ inDepthLeft ]
+                                                             [ m ] ),
+                                            kX,
+                                            kY,
+                                            loneColorFound );
+                                    
+                                    /* turn this into a positive bonus,
+                                       so scores don't suddenly get worse
+                                       when we capture the last piece before
+                                       leaving a lone king */
+                                    reachable = BN - reachable;
+
+                                    /* fewer squares reachable is better */
+                                    if( attackerColor == CHESS_WHITE ) {
+                                        score += reachable;
+                                        }
+                                    else {
+                                        score -= reachable;
+                                        }
+                                
                                     }
                                 }
                             }

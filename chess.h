@@ -2641,8 +2641,10 @@ static int getKingReachableSquares( BoardState  *inState,
     static  BoardState     workingState;
     static  char           examined         [BH][BW];
     
-    static  unsigned char  workingDestRows  [4];
-    static  unsigned char  workingDestCols  [4];
+    static  char           workingDeltaRows [8]
+                                            = {  0,  0, -1,  1, -1, -1,  1,  1 };
+    static  char           workingDeltaCols [8]
+                                            = { -1,  1,  0,  0, -1,  1,  1, -1 };
     
     static  unsigned char  newReachableRows [BN];
     static  unsigned char  newReachableCols [BN];
@@ -2695,69 +2697,53 @@ static int getKingReachableSquares( BoardState  *inState,
              i < numNewReachable;
              i ++ ) {
 
-            int  numPossibleMoves  =  0;
             int  m;
             
             /* test king moves at this spot */
 
-            /* possible moves are NSEW, watching out for board edges */
-            if( newReachableRows[ i ] > 0 ) {
-                workingDestRows[ numPossibleMoves ] = newReachableRows[ i ] - 1;
-                workingDestCols[ numPossibleMoves ] = newReachableCols[ i ];
-                numPossibleMoves++;
-                }
-
-            if( newReachableCols[ i ] > 0 ) {
-                workingDestRows[ numPossibleMoves ] = newReachableRows[ i ];
-                workingDestCols[ numPossibleMoves ] = newReachableCols[ i ] - 1;
-                numPossibleMoves++;
-                }
-
-            if( newReachableRows[ i ] < BH - 1 ) {
-                workingDestRows[ numPossibleMoves ] = newReachableRows[ i ] + 1;
-                workingDestCols[ numPossibleMoves ] = newReachableCols[ i ];
-                numPossibleMoves++;
-                }
-
-            if( newReachableCols[ i ] < BW - 1 ) {
-                workingDestRows[ numPossibleMoves ] = newReachableRows[ i ];
-                workingDestCols[ numPossibleMoves ] = newReachableCols[ i ] + 1;
-                numPossibleMoves++;
-                }
-
             for( m = 0;
-                 m < numPossibleMoves;
+                 m < 8;
                  m ++ ) {
 
                 char  check  =  0;
+                int   mY     =  newReachableRows[ i ] + workingDeltaRows[ m ];
+                int   mX     =  newReachableCols[ i ] + workingDeltaCols[ m ];
+
+                /* skip off edge of board */
+                if( mY < 0 ) {
+                    continue;
+                    }
+                if( mY >= BH ) {
+                    continue;
+                    }
+                if( mX < 0 ) {
+                    continue;
+                    }
+                if( mX >= BW ) {
+                    continue;
+                    }
                 
-                if( examined[ workingDestRows[ m ] ]
-                            [ workingDestCols[ m ] ] ) {
+                if( examined[ mY ][ mX ] ) {
                     /* already examined this spot before */
                     continue;
                     }
 
-                examined[ workingDestRows[ m ] ]
-                        [ workingDestCols[ m ] ] = 1;
+                examined[ mY ][ mX ] = 1;
 
-                if( workingState.grid[ workingDestRows[ m ] ]
-                                     [ workingDestCols[ m ] ] != noPiece ) {
+                if( workingState.grid[ mY ][ mX ] != noPiece ) {
                     /* assume king can't move to non-empty squares
                        for simplicity */
                     continue;
                     }
 
                 /* make this state to test it */
-                workingState.grid[ workingDestRows[ m ] ]
-                                 [ workingDestCols[ m ] ]
+                workingState.grid[ mY ][ mX ]
                     = (ChessPiece)( king | inKingColor );
                 
                 check = isKingInCheck( &workingState, inKingColor );
 
                 /* back to no-king state to be ready for next test */
-                workingState.grid[ workingDestRows[ m ] ]
-                                 [ workingDestCols[ m ] ]
-                    = noPiece;
+                workingState.grid[ mY ][ mX ]= noPiece;
 
                 if( check ) {
                     /* moving into check doesn't count as reachable */
@@ -2767,10 +2753,8 @@ static int getKingReachableSquares( BoardState  *inState,
                 /* found a dest square for the king that we
                    haven't reached before */
                     
-                newReachableRowsB[ numBrandNewReachable ] =
-                    workingDestRows[ m ];
-                newReachableColsB[ numBrandNewReachable ] =
-                    workingDestCols[ m ];
+                newReachableRowsB[ numBrandNewReachable ] = (unsigned char)mY;
+                newReachableColsB[ numBrandNewReachable ] = (unsigned char)mX;
                     
                 numBrandNewReachable ++;
 

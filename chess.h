@@ -2973,129 +2973,133 @@ static char getGreedyDepthMove( BoardState  *inState,
                     score = getScore( &( possibleStates[ inDepthLeft ][m] ) );
 
 
-                    /* check for lone enemy king
-                       increase score by how little room the king has,
-                       and how close he is to edges,
-                       and how close our king is to him,
-                       so we favor trying to cut him off */
+                    if( inDepthLeft == 0 ) {
+                        /* only perform this evaluation on leaf nodes */
+                        
+                        /* check for lone enemy king
+                           increase score by how little room the king has,
+                           and how close he is to edges,
+                           and how close our king is to him,
+                           so we favor trying to cut him off */
 
-                    /* don't bother with this bonus if score is huge,
-                       meaning that we've found a checkmate in a few moves */
-                    if( ( colorToMove == CHESS_WHITE
-                          &&
-                          score < checkmateScore / 2 )
-                        ||
-                        ( colorToMove == CHESS_BLACK
-                          &&
-                          score > - checkmateScore / 2 ) ) {
+                        /* don't bother with this bonus if score is huge,
+                           meaning that we've found a checkmate in a few moves */
+                        if( ( colorToMove == CHESS_WHITE
+                              &&
+                              score < checkmateScore / 2 )
+                            ||
+                            ( colorToMove == CHESS_BLACK
+                              &&
+                              score > - checkmateScore / 2 ) ) {
 
-                        int  kX;
-                        int  kY;
-                        int  loneColorFound  =
-                            isKingAlone(
-                                &( possibleStates[ inDepthLeft ][ m ] ),
-                                &kX,
-                                &kY );
-
-                        if( loneColorFound != -1 ) {
-
-                            int  edgeYDist;
-                            int  edgeXDist;
-                            int  edgeScoreFactor;
-                            int  ourKingX;
-                            int  ourKingY;
-
-                            int  attackerColor;
-                            int  reachable;
-                            
-                            if( loneColorFound ==  CHESS_WHITE ) {
-                                attackerColor = CHESS_BLACK;
-                                }
-                            else {
-                                attackerColor = CHESS_WHITE;
-                                }
-                            
-                            reachable =
-                                getKingReachableSquares(
+                            int  kX;
+                            int  kY;
+                            int  loneColorFound  =
+                                isKingAlone(
                                     &( possibleStates[ inDepthLeft ][ m ] ),
-                                    kX,
-                                    kY,
-                                    loneColorFound );
+                                    &kX,
+                                    &kY );
 
-                            /* turn this into a positive bonus,
-                               so scores don't suddenly get worse
-                               when we capture the last piece before
-                               leaving a lone king */
-                            reachable = BN - reachable;
+                            if( loneColorFound != -1 ) {
 
-                            /* fewer squares reachable is better */
-                            if( attackerColor == CHESS_WHITE ) {
-                                score += reachable;
-                                }
-                            else {
-                                score -= reachable;
-                                }
-                                
+                                int  edgeYDist;
+                                int  edgeXDist;
+                                int  edgeScoreFactor;
+                                int  ourKingX;
+                                int  ourKingY;
 
-                            if( kY < BH / 2 ) {
-                                edgeYDist = kY;
-                                }
-                            else {
-                                edgeYDist = BH - kY - 1;
-                                }
-                            if( kX < BW / 2 ) {
-                                edgeXDist = kX;
-                                }
-                            else {
-                                edgeXDist = BW - kX - 1;
-                                }
-                                
-                            edgeScoreFactor =
-                                edgeXDist * edgeXDist +
-                                edgeYDist * edgeYDist;
-
-                            /* again, turn this into a positive-only bonus */
-                            edgeScoreFactor =
-                                ( BW / 2 - 1 ) * ( BW / 2 - 1 ) +
-                                ( BH / 2 - 1 ) * ( BH / 2 - 1 ) -
-                                edgeScoreFactor;
-
+                                int  attackerColor;
+                                int  reachable;
                             
-                            /* closer to edges of board is better */
-                            if( attackerColor == CHESS_WHITE ) {
-                                score += edgeScoreFactor;
-                                }
-                            else {
-                                score -= edgeScoreFactor;
-                                }
-
-                            if( findPiece(
-                                    &( possibleStates[ inDepthLeft ][ m ] ),
-                                    (ChessPiece)( attackerColor | king ),
-                                    &ourKingY,
-                                    &ourKingX ) ) {
-
-                                /* give score bonus as our king gets
-                                   closer to help out */
-
-                                int  kingDistX = ourKingX - kX;
-                                int  kingDistY = ourKingY - kY;
-
-                                int  kingDist =
-                                    kingDistX * kingDistX +
-                                    kingDistY * kingDistY;
-
-                                /* make into a positive-only bonus */
-                                kingDist =
-                                    ( BW - 1 ) * ( BW - 1 ) +
-                                    ( BH - 1 ) * ( BH - 1 ) -
-                                    kingDist;
-
-                                if( attackerColor == CHESS_WHITE ) {
-                                    score += kingDist;
+                                if( loneColorFound ==  CHESS_WHITE ) {
+                                    attackerColor = CHESS_BLACK;
                                     }
                                 else {
-                                    score -= kingDist;
+                                    attackerColor = CHESS_WHITE;
+                                    }
+                            
+                                reachable =
+                                    getKingReachableSquares(
+                                        &( possibleStates[ inDepthLeft ][ m ] ),
+                                        kX,
+                                        kY,
+                                        loneColorFound );
+
+                                /* turn this into a positive bonus,
+                                   so scores don't suddenly get worse
+                                   when we capture the last piece before
+                                   leaving a lone king */
+                                reachable = BN - reachable;
+
+                                /* fewer squares reachable is better */
+                                if( attackerColor == CHESS_WHITE ) {
+                                    score += reachable;
+                                    }
+                                else {
+                                    score -= reachable;
+                                    }
+                                
+
+                                if( kY < BH / 2 ) {
+                                    edgeYDist = kY;
+                                    }
+                                else {
+                                    edgeYDist = BH - kY - 1;
+                                    }
+                                if( kX < BW / 2 ) {
+                                    edgeXDist = kX;
+                                    }
+                                else {
+                                    edgeXDist = BW - kX - 1;
+                                    }
+                                
+                                edgeScoreFactor =
+                                    edgeXDist * edgeXDist +
+                                    edgeYDist * edgeYDist;
+
+                                /* again, turn this into a positive-only bonus */
+                                edgeScoreFactor =
+                                    ( BW / 2 - 1 ) * ( BW / 2 - 1 ) +
+                                    ( BH / 2 - 1 ) * ( BH / 2 - 1 ) -
+                                    edgeScoreFactor;
+
+                            
+                                /* closer to edges of board is better */
+                                if( attackerColor == CHESS_WHITE ) {
+                                    score += edgeScoreFactor;
+                                    }
+                                else {
+                                    score -= edgeScoreFactor;
+                                    }
+
+                                if( findPiece(
+                                        &( possibleStates[ inDepthLeft ][ m ] ),
+                                        (ChessPiece)( attackerColor | king ),
+                                        &ourKingY,
+                                        &ourKingX ) ) {
+
+                                    /* give score bonus as our king gets
+                                       closer to help out */
+
+                                    int  kingDistX = ourKingX - kX;
+                                    int  kingDistY = ourKingY - kY;
+
+                                    int  kingDist =
+                                        kingDistX * kingDistX +
+                                        kingDistY * kingDistY;
+
+                                    /* make into a positive-only bonus */
+                                    kingDist =
+                                        ( BW - 1 ) * ( BW - 1 ) +
+                                        ( BH - 1 ) * ( BH - 1 ) -
+                                        kingDist;
+
+                                    if( attackerColor == CHESS_WHITE ) {
+                                        score += kingDist;
+                                        }
+                                    else {
+                                        score -= kingDist;
+                                        }
                                     }
                                 }
                             }

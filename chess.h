@@ -2641,9 +2641,9 @@ static int getKingReachableSquares( BoardState  *inState,
     static  BoardState     workingState;
     static  char           examined         [BH][BW];
     
-    static  char           workingDeltaRows [8]
+    static  const char     workingDeltaRows [8]
                                             = {  0,  0, -1,  1, -1, -1,  1,  1 };
-    static  char           workingDeltaCols [8]
+    static  const char     workingDeltaCols [8]
                                             = { -1,  1,  0,  0, -1,  1,  1, -1 };
     
     static  unsigned char  reachableRows [BN];
@@ -2700,7 +2700,7 @@ static int getKingReachableSquares( BoardState  *inState,
              m < 8;
              m ++ ) {
 
-            char  check  =  0;
+            char  check;
             int   mY     =  reachableRows[ i ] + workingDeltaRows[ m ];
             int   mX     =  reachableCols[ i ] + workingDeltaCols[ m ];
 

@@ -469,9 +469,12 @@ static char isKingInCheck( BoardState  *inState,
 
 static char isKingInCheckGetMove( BoardState  *inState,
                                   int          inVictimKingColor,
+                                  /* these can be 0 to skip them */
                                   int         *outKingX,
                                   int         *outKingY,
-                                  Move        *outMove );
+                                  Move        *outMove,
+                                  BoardState  *outState,
+                                  Captured    *outCaptured );
 
 
 
@@ -1844,6 +1847,8 @@ static char isKingInCheck( BoardState  *inState,
                                  inVictimKingColor,
                                  0,
                                  0,
+                                 0,
+                                 0,
                                  0 );
     }
 
@@ -1889,7 +1894,9 @@ static char isKingInCheckGetMove( BoardState  *inState,
                                   int          inVictimKingColor,
                                   int         *outKingX,
                                   int         *outKingY,
-                                  Move        *outMove ) {
+                                  Move        *outMove,
+                                  BoardState  *outState,
+                                  Captured    *outCaptured ) {
 
     unsigned char  y;
     unsigned char  x;
@@ -1975,7 +1982,12 @@ static char isKingInCheckGetMove( BoardState  *inState,
                                       outKingY );
                         
                             }
-                    
+                        if( outState != 0 ) {
+                            *outState = resultStates[ i ];
+                            }
+                        if( outCaptured != 0 ) {
+                            *outCaptured = resultCaptured[ i ];
+                            }
 
                         return 1;
                         }
@@ -2886,6 +2898,45 @@ static char getGreedyDepthMove( BoardState  *inState,
        reach.... this is an 8x savings */
     int             kingReachableCount;
     char            kingReachableCountValid  =  0;
+
+
+    if( inOurDepth == 0 ) {
+
+        /* before doing anything, check for a single-move mate.
+           If it's available, just do that.
+
+           This fixes the case where we've both checked each other,
+           but it's our turn to move.  Before, we were not taking the checkmate
+           and just moving to get out of check.
+        */
+
+        int   victimKingX;
+        int   victimKingY;
+        char  mated;
+        int   victimColor;
+
+        if( colorToMove == CHESS_WHITE ) {
+            victimColor = CHESS_BLACK;
+            }
+        else {
+            victimColor = CHESS_WHITE;
+            }
+        
+        
+        mated = isKingInCheckGetMove( inState,
+                                      victimColor,
+                                      &victimKingX,
+                                      &victimKingY,
+                                      outMove,
+                                      outNewState,
+                                      outCaptured );
+        if( mated ) {
+
+            *outScore = getScore( outNewState );
+
+            return 1;
+            }
+        }
     
 
     if( inOurDepth == 0 ) {

@@ -262,7 +262,9 @@ void checkDisplayStartCheck( BoardState  *inState ) {
                               inState->nextToMove,
                               &checkKingX,
                               &checkKingY,
-                              &checkingMove ) ) {
+                              &checkingMove,
+                              0,
+                              0 ) ) {
 
         checkRunning  = 1;
         checkProgress = 0;

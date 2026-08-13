@@ -2590,6 +2590,8 @@ static int isKingAlone( BoardState  *inState,
     
     int   y;
     int   x;
+    int   score;
+    
     
     for( y = 0;
          y < BH;
@@ -2642,11 +2644,17 @@ static int isKingAlone( BoardState  *inState,
             }
         }
 
+    score = getScore( inState );
+    
     if( whiteKingFound
         &&
-        otherWhiteCount < 2
+        otherWhiteCount <  2
         &&
-        otherBlackCount > otherWhiteCount
+        otherBlackCount >  0
+        && 
+        otherBlackCount >= otherWhiteCount
+        &&
+        score < 0
         &&
         blackKingFound ) {
 
@@ -2658,9 +2666,13 @@ static int isKingAlone( BoardState  *inState,
     
     if( blackKingFound
         &&
-        otherBlackCount < 2
+        otherBlackCount <  2
         &&
-        otherWhiteCount > otherBlackCount
+        otherWhiteCount >  0
+        &&
+        otherWhiteCount >= otherBlackCount
+        &&
+        score > 0
         &&
         whiteKingFound ) {
 
@@ -3209,6 +3221,8 @@ static char getGreedyDepthMove( BoardState  *inState,
                                         ( BW - 1 ) * ( BW - 1 ) +
                                         ( BH - 1 ) * ( BH - 1 ) -
                                         kingDist;
+
+                                    kingDist *= 2;
 
                                     if( attackerColor == CHESS_WHITE ) {
                                         score += kingDist;

@@ -2581,8 +2581,8 @@ static int isKingAlone( BoardState  *inState,
 
     char  whiteKingFound   =  0;
     char  blackKingFound   =  0;
-    char  otherWhiteFound  =  0;
-    char  otherBlackFound  =  0;
+    int   otherWhiteCount  =  0;
+    int   otherBlackCount  =  0;
     int   whiteKingX       =  0;
     int   whiteKingY       =  0;
     int   blackKingX       =  0;
@@ -2621,14 +2621,20 @@ static int isKingAlone( BoardState  *inState,
                 }
             else {
                 if( c == CHESS_WHITE ) {
-                    otherWhiteFound= 1;
-                    if( otherBlackFound ) {
+                    otherWhiteCount ++;
+                    
+                    if( otherWhiteCount > 1
+                        &&
+                        otherBlackCount > 1 ) {
                         return -1;
                         }   
                     }
                 else {
-                    otherBlackFound = 1;
-                    if( otherWhiteFound ) {
+                    otherBlackCount ++;
+                    
+                    if( otherWhiteCount > 1
+                        &&
+                        otherBlackCount > 1 ) {
                         return -1;
                         }
                     }
@@ -2638,9 +2644,9 @@ static int isKingAlone( BoardState  *inState,
 
     if( whiteKingFound
         &&
-        ! otherWhiteFound
+        otherWhiteCount < 2
         &&
-          otherBlackFound
+        otherBlackCount > otherWhiteCount
         &&
         blackKingFound ) {
 
@@ -2652,9 +2658,9 @@ static int isKingAlone( BoardState  *inState,
     
     if( blackKingFound
         &&
-        ! otherBlackFound
+        otherBlackCount < 2
         &&
-        otherWhiteFound
+        otherWhiteCount > otherBlackCount
         &&
         whiteKingFound ) {
 

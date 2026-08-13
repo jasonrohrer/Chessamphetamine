@@ -327,6 +327,7 @@ void shopReroll( void ) {
     costLevelIncrement( shopRerollCost );
 
     buttonReset( doneButton );
+    buttonReset( rerollButton );
     }
 
 

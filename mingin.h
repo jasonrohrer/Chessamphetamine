@@ -2418,7 +2418,8 @@ static char mn_isRunningOnSteamDeck( void );
 
 
 int mingin_getStepsPerSecond( void ) {
-    return mn_screenRefreshRate;
+    if(0)return mn_screenRefreshRate;
+    return 5 * mn_screenRefreshRate/12;
     }
 
 

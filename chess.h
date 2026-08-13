@@ -3222,8 +3222,8 @@ static char getGreedyDepthMove( BoardState  *inState,
                                         ( BH - 1 ) * ( BH - 1 ) -
                                         kingDist;
 
-                                    kingDist *= 3;
-                                    kingDist /= 2;
+                                    kingDist *= 4;
+                                    kingDist /= 3;
 
                                     if( attackerColor == CHESS_WHITE ) {
                                         score += kingDist;

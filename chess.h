@@ -3225,7 +3225,7 @@ static char getGreedyDepthMove( BoardState  *inState,
 
                                             if( colorToMove == CHESS_WHITE
                                                 &&
-                                                testScore < bestScore ) {
+                                                testScore <= bestScore ) {
                                             
                                                 maxSquares = r - 1;
                                                 break;
@@ -3233,7 +3233,7 @@ static char getGreedyDepthMove( BoardState  *inState,
                                         
                                             if( colorToMove == CHESS_BLACK
                                                 &&
-                                                testScore > bestScore ) {
+                                                testScore >= bestScore ) {
                                                 maxSquares = r - 1;
                                                 break;
                                                 }

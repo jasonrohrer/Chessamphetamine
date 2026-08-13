@@ -3085,8 +3085,8 @@ static char getGreedyDepthMove( BoardState  *inState,
                                 /* don't bother computing the expensive
                                    king reachability test if the possible
                                    bonus from it won't surpass bestScore */
-                                int  maxReachableBonus = BN;
-                                int  maxBonuScore;
+                                int  maxReachableBonus = BN - 1;
+                                int  maxBonusScore;
                                 
                                 
                                 if( loneColorFound ==  CHESS_WHITE ) {
@@ -3161,29 +3161,35 @@ static char getGreedyDepthMove( BoardState  *inState,
                                         }
                                     }
 
+                                maxBonusScore = score;
+
+                                if( attackerColor == colorToMove ) {
                                 
-                                if( attackerColor == CHESS_WHITE ) {
-                                    maxBonuScore = score + maxReachableBonus;
-                                    }
-                                else {
-                                    maxBonuScore = score - maxReachableBonus;
+                                    if( colorToMove == CHESS_WHITE ) {
+                                        maxBonusScore =
+                                            score + maxReachableBonus;
+                                        }
+                                    else {
+                                        maxBonusScore =
+                                            score - maxReachableBonus;
+                                        }
                                     }
 
 
                                 if( ( colorToMove == CHESS_WHITE
                                       &&
-                                      maxBonuScore > bestScore )
+                                      maxBonusScore > bestScore )
                                     ||
                                     ( colorToMove == CHESS_BLACK
                                       &&
-                                      maxBonuScore < bestScore ) ) {
+                                      maxBonusScore < bestScore ) ) {
 
                                     /* the possible bonus from reachability
                                        might give us a new best score, so
                                        compute it.  Otherwise skip
                                        this expensive computation */
-
-
+                                    
+                                        
                                     /* and we don't need to compute ALL
                                        reachable squares for the king,
                                        which is expensive.  As soon
@@ -3192,38 +3198,48 @@ static char getGreedyDepthMove( BoardState  *inState,
                                        we can stop */
                                     int  maxSquares  =  BN;
 
-                                    /* cheap loop to compute
-                                       how many maxSquares we might
-                                       care about */
-                                    for( r  = 1;
-                                         r <= BN;
-                                         r ++ ) {
+                                    /* and we only limit the reachability
+                                       test if we're the attacker color
+                                       if we're the escaping lone king,
+                                       we actually want to get reachability
+                                       as high as possible.
+                                    */
+                                    
+                                    if( attackerColor == colorToMove ) {
+                                        /* cheap loop to compute
+                                           how many maxSquares we might
+                                           care about */
+                                        for( r  = 1;
+                                             r <= BN;
+                                             r ++ ) {
 
-                                        int  testBonus = BN - r;
-                                        int  testScore;
+                                            int  testBonus = BN - r;
+                                            int  testScore;
                                         
-                                        if( attackerColor == CHESS_WHITE ) {
-                                            testScore = score + testBonus;
-                                            }
-                                        else {
-                                            testScore = score - testBonus;
-                                            }
+                                            if( attackerColor == CHESS_WHITE ) {
+                                                testScore = score + testBonus;
+                                                }
+                                            else {
+                                                testScore = score - testBonus;
+                                                }
 
-                                        if( colorToMove == CHESS_WHITE
-                                            &&
-                                            testScore < bestScore ) {
+                                            if( colorToMove == CHESS_WHITE
+                                                &&
+                                                testScore < bestScore ) {
                                             
-                                            maxSquares = r - 1;
-                                            break;
-                                            }
+                                                maxSquares = r - 1;
+                                                break;
+                                                }
                                         
-                                        if( colorToMove == CHESS_BLACK
-                                            &&
-                                            testScore > bestScore ) {
-                                            maxSquares = r - 1;
-                                            break;
+                                            if( colorToMove == CHESS_BLACK
+                                                &&
+                                                testScore > bestScore ) {
+                                                maxSquares = r - 1;
+                                                break;
+                                                }
                                             }
                                         }
+                                    
                                     
 
                                     if( kingReachableCountValid ) {

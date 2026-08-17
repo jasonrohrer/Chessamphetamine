@@ -54,6 +54,7 @@ defaults       "Defaults"
 
 
 drawInstruct   "Pick pieces to swap"
+formationInstruct   "Adjust army formation"
 
 shopTitle      "Shop!"
 sale           "Sale!"

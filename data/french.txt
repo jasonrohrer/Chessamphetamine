@@ -51,6 +51,7 @@ press          "appuyez"
 defaults       "Par défaut"
 
 drawInstruct   "Pick pieces to swap"
+formationInstruct   "Adjust army formation"
 
 shopTitle      "Shop!"
 sale           "Sale!"

@@ -180,6 +180,7 @@ static int          lang_draw;
 static int          lang_deck;
 
 static int          lang_drawInstruct;
+static int          lang_formInstruct;
 static int          lang_level;
 static int          lang_gameOverInstruct;
 
@@ -349,30 +350,36 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
 
     spinButtonY = MAXIGIN_GAME_NATIVE_H - 25;
-    
-    maxigin_drawSprite( spinFrameSprite,
-                        MAXIGIN_GAME_NATIVE_W - 35,
-                        spinButtonY );
 
-    if( ! spinning
-        ||
-        spinningPaused ) {
-        maxigin_drawSprite( spinUnpressedSprite,
-                            MAXIGIN_GAME_NATIVE_W - 35,
-                            spinButtonY );
-        }
-    else {
-        maxigin_drawSprite( spinPressedSprite,
-                            MAXIGIN_GAME_NATIVE_W - 35,
-                            spinButtonY );
-    
-        maxigin_drawSprite( spinPressedTextSprite,
+
+    if( ! formationShowing
+        &&
+        ! shopShowing ) {
+        
+        maxigin_drawSprite( spinFrameSprite,
                             MAXIGIN_GAME_NATIVE_W - 35,
                             spinButtonY );
 
-        maxigin_drawSpriteGlowOnly( spinPressedTextGlowSprite,
-                                    MAXIGIN_GAME_NATIVE_W - 35,
-                                    spinButtonY );
+        if( ! spinning
+            ||
+            spinningPaused ) {
+            maxigin_drawSprite( spinUnpressedSprite,
+                                MAXIGIN_GAME_NATIVE_W - 35,
+                                spinButtonY );
+            }
+        else {
+            maxigin_drawSprite( spinPressedSprite,
+                                MAXIGIN_GAME_NATIVE_W - 35,
+                                spinButtonY );
+    
+            maxigin_drawSprite( spinPressedTextSprite,
+                                MAXIGIN_GAME_NATIVE_W - 35,
+                                spinButtonY );
+
+            maxigin_drawSpriteGlowOnly( spinPressedTextGlowSprite,
+                                        MAXIGIN_GAME_NATIVE_W - 35,
+                                        spinButtonY );
+            }
         }
 
 
@@ -542,7 +549,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         &&
         ( sideBoardShowing
           ||
-          shopShowing ) ) {
+          shopShowing
+          ||
+          formationShowing ) ) {
         buttonDraw( deckButton );
         }
     
@@ -627,13 +636,19 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     if( ! spinning
         &&
         ! chessGameOver ) {
+
+        int  stringKey  =  lang_drawInstruct;
+
+        if( formationShowing ) {
+            stringKey = lang_formInstruct;
+            }
         
         maxigin_drawResetColor();
 
         maxigin_setLanguageFontIndex( 1 );
-    
+        
         maxigin_drawLangText(
-                lang_drawInstruct,
+                stringKey,
                 boardCenterX,
                 drawButtonPosY,
                 MAXIGIN_CENTER );
@@ -982,6 +997,10 @@ void maxiginGame_step( void ) {
     r = mingin_getStepsPerSecond();
 
     if( ! spinning
+        &&
+        ! shopShowing
+        &&
+        ! formationShowing
         &&
         ! chessGameOver
         &&
@@ -2129,7 +2148,9 @@ void maxiginGame_step( void ) {
         &&
         ( sideBoardShowing
           ||
-          shopShowing )
+          shopShowing
+          ||
+          formationShowing )
         &&
         buttonIsNewPressed( deckButton ) ) {
 
@@ -2559,6 +2580,7 @@ void maxiginGame_init( void ) {
     lang_draw             = maxigin_initTranslationKey( "drawDesc" );
     lang_deck             = maxigin_initTranslationKey( "deckDesc" );
     lang_drawInstruct     = maxigin_initTranslationKey( "drawInstruct" );
+    lang_formInstruct     = maxigin_initTranslationKey( "formationInstruct" );
     lang_level            = maxigin_initTranslationKey( "level" );
     lang_gameOverInstruct = maxigin_initTranslationKey( "gameOverInstruct" );
 

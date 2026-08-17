@@ -59,7 +59,7 @@ static  int   fmSpotKingSprite        =  -1;
 static  int   fmSpotKingPickedSprite  =  -1;
 
 static  char  fmActionDown            =   0;
-
+static  int   fmDoneButton            =  -1;
 
 
 void formationInit( int  inPointerActionHandle ) {
@@ -111,6 +111,17 @@ void formationInit( int  inPointerActionHandle ) {
     formation[ 6 ][ 3 ] = 1;
     formation[ 6 ][ 4 ] = 1;
     formation[ 6 ][ 5 ] = 1;
+
+
+    fmDoneButton = buttonInit( maxigin_initSprite( "doneButton.tga" ),
+                               -1,
+                               maxigin_initSprite( "doneButtonPressed.tga" ),
+                               50,
+                               MAXIGIN_GAME_NATIVE_H - 10,
+                               1,
+                               fmPointerActionHandle,
+                               /* fixme... need controller mapping for this */
+                               -1 );
     
 
     REGISTER_ARRAY_MEM( formation );
@@ -204,6 +215,8 @@ void formationDraw( int  inBoardCenterX,
                 }
             }
         }
+
+    buttonDraw( fmDoneButton );
     }
 
 
@@ -347,6 +360,9 @@ char formationStep( int  inBoardCenterX,
         }
     
 
+    if( buttonIsNewPressed( fmDoneButton ) ) {
+        return 1;
+        }
     return 0;
     }
 

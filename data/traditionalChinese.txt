@@ -49,6 +49,7 @@ defaults       "恢復預設"
 
 
 drawInstruct   "Pick pieces to swap"
+formationInstruct   "Adjust army formation"
 
 shopTitle      "Shop!"
 sale           "Sale!"

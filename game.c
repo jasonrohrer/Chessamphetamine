@@ -268,6 +268,9 @@ static char           gameOver                    =  0;
 static int            startingMoney               =  5;
 
 
+static int            formationShowing            =  0;
+
+
 
 static void clearDrawMarkers( void ) {
     int  y;
@@ -482,6 +485,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                             0,
                             0 );
             }
+        }
+    else if( formationShowing ) {
+
+        formationDraw();
+
         }
     else if( boardSlideUp < boardSlideUpMax ) {
         /* draw regular board (no move log) */
@@ -1352,6 +1360,8 @@ void maxiginGame_step( void ) {
         &&
         ! deckViewShowing
         &&
+        ! formationShowing
+        &&
         !( sideBoardShowing
            &&
            sideBoardIsMouseOver() ) ) {
@@ -2209,6 +2219,14 @@ void maxiginGame_step( void ) {
             infoPanelFade = 255;
             }
         }
+
+    if( formationShowing ) {
+        char  fmDone  = formationStep();
+
+        if( fmDone ) {
+            formationShowing = 0;
+            }
+        }
     }
 
 
@@ -2684,8 +2702,11 @@ void maxiginGame_init( void ) {
     rollInit();
     
 
-    formationInit( boardCenterX,
+    formationInit( ACTION,
+                   boardCenterX,
                    boardCenterY );
+
+    formationShowing = 1;
     
     levelsInit();
 
@@ -2817,6 +2838,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( gameOver );
 
     REGISTER_VAL_MEM( noScoreMoveCount );
+
+    REGISTER_VAL_MEM( formationShowing );
     
 
     if( ! maxigin_initRestoreStaticMemoryFromLastRun() ) {

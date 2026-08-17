@@ -15,7 +15,8 @@
 #define FORMATION_H_INCLUDED
 
 
-void formationInit( int  inBoardCenterX,
+void formationInit( int  inPointerActionHandle,
+                    int  inBoardCenterX,
                     int  inBoardCenterY );
 
 
@@ -38,6 +39,7 @@ char formationStep( void );
 
 
 #include "chess.h"
+#include "moveAnim.h"
 
 #include "memoryRegister.h"
 
@@ -51,15 +53,19 @@ static  int   formationPickedX;
 
 static  int   fmBoardCenterX;
 static  int   fmBoardCenterY;
+static  int   fmPointerActionHandle   =  -1;
 
 static  int   fmSpotSprite            =  -1;
 static  int   fmSpotPickedSprite      =  -1;
 static  int   fmSpotKingSprite        =  -1;
 static  int   fmSpotKingPickedSprite  =  -1;
 
+static  char  fmActionDown            =   0;
 
 
-void formationInit( int  inBoardCenterX,
+
+void formationInit( int  inPointerActionHandle,
+                    int  inBoardCenterX,
                     int  inBoardCenterY ) {
 
     int  y;
@@ -86,6 +92,8 @@ void formationInit( int  inBoardCenterX,
     
     fmBoardCenterX = inBoardCenterX;
     fmBoardCenterY = inBoardCenterY;
+
+    fmPointerActionHandle = inPointerActionHandle;
 
     for( y = 0;
          y < BH;
@@ -120,12 +128,14 @@ void formationInit( int  inBoardCenterX,
     }
 
 
+
 void formationDraw( void ) {
 
     int  y;
     int  x;
-
+    
     /* last 3 rows on white's side */
+    maxigin_drawResetColor();
     boardDrawPortion( fmBoardCenterX,
                       fmBoardCenterY,
                       5 );
@@ -161,9 +171,6 @@ void formationDraw( void ) {
                         formationPickedX == x ) {
                         s = fmSpotPickedSprite;
                         }
-                    maxigin_drawSprite( fmSpotSprite,
-                                        cX,
-                                        cY );
                     }
                 if( f == 2 ) {
                     s = fmSpotKingSprite;
@@ -175,14 +182,169 @@ void formationDraw( void ) {
                         }
                     }
 
+                maxigin_drawResetColor();
+                
                 maxigin_drawSprite( s,
                                     cX,
                                     cY );
+
+                if( formationHighlightFade[ y ][ x ] > 0 ) {
+
+
+                    maxigin_drawSetAlpha(
+                        (unsigned char)( formationHighlightFade[ y ][ x ] ) );
+                    
+                    maxigin_drawSpriteGlowOnly( s,
+                                                cX,
+                                                cY );
+                    }  
                 }
             }
         }
     }
 
+
+
+char formationStep( void ) {
+    
+
+    int  pointerX;
+    int  pointerY;
+    int  y;
+    int  x;
+    int  r              =  mingin_getStepsPerSecond();
+    int  deltaFade      =  ( 20 * 60 ) / r;
+    int  overSlotX      =  -1;
+    int  overSlotY      =  -1;
+
+    int  squareR        =  BOARD_SQUARE_SIZE / 2;
+    
+    if( maxigin_getPointerLocation( &pointerX,
+                                    &pointerY ) ) {
+
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
+
+                int  cX;
+                int  cY;
+                
+                boardGetSquareCenter( fmBoardCenterX,
+                                      fmBoardCenterY,
+                                      y,
+                                      x,
+                                      &cX,
+                                      &cY );
+
+                if( pointerX > cX - squareR
+                    &&
+                    pointerX < cX + squareR
+                    &&
+                    pointerY > cY - squareR
+                    &&
+                    pointerY < cY + squareR ) {
+
+                    formationHighlightFade[ y ][ x ] = 255;
+
+                    overSlotX = x;
+                    overSlotY = y;
+
+                    maxigin_logInt2( "Over ",
+                                     overSlotX,
+                                     ", ",
+                                     overSlotY,
+                                     " " );
+                    }
+                }
+            }
+        }
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+
+            if( ( y != overSlotY
+                  ||
+                  x != overSlotX )
+                &&
+                formationHighlightFade[ y ][ x ] > 0 ) {
+
+                int  newHighlight =
+                    formationHighlightFade[ y ][ x ] - deltaFade;
+
+                if( newHighlight > 0 ) {
+                    formationHighlightFade[ y ][ x ] =
+                        (unsigned char)newHighlight;
+                    }
+                else {
+                    formationHighlightFade[ y ][ x ] = 0;
+                    }
+                }
+            }
+
+        }
+
+
+    if( ! fmActionDown
+        &&
+        maxigin_isButtonDown( fmPointerActionHandle ) ) {
+
+        if( overSlotX != -1
+            &&
+            overSlotY != -1
+            &&
+            overSlotY >= 5 ) {
+
+            if( formationPickedX == overSlotX
+                &&
+                formationPickedY == overSlotY ) {
+                
+                formationPickedX = -1;
+                formationPickedY = -1;
+                playBeepDownSound();
+                }
+            else if( formationPickedX == -1
+                     &&
+                     formationPickedY == -1 ) {
+                
+                formationPickedX = overSlotX;
+                formationPickedY = overSlotY;
+                playBeepUpSound();
+                }
+            else {
+                /* swap */
+
+                char  temp  =  formation[ formationPickedY ][ formationPickedX ];
+
+                formation[ formationPickedY ][ formationPickedX ] =
+                    formation[ overSlotY ][ overSlotX ];
+
+                formation[ overSlotY ][ overSlotX ] = temp;
+
+                formationPickedX = -1;
+                formationPickedY = -1;
+                playBeepDownSound();
+                }
+
+            }
+
+        fmActionDown = 1;
+        }
+
+    if( ! maxigin_isButtonDown( fmPointerActionHandle ) ) {
+        fmActionDown = 0;
+        }
+    
+
+    return 0;
+    }
 
 
 #endif

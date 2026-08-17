@@ -391,7 +391,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
                30 );
 
-    if( sideBoardShowing ) {
+    if( sideBoardShowing
+        &&
+        ! formationShowing ) {
         sideBoardDraw();
 
         buttonDraw( drawButton );
@@ -411,13 +413,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                     MAXIGIN_GAME_NATIVE_H - 18 );
         }
 
-    if( ! gameOver
-        &&
-        ( sideBoardShowing
-          ||
-          shopShowing ) ) {
-        buttonDraw( deckButton );
-        }
+    
 
     
     if( moveMade ) {
@@ -486,11 +482,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                             0 );
             }
         }
-    else if( formationShowing ) {
-
-        formationDraw();
-
-        }
     else if( boardSlideUp < boardSlideUpMax ) {
         /* draw regular board (no move log) */
 
@@ -507,34 +498,52 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
             boardLiveCenterY -= boardSlideUpY;
             }
-        
 
-        boardDraw( boardCenterX,
-                   boardLiveCenterY);
 
-        if( ! spinning
-            &&
-            ! chessGameOver
-            &&
-            ! boardMarkersHidden ) {
+        if( formationShowing ) {
 
-            boardDrawMarkers( boardCenterX,
-                              boardLiveCenterY,
-                              boardMarkers );
+            formationDraw( boardCenterX,
+                           boardLiveCenterY );
+
             }
+        else {
 
-        drawBoardState( &boardState,
-                        checkmate,
-                        stalemate,
-                        drawGame,
-                        gameLoserColor,
-                        &boardMove,
-                        0,
-                        0,
-                        boardCenterX,
-                        boardLiveCenterY,
-                        0,
-                        &redrawSmoothLift );
+            boardDraw( boardCenterX,
+                       boardLiveCenterY );
+
+            if( ! spinning
+                &&
+                ! chessGameOver
+                &&
+                ! boardMarkersHidden ) {
+
+                boardDrawMarkers( boardCenterX,
+                                  boardLiveCenterY,
+                                  boardMarkers );
+                }
+
+            drawBoardState( &boardState,
+                            checkmate,
+                            stalemate,
+                            drawGame,
+                            gameLoserColor,
+                            &boardMove,
+                            0,
+                            0,
+                            boardCenterX,
+                            boardLiveCenterY,
+                            0,
+                            &redrawSmoothLift );
+            }
+        }
+
+
+    if( ! gameOver
+        &&
+        ( sideBoardShowing
+          ||
+          shopShowing ) ) {
+        buttonDraw( deckButton );
         }
     
 
@@ -2036,7 +2045,9 @@ void maxiginGame_step( void ) {
 
     heartsStep();
 
-    if( sideBoardShowing ) {
+    if( sideBoardShowing
+        &&
+        ! formationShowing ) {
         
         ChessPiece  newInfoPiece  =  sideBoardStep( examinePieceSound );
 
@@ -2220,8 +2231,11 @@ void maxiginGame_step( void ) {
             }
         }
 
-    if( formationShowing ) {
-        char  fmDone  = formationStep();
+    if( formationShowing
+        &&
+        boardSlideUp == 0 ) {
+        char  fmDone  = formationStep( boardCenterX,
+                                       boardCenterY );
 
         if( fmDone ) {
             formationShowing = 0;
@@ -2702,9 +2716,7 @@ void maxiginGame_init( void ) {
     rollInit();
     
 
-    formationInit( ACTION,
-                   boardCenterX,
-                   boardCenterY );
+    formationInit( ACTION );
 
     formationShowing = 1;
     

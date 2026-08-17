@@ -15,16 +15,16 @@
 #define FORMATION_H_INCLUDED
 
 
-void formationInit( int  inPointerActionHandle,
-                    int  inBoardCenterX,
+void formationInit( int  inPointerActionHandle );
+
+
+void formationDraw( int  inBoardCenterX,
                     int  inBoardCenterY );
 
 
-void formationDraw( void );
-
-
 /* returns 1 if done adjusting formation */
-char formationStep( void );
+char formationStep( int  inBoardCenterX,
+                    int  inBoardCenterY );
 
 
 
@@ -51,8 +51,6 @@ static  int   formationHighlightFade[BH][BW];
 static  int   formationPickedY;
 static  int   formationPickedX;
 
-static  int   fmBoardCenterX;
-static  int   fmBoardCenterY;
 static  int   fmPointerActionHandle   =  -1;
 
 static  int   fmSpotSprite            =  -1;
@@ -64,9 +62,7 @@ static  char  fmActionDown            =   0;
 
 
 
-void formationInit( int  inPointerActionHandle,
-                    int  inBoardCenterX,
-                    int  inBoardCenterY ) {
+void formationInit( int  inPointerActionHandle ) {
 
     int  y;
     int  x;
@@ -88,10 +84,6 @@ void formationInit( int  inPointerActionHandle,
     maxigin_initMakeGlowSprite( fmSpotKingPickedSprite,
                                 4,
                                 2 );
-    
-    
-    fmBoardCenterX = inBoardCenterX;
-    fmBoardCenterY = inBoardCenterY;
 
     fmPointerActionHandle = inPointerActionHandle;
 
@@ -129,15 +121,26 @@ void formationInit( int  inPointerActionHandle,
 
 
 
-void formationDraw( void ) {
+void formationDraw( int  inBoardCenterX,
+                    int  inBoardCenterY ) {
 
     int  y;
     int  x;
-    
+
+    /* black box behind to cover deck when board slides up */
+    maxigin_drawSetColor( 0,
+                          0,
+                          0,
+                          255 );
+    maxigin_drawFillRect( inBoardCenterX - ( BW * BOARD_SQUARE_SIZE ) / 2,
+                          inBoardCenterY - ( BH * BOARD_SQUARE_SIZE ) / 2,
+                          inBoardCenterX + ( BW * BOARD_SQUARE_SIZE ) / 2,
+                          inBoardCenterY + ( BH * BOARD_SQUARE_SIZE ) / 2 );
+                          
     /* last 3 rows on white's side */
     maxigin_drawResetColor();
-    boardDrawPortion( fmBoardCenterX,
-                      fmBoardCenterY,
+    boardDrawPortion( inBoardCenterX,
+                      inBoardCenterY,
                       5 );
 
     for( y = 0;
@@ -156,8 +159,8 @@ void formationDraw( void ) {
                 int  cY;
                 int  s;
                 
-                boardGetSquareCenter( fmBoardCenterX,
-                                      fmBoardCenterY,
+                boardGetSquareCenter( inBoardCenterX,
+                                      inBoardCenterY,
                                       y,
                                       x,
                                       &cX,
@@ -205,7 +208,8 @@ void formationDraw( void ) {
 
 
 
-char formationStep( void ) {
+char formationStep( int  inBoardCenterX,
+                    int  inBoardCenterY ) {
     
 
     int  pointerX;
@@ -232,8 +236,8 @@ char formationStep( void ) {
                 int  cX;
                 int  cY;
                 
-                boardGetSquareCenter( fmBoardCenterX,
-                                      fmBoardCenterY,
+                boardGetSquareCenter( inBoardCenterX,
+                                      inBoardCenterY,
                                       y,
                                       x,
                                       &cX,

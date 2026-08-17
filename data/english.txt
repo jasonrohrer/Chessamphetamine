@@ -45,7 +45,7 @@ back           "Back"
 actionDesc     "Action"
 drawDesc       "Draw"
 deckDesc       "View Deck"
-
+commitDesc     "Commit Army"
 
 
 press          "press"
@@ -53,7 +53,7 @@ press          "press"
 defaults       "Defaults"
 
 
-drawInstruct   "Pick pieces to swap"
+drawInstruct   "Draft your army"
 formationInstruct   "Adjust army formation"
 
 shopTitle      "Shop!"

@@ -44,13 +44,14 @@ back           "Retour"
 actionDesc     "Tirer"
 drawDesc       "Draw"
 deckDesc       "View Deck"
+commitDesc     "Commit Army"
 
 
 press          "appuyez"
 
 defaults       "Par défaut"
 
-drawInstruct   "Pick pieces to swap"
+drawInstruct   "Draft your army"
 formationInstruct   "Adjust army formation"
 
 shopTitle      "Shop!"

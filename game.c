@@ -99,6 +99,7 @@ enum GameUserAction {
     ACTION,
     DRAW,
     DECK,
+    COMMIT,
     TOGGLE_MOVE_LOG,
     ADVANCE_MOVE_LOG,
     BACK_MOVE_LOG,
@@ -153,6 +154,8 @@ static int          newGameButton              = -1;
 static int          newGameButtonPosY          =  MAXIGIN_GAME_NATIVE_H - 10;
 static int          newGameButtonPosX          =  MAXIGIN_GAME_NATIVE_W / 2 + 25;
 
+static int          commitButton               =  -1;
+
 static char         redrawRemoveRunning        =  0;
 static char         redrawAddRunning           =  0;
 static int          redrawProgressMax          =  100;
@@ -178,6 +181,7 @@ static int          lang_fullscreen;
 static int          lang_action;
 static int          lang_draw;
 static int          lang_deck;
+static int          lang_commit;
 
 static int          lang_drawInstruct;
 static int          lang_formInstruct;
@@ -270,7 +274,7 @@ static int            startingMoney               =  5;
 
 
 static int            formationShowing            =  0;
-
+static int            draftingPieces              =  0;
 
 
 static void clearDrawMarkers( void ) {
@@ -354,6 +358,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( ! formationShowing
         &&
+        ! draftingPieces
+        &&
         ! shopShowing ) {
         
         maxigin_drawSprite( spinFrameSprite,
@@ -411,7 +417,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                       drawButtonPosY );
             
         numberDraw( costGet( drawCost ),
-                    drawButtonPosX + 50,
+                    drawButtonPosX + 35,
                     drawButtonPosY,
                     0 );
         }
@@ -420,7 +426,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                     MAXIGIN_GAME_NATIVE_H - 18 );
         }
 
-    
+
+    if( draftingPieces ) {
+        buttonDraw( commitButton );
+        }
 
     
     if( moveMade ) {
@@ -634,6 +643,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
 
     if( ! spinning
+        &&
+        ( formationShowing
+          ||
+          draftingPieces )
         &&
         ! chessGameOver ) {
 
@@ -859,7 +872,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
 
-static void dropNewLevelPiecesIn( void ) {
+/* inSide  is CHESS_WHITE or CHESS_BLACK */
+static void dropNewLevelPiecesIn( int  inSide ) {
 
     int  y;
     int  x;
@@ -876,7 +890,12 @@ static void dropNewLevelPiecesIn( void ) {
              x < BW;
              x ++ ) {
 
-            if( boardState.grid[y][x] != noPiece ) {
+            ChessPiece  p  =  boardState.grid[y][x];
+            ChessPiece  c  =  p & CHESS_COLOR_MASK;
+
+            if( p != noPiece
+                &&
+                c == inSide ) {
                                 
                 int  val;
                                 
@@ -1780,13 +1799,14 @@ void maxiginGame_step( void ) {
 
                     getLevel( 0,
                               &boardState,
-                              &playerDeck );
+                              &playerDeck,
+                              CHESS_WHITE );
                     
                     sideBoardRedraw( &playerDeck );
 
                     sideBoardShowing = 1;
                     
-                    dropNewLevelPiecesIn();
+                    dropNewLevelPiecesIn( CHESS_WHITE );
                     }
                 else {
 
@@ -1943,7 +1963,7 @@ void maxiginGame_step( void ) {
                         }
                 
                     maxigin_playSoundEffect( boardSlideSound,
-                                             356 );
+                                             256 );
 
                     /* give them an allowance of 3 every time shop appears */
                     moneyAddDelayed( 3 );
@@ -2144,6 +2164,25 @@ void maxiginGame_step( void ) {
         swapMarkedPieces();
         }
 
+    if( draftingPieces
+        &&
+        buttonIsNewPressed( commitButton ) ) {
+
+        draftingPieces = 0;
+
+        getLevel( currentLevel,
+                  &boardState,
+                  &playerDeck,
+                  CHESS_BLACK );
+
+        dropNewLevelPiecesIn( CHESS_BLACK );
+        boardMarkersHidden  = 1;
+        redrawRemoveRunning = 0;
+        redrawAddRunning    = 1;
+        sideBoardShowing    = 0;
+        }
+    
+
     if( ! gameOver
         &&
         ( sideBoardShowing
@@ -2167,7 +2206,7 @@ void maxiginGame_step( void ) {
                 }
             }
         maxigin_playSoundEffect( boardSlideSound,
-                                             356 );
+                                 256 );
         }
 
 
@@ -2197,7 +2236,7 @@ void maxiginGame_step( void ) {
             if( isShoppingDone() ) {
                 
                 maxigin_playSoundEffect( boardSlideSound,
-                                         356 );
+                                         256 );
                 shopDone = 1;
 
                 /* go on to next level */
@@ -2220,9 +2259,10 @@ void maxiginGame_step( void ) {
                         
                 getLevel( currentLevel,
                           &boardState,
-                          &playerDeck );
+                          &playerDeck,
+                          CHESS_WHITE );
 
-                dropNewLevelPiecesIn();
+                dropNewLevelPiecesIn( CHESS_WHITE );
                 boardMarkersHidden  = 1;
                 redrawRemoveRunning = 0;
                 redrawAddRunning    = 1;
@@ -2260,6 +2300,25 @@ void maxiginGame_step( void ) {
 
         if( fmDone ) {
             formationShowing = 0;
+            draftingPieces   = 1;
+
+            getLevel( currentLevel,
+                      &boardState,
+                      &playerDeck,
+                      CHESS_WHITE );
+
+            
+            sideBoardRedraw( &playerDeck );
+            sideBoardShowing = 1;
+            dropNewLevelPiecesIn( CHESS_WHITE );
+            boardMarkersHidden  = 1;
+            redrawRemoveRunning = 0;
+            redrawAddRunning    = 1;
+
+            sideBoardForceFullLift();
+
+            maxigin_playSoundEffect( boardSlideSound,
+                                     256 );
             }
         }
     }
@@ -2294,6 +2353,9 @@ static MinginButton drawMapping[]  =  { MGN_BUTTON_PS_TRIANGLE,
 
 static MinginButton deckMapping[]  =  { MGN_BUTTON_L1,
                                         MGN_MAP_END };
+
+static MinginButton commitMapping[]  =  { MGN_BUTTON_L2,
+                                          MGN_MAP_END };
 
 static MinginButton hintMapping[]   =  { MGN_BUTTON_MOUSE_LEFT,
                                          MGN_BUTTON_MOUSE_RIGHT,
@@ -2477,6 +2539,15 @@ void maxiginGame_init( void ) {
                              0,
                              ACTION,
                              DECK );
+
+    commitButton = buttonInit( maxigin_initSprite( "commitButton.tga" ),
+                               -1,
+                               maxigin_initSprite( "commitButtonPressed.tga" ),
+                               boardCenterX,
+                               10,
+                               0,
+                               ACTION,
+                               COMMIT );
     
 
     newGameButton = buttonInit( maxigin_initSprite( "newGameButton.tga" ),
@@ -2579,6 +2650,7 @@ void maxiginGame_init( void ) {
     lang_action           = maxigin_initTranslationKey( "actionDesc" );
     lang_draw             = maxigin_initTranslationKey( "drawDesc" );
     lang_deck             = maxigin_initTranslationKey( "deckDesc" );
+    lang_commit           = maxigin_initTranslationKey( "commitDesc" );
     lang_drawInstruct     = maxigin_initTranslationKey( "drawInstruct" );
     lang_formInstruct     = maxigin_initTranslationKey( "formationInstruct" );
     lang_level            = maxigin_initTranslationKey( "level" );
@@ -2630,6 +2702,11 @@ void maxiginGame_init( void ) {
         DECK,
         deckMapping,
         lang_deck  );
+
+    maxigin_registerDynamicButtonMapping(
+        COMMIT,
+        commitMapping,
+        lang_commit  );
 
     
     maxigin_logInt( "Primary button for ACTION is: ",
@@ -2740,7 +2817,6 @@ void maxiginGame_init( void ) {
 
     formationInit( ACTION );
 
-    formationShowing = 1;
     
     levelsInit();
 
@@ -2789,19 +2865,22 @@ void maxiginGame_init( void ) {
     getPlayerStartDeck( &playerDeck );
     
     if(1) {
-        
-        getLevel( currentLevel,
-                  &boardState,
-                  &playerDeck );
-        }
-    sideBoardRedraw( &playerDeck );
-    sideBoardShowing = 1;
-    dropNewLevelPiecesIn();
-    boardMarkersHidden  = 1;
-    redrawRemoveRunning = 0;
-    redrawAddRunning    = 1;
 
-    sideBoardForceFullLift();
+        formationShowing = 1;
+        
+        }
+    else {
+        sideBoardRedraw( &playerDeck );
+        sideBoardShowing = 1;
+        dropNewLevelPiecesIn( CHESS_WHITE );
+        dropNewLevelPiecesIn( CHESS_BLACK );
+        boardMarkersHidden  = 1;
+        redrawRemoveRunning = 0;
+        redrawAddRunning    = 1;
+
+        sideBoardForceFullLift();
+        }
+    
     
 
     REGISTER_VAL_MEM( boardState );
@@ -2874,6 +2953,7 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( noScoreMoveCount );
 
     REGISTER_VAL_MEM( formationShowing );
+    REGISTER_VAL_MEM( draftingPieces );
     
 
     if( ! maxigin_initRestoreStaticMemoryFromLastRun() ) {

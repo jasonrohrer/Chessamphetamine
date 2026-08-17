@@ -27,6 +27,11 @@ char formationStep( int  inBoardCenterX,
                     int  inBoardCenterY );
 
 
+/* returns 0 for empty, 1 for regular piece, 2 for king */
+char formationGet( int  inRow,
+                   int  inCol );
+
+
 
 #endif
 
@@ -42,6 +47,8 @@ char formationStep( int  inBoardCenterX,
 #include "moveAnim.h"
 
 #include "memoryRegister.h"
+
+#include "button.h"
 
 
 /* 0 empty, 1 regular piece, 2 king */
@@ -268,12 +275,6 @@ char formationStep( int  inBoardCenterX,
 
                     overSlotX = x;
                     overSlotY = y;
-
-                    maxigin_logInt2( "Over ",
-                                     overSlotX,
-                                     ", ",
-                                     overSlotY,
-                                     " " );
                     }
                 }
             }
@@ -365,6 +366,14 @@ char formationStep( int  inBoardCenterX,
         }
     return 0;
     }
+
+
+
+char formationGet( int  inRow,
+                   int  inCol ) {
+    return formation[ inRow ][ inCol ];
+    }
+
 
 
 #endif

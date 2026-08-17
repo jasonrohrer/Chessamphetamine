@@ -22,10 +22,15 @@ void levelsInit( void );
 
 /* outState is filled with the enemy pieces and the player's king piece
             and pieces drawn from the player's deck
+
+   inSideToAdd can be CHESS_WHITE or CHESS_BLACK
+               CHESS_WHITE clears the board before adding white pieces
+               CHESS_BLACK simply adds black pieces to an existing board
 */
 void getLevel( int          inLevelNumber,
                BoardState  *outState,
-               Deck        *inPlayerDeck );
+               Deck        *inPlayerDeck,
+               int          inSideToAdd );
 
 
 
@@ -44,6 +49,8 @@ void getLevel( int          inLevelNumber,
 
 
 #include "memoryRegister.h"
+
+#include "formation.h"
 
 
 #define NUM_POSSIBLE_LEVELS  256
@@ -262,7 +269,8 @@ void levelsInit( void ) {
 
 void getLevel( int          inLevelNumber,
                BoardState  *outState,
-               Deck        *inPlayerDeck ) {
+               Deck        *inPlayerDeck,
+               int          inSide ) {
 
     int   y;
     int   x;
@@ -356,52 +364,69 @@ void getLevel( int          inLevelNumber,
     
     
     
-    outState->kingExists[0] = 0;
-    outState->kingExists[1] = 0;
     
 
-    for( y = 0;
-         y < BH;
-         y ++ ) {
+    if( inSide == CHESS_WHITE ) {
+        /* clear board first, then draw from player
+           deck into their formation  */
 
-        for( x = 0;
-             x < BW;
-             x ++ ) {
+        outState->kingExists[0] = 0;
+        outState->kingExists[1] = 0;
+    
+        for( y = 0;
+             y < BH;
+             y ++ ) {
 
-            int  p  =  pieceLayouts[ layoutIndex ][ y ][ x ];
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
 
-            outState->grid[ y ][ x ] = noPiece;
-
-            if( p == 0 ) {
-                continue;
-                }
-
-            if( p == 1 ) {
-                outState->grid[ y ][ x ]  = king | CHESS_WHITE;
-                outState->kingExists[ 0 ] =  1;
-                continue;
-                }
-
-            if( p == 2 ) {
-                outState->grid[ y ][ x ]  = king | CHESS_BLACK;
-                outState->kingExists[ 1 ] =  1;
-                continue;
-                }
-
-            if( p == 3 ) {
-                /* spot for player piece */
+                char  fSpot  =  formationGet( y,
+                                              x );
                 
-                outState->grid[ y ][ x ] =
-                    deckDraw( inPlayerDeck ) | CHESS_WHITE;
-                
-                continue;
-                }
-            if( p == 4 ) {
-                /* enemy piece */
-                ChessPiece enemyPiece = deckDraw( &enemyDeck );
+                outState->grid[ y ][ x ] = noPiece;
 
-                outState->grid[ y ][ x ] =
-                    enemyPiece | CHESS_BLACK;
+                if( fSpot == 1 ) {
+                    outState->grid[ y ][ x ] =
+                        deckDraw( inPlayerDeck ) | CHESS_WHITE;
+                    continue;
+                    }
+                else if( fSpot == 2 ) {
+                    outState->grid[ y ][ x ]  = king | CHESS_WHITE;
+                    outState->kingExists[ 0 ] =  1;
+                    continue;
+                    }
+                }
+            }
+        }
+
+    else if( inSide == CHESS_BLACK ) {
+
+        /* add black pieces to exisiting board */
+        
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
+
+                int   p      =  pieceLayouts[ layoutIndex ][ y ][ x ];
+
+                if( p == 2 ) {
+                    outState->grid[ y ][ x ]  = king | CHESS_BLACK;
+                    outState->kingExists[ 1 ] =  1;
+                    continue;
+                    }
+
+                if( p == 4 ) {
+                    /* enemy piece */
+                    ChessPiece enemyPiece = deckDraw( &enemyDeck );
+
+                    outState->grid[ y ][ x ] =
+                        enemyPiece | CHESS_BLACK;
+                    }
                 }
             }
         }

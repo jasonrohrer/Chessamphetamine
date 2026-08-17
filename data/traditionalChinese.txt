@@ -41,6 +41,7 @@ back           "返回"
 actionDesc     "射擊"
 drawDesc       "Draw"
 deckDesc       "View Deck"
+commitDesc     "Commit Army"
 
 
 press          "按下"
@@ -48,7 +49,7 @@ press          "按下"
 defaults       "恢復預設"
 
 
-drawInstruct   "Pick pieces to swap"
+drawInstruct   "Draft your army"
 formationInstruct   "Adjust army formation"
 
 shopTitle      "Shop!"

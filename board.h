@@ -26,6 +26,9 @@ void boardInit( void );
 void boardDraw( int  inCenterX,
                 int  inCenterY );
 
+void boardDrawPortion( int  inCenterX,
+                       int  inCenterY,
+                       int  inStartRow );
 
 void boardDrawMarkers( int   inCenterX,
                        int   inCenterY,
@@ -118,6 +121,17 @@ void boardInit( void ) {
 void boardDraw( int  inCenterX,
                 int  inCenterY ) {
 
+    boardDrawPortion( inCenterX,
+                      inCenterY,
+                      0 );
+    }
+
+    
+
+void boardDrawPortion( int  inCenterX,
+                       int  inCenterY,
+                       int  inStartRow ) {
+
     int  y;
     int  x;
     int  pass;
@@ -135,7 +149,7 @@ void boardDraw( int  inCenterX,
 
         w = 1;
         
-        for( y = 0;
+        for( y = inStartRow;
              y < BH;
              y ++ ) {
 

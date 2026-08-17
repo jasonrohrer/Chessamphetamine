@@ -34,6 +34,7 @@
 #define RARITY_IMPLEMENTATION
 #define ROLL_IMPLEMENTATION
 #define SLOT_LIFT_IMPLEMENTATION
+#define FORMATION_IMPLEMENTATION
 
 
 #include "chess.h"
@@ -89,6 +90,8 @@
 #include "roll.h"
 
 #include "slotLift.h"
+
+#include "formation.h"
 
 
 enum GameUserAction {
@@ -2680,7 +2683,9 @@ void maxiginGame_init( void ) {
 
     rollInit();
     
-    
+
+    formationInit( boardCenterX,
+                   boardCenterY );
     
     levelsInit();
 

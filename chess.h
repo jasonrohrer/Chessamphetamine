@@ -36,8 +36,13 @@ enum{
     rocket,
     NUM_CHESS_PIECES };
 
-#define  FIRST_CHESS_PIECE  pawn
-#define  LAST_CHESS_PIECE   ( NUM_CHESS_PIECES - 1 )
+
+#define  FIRST_CHESS_PIECE               pawn
+#define  LAST_CHESS_PIECE                ( NUM_CHESS_PIECES - 1 )
+#define  LAST_NORMAL_CHESS_PIECE         queen
+#define  FIRST_SPECIAL_CHESS_PIECE       laserRook
+#define  LAST_SPECIAL_CHESS_PEICE        rocket
+#define  LAST_ENEMY_SPECIAL_CHESS_PIECE  rocket
 
 
 

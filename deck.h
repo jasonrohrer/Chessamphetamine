@@ -80,6 +80,11 @@ void deckAddPiece( Deck        *inDeck,
                    ChessPiece   inPiece );
 
 
+void deckReplacePiece( Deck        *inDeck,
+                       ChessPiece   inOldPiece,
+                       ChessPiece   inNewPiece );
+
+
 /* returns all non-present pieces back to deck */
 void deckReturnAll( Deck  *inDeck );
 
@@ -294,6 +299,24 @@ void deckAddPiece( Deck        *inDeck,
 
     inDeck->pieces[ newIndex ]  = inPiece;
     inDeck->present[ newIndex ] = 1;
+    }
+
+
+
+void deckReplacePiece( Deck        *inDeck,
+                       ChessPiece   inOldPiece,
+                       ChessPiece   inNewPiece ) {
+    int  i;
+
+    for( i = 0;
+         i < inDeck->numPieces;
+         i ++ ) {
+
+        if( inDeck->pieces[ i ] == inOldPiece ) {
+            inDeck->pieces[ i ] =  inNewPiece;
+            return;
+            }
+        }
     }
 
 

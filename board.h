@@ -146,14 +146,21 @@ void boardDrawPortion( int  inCenterX,
     for( pass = 0;
          pass < 2;
          pass ++ ) {
-
-        w = 1;
         
         for( y = inStartRow;
              y < BH;
              y ++ ) {
 
             int  yPos  =  inCenterY - yOff + y * squareSize + squareSize / 2;
+            
+            if( y % 2 == 1 ) {
+                /* first square in upper left is white, but if we're skipping
+                   rows, we need to toggle that */
+                w = 0;
+                }
+            else {
+                w = 1;
+                }
 
             for( x = 0;
                  x < BW;

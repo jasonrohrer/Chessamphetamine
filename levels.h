@@ -55,204 +55,57 @@ void getEmptyLevel( BoardState  *outState );
 #include "formation.h"
 
 
-#define NUM_POSSIBLE_LEVELS  256
-
-
-/* starting piece locations
-   0  empty
-   1  player's king
-   2  enemy's  king
-   3  player's piece spot
-   4  enemy's piece spot  */
-static  char         pieceLayouts[ NUM_POSSIBLE_LEVELS ][ BH ][ BW ];
-
 static  MaxiginRand  levelsRand;
-
-static  const char  *levelsFile       =  "levels.tga";
-
-static  int          numLoadedLevels  =  0;
+static  Deck         enemyDeck;
 
 
-static void makeDefaultLayouts( void ) {
-    int  i;
 
-    for( i = 0;
-         i < NUM_POSSIBLE_LEVELS;
-         i ++ ) {
-
-        int  y;
-        int  x;
-
-        for( y = 0;
-             y < BH;
-             y ++ ) {
-
-            for( x = 0;
-                 x < BW;
-                 x ++ ) {
-                
-                pieceLayouts[i][y][x] = 0;
-                }
-            }
-
-        /* normal chess layout, default */
-
-        /* fill first two and last two rows with pieces */
-        for( y = BH - 2;
-             y < BH;
-             y ++ ) {
-
-            for( x = 0;
-                 x < BW;
-                 x ++ ) {
-                
-                pieceLayouts[i][y][x] = 3;
-                }
-            }
-        
-        for( y = 0;
-             y < 2;
-             y ++ ) {
-
-            for( x = 0;
-                 x < BW;
-                 x ++ ) {
-                
-                pieceLayouts[i][y][x] = 4;
-                }
-            }
-
-           
-
-        /* kings */
-
-        pieceLayouts[i][ BH - 1 ][ 4 ] = 1;
-        pieceLayouts[i][ 0      ][ 4 ] = 2;
-        }
-
-
-    
+static int saturationCurve( int  inStart,
+                            int  inMax,
+                            int  inK,
+                            int  inL ) {
+    return
+        inStart
+        +
+        ( ( (inMax - inStart) * inL )
+          /
+          ( inL + inK ) );
     }
 
 
-static void levelsReload( void ) {
 
-    /* layouts are represented by blocks of pixels */
-    int             layoutPixelHeight  =  BH + 1;
+/* number of enemy pieces in addition to the king */
+static int getNumEnemyPieces( int  inLevelNumber ) {
+
+    /* start at 2 */
+    int  start  =   2;
+    /* reach halfway in max curve by level 20 */
+    int  kmax   =  20;
+    /* reach halfway in min curve by level 30 */
+    int  kmin   =  30;
+
+    /* the min and max curves define a growing window of
+       possible piece densities as we go up in levels.
+       For level 0,   we always have   2        pieces.
+       For level 8,   we have between  4 and  8 pieces.
+       For level 100, we have between 12 and 19 pieces.
+    */
+    int  max    =  saturationCurve( start,
+                                    23,
+                                    kmax,
+                                    inLevelNumber );
     
-    unsigned char  *loadedBytes;
-    int             w;
-    int             h;
-    char            loaded;
-    int             numLoadedLayouts;
-    int             i;
+    int  min    =  saturationCurve( start,
+                                    15,
+                                    kmin,
+                                    inLevelNumber );
+
     
-    
-    makeDefaultLayouts();
-    
-    loaded = maxigin_loadTempSprite( levelsFile,
-                                     &loadedBytes,
-                                     &w,
-                                     &h );
-
-    if( !loaded ) {
-        return;
-        }
-
-
-    numLoadedLayouts = h / layoutPixelHeight;
-
-    if( numLoadedLayouts > NUM_POSSIBLE_LEVELS ) {
-        numLoadedLayouts = NUM_POSSIBLE_LEVELS;
-        }
-
-    for( i = 0;
-         i < numLoadedLayouts;
-         i ++ ) {
-
-        /* image w might be bigger than BW
-           there can be comments, etc off to right side */
-        int  startPixel  =  i * layoutPixelHeight * w;
-        
-        
-        int  y;
-        int  x;
-
-        for( y = 0;
-             y < BH;
-             y ++ ) {
-            
-            int  p           =  startPixel * 4;
-
-            for( x = 0;
-                 x < BW;
-                 x ++ ) {
-
-                unsigned char  r  =  loadedBytes[ p ++ ];
-                unsigned char  g  =  loadedBytes[ p ++ ];
-                unsigned char  b  =  loadedBytes[ p ++ ];
-                unsigned char  a  =  loadedBytes[ p ++ ];
-                
-                if( a == 0 ) {
-                    pieceLayouts[i][y][x] = 0;
-                    continue;
-                    }
-
-                if( r == 255
-                    &&
-                    g == 0
-                    &&
-                    b == 0 ) {
-
-                    /* enemy king */
-                    pieceLayouts[i][y][x] = 2;
-                    continue;
-                    }
-                
-                if( r == 0
-                    &&
-                    g == 255
-                    &&
-                    b == 0 ) {
-
-                    /* player king */
-                    pieceLayouts[i][y][x] = 1;
-                    continue;
-                    }
-
-                if( r == 255
-                    &&
-                    g == 255
-                    &&
-                    b == 255 ) {
-
-                    /* player piece spot*/
-                    pieceLayouts[i][y][x] = 3;
-                    continue;
-                    }
-
-                if( r == 0
-                    &&
-                    g == 0
-                    &&
-                    b == 0 ) {
-
-                    /* enemy piece spot*/
-                    pieceLayouts[i][y][x] = 4;
-                    continue;
-                    }
-                
-                }
-
-            /* go to start of next row, skipping any extra
-               pixels beyond BW */
-            startPixel += w;
-            }
-        }
-
-    numLoadedLevels = numLoadedLayouts;
+    return maxigin_randRange( &levelsRand,
+                              min,
+                              max );
     }
-
+    
     
 
 
@@ -262,9 +115,135 @@ void levelsInit( void ) {
     maxigin_randSeed( &levelsRand,
                       mingin_getEntropySeed() );
 
-    levelsReload();
+    getEmptyDeck( &enemyDeck,
+                  0 );
 
     REGISTER_VAL_MEM( levelsRand );
+    REGISTER_VAL_MEM( enemyDeck  );
+    }
+
+
+static void prepareEnemyDeck( int  inLevelNumber ) {
+    if( inLevelNumber == 0 ) {
+
+        /* 4 pieces in deck at level 0 */
+
+        /* whenever asked for level 0 again, start of new game,
+           rebuild deck from start */
+        getEmptyDeck( &enemyDeck,
+                      0 );
+        
+        deckAddPiece( &enemyDeck,
+                      pawn );
+        deckAddPiece( &enemyDeck,
+                      bishop );
+        deckAddPiece( &enemyDeck,
+                      bishop );
+        deckAddPiece( &enemyDeck,
+                      knight );
+        }
+    if( inLevelNumber == 1 ) {
+        deckAddPiece( &enemyDeck,
+                      rook );
+        }
+    if( inLevelNumber == 2 ) {
+        deckAddPiece( &enemyDeck,
+                      rook );
+        }
+
+    if( inLevelNumber == 3 ) {
+        deckAddPiece( &enemyDeck,
+                      knight );
+        }
+    
+    if( inLevelNumber == 4 ) {
+        /* 8 pieces in deck at level 4,
+           including Queen */
+        deckAddPiece( &enemyDeck,
+                      queen );
+        }
+
+    if( inLevelNumber > 4
+        &&
+        inLevelNumber <= 16 ) {
+
+        /* add up to 12 extra normal pieces
+           between level 5 and level 16,
+           we get extra normal chess pieces added at random */
+        deckAddPiece(
+            &enemyDeck,
+            (ChessPiece)( maxigin_randRange( &levelsRand,
+                                             FIRST_CHESS_PIECE,
+                                             LAST_NORMAL_CHESS_PIECE ) ) );
+        }
+
+    /* by level 16, our deck has 20 pieces */
+
+    if( inLevelNumber > 16
+        &&
+        inLevelNumber <= 46 ) {
+        /* add up to 30 extra special pieces
+           between level 17 and level 46, we get extra special
+           chess pieces added at random */
+
+        deckAddPiece(
+            &enemyDeck,
+            (ChessPiece)( maxigin_randRange(
+                              &levelsRand,
+                              FIRST_SPECIAL_CHESS_PIECE,
+                              LAST_ENEMY_SPECIAL_CHESS_PIECE ) ) );
+        }
+
+    /* by level 46, our deck has 50 pieces */
+    
+    if( inLevelNumber > 46 ) {
+
+        /* add random non-King piece */
+
+        int         t  =  0;
+        ChessPiece  p  =  (ChessPiece)( maxigin_randRange(
+                                            &levelsRand,
+                                            FIRST_CHESS_PIECE,
+                                            LAST_CHESS_PIECE ) );
+        /* 10 trials before giving up */
+        while( p == king
+               &&
+               t < 10 ) {
+
+            p = (ChessPiece)( maxigin_randRange(
+                                  &levelsRand,
+                                  FIRST_CHESS_PIECE,
+                                  LAST_CHESS_PIECE ) );
+            t ++;
+            }
+
+        /* by level 100, our deck has 104 pieces */
+
+        /* after level 100 we stop adding extra pieces, so the deck
+           doesn't just keep growing in size.
+           
+           However, we keep replacing pieces with a random piece,
+           so deck gradually keeps changing composition forever
+        */
+
+        if( p != king ) {
+
+            if( inLevelNumber <= 100 ) {
+                deckAddPiece( &enemyDeck,
+                              p );
+                }
+            else {
+
+                ChessPiece  oldP  =  deckDraw( &enemyDeck );
+
+                deckReplacePiece( &enemyDeck,
+                                  oldP,
+                                  p );
+                }
+            }
+        }
+
+    deckReshuffleAll( &enemyDeck );
     }
 
 
@@ -276,95 +255,6 @@ void getLevel( int          inLevelNumber,
 
     int   y;
     int   x;
-
-    Deck  enemyDeck;
-
-    int   layoutIndex  =  inLevelNumber;
-    
-
-    if( mingin_getBulkDataChanged( levelsFile ) ) {
-        levelsReload();
-        }
-    
-
-    /* if beyond our max number of hand-authored levels, pick
-       a random level from in the second half */
-    if( layoutIndex >= numLoadedLevels ) {
-
-        layoutIndex = maxigin_randRange( &levelsRand,
-                                         numLoadedLevels / 2,
-                                         numLoadedLevels - 1 );
-        }
-
-
-    getEmptyDeck( &enemyDeck,
-                  0 );
-
-    if( inLevelNumber >= 0 ) {
-        deckAddPiece( &enemyDeck,
-                      pawn );
-        deckAddPiece( &enemyDeck,
-                      bishop );
-        deckAddPiece( &enemyDeck,
-                      bishop );
-        deckAddPiece( &enemyDeck,
-                      knight );
-        }
-    if( inLevelNumber >= 1 ) {
-        deckAddPiece( &enemyDeck,
-                      rook );
-        }
-    if( inLevelNumber >= 2 ) {
-        deckAddPiece( &enemyDeck,
-                      rook );
-        }
-
-    if( inLevelNumber >= 3 ) {
-        deckAddPiece( &enemyDeck,
-                      knight );
-        }
-    
-    if( inLevelNumber >= 4 ) {
-        deckAddPiece( &enemyDeck,
-                      queen );
-        }
-
-    if( inLevelNumber == 8 ) {
-        /* special case for 8
-           standard set of pieces
-           but don't add 8 pawns for future levels */
-        int  p;
-        
-        for( p = 0;
-             p < 7;
-             p ++ ) {
-            deckAddPiece( &enemyDeck,
-                          pawn );
-            }
-        }
-        
-            
-
-    if( inLevelNumber >= numLoadedLevels ) {
-
-        /* add random pieces to enemy deck for beyond levels */
-        int          extra       =  inLevelNumber - numLoadedLevels + 1;
-        int          i;
-        for( i = 0;
-             i < extra;
-             i ++ ) {
-            
-            deckAddPiece(
-                &enemyDeck,
-                (ChessPiece)( maxigin_randRange( &levelsRand,
-                                                 FIRST_CHESS_PIECE,
-                                                 LAST_CHESS_PIECE ) ) );
-            }
-        }
-
-    deckReshuffleAll( &enemyDeck );
-    
-    
     
     
 
@@ -401,35 +291,84 @@ void getLevel( int          inLevelNumber,
                 }
             }
         }
-
     else if( inSide == CHESS_BLACK ) {
 
-        /* add black pieces to exisiting board */
+        int  numEnemyPieces  =  getNumEnemyPieces( inLevelNumber );
+
+        /* place king anywhere in first two rows */
         
-        for( y = 0;
-             y < BH;
-             y ++ ) {
+        int  kingRow  =  maxigin_randRange( &levelsRand,
+                                            0,
+                                            1 );
+        int  kingCol  =  maxigin_randRange( &levelsRand,
+                                            0,
+                                            BW - 1 );
 
-            for( x = 0;
-                 x < BW;
-                 x ++ ) {
+        int  protColA;
+        int  protColB;
 
-                int   p      =  pieceLayouts[ layoutIndex ][ y ][ x ];
+        /* enemy spots in first 3 rows */
+        static  int  spots[ 3 * BW ];
 
-                if( p == 2 ) {
-                    outState->grid[ y ][ x ]  = king | CHESS_BLACK;
-                    outState->kingExists[ 1 ] =  1;
-                    continue;
-                    }
+        int  s;
+        int  numFilled;
+        
 
-                if( p == 4 ) {
-                    /* enemy piece */
-                    ChessPiece enemyPiece = deckDraw( &enemyDeck );
+        /* add new pieces to enemy deck based on level number */
+        prepareEnemyDeck( inLevelNumber );
+        
+        
+        outState->grid[ kingRow ][ kingCol ]  = king | CHESS_BLACK;
+        outState->kingExists[ 1 ] =  1;
 
-                    outState->grid[ y ][ x ] =
-                        enemyPiece | CHESS_BLACK;
-                    }
+        protColA = kingCol;
+
+        if( kingCol >= BW / 2 ) {
+            /* king on right side of board
+               two protection pieces in front and to front left */
+            protColB = kingCol - 1;
+            }
+        else {
+            /* front right protection */
+            protColB = kingCol + 1;
+            }
+
+        outState->grid[ kingRow + 1 ][ protColA ] =
+            deckDraw( &enemyDeck ) | CHESS_BLACK;
+        
+        outState->grid[ kingRow + 1 ][ protColB ] =
+            deckDraw( &enemyDeck ) | CHESS_BLACK;
+
+        numEnemyPieces -= 2;
+        
+
+        /* random spots in first three rows */
+            
+
+        for( s = 0;
+             s < 3 * BW;
+             s ++ ) {
+            spots[ s ] = s;
+            }
+        maxigin_shuffle( &levelsRand,
+                         3 * BW,
+                         spots );
+        s = 0;
+
+        numFilled = 0;
+        while( numFilled < numEnemyPieces
+               &&
+               s < 3 * BW ) {
+
+            y = spots[ s ] / BW;
+            x = spots[ s ] - y * BW;
+
+            if( outState->grid[ y ][ x ] == noPiece ) {
+                
+                outState->grid[ y ][ x ] = deckDraw( &enemyDeck ) | CHESS_BLACK;
+                numFilled ++;
                 }
+            s ++;
             }
         }
     

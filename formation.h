@@ -377,12 +377,11 @@ void formationBackToStart( void ) {
     formationPickedX = -1;
 
     /* default starting formation
-       k in back, 3 pieces in front */
+       k in back, 2 pieces in front */
     
     /* king */
-    formation[ 7 ][ 4 ] = 2;
-
-    formation[ 6 ][ 3 ] = 1;
+    formation[ 7 ][ 5 ] = 2;
+    
     formation[ 6 ][ 4 ] = 1;
     formation[ 6 ][ 5 ] = 1;
     }

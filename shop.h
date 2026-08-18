@@ -365,6 +365,7 @@ void shopReset( void ) {
     shopSelectedSlot = -1;
     shopActionDown   =  0;
     shoppingDone     =  0;
+    newSpotBought    =  0;
     
     newSpotHighlightFade = 0;
 
@@ -639,14 +640,55 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
 
             overNewSpot = 1;
 
+            if( newSpotHighlightFade < 255 ) {
+                maxigin_playSoundEffect( inPieceLiftSound,
+                                         256 );
+                }
             newSpotHighlightFade = 255;
 
             /* fixme:  use this */
             (void)overNewSpot;
             }
+        else {
+            int  newHighlight;
+
+            newHighlight = newSpotHighlightFade - deltaFade;
+
+            if( newHighlight > 0 ) {
+                newSpotHighlightFade = (unsigned char)newHighlight;
+                }
+            else {
+                newSpotHighlightFade = 0;
+                }
+            }
         }
     
 
+    
+    if( overNewSpot
+        &&
+        maxigin_isButtonDown( shopPointerActionHandle ) ) {
+        
+        if( costGet( newFormationSpotCost )
+            <= moneyGetTotal() ) {
+
+            moneyAdd( - costGet( newFormationSpotCost ) );
+
+            formationAddNewSpot();
+
+            costIncrement( newFormationSpotCost );
+
+            newSpotBought = 1;
+
+            maxigin_playSoundEffect( purchaseSound,
+                                     256 );
+            }
+        else {
+            /* can't afford */
+            maxigin_playSoundEffect( inPickFailedSound,
+                                     256 );
+            }
+        }
 
     if( shopSelectedSlot == -1 ) {
         return noPiece;

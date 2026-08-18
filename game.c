@@ -427,7 +427,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
 
-    if( draftingPieces ) {
+    if( draftingPieces
+        &&
+        ! deckViewShowing ) {
         buttonDraw( commitButton );
         }
 
@@ -1020,6 +1022,8 @@ void maxiginGame_step( void ) {
         ! shopShowing
         &&
         ! formationShowing
+        &&
+        ! draftingPieces
         &&
         ! chessGameOver
         &&
@@ -1797,16 +1801,19 @@ void maxiginGame_step( void ) {
                     stalemate = 0;
                     drawGame  = 0;
 
-                    getLevel( 0,
-                              &boardState,
-                              &playerDeck,
-                              CHESS_WHITE );
+                    formationBackToStart();
                     
-                    sideBoardRedraw( &playerDeck );
+                    formationShowing = 1;
 
-                    sideBoardShowing = 1;
-                    
-                    dropNewLevelPiecesIn( CHESS_WHITE );
+                    getEmptyLevel( &boardState );
+
+                    gameOver = 0;
+                    chessGameOver = 0;
+                    redrawRemoveRunning = 0;
+                    redrawAddRunning    = 0;
+
+                    maxigin_playSoundEffect( boardSlideSound,
+                                             256 );
                     }
                 else {
 
@@ -1838,10 +1845,9 @@ void maxiginGame_step( void ) {
                                 }
                             }
                         }
+                    redrawRemoveRunning = 0;
+                    redrawAddRunning    = 1;
                     }
-                
-                redrawRemoveRunning = 0;
-                redrawAddRunning    = 1;
                 }
             }
             
@@ -2068,9 +2074,6 @@ void maxiginGame_step( void ) {
                 }
             redrawRemoveRunning = 1;
             redrawAddRunning = 0;
-
-            sideBoardRedraw( &playerDeck );
-            sideBoardForceFullLift();
             }
         }
         
@@ -2166,6 +2169,8 @@ void maxiginGame_step( void ) {
 
     if( draftingPieces
         &&
+        ! deckViewShowing
+        &&
         buttonIsNewPressed( commitButton ) ) {
 
         draftingPieces = 0;
@@ -2180,6 +2185,9 @@ void maxiginGame_step( void ) {
         redrawRemoveRunning = 0;
         redrawAddRunning    = 1;
         sideBoardShowing    = 0;
+        
+        maxigin_playSoundEffect( boardSlideSound,
+                                 256 );
         }
     
 
@@ -2246,7 +2254,7 @@ void maxiginGame_step( void ) {
                 stalemate        = 0;
                 drawGame         = 0;
                 noScoreMoveCount = 0;
-                sideBoardShowing = 1;
+                sideBoardShowing = 0;
 
                 /* give them an allowance for each level */
                 moneyAddDelayed( 5 );
@@ -2254,18 +2262,13 @@ void maxiginGame_step( void ) {
                 costResetIncrement( drawCost );
 
                 costLevelIncrement( drawCost );
+
+                deckReturnAll   ( &playerDeck );
+                deckReshuffleAll( &playerDeck );
                 
                 currentLevel ++;
-                        
-                getLevel( currentLevel,
-                          &boardState,
-                          &playerDeck,
-                          CHESS_WHITE );
 
-                dropNewLevelPiecesIn( CHESS_WHITE );
-                boardMarkersHidden  = 1;
-                redrawRemoveRunning = 0;
-                redrawAddRunning    = 1;
+                formationShowing = 1;
                 }
             }
         }

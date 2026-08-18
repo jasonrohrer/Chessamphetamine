@@ -311,6 +311,8 @@ void shopInit( int  inPointerActionHandle,
 
     REGISTER_VAL_MEM( shopSlotsLifting );
     REGISTER_VAL_MEM( shopSlotsDropping );
+
+    REGISTER_VAL_MEM( shoppingDone );
     }
 
 

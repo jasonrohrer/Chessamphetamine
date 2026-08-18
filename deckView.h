@@ -108,6 +108,9 @@ void deckViewInit(  int  inCenterX,
         deckViewCenterY
         - ( ( DECK_VIEW_ROWS -  1 ) * deckViewCellSizeY ) / 2;
 
+    yPos += 2;
+    
+
     for( y = 0;
          y < DECK_VIEW_ROWS;
          y ++ ) {

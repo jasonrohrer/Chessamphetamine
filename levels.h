@@ -33,6 +33,8 @@ void getLevel( int          inLevelNumber,
                int          inSideToAdd );
 
 
+void getEmptyLevel( BoardState  *outState );
+
 
 
 
@@ -431,6 +433,32 @@ void getLevel( int          inLevelNumber,
             }
         }
     
+    outState->nextToMove = CHESS_WHITE;
+    outState->moveCount = 0;
+    }
+
+
+
+void getEmptyLevel( BoardState  *outState ) {
+
+    int   y;
+    int   x;
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            outState->grid[ y ][ x ]  = noPiece;
+            }
+        }
+                    
+    outState->kingExists[0] = 0;
+    outState->kingExists[1] = 0;
+
     outState->nextToMove = CHESS_WHITE;
     outState->moveCount = 0;
     }

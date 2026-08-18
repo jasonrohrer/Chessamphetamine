@@ -32,6 +32,11 @@ char formationGet( int  inRow,
                    int  inCol );
 
 
+/* back to starting formation */
+void formationBackToStart( void );
+
+
+
 
 #endif
 
@@ -71,9 +76,6 @@ static  int   fmDoneButton            =  -1;
 
 void formationInit( int  inPointerActionHandle ) {
 
-    int  y;
-    int  x;
-
     fmSpotSprite           = maxigin_initSprite( "formationSpot.tga"           );
     fmSpotPickedSprite     = maxigin_initSprite( "formationSpotPicked.tga"     );
     fmSpotKingSprite       = maxigin_initSprite( "formationKingSpot.tga"       );
@@ -94,30 +96,7 @@ void formationInit( int  inPointerActionHandle ) {
 
     fmPointerActionHandle = inPointerActionHandle;
 
-    for( y = 0;
-         y < BH;
-         y ++ ) {
-        for( x = 0;
-             x < BW;
-             x ++ ) {
-
-            formation             [ y ][ x ] = 0;
-            formationHighlightFade[ y ][ x ] = 0;
-            }
-        }
-    
-    formationPickedY = -1;
-    formationPickedX = -1;
-
-    /* default starting formation
-       k in back, 3 pieces in front */
-    
-    /* king */
-    formation[ 7 ][ 4 ] = 2;
-
-    formation[ 6 ][ 3 ] = 1;
-    formation[ 6 ][ 4 ] = 1;
-    formation[ 6 ][ 5 ] = 1;
+    formationBackToStart();
 
 
     fmDoneButton = buttonInit( maxigin_initSprite( "doneButton.tga" ),
@@ -125,7 +104,7 @@ void formationInit( int  inPointerActionHandle ) {
                                maxigin_initSprite( "doneButtonPressed.tga" ),
                                50,
                                MAXIGIN_GAME_NATIVE_H - 10,
-                               1,
+                               0,
                                fmPointerActionHandle,
                                /* fixme... need controller mapping for this */
                                -1 );
@@ -331,10 +310,12 @@ char formationStep( int  inBoardCenterX,
             else if( formationPickedX == -1
                      &&
                      formationPickedY == -1 ) {
-                
-                formationPickedX = overSlotX;
-                formationPickedY = overSlotY;
-                playBeepUpSound();
+
+                if( formation[ overSlotY ][ overSlotX ] != 0 ) {
+                    formationPickedX = overSlotX;
+                    formationPickedY = overSlotY;
+                    playBeepUpSound();
+                    }
                 }
             else {
                 /* swap */
@@ -373,6 +354,39 @@ char formationGet( int  inRow,
                    int  inCol ) {
     return formation[ inRow ][ inCol ];
     }
+
+
+void formationBackToStart( void ) {
+    
+    int  y;
+    int  x;
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            formation             [ y ][ x ] = 0;
+            formationHighlightFade[ y ][ x ] = 0;
+            }
+        }
+    
+    formationPickedY = -1;
+    formationPickedX = -1;
+
+    /* default starting formation
+       k in back, 3 pieces in front */
+    
+    /* king */
+    formation[ 7 ][ 4 ] = 2;
+
+    formation[ 6 ][ 3 ] = 1;
+    formation[ 6 ][ 4 ] = 1;
+    formation[ 6 ][ 5 ] = 1;
+    }
+
 
 
 

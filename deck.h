@@ -80,6 +80,9 @@ void deckAddPiece( Deck        *inDeck,
                    ChessPiece   inPiece );
 
 
+/* returns all non-present pieces back to deck */
+void deckReturnAll( Deck  *inDeck );
+
 
 /* reshuffles all and resets draw pos to (numPieces - 1) */
 void deckReshuffleAll( Deck  *inDeck );
@@ -182,6 +185,21 @@ static void deckReshuffleRange( Deck  *inDeck,
         inDeck->present[ i ] = shuffleTempPresent[ shuffleIndices[i] ];
         }
     }
+
+
+
+void deckReturnAll( Deck  *inDeck ) {
+
+    int  i;
+    
+    for( i = 0;
+         i < inDeck->numPieces;
+         i ++ ) {
+        
+        inDeck->present[i] = 1;
+        }
+    }
+
 
 
 

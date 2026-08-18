@@ -24,7 +24,8 @@ void formationDraw( int  inBoardCenterX,
 
 /* returns 1 if done adjusting formation */
 char formationStep( int  inBoardCenterX,
-                    int  inBoardCenterY );
+                    int  inBoardCenterY,
+                    int  inPieceLiftSound );
 
 
 /* returns 0 for empty, 1 for regular piece, 2 for king */
@@ -241,7 +242,8 @@ void formationDraw( int  inBoardCenterX,
 
 
 char formationStep( int  inBoardCenterX,
-                    int  inBoardCenterY ) {
+                    int  inBoardCenterY,
+                    int  inPieceLiftSound ) {
     
 
     int  pointerX;
@@ -283,6 +285,13 @@ char formationStep( int  inBoardCenterX,
                     &&
                     pointerY < cY + squareR ) {
 
+                    if( formation[ y ][ x ] != 0
+                        &&
+                        formationHighlightFade[ y ][ x ] < 255 ) {
+                        
+                        maxigin_playSoundEffect( inPieceLiftSound,
+                                                 256 );
+                        }
                     formationHighlightFade[ y ][ x ] = 255;
 
                     overSlotX = x;

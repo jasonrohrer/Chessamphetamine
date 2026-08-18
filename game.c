@@ -2299,7 +2299,8 @@ void maxiginGame_step( void ) {
         &&
         boardSlideUp == 0 ) {
         char  fmDone  = formationStep( boardCenterX,
-                                       boardCenterY );
+                                       boardCenterY,
+                                       examinePieceSound );
 
         if( fmDone ) {
             formationShowing = 0;

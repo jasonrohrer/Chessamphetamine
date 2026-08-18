@@ -31,6 +31,8 @@ char formationStep( int  inBoardCenterX,
 char formationGet( int  inRow,
                    int  inCol );
 
+void formationAddNewSpot( void );
+
 
 /* back to starting formation */
 void formationBackToStart( void );
@@ -73,6 +75,10 @@ static  int   fmSpotKingPickedSprite  =  -1;
 static  char  fmActionDown            =   0;
 static  int   fmDoneButton            =  -1;
 
+static  char  fmNewSpotWaiting        =   0;
+
+static  int   lang_newSpot;
+
 
 void formationInit( int  inPointerActionHandle ) {
 
@@ -108,12 +114,15 @@ void formationInit( int  inPointerActionHandle ) {
                                fmPointerActionHandle,
                                /* fixme... need controller mapping for this */
                                -1 );
-    
+
+    lang_newSpot = maxigin_initTranslationKey( "newFormationSpot" );
 
     REGISTER_ARRAY_MEM( formation );
     REGISTER_ARRAY_MEM( formationHighlightFade );
     REGISTER_VAL_MEM  ( formationPickedY );
     REGISTER_VAL_MEM  ( formationPickedX );
+
+    REGISTER_VAL_MEM  ( fmNewSpotWaiting );
     }
 
 
@@ -202,7 +211,23 @@ void formationDraw( int  inBoardCenterX,
             }
         }
 
-    buttonDraw( fmDoneButton );
+    if( fmNewSpotWaiting ) {
+        maxigin_drawResetColor();
+
+        maxigin_setLanguageFontIndex( 1 );
+        
+        maxigin_drawLangText(
+                lang_newSpot,
+                inBoardCenterX,
+                inBoardCenterY - 70,
+                MAXIGIN_CENTER );
+        maxigin_setLanguageFontIndex( 0 );
+        }
+    else {
+        /* hide done button if new spot waiting */
+
+        buttonDraw( fmDoneButton );
+        }
     }
 
 
@@ -317,7 +342,10 @@ char formationStep( int  inBoardCenterX,
                     playBeepUpSound();
                     }
                 }
-            else {
+            else if( ! fmNewSpotWaiting
+                     ||
+                     formation[ overSlotY ][ overSlotX ] == 0 ) {
+                
                 /* swap */
 
                 char  temp  =  formation[ formationPickedY ][ formationPickedX ];
@@ -330,6 +358,8 @@ char formationStep( int  inBoardCenterX,
                 formationPickedX = -1;
                 formationPickedY = -1;
                 playBeepDownSound();
+
+                fmNewSpotWaiting = 0;
                 }
 
             }
@@ -342,7 +372,11 @@ char formationStep( int  inBoardCenterX,
         }
     
 
-    if( buttonIsNewPressed( fmDoneButton ) ) {
+    if( ! fmNewSpotWaiting
+        &&
+        buttonIsNewPressed( fmDoneButton ) ) {
+        formationPickedX = -1;
+        formationPickedY = -1;
         return 1;
         }
     return 0;
@@ -384,6 +418,18 @@ void formationBackToStart( void ) {
     
     formation[ 6 ][ 4 ] = 1;
     formation[ 6 ][ 5 ] = 1;
+    }
+
+
+void formationAddNewSpot( void ) {
+    
+    formation[ 3 ][ 4 ] = 1;
+
+    /* force it to be picked so they have to move it next time */
+    formationPickedY = 3;
+    formationPickedX = 4;
+
+    fmNewSpotWaiting = 1;
     }
 
 

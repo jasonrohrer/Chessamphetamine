@@ -53,6 +53,7 @@ defaults       "Par défaut"
 
 drawInstruct   "Draft your army"
 formationInstruct   "Adjust army formation"
+newFormationSpot    "New spot!"
 
 shopTitle      "Shop!"
 sale           "Sale!"

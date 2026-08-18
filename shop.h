@@ -138,6 +138,11 @@ static  int            shopOnSaleOneIn                            =  10;
 static  RollInfo       shopOnSaleRoll;
 
 static  int            shopRerollCost;
+static  int            newFormationSpotCost;
+
+static  int            newFormSpotY;
+static  int            newSpotBought                              =  0;
+static  unsigned char  newSpotHighlightFade                       =  0;
 
 
 static void shopResetHightlighFades( void ) {
@@ -210,6 +215,17 @@ void shopInit( int  inPointerActionHandle,
                                -1,
                                -1,
                                0 );
+
+    /* new slots cost 3, 4, 5, 6, 7, etc */
+    newFormationSpotCost = costInit( 3,
+                                     1,
+                                     -1,
+                                     -1,
+                                     0,
+                                     0,
+                                     -1,
+                                     -1,
+                                     0 );
     
     
     maxigin_randSeed( &shopRand,
@@ -224,7 +240,8 @@ void shopInit( int  inPointerActionHandle,
 
     shopCenterX = inCenterX;
     shopCenterY = inCenterY;
-    
+
+    newFormSpotY = shopCenterY + 95;
 
     purchaseSound = maxigin_initSoundEffect( "purchase_sd_30.wav" );
 
@@ -291,7 +308,7 @@ void shopInit( int  inPointerActionHandle,
                              -1,
                              maxigin_initSprite( "doneButtonPressed.tga" ),
                              shopCenterX + 70,
-                             shopCenterY + 70,
+                             shopCenterY + 50,
                              1,
                              shopPointerActionHandle,
                              /* fixme... need controller mapping for this */
@@ -313,6 +330,10 @@ void shopInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( shopSlotsDropping );
 
     REGISTER_VAL_MEM( shoppingDone );
+
+    REGISTER_VAL_MEM( newSpotBought );
+
+    REGISTER_VAL_MEM( newSpotHighlightFade );
     }
 
 
@@ -324,6 +345,9 @@ void shopReroll( void ) {
     shopResetHightlighFades();
     shopActionDown = 0;
     shoppingDone   = 0;
+    newSpotBought  = 0;
+
+    newSpotHighlightFade = 0;
 
     costResetIncrement( shopRerollCost );
     costLevelIncrement( shopRerollCost );
@@ -341,8 +365,11 @@ void shopReset( void ) {
     shopSelectedSlot = -1;
     shopActionDown   =  0;
     shoppingDone     =  0;
+    
+    newSpotHighlightFade = 0;
 
     costFullReset( shopRerollCost );
+    costFullReset( newFormationSpotCost );
 
     buttonReset( doneButton );
     }
@@ -435,6 +462,43 @@ void shopDraw( void ) {
                     shopCenterX - 35,
                     shopCenterY + 50,
                     1 );
+
+    if( formationHasRoomForNewSpot()
+        &&
+        ! newSpotBought ) {
+
+        int  spotSprite  =  formationGetSpotSprite();
+
+        maxigin_drawResetColor();
+
+        maxigin_setLanguageFontIndex( 1 );
+    
+        maxigin_drawLangText( formationGetNewSpotLangHandle(),
+                              shopCenterX,
+                              newFormSpotY - 17,
+                              MAXIGIN_CENTER );
+    
+        maxigin_setLanguageFontIndex( 0 ); 
+
+        maxigin_drawSprite( spotSprite,
+                            shopCenterX,
+                            newFormSpotY );
+
+        if( newSpotHighlightFade > 0 ) {
+
+            maxigin_drawSetAlpha( newSpotHighlightFade );
+            
+            maxigin_drawSpriteGlowOnly( spotSprite,
+                                        shopCenterX,
+                                        newFormSpotY );
+            maxigin_drawResetColor();
+            }
+
+        numberDrawCenter( costGet( newFormationSpotCost ),
+                          shopCenterX,
+                          newFormSpotY + 17,
+                          1 );
+        }
     }
 
 
@@ -457,7 +521,8 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
     int  r              =  mingin_getStepsPerSecond();
     int  deltaFade      =  ( 20 * 60 ) / r;
     int  liftPhaseDone  =  0;
-
+    char overNewSpot    =  0;
+    
     if( buttonIsNewPressed( doneButton ) ) {
         shoppingDone = 1;
         return noPiece;
@@ -557,6 +622,30 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
                 }
             }
         }
+
+    if( formationHasRoomForNewSpot()
+        &&
+        ! newSpotBought ) {
+
+        int  spotR  =  BOARD_SQUARE_SIZE / 2;
+
+        if( pointerX > shopCenterX - spotR
+            &&
+            pointerX < shopCenterX + spotR
+            &&
+            pointerY > newFormSpotY - spotR
+            &&
+            pointerY < newFormSpotY + spotR ) {
+
+            overNewSpot = 1;
+
+            newSpotHighlightFade = 255;
+
+            /* fixme:  use this */
+            (void)overNewSpot;
+            }
+        }
+    
 
 
     if( shopSelectedSlot == -1 ) {

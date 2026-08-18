@@ -38,6 +38,13 @@ void formationAddNewSpot( void );
 void formationBackToStart( void );
 
 
+char formationHasRoomForNewSpot( void );
+
+
+int formationGetSpotSprite( void );
+
+int formationGetNewSpotLangHandle( void );
+
 
 
 #endif
@@ -59,25 +66,27 @@ void formationBackToStart( void );
 
 
 /* 0 empty, 1 regular piece, 2 king */
-static  char  formation             [BH][BW];
-static  int   formationHighlightFade[BH][BW];
+static  char           formation             [BH][BW];
+static  unsigned char  formationHighlightFade[BH][BW];
 
-static  int   formationPickedY;
-static  int   formationPickedX;
+static  int            formationPickedY;
+static  int            formationPickedX;
 
-static  int   fmPointerActionHandle   =  -1;
+static  int            fmPointerActionHandle   =  -1;
 
-static  int   fmSpotSprite            =  -1;
-static  int   fmSpotPickedSprite      =  -1;
-static  int   fmSpotKingSprite        =  -1;
-static  int   fmSpotKingPickedSprite  =  -1;
+static  int            fmSpotSprite            =  -1;
+static  int            fmSpotPickedSprite      =  -1;
+static  int            fmSpotKingSprite        =  -1;
+static  int            fmSpotKingPickedSprite  =  -1;
 
-static  char  fmActionDown            =   0;
-static  int   fmDoneButton            =  -1;
+static  char           fmActionDown            =   0;
+static  int            fmDoneButton            =  -1;
 
-static  char  fmNewSpotWaiting        =   0;
+static  char           fmNewSpotWaiting        =   0;
+static  int            formationSize           =   0;
 
-static  int   lang_newSpot;
+static  int            lang_newSpot;
+
 
 
 void formationInit( int  inPointerActionHandle ) {
@@ -200,8 +209,7 @@ void formationDraw( int  inBoardCenterX,
                 if( formationHighlightFade[ y ][ x ] > 0 ) {
 
 
-                    maxigin_drawSetAlpha(
-                        (unsigned char)( formationHighlightFade[ y ][ x ] ) );
+                    maxigin_drawSetAlpha( formationHighlightFade[ y ][ x ] );
                     
                     maxigin_drawSpriteGlowOnly( s,
                                                 cX,
@@ -418,6 +426,8 @@ void formationBackToStart( void ) {
     
     formation[ 6 ][ 4 ] = 1;
     formation[ 6 ][ 5 ] = 1;
+
+    formationSize = 3;
     }
 
 
@@ -430,8 +440,33 @@ void formationAddNewSpot( void ) {
     formationPickedX = 4;
 
     fmNewSpotWaiting = 1;
+
+    formationSize ++;
     }
 
+
+
+char formationHasRoomForNewSpot( void ) {
+
+    /* can fill first 3 rows */
+    if( formationSize < BW * 3 ) {
+        return 1;
+        }
+    else {
+        return 0;
+        }
+    }
+
+
+
+int formationGetSpotSprite( void ) {
+    return fmSpotSprite;
+    }
+
+
+int formationGetNewSpotLangHandle( void ) {
+    return lang_newSpot;
+    }
 
 
 

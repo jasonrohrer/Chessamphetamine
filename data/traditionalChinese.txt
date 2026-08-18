@@ -51,7 +51,7 @@ defaults       "恢復預設"
 
 drawInstruct   "Draft your army"
 formationInstruct   "Adjust army formation"
-newFormationSpot    "New spot!"
+newFormationSpot    "New army formation spot!"
 
 shopTitle      "Shop!"
 sale           "Sale!"

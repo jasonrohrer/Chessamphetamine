@@ -713,6 +713,9 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
                 deckAddPiece( inPlayerDeck,
                               shopItems[ shopSelectedSlot ] );
 
+                deckReturnAll   ( inPlayerDeck );
+                deckReshuffleAll( inPlayerDeck );
+
                 shopItems[ shopSelectedSlot ] = noPiece;
 
                 maxigin_playSoundEffect( purchaseSound,

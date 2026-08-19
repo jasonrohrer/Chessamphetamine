@@ -1960,6 +1960,9 @@ void maxiginGame_step( void ) {
                 endMessageFade = 0;
 
                 if( ! heartsIsDead() ) {
+                    deckReturnAll   ( &playerDeck );
+                    deckReshuffleAll( &playerDeck );
+                    
                     shopShowing = 1;
                     shopDone    = 0;
 
@@ -2256,9 +2259,6 @@ void maxiginGame_step( void ) {
                 noScoreMoveCount = 0;
                 sideBoardShowing = 0;
 
-                /* give them an allowance for each level */
-                moneyAddDelayed( 5 );
-
                 costResetIncrement( drawCost );
 
                 costLevelIncrement( drawCost );
@@ -2310,6 +2310,9 @@ void maxiginGame_step( void ) {
                       &boardState,
                       &playerDeck,
                       CHESS_WHITE );
+
+            /* give them an allowance for drafting army in each level */
+            moneyAdd( 5 ); 
 
             
             sideBoardRedraw( &playerDeck );

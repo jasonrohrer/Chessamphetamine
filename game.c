@@ -2279,7 +2279,7 @@ void maxiginGame_step( void ) {
         &&
         ! sideBoardIsMouseOver() ) {
 
-        ChessPiece  newInfoPiece  =  deckViewStep(); 
+        ChessPiece  newInfoPiece  =  deckViewStep( boardSlideSound ); 
 
         if( newInfoPiece != infoPanelPiece ) {
             infoPanelLastPiece = infoPanelPiece;

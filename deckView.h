@@ -29,7 +29,7 @@ void deckViewDraw( void );
 
 
 /* returns current moused-over piece for sidebar info panel */
-ChessPiece deckViewStep( void );
+ChessPiece deckViewStep( int  inPageSound );
 
 
 
@@ -315,7 +315,7 @@ void deckViewDraw( void ) {
 
 
 
-ChessPiece deckViewStep( void ) {
+ChessPiece deckViewStep( int  inPageSound ) {
 
     /* fixme:
        also handle case where controller is used */
@@ -331,11 +331,15 @@ ChessPiece deckViewStep( void ) {
 
     if( deckViewPageNumber > 0 ) {
         if( buttonIsNewPressed( prevButton ) ) {
+            maxigin_playSoundEffect( inPageSound,
+                                     256 );
             deckViewPageNumber--;
             }
         }
     if( skip + DECK_VIEW_VIS_SLOTS < deckViewNumFullSlots ) {
         if( buttonIsNewPressed( nextButton ) ) {
+            maxigin_playSoundEffect( inPageSound,
+                                     256 );
             deckViewPageNumber ++;
             }
         }

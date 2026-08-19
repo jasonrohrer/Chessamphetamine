@@ -270,7 +270,7 @@ static int            currentLevel                =  0;
 
 static char           gameOver                    =  0;
 
-static int            startingMoney               =  5;
+static int            startingMoney               =  0;
 
 
 static int            formationShowing            =  0;

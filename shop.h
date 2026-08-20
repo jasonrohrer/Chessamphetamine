@@ -22,13 +22,16 @@ void shopInit( int  inPointerActionHandle,
 
 
 /* refresh the shop, rolling new pieces from the internal shop decks,
-   and incrementing prices */
-void shopReroll( void );
+   and incrementing prices
+   size of deck determines whether a new formation slot is offered
+   for sale */
+void shopReroll( Deck  *inPlayerDeck );
+
 
 /* resets the shop back to its starting state
    ( starting prices, fully shuffled decks )
 */
-void shopReset( void );
+void shopReset( Deck  *inPlayerDeck );
 
 
 
@@ -122,6 +125,8 @@ static  int            purchaseSound                              =  -1;
 
 static  int            lang_shopTitle                             =  -1;
 static  int            lang_sale                                  =  -1;
+static  int            lang_newSpotInA                            =  -1;
+static  int            lang_newSpotInB                            =  -1;
 
 static  char           shoppingDone                               =   0;
 
@@ -142,7 +147,9 @@ static  int            newFormationSpotCost;
 
 static  int            newFormSpotY;
 static  int            newSpotBought                              =  0;
+static  int            newSpotAvail                               =  0;
 static  unsigned char  newSpotHighlightFade                       =  0;
+static  int            numLeftForNewSpot                          =  0;
 
 
 static void shopResetHightlighFades( void ) {
@@ -191,6 +198,23 @@ static void shopInternalReroll( void ) {
 
 
 
+static void shopSetNewSpotAvail( Deck  *inPlayerDeck ) {
+    newSpotAvail = 0;
+
+    /* they start with a 15-piece deck and 2 spots
+       Once they have an 18-piece deck, they can buy another spot
+       Then they can buy another when they have a 24-piece deck */
+    if( formationGetNumNonKingSpots() < deckGetSize( inPlayerDeck ) / 6  ) {
+        newSpotAvail = 1;
+        numLeftForNewSpot = 0;
+        }
+    else {
+        numLeftForNewSpot =
+            ( formationGetNumNonKingSpots() + 1 ) * 6
+            - deckGetSize( inPlayerDeck );
+        }
+    }
+
 
 
 void shopInit( int  inPointerActionHandle,
@@ -218,7 +242,7 @@ void shopInit( int  inPointerActionHandle,
 
     /* new slots cost 3, 4, 5, 6, 7, etc */
     newFormationSpotCost = costInit( 3,
-                                     1,
+                                     2,
                                      -1,
                                      -1,
                                      0,
@@ -246,7 +270,9 @@ void shopInit( int  inPointerActionHandle,
     purchaseSound = maxigin_initSoundEffect( "purchase_sd_30.wav" );
 
     lang_shopTitle  = maxigin_initTranslationKey( "shopTitle" );
-    lang_sale  = maxigin_initTranslationKey( "sale" );
+    lang_sale       = maxigin_initTranslationKey( "sale"      );
+    lang_newSpotInA = maxigin_initTranslationKey( "newSpotInA" );
+    lang_newSpotInB = maxigin_initTranslationKey( "newSpotInB" );
     
 
     /* all have discount turned off, but potential 50 % discount for now */
@@ -332,13 +358,15 @@ void shopInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( shoppingDone );
 
     REGISTER_VAL_MEM( newSpotBought );
+    REGISTER_VAL_MEM( newSpotAvail );
+    REGISTER_VAL_MEM( numLeftForNewSpot );
 
     REGISTER_VAL_MEM( newSpotHighlightFade );
     }
 
 
 
-void shopReroll( void ) {
+void shopReroll( Deck  *inPlayerDeck ) {
     shopInternalReroll();
 
     shopSelectedSlot = -1;
@@ -346,6 +374,8 @@ void shopReroll( void ) {
     shopActionDown = 0;
     shoppingDone   = 0;
     newSpotBought  = 0;
+
+    shopSetNewSpotAvail( inPlayerDeck );
 
     newSpotHighlightFade = 0;
 
@@ -358,7 +388,7 @@ void shopReroll( void ) {
 
 
 
-void shopReset( void ) {
+void shopReset( Deck  *inPlayerDeck ) {
 
     shopInternalReroll();
 
@@ -366,6 +396,9 @@ void shopReset( void ) {
     shopActionDown   =  0;
     shoppingDone     =  0;
     newSpotBought    =  0;
+
+    shopSetNewSpotAvail( inPlayerDeck );
+    
     
     newSpotHighlightFade = 0;
 
@@ -466,7 +499,9 @@ void shopDraw( void ) {
 
     if( formationHasRoomForNewSpot()
         &&
-        ! newSpotBought ) {
+        ! newSpotBought
+        &&
+        newSpotAvail ) {
 
         int  spotSprite  =  formationGetSpotSprite();
 
@@ -500,6 +535,38 @@ void shopDraw( void ) {
                           newFormSpotY + 17,
                           1 );
         }
+    else if( formationHasRoomForNewSpot()
+             &&
+             ! newSpotBought
+             &&
+             ! newSpotAvail ) {
+
+        maxigin_drawResetColor();
+        
+        maxigin_setLanguageFontIndex( 1 );
+    
+        maxigin_drawLangText( lang_newSpotInA,
+                              shopCenterX - 57,
+                              newFormSpotY - 17,
+                              MAXIGIN_RIGHT );
+
+        maxigin_drawSetColor( 255, 255, 0, 255 );
+        
+        numberDrawCenter( numLeftForNewSpot,
+                          shopCenterX - 50,
+                          newFormSpotY - 17,
+                          1 );
+        
+        maxigin_drawResetColor();
+        
+        maxigin_drawLangText( lang_newSpotInB,
+                              shopCenterX - 43,
+                              newFormSpotY - 17,
+                              MAXIGIN_LEFT );
+    
+        maxigin_setLanguageFontIndex( 0 );
+        }
+    
     }
 
 
@@ -626,7 +693,9 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
 
     if( formationHasRoomForNewSpot()
         &&
-        ! newSpotBought ) {
+        ! newSpotBought
+        &&
+        newSpotAvail ) {
 
         int  spotR  =  BOARD_SQUARE_SIZE / 2;
 
@@ -715,6 +784,9 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
 
                 deckReturnAll   ( inPlayerDeck );
                 deckReshuffleAll( inPlayerDeck );
+
+                /* deck grew... does this make new slot purchase avail? */
+                shopSetNewSpotAvail( inPlayerDeck );
 
                 shopItems[ shopSelectedSlot ] = noPiece;
 

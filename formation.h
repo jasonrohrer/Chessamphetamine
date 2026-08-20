@@ -35,6 +35,9 @@ char formationGet( int  inRow,
 void formationAddNewSpot( void );
 
 
+int formationGetNumNonKingSpots( void );
+
+
 /* back to starting formation */
 void formationBackToStart( void );
 
@@ -475,6 +478,11 @@ int formationGetSpotSprite( void ) {
 
 int formationGetNewSpotLangHandle( void ) {
     return lang_newSpot;
+    }
+
+
+int formationGetNumNonKingSpots( void ) {
+    return formationSize - 1;
     }
 
 

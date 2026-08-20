@@ -99,6 +99,10 @@ void deckReshuffleAll( Deck  *inDeck );
 void deckReshuffleRemaining( Deck  *inDeck );
 
 
+int deckGetSize( Deck  *inDeck );
+
+
+
 void deckDrawDebugInfo( Deck  *inDeck,
                         int    inFontHandle,
                         int    inCenterX,
@@ -489,6 +493,11 @@ void deckDrawDebugInfo( Deck  *inDeck,
 
     }
 
+
+
+int deckGetSize( Deck  *inDeck ) {
+    return  inDeck->numPieces;
+    }
 
 
 

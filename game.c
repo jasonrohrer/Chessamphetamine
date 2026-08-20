@@ -1800,8 +1800,6 @@ void maxiginGame_step( void ) {
                     checkmate = 0;
                     stalemate = 0;
                     drawGame  = 0;
-
-                    formationBackToStart();
                     
                     formationShowing = 1;
 
@@ -1966,10 +1964,7 @@ void maxiginGame_step( void ) {
                     shopShowing = 1;
                     shopDone    = 0;
 
-                    if( currentLevel > 0 ) {
-                        /* don't reroll the shop until level 1 */
-                        shopReroll();
-                        }
+                    shopReroll( &playerDeck );
                 
                     maxigin_playSoundEffect( boardSlideSound,
                                              256 );
@@ -2059,7 +2054,9 @@ void maxiginGame_step( void ) {
 
             getPlayerStartDeck( &playerDeck );
 
-            shopReset();
+            formationBackToStart();
+
+            shopReset( &playerDeck );
 
             /* mark all remaining pieces as ready to be lifted */
             for( y = 0;

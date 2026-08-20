@@ -434,10 +434,10 @@ void formationBackToStart( void ) {
        k in back, 2 pieces in front */
     
     /* king */
-    formation[ 7 ][ 5 ] = 2;
+    formation[ 7 ][ 4 ] = 2;
     
-    formation[ 6 ][ 4 ] = 1;
-    formation[ 6 ][ 5 ] = 1;
+    formation[ 7 ][ 0 ] = 1;
+    formation[ 7 ][ 7 ] = 1;
 
     formationSize = 3;
     }

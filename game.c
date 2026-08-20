@@ -270,7 +270,7 @@ static int            currentLevel                =  0;
 
 static char           gameOver                    =  0;
 
-static int            startingMoney               =  0;
+static int            startingMoney               =  5;
 
 
 static int            formationShowing            =  0;
@@ -2308,8 +2308,9 @@ void maxiginGame_step( void ) {
                       &playerDeck,
                       CHESS_WHITE );
 
-            /* give them an allowance for drafting army in each level */
-            moneyAdd( 5 ); 
+            /* don't give
+               give them an allowance for drafting army in each level */
+            if( 0 ) moneyAdd( 5 ); 
 
             
             sideBoardRedraw( &playerDeck );

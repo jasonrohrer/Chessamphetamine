@@ -92,16 +92,16 @@ void moneyForce( int  inVal );
 #define PIECE_CAPTURE_MONEY_LIST( C, V )   \
     V( C, 0,   noPiece,      0   ) \
     V( C, 1,   pawn,         1   ) \
-    V( C, 2,   bishop,       1   ) \
-    V( C, 3,   knight,       1   ) \
-    V( C, 4,   rook,         1   ) \
-    V( C, 5,   queen,        1   ) \
+    V( C, 2,   bishop,       2   ) \
+    V( C, 3,   knight,       2   ) \
+    V( C, 4,   rook,         2   ) \
+    V( C, 5,   queen,        2   ) \
     V( C, 6,   king,         6   ) \
-    V( C, 7,   laserRook,    1   ) \
-    V( C, 8,   laserPawn,    1   ) \
-    V( C, 9,   doublingPawn, 1   ) \
-    V( C, 10,  addingRook,   1   ) \
-    V( C, 11,  rocket,       1   )
+    V( C, 7,   laserRook,    2   ) \
+    V( C, 8,   laserPawn,    2   ) \
+    V( C, 9,   doublingPawn, 2   ) \
+    V( C, 10,  addingRook,   2   ) \
+    V( C, 11,  rocket,       2   )
 
 static int pieceCaptureMoney[] = {
     MAKE_CHESS_ARRAY( PIECE_CAPTURE_MONEY_LIST )

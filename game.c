@@ -35,7 +35,7 @@
 #define ROLL_IMPLEMENTATION
 #define SLOT_LIFT_IMPLEMENTATION
 #define FORMATION_IMPLEMENTATION
-
+#define UNLOCKS_IMPLEMENTATION
 
 #include "chess.h"
 
@@ -92,6 +92,8 @@
 #include "slotLift.h"
 
 #include "formation.h"
+
+#include "unlocks.h"
 
 
 enum GameUserAction {
@@ -403,6 +405,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
                30 );
+
+    unlocksDraw( MAXIGIN_GAME_NATIVE_W - 56,
+                 10 );
 
     if( sideBoardShowing
         &&
@@ -2086,6 +2091,9 @@ void maxiginGame_step( void ) {
     
 
 
+    unlocksStep( MAXIGIN_GAME_NATIVE_W - 56,
+                 10 );
+    
     moneyStep();
     checkDisplayStep();
 
@@ -2806,6 +2814,9 @@ void maxiginGame_init( void ) {
 
     maxigin_initSetLanguageFontGLow( 2,
                                      2 );
+
+    unlocksInit();
+    
     chessInit();
     boardInit();
     pieceSpritesInit();

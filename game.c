@@ -278,6 +278,8 @@ static int            startingMoney               =  5;
 static int            formationShowing            =  0;
 static int            draftingPieces              =  0;
 
+static int            levelForUnlock              = -1;
+
 
 static void clearDrawMarkers( void ) {
     int  y;
@@ -1332,6 +1334,7 @@ void maxiginGame_step( void ) {
                     maxigin_playSoundEffect( checkmateGood,
                                              512 );
                     endMessageColor = CHESS_WHITE;
+                    levelForUnlock = currentLevel;
                     }
                 else {
                     maxigin_playSoundEffect( checkmateBad,
@@ -1959,6 +1962,13 @@ void maxiginGame_step( void ) {
 
         if( endMessagePreFadeSteps < ( 30 * 60 ) / r ) {
             endMessagePreFadeSteps ++;
+            }
+        else if( levelForUnlock != -1 ) {
+            /* delay fade to give them time to see unlock */
+            endMessagePreFadeSteps = 0;
+            
+            unlockBeatLevel( levelForUnlock );
+            levelForUnlock = -1;
             }
         else {
 

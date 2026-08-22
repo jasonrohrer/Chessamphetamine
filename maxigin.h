@@ -217,7 +217,7 @@
   [jumpSettings]
 */
 #ifndef  MAXIGIN_MAX_NUM_SOUND_EFFECTS
-#define  MAXIGIN_MAX_NUM_SOUND_EFFECTS  20
+#define  MAXIGIN_MAX_NUM_SOUND_EFFECTS  24
 #endif
 
 

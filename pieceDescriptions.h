@@ -30,6 +30,18 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
 
 
+void drawDescriptionText( int            inLangTitle,
+                          int            inLangDescription,
+                          int            inCenterX,
+                          int            inCenterY,
+                          unsigned char  inFade );
+
+
+
+void drawDescriptionFrame( int  inCenterX,
+                           int  inCenterY );
+
+
 
 #endif
 
@@ -515,15 +527,14 @@ static void pieceSplitLines( const char  *inString,
 
 
 
+
 void drawPieceInfoPanel( ChessPiece     inPiece,
                          int            inCenterX,
                          int            inCenterY,
                          unsigned char  inFade ) {
     
     ChessPiece   t  =  inPiece & CHESS_TYPE_MASK;
-
-    const char  *title;
-    const char  *desc;
+    
     int          diagramOffset  =  52;
     int          pW;
     int          pH;
@@ -575,14 +586,40 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
                             inCenterX,
                             inCenterY + diagramOffset );
         }
-    
+
+    drawDescriptionText( pieceNameKeys[ t ],
+                         pieceDescriptionKeys[ t ],
+                         inCenterX,
+                         inCenterY,
+                         inFade );
+    }
+
+
+
+void drawDescriptionFrame( int  inCenterX,
+                           int  inCenterY ) {
+    maxigin_drawSprite( infoPanelSprite,
+                        inCenterX,
+                        inCenterY );
+    }
+
+
+
+void drawDescriptionText( int            inLangTitle,
+                          int            inLangDescription,
+                          int            inCenterX,
+                          int            inCenterY,
+                          unsigned char  inFade ) {
+
+    const char  *title;
+    const char  *desc;
 
     maxigin_drawSetColor( 255,
                           255,
                           255,
                           inFade );
 
-    title = maxigin_getLangText( pieceNameKeys[ t ] );
+    title = maxigin_getLangText( inLangTitle );
 
     pieceSplitWords( title );
 
@@ -614,7 +651,7 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
 
     
-    desc = maxigin_getLangText( pieceDescriptionKeys[ t ] );
+    desc = maxigin_getLangText( inLangDescription );
 
     /* small font for description, if available */
     maxigin_setLanguageFontIndex( 1 );

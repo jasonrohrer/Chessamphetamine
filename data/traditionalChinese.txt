@@ -62,6 +62,14 @@ level          "Level"
 
 gameOverInstruct  "Please Play Again:"
 
+unlockDes      "Permanent Unlock"
+unlock0        "Extra space on the sideboard"
+unlock1        "Extra slot in the shop"
+unlock2        "Something is always on sale in the shop"
+
+unlockLockedA  "Reach level"
+unlockLockedB  "to unlock"
+
 
 contraband     "XXX"
 common         "Common"

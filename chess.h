@@ -2663,7 +2663,7 @@ static int isKingAlone( BoardState  *inState,
         &&
         otherBlackCount >  0
         && 
-        otherBlackCount >= otherWhiteCount
+        otherBlackCount > otherWhiteCount
         &&
         score < 0
         &&
@@ -2681,7 +2681,7 @@ static int isKingAlone( BoardState  *inState,
         &&
         otherWhiteCount >  0
         &&
-        otherWhiteCount >= otherBlackCount
+        otherWhiteCount > otherBlackCount
         &&
         score > 0
         &&

@@ -1414,7 +1414,6 @@ static int laserRookMove( BoardState     *inState,
                                 {  0,  1 } };
 
     int  maxDist   =  BH - 1;
-    int  i;
     int  numMoves  =  rookMove( inState,
                                 inPieceColor,
                                 inPieceRow,
@@ -1429,6 +1428,12 @@ static int laserRookMove( BoardState     *inState,
                                 outCaptured,
                                 outStates );
 
+    int   v;
+    int   d;
+    int   repeatVal;
+    char  anyHitByLasers;
+    int   laserVictimColor;
+
     (void)inMaySkipNonKingCaptureMoves;
     
 
@@ -1437,24 +1442,28 @@ static int laserRookMove( BoardState     *inState,
         maxDist = BW - 1;
         }
 
-    /* fire lasers after moving */
+    /* fire lasers as extra move, from current location */
 
-    for( i = 0;
-         i < numMoves;
-         i ++ ) {
+    repeatVal  =  getTotalEffectsRepeatValue( inState,
+                                              inPieceColor,
+                                              inPieceRow,
+                                              inPieceCol );
+    
+    anyHitByLasers = 0;
+    outStates  [ numMoves ]     = *inState;
+    outCaptured[ numMoves ].num = 0;
+
+    if( inState->nextToMove == CHESS_WHITE ) {
+        laserVictimColor = CHESS_BLACK;
+        }
+    else {
+        laserVictimColor = CHESS_WHITE;
+        }
+    
+    for( v = 0;
+         v < repeatVal;
+         v++ ) {
         
-        int          r          =  outDestRows[i];
-        int          c          =  outDestCols[i];
-        BoardState  *s          =  &( outStates[i] );
-        int          v;
-        int          d;
-        int          repeatVal  =  getTotalEffectsRepeatValue( s,
-                                                               inPieceColor,
-                                                               r,
-                                                               c );
-        for( v = 0;
-             v < repeatVal;
-             v++ )
         for( d = 0;
              d < 4;
              d ++ ) {
@@ -1465,8 +1474,8 @@ static int laserRookMove( BoardState     *inState,
                  dist <= maxDist;
                  dist ++ ) {
                 
-                int         dy  =  r + dirs[ d ][ 0 ] * dist;
-                int         dx  =  c + dirs[ d ][ 1 ] * dist;
+                int         dy  =  inPieceRow + dirs[ d ][ 0 ] * dist;
+                int         dx  =  inPieceCol + dirs[ d ][ 1 ] * dist;
                 ChessPiece  p;
                 
                 if( dy < 0
@@ -1482,20 +1491,22 @@ static int laserRookMove( BoardState     *inState,
                     break;
                     }
 
-                p = s->grid[ dy ][ dx ];
+                p = outStates[ numMoves ].grid[ dy ][ dx ];
                 
                 if( p != noPiece ) {
 
-                    if( ( p & CHESS_COLOR_MASK ) == s->nextToMove ) {
+                    if( ( p & CHESS_COLOR_MASK ) == laserVictimColor ) {
                         /* opponent piece */
 
-                        addCapturedPiece( &( outCaptured[i] ),
-                                          s,
+                        addCapturedPiece( &( outCaptured[ numMoves ] ),
+                                          inState,
                                           dy,
                                           dx );
                         
                         /* destroy piece */
-                        s->grid[ dy ][ dx ] = noPiece;
+                        outStates[ numMoves ].grid[ dy ][ dx ] = noPiece;
+
+                        anyHitByLasers = 1;
                         }
                     /* if it's our piece, we don't destroy it, but
                        stop laser */
@@ -1504,9 +1515,16 @@ static int laserRookMove( BoardState     *inState,
                     break;
                     }
                 }
-
             }
+        }
 
+    if( anyHitByLasers ) {
+        /* one extra move where we fire lasers from current position
+           and actually hit something */
+        outDestRows[ numMoves ] = (unsigned char)inPieceRow;
+        outDestCols[ numMoves ] = (unsigned char)inPieceCol;
+        
+        numMoves ++;
         }
 
     return numMoves;
@@ -2034,7 +2052,7 @@ void chessInit( void ) {
     /* stalemate */
     chessSeed( 12036707 );
 
-    if( 0 ) chessSeed( mingin_getEntropySeed() );
+    if( 1 ) chessSeed( mingin_getEntropySeed() );
 
     /* draw */
     if(0)chessSeed( 12035857 );
@@ -2128,14 +2146,14 @@ void getStartBoard( BoardState  *outState ) {
         outState->grid[1][i] = pawn | CHESS_BLACK;
         }
 
-    outState->grid[7][0] = rook      | CHESS_WHITE;
+    outState->grid[7][0] = laserRook      | CHESS_WHITE;
     outState->grid[7][1] = knight    | CHESS_WHITE;
     outState->grid[7][2] = bishop    | CHESS_WHITE;
     outState->grid[7][3] = queen     | CHESS_WHITE;
     outState->grid[7][4] = king      | CHESS_WHITE;
     outState->grid[7][5] = bishop    | CHESS_WHITE;
     outState->grid[7][6] = knight    | CHESS_WHITE;
-    outState->grid[7][7] = rook      | CHESS_WHITE;
+    outState->grid[7][7] = laserRook      | CHESS_WHITE;
 
     for( i = 0;
          i < 8;
@@ -2164,10 +2182,12 @@ void getTestBoard( BoardState  *outState ) {
     clearBoard( outState );
 
     outState->grid[2][4] = king   | CHESS_BLACK;
+    outState->grid[0][0] = queen   | CHESS_BLACK;
+    outState->grid[7][3] = queen   | CHESS_BLACK;
 
     outState->grid[7][4] = king   | CHESS_WHITE;
 
-    outState->grid[7][0] = rook | CHESS_WHITE;
+    outState->grid[7][0] = laserRook | CHESS_WHITE;
 
     if(0)outState->grid[7][6] = rook  | CHESS_WHITE;
     if(0)outState->grid[7][7] = rook  | CHESS_WHITE;

@@ -287,6 +287,12 @@ char getLoggedState( int          inLogNumber,
 const char *getPieceName( ChessPiece  inPiece );
 
 
+/* returns false if one side has a lone king and the other
+   side has one of the piece sets known to not be able to force a checkmate
+   (king and 1/2 knights, king and 1 bishop, etc.)
+*/
+char isForcedCheckmatePossible( BoardState  *inState );
+
 
 
 #endif
@@ -4306,6 +4312,197 @@ void getTotalSpaceEffects( int                     inTargetRow,
     
     }
 
+
+
+static int chessGetSquareColor( int  inRow,
+                                int  inCol ) {
+
+    if( inRow % 2 == 0 ) {
+        /* even rows */
+        if( inCol % 2 == 0 ) {
+            return CHESS_WHITE;
+            }
+        else {
+            return CHESS_BLACK;
+            }
+        }
+    else {
+        /* odd rows */
+        if( inCol % 2 == 0 ) {
+            return CHESS_BLACK;
+            }
+        else {
+            return CHESS_WHITE;
+            }
+        }
+    }
+
+
+
+char isForcedCheckmatePossible( BoardState  *inState ) {
+
+    int  x;
+    int  y;
+    int  kingX;
+    int  kingY;
+
+    int  colorToCheck;
+    int  knightCount    =  0;
+    int  bishopCountW   =  0;
+    int  bishopCountB   =  0;
+    int  bishopCountTot =  0;
+    int  otherCount     =  0;
+    
+    int  loneKingColor  =  isKingAlone( inState,
+                                        &kingX,
+                                        &kingY );
+
+    if( loneKingColor == -1 ) {
+
+        /* could be that both kings are alone.
+           In that case, checkmate not possible */
+        char  whiteKingFound   =  0;
+        char  blackKingFound   =  0;
+        char  whiteOtherFound  =  0;
+        char  blackOtherFound  =  0;
+
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
+
+                ChessPiece  p  = inState->grid[y][x];
+                ChessPiece  t;
+                ChessPiece  c;
+            
+                if( p == noPiece ) {
+                    continue;
+                    }
+                c = p & CHESS_COLOR_MASK;
+                t = p & CHESS_TYPE_MASK;
+
+                if( t == king ) {
+                    if( c == CHESS_WHITE ) {
+                        whiteKingFound = 1;
+                        }
+                    else {
+                        blackKingFound = 1;
+                        }
+                    }
+                else {
+                    if( c == CHESS_WHITE ) {
+                        whiteOtherFound = 1;
+                        }
+                    else {
+                        blackOtherFound = 1;
+                        }
+                    }
+                }
+
+            }
+
+        if( whiteKingFound
+            &&
+            ! whiteOtherFound
+            &&
+            blackKingFound
+            &&
+            ! blackOtherFound ) {
+            /* two lone kings, no checkmate */
+            return 0;
+            }
+
+        /* neither king alone, don't check any farther,
+           assume checkmate possible (though in some cases, it might not be) */
+        return 1;
+        }
+    
+
+    if( loneKingColor == CHESS_WHITE ) {
+        colorToCheck = CHESS_BLACK;
+        }
+    else {
+        colorToCheck = CHESS_WHITE;
+        }
+
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            ChessPiece  p  = inState->grid[y][x];
+            ChessPiece  t;
+            ChessPiece  c;
+            
+            if( p == noPiece ) {
+                continue;
+                }
+            c = p & CHESS_COLOR_MASK;
+
+            if( c != colorToCheck ) {
+                continue;
+                }
+            t = p & CHESS_TYPE_MASK;
+
+            if( t == king ) {
+                continue;
+                }
+
+            if( t == bishop ) {
+                bishopCountTot ++;
+
+                if( chessGetSquareColor( y,
+                                         x ) == CHESS_WHITE ) {
+                    bishopCountW ++;
+                    }
+                else {
+                    bishopCountB ++;
+                    }
+                }
+            else if( t == knight ) {
+                knightCount ++;
+                }
+            else {
+                otherCount ++;
+                }
+            }
+        }
+
+    if( otherCount > 0 ) {
+        return 1;
+        }
+
+    if( knightCount > 0
+        &&
+        bishopCountTot > 0 ) {
+        return 1;
+        }
+    
+    if( knightCount > 2 ) {
+        return 1;
+        }
+
+    if( bishopCountW > 0
+        &&
+        bishopCountB > 0 ) {
+        return 1;
+        }
+
+    /* lone bishop
+       lone 2 or fewer knights
+       2 or more bishops on the same color square
+
+       impossible to checkmate */
+    
+    return 0;
+    }
 
 
 

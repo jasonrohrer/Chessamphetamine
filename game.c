@@ -1346,10 +1346,16 @@ void maxiginGame_step( void ) {
                 endMessagePreFadeSteps = 0;
                 }
             else if( postMoveCaptured.num == 0 ) {
+
+                int  noScoreLimit  =  50;
+
+                if( ! isForcedCheckmatePossible( &postMoveState ) ) {
+                    noScoreLimit = 20;
+                    }
                 
                 noScoreMoveCount ++;
 
-                if( noScoreMoveCount > 50 ) {
+                if( noScoreMoveCount > noScoreLimit ) {
                     /* overrun condition */
                     
                     int  newScore  =  getScore( &postMoveState );

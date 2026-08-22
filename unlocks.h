@@ -69,10 +69,134 @@ static  int            lang_lockedA;
 static  int            lang_lockedB;
 
 
-static void unlocksWrite( void ) {}
+static  const char     hashMessage[]   =  "you are only cheating yourself";
 
 
-static void unlocksRead( void ) {}
+/* gets the correct hex hash for an unlock string ending with a space */
+static const char *getUnlockStringHash(  const char  *inUnlockString ) {
+
+    const char  *stringToHash = maxigin_stringConcat( inUnlockString,
+                                                      hashMessage );
+    
+    return maxigin_stringHash8Byte( stringToHash );
+    }
+
+
+
+static void unlocksWrite( void ) {
+
+    static  char  s[ NUM_UNLOCKS + 2 ];
+
+    int          i;
+    const char  *hexHash;
+    int          file;
+    
+    for( i = 0;
+         i < NUM_UNLOCKS;
+         i ++ ) {
+
+        if( unlockEnabled[ i ] ) {
+            s[ i ] = '1';
+            }
+        else {
+            s[ i ] = '0';
+            }
+        }
+    s[ NUM_UNLOCKS ] = ' ';
+    s[ NUM_UNLOCKS  + 1 ] = '\0';
+
+    hexHash = getUnlockStringHash( s );
+
+    file = mingin_startWritePersistData( "unlocks.ini" );
+
+    if( file != -1 ) {
+
+        char  success  =  mingin_writePersistData( file,
+                                                   /* include space */
+                                                   NUM_UNLOCKS + 1,
+                                                   (unsigned char *)s );
+        if( success ) {
+            int  hexLen  =  maxigin_stringLength( hexHash );
+
+            success = mingin_writePersistData( file,
+                                               hexLen,
+                                               (unsigned char *)hexHash );
+            }
+        mingin_endWritePersistData( file );
+        }
+    }
+
+
+static void unlocksRead( void ) {
+
+    static  char  s       [ NUM_UNLOCKS + 2 ];
+    static  char  readHash[ 16 + 1 ];
+    
+    int          i;
+    const char  *correctHexHash;
+    int          file;
+    int          numBytes;
+    int          numRead;
+    
+    file = mingin_startReadPersistData( "unlocks.ini",
+                                        &numBytes );
+
+    if( file == -1 ) {
+        return;
+        }
+    
+    if( numBytes != NUM_UNLOCKS + 1 + 16 ) {
+        mingin_endReadPersistData( file );
+        return;
+        }
+    
+    numRead = mingin_readPersistData( file,
+                                      NUM_UNLOCKS + 1,
+                                      (unsigned char*)s );
+
+    if( numRead != NUM_UNLOCKS + 1 ) {
+        mingin_endReadPersistData( file );
+        return;
+        }
+
+    if( s[ NUM_UNLOCKS ] != ' ' ) {
+        mingin_endReadPersistData( file );
+        return;
+        }
+    s[ NUM_UNLOCKS + 1 ] = '\0';
+
+    correctHexHash = getUnlockStringHash( s );
+
+    numRead = mingin_readPersistData( file,
+                                      16,
+                                      (unsigned char*)readHash );
+
+    mingin_endReadPersistData( file );
+
+    if( numRead != 16 ) {
+        return;
+        }
+    readHash[ 16 ] = '\0';
+
+    if( ! maxigin_stringsEqual( correctHexHash,
+                                readHash ) ) {
+        return;
+        }
+
+    /* hash matched!  Load unlocks */
+    
+    for( i = 0;
+         i < NUM_UNLOCKS;
+         i ++ ) {
+
+        if( s[ i ] == '1' ) {
+            unlockEnabled[ i ] = 1;
+            }
+        else {
+            unlockEnabled[ i ] = 0;
+            }
+        }
+    }
 
 
 
@@ -106,9 +230,9 @@ void unlocksInit( void ) {
         unlockExtraGlowFade[ i ] = 0;
         }
 
-    unlockAtLevel[ 0 ] = 8;
-    unlockAtLevel[ 1 ] = 16;
-    unlockAtLevel[ 2 ] = 32;
+    unlockAtLevel[ 0 ] = 1;
+    unlockAtLevel[ 1 ] = 2;
+    unlockAtLevel[ 2 ] = 3;
 
     unlockSound = maxigin_initSoundEffect( "unlock_sd_24.wav" );
 
@@ -120,8 +244,7 @@ void unlocksInit( void ) {
 
     lang_lockedA      = maxigin_initTranslationKey( "unlockLockedA" );
     lang_lockedB      = maxigin_initTranslationKey( "unlockLockedB" );
-                                        
-    
+                
     unlocksRead();
 
     REGISTER_ARRAY_MEM( unlockEnabled       );
@@ -333,8 +456,6 @@ void unlockBeatLevel( int  inLevel ) {
                                      512 );
 
             unlockEnabled[ i ] = 1;
-
-            unlockExtraGlowFade[ i ] = 255;
 
             unlocksWrite();
 

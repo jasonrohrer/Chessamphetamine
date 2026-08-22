@@ -3422,6 +3422,25 @@ void maxigin_flexHashFinish( MaxiginFlexHashState  *inState );
 
 
 
+/*
+  Computes an 8-byte flex hash on a string and returns a hex-encoded result
+  as a string from a rotating pool of 10 static buffers.
+
+  Parameters:
+
+      inState      the string to hash
+
+  Returns:
+
+      the hex-encoded hash of the string
+  
+  [jumpMaxiginGeneral]
+*/
+const char *maxigin_stringHash8Byte( const char  *inString );
+
+
+
+
 struct MaxiginRand {
         unsigned long  a;
         unsigned long  b;
@@ -18028,6 +18047,39 @@ void maxigin_hexEncode( int                   inNumBytes,
     inHexBuffer[stringPos] = '\0';
     }
 
+
+
+const char *maxigin_stringHash8Byte( const char  *inString ) {
+
+    enum{  NUM_BUFFERS  =  10,
+           BUFFER_LEN   =  17 };
+
+    static  char           buffers[ NUM_BUFFERS ][ BUFFER_LEN ];
+    static  int            nextBuffer                             =  0;
+    static  unsigned char  hashBuffer[ 8 ];
+    
+    char  *returnVal;
+
+
+    maxigin_flexHash( maxigin_stringLength( inString ),
+                      (unsigned char *)inString,
+                      8,
+                      hashBuffer );
+
+    maxigin_hexEncode( 8,
+                       hashBuffer,
+                       buffers[ nextBuffer ] );
+
+    returnVal = buffers[ nextBuffer ];
+
+    nextBuffer++;
+
+    if( nextBuffer >= NUM_BUFFERS ) {
+        nextBuffer = 0;
+        }
+
+    return returnVal;
+    }
 
 
 

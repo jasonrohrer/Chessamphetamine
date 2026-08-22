@@ -230,9 +230,9 @@ void unlocksInit( void ) {
         unlockExtraGlowFade[ i ] = 0;
         }
 
-    unlockAtLevel[ 0 ] = 1;
-    unlockAtLevel[ 1 ] = 2;
-    unlockAtLevel[ 2 ] = 3;
+    unlockAtLevel[ 0 ] = 8;
+    unlockAtLevel[ 1 ] = 16;
+    unlockAtLevel[ 2 ] = 32;
 
     unlockSound = maxigin_initSoundEffect( "unlock_sd_24.wav" );
 

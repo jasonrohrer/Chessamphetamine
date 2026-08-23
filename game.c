@@ -1440,139 +1440,53 @@ void maxiginGame_step( void ) {
                                           &mouseY ) ) {
 
             /* pointer not present on this platform */
+            int  x;
+            int  y;
+            int  curRow  =  -1;
+            int  curCol  =  -1;
+            int  oldRow  =  -1;
+            int  oldCol  =  -1;
             
-            int  curRow = -1;
-            int  curCol = -1;
-            int  dirX;
-            int  dirY;
+            static  char  presentMap[ BH * BW ];
 
-            /* prioritize x dir, no diagonals since they are
-               ambiguous in sparse grid */
-            navGetDir( 0,
-                       &dirX,
-                       &dirY );
+            for( y = 0;
+                 y < BH;
+                 y ++ ) {
+                for( x = 0;
+                     x < BW;
+                     x ++ ) {
 
-            if( dirX != 0
-                ||
-                dirY != 0 ) {
-            
-                if( infoPanelPiece == noPiece ) {
-
-                    /* allow enter based on dir */
-
-
-                    if( dirX == -1 ) {
-                        curCol = BW;
-                        curRow = 0;
-                        }
-                    else if( dirX == 1 ) {
-                        curCol = -1;
-                        curRow =  0;
-                        }
-                    else if( dirY == -1 ) {
-                        curRow = BH;
-                        curCol = 0;
-                        }
-                    else if( dirY == 1 ) {
-                        curRow = -1;
-                        curCol =  0;
-                        }
-                    }
-                else {
-                    /* take current position */
-                    curRow = infoRow[ curInfoIndex ];
-                    curCol = infoCol[ curInfoIndex ];
-                    }
-
-                curRow += dirY;
-                curCol += dirX;
-
-                if( dirX > 0
-                    &&
-                    curCol >= BW ) {
-                    curCol = 0;
-                    curRow ++;
-                    if( curRow >= BH ) {
-                        curRow = 0;
-                        }
-                    }
-                if( dirX < 0
-                    &&
-                    curCol < 0 ) {
-                    curCol =  BW - 1;
-                    curRow --;
-                    if( curRow < 0 ) {
-                        curRow = BH - 1;
-                        }
-                    }
-
-                if( dirY > 0
-                    &&
-                    curRow >= BH ) {
-                    curRow = 0;
-                    curCol ++;
-                    if( curCol >= BW ) {
-                        curCol = 0;
-                        }
-                    }
-                if( dirY < 0
-                    &&
-                    curRow < 0 ) {
-                    curRow =  BH - 1;
-                    curCol --;
-                    if( curCol < 0 ) {
-                        curCol = BW - 1;
-                        }
-                    }
-
-                while( boardState.grid[ curRow ][ curCol ] == noPiece ) {
-
-                    if( dirX != 0 ) {
-                        curCol += dirX;
-
-                        if( dirX > 0
-                            &&
-                            curCol >= BW ) {
-                            curCol = 0;
-                            curRow ++;
-                            if( curRow >= BH ) {
-                                curRow = 0;
-                                }
-                            }
-                        if( dirX < 0
-                            &&
-                            curCol < 0 ) {
-                            curCol =  BW - 1;
-                            curRow --;
-                            if( curRow < 0 ) {
-                                curRow = BH - 1;
-                                }
-                            }
+                    if( boardState.grid[ y ][ x ] == noPiece ) {
+                        presentMap[ y * BW + x ] = 0;
                         }
                     else {
-                        /* move in y dir only */
-                        curRow += dirY;
-
-                        if( dirY > 0
-                            &&
-                            curRow >= BH ) {
-                            curRow = 0;
-                            curCol ++;
-                            if( curCol >= BW ) {
-                                curCol = 0;
-                                }
-                            }
-                        if( dirY < 0
-                            &&
-                            curRow < 0 ) {
-                            curRow =  BH - 1;
-                            curCol --;
-                            if( curCol < 0 ) {
-                                curCol = BW - 1;
-                                }
-                            }
+                        presentMap[ y * BW + x ] = 1;
                         }
                     }
+                }
+                
+            if( infoPanelPiece != noPiece ) {
+                /* take current position */
+                curRow = infoRow[ curInfoIndex ];
+                curCol = infoCol[ curInfoIndex ];
+
+                oldRow = curRow;
+                oldCol = curCol;
+                }
+            
+            sparseGridNav( presentMap,
+                           BW,
+                           BH,
+                           &curCol,
+                           &curRow );
+
+            if( curRow != -1
+                &&
+                curCol != -1
+                &&
+                ( curRow != oldRow
+                  ||
+                  curCol != oldCol ) ) {
 
                 infoPanelPiece = boardState.grid[ curRow ][ curCol ];
 

@@ -35,6 +35,16 @@ void navGetDir( int  inPrioritizeDir,
                 int  *outDeltaY );
 
 
+/* navigates a grid of 1 or 0 preset flags
+   inOutPicked holds both current spot (or -1 if nothing picked)
+   and new value if nav occurs */
+void sparseGridNav( char  *inPresentGrid,
+                    int    inGridW,
+                    int    inGridH,
+                    int   *inOutPickedX,
+                    int   *inOutPickedY );
+
+
 
 #endif
 
@@ -287,6 +297,146 @@ void navStep( void ) {
     navHeldCount ++;
     }
 
+
+
+
+void sparseGridNav( char  *inPresentGrid,
+                    int    inGridW,
+                    int    inGridH,
+                    int   *inOutPickedX,
+                    int   *inOutPickedY ) {
+    int  dirX;
+    int  dirY;
+
+    int  curCol  =  *inOutPickedX;
+    int  curRow  =  *inOutPickedY;
+    
+    navGetDir( 0,
+               &dirX,
+               &dirY );
+
+    if( dirX != 0
+        ||
+        dirY != 0 ) {
+            
+        if( curCol == -1
+            ||
+            curRow == -1 ) {
+
+            /* allow enter based on dir */
+
+            if( dirX == -1 ) {
+                curCol = inGridW;
+                curRow = 0;
+                }
+            else if( dirX == 1 ) {
+                curCol = -1;
+                curRow =  0;
+                }
+            else if( dirY == -1 ) {
+                curRow = inGridH;
+                curCol = 0;
+                }
+            else if( dirY == 1 ) {
+                curRow = -1;
+                curCol =  0;
+                }
+            }
+
+        curRow += dirY;
+        curCol += dirX;
+
+        if( dirX > 0
+            &&
+            curCol >= inGridW ) {
+            curCol = 0;
+            curRow ++;
+            if( curRow >= inGridH ) {
+                curRow = 0;
+                }
+            }
+        if( dirX < 0
+            &&
+            curCol < 0 ) {
+            curCol =  inGridW - 1;
+            curRow --;
+            if( curRow < 0 ) {
+                curRow = inGridH - 1;
+                }
+            }
+
+        if( dirY > 0
+            &&
+            curRow >= inGridH ) {
+            curRow = 0;
+            curCol ++;
+            if( curCol >= inGridW ) {
+                curCol = 0;
+                }
+            }
+        if( dirY < 0
+            &&
+            curRow < 0 ) {
+            curRow =  inGridH - 1;
+            curCol --;
+            if( curCol < 0 ) {
+                curCol = inGridW - 1;
+                }
+            }
+
+        while( inPresentGrid[ curRow * inGridW + curCol ] == 0 ) {
+
+            if( dirX != 0 ) {
+                curCol += dirX;
+
+                if( dirX > 0
+                    &&
+                    curCol >= inGridW ) {
+                    curCol = 0;
+                    curRow ++;
+                    if( curRow >= inGridH ) {
+                        curRow = 0;
+                        }
+                    }
+                if( dirX < 0
+                    &&
+                    curCol < 0 ) {
+                    curCol =  inGridW - 1;
+                    curRow --;
+                    if( curRow < 0 ) {
+                        curRow = inGridH - 1;
+                        }
+                    }
+                }
+            else {
+                /* move in y dir only */
+                curRow += dirY;
+
+                if( dirY > 0
+                    &&
+                    curRow >= inGridH ) {
+                    curRow = 0;
+                    curCol ++;
+                    if( curCol >= inGridW ) {
+                        curCol = 0;
+                        }
+                    }
+                if( dirY < 0
+                    &&
+                    curRow < 0 ) {
+                    curRow =  inGridH - 1;
+                    curCol --;
+                    if( curCol < 0 ) {
+                        curCol = inGridW - 1;
+                        }
+                    }
+                }
+            }
+        }
+
+    *inOutPickedX = curCol;
+    *inOutPickedY = curRow;
+    }
 
 
 

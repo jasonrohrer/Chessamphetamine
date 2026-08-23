@@ -316,6 +316,98 @@ char formationStep( int  inBoardCenterX,
         }
     else {
         
+        static  char  presentMap[ BH * BW ];
+
+        int  oldX  =  fmOverSlotX;
+        int  oldY  =  fmOverSlotY;
+
+        if( formationPickedX != -1
+            &&
+            formationPickedY != -1 ) {
+
+            oldX = formationPickedX;
+            oldY = formationPickedY;
+
+            /* something picked, allow them to move it around */
+            for( y = 0;
+                 y < BH;
+                 y ++ ) {
+                for( x = 0;
+                     x < BW;
+                     x ++ ) {
+
+                    if( y < BH - 3 ) {
+                        /* formation only allowed in first 3 rows */
+                        presentMap[ y * BW + x ] = 0;
+                        }
+                    else {
+                        /* can swap it with any space */
+                        presentMap[ y * BW + x ] = 1;
+                        }
+                    }
+                }
+            
+            sparseGridNav( presentMap,
+                           BW,
+                           BH,
+                           &formationPickedX,
+                           &formationPickedY);
+
+            if( formationPickedX != oldX
+                ||
+                formationPickedY != oldY ) {
+
+                char  temp  =  formation[ formationPickedY ][ formationPickedX ];
+
+                formation[ formationPickedY ][ formationPickedX ] =
+                    formation[ oldY ][ oldX ];
+                
+                formation[ oldY ][ oldX ] = temp;
+                
+                maxigin_playSoundEffect( inPieceLiftSound,
+                                         256 );
+
+                fmOverSlotX = formationPickedX;
+                fmOverSlotY = formationPickedY;
+                }
+            }
+        else {
+            /* nothing picked, allow them to pick one */
+        
+            for( y = 0;
+                 y < BH;
+                 y ++ ) {
+                for( x = 0;
+                     x < BW;
+                     x ++ ) {
+
+                    if( formation[ y ][ x ] == 0 ) {
+                        presentMap[ y * BW + x ] = 0;
+                        }
+                    else {
+                        presentMap[ y * BW + x ] = 1;
+                        }
+                    }
+                }
+            sparseGridNav( presentMap,
+                           BW,
+                           BH,
+                           &fmOverSlotX,
+                           &fmOverSlotY);
+
+            if( fmOverSlotX != -1
+                &&
+                fmOverSlotY != -1
+                &&
+                ( fmOverSlotX != oldX
+                  ||
+                  fmOverSlotY != oldY ) ) {
+
+                maxigin_playSoundEffect( inPieceLiftSound,
+                                         256 );
+                formationHighlightFade[ fmOverSlotY ][ fmOverSlotX ] = 255;
+                }
+            }
         }
     
     

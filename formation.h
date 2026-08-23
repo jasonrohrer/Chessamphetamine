@@ -369,6 +369,7 @@ char formationStep( int  inBoardCenterX,
 
                 fmOverSlotX = formationPickedX;
                 fmOverSlotY = formationPickedY;
+                fmNewSpotWaiting = 0;
                 }
             }
         else {

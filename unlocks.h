@@ -32,6 +32,12 @@ void unlocksStep( int  inPosX,
                   int  inPosY  );
 
 
+int unlockGetExtraSideboardSlots( void );
+
+int unlockGetExtraShopSlots( void );
+
+int unlockGetMinNumSaleSlots( void );
+
 
 
 #endif
@@ -467,6 +473,42 @@ void unlockBeatLevel( int  inLevel ) {
     
     }
 
+
+
+int unlockGetExtraSideboardSlots( void ) {
+
+    if( unlockEnabled[ 0 ] ) {
+        return 1;
+        }
+    else {
+        return 0;
+        }
+    }
+
+
+
+int unlockGetExtraShopSlots( void ) {
+
+    if( unlockEnabled[ 1 ] ) {
+        return 1;
+        }
+    else {
+        return 0;
+        }
+    }
+
+
+
+int unlockGetMinNumSaleSlots( void ) {
+
+    if( unlockEnabled[ 2 ] ) {
+        return 1;
+        }
+    else {
+        return 0;
+        }
+    }
+    
 
 
     

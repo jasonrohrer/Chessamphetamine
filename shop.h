@@ -75,6 +75,9 @@ char isShoppingDone( void );
 #include "slotLift.h"
 #include "cost.h"
 
+#include "unlocks.h"
+
+
 
 /* pawns are never sold in shop */
 #define SHOP_PRICE_LIST( C, V )  \
@@ -103,7 +106,10 @@ CHECK_CHESS_ARRAY( shopPrices,
    and two paid decks with more and more rarity */
 #define                NUM_SHOP_SLOTS  6
 
+static  int            shopBaseVisibleSlots                       =  5;
+static  int            shopNumVisibleSlots                        =  5;
 
+static  char           shopIsPermaSale       [ NUM_SHOP_SLOTS ];
 static  char           shopIsOnSale          [ NUM_SHOP_SLOTS ];
 static  int            shopDiscountPercent   [ NUM_SHOP_SLOTS ];
 static  int            shopSlotPrices        [ NUM_SHOP_SLOTS ];
@@ -125,6 +131,7 @@ static  int            purchaseSound                              =  -1;
 
 static  int            lang_shopTitle                             =  -1;
 static  int            lang_sale                                  =  -1;
+static  int            lang_permanent                             =  -1;
 static  int            lang_newSpotInA                            =  -1;
 static  int            lang_newSpotInB                            =  -1;
 
@@ -167,25 +174,56 @@ static void shopResetHightlighFades( void ) {
 
 /* rerolls and updates prices */
 static void shopInternalReroll( void ) {
+
     int  i;
+    int  minNumSale;
+    
+    shopNumVisibleSlots = shopBaseVisibleSlots + unlockGetExtraShopSlots();
+
+    if( shopNumVisibleSlots > NUM_SHOP_SLOTS ) {
+        shopNumVisibleSlots = NUM_SHOP_SLOTS;
+        }
+
+    minNumSale = unlockGetExtraShopSlots();
+
+    if( minNumSale > shopNumVisibleSlots ) {
+        minNumSale = shopNumVisibleSlots;
+        }
 
     for( i = 0;
-         i < NUM_SHOP_SLOTS;
+         i < shopNumVisibleSlots;
+         i ++ ) {
+        if( i < minNumSale ) {
+            shopIsOnSale   [ i ] = 1;
+            shopIsPermaSale[ i ] = 1;
+            }
+        else {
+            shopIsOnSale   [ i ] = 0;
+            shopIsPermaSale[ i ] = 0;
+            }
+        }
+
+    for( i = 0;
+         i < shopNumVisibleSlots;
          i ++ ) {
         
         shopItems[ i ] = rarityRollPiece();
 
         shopSlotPrices[ i ] = shopPrices[ shopItems[ i ] ];
 
+        /* don't roll if slot is already on sale, b/c we don't want
+           to polute the variance reduction of the roll mechanism */
+        if( ! shopIsOnSale[ i ] ) {
+            if( roll( &shopOnSaleRoll ) ) {
+                shopIsOnSale[ i ] = 1;
+                }
+            }
+        }
+    
 
-        if( roll( &shopOnSaleRoll ) ) {
-            
-            shopIsOnSale[ i ] = 1;
-            }
-        else {
-            shopIsOnSale[ i ] = 0;
-            }
-        
+    for( i = 0;
+         i < shopNumVisibleSlots;
+         i ++ ) {
         if( shopIsOnSale[ i ] ) {
             int  discount  =  shopDiscountPercent[ i ] * shopSlotPrices[ i ];
 
@@ -195,6 +233,7 @@ static void shopInternalReroll( void ) {
             }
         }
     }
+
 
 
 
@@ -269,8 +308,9 @@ void shopInit( int  inPointerActionHandle,
 
     purchaseSound = maxigin_initSoundEffect( "purchase_sd_30.wav" );
 
-    lang_shopTitle  = maxigin_initTranslationKey( "shopTitle" );
-    lang_sale       = maxigin_initTranslationKey( "sale"      );
+    lang_shopTitle  = maxigin_initTranslationKey( "shopTitle"  );
+    lang_sale       = maxigin_initTranslationKey( "sale"       );
+    lang_permanent  = maxigin_initTranslationKey( "permanent"  );
     lang_newSpotInA = maxigin_initTranslationKey( "newSpotInA" );
     lang_newSpotInB = maxigin_initTranslationKey( "newSpotInB" );
     
@@ -284,6 +324,7 @@ void shopInit( int  inPointerActionHandle,
          i ++ ) {
 
         shopIsOnSale       [ i ] =  0;
+        shopIsPermaSale    [ i ] =  0;
         shopDiscountPercent[ i ] = 50;
 
         shopSlotLift       [ i ] =  0;
@@ -346,6 +387,7 @@ void shopInit( int  inPointerActionHandle,
 
     REGISTER_ARRAY_MEM( shopSlotPrices );
     REGISTER_ARRAY_MEM( shopIsOnSale );
+    REGISTER_ARRAY_MEM( shopIsPermaSale );
     
     REGISTER_ARRAY_MEM( shopItems );
 
@@ -362,6 +404,8 @@ void shopInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( numLeftForNewSpot );
 
     REGISTER_VAL_MEM( newSpotHighlightFade );
+
+    REGISTER_VAL_MEM( shopNumVisibleSlots );
     }
 
 
@@ -426,7 +470,7 @@ void shopDraw( void ) {
     maxigin_setLanguageFontIndex( 0 );
 
     for( i = 0;
-         i < NUM_SHOP_SLOTS;
+         i < shopNumVisibleSlots;
          i ++ ) {
 
         ChessPiece  p  =  shopItems[ i ];
@@ -474,6 +518,13 @@ void shopDraw( void ) {
                                           shopCenterX + shopSlotPosX[i],
                                           pieceYBase - 40,
                                           MAXIGIN_CENTER );
+
+                    if( shopIsPermaSale[ i ] ) {
+                        maxigin_drawLangText( lang_permanent,
+                                              shopCenterX + shopSlotPosX[i],
+                                              pieceYBase - 50,
+                                              MAXIGIN_CENTER );
+                        }
     
                     maxigin_setLanguageFontIndex( 0 );
 
@@ -617,7 +668,7 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
     liftPhaseDone = slotLiftStep( shopSlotsLifting,
                                   shopSlotsDropping,
                                   100,
-                                  NUM_SHOP_SLOTS,
+                                  shopNumVisibleSlots,
                                   shopSlotLift,
                                   shopSlotSmoothLift,
                                   inPieceLiftSound );
@@ -652,7 +703,7 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
     shopSelectedSlot = -1;
     
     for( i = 0;
-         i < NUM_SHOP_SLOTS;
+         i < shopNumVisibleSlots;
          i ++ ) {
 
         ChessPiece  p  =  shopItems[ i ];
@@ -673,7 +724,7 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
         }
 
     for( i = 0;
-         i < NUM_SHOP_SLOTS;
+         i < shopNumVisibleSlots;
          i ++ ) {
 
         if( i != shopSelectedSlot

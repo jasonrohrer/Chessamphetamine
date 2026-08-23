@@ -25,8 +25,6 @@ void sideBoardInit( int  inPointerActionHandle,
                     int  inCenterX,
                     int  inBottomSlotY );
 
-void sideBoardSetNumSlots( int  inNumSlots );
-
 
 void sideBoardRedraw( Deck *inDeck );
 
@@ -76,6 +74,8 @@ void sideBoardClearPick( void );
 #define SIDE_BOARD_IMPLEMENTATION_INCLUDED
 
 
+#include "unlocks.h"
+
 
 
 static  ChessPiece     sideBoard      [ SIDE_BOARD_MAX_SLOTS ];
@@ -85,7 +85,8 @@ static  unsigned char  sbHighlightFade[ SIDE_BOARD_MAX_SLOTS ];
 static  int            sbSlotPosX     [ SIDE_BOARD_MAX_SLOTS ];
 static  int            sbSlotPosY     [ SIDE_BOARD_MAX_SLOTS ];
 
-static  int            sbNumSlots             =  3;
+static  int            sbBaseNumSlots         =  2;
+static  int            sbNumSlots             =  2;
 static  int            sbMaxLift              =  100;
 
 
@@ -150,19 +151,18 @@ void sideBoardInit( int  inPointerActionHandle,
 
     REGISTER_VAL_MEM( sbRedrawShowing );
     }
-    
-
-
-void sideBoardSetNumSlots( int  inNumSlots ) {
-    
-    sbNumSlots = inNumSlots;
-    }
 
 
 
 void sideBoardRedraw( Deck *inDeck ) {
     
     int  i;
+    
+    sbNumSlots = sbBaseNumSlots + unlockGetExtraSideboardSlots();
+
+    if( sbNumSlots > SIDE_BOARD_MAX_SLOTS ) {
+        sbNumSlots = SIDE_BOARD_MAX_SLOTS;
+        }
 
     for( i = 0;
          i < sbNumSlots;
@@ -321,7 +321,6 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
 void sideBoardDraw( void ) {
 
     int  i;
-    
 
     for( i = sbNumSlots -  1;
          i >= 0;

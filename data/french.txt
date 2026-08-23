@@ -59,6 +59,7 @@ newSpotInB           "more for new army formation spot"
 
 shopTitle      "Shop!"
 sale           "Sale!"
+permanent      "Perma"
 
 level          "Level"
 

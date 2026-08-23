@@ -53,6 +53,11 @@ char buttonIsStuck( int  inButtonHandle );
 /* only affects sticky buttons */
 void buttonReset( int  inButtonHandle );
 
+void buttonGetPos( int   inButtonHandle,
+                   int  *outX,
+                   int  *outY );
+
+
 
 #endif
 
@@ -80,6 +85,8 @@ typedef struct Button {
         char sticky;
         int  pointerActionHandle;
         int  actionHandle;
+
+        char sawUnpressed;
 
         char pressed;
         char hover;
@@ -127,11 +134,33 @@ int buttonInit( int  inBaseSprite,
 
     b->pressed = 0;
     b->hover = 0;
+    b->sawUnpressed = 0;
 
     REGISTER_VAL_MEM( b->pressed );
     REGISTER_VAL_MEM( b->hover );
 
     return newHandle;
+    }
+
+
+
+void buttonGetPos( int   inButtonHandle,
+                   int  *outX,
+                   int  *outY ) {
+
+    Button  *b;
+    
+    *outX = 0;
+    *outY = 0;
+    
+    if( inButtonHandle == -1 ) {
+        return;
+        }
+
+    b = &( buttonRecords[ inButtonHandle ] );
+
+    *outX = b->centerX;
+    *outY = b->centerY;
     }
 
 
@@ -172,6 +201,27 @@ void buttonDraw( int  inButtonHandle ) {
         maxigin_drawSprite( s,
                             b->centerX,
                             b->centerY );
+
+        if( b->actionHandle != -1 ) {
+            
+            int  spriteW;
+            int  spriteH;
+
+            int  dir       =  -1;
+
+            if( b->centerX < MAXIGIN_GAME_NATIVE_W / 3 ) {
+                dir = 1;
+                }
+
+            maxigin_getSpriteDimensions( s,
+                                         &spriteW,
+                                         &spriteH );
+            
+            maxigin_drawButtonHintSprite(
+                b->actionHandle,
+                b->centerX + dir * ( 4 + spriteW / 2 ),
+                b->centerY + spriteH / 2 - 7 );
+            }
         }
     }
 
@@ -235,9 +285,20 @@ char buttonIsNewPressed( int  inButtonHandle ) {
     b = &( buttonRecords[ inButtonHandle ] );
 
     pressedBefore = b->pressed;
+
+    if( ! b->sawUnpressed
+        &&
+        b->actionHandle != -1
+        &&
+        ! maxigin_isButtonDown( b->actionHandle ) ) {
+        
+        b->sawUnpressed = 1;
+        }
     
     
     if( b->actionHandle != -1
+        &&
+        b->sawUnpressed
         &&
         maxigin_isButtonDown( b->actionHandle ) ) {
 
@@ -288,6 +349,7 @@ void buttonReset( int  inButtonHandle ) {
     b = &( buttonRecords[ inButtonHandle ] );
 
     b->pressed = 0;
+    b->sawUnpressed = 0;
     }
 
 

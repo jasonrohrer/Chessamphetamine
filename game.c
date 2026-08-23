@@ -184,6 +184,7 @@ static int          lang_action;
 static int          lang_draw;
 static int          lang_deck;
 static int          lang_commit;
+static int          lang_spin;
 
 static int          lang_drawInstruct;
 static int          lang_formInstruct;
@@ -418,14 +419,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         buttonDraw( drawButton );
             
-
-        maxigin_drawButtonHintSprite( DRAW,
-                                      drawButtonPosX + 30,
-                                      drawButtonPosY );
-            
-        numberDraw( costGet( drawCost ),
-                    drawButtonPosX + 35,
-                    drawButtonPosY,
+        numberDrawCenter( costGet( drawCost ),
+                    drawButtonPosX,
+                    drawButtonPosY + 6,
                     0 );
         }
     else {
@@ -437,7 +433,15 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     if( draftingPieces
         &&
         ! deckViewShowing ) {
+
+        int  comPosX;
+        int  comPosY;
+        
         buttonDraw( commitButton );
+
+        buttonGetPos( commitButton,
+                      &comPosX,
+                      &comPosY );
         }
 
     
@@ -697,11 +701,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         maxigin_setLanguageFontIndex( 0 );
 
         buttonDraw( newGameButton );
-            
-
-        maxigin_drawButtonHintSprite( DRAW,
-                                      newGameButtonPosX + 30,
-                                      newGameButtonPosY );
         }
     
 
@@ -2357,7 +2356,10 @@ void maxiginGame_step( void ) {
 
 
 
-static MinginButton spinMapping[]    =  { MGN_KEY_SPACE,     MGN_MAP_END };
+static MinginButton spinMapping[]    =  { MGN_KEY_SPACE,
+                                          MGN_BUTTON_XBOX_A,
+                                          MGN_BUTTON_PS_X,
+                                          MGN_MAP_END };
 
 static MinginButton moveLogMapping[] =  { MGN_KEY_Y,     MGN_MAP_END };
 static MinginButton moveLogAdvMapping[] =  { MGN_KEY_I,     MGN_MAP_END };
@@ -2383,7 +2385,7 @@ static MinginButton drawMapping[]  =  { MGN_BUTTON_PS_TRIANGLE,
                                         MGN_BUTTON_XBOX_Y,
                                         MGN_MAP_END };
 
-static MinginButton deckMapping[]  =  { MGN_BUTTON_L1,
+static MinginButton deckMapping[]  =  { MGN_BUTTON_R1,
                                         MGN_MAP_END };
 
 static MinginButton commitMapping[]  =  { MGN_BUTTON_L2,
@@ -2519,6 +2521,17 @@ void maxiginGame_init( void ) {
     maxigin_initMakeGlowSpriteStrip( buttonHintStrip,
                                      2,
                                      2 );
+
+    maxigin_initMakeDropShadowSpriteStrip( buttonHintStrip,
+                                           5,
+                                           2,
+                                           255,
+                                           255,
+                                           0,
+                                           100,
+                                           100,
+                                           0 );
+    
     
     maxigin_initKeyAndButtonHintSprites( buttonHintStrip,
                                          hintMapping );
@@ -2683,6 +2696,7 @@ void maxiginGame_init( void ) {
     lang_draw             = maxigin_initTranslationKey( "drawDesc" );
     lang_deck             = maxigin_initTranslationKey( "deckDesc" );
     lang_commit           = maxigin_initTranslationKey( "commitDesc" );
+    lang_spin             = maxigin_initTranslationKey( "spinDesc" );
     lang_drawInstruct     = maxigin_initTranslationKey( "drawInstruct" );
     lang_formInstruct     = maxigin_initTranslationKey( "formationInstruct" );
     lang_level            = maxigin_initTranslationKey( "level" );
@@ -2739,6 +2753,11 @@ void maxiginGame_init( void ) {
         COMMIT,
         commitMapping,
         lang_commit  );
+
+    maxigin_registerDynamicButtonMapping(
+        SPIN,
+        spinMapping,
+        lang_spin  );
 
     
     maxigin_logInt( "Primary button for ACTION is: ",
@@ -2850,7 +2869,8 @@ void maxiginGame_init( void ) {
     rollInit();
     
 
-    formationInit( ACTION );
+    formationInit( ACTION,
+                   COMMIT );
 
     
     levelsInit();
@@ -2860,6 +2880,8 @@ void maxiginGame_init( void ) {
     rarityInit();
 
     shopInit( ACTION,
+              DRAW,
+              COMMIT,
               boardCenterX,
               boardCenterY );
 

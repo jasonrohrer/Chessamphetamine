@@ -16,6 +16,8 @@
 
 
 void shopInit( int  inPointerActionHandle,
+               int  inDynamicRerollButtonHandle,
+               int  inDynamicDoneButtonHandle,
                int  inCenterX,
                int  inCenterY );
 
@@ -257,6 +259,8 @@ static void shopSetNewSpotAvail( Deck  *inPlayerDeck ) {
 
 
 void shopInit( int  inPointerActionHandle,
+               int  inDynamicRerollButtonHandle,
+               int  inDynamicDoneButtonHandle,
                int  inCenterX,
                int  inCenterY ) {
     
@@ -368,8 +372,7 @@ void shopInit( int  inPointerActionHandle,
                                shopCenterY + 50,
                                1,
                                shopPointerActionHandle,
-                               /* fixme... need controller mapping for this */
-                               -1 );
+                               inDynamicRerollButtonHandle );
     
     doneButton = buttonInit( maxigin_initSprite( "doneButton.tga" ),
                              -1,
@@ -378,8 +381,7 @@ void shopInit( int  inPointerActionHandle,
                              shopCenterY + 50,
                              1,
                              shopPointerActionHandle,
-                             /* fixme... need controller mapping for this */
-                             -1 );
+                             inDynamicDoneButtonHandle );
 
     REGISTER_VAL_MEM( shopRand );
 
@@ -543,9 +545,9 @@ void shopDraw( void ) {
 
     maxigin_drawResetColor();
             
-    numberDraw( costGet( shopRerollCost ),
-                    shopCenterX - 35,
-                    shopCenterY + 50,
+    numberDrawCenter( costGet( shopRerollCost ),
+                    shopCenterX,
+                    shopCenterY + 59,
                     1 );
 
     if( formationHasRoomForNewSpot()

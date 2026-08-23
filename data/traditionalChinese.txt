@@ -41,7 +41,8 @@ back           "返回"
 actionDesc     "射擊"
 drawDesc       "Draw"
 deckDesc       "View Deck"
-commitDesc     "Commit Army"
+commitDesc     "Commit"
+spinDesc       "Spin"
 
 
 press          "按下"

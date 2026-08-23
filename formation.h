@@ -15,7 +15,8 @@
 #define FORMATION_H_INCLUDED
 
 
-void formationInit( int  inPointerActionHandle );
+void formationInit( int  inPointerActionHandle,
+                    int  inDynamicDoneButtonHandle );
 
 
 void formationDraw( int  inBoardCenterX,
@@ -91,9 +92,13 @@ static  int            formationSize           =   0;
 
 static  int            lang_newSpot;
 
+static  int            fmOverSlotX             =  -1;
+static  int            fmOverSlotY             =  -1;
 
 
-void formationInit( int  inPointerActionHandle ) {
+
+void formationInit( int  inPointerActionHandle,
+                    int  inDynamicDoneButtonHandle ) {
 
     fmSpotSprite           = maxigin_initSprite( "formationSpot.tga"           );
     fmSpotPickedSprite     = maxigin_initSprite( "formationSpotPicked.tga"     );
@@ -126,14 +131,18 @@ void formationInit( int  inPointerActionHandle ) {
                                0,
                                fmPointerActionHandle,
                                /* fixme... need controller mapping for this */
-                               -1 );
+                               inDynamicDoneButtonHandle );
 
     lang_newSpot = maxigin_initTranslationKey( "newFormationSpot" );
 
-    REGISTER_ARRAY_MEM( formation );
+    REGISTER_ARRAY_MEM( formation              );
     REGISTER_ARRAY_MEM( formationHighlightFade );
-    REGISTER_VAL_MEM  ( formationPickedY );
-    REGISTER_VAL_MEM  ( formationPickedX );
+    
+    REGISTER_VAL_MEM  ( formationPickedY       );
+    REGISTER_VAL_MEM  ( formationPickedX       );
+    REGISTER_VAL_MEM  ( fmOverSlotX            );
+    REGISTER_VAL_MEM  ( fmOverSlotY            );
+    
 
     REGISTER_VAL_MEM  ( fmNewSpotWaiting );
     }
@@ -255,13 +264,15 @@ char formationStep( int  inBoardCenterX,
     int  x;
     int  r              =  mingin_getStepsPerSecond();
     int  deltaFade      =  ( 20 * 60 ) / r;
-    int  overSlotX      =  -1;
-    int  overSlotY      =  -1;
+
 
     int  squareR        =  BOARD_SQUARE_SIZE / 2;
     
     if( maxigin_getPointerLocation( &pointerX,
                                     &pointerY ) ) {
+
+        fmOverSlotX = -1;
+        fmOverSlotY = -1;
 
         for( y = 0;
              y < BH;
@@ -297,12 +308,16 @@ char formationStep( int  inBoardCenterX,
                         }
                     formationHighlightFade[ y ][ x ] = 255;
 
-                    overSlotX = x;
-                    overSlotY = y;
+                    fmOverSlotX = x;
+                    fmOverSlotY = y;
                     }
                 }
             }
         }
+    else {
+        
+        }
+    
     
     for( y = 0;
          y < BH;
@@ -312,9 +327,9 @@ char formationStep( int  inBoardCenterX,
              x ++ ) {
 
 
-            if( ( y != overSlotY
+            if( ( y != fmOverSlotY
                   ||
-                  x != overSlotX )
+                  x != fmOverSlotX )
                 &&
                 formationHighlightFade[ y ][ x ] > 0 ) {
 
@@ -338,15 +353,15 @@ char formationStep( int  inBoardCenterX,
         &&
         maxigin_isButtonDown( fmPointerActionHandle ) ) {
 
-        if( overSlotX != -1
+        if( fmOverSlotX != -1
             &&
-            overSlotY != -1
+            fmOverSlotY != -1
             &&
-            overSlotY >= 5 ) {
+            fmOverSlotY >= 5 ) {
 
-            if( formationPickedX == overSlotX
+            if( formationPickedX == fmOverSlotX
                 &&
-                formationPickedY == overSlotY ) {
+                formationPickedY == fmOverSlotY ) {
                 
                 formationPickedX = -1;
                 formationPickedY = -1;
@@ -356,24 +371,24 @@ char formationStep( int  inBoardCenterX,
                      &&
                      formationPickedY == -1 ) {
 
-                if( formation[ overSlotY ][ overSlotX ] != 0 ) {
-                    formationPickedX = overSlotX;
-                    formationPickedY = overSlotY;
+                if( formation[ fmOverSlotY ][ fmOverSlotX ] != 0 ) {
+                    formationPickedX = fmOverSlotX;
+                    formationPickedY = fmOverSlotY;
                     playBeepUpSound();
                     }
                 }
             else if( ! fmNewSpotWaiting
                      ||
-                     formation[ overSlotY ][ overSlotX ] == 0 ) {
+                     formation[ fmOverSlotY ][ fmOverSlotX ] == 0 ) {
                 
                 /* swap */
 
                 char  temp  =  formation[ formationPickedY ][ formationPickedX ];
 
                 formation[ formationPickedY ][ formationPickedX ] =
-                    formation[ overSlotY ][ overSlotX ];
+                    formation[ fmOverSlotY ][ fmOverSlotX ];
 
-                formation[ overSlotY ][ overSlotX ] = temp;
+                formation[ fmOverSlotY ][ fmOverSlotX ] = temp;
 
                 formationPickedX = -1;
                 formationPickedY = -1;

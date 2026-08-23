@@ -1960,7 +1960,10 @@ void maxiginGame_step( void ) {
              &&
              endMessageFade > 0 ) {
 
-        if( endMessagePreFadeSteps < ( 30 * 60 ) / r ) {
+        if( ! moneyIsSettled()
+            ||
+            endMessagePreFadeSteps < ( 10 * 60 ) / r ) {
+            
             endMessagePreFadeSteps ++;
             }
         else if( levelForUnlock != -1 ) {

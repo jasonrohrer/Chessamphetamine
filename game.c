@@ -263,6 +263,7 @@ static char           deckViewDone                =  0;
 static ChessPiece     infoPanelPiece              =  noPiece;
 static ChessPiece     infoPanelLastPiece          =  noPiece;
 static unsigned char  infoPanelFade               =  0;
+static char           sideBoardHadController      =  0;
 
 #define  INFO_HIGHLIGHT_BUFFER_SIZE  5
 static int            infoRow [ INFO_HIGHLIGHT_BUFFER_SIZE ];
@@ -1464,64 +1465,132 @@ void maxiginGame_step( void ) {
         if( ! maxigin_getPointerLocation( &mouseX,
                                           &mouseY ) ) {
 
-            /* pointer not present on this platform */
-            int  x;
-            int  y;
-            int  curRow  =  -1;
-            int  curCol  =  -1;
-            int  oldRow  =  -1;
-            int  oldCol  =  -1;
-            
-            static  char  presentMap[ BH * BW ];
+            if( ! sideBoardStillHoldingController() ) {
+                
+                /* pointer not present on this platform */
+                int  x;
+                int  y;
+                int  curRow  =  -1;
+                int  curCol  =  -1;
+                int  oldRow  =  -1;
+                int  oldCol  =  -1;
 
-            for( y = 0;
-                 y < BH;
-                 y ++ ) {
-                for( x = 0;
-                     x < BW;
-                     x ++ ) {
+                /* extra col on side to represent sideboard */
+                static  char  presentMap[ BH * ( BW + 1 ) ];
 
-                    if( boardState.grid[ y ][ x ] == noPiece ) {
-                        presentMap[ y * BW + x ] = 0;
+                for( y = 0;
+                     y < BH;
+                     y ++ ) {
+                    if( sideBoardShowing
+                        &&
+                        infoCol[ curInfoIndex ] != -1 ) {
+                        /* trough of full squares to slide off into on side */
+                        presentMap[ y * ( BW + 1 ) ] = 1;
                         }
                     else {
-                        presentMap[ y * BW + x ] = 1;
+                        presentMap[ y * ( BW + 1 ) ] = 0;
+                        }
+                    for( x = 0;
+                         x < BW;
+                         x ++ ) {
+
+                        if( boardState.grid[ y ][ x ] == noPiece ) {
+                            presentMap[ y * ( BW + 1 ) + x + 1 ] = 0;
+                            }
+                        else {
+                            presentMap[ y * ( BW + 1 ) + x + 1 ] = 1;
+                            }
                         }
                     }
-                }
                 
-            if( infoPanelPiece != noPiece ) {
-                /* take current position */
-                curRow = infoRow[ curInfoIndex ];
-                curCol = infoCol[ curInfoIndex ];
+                if( infoCol[ curInfoIndex ] != -1 ) {
+                    /* take current position */
+                    curRow = infoRow[ curInfoIndex ];
+                    curCol = infoCol[ curInfoIndex ] + 1;
 
-                oldRow = curRow;
-                oldCol = curCol;
-                }
+                    oldRow = curRow;
+                    oldCol = curCol;
+                    }
+                else if( sideBoardHadController ) {
+                        
+                    char  foundFirst  =  0;
+                        
+                    /* coming back from sideboard
+                       find first piece on left of main board
+                       and make that active */
+                        
+                    sideBoardHadController = 0;
+                        
+                    for( x = 0;
+                         x < BW;
+                         x ++ ) {
+                        for( y = BH -1;
+                             y >= 0;
+                             y -- ) {
+                            if( boardState.grid[ y ][ x ] != noPiece ) {
+
+                                infoPanelPiece =
+                                    boardState.grid[ y ][ x ];
+
+                                panRow = y;
+                                panCol = x;
+
+                                maxigin_playSoundEffect( examinePieceSound,
+                                                         256 );
+
+                                curInfoPickedWithController = 1;
+
+                                curRow = y;
+                                curCol = x;
+                                oldRow = y;
+                                oldCol = x;
+                                foundFirst = 1;
+                                break;
+                                }
+                            }
+                        if( foundFirst ) {
+                            break;
+                            }
+                        }
+                    }
             
-            sparseGridNav( presentMap,
-                           BW,
-                           BH,
-                           &curCol,
-                           &curRow );
+                sparseGridNav( presentMap,
+                               BW + 1,
+                               BH,
+                               &curCol,
+                               &curRow );
 
-            if( curRow != -1
-                &&
-                curCol != -1
-                &&
-                ( curRow != oldRow
-                  ||
-                  curCol != oldCol ) ) {
+                if( curRow != -1
+                    &&
+                    curCol != -1
+                    &&
+                    ( curRow != oldRow
+                      ||
+                      curCol != oldCol ) ) {
 
-                infoPanelPiece = boardState.grid[ curRow ][ curCol ];
+                    if( curCol == 0 ) {
+                        /* slid off onto sideboard */
+                        panRow = -1;
+                        panCol = -1;
+                        infoPanelPiece = noPiece;
+                        infoRow[ curInfoIndex ] = -1;
+                        infoCol[ curInfoIndex ] = -1;
+                        sideBoardHadController = 1;
+                        sideBoardGrabController();
+                        }
+                    else {
+                        infoPanelPiece =
+                            boardState.grid[ curRow ][ curCol - 1 ];
 
-                panRow = curRow;
-                panCol = curCol;
+                        panRow = curRow;
+                        panCol = curCol - 1;
 
-                maxigin_playSoundEffect( examinePieceSound,
-                                         256 );
+                        maxigin_playSoundEffect( examinePieceSound,
+                                                 256 );
 
-                curInfoPickedWithController = 1;
+                        curInfoPickedWithController = 1;
+                        }
+                    }
                 }
             }
         else {
@@ -2061,7 +2130,9 @@ void maxiginGame_step( void ) {
         
         ChessPiece  newInfoPiece  =  sideBoardStep( examinePieceSound );
 
-        if( sideBoardIsMouseOver() ) {
+        if( sideBoardIsMouseOver()
+            ||
+            sideBoardStillHoldingController() ) {
             
             if( newInfoPiece != infoPanelPiece ) {
                 
@@ -2931,6 +3002,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( infoPanelPiece );
     REGISTER_VAL_MEM( infoPanelLastPiece );
     REGISTER_VAL_MEM( infoPanelFade );
+
+    REGISTER_VAL_MEM( sideBoardHadController );
 
     REGISTER_ARRAY_MEM( infoRow );
     REGISTER_ARRAY_MEM( infoCol );

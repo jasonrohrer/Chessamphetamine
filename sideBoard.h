@@ -63,6 +63,11 @@ char sideBoardIsMouseOver( void );
 void sideBoardClearPick( void );
 
 
+void sideBoardGrabController( void );
+
+char sideBoardStillHoldingController( void );
+
+
 
 #endif
 
@@ -101,6 +106,8 @@ static  int            sbSlotRedrawSprite     =  -1;
 
 static  char           sbActionDown           =   0;
 static  char           sbRedrawShowing        =   0;
+static  char           sbHoldingController    =   0;
+static  int            sbOverSlot             =  -1;
 
 
 void sideBoardInit( int  inPointerActionHandle,
@@ -150,6 +157,10 @@ void sideBoardInit( int  inPointerActionHandle,
     REGISTER_ARRAY_MEM( sbHighlightFade );
 
     REGISTER_VAL_MEM( sbRedrawShowing );
+
+    REGISTER_VAL_MEM( sbHoldingController );
+
+    REGISTER_VAL_MEM( sbOverSlot );
     }
 
 
@@ -177,6 +188,14 @@ void sideBoardRedraw( Deck *inDeck ) {
         }
 
     sbPickedIndex = -1;
+
+    if( sbHoldingController ) {
+        sbOverSlot = 0;
+        sbHighlightFade[ 0 ] = 255;
+        }
+    else {
+        sbOverSlot = -1;
+        }
     }
 
 
@@ -205,7 +224,7 @@ ChessPiece sideBoardSwap( ChessPiece  inNewPiece ) {
 ChessPiece sideBoardStep( int  inPieceLiftSound ) {
 
     /* fixme
-       react to mouse and controller
+       react to controller
 
        show piece info panel
     */
@@ -213,16 +232,19 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
     /* fixme:
        also handle case where controller is used */
     
-    int  pointerX;
-    int  pointerY;
-    int  i;
-    int  r              =  mingin_getStepsPerSecond();
-    int  deltaFade      =  ( 20 * 60 ) / r;
-    int  overSlot       =  -1;
-    char liftPhaseDone  =  0;
+    int   pointerX;
+    int   pointerY;
+    int   i;
+    int   r                    =  mingin_getStepsPerSecond();
+    int   deltaFade            =  ( 20 * 60 ) / r;
+    char  liftPhaseDone        =  0;
+    char  controllerMovedSlot  =  0;
     
     if( maxigin_getPointerLocation( &pointerX,
                                     &pointerY ) ) {
+        sbOverSlot = -1;
+        sbHoldingController = 0;
+        
         for( i = 0;
              i < sbNumSlots;
              i ++ ) {
@@ -237,11 +259,42 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
                                        pointerX,
                                        pointerY ) ) {
 
-                    overSlot = i;
+                    sbOverSlot = i;
                     sbHighlightFade[ i ] = 255;
                     break;
                     }
                 }
+            }
+        }
+    else if( sbHoldingController ) {
+
+        int  navX;
+        int  navY;
+        
+        navGetDir( 1,
+                   &navX,
+                   &navY );
+
+        if( navY > 0 ) {
+            sbOverSlot ++;
+            if( sbOverSlot >= sbNumSlots ) {
+                sbOverSlot = 0;
+                }
+            controllerMovedSlot = 1;
+            sbHighlightFade[ sbOverSlot ] = 255;
+            }
+        else if( navY < 0 ) {
+            sbOverSlot --;
+            if( sbOverSlot < 0 ) {
+                sbOverSlot = sbNumSlots - 1;
+                }
+            controllerMovedSlot = 1;
+            sbHighlightFade[ sbOverSlot ] = 255;
+            }
+        else if( navX > 0 ) {
+            /* moving back to board */
+            sbOverSlot = -1;
+            sbHoldingController = 0;
             }
         }
     
@@ -250,7 +303,7 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
          i < sbNumSlots;
          i ++ ) {
 
-        if( i != overSlot
+        if( i != sbOverSlot
             &&
             sbHighlightFade[i] > 0 ) {
 
@@ -282,7 +335,7 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
         }
     
 
-    if( overSlot == -1 ) {
+    if( sbOverSlot == -1 ) {
         return noPiece;
         }
 
@@ -290,13 +343,13 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
         &&
         maxigin_isButtonDown( shopPointerActionHandle ) ) {
 
-        if( sideBoard[ overSlot ] != noPiece ) {
+        if( sideBoard[ sbOverSlot ] != noPiece ) {
 
             /* picking a piece to swap */
-            if( overSlot != sbPickedIndex ) {
+            if( sbOverSlot != sbPickedIndex ) {
                     
             
-                sbPickedIndex = overSlot;
+                sbPickedIndex = sbOverSlot;
 
                 playBeepDownSound();
                 }
@@ -313,7 +366,14 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
         sbActionDown = 0;
         }
 
-    return sideBoard[ overSlot ];
+    if( controllerMovedSlot ) {
+        /* return noPiece for one step, to allow piece info panel
+           to fade slightly, and so that game will play sound */
+        return noPiece;
+        }
+
+        
+    return sideBoard[ sbOverSlot ];
     }
 
 
@@ -358,6 +418,16 @@ void sideBoardDraw( void ) {
                                     sbSlotPosX     [i],
                                     sbSlotPosY     [i] - sbSmoothLift[i],
                                     sbHighlightFade[i] );
+                }
+
+            if( sbHoldingController
+                &&
+                sbOverSlot == i ) {
+                
+                maxigin_drawButtonHintSprite(
+                    sbPointerActionHandle,
+                    sbSlotPosX[i] - 10,
+                    sbSlotPosY[i] );
                 }
             }
 
@@ -457,6 +527,21 @@ char sideBoardUnlift( void ) {
 void sideBoardClearPick( void ) {
     sbPickedIndex = -1;
     }
+
+
+
+void sideBoardGrabController( void ) {
+    sbHoldingController = 1;
+    sbOverSlot = 0;
+    sbHighlightFade[ 0 ] = 255;
+    }
+
+
+
+char sideBoardStillHoldingController( void ) {
+    return sbHoldingController;
+    }
+
 
 
 #endif

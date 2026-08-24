@@ -84,6 +84,8 @@ static  int            deckViewPageNumber               =  0;
 static  int            nextButton                       =  -1;
 static  int            prevButton                       =  -1;
 
+static  int            deckViewOverSlot                 =  -1;
+
 
 static void deckViewClear( void ) {
     deckViewNumFullSlots = 0;
@@ -171,7 +173,10 @@ void deckViewInit(  int  inCenterX,
 
     REGISTER_VAL_MEM( deckViewNumFullSlots );
     REGISTER_VAL_MEM( deckViewPageNumber   );
+
+    REGISTER_VAL_MEM( deckViewOverSlot );
     }
+
 
 
 /* show deck in order for debugging */
@@ -202,8 +207,9 @@ void deckViewSet( Deck *inDeck ) {
         return;
         }
 
-    deckViewPageNumber   = 0;
-    deckViewNumFullSlots = inDeck->numPieces;
+    deckViewOverSlot     = -1;
+    deckViewPageNumber   =  0;
+    deckViewNumFullSlots =  inDeck->numPieces;
     
 
     /* show in order
@@ -323,20 +329,22 @@ ChessPiece deckViewStep( int  inPageSound ) {
     /* fixme:
        also handle case where controller is used */
     
-    int  pointerX;
-    int  pointerY;
-    int  i;
-    int  skip       =  deckViewPageNumber * DECK_VIEW_VIS_SLOTS;
-    int  r          =  mingin_getStepsPerSecond();
-    int  deltaFade  =  ( 20 * 60 ) / r;
-    int  overSlot   =  -1;
+    int   pointerX;
+    int   pointerY;
+    int   i;
+    int   skip       =  deckViewPageNumber * DECK_VIEW_VIS_SLOTS;
+    int   r          =  mingin_getStepsPerSecond();
+    int   deltaFade  =  ( 20 * 60 ) / r;
 
+    char  controllerMovedSlot  =  0;
 
+    
     if( deckViewPageNumber > 0 ) {
         if( buttonIsNewPressed( prevButton ) ) {
             maxigin_playSoundEffect( inPageSound,
                                      256 );
-            deckViewPageNumber--;
+            deckViewPageNumber --;
+            deckViewOverSlot = -1;
             }
         }
     if( skip + DECK_VIEW_VIS_SLOTS < deckViewNumFullSlots ) {
@@ -344,42 +352,93 @@ ChessPiece deckViewStep( int  inPageSound ) {
             maxigin_playSoundEffect( inPageSound,
                                      256 );
             deckViewPageNumber ++;
+            deckViewOverSlot = -1;
             }
         }
+
+    skip = deckViewPageNumber * DECK_VIEW_VIS_SLOTS;
+
     
-    if( ! maxigin_getPointerLocation( &pointerX,
-                                      &pointerY ) ) {
-        /* pointer not available */
-        return noPiece;
-        }
-    
-
-    for( i = 0;
-         i < DECK_VIEW_VIS_SLOTS;
-         i ++ ) {
-
-        ChessPiece  p;
-
-        if( i + skip >= deckViewNumFullSlots ) {
-            break;
-            }
+    if( maxigin_getPointerLocation( &pointerX,
+                                    &pointerY ) ) {
         
-        p =  deckViewSlots[ i + skip ].piece;
+        deckViewOverSlot = -1;
+        
+        for( i = 0;
+             i < DECK_VIEW_VIS_SLOTS;
+             i ++ ) {
 
-        if( p != noPiece ) {
+            ChessPiece  p;
 
-            if( getPixelOverPiece( p | CHESS_WHITE,
-                                   deckViewSlotPosX[i],
-                                   deckViewSlotPosY[i],
-                                   pointerX,
-                                   pointerY ) ) {
-
-                overSlot = i;
-                deckViewHighlightFade[ i ] = 255;
+            if( i + skip >= deckViewNumFullSlots ) {
                 break;
+                }
+        
+            p =  deckViewSlots[ i + skip ].piece;
+
+            if( p != noPiece ) {
+
+                if( getPixelOverPiece( p | CHESS_WHITE,
+                                       deckViewSlotPosX[i],
+                                       deckViewSlotPosY[i],
+                                       pointerX,
+                                       pointerY ) ) {
+
+                    deckViewOverSlot = i;
+                    deckViewHighlightFade[ i ] = 255;
+                    break;
+                    }
                 }
             }
         }
+    else {
+        /* examine slots with controller */
+
+        static  char  presentMap[  DECK_VIEW_ROWS * DECK_VIEW_COLS ];
+
+        int  pickX  =  -1;
+        int  pickY  =  -1;
+        
+        for( i = 0;
+             i < DECK_VIEW_ROWS * DECK_VIEW_COLS;
+             i ++ ) {
+            
+            if( deckViewSlots[ i + skip ].piece != noPiece ) {
+
+                presentMap[ i ] = 1;
+                }
+            else {
+                presentMap[ i ] = 0;
+                }
+            }
+
+        if( deckViewOverSlot != -1 ) {
+            pickY = deckViewOverSlot / DECK_VIEW_COLS;
+            pickX = deckViewOverSlot % DECK_VIEW_COLS;
+            }
+
+        sparseGridNav( presentMap,
+                       DECK_VIEW_COLS,
+                       DECK_VIEW_ROWS,
+                       &pickX,
+                       &pickY );
+
+        if( pickX != -1
+            &&
+            pickY != -1 ) {
+
+            int  old  =  deckViewOverSlot;
+            
+            deckViewOverSlot = pickY * DECK_VIEW_COLS + pickX;
+
+            deckViewHighlightFade[ deckViewOverSlot ] = 255;
+
+            if( old != deckViewOverSlot ) {
+                controllerMovedSlot = 1;
+                }
+            }
+        }
+    
 
     for( i = 0;
          i < DECK_VIEW_VIS_SLOTS;
@@ -389,7 +448,7 @@ ChessPiece deckViewStep( int  inPageSound ) {
             break;
             }
 
-        if( i != overSlot
+        if( i != deckViewOverSlot
             &&
             deckViewHighlightFade[i] > 0 ) {
 
@@ -404,8 +463,14 @@ ChessPiece deckViewStep( int  inPageSound ) {
             }
         }
 
-    if( overSlot != -1 ) {
-        return deckViewSlots[ overSlot + skip ].piece;
+    if( controllerMovedSlot ) {
+        /* return noPiece for one step, to allow piece info panel
+           to fade slightly, and so that game will play sound */
+        return noPiece;
+        }
+    
+    if( deckViewOverSlot != -1 ) {
+        return deckViewSlots[ deckViewOverSlot + skip ].piece;
         }
     else {
         return noPiece;

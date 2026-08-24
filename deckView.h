@@ -19,7 +19,9 @@
 
 void deckViewInit(  int  inCenterX,
                     int  inCenterY,
-                    int  inPointerActionHandle );
+                    int  inPointerActionHandle,
+                    int  inNextButtonActionHandle,
+                    int  inPrevButtonActionHandle );
 
 
 void deckViewSet( Deck *inDeck );
@@ -92,7 +94,9 @@ static void deckViewClear( void ) {
 
 void deckViewInit(  int  inCenterX,
                     int  inCenterY,
-                    int  inPointerActionHandle ) {
+                    int  inPointerActionHandle,
+                    int  inNextButtonActionHandle,
+                    int  inPrevButtonActionHandle ) {
 
     int  x;
     int  y;
@@ -146,22 +150,21 @@ void deckViewInit(  int  inCenterX,
                              inCenterX
                              + ( DECK_VIEW_COLS - 1 ) * deckViewCellSizeX / 2
                              + 31,
-                             inCenterY,
+                             inCenterY - 10,
                              0,
                              inPointerActionHandle,
-                             /* fixme... need controller mapping for this */
-                             -1 );
+                             inNextButtonActionHandle );
+    
     prevButton = buttonInit( maxigin_initSprite( "prevButton.tga" ),
                              -1,
                              maxigin_initSprite( "prevButtonPressed.tga" ),
                              inCenterX
                              - ( DECK_VIEW_COLS - 1 ) * deckViewCellSizeX / 2
                              - 31,
-                             inCenterY,
+                             inCenterY - 10,
                              0,
                              inPointerActionHandle,
-                             /* fixme... need controller mapping for this */
-                             -1 );
+                             inPrevButtonActionHandle );
     
     REGISTER_ARRAY_MEM( deckViewSlots        );
     REGISTER_ARRAY_MEM( deckViewHighlightFade );

@@ -113,7 +113,9 @@ enum GameUserAction {
     ROT_COLORS_1,
     ROT_COLORS_2,
     ROT_COLORS_ALL,
-    PRINT_COLORS
+    PRINT_COLORS,
+    DECK_NEXT,
+    DECK_PREV
     };
 
 
@@ -2305,6 +2307,15 @@ static MinginButton deckMapping[]  =  { MGN_BUTTON_R1,
 static MinginButton commitMapping[]  =  { MGN_BUTTON_L2,
                                           MGN_MAP_END };
 
+static  MinginButton   deckNextMapping[]  =  { MGN_BUTTON_XBOX_A,
+                                               MGN_BUTTON_PS_X,
+                                               MGN_MAP_END };
+
+static  MinginButton   deckPrevMapping[]  =  { MGN_BUTTON_XBOX_B,
+                                               MGN_BUTTON_PS_CIRCLE,
+                                               MGN_MAP_END };
+
+
 static MinginButton hintMapping[]   =  { MGN_BUTTON_MOUSE_LEFT,
                                          MGN_BUTTON_MOUSE_RIGHT,
                                          MGN_BUTTON_PS_X,
@@ -2647,6 +2658,13 @@ void maxiginGame_init( void ) {
                                    rotColorsAllMapping );
     maxigin_registerButtonMapping( PRINT_COLORS,
                                    printColorsMapping );
+
+    maxigin_registerButtonMapping( DECK_NEXT,
+                                   deckNextMapping );
+    
+    maxigin_registerButtonMapping( DECK_PREV,
+                                   deckPrevMapping );
+                                   
     
     maxigin_registerDynamicButtonMapping(
         ACTION,
@@ -2807,7 +2825,9 @@ void maxiginGame_init( void ) {
 
     deckViewInit( boardCenterX,
                   boardCenterY,
-                  ACTION );
+                  ACTION,
+                  DECK_NEXT,
+                  DECK_PREV );
 
 
     /* redraw costs are 1, 2, 3, 6, 10, etc */

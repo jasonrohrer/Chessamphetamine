@@ -162,6 +162,8 @@ static  int            newSpotAvail                               =  0;
 static  unsigned char  newSpotHighlightFade                       =  0;
 static  int            numLeftForNewSpot                          =  0;
 
+static  char           shopSlotPickedWithController               =  0;
+
 
 static void shopResetHightlighFades( void ) {
     int  i;
@@ -413,6 +415,8 @@ void shopInit( int  inPointerActionHandle,
 
     REGISTER_VAL_MEM( shopSelectedSlot );
     REGISTER_VAL_MEM( shopOverNewSpot );
+
+    REGISTER_VAL_MEM( shopSlotPickedWithController );
     }
 
 
@@ -422,6 +426,8 @@ void shopReroll( Deck  *inPlayerDeck ) {
 
     shopSelectedSlot = -1;
     shopOverNewSpot  =  0;
+    
+    shopSlotPickedWithController = 0;
     
     shopResetHightlighFades();
     shopActionDown = 0;
@@ -449,6 +455,8 @@ void shopReset( Deck  *inPlayerDeck ) {
     shopActionDown   =  0;
     shoppingDone     =  0;
     newSpotBought    =  0;
+    
+    shopSlotPickedWithController = 0;
 
     shopSetNewSpotAvail( inPlayerDeck );
     
@@ -498,6 +506,15 @@ void shopDraw( void ) {
                                     shopCenterX + shopSlotPosX[i],
                                     pieceYLifted,
                                     shopSlotHighlightFade[i] );
+                }
+            if( shopSelectedSlot == i
+                &&
+                shopSlotPickedWithController ) {
+
+                maxigin_drawButtonHintSprite(
+                    shopPointerActionHandle,
+                    shopCenterX + shopSlotPosX[i] - 5,
+                    pieceYLifted );
                 }
             
 
@@ -588,6 +605,16 @@ void shopDraw( void ) {
                                         shopCenterX,
                                         newFormSpotY );
             maxigin_drawResetColor();
+            }
+
+        if( shopOverNewSpot
+            &&
+            shopSlotPickedWithController ) {
+
+            maxigin_drawButtonHintSprite(
+                shopPointerActionHandle,
+                shopCenterX - 13,
+                newFormSpotY + 5 );
             }
 
         numberDrawCenter( costGet( newFormationSpotCost ),
@@ -705,8 +732,10 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
     
     if( maxigin_getPointerLocation( &pointerX,
                                     &pointerY ) ) {
+        shopSlotPickedWithController = 0;
         
         shopSelectedSlot = -1;
+        shopOverNewSpot  =  0;
     
         for( i = 0;
              i < shopNumVisibleSlots;
@@ -811,6 +840,12 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
                        &pickX,
                        &pickY );
 
+        if( pickY != -1
+            &&
+            pickX != -1 ) {
+            shopSlotPickedWithController = 1;
+            }
+
         if( pickY == 0 ) {
             shopSelectedSlot = pickX;
             shopOverNewSpot = 0;
@@ -887,10 +922,14 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
         }
 
     
-    
+    if( ! maxigin_isButtonDown( shopPointerActionHandle ) ) {
+        shopActionDown = 0;
+        }
 
     
-    if( shopOverNewSpot
+    if( ! shopActionDown
+        &&
+        shopOverNewSpot
         &&
         maxigin_isButtonDown( shopPointerActionHandle ) ) {
         
@@ -913,6 +952,7 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
             maxigin_playSoundEffect( inPickFailedSound,
                                      256 );
             }
+        shopActionDown = 1;
         }
 
     if( shopSelectedSlot == -1 ) {
@@ -957,10 +997,6 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
                 }
             }
         shopActionDown = 1;
-        }
-
-    if( ! maxigin_isButtonDown( shopPointerActionHandle ) ) {
-        shopActionDown = 0;
         }
 
     if( controllerMovedSlot ) {

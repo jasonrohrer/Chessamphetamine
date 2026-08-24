@@ -94,6 +94,7 @@ static  int            lang_newSpot;
 
 static  int            fmOverSlotX             =  -1;
 static  int            fmOverSlotY             =  -1;
+static  char           fmPickedWithController  =   0;
 
 
 
@@ -146,7 +147,8 @@ void formationInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM  ( formationSize          );
     
 
-    REGISTER_VAL_MEM  ( fmNewSpotWaiting );
+    REGISTER_VAL_MEM  ( fmNewSpotWaiting       );
+    REGISTER_VAL_MEM  ( fmPickedWithController );
     }
 
 
@@ -229,7 +231,19 @@ void formationDraw( int  inBoardCenterX,
                     maxigin_drawSpriteGlowOnly( s,
                                                 cX,
                                                 cY );
-                    }  
+                    }
+
+                if( fmOverSlotX == x
+                    &&
+                    fmOverSlotY == y
+                    &&
+                    fmPickedWithController ) {
+
+                    maxigin_drawButtonHintSprite(
+                        fmPointerActionHandle,
+                        cX - 13,
+                        cY + 5 );
+                    }
                 }
             }
         }
@@ -273,6 +287,8 @@ char formationStep( int  inBoardCenterX,
     if( maxigin_getPointerLocation( &pointerX,
                                     &pointerY ) ) {
 
+        fmPickedWithController = 0;
+        
         fmOverSlotX = -1;
         fmOverSlotY = -1;
 
@@ -373,6 +389,12 @@ char formationStep( int  inBoardCenterX,
                 fmOverSlotY = formationPickedY;
                 fmNewSpotWaiting = 0;
                 }
+
+            if( formationPickedX != -1
+                &&
+                formationPickedY != -1 ) {
+                fmPickedWithController = 1;
+                }
             }
         else {
             /* nothing picked, allow them to pick one */
@@ -409,6 +431,12 @@ char formationStep( int  inBoardCenterX,
                 maxigin_playSoundEffect( inPieceLiftSound,
                                          256 );
                 formationHighlightFade[ fmOverSlotY ][ fmOverSlotX ] = 255;
+                }
+            
+            if( fmOverSlotX != -1
+                &&
+                fmOverSlotY != -1 ) {
+                fmPickedWithController = 1;
                 }
             }
         }
@@ -539,6 +567,8 @@ void formationBackToStart( void ) {
     
     formationPickedY = -1;
     formationPickedX = -1;
+    
+    fmPickedWithController = 0;
 
     /* default starting formation
        k in back, 2 pieces in front */
@@ -562,6 +592,11 @@ void formationAddNewSpot( void ) {
     formationPickedX = 4;
 
     fmNewSpotWaiting = 1;
+
+    fmPickedWithController = 0;
+
+    fmOverSlotX = -1;
+    fmOverSlotY = -1;
 
     formationSize ++;
     }

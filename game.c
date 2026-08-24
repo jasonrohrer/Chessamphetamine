@@ -368,7 +368,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         &&
         ! draftingPieces
         &&
-        ! shopShowing ) {
+        ! shopShowing
+        &&
+        ! chessGameOver ) {
         
         maxigin_drawSprite( spinFrameSprite,
                             MAXIGIN_GAME_NATIVE_W - 35,
@@ -380,6 +382,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             maxigin_drawSprite( spinUnpressedSprite,
                                 MAXIGIN_GAME_NATIVE_W - 35,
                                 spinButtonY );
+
+            maxigin_drawButtonHintSprite( SPIN,
+                                          MAXIGIN_GAME_NATIVE_W - 35 - 30,
+                                          spinButtonY + 10 );                
             }
         else {
             maxigin_drawSprite( spinPressedSprite,
@@ -1105,19 +1111,23 @@ void maxiginGame_step( void ) {
                                  512 );
         }
 
-    if( spinning
-        &&
-        ! maxigin_isButtonDown( SPIN ) ) {
+    if( 0 ) {
+        /* disable spinning pause for now */
+        
+        if( spinning
+            &&
+            ! maxigin_isButtonDown( SPIN ) ) {
 
-        spinningPaused = 1;
-        }
+            spinningPaused = 1;
+            }
     
-    if( spinning
-        &&
-        spinningPaused
-        &&
-        maxigin_isButtonDown( SPIN ) ) {
-        spinningPaused = 0;
+        if( spinning
+            &&
+            spinningPaused
+            &&
+            maxigin_isButtonDown( SPIN ) ) {
+            spinningPaused = 0;
+            }
         }
     
 

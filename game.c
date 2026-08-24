@@ -880,6 +880,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                 &&
                 curInfoPickedWithController
                 &&
+                sideBoardShowing
+                &&
                 ( infoPanelPiece & CHESS_TYPE_MASK ) != king ) {
 
                 int  cX;

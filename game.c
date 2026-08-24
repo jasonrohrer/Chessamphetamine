@@ -269,7 +269,7 @@ static int            infoRow [ INFO_HIGHLIGHT_BUFFER_SIZE ];
 static int            infoCol [ INFO_HIGHLIGHT_BUFFER_SIZE ];
 static unsigned char  infoFade[ INFO_HIGHLIGHT_BUFFER_SIZE ];
 static int            curInfoIndex                =  0;
-
+static int            curInfoPickedWithController =  0;
 
 static int            currentLevel                =  0;
 
@@ -874,6 +874,29 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                      infoRow[ i ],
                                      infoCol[ i  ],
                                      infoFade[ i ] );
+
+            if( curInfoIndex == i
+                &&
+                curInfoPickedWithController
+                &&
+                ( infoPanelPiece & CHESS_TYPE_MASK ) != king ) {
+
+                int  cX;
+                int  cY;
+
+                boardGetSquareCenter( boardCenterX,
+                                      boardCenterY,
+                                      infoRow[ i ],
+                                      infoCol[ i ],
+                                      &cX,
+                                      &cY );
+                
+                maxigin_drawButtonHintSprite(
+                    ACTION,
+                    cX + 10,
+                    cY );
+
+                }
             }
         }
     
@@ -1497,10 +1520,13 @@ void maxiginGame_step( void ) {
 
                 maxigin_playSoundEffect( examinePieceSound,
                                          256 );
+
+                curInfoPickedWithController = 1;
                 }
             }
         else {
             /* mouse available */
+            curInfoPickedWithController = 0;
             
             infoPanelPiece  =  getPointerOverPiece( &boardState,
                                                     boardCenterX,
@@ -2911,6 +2937,7 @@ void maxiginGame_init( void ) {
     REGISTER_ARRAY_MEM( infoFade );
     
     REGISTER_VAL_MEM( curInfoIndex );
+    REGISTER_VAL_MEM( curInfoPickedWithController );
 
     REGISTER_VAL_MEM( boardMarkersDownCount );
     REGISTER_ARRAY_MEM( boardMarkers );

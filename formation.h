@@ -142,6 +142,8 @@ void formationInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM  ( formationPickedX       );
     REGISTER_VAL_MEM  ( fmOverSlotX            );
     REGISTER_VAL_MEM  ( fmOverSlotY            );
+
+    REGISTER_VAL_MEM  ( formationSize          );
     
 
     REGISTER_VAL_MEM  ( fmNewSpotWaiting );

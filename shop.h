@@ -125,6 +125,8 @@ static  char           shopSlotsLifting                           =  0;
 static  char           shopSlotsDropping                          =  0;
 
 static  int            shopSelectedSlot                           =  -1;
+static  char           shopOverNewSpot                            =   0;
+
 static  unsigned char  shopSlotHighlightFade [ NUM_SHOP_SLOTS ];
 static  char           shopActionDown                             =   0;
 
@@ -408,6 +410,9 @@ void shopInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( newSpotHighlightFade );
 
     REGISTER_VAL_MEM( shopNumVisibleSlots );
+
+    REGISTER_VAL_MEM( shopSelectedSlot );
+    REGISTER_VAL_MEM( shopOverNewSpot );
     }
 
 
@@ -416,6 +421,8 @@ void shopReroll( Deck  *inPlayerDeck ) {
     shopInternalReroll();
 
     shopSelectedSlot = -1;
+    shopOverNewSpot  =  0;
+    
     shopResetHightlighFades();
     shopActionDown = 0;
     shoppingDone   = 0;
@@ -636,13 +643,14 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
 
     /* fixme:
        also handle case where controller is used */
-    int  pointerX;
-    int  pointerY;
-    int  i;
-    int  r              =  mingin_getStepsPerSecond();
-    int  deltaFade      =  ( 20 * 60 ) / r;
-    int  liftPhaseDone  =  0;
-    char overNewSpot    =  0;
+    int   pointerX;
+    int   pointerY;
+    int   i;
+    int   r                    =  mingin_getStepsPerSecond();
+    int   deltaFade            =  ( 20 * 60 ) / r;
+    int   liftPhaseDone        =  0;
+    char  controllerMovedSlot  =  0;
+    
     
     if( buttonIsNewPressed( doneButton ) ) {
         shoppingDone = 1;
@@ -695,35 +703,169 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
 
     
     
-    if( ! maxigin_getPointerLocation( &pointerX,
-                                      &pointerY ) ) {
-        /* pointer not available */
-        return noPiece;
-        }
+    if( maxigin_getPointerLocation( &pointerX,
+                                    &pointerY ) ) {
+        
+        shopSelectedSlot = -1;
     
+        for( i = 0;
+             i < shopNumVisibleSlots;
+             i ++ ) {
 
-    shopSelectedSlot = -1;
-    
-    for( i = 0;
-         i < shopNumVisibleSlots;
-         i ++ ) {
+            ChessPiece  p  =  shopItems[ i ];
 
-        ChessPiece  p  =  shopItems[ i ];
+            if( p != noPiece ) {
 
-        if( p != noPiece ) {
+                if( getPixelOverPiece( p | CHESS_WHITE,
+                                       shopCenterX + shopSlotPosX[i],
+                                       shopCenterY + shopSlotPosY[i],
+                                       pointerX,
+                                       pointerY ) ) {
 
-            if( getPixelOverPiece( p | CHESS_WHITE,
-                                   shopCenterX + shopSlotPosX[i],
-                                   shopCenterY + shopSlotPosY[i],
-                                   pointerX,
-                                   pointerY ) ) {
+                    shopSelectedSlot = i;
+                    shopSlotHighlightFade[ i ] = 255;
+                    break;
+                    }
+                }
+            }
 
-                shopSelectedSlot = i;
-                shopSlotHighlightFade[ i ] = 255;
-                break;
+        if( formationHasRoomForNewSpot()
+            &&
+            ! newSpotBought
+            &&
+            newSpotAvail ) {
+
+            int  spotR  =  BOARD_SQUARE_SIZE / 2;
+
+            if( pointerX > shopCenterX - spotR
+                &&
+                pointerX < shopCenterX + spotR
+                &&
+                pointerY > newFormSpotY - spotR
+                &&
+                pointerY < newFormSpotY + spotR ) {
+
+                shopOverNewSpot = 1;
+
+                if( newSpotHighlightFade < 255 ) {
+                    maxigin_playSoundEffect( inPieceLiftSound,
+                                             256 );
+                    }
+                newSpotHighlightFade = 255;
                 }
             }
         }
+    else {
+        /* controller can pan through slots and potentially new spot beneath */
+
+        /* two rows */
+        static  char  presentMap[ NUM_SHOP_SLOTS * 2 ];
+
+        int  pickX  =  -1;
+        int  pickY  =  -1;
+
+        int  oldX;
+        int  oldY;
+
+        for( i = 0;
+             i < NUM_SHOP_SLOTS;
+             i ++ ) {
+
+            if( i < shopNumVisibleSlots
+                &&
+                shopItems[ i ] != noPiece ) {
+                presentMap[ i ] = 1;
+                }
+            else {
+                presentMap[ i ] = 0;
+                }
+
+            /* second row all present, if spot visible down there */
+            if( formationHasRoomForNewSpot()
+                &&
+                ! newSpotBought
+                &&
+                newSpotAvail ) {
+                presentMap[ NUM_SHOP_SLOTS + i ] = 1;
+                }
+            else {
+                presentMap[ NUM_SHOP_SLOTS + i ] = 0;
+                }
+            }
+
+        if( shopSelectedSlot != -1 ) {
+            pickX = shopSelectedSlot;
+            pickY = 0;
+            }
+        else if( shopOverNewSpot ) {
+            pickX = shopNumVisibleSlots / 2;
+            pickY = 1;
+            }
+
+        oldX = pickX;
+        oldY = pickY;
+
+        sparseGridNav( presentMap,
+                       NUM_SHOP_SLOTS,
+                       2,
+                       &pickX,
+                       &pickY );
+
+        if( pickY == 0 ) {
+            shopSelectedSlot = pickX;
+            shopOverNewSpot = 0;
+            shopSlotHighlightFade[ pickX ] = 255;
+
+            if( oldX != pickX ) {
+                controllerMovedSlot = 1;
+                }
+            }
+        else if( oldY != pickY
+                 &&
+                 pickY == 1 ) {
+            shopSelectedSlot = -1;
+            shopOverNewSpot = 1;
+            
+            if( newSpotHighlightFade < 255 ) {
+                maxigin_playSoundEffect( inPieceLiftSound,
+                                         256 );
+                }
+            newSpotHighlightFade = 255;
+            }
+        else if( oldY == pickY
+                 &&
+                 pickY == 1
+                 &&
+                 oldX != pickX ) {
+
+            /* moving left or right from single spot beneath shop row
+               go back up to row */
+            shopOverNewSpot = 0;
+
+            if( pickX > oldX ) {
+                shopSelectedSlot = 0;
+                }
+            else {
+                shopSelectedSlot = shopNumVisibleSlots - 1;
+                }
+            }
+        }
+
+    
+    if( ! shopOverNewSpot ) {
+        int  newHighlight;
+
+        newHighlight = newSpotHighlightFade - deltaFade;
+
+        if( newHighlight > 0 ) {
+            newSpotHighlightFade = (unsigned char)newHighlight;
+            }
+        else {
+            newSpotHighlightFade = 0;
+            }
+        }
+    
+        
 
     for( i = 0;
          i < shopNumVisibleSlots;
@@ -744,50 +886,11 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
             }
         }
 
-    if( formationHasRoomForNewSpot()
-        &&
-        ! newSpotBought
-        &&
-        newSpotAvail ) {
-
-        int  spotR  =  BOARD_SQUARE_SIZE / 2;
-
-        if( pointerX > shopCenterX - spotR
-            &&
-            pointerX < shopCenterX + spotR
-            &&
-            pointerY > newFormSpotY - spotR
-            &&
-            pointerY < newFormSpotY + spotR ) {
-
-            overNewSpot = 1;
-
-            if( newSpotHighlightFade < 255 ) {
-                maxigin_playSoundEffect( inPieceLiftSound,
-                                         256 );
-                }
-            newSpotHighlightFade = 255;
-
-            /* fixme:  use this */
-            (void)overNewSpot;
-            }
-        else {
-            int  newHighlight;
-
-            newHighlight = newSpotHighlightFade - deltaFade;
-
-            if( newHighlight > 0 ) {
-                newSpotHighlightFade = (unsigned char)newHighlight;
-                }
-            else {
-                newSpotHighlightFade = 0;
-                }
-            }
-        }
+    
     
 
     
-    if( overNewSpot
+    if( shopOverNewSpot
         &&
         maxigin_isButtonDown( shopPointerActionHandle ) ) {
         
@@ -860,6 +963,12 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
         shopActionDown = 0;
         }
 
+    if( controllerMovedSlot ) {
+        /* return noPiece for one step, to allow piece info panel
+           to fade slightly, and so that game will play sound */
+        return noPiece;
+        }
+    
     return shopItems[ shopSelectedSlot ];
     }
 

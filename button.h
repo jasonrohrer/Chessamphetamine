@@ -138,6 +138,7 @@ int buttonInit( int  inBaseSprite,
 
     REGISTER_VAL_MEM( b->pressed );
     REGISTER_VAL_MEM( b->hover );
+    REGISTER_VAL_MEM( b->sawUnpressed );
 
     return newHandle;
     }

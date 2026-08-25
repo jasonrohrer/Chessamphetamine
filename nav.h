@@ -318,6 +318,93 @@ void sparseGridNav( char  *inPresentGrid,
     if( dirX != 0
         ||
         dirY != 0 ) {
+
+        if( curCol != -1
+            &&
+            curRow != -1 ) {
+
+            /* somewhere in the grid already */
+
+            /* search for closest spot in the area that is in the direction
+               we are pushing */
+            int  startX      =   1;
+            int  endX        =   0;
+            int  startY      =   1;
+            int  endY        =   0;
+            int  x;
+            int  y;
+
+            int  closeX      =  -1;
+            int  closeY      =  -1;
+            int  closeDist2  =  ( inGridW + inGridH ) * ( inGridW + inGridH );
+
+            /* only one of x or y is non-zero */
+            if( dirX > 0 ) {
+                startX = curCol + 1;
+                endX   = inGridW - 1;
+                startY = 0;
+                endY   = inGridH - 1;
+                }
+            else if( dirX < 0 ) {
+                startX = 0;
+                endX   = curCol -1;
+                startY = 0;
+                endY   = inGridH - 1;
+                }
+            else if( dirY > 0 ) {
+                startX = 0;
+                endX   = inGridW - 1;
+                startY = curRow + 1;
+                endY   = inGridH - 1;
+                }
+            else if( dirY < 0 ) {
+                startX = 0;
+                endX   = inGridW - 1;
+                startY = 0;
+                endY   = curRow - 1;
+                }
+
+            for( y =  startY;
+                 y <= endY;
+                 y ++ ) {
+                
+                for( x =  startX;
+                     x <= endX;
+                     x ++ ) {
+                    if( inPresentGrid[ y * inGridW + x ] ) {
+
+                        int  dx     =  curCol - x;
+                        int  dy     =  curRow - y;
+                        int  dist2  =  dx * dx + dy * dy;
+
+                        if( dist2 < closeDist2 ) {
+                            closeDist2 = dist2;
+                            closeX = x;
+                            closeY = y;
+                            }
+                        }
+                    }
+                }
+
+            if( closeX != -1
+                &&
+                closeY != -1 ) {
+
+                *inOutPickedX = closeX;
+                *inOutPickedY = closeY;
+                return;
+                }
+            else {
+                /* didn't find anything in that direction
+                   wrap around and re-enter from the other side instead */
+                curCol = -1;
+                curRow = -1;
+                }
+            }
+
+        /* older code than found matching row when moving left/right
+
+           but still use this code when re-entering grid from edge */
             
         if( curCol == -1
             ||

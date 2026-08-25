@@ -229,33 +229,10 @@ void buttonDraw( int  inButtonHandle ) {
 
 
 static char pointerInButton( Button  *b ) {
-    int  pointerX;
-    int  pointerY;
-        
-    if( maxigin_getPointerLocation( &pointerX,
-                                    &pointerY ) ) {
 
-        int  buttonW  =  0;
-        int  buttonH  =  0;
-
-        if( b->baseSprite != -1 ) {
-            maxigin_getSpriteDimensions( b->baseSprite,
-                                         &buttonW,
-                                         &buttonH );
-            }
-            
-        if( pointerX >= b->centerX - buttonW / 2
-            &&
-            pointerX <= b->centerX + buttonW / 2 - 1
-            &&
-            pointerY >= b->centerY - buttonH / 2 - 2
-            &&
-            pointerY <= b->centerY + buttonH / 2 - 2 ) {
-
-            return 1;
-            }
-        }
-    return 0;
+    return maxigin_isPointerInsideSprite( b->baseSprite,
+                                          b->centerX,
+                                          b->centerY );
     }
 
 

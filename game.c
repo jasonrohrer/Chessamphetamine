@@ -145,6 +145,8 @@ static int          spinUnpressedSprite        = -1;
 static int          spinPressedSprite          = -1;
 static int          spinPressedTextSprite      = -1;
 static int          spinPressedTextGlowSprite  = -1;
+static int          spinButtonX                = MAXIGIN_GAME_NATIVE_W - 35;
+static int          spinButtonY                = MAXIGIN_GAME_NATIVE_H - 25;
 
 static int          drawCost                   = -1;
 static int          drawButton                 = -1;
@@ -312,7 +314,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     int  numPixels  =  MAXIGIN_GAME_NATIVE_W * MAXIGIN_GAME_NATIVE_H;
     int  p;
     int  i;
-    int  spinButtonY;
     
 
     maxigin_drawSetAlpha( 255 );
@@ -363,7 +364,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
     
 
-    spinButtonY = MAXIGIN_GAME_NATIVE_H - 25;
+
 
 
     if( ! formationShowing
@@ -375,31 +376,31 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         ! chessGameOver ) {
         
         maxigin_drawSprite( spinFrameSprite,
-                            MAXIGIN_GAME_NATIVE_W - 35,
+                            spinButtonX,
                             spinButtonY );
 
         if( ! spinning
             ||
             spinningPaused ) {
             maxigin_drawSprite( spinUnpressedSprite,
-                                MAXIGIN_GAME_NATIVE_W - 35,
+                                spinButtonX,
                                 spinButtonY );
 
             maxigin_drawButtonHintSprite( SPIN,
-                                          MAXIGIN_GAME_NATIVE_W - 35 - 30,
+                                          spinButtonX - 30,
                                           spinButtonY + 10 );                
             }
         else {
             maxigin_drawSprite( spinPressedSprite,
-                                MAXIGIN_GAME_NATIVE_W - 35,
+                                spinButtonX,
                                 spinButtonY );
     
             maxigin_drawSprite( spinPressedTextSprite,
-                                MAXIGIN_GAME_NATIVE_W - 35,
+                                spinButtonX,
                                 spinButtonY );
 
             maxigin_drawSpriteGlowOnly( spinPressedTextGlowSprite,
-                                        MAXIGIN_GAME_NATIVE_W - 35,
+                                        spinButtonX,
                                         spinButtonY );
             }
         }
@@ -1041,6 +1042,9 @@ void maxiginGame_step( void ) {
 
     int   deltaFade;
 
+    char  spinPressed  =  0;
+    
+
     if( saveCorrupted ) {
         if( autoQuitFrameCount > 0 ) { 
             autoQuitFrameCount --;
@@ -1059,6 +1063,18 @@ void maxiginGame_step( void ) {
 
     r = mingin_getStepsPerSecond();
 
+    if( maxigin_isButtonDown( SPIN ) ) {
+        spinPressed = 1;
+        }
+    else if( maxigin_isButtonDown( ACTION )
+             &&
+             maxigin_isPointerInsideSprite( spinUnpressedSprite,
+                                            spinButtonX,
+                                            spinButtonY ) ) {
+
+        spinPressed = 1;
+        }
+
     if( ! spinning
         &&
         ! shopShowing
@@ -1069,7 +1085,7 @@ void maxiginGame_step( void ) {
         &&
         ! chessGameOver
         &&
-        ( maxigin_isButtonDown( SPIN ) ) ) {
+        spinPressed ) {
 
         int  y;
         int  x;
@@ -1120,7 +1136,7 @@ void maxiginGame_step( void ) {
         
         if( spinning
             &&
-            ! maxigin_isButtonDown( SPIN ) ) {
+            ! spinPressed ) {
 
             spinningPaused = 1;
             }
@@ -1129,7 +1145,7 @@ void maxiginGame_step( void ) {
             &&
             spinningPaused
             &&
-            maxigin_isButtonDown( SPIN ) ) {
+            spinPressed ) {
             spinningPaused = 0;
             }
         }
@@ -2422,8 +2438,7 @@ void maxiginGame_step( void ) {
 
 
 
-static MinginButton spinMapping[]    =  { MGN_KEY_SPACE,
-                                          MGN_BUTTON_XBOX_A,
+static MinginButton spinMapping[]    =  { MGN_BUTTON_XBOX_A,
                                           MGN_BUTTON_PS_X,
                                           MGN_MAP_END };
 

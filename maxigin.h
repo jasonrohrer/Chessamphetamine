@@ -2963,6 +2963,33 @@ char maxigin_isInSprite( int  inSpriteHandle,
 
 
 
+
+/*
+  Gets whether the pointer is inside the visible area of a sprite
+  if the sprite were positioned on the screen at a specific spot.
+
+  Parameters:
+
+      inSpriteHandle  the sprite to test
+
+      inCenterX       the hypothetical center X position of the sprite
+      
+      inCenterY       the hypothetical center Y position of the sprite
+
+  Returns:
+
+      1   if pointer would be inside the sprite centered at the given position
+
+      0   if pointer is outside the sprite or not available
+                         
+  [jumpMaxiginGeneral] 
+ */
+char maxigin_isPointerInsideSprite( int  inSpriteHandle,
+                                    int  inCenterX,
+                                    int  inCenterY );
+
+
+
 /*
   Reads an integer value from a persistent setting.
 
@@ -8901,7 +8928,27 @@ char maxigin_isInSprite( int  inSpriteHandle,
         }
     }
 
-    
+
+
+char maxigin_isPointerInsideSprite( int  inSpriteHandle,
+                                    int  inCenterX,
+                                    int  inCenterY ) {
+    char  avail;
+    int   pointerX;
+    int   pointerY;
+
+    avail = maxigin_getPointerLocation( &pointerX,
+                                        &pointerY );
+
+    if( ! avail ) {
+        return 0;
+        }
+
+    return maxigin_isInSprite( inSpriteHandle,
+                               pointerX - inCenterX,
+                               pointerY - inCenterY );
+    }
+
 
 
 void maxigin_drawExplodingSprite( int            inSpriteHandle,

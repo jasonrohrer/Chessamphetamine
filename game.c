@@ -1725,8 +1725,10 @@ void maxiginGame_step( void ) {
              ! deckViewShowing
              &&
              ! ( sideBoardShowing
-                &&
-                sideBoardIsMouseOver() ) ) {
+                 &&
+                 ( sideBoardIsMouseOver()
+                   ||
+                   sideBoardStillHoldingController() ) ) ) {
         infoPanelPiece = noPiece;
         }
 

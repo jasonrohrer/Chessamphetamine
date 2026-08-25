@@ -792,116 +792,169 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
         }
     else {
         /* controller can pan through slots and potentially new spot beneath */
+        int  dirX;
+        int  dirY;
 
-        /* two rows */
-        static  char  presentMap[ NUM_SHOP_SLOTS * 2 ];
+        shopSlotPickedWithController = 1;
+        
+        if( shopSelectedSlot != -1 ) {
 
-        int  pickX  =  -1;
-        int  pickY  =  -1;
+            navGetDir( 0,
+                       &dirX,
+                       &dirY );
 
-        int  oldX;
-        int  oldY;
-
-        for( i = 0;
-             i < NUM_SHOP_SLOTS;
-             i ++ ) {
-
-            if( i < shopNumVisibleSlots
+            if( dirY == 1
                 &&
-                shopItems[ i ] != noPiece ) {
-                presentMap[ i ] = 1;
-                }
-            else {
-                presentMap[ i ] = 0;
-                }
-
-            /* second row all present, if spot visible down there */
-            if( formationHasRoomForNewSpot()
+                formationHasRoomForNewSpot()
                 &&
                 ! newSpotBought
                 &&
                 newSpotAvail ) {
-                presentMap[ NUM_SHOP_SLOTS + i ] = 1;
-                }
-            else {
-                presentMap[ NUM_SHOP_SLOTS + i ] = 0;
-                }
-            }
-
-        if( shopSelectedSlot != -1 ) {
-            pickX = shopSelectedSlot;
-            pickY = 0;
-            }
-        else if( shopOverNewSpot ) {
-            pickX = shopNumVisibleSlots / 2;
-            pickY = 1;
-            }
-
-        oldX = pickX;
-        oldY = pickY;
-
-        sparseGridNav( presentMap,
-                       NUM_SHOP_SLOTS,
-                       2,
-                       &pickX,
-                       &pickY );
-
-        if( pickY != -1
-            &&
-            pickX != -1 ) {
-            shopSlotPickedWithController = 1;
-            }
-
-        if( pickY == 0 ) {
-            shopSelectedSlot = pickX;
-            shopOverNewSpot = 0;
-            shopSlotHighlightFade[ pickX ] = 255;
-
-            if( oldX != pickX ) {
-                controllerMovedSlot = 1;
-                }
-            
-            if( oldY != pickY
-                ||
-                oldX != pickX ) {
                 
+                /* down to new spot */
+                shopSelectedSlot = -1;
+                shopOverNewSpot = 1;
+
+                unlocksCancelViewer();
+            
+                if( newSpotHighlightFade < 255 ) {
+                    maxigin_playSoundEffect( inPieceLiftSound,
+                                             256 );
+                    }
+                newSpotHighlightFade = 255;
+                }
+            else if( dirX != 0 ) {
+
+                /* left or right in shop row */
+
+                int  start  = shopSelectedSlot;
+
+                shopSelectedSlot += dirX;
+                if( shopSelectedSlot < 0 ) {
+                    shopSelectedSlot = shopNumVisibleSlots - 1;
+                    }
+                else if( shopSelectedSlot >= shopNumVisibleSlots ) {
+                    
+                    shopSelectedSlot = 0;
+                    }
+                while( shopSelectedSlot != start
+                       &&
+                       shopItems[ shopSelectedSlot ] == noPiece ) {
+                    
+                    shopSelectedSlot += dirX;
+                    if( shopSelectedSlot < 0 ) {
+                        shopSelectedSlot = shopNumVisibleSlots - 1;
+                        }
+                    else if( shopSelectedSlot >= shopNumVisibleSlots ) {
+                        shopSelectedSlot = 0;
+                        }
+                    }
+                if( shopItems[ shopSelectedSlot ] == noPiece ) {
+                    shopSelectedSlot = -1;
+                    }
+                else {
+                    shopSlotHighlightFade[ shopSelectedSlot ] = 255;
+                    }
+
+                if( shopSelectedSlot != start ) {
+                    controllerMovedSlot = 1;
+                    }
+                
+                shopOverNewSpot = 0;
                 unlocksCancelViewer();
                 }
             }
-        else if( oldY != pickY
-                 &&
-                 pickY == 1 ) {
-            shopSelectedSlot = -1;
-            shopOverNewSpot = 1;
+        else if( shopOverNewSpot ) {
+            navGetDir( 1,
+                       &dirX,
+                       &dirY );
 
-            unlocksCancelViewer();
-            
-            if( newSpotHighlightFade < 255 ) {
-                maxigin_playSoundEffect( inPieceLiftSound,
-                                         256 );
+            if( dirX != 0
+                ||
+                dirY < 0 ) {
+
+                /* up back to shop row */
+                shopSelectedSlot = -1;
+                
+                for( i = 0;
+                     i < shopNumVisibleSlots;
+                     i ++ ) {
+                    if( shopItems[ i ] != noPiece ) {
+                        shopSelectedSlot = i;
+                        shopSlotHighlightFade[ i ] = 255;
+                        break;
+                        }
+                    }
+                if( shopSelectedSlot != -1 ) {
+                    shopOverNewSpot = 0;
+                    unlocksCancelViewer();
+                    }
                 }
-            newSpotHighlightFade = 255;
             }
-        else if( oldY == pickY
+        else if( shopSelectedSlot == -1
                  &&
-                 pickY == 1
-                 &&
-                 oldX != pickX ) {
+                 ! shopOverNewSpot ) {
+            navGetDir( 0,
+                       &dirX,
+                       &dirY );
 
-            /* moving left or right from single spot beneath shop row
-               go back up to row */
-            shopOverNewSpot = 0;
+            if( dirY == 1
+                &&
+                formationHasRoomForNewSpot()
+                &&
+                ! newSpotBought
+                &&
+                newSpotAvail ) {
+                
+                /* down to new spot */
+                shopSelectedSlot = -1;
+                shopOverNewSpot = 1;
 
-            unlocksCancelViewer();
-
-            if( pickX > oldX ) {
+                unlocksCancelViewer();
+            
+                if( newSpotHighlightFade < 255 ) {
+                    maxigin_playSoundEffect( inPieceLiftSound,
+                                             256 );
+                    }
+                newSpotHighlightFade = 255;
+                }
+            else if( dirX == 1
+                     ||
+                     dirY == -1 ) {
                 shopSelectedSlot = 0;
+                while( shopSelectedSlot < shopNumVisibleSlots
+                       &&
+                       shopItems[ shopSelectedSlot ] == noPiece ) {
+                    shopSelectedSlot ++;
+                    }
+                if( shopSelectedSlot >= shopNumVisibleSlots ) {
+                    shopSelectedSlot = -1;
+                    }
+                else {
+                    shopSlotHighlightFade[ shopSelectedSlot ] = 255;
+                    }
+                unlocksCancelViewer();
                 }
-            else {
+            else if( dirX == -1 ) {
                 shopSelectedSlot = shopNumVisibleSlots - 1;
+                
+                while( shopSelectedSlot >= 0
+                       &&
+                       shopItems[ shopSelectedSlot ] == noPiece ) {
+                    shopSelectedSlot --;
+                    }
+                if( shopSelectedSlot < 0 ) {
+                    shopSelectedSlot = -1;
+                    }
+                else {
+                    shopSlotHighlightFade[ shopSelectedSlot ] = 255;
+                    }
+                unlocksCancelViewer();
                 }
+            
             }
         }
+    
 
     
     if( ! shopOverNewSpot ) {

@@ -417,13 +417,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         deckViewDraw();
         }
 
-    
-    moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
-               30 );
-
-    unlocksDraw( MAXIGIN_GAME_NATIVE_W - 56,
-                 10 );
-
     if( sideBoardShowing
         &&
         ! formationShowing ) {
@@ -721,6 +714,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                       boardCenterY );
 
 
+    moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
+               30 );
+
+    unlocksDraw( MAXIGIN_GAME_NATIVE_W - 56,
+                 10 );
     
 
     if( 0 ) {

@@ -82,6 +82,12 @@ static  int            unlockViewSound;
 static  char           unlockViewDown                        =   0;
 static  char           unlockViewerCanceled                  =   0;
 
+
+static  int            unlockExploding                       =  -1;
+static  int            unlockExplodingProgress               =   0;
+static  int            unlockExplodingMax                    = 512;
+
+
 static  int            lang_unlockDes;
 static  int            lang_unlocks       [ NUM_UNLOCKS ];
 static  int            lang_lockedA;
@@ -280,7 +286,11 @@ void unlocksInit( int  inViewActionHandle,
     REGISTER_VAL_MEM( unlockViewDown );
 
     REGISTER_VAL_MEM( unlockViewerCanceled );
+
+    REGISTER_VAL_MEM( unlockExploding );
+    REGISTER_VAL_MEM( unlockExplodingProgress );
     }
+
 
 
 void unlocksDraw( int  inPosX,
@@ -289,7 +299,8 @@ void unlocksDraw( int  inPosX,
     int  i;
     int  j;
     int  glowRep  =  3;
-    
+    int  x;
+    int  y;
 
     maxigin_drawResetColor();
 
@@ -300,8 +311,9 @@ void unlocksDraw( int  inPosX,
     for( i = 0;
          i < NUM_UNLOCKS;
          i ++ ) {
-        int  x  =  unlockPosX[ i ] + inPosX;
-        int  y  =  unlockPosY[ i ] + inPosY;
+        
+        x = unlockPosX[ i ] + inPosX;
+        y = unlockPosY[ i ] + inPosY;
 
         if( i == unlockLastOver
             &&
@@ -408,6 +420,33 @@ void unlocksDraw( int  inPosX,
             maxigin_setLanguageFontIndex( 0 );
             }
         
+        }
+
+    if( unlockExploding != -1 ) {
+        
+        unsigned char  a;
+        
+        i = unlockExploding;
+
+        x = unlockPosX[ i ] + inPosX;
+        y = unlockPosY[ i ] + inPosY;
+
+        a = (unsigned char)(
+            ( (long)( unlockExplodingMax - unlockExplodingProgress ) * 255 )
+            / unlockExplodingMax );
+
+        maxigin_drawToggleAdditive( 1 );
+        maxigin_drawExplodingSprite( unlockSprites[ i ],
+                                  getParticleSprite(),
+                                  x + 2,
+                                  y,
+                                  x + 2,
+                                  y - 1,
+                                  30,
+                                  unlockExplodingProgress,
+                                  unlockExplodingMax,
+                                  a );
+        maxigin_drawToggleAdditive( 0 );
         }
     }
 
@@ -519,6 +558,15 @@ void unlocksStep( int  inPosX,
                 }
             }
         }
+
+    if( unlockExploding != -1 ) {
+        unlockExplodingProgress += ( 10 * 60 ) / r;
+
+        if( unlockExplodingProgress > unlockExplodingMax ) {
+            unlockExplodingProgress = 0;
+            unlockExploding = -1;
+            }
+        }
     }
 
 
@@ -538,6 +586,9 @@ void unlocksBeatLevel( int  inLevel ) {
                                      512 );
 
             unlockEnabled[ i ] = 1;
+
+            unlockExploding = i;
+            unlockExplodingProgress = 0;
 
             unlocksWrite();
 

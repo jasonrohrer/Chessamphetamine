@@ -279,7 +279,7 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
                    &navX,
                    &navY );
 
-        if( navY > 0 ) {
+        if( navY < 0 ) {
             sbOverSlot ++;
             if( sbOverSlot >= sbNumSlots ) {
                 sbOverSlot = 0;
@@ -288,7 +288,7 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
             sbHighlightFade[ sbOverSlot ] = 255;
             unlocksCancelViewer();
             }
-        else if( navY < 0 ) {
+        else if( navY > 0 ) {
             sbOverSlot --;
             if( sbOverSlot < 0 ) {
                 sbOverSlot = sbNumSlots - 1;

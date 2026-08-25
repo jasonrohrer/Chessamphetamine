@@ -11,9 +11,9 @@ langHasWords  0
 
 
 
-corruptedA     "Saved game data corrupted."
-corruptedB     "Please re-launch the game."
-corruptedC     "Auto-quitting in:"
+corruptedA     "存檔資料已損毀。"
+corruptedB     "請重新啟動遊戲。"
+corruptedC     "自動離開倒數："
 
 
 settings       "設定"
@@ -38,47 +38,47 @@ controls       "控制"
 back           "返回"
 
 
-actionDesc     "射擊"
-drawDesc       "Draw"
-deckDesc       "View Deck"
-commitDesc     "Commit"
-spinDesc       "Spin"
-unlockView     "View Unlocks"
+actionDesc     "動作"
+drawDesc       "重抽"
+deckDesc       "查看牌組"
+commitDesc     "確認"
+spinDesc       "旋轉"
+unlockView     "查看解鎖"
 
 press          "按下"
 
 defaults       "恢復預設"
 
 
-drawInstruct   "Draft your army"
-formationInstruct   "Adjust army formation"
-newFormationSpot    "New army formation spot!"
-newSpotInA           "Purchase"
-newSpotInB           "more for new army formation spot"
+drawInstruct   "徵召你的軍隊"
+formationInstruct   "調整軍隊陣形"
+newFormationSpot    "新增軍隊陣形位置！"
+newSpotInA           "再購買"
+newSpotInB           "次即可獲得新的軍隊陣形位置"
 
-shopTitle      "Shop!"
-sale           "Sale!"
-permanent      "Perma"
+shopTitle      "商店！"
+sale           "特價！"
+permanent      "永久"
 
-level          "Level"
+level          "關卡"
 
-gameOverInstruct  "Please Play Again:"
+gameOverInstruct  "請再玩一次："
 
-unlockDes      "Permanent Unlock"
-unlock0        "Extra space on the sideboard"
-unlock1        "Extra slot in the shop"
-unlock2        "Something is always on sale in the shop"
+unlockDes      "永久解鎖"
+unlock0        "備用區增加一格"
+unlock1        "商店增加一個欄位"
+unlock2        "商店中總有一項商品特價"
 
-unlockLockedA  "Checkmate level"
-unlockLockedB  "to unlock"
+unlockLockedA  "在關卡"
+unlockLockedB  "完成將死以解鎖"
 
 
 contraband     "XXX"
-common         "Common"
-uncommon       "Uncommon"
-rare           "Rare"
-legendary      "Legendary"
-impossible     "Impossible"
+common         "普通"
+uncommon       "少見"
+rare           "稀有"
+legendary      "傳說"
+impossible     "不可能"
 
 
 

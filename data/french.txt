@@ -14,9 +14,9 @@ langHasWords  1
 
 
 
-corruptedA     "Saved game data corrupted."
-corruptedB     "Please re-launch the game."
-corruptedC     "Auto-quitting in:"
+corruptedA     "Données de sauvegarde corrompues."
+corruptedB     "Veuillez relancer le jeu."
+corruptedC     "Fermeture automatique dans:"
 
 
 settings       "Paramètres"
@@ -41,48 +41,48 @@ controls       "Commandes"
 back           "Retour"
 
 
-actionDesc     "Tirer"
-drawDesc       "Draw"
-deckDesc       "View Deck"
-commitDesc     "Commit"
-spinDesc       "Spin"
-unlockView     "View Unlocks"
+actionDesc     "Action"
+drawDesc       "Repiocher"
+deckDesc       "Voir le deck"
+commitDesc     "Valider"
+spinDesc       "Lancer"
+unlockView     "Déblocages"
 
 
 press          "appuyez"
 
 defaults       "Par défaut"
 
-drawInstruct   "Draft your army"
-formationInstruct   "Adjust army formation"
-newFormationSpot    "New army formation spot!"
-newSpotInA           "Purchase"
-newSpotInB           "more for new army formation spot"
+drawInstruct   "Composez votre armée"
+formationInstruct   "Ajustez la formation"
+newFormationSpot    "Nouvelle case de formation!"
+newSpotInA           "Encore"
+newSpotInB           "pour une case de formation"
 
-shopTitle      "Shop!"
-sale           "Sale!"
-permanent      "Perma"
+shopTitle      "Boutique!"
+sale           "Promo!"
+permanent      "Permanent"
 
-level          "Level"
+level          "Niveau"
 
-gameOverInstruct  "Please Play Again:"
+gameOverInstruct  "Veuillez rejouer:"
 
 
-unlockDes      "Permanent Unlock"
-unlock0        "Extra space on the sideboard"
-unlock1        "Extra slot in the shop"
-unlock2        "Something is always on sale in the shop"
+unlockDes      "Déblocage permanent"
+unlock0        "Une place de plus dans la réserve"
+unlock1        "Un emplacement de plus dans la boutique"
+unlock2        "Un article est toujours en promo dans la boutique"
 
-unlockLockedA  "Checkmate level"
-unlockLockedB  "to unlock"
+unlockLockedA  "Mat au niveau"
+unlockLockedB  "pour débloquer"
 
 
 
 contraband     "XXX"
-common         "Common"
-uncommon       "Uncommon"
+common         "Commun"
+uncommon       "Peu commun"
 rare           "Rare"
-legendary      "Legendary"
+legendary      "Légendaire"
 impossible     "Impossible"
 
 

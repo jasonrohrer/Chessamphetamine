@@ -646,14 +646,14 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
         maxigin_drawLangText(
             lang_level,
-            30,
+            32,
             10,
             MAXIGIN_RIGHT );
         maxigin_setLanguageFontIndex( 0 );
 
         numberDraw( currentLevel,
-                    30,
-                    20,
+                    32,
+                    22,
                     1);
         }
     

@@ -184,13 +184,13 @@ static void shopInternalReroll( void ) {
     int  i;
     int  minNumSale;
     
-    shopNumVisibleSlots = shopBaseVisibleSlots + unlockGetExtraShopSlots();
+    shopNumVisibleSlots = shopBaseVisibleSlots + unlocksGetExtraShopSlots();
 
     if( shopNumVisibleSlots > NUM_SHOP_SLOTS ) {
         shopNumVisibleSlots = NUM_SHOP_SLOTS;
         }
 
-    minNumSale = unlockGetExtraShopSlots();
+    minNumSale = unlocksGetExtraShopSlots();
 
     if( minNumSale > shopNumVisibleSlots ) {
         minNumSale = shopNumVisibleSlots;
@@ -680,11 +680,13 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
     
     
     if( buttonIsNewPressed( doneButton ) ) {
+        unlocksCancelViewer();
         shoppingDone = 1;
         return noPiece;
         }
 
     if( buttonIsNewPressed( rerollButton ) ) {
+        unlocksCancelViewer();
 
         if( moneyGetTotal() < costGet( shopRerollCost ) ) {
             /* fail */
@@ -728,6 +730,10 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
         }
     
 
+    if( unlocksIsViewerActive() ) {
+        shopSelectedSlot = -1;
+        shopOverNewSpot  =  0;
+        }
     
     
     if( maxigin_getPointerLocation( &pointerX,
@@ -854,12 +860,21 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
             if( oldX != pickX ) {
                 controllerMovedSlot = 1;
                 }
+            
+            if( oldY != pickY
+                ||
+                oldX != pickX ) {
+                
+                unlocksCancelViewer();
+                }
             }
         else if( oldY != pickY
                  &&
                  pickY == 1 ) {
             shopSelectedSlot = -1;
             shopOverNewSpot = 1;
+
+            unlocksCancelViewer();
             
             if( newSpotHighlightFade < 255 ) {
                 maxigin_playSoundEffect( inPieceLiftSound,
@@ -876,6 +891,8 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
             /* moving left or right from single spot beneath shop row
                go back up to row */
             shopOverNewSpot = 0;
+
+            unlocksCancelViewer();
 
             if( pickX > oldX ) {
                 shopSelectedSlot = 0;

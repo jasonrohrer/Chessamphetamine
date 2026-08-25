@@ -15,12 +15,15 @@
 #define UNLOCKS_H_INCLUDED
 
 
-void unlocksInit( void );
+/* handle for action controller to toggle through unlocks
+   for info */
+void unlocksInit( int  inViewActionHandle,
+                  int  inViewSound );
 
 
 /* register that player checkmated a level.
    Checkmating certain levels may unlock things */
-void unlockBeatLevel( int  inLevel );
+void unlocksBeatLevel( int  inLevel );
 
 
 
@@ -32,12 +35,16 @@ void unlocksStep( int  inPosX,
                   int  inPosY  );
 
 
-int unlockGetExtraSideboardSlots( void );
+int unlocksGetExtraSideboardSlots( void );
 
-int unlockGetExtraShopSlots( void );
+int unlocksGetExtraShopSlots( void );
 
-int unlockGetMinNumSaleSlots( void );
+int unlocksGetMinNumSaleSlots( void );
 
+
+void unlocksCancelViewer( void );
+
+char unlocksIsViewerActive( void );
 
 
 #endif
@@ -65,9 +72,15 @@ static  int            unlockAtLevel      [ NUM_UNLOCKS ];
 
 static  int            unlockFrameSprite;
 static  int            unlockGlintSprite;
+static  int            unlockViewerSprite;
+
 static  int            unlockSound                           =  -1;
 static  int            unlockLastOver                        =  -1;
+static  int            unlockViewActionHandle;
+static  int            unlockViewSound;
 
+static  char           unlockViewDown                        =   0;
+static  char           unlockViewerCanceled                  =   0;
 
 static  int            lang_unlockDes;
 static  int            lang_unlocks       [ NUM_UNLOCKS ];
@@ -206,12 +219,16 @@ static void unlocksRead( void ) {
 
 
 
-void unlocksInit( void ) {
+void unlocksInit( int  inViewActionHandle,
+                  int  inViewSound ) {
 
     int  i;
 
     int  offsetX  =  15;
     int  curX     =  - ( ( NUM_UNLOCKS - 1 ) * offsetX ) / 2;
+
+    unlockViewActionHandle = inViewActionHandle;
+    unlockViewSound        = inViewSound;
 
     unlockFrameSprite = maxigin_initSprite( "unlockFrame.tga" );
     unlockGlintSprite = maxigin_initSprite( "unlockGlint.tga" );
@@ -219,6 +236,9 @@ void unlocksInit( void ) {
     unlockSprites[0] = maxigin_initSprite( "unlockSideboard.tga" );
     unlockSprites[1] = maxigin_initSprite( "unlockShopSlot.tga"  );
     unlockSprites[2] = maxigin_initSprite( "unlockSale.tga"      );
+
+    unlockViewerSprite = maxigin_initSprite( "unlockViewer.tga" );
+    
 
     for( i = 0;
          i < NUM_UNLOCKS;
@@ -256,6 +276,10 @@ void unlocksInit( void ) {
     REGISTER_ARRAY_MEM( unlockEnabled       );
     REGISTER_ARRAY_MEM( unlockExtraGlowFade );
     REGISTER_VAL_MEM( unlockLastOver );
+
+    REGISTER_VAL_MEM( unlockViewDown );
+
+    REGISTER_VAL_MEM( unlockViewerCanceled );
     }
 
 
@@ -268,12 +292,24 @@ void unlocksDraw( int  inPosX,
     
 
     maxigin_drawResetColor();
+
+    maxigin_drawButtonHintSprite( unlockViewActionHandle,
+                                  inPosX + unlockPosX[ 0 ] - 13,
+                                  inPosY + unlockPosY[ 0 ] );
     
     for( i = 0;
          i < NUM_UNLOCKS;
          i ++ ) {
         int  x  =  unlockPosX[ i ] + inPosX;
         int  y  =  unlockPosY[ i ] + inPosY;
+
+        if( i == unlockLastOver
+            &&
+            unlockExtraGlowFade[ i ] == 255 ) {
+            maxigin_drawSprite( unlockViewerSprite,
+                                x,
+                                y - 7 );
+            }
         
         maxigin_drawSprite( unlockFrameSprite,
                             x,
@@ -423,6 +459,39 @@ void unlocksStep( int  inPosX,
                 }
             }
         }
+    else {
+
+        if( ! unlockViewDown
+            &&
+            maxigin_isButtonDown( unlockViewActionHandle ) ) {
+            unlockViewDown = 1;
+            unlockViewerCanceled = 0;
+
+            if( unlockLastOver == -1
+                ||
+                unlockLastOver == NUM_UNLOCKS - 1 ) {
+                unlockLastOver = 0;
+                }
+            else {
+                unlockLastOver ++;
+                }
+            maxigin_playSoundEffect( unlockViewSound,
+                                     256 );
+            }   
+
+        if( unlockLastOver != -1
+            &&
+            ! unlockViewerCanceled ) {
+                
+            unlockExtraGlowFade[ unlockLastOver ] = 255;
+                
+            overI = unlockLastOver;
+            }
+        }
+    
+    if( ! maxigin_isButtonDown( unlockViewActionHandle ) ) {
+        unlockViewDown = 0;
+        }
 
     
     for( i = 0;
@@ -440,6 +509,9 @@ void unlocksStep( int  inPosX,
                 }
             else {
                 unlockExtraGlowFade[i] = 0;
+                if( i == unlockLastOver ) {
+                    unlockLastOver = -1;
+                    }
                 }
             }
         }
@@ -447,7 +519,7 @@ void unlocksStep( int  inPosX,
 
 
 
-void unlockBeatLevel( int  inLevel ) {
+void unlocksBeatLevel( int  inLevel ) {
     int  i;
     
     for( i = 0;
@@ -475,7 +547,7 @@ void unlockBeatLevel( int  inLevel ) {
 
 
 
-int unlockGetExtraSideboardSlots( void ) {
+int unlocksGetExtraSideboardSlots( void ) {
 
     if( unlockEnabled[ 0 ] ) {
         return 1;
@@ -487,7 +559,7 @@ int unlockGetExtraSideboardSlots( void ) {
 
 
 
-int unlockGetExtraShopSlots( void ) {
+int unlocksGetExtraShopSlots( void ) {
 
     if( unlockEnabled[ 1 ] ) {
         return 1;
@@ -499,7 +571,7 @@ int unlockGetExtraShopSlots( void ) {
 
 
 
-int unlockGetMinNumSaleSlots( void ) {
+int unlocksGetMinNumSaleSlots( void ) {
 
     if( unlockEnabled[ 2 ] ) {
         return 1;
@@ -510,6 +582,23 @@ int unlockGetMinNumSaleSlots( void ) {
     }
     
 
+
+void unlocksCancelViewer( void ) {
+    unlockViewerCanceled = 1;
+    }
+
+
+
+char unlocksIsViewerActive( void ) {
+    if( ! unlockViewerCanceled
+        &&
+        unlockLastOver != -1 ) {
+        return 1;
+        }
+    return 0;
+    }
+
+    
 
     
 

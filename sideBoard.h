@@ -169,7 +169,7 @@ void sideBoardRedraw( Deck *inDeck ) {
     
     int  i;
     
-    sbNumSlots = sbBaseNumSlots + unlockGetExtraSideboardSlots();
+    sbNumSlots = sbBaseNumSlots + unlocksGetExtraSideboardSlots();
 
     if( sbNumSlots > SIDE_BOARD_MAX_SLOTS ) {
         sbNumSlots = SIDE_BOARD_MAX_SLOTS;
@@ -239,6 +239,10 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
     int   deltaFade            =  ( 20 * 60 ) / r;
     char  liftPhaseDone        =  0;
     char  controllerMovedSlot  =  0;
+
+    if( unlocksIsViewerActive() ) {
+        sbOverSlot = -1;
+        }
     
     if( maxigin_getPointerLocation( &pointerX,
                                     &pointerY ) ) {
@@ -282,6 +286,7 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
                 }
             controllerMovedSlot = 1;
             sbHighlightFade[ sbOverSlot ] = 255;
+            unlocksCancelViewer();
             }
         else if( navY < 0 ) {
             sbOverSlot --;
@@ -290,11 +295,13 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
                 }
             controllerMovedSlot = 1;
             sbHighlightFade[ sbOverSlot ] = 255;
+            unlocksCancelViewer();
             }
         else if( navX > 0 ) {
             /* moving back to board */
             sbOverSlot = -1;
             sbHoldingController = 0;
+            unlocksCancelViewer();
             }
         }
     
@@ -534,6 +541,7 @@ void sideBoardGrabController( void ) {
     sbHoldingController = 1;
     sbOverSlot = 0;
     sbHighlightFade[ 0 ] = 255;
+    unlocksCancelViewer();
     }
 
 

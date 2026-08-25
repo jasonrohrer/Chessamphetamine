@@ -47,6 +47,7 @@ drawDesc       "Redraw"
 deckDesc       "View Deck"
 commitDesc     "Commit"
 spinDesc       "Spin"
+unlockView     "View Unlocks"
 
 press          "press"
 

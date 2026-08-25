@@ -115,7 +115,8 @@ enum GameUserAction {
     ROT_COLORS_ALL,
     PRINT_COLORS,
     DECK_NEXT,
-    DECK_PREV
+    DECK_PREV,
+    UNLOCK_VIEW
     };
 
 
@@ -187,6 +188,7 @@ static int          lang_draw;
 static int          lang_deck;
 static int          lang_commit;
 static int          lang_spin;
+static int          lang_unlockView;
 
 static int          lang_drawInstruct;
 static int          lang_formInstruct;
@@ -1097,6 +1099,8 @@ void maxiginGame_step( void ) {
                     }
                 }
             }
+
+        unlocksCancelViewer();
         
         clearDrawMarkers();
 
@@ -1477,6 +1481,21 @@ void maxiginGame_step( void ) {
         if( ! maxigin_getPointerLocation( &mouseX,
                                           &mouseY ) ) {
 
+            if( unlocksIsViewerActive() ) {
+                infoPanelPiece = noPiece;
+
+                curInfoIndex ++;
+
+                if( curInfoIndex >= INFO_HIGHLIGHT_BUFFER_SIZE ) {
+                    curInfoIndex = 0;
+                    }
+                infoRow[ curInfoIndex ] = -1;
+                infoCol[ curInfoIndex ] = -1;
+                panRow = -1;
+                panCol = -1;
+                }
+            
+
             if( ! sideBoardStillHoldingController() ) {
                 
                 /* pointer not present on this platform */
@@ -1580,13 +1599,22 @@ void maxiginGame_step( void ) {
                       ||
                       curCol != oldCol ) ) {
 
+                    unlocksCancelViewer();
+                    
                     if( curCol == 0 ) {
                         /* slid off onto sideboard */
                         panRow = -1;
                         panCol = -1;
                         infoPanelPiece = noPiece;
+
+                        curInfoIndex ++;
+
+                        if( curInfoIndex >= INFO_HIGHLIGHT_BUFFER_SIZE ) {
+                            curInfoIndex = 0;
+                            }
                         infoRow[ curInfoIndex ] = -1;
                         infoCol[ curInfoIndex ] = -1;
+                        
                         sideBoardHadController = 1;
                         sideBoardGrabController();
                         }
@@ -1992,7 +2020,7 @@ void maxiginGame_step( void ) {
             /* delay fade to give them time to see unlock */
             endMessagePreFadeSteps = 0;
             
-            unlockBeatLevel( levelForUnlock );
+            unlocksBeatLevel( levelForUnlock );
             levelForUnlock = -1;
             }
         else {
@@ -2159,6 +2187,10 @@ void maxiginGame_step( void ) {
             if( infoPanelPiece != noPiece ) {
                 infoPanelFade = 255;
                 }
+
+            if( unlocksIsViewerActive() ) {
+                infoPanelPiece = noPiece;
+                }
             }
 
         if( buttonIsHover( drawButton )
@@ -2171,6 +2203,8 @@ void maxiginGame_step( void ) {
             }
 
         if( buttonIsNewPressed( drawButton ) ) {
+
+            unlocksCancelViewer();
             
             /* press attempt */
             if( moneyGetTotal() < costGet( drawCost ) ) {
@@ -2224,6 +2258,8 @@ void maxiginGame_step( void ) {
         &&
         buttonIsNewPressed( commitButton ) ) {
 
+        unlocksCancelViewer();
+
         draftingPieces = 0;
 
         getLevel( currentLevel,
@@ -2251,6 +2287,9 @@ void maxiginGame_step( void ) {
           formationShowing )
         &&
         buttonIsNewPressed( deckButton ) ) {
+
+        unlocksCancelViewer();
+        
 
         if( ! deckViewShowing ) {
             deckViewSet( &playerDeck );
@@ -2424,6 +2463,9 @@ static  MinginButton   deckPrevMapping[]  =  { MGN_BUTTON_XBOX_B,
                                                MGN_BUTTON_PS_CIRCLE,
                                                MGN_MAP_END };
 
+static  MinginButton   unlockViewMapping[]  =  { MGN_BUTTON_XBOX_BACK,
+                                                 MGN_BUTTON_PS_SHARE,
+                                                 MGN_MAP_END };
 
 static MinginButton hintMapping[]   =  { MGN_BUTTON_MOUSE_LEFT,
                                          MGN_BUTTON_MOUSE_RIGHT,
@@ -2735,12 +2777,12 @@ void maxiginGame_init( void ) {
     lang_formInstruct     = maxigin_initTranslationKey( "formationInstruct" );
     lang_level            = maxigin_initTranslationKey( "level" );
     lang_gameOverInstruct = maxigin_initTranslationKey( "gameOverInstruct" );
-
+    lang_unlockView       = maxigin_initTranslationKey( "unlockView" );
+    
     lang_corrupted[0]     = maxigin_initTranslationKey( "corruptedA" );
     lang_corrupted[1]     = maxigin_initTranslationKey( "corruptedB" );
     lang_corrupted[2]     = maxigin_initTranslationKey( "corruptedC" );
     
-    maxigin_registerButtonMapping( SPIN,   spinMapping );
 
     maxigin_registerButtonMapping( TOGGLE_MOVE_LOG,
                                    moveLogMapping );
@@ -2799,6 +2841,11 @@ void maxiginGame_init( void ) {
         SPIN,
         spinMapping,
         lang_spin  );
+
+    maxigin_registerDynamicButtonMapping(
+        UNLOCK_VIEW,
+        unlockViewMapping,
+        lang_unlockView  );
 
     
     maxigin_logInt( "Primary button for ACTION is: ",
@@ -2888,7 +2935,8 @@ void maxiginGame_init( void ) {
     maxigin_initSetLanguageFontGLow( 2,
                                      2 );
 
-    unlocksInit();
+    unlocksInit( UNLOCK_VIEW,
+                 examinePieceSound );
     
     chessInit();
     boardInit();

@@ -48,6 +48,7 @@ ChessPiece deckViewStep( int  inPageSound );
 
 
 #include "memoryRegister.h"
+#include "unlocks.h"
 
 
 static  int  deckViewCenterX;
@@ -345,6 +346,7 @@ ChessPiece deckViewStep( int  inPageSound ) {
                                      256 );
             deckViewPageNumber --;
             deckViewOverSlot = -1;
+            unlocksCancelViewer();
             }
         }
     if( skip + DECK_VIEW_VIS_SLOTS < deckViewNumFullSlots ) {
@@ -353,7 +355,12 @@ ChessPiece deckViewStep( int  inPageSound ) {
                                      256 );
             deckViewPageNumber ++;
             deckViewOverSlot = -1;
+            unlocksCancelViewer();
             }
+        }
+
+    if( unlocksIsViewerActive() ) {
+        deckViewOverSlot = -1;
         }
 
     skip = deckViewPageNumber * DECK_VIEW_VIS_SLOTS;
@@ -435,6 +442,7 @@ ChessPiece deckViewStep( int  inPageSound ) {
 
             if( old != deckViewOverSlot ) {
                 controllerMovedSlot = 1;
+                unlocksCancelViewer();
                 }
             }
         }

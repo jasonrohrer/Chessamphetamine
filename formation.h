@@ -69,6 +69,9 @@ int formationGetNewSpotLangHandle( void );
 
 #include "button.h"
 
+#include "unlocks.h"
+
+
 
 /* 0 empty, 1 regular piece, 2 king */
 static  char           formation             [BH][BW];
@@ -384,6 +387,7 @@ char formationStep( int  inBoardCenterX,
                 
                 maxigin_playSoundEffect( inPieceLiftSound,
                                          256 );
+                unlocksCancelViewer();
 
                 fmOverSlotX = formationPickedX;
                 fmOverSlotY = formationPickedY;
@@ -431,6 +435,8 @@ char formationStep( int  inBoardCenterX,
                 maxigin_playSoundEffect( inPieceLiftSound,
                                          256 );
                 formationHighlightFade[ fmOverSlotY ][ fmOverSlotX ] = 255;
+
+                unlocksCancelViewer();
                 }
             
             if( fmOverSlotX != -1
@@ -489,6 +495,7 @@ char formationStep( int  inBoardCenterX,
                 formationPickedX = -1;
                 formationPickedY = -1;
                 playBeepDownSound();
+                unlocksCancelViewer();
                 }
             else if( formationPickedX == -1
                      &&
@@ -498,6 +505,7 @@ char formationStep( int  inBoardCenterX,
                     formationPickedX = fmOverSlotX;
                     formationPickedY = fmOverSlotY;
                     playBeepUpSound();
+                    unlocksCancelViewer();
                     }
                 }
             else if( ! fmNewSpotWaiting
@@ -516,6 +524,7 @@ char formationStep( int  inBoardCenterX,
                 formationPickedX = -1;
                 formationPickedY = -1;
                 playBeepDownSound();
+                unlocksCancelViewer();
 
                 fmNewSpotWaiting = 0;
                 }
@@ -535,6 +544,7 @@ char formationStep( int  inBoardCenterX,
         buttonIsNewPressed( fmDoneButton ) ) {
         formationPickedX = -1;
         formationPickedY = -1;
+        unlocksCancelViewer();
         return 1;
         }
     return 0;

@@ -389,10 +389,14 @@ void unlocksDraw( int  inPosX,
                                   centY - 15,
                                   MAXIGIN_CENTER );
 
-            numberDrawCenter( unlockAtLevel[ unlockLastOver ],
-                              centX,
-                              centY,
-                              0 );
+            numberDrawText(
+                maxigin_stringConcat(
+                    maxigin_intToString( unlockAtLevel[ unlockLastOver ] ),
+                    "+" ),
+                centX,
+                centY,
+                0,
+                MAXIGIN_CENTER );
 
             maxigin_setLanguageFontIndex( 1 );
 

@@ -192,7 +192,7 @@ void formationDraw( int  inBoardCenterX,
 
                 int  cX;
                 int  cY;
-                int  s;
+                int  s    =  fmSpotSprite;
                 
                 boardGetSquareCenter( inBoardCenterX,
                                       inBoardCenterY,

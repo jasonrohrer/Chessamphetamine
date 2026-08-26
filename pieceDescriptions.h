@@ -538,7 +538,9 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
     int          diagramOffset  =  52;
     int          pW;
     int          pH;
-    
+    int          upperH;
+    int          lowerH;
+    int          rarityKey;
     
     raritySetDrawColor( inPiece );
 
@@ -554,9 +556,15 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
     maxigin_setLanguageFontIndex( 1 );
 
+    rarityKey = rarityGetLangKey( inPiece );
+
+    maxigin_measureLangTextVertical( rarityKey,
+                                     &upperH,
+                                     &lowerH );
+    
     maxigin_drawLangText( rarityGetLangKey( inPiece ),
                           inCenterX,
-                          inCenterY - pH / 2 - 3,
+                          inCenterY - pH / 2 - lowerH,
                           MAXIGIN_CENTER );
     maxigin_setLanguageFontIndex( 0 );
     

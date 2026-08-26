@@ -2214,6 +2214,27 @@ int maxigin_measureLangText( int  inPhraseKey );
 
 
 /*
+  Measures the vertical extend above and below center using the active language
+  and corresponding font.
+
+  Parameters:
+
+      inPhraseKey    a phrase key previously registered with
+                     maxigin_initTranslationKey()
+
+      outAboveH      pointer to where above-center height is returned
+
+      outBelowH      pointer to where below-center height is returned
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_measureLangTextVertical( int   inPhraseKey,
+                                      int   *outAboveH,
+                                      int   *outBelowH );
+
+
+
+/*
   Measures language text string using the active language's corresponding font.
 
   Parameters:
@@ -22802,6 +22823,79 @@ int maxigin_measureLangTextString( const char  *inString ) {
                                        0,
                                        0,
                                        MAXIGIN_SKIP_DRAW_AND_MEASURE );
+    }
+
+
+
+void maxigin_measureLangTextVertical( int   inPhraseKey,
+                                      int   *outAboveH,
+                                      int   *outBelowH ) {
+
+    MaxiginLanguage  *lang;
+    const char       *langString  =  maxigin_getLangText( inPhraseKey );
+    char             *nextText;
+    MaxiginFont      *f;
+    int               maxUpper  =  0;
+    int               maxLower  =  0;
+    
+    if( langString[0] == '\0' ) {
+        if( ! mx_drawLangFailureShown ) {
+            maxigin_logString( "Translation string for phrase key "
+                               "not found for current language: ",
+                               mx_translationKeys[ inPhraseKey ] );
+            mx_drawLangFailureShown = 1;
+            }
+        return;
+        }
+    
+    
+    if( mx_currentLanguage >= mx_numLanguages ) {
+
+        if( ! mx_drawLangFailureShown ) {
+            mingin_log( "maxigin_drawLangText called when no "
+                        "languages loaded\n" );
+            mx_drawLangFailureShown = 1;
+            }
+        return;
+        }
+
+    lang = &( mx_languages[ mx_currentLanguage ] );
+
+    f = &( mx_fonts[ lang->fontHandles[ mx_languageFontIndex ] ] );
+
+    nextText = (char*)langString;
+    
+    while( nextText[0] != '\0' ) {
+
+        long  codePoint;
+        int   spriteHandle;
+        int   upper;
+        int   lower;
+        
+        nextText = mx_scanNextCodePoint( nextText,
+                                         &codePoint );
+
+        if( codePoint == -1 ) {
+            break;
+            }
+        spriteHandle = mx_fontSpriteLookup( f,
+                                            (unsigned long)codePoint );
+
+        /* fixme */
+
+        upper = mx_sprites[ spriteHandle ].upperVisibleRadius;
+        lower = mx_sprites[ spriteHandle ].lowerVisibleRadius;
+
+        if( upper > maxUpper ) {
+            maxUpper = upper;
+            }
+        if( lower > maxLower ) {
+            maxLower = lower;
+            }
+        }
+
+    *outAboveH = maxUpper;
+    *outBelowH = maxLower;
     }
 
 

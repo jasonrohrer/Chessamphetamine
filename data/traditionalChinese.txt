@@ -57,7 +57,7 @@ newSpotInA           "再購買"
 newSpotInB           "次即可獲得新的軍隊陣形位置"
 
 shopTitle      "商店！"
-sale           "特價！"
+sale           "折"
 permanent      "永久"
 
 level          "關卡"
@@ -69,8 +69,8 @@ unlock0        "備用區增加一格"
 unlock1        "商店增加一個欄位"
 unlock2        "商店中總有一項商品特價"
 
-unlockLockedA  "在關卡"
-unlockLockedB  "完成將死以解鎖"
+unlockLockedA  "關卡"
+unlockLockedB  "將死解鎖"
 
 
 contraband     "XXX"

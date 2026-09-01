@@ -362,8 +362,23 @@ char formationStep( int  inBoardCenterX,
                         presentMap[ y * BW + x ] = 0;
                         }
                     else {
-                        /* can swap it with any space */
-                        presentMap[ y * BW + x ] = 1;
+
+                        if( fmNewSpotWaiting ) {
+                            /* can only move it into empty spot
+                               can't swap it, because the thing we're
+                               swapping with would jump up into the
+                               forbidden "new spot" area */
+                            if( formation[ y ][ x ] == 0 ) {
+                                presentMap[ y * BW + x ] = 1;
+                                }
+                            else {
+                                presentMap[ y * BW + x ] = 0;
+                                }
+                            }
+                        else {
+                            /* can swap it with any space */
+                            presentMap[ y * BW + x ] = 1;
+                            }
                         }
                     }
                 }

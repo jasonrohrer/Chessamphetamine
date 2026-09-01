@@ -46,4 +46,52 @@
       "LocalPath" "settings\\maxigin_disableRecording.ini" 
       "Attributes" "userconfig" 
     }
+
+	"FileProperties" 
+    { 
+      "LocalPath" "settings\\maxigin_soundEffectsVolume.ini" 
+      "Attributes" "userconfig" 
+    }
+	
+	"FileProperties" 
+    { 
+      "LocalPath" "settings\\maxigin_musicVolume.ini" 
+      "Attributes" "userconfig" 
+    }
+	
+	"FileProperties" 
+    { 
+      "LocalPath" "settings\\maxigin_defaultButtons.ini" 
+      "Attributes" "userconfig" 
+    }
+
+	"FileProperties" 
+    { 
+      "LocalPath" "settings\\maxigin_savedButtons.ini" 
+      "Attributes" "userconfig" 
+    }
+
+	"FileProperties" 
+    { 
+      "LocalPath" "settings\\maxigin_languageIndex.ini" 
+      "Attributes" "userconfig" 
+    }
+
+	"FileProperties" 
+    { 
+      "LocalPath" "settings\\mingin_fullscreen.ini" 
+      "Attributes" "userconfig" 
+    }
+
+	"FileProperties" 
+    { 
+      "LocalPath" "settings\\unlocks.ini" 
+      "Attributes" "userconfig" 
+    }
+
+	"FileProperties" 
+    { 
+      "LocalPath" "settings\\maxigin_save.bin" 
+      "Attributes" "userconfig" 
+    }
 }

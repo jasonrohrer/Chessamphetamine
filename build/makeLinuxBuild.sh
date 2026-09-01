@@ -37,15 +37,23 @@ rm -rf tempCheckout
 
 mkdir tempCheckout
 
+
 echo "Cloning..."
 
 git clone .. tempCheckout/
 
 cd tempCheckout
 
+
 echo "Compiling..."
 
 ./hardcoreC89OptCompile.sh
+
+
+echo "Generating spriteCacheFingerprint.txt ..."
+
+find data/*.tga -type f -print0 | sort -z | xargs -0 md5sum | md5sum | sed "s/ .*//" > data/spriteCacheFingerprint.txt
+
 
 cd ..
 

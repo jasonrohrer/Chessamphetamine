@@ -13271,11 +13271,11 @@ static  MinginButton  mx_menuMapping[] = { MGN_KEY_ESCAPE,
                                            MGN_BUTTON_XBOX_START,
                                            MGN_BUTTON_PS_PS,
                                            MGN_BUTTON_PS_OPTIONS,
+                                           MGN_BUTTON_STEAM_MENU,
                                            MGN_MAP_END };
 
 static  MinginButton  mx_menuBackMapping[] = { MGN_BUTTON_XBOX_B,
                                                MGN_BUTTON_PS_CIRCLE,
-                                               MGN_BUTTON_XBOX_BACK,
                                                MGN_MAP_END };
 
 static  MinginButton  mx_menuUpMapping[] = { MGN_BUTTON_DPAD_UP,

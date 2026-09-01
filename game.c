@@ -2480,6 +2480,7 @@ static  MinginButton   deckPrevMapping[]  =  { MGN_BUTTON_XBOX_B,
 
 static  MinginButton   unlockViewMapping[]  =  { MGN_BUTTON_XBOX_BACK,
                                                  MGN_BUTTON_PS_SHARE,
+                                                 MGN_BUTTON_STEAM_VIEW,
                                                  MGN_MAP_END };
 
 static MinginButton hintMapping[]   =  { MGN_BUTTON_MOUSE_LEFT,

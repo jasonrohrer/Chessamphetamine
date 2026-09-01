@@ -3033,6 +3033,7 @@ int maxigin_readIntSetting( const char  *inSettingName,
                             int          inDefaultValue );
 
 
+
 /*
   Reads an flag (1 or 0) from a persistent setting.
 
@@ -3060,9 +3061,37 @@ char maxigin_readFlagSetting( const char  *inSettingName,
 
 
 /*
-  Writes an integer value to a persistent setting.
+  Reads a whitespace-delimited string from a bulk data resource into a buffer.
 
-  On write failure, this call has no effect.
+  Skips any whitespace before the token, and ends the string at
+  the first whitespace character after the token.
+
+  Valid whitespace includes ' ', '\n', '\r', and '\t'
+
+  Parameters:
+
+      inBulkDataName    the name of the bulk data resource to read
+
+      inBufferSize      the size of the output buffer in bytes
+
+      outBuffer         the buffer to write the string to
+
+  Returns:
+
+      1    if found and read completely into buffer along with \0 termination
+
+      0    if not found or reading into buffer failed (too small, etc.)
+      
+   [jumpMaxiginGeneral]
+*/     
+char maxigin_readBulkDataStringToken( const char  *inBulkDataName,
+                                      int          inBufferSize,
+                                      char        *outBuffer );
+
+
+
+/*
+  Writes an integer value to a persistent setting.
 
   Parameters:
 
@@ -14072,7 +14101,7 @@ static char mx_readIntTokenFromBulkData( int   inBulkReadHandle,
 
 
 /*
-  Writes a \0-terminated string representation of an int to data store.
+  Writes a \0-terminated string to data store, including the \0 termination.
 
   Returns 1 on success, 0 on failure.
 */
@@ -14180,6 +14209,8 @@ static void mx_initSpriteCache( void ) {
     int  numBytes;
     int  readHandle;
 
+    static char  fingerprintBuffer[ 64 ];
+
     if( maxigin_readFlagSetting( "maxigin_disableSpriteCache.ini",
                                  0 ) ) {
         /* if we're in development and hot-reloading a bunch of sprites
@@ -14192,12 +14223,36 @@ static void mx_initSpriteCache( void ) {
         return;
         }
 
+   
+
     readHandle =  mingin_startReadPersistData( mx_spriteCacheName,
                                                &numBytes );
 
     if( readHandle != -1 ) {
 
         int  readInt;
+
+        if( maxigin_readBulkDataStringToken( "spriteCacheFingerprint.txt",
+                                             sizeof( fingerprintBuffer ),
+                                             fingerprintBuffer ) ) {
+            /* a fingerprint file is present
+               make sure our sprite cache header matches it */
+
+            const char  *readFingerprint =
+                mx_readShortTokenFromBulkData( readHandle );
+
+            if( readFingerprint == 0 ) {
+                mx_spriteCacheReadFailed( readHandle );
+                return;
+                }
+
+            if( ! maxigin_stringsEqual( readFingerprint,
+                                        fingerprintBuffer ) ) {
+                mx_spriteCacheReadFailed( readHandle );
+                return;
+                }
+            }
+    
         
         if( ! mx_readIntFromPersistData( readHandle,
                                          & mx_numSpriteBytesUsed ) ) {
@@ -14359,6 +14414,34 @@ static void mx_finalizeSpriteCache( void ) {
         mingin_log( "Regenerating new sprite cache from good sprite data.\n" );
         
         if( writeHandle != -1 ) {
+
+            static char  fingerprintBuffer[ 64 ];
+
+            if( maxigin_readBulkDataStringToken( "spriteCacheFingerprint.txt",
+                                                 sizeof( fingerprintBuffer ),
+                                                 fingerprintBuffer ) ) {
+                /* include fingerprint as first thing in cache file header */
+
+                /* note that we don't generate this fingerprint ourselves
+                   instead, it is an opaque string that is changed during
+                   the build process whenever the sprite cache should be
+                   rebuilt.
+
+                   This allows the sprite cache to be read quickly without
+                   a lot of cross-checking against the actual sprite files
+                   in the file system.
+
+                   Build tools can use this fingerprint file to force
+                   us to rebuild the sprite cache when sprite files have
+                   changed. */
+
+                if( ! mx_writeStringToPeristentData( writeHandle,
+                                                     fingerprintBuffer ) ) {
+                    mx_spriteCacheWriteFailed( writeHandle );
+                    return;
+                    }
+                }
+            
 
             if( ! mx_writeIntToPeristentData( writeHandle,
                                               mx_numSpriteBytesUsed ) ) {
@@ -18190,6 +18273,51 @@ char maxigin_readFlagSetting( const char  *inSettingName,
         }
     
     return 0;
+    }
+
+
+
+
+char maxigin_readBulkDataStringToken( const char  *inBulkDataName,
+                                      int          inBufferSize,
+                                      char        *outBuffer ) {
+    int          readHandle;
+    int          v;
+    const char  *readToken;
+    int          tokenLength;
+    int          i;
+    
+    readHandle = mingin_startReadBulkData( inBulkDataName,
+                                           &v );
+
+    if( readHandle == -1 ) {
+        return 0;
+        }
+
+    readToken = mx_readShortTokenFromBulkData( readHandle );
+
+    mingin_endReadBulkData( readHandle );
+
+    if( readToken == 0 ) {
+        return 0;
+        }
+
+    mingin_endReadBulkData( readHandle );
+
+    tokenLength = maxigin_stringLength( readToken );
+    
+    if( tokenLength + 1 > inBufferSize ) {
+        /* not enough room in buffer */
+        return 0;
+        }
+
+    for( i = 0;
+         i < tokenLength + 1;
+         i ++ ) {
+        outBuffer[ i ] = readToken[ i ];
+        }
+
+    return 1;
     }
 
 
@@ -22663,7 +22791,7 @@ static void mx_initLanguages( void ) {
         token = mx_readShortTokenFromBulkData( bulkHandle );
         }
 
-    mx_currentLanguage = maxigin_readIntSetting( "languageIndex.ini",
+    mx_currentLanguage = maxigin_readIntSetting( "maxigin_languageIndex.ini",
                                                  0 );
 
     mx_languageFontIndex = 0;
@@ -23305,7 +23433,7 @@ static void mx_populateLangPanel( void ) {
                                          mx_menuDoLoudness );
                 }
 
-            maxigin_writeIntSetting( "languageIndex.ini",
+            maxigin_writeIntSetting( "maxigin_languageIndex.ini",
                                      mx_currentLanguage );
             }
         

@@ -52,7 +52,7 @@ echo "Compiling..."
 
 echo "Generating spriteCacheFingerprint.txt ..."
 
-find data/*.tga -type f -print0 | sort -z | xargs -0 md5sum | md5sum | sed "s/ .*//" > data/spriteCacheFingerprint.txt
+find data/*.tga *.h *.c -type f -print0 | sort -z | xargs -0 md5sum | md5sum | sed "s/ .*//" > data/spriteCacheFingerprint.txt
 
 
 cd ..

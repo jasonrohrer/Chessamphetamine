@@ -771,6 +771,10 @@ typedef enum MinginButton {
     MGN_BUTTON_XBOX_BACK,
     MGN_BUTTON_XBOX_START,
     MGN_BUTTON_XBOX_GUIDE,
+
+    /* on Steam Deck, the XB360 Back and Start buttons are View and Menu */
+    MGN_BUTTON_STEAM_VIEW,
+    MGN_BUTTON_STEAM_MENU,
     
     MGN_BUTTON_MOUSE_LEFT,
     MGN_BUTTON_MOUSE_MIDDLE,
@@ -4513,8 +4517,18 @@ static void mn_setupLinuxGamepadMaps( void ) {
     mn_jsButtonToButtonMap[ xboxGamepad ][  4 ]  =  MGN_BUTTON_L1;
     mn_jsButtonToButtonMap[ xboxGamepad ][  5 ]  =  MGN_BUTTON_R1;
     /* xbox360 doesn't send button press/release events for LT and RT triggers */
-    mn_jsButtonToButtonMap[ xboxGamepad ][  6 ]  =  MGN_BUTTON_XBOX_BACK;
-    mn_jsButtonToButtonMap[ xboxGamepad ][  7 ]  =  MGN_BUTTON_XBOX_START;
+
+    if( mn_steamDeck ) {
+       /* all controls are XB360 controlls on SteamDeck except for these
+          two (Back becomes View and Start becomes Menu ) */
+        mn_jsButtonToButtonMap[ xboxGamepad ][  6 ]  =  MGN_BUTTON_STEAM_VIEW;
+        mn_jsButtonToButtonMap[ xboxGamepad ][  7 ]  =  MGN_BUTTON_STEAM_MENU;
+        }
+    else {
+        mn_jsButtonToButtonMap[ xboxGamepad ][  6 ]  =  MGN_BUTTON_XBOX_BACK;
+        mn_jsButtonToButtonMap[ xboxGamepad ][  7 ]  =  MGN_BUTTON_XBOX_START;
+        }
+    
     mn_jsButtonToButtonMap[ xboxGamepad ][  8 ]  =  MGN_BUTTON_XBOX_GUIDE;
     mn_jsButtonToButtonMap[ xboxGamepad ][  9 ]  =  MGN_BUTTON_STICK_LEFT_PRESS;
     mn_jsButtonToButtonMap[ xboxGamepad ][ 10 ]  =  MGN_BUTTON_STICK_RIGHT_PRESS;

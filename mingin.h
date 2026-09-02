@@ -8076,6 +8076,9 @@ static  LARGE_INTEGER  mn_frameEndTarget;
 static  LARGE_INTEGER  mn_programStartCount;
 
 
+static  const char  *fullscreenSetting  =  "mingin_fullscreen.ini";
+
+
 
 int APIENTRY WinMain( HINSTANCE  hInstance,
                       HINSTANCE  hInstancePrev,
@@ -8088,6 +8091,7 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     HANDLE         frameTimer;
     int            i;
     int            b;
+    char           currentlyFullscreen;
 
     QueryPerformanceCounter( &mn_programStartCount );
     
@@ -8102,6 +8106,19 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
 
     mingin_log( "Mingin starting up\n" );
 
+
+    
+    currentlyFullscreen = mn_getFlagSetting( fullscreenSetting,
+                                             -1 );
+
+    if( currentlyFullscreen != -1 ) {
+        mn_fullscreen = currentlyFullscreen;
+        }
+    else {
+        /* default to fullscreen on windows platform */
+        currentlyFullscreen = 1;
+        mn_fullscreen       = currentlyFullscreen;
+        }
     
     mn_hInstance = hInstance;
     mn_cmdshow   = cmdshow;
@@ -8785,6 +8802,9 @@ char mingin_toggleFullscreen( char  inFullscreen ) {
         mn_screenRefreshRate;
     
     mn_ignoreWindowDestroy = 0;
+
+    mn_saveFlagSetting( fullscreenSetting,
+                        inFullscreen );
 
     return 1;
     }

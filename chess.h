@@ -3932,18 +3932,21 @@ char isForcedCheckmate( BoardState  *inState,
    Updates the passed-in effects map to include effects caused by a given
    piece.
 */
-typedef void (*PieceEffectsFunction)( ChessPiece              inPiece,
+typedef void (*PieceEffectsFunction)( BoardState             *inState,
+                                      ChessPiece              inPiece,
                                       int                     inPieceRow,
                                       int                     inPieceCol,
                                       FullBoardSpaceEffects  *inEffects );
 
 
 
-static void nullEffects( ChessPiece              inPiece,
+static void nullEffects( BoardState             *inState,
+                         ChessPiece              inPiece,
                          int                     inPieceRow,
                          int                     inPieceCol,
                          FullBoardSpaceEffects  *inEffects ) {
 
+    (void)inState;
     (void)inPiece;
     (void)inPieceRow;
     (void)inPieceCol;
@@ -3952,13 +3955,16 @@ static void nullEffects( ChessPiece              inPiece,
 
 
 
-static void doublingPawnEffects( ChessPiece              inPiece,
+static void doublingPawnEffects( BoardState             *inState,
+                                 ChessPiece              inPiece,
                                  int                     inPieceRow,
                                  int                     inPieceCol,
                                  FullBoardSpaceEffects  *inEffects ) {
 
     int  yDir      = -1;
     int  targetY;
+
+    (void)inState;
 
     if( ( inPiece & CHESS_COLOR_MASK ) == CHESS_BLACK ) {
         yDir = 1;
@@ -3992,7 +3998,8 @@ static void doublingPawnEffects( ChessPiece              inPiece,
 
 
 
-static void addingRookEffects( ChessPiece              inPiece,
+static void addingRookEffects( BoardState             *inState,
+                               ChessPiece              inPiece,
                                int                     inPieceRow,
                                int                     inPieceCol,
                                FullBoardSpaceEffects  *inEffects ) {
@@ -4001,6 +4008,14 @@ static void addingRookEffects( ChessPiece              inPiece,
     static  int  dY[4]  =  { 0,  0, -1,  1 };
 
     int  i;
+    int  m;
+    
+    int  maxDist   =  BH - 1;
+
+    if( BW - 1 > maxDist ) {
+        /* non-square board, consider reach as long as longest side */
+        maxDist = BW - 1;
+        }
 
     (void)inPiece;
 
@@ -4008,33 +4023,51 @@ static void addingRookEffects( ChessPiece              inPiece,
          i < 4;
          i ++ ) {
 
-        int  targetX  =  inPieceCol + dX[i];
-        int  targetY  =  inPieceRow + dY[i];
+        for( m = 1;
+             m <= maxDist;
+             m ++ ) {
 
-        if( targetX >= 0
-            &&
-            targetX < BW
-            &&
-            targetY >= 0
-            &&
-            targetY < BH ) {
+            int  targetX  =  inPieceCol + m * dX[i];
+            int  targetY  =  inPieceRow + m * dY[i];
 
-            int  oldNum  =  inEffects->grid[ targetY ][ targetX ].num;
+            if( targetX >= 0
+                &&
+                targetX < BW
+                &&
+                targetY >= 0
+                &&
+                targetY < BH ) {
 
-            inEffects->grid[ targetY ][ targetX ].effectType [ oldNum ] =
-                add;
+                int  oldNum  =  inEffects->grid[ targetY ][ targetX ].num;
+
+                inEffects->grid[ targetY ][ targetX ].effectType [ oldNum ] =
+                    add;
         
-            inEffects->grid[ targetY ][ targetX ].effectValue[ oldNum ] =
-                1;
+                inEffects->grid[ targetY ][ targetX ].effectValue[ oldNum ] =
+                    1;
         
-            inEffects->grid[ targetY ][ targetX ].sourceRow[ oldNum ] =
-                inPieceRow;
+                inEffects->grid[ targetY ][ targetX ].sourceRow[ oldNum ] =
+                    inPieceRow;
         
-            inEffects->grid[ targetY ][ targetX ].sourceCol[ oldNum ] =
-                inPieceCol;
+                inEffects->grid[ targetY ][ targetX ].sourceCol[ oldNum ] =
+                    inPieceCol;
         
 
-            inEffects->grid[ targetY ][ targetX ].num ++;
+                inEffects->grid[ targetY ][ targetX ].num ++;
+
+                if( inState->grid[ targetY ][ targetX ] != noPiece ) {
+                    /* adding rook only effects spaces in each straight-line
+                       direction up to and including first piece hit
+                       doesn't penetrate beyond peices to squares
+                       on other side */
+                    break;
+                    }
+                }
+            else {
+                /* fell off end of board
+                   stop pushing in that direction */
+                break;
+                }
             }
         }
     }
@@ -4116,7 +4149,8 @@ void getSpaceEffects( BoardState             *inState,
             
             t = p & CHESS_TYPE_MASK;
 
-            effectsFunctions[ t ]( p,
+            effectsFunctions[ t ]( inState,
+                                   p,
                                    y,
                                    x,
                                    outEffects );

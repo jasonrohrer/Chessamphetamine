@@ -110,7 +110,7 @@ doublingPawn   "倍增兵"
 doublingPawnDesc  "使正前方棋子的特殊能力加倍"
 
 addingRook     "加成車"
-addingRookDesc "使相鄰棋子的特殊能力加一"
+addingRookDesc "直線可達的棋子特殊能力加一"
 
 rocket         "蘇聯火箭"
 rocketDesc     "隨機摧毀一枚敵方棋子，然後自爆"

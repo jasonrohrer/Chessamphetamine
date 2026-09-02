@@ -116,7 +116,7 @@ doublingPawnDesc  "Doubles special abilities of any piece immediately in front"
 
 
 addingRook     "Adding Rook"
-addingRookDesc "Adds 1 to special abilities of any neighboring pieces"
+addingRookDesc "Adds 1 to special abilities of reachable pieces in straight lines"
 
 rocket         "CCCP Rocket"
 rocketDesc     "Destroys a random enemy piece, then destroys itself"

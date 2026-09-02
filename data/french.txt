@@ -114,7 +114,7 @@ doublingPawn   "Pion doubleur"
 doublingPawnDesc  "Double les capacités spéciales de la pièce juste devant lui"
 
 addingRook     "Tour additive"
-addingRookDesc "Ajoute 1 aux capacités spéciales des pièces voisines"
+addingRookDesc "Ajoute 1 aux capacités spéciales des pièces accessibles en ligne droite"
 
 rocket         "Fusée CCCP"
 rocketDesc     "Détruit une pièce ennemie au hasard, puis s’autodétruit"

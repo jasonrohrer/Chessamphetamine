@@ -7792,8 +7792,8 @@ static void mn_setupWindowsKeyMap( void ) {
     mn_buttonToWindowsKeyMap[ MGN_KEY_META_R ]        =  MN_NO_WIN_KEY;
     mn_buttonToWindowsKeyMap[ MGN_KEY_ALT_L ]         =  VK_MENU;
     mn_buttonToWindowsKeyMap[ MGN_KEY_ALT_R ]         =  VK_MENU;
-    mn_buttonToWindowsKeyMap[ MGN_KEY_SUPER_L ]       =  VK_WIN;
-    mn_buttonToWindowsKeyMap[ MGN_KEY_SUPER_R ]       =  VK_WIN;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_SUPER_L ]       =  VK_LWIN;
+    mn_buttonToWindowsKeyMap[ MGN_KEY_SUPER_R ]       =  VK_RWIN;
 
     mn_buttonToWindowsKeyMap[ MGN_KEY_SPACE ]         =  VK_SPACE;
 

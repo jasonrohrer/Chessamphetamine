@@ -872,6 +872,10 @@ static void spaceEffectsInit( BoardState    *inState,
              i < a->num;
              i ++ ) {
 
+            if( a->effectType[ i ] == noEffect ) {
+                continue;
+                }
+
             types     [ numEffects ] = a->effectType [ i ];
             values    [ numEffects ] = a->effectValue[ i ];
             sourceRows[ numEffects ] = a->sourceRow  [ i ];

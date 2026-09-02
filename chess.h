@@ -1364,6 +1364,58 @@ static int kingMove( BoardState     *inState,
 
 
 
+static void printFullBoardSpaceEffects( BoardState *inState,
+                                        FullBoardSpaceEffects *inEffects ) {
+
+    int  y;
+    int  x;
+    int  i;
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            if( inState->grid[ y ][ x ] != noPiece
+                &&
+                ( inState->grid[ y ][ x ] & CHESS_COLOR_MASK )
+                == inState->nextToMove ) {
+                
+
+                ActiveSpaceEffects *a = &( inEffects->grid[ y ][ x ] );
+
+                for( i = 0;
+                     i < a->num;
+                     i ++ ) {
+
+                    maxigin_logInt2( "Space ",
+                                     y,
+                                     ", ",
+                                     x,
+                                     " affected by: " );
+                    maxigin_logInt2( "   ",
+                                     a->sourceRow[ i ],
+                                     ", ",
+                                     a->sourceCol[ i ],
+                                     " with: "  );
+                
+                    maxigin_logInt2( "   Type: ",
+                                     a->effectType[ i ],
+                                     ", Value: ",
+                                     a->effectValue[ i ],
+                                     " [end]" );
+                    }
+                }
+            }
+        }
+        
+    }
+
+
+
 /* returns pointer to statically allocated effects totals */
 static int getTotalEffectsRepeatValue( BoardState  *inState,
                                        int          inAffectedColor,
@@ -1372,6 +1424,9 @@ static int getTotalEffectsRepeatValue( BoardState  *inState,
 
     static  FullBoardSpaceEffects  effects;
     static  TotalSpaceEffects      totals;
+
+    /* avoid unused warnings for this utility function */
+    (void)printFullBoardSpaceEffects;
     
     getSpaceEffects( inState,
                      inAffectedColor,
@@ -4175,6 +4230,8 @@ static void compoundSpaceEffectsRec( int                     inTargetRow,
 
     int                  i;
 
+    /* make sure we don't re-visit this spot as we recurse deeper
+       below this, no loops back up here */
     visitFlags[ inTargetRow ][ inTargetCol ] = 1;
     
     for( i = 0;
@@ -4186,6 +4243,16 @@ static void compoundSpaceEffectsRec( int                     inTargetRow,
         int                  sC     =  a->sourceCol  [ i ];
         ActiveSpaceEffects  *sA     =  &( inOutEffects->grid[ sR ][ sC ] );
         int                  sI;
+
+        if( a->effectType[ i ] == noEffect ) {
+            /* don't even bother exploring deeper into nodes that have
+               no effect
+               These could also be marked as such by previous recursion
+               paths to these nodes, which means we shouldn't recurse
+               past them again even if visitFlags have been cleared for
+               that node */
+            continue;
+            }
 
         if( visitFlags[ sR ][ sC ] ) {
             /* skip any nodes we've already visited entirely
@@ -4227,6 +4294,12 @@ static void compoundSpaceEffectsRec( int                     inTargetRow,
 
         a->effectValue[ i ] = value;
         }
+
+    /* we're done recursing below this spot
+       Mark it as unvisited, because we no longer need to prevent loops here
+       AND other nodes higher up may also be affected by this spot as
+       they recurse down, and we don't want to block that. */
+    visitFlags[ inTargetRow ][ inTargetCol ] = 0;
     }
     
 

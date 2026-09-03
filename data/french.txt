@@ -61,7 +61,7 @@ newSpotInB           "pour une case de formation"
 
 shopTitle      "Boutique!"
 sale           "Promo!"
-permanent      "Permanent"
+permanent      "À vie"
 
 level          "Niveau"
 

@@ -481,7 +481,7 @@ void shopDraw( void ) {
     
     maxigin_drawLangText( lang_shopTitle,
                           shopCenterX,
-                          shopCenterY - 60,
+                          shopCenterY - 70,
                           MAXIGIN_CENTER );
     
     maxigin_setLanguageFontIndex( 0 );
@@ -546,9 +546,23 @@ void shopDraw( void ) {
                                           MAXIGIN_CENTER );
 
                     if( shopIsPermaSale[ i ] ) {
+                        
+                        int  aboveS;
+                        int  belowS;
+                        int  aboveP;
+                        int  belowP;
+
+                        maxigin_measureLangTextVertical( lang_sale,
+                                                         &aboveS,
+                                                         &belowS );
+                        
+                        maxigin_measureLangTextVertical( lang_permanent,
+                                                         &aboveP,
+                                                         &belowP );
+                        
                         maxigin_drawLangText( lang_permanent,
                                               shopCenterX + shopSlotPosX[i],
-                                              pieceYBase - 50,
+                                              pieceYBase - 43 - aboveS - belowP,
                                               MAXIGIN_CENTER );
                         }
     

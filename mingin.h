@@ -6782,7 +6782,6 @@ static char mn_isRunningOnSteamDeck( void ) {
 #include <xinput.h>
 
 static  HINSTANCE                mn_hInstance;
-static  int                      mn_cmdshow;
 
 static  IDXGISwapChain          *mn_dxSwapChain;
 static  ID3D11Device            *mn_d3dDevice;
@@ -7247,8 +7246,12 @@ static char mn_createWindow( HINSTANCE  hInstance,
     
     WNDCLASSEXA   wc;
     RECT          windRect     =  { 0, 0, 0, 0 };
-    DWORD         windStyle    =  WS_OVERLAPPEDWINDOW;
+    DWORD         windStyle    =  WS_OVERLAPPED |
+                                  WS_CAPTION    |
+                                  WS_SYSMENU    |
+                                  WS_MINIMIZEBOX;
     const char   *windowTitle  =  mn_getWindowTitle();
+    RECT          actualRect   =  { 0, 0, 0, 0 };
     
     if( mn_fullscreen ) {
         windStyle = WS_POPUP;
@@ -7301,6 +7304,16 @@ static char mn_createWindow( HINSTANCE  hInstance,
     ShowWindow( mn_windowHandle,
                 cmdshow );
 
+    /* now get actual client window size and log it */
+    GetClientRect( mn_windowHandle,
+                   &actualRect );
+
+    mingin_log( "Actual window size provided by Windows: " );
+    mingin_log( mn_intToString( actualRect.right - actualRect.left ) );
+    mingin_log( "x" );
+    mingin_log( mn_intToString( actualRect.bottom - actualRect.top ) );
+    mingin_log( "\n" );
+    
     mn_windowSetup = 1;
     
     mn_d3dInit( mn_windowHandle );
@@ -8094,6 +8107,10 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     char           currentlyFullscreen;
 
     QueryPerformanceCounter( &mn_programStartCount );
+
+    /* tell windows NOT to scale our application according to DPI settings
+       let us specify raw window pixel sizes directly */
+    SetProcessDPIAware();
     
     for( i = 0;
          i < MINGIN_WINDOWS_MAX_OPEN_FILES;
@@ -8121,7 +8138,6 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
         }
     
     mn_hInstance = hInstance;
-    mn_cmdshow   = cmdshow;
 
     QueryPerformanceFrequency( &mn_performanceCounterFreq );
 
@@ -8793,8 +8809,12 @@ char mingin_toggleFullscreen( char  inFullscreen ) {
     
     mn_fullscreen = inFullscreen;
 
+    /* here we pass in our own cmdshow parameter, and we don't reuse
+       the one originally passed into WinMain, because it might
+       a SW_SHOWMAXIMIZED, which causes our windowed mode to stretch
+       to fill the screen */
     mn_createWindow( mn_hInstance,
-                     mn_cmdshow );
+                     SW_SHOW );
     
     /* recompute in case screen refresh rate has changed */
     mn_ticksPerFrame.QuadPart =

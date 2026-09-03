@@ -190,7 +190,7 @@ static void shopInternalReroll( void ) {
         shopNumVisibleSlots = NUM_SHOP_SLOTS;
         }
 
-    minNumSale = unlocksGetExtraShopSlots();
+    minNumSale = unlocksGetMinNumSaleSlots();
 
     if( minNumSale > shopNumVisibleSlots ) {
         minNumSale = shopNumVisibleSlots;

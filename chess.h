@@ -2980,7 +2980,7 @@ static char getGreedyDepthMove( BoardState  *inState,
        we only need to compute our reachable square count one time,
        because no move we make will change how many squares we can
        reach.... this is an 8x savings */
-    int             kingReachableCount;
+    int             kingReachableCount       =  0;
     char            kingReachableCountValid  =  0;
 
 

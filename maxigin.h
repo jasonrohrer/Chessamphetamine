@@ -4433,9 +4433,10 @@ static void mx_generateCRTOverlay( int  inW,
             }
         else {
             /* continue this scan line */
-            scanlineV += (unsigned char)( maxigin_randRange( &rand,
-                                                             startIncV,
-                                                             endIncV ) );
+            scanlineV = (unsigned char)( scanlineV +
+                                         maxigin_randRange( &rand,
+                                                            startIncV,
+                                                            endIncV ) );
             }
         }
 
@@ -4506,7 +4507,8 @@ static void mx_generateCRTOverlay( int  inW,
 
 
             if( mx_crtOverlayPixelBuffer[i] > scanlineV ) {
-                mx_crtOverlayPixelBuffer[i] -= scanlineV;
+                mx_crtOverlayPixelBuffer[i] =
+                    (unsigned char)( mx_crtOverlayPixelBuffer[i] - scanlineV );
                 }
             else {
                 mx_crtOverlayPixelBuffer[i] = 0;
@@ -4517,14 +4519,17 @@ static void mx_generateCRTOverlay( int  inW,
                                                          20 ) );
 
             if( mx_crtOverlayPixelBuffer[i] > vTweak ) {
-                mx_crtOverlayPixelBuffer[i] -= vTweak;
+                mx_crtOverlayPixelBuffer[i] =
+                    (unsigned char)( mx_crtOverlayPixelBuffer[i] - vTweak );
                 }
             else {
                 mx_crtOverlayPixelBuffer[i] = 0;
                 }
 
             if( mx_crtOverlayPixelBuffer[i] > vertScanV[x] ) {
-                mx_crtOverlayPixelBuffer[i] -= vertScanV[x];
+                mx_crtOverlayPixelBuffer[i] =
+                    (unsigned char)( mx_crtOverlayPixelBuffer[i] -
+                                     vertScanV[x] );
                 }
             else {
                 mx_crtOverlayPixelBuffer[i] = 0;
@@ -4542,9 +4547,10 @@ static void mx_generateCRTOverlay( int  inW,
             }
         else {
             /* continue this scan line */
-            scanlineV += (unsigned char)( maxigin_randRange( &rand,
-                                                             startIncV,
-                                                             endIncV ) );
+            scanlineV = (unsigned char)( scanlineV +
+                                         maxigin_randRange( &rand,
+                                                            startIncV,
+                                                            endIncV ) );
             }
         }
 

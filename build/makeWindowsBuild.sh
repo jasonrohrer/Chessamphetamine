@@ -82,5 +82,5 @@ cp -r $folderName/* steamWindowsLatest
 
 echo "Pushing build with steamcmd..."
 
-steamcmd +login "jasonrohrergames" +run_app_build -desc Chessamphetamine_windows_v$1 /home/jasonrohrer/cpp/Chessamphetamine/build/app_build_windows_4109570.vdf +quit
+steamcmd +login "jasonrohrergames" +run_app_build -desc Chessamphetamine_windows_v$1 /c/checkout/Chessamphetamine/build/app_build_windows_4109570.vdf +quit
 

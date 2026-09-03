@@ -14,7 +14,7 @@
 	
 	// this is the location of the latest data as created by 
 	// generateDataOnlyDiffBundle
-	"ContentRoot"	"/c/checkout/Chessamphetamine/build/steamWindowsLatest"
+	"ContentRoot"	"c:\checkout\Chessamphetamine\build\steamWindowsLatest"
 
 	// include all files recursivley
   "FileMapping"

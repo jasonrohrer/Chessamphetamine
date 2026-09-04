@@ -494,6 +494,11 @@ void unlocksStep( int  inPosX,
                 &&
                 dy <=  h ) {
 
+                if( unlockExtraGlowFade[ i ] < 255 ) {
+                    maxigin_playSoundEffect( unlockViewSound,
+                                             256 );
+                    }
+                
                 unlockExtraGlowFade[ i ] = 255;
 
                 overI = i;

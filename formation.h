@@ -170,8 +170,12 @@ void formationInit( int  inPointerActionHandle,
 void formationDraw( int  inBoardCenterX,
                     int  inBoardCenterY ) {
 
-    int  y;
-    int  x;
+    int            y;
+    int            x;
+    int            descX;
+    int            descY;
+    unsigned char  descFade;
+    
 
     /* black box behind to cover deck when board slides up */
     maxigin_drawSetColor( 0,
@@ -261,22 +265,36 @@ void formationDraw( int  inBoardCenterX,
                 }
             }
         }
+    
 
-    if( fmOverSlotX != -1
+    if( formationPickedX != -1
         &&
-        fmOverSlotY != -1
+        formationPickedY != -1 ) {
+
+        descX    = formationPickedX;
+        descY    = formationPickedY;
+        descFade = 255;
+        }
+    else {
+        descX    = fmOverSlotX;
+        descY    = fmOverSlotY;
+        descFade = formationHighlightFade[ descY ][ descX ];
+        }
+    
+
+    if( descX != -1
+        &&
+        descY != -1
         &&
         ! unlocksIsViewerActive()
         &&
-        formation[ fmOverSlotY ][ fmOverSlotX ] > 0 ) {
+        formation[ descY ][ descX ] > 0 ) {
 
-        int            f         =  formation[ fmOverSlotY ][ fmOverSlotX ];
+        int            f         =  formation[ descY ][ descX ];
         int            titleKey  =  lang_otherSpot;
         int            descKey   =  lang_otherSpotDesc;
         int            centX     =  MAXIGIN_GAME_NATIVE_W - 42;
         int            centY     =  MAXIGIN_GAME_NATIVE_H / 2;
-        unsigned char  fade      =  formationHighlightFade[ fmOverSlotY ]
-                                                          [ fmOverSlotX ];
         
         if( f == 2 ) {
             titleKey = lang_kingSpot;
@@ -288,12 +306,12 @@ void formationDraw( int  inBoardCenterX,
                              descKey,
                              centX,
                              centY,
-                             fade );
+                             descFade );
 
         maxigin_drawSetColor( 70,
                               198,
                               87,
-                              fade  );
+                              descFade  );
             
         drawDescriptionFrame( centX,
                               centY );
@@ -368,17 +386,52 @@ char formationStep( int  inBoardCenterX,
                     &&
                     pointerY < cY + squareR ) {
 
+                    char  soundAlreadyPlayed  =  0;
+                    
+
                     if( formation[ y ][ x ] != 0
                         &&
                         formationHighlightFade[ y ][ x ] < 255 ) {
                         
                         maxigin_playSoundEffect( inPieceLiftSound,
                                                  256 );
+                        soundAlreadyPlayed = 1;
                         }
                     formationHighlightFade[ y ][ x ] = 255;
 
                     fmOverSlotX = x;
                     fmOverSlotY = y;
+
+                    if( ! fmNewSpotWaiting
+                        &&
+                        fmOverSlotY >= 5
+                        &&
+                        formationPickedX != -1
+                        &&
+                        formationPickedY != -1
+                        &&
+                        ( formationPickedX != fmOverSlotX
+                          ||
+                          formationPickedY != fmOverSlotY ) ) {
+
+                        /* swap when simply moving around with the mouse */
+                        
+                        char  temp  =
+                              formation[ formationPickedY ][ formationPickedX ];
+
+                        formation[ formationPickedY ][ formationPickedX ] =
+                            formation[ fmOverSlotY ][ fmOverSlotX ];
+
+                        formation[ fmOverSlotY ][ fmOverSlotX ] = temp;
+
+                        if( ! soundAlreadyPlayed ) {
+                            maxigin_playSoundEffect( inPieceLiftSound,
+                                                     256 );
+                            }
+
+                        formationPickedX = fmOverSlotX;
+                        formationPickedY = fmOverSlotY;
+                        }
                     }
                 }
             }

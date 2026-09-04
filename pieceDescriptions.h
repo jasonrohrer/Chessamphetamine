@@ -93,7 +93,7 @@ static  int  pieceNameKeys[ NUM_CHESS_PIECES ];
     V( C, 3,   knight,       "knightDesc"       ) \
     V( C, 4,   rook,         "rookDesc"         ) \
     V( C, 5,   queen,        "queenDesc"        ) \
-    V( C, 6,   king,         "kingDesc"         ) \
+    V( C, 6,   king,         ""                 ) \
     V( C, 7,   laserRook,    "laserRookDesc"    ) \
     V( C, 8,   laserPawn,    "laserPawnDesc"    ) \
     V( C, 9,   doublingPawn, "doublingPawnDesc" ) \
@@ -107,10 +107,13 @@ static  const char  *pieceDescriptionKeyStrings[] = {
 CHECK_CHESS_ARRAY( pieceDescriptionKeyStrings,
                    PIECE_DESCRIPTION_KEY_STRING_LIST );
 
-
 static  int  pieceDescriptionKeys[ NUM_CHESS_PIECES ];
 
 
+static const char  *kingDescriptionKeyStrings[2]  =  {  "kingDescYou",
+                                                        "kingDescThem" };
+
+static  int  kingDescriptionKeys[ 2 ];
 
 
 static  int  infoPanelSprite    =  -1;
@@ -131,10 +134,23 @@ void pieceDescriptionsInit( void ) {
          i ++ ) {
 
         pieceNameKeys[ i ] =
-            maxigin_initTranslationKey( pieceNameKeyStrings[i] );
+            maxigin_initTranslationKey( pieceNameKeyStrings[ i ] );
 
-        pieceDescriptionKeys[ i ] =
-            maxigin_initTranslationKey( pieceDescriptionKeyStrings[i] );
+        if( i != king ) {
+            pieceDescriptionKeys[ i ] =
+                maxigin_initTranslationKey( pieceDescriptionKeyStrings[ i ] );
+            }
+        else {
+            int  k;
+
+            for( k = 0;
+                 k < 2;
+                 k ++ ) {
+                
+                kingDescriptionKeys[ k ] =
+                    maxigin_initTranslationKey( kingDescriptionKeyStrings[ k ] );
+                }
+            }
         }
 
     infoPanelSprite = maxigin_initSprite( "pieceInfoPanel.tga" );
@@ -287,10 +303,36 @@ static char isPunctuation( char  * inWorkingString,
 
         if( (unsigned char)( inWorkingString[0] ) == 0xEF
             &&
-            (unsigned char)( inWorkingString[1] ) == 0xBC
+            (unsigned char)( inWorkingString[1] ) == 0xBC ) {
+
+            unsigned char  lastByte  =  (unsigned char)( inWorkingString[2] );
+            
+            
+            if( lastByte == 0x8C ) {
+                /* chinese comma */
+                return 1;
+                }
+            if( lastByte == 0x81 ) {
+                /* chinese full exclamation */
+                return 1;
+                }
+            if( lastByte == 0x9F ) {
+                /* chinese question mark */
+                return 1;
+                }
+            if( lastByte == 0x9A ) {
+                /* chinese colon */
+                return 1;
+                }
+            }
+
+        if( (unsigned char)( inWorkingString[0] ) == 0xE3
             &&
-            (unsigned char)( inWorkingString[2] ) == 0x8C ) {
-            /* chinese comma */
+            (unsigned char)( inWorkingString[1] ) == 0x80
+            &&
+            (unsigned char)( inWorkingString[2] ) == 0x82 ) {
+            
+            /* chinese full stop */
             return 1;
             }
         }
@@ -541,6 +583,7 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
     int          upperH;
     int          lowerH;
     int          rarityKey;
+    int          desKey;
     
     raritySetDrawColor( inPiece );
 
@@ -595,8 +638,26 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
                             inCenterY + diagramOffset );
         }
 
+    if( t == king ) {
+        /* distinct description text for enemy vs player king */
+        
+        ChessPiece   c     =  inPiece & CHESS_COLOR_MASK;
+
+        if( c == CHESS_WHITE ) {
+            desKey = kingDescriptionKeys[ 0 ];
+            }
+        else {
+            desKey = kingDescriptionKeys[ 1 ];
+            }
+        }
+    else {
+        /* for all other pieces, description text is the same for both
+           players */
+        desKey = pieceDescriptionKeys[ t ];
+        }
+    
     drawDescriptionText( pieceNameKeys[ t ],
-                         pieceDescriptionKeys[ t ],
+                         desKey,
                          inCenterX,
                          inCenterY,
                          inFade );

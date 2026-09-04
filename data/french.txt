@@ -78,7 +78,7 @@ unlockLockedB  "pour débloquer"
 
 
 
-contraband     "XXX"
+contraband     " "
 common         "Commun"
 uncommon       "Peu commun"
 rare           "Rare"
@@ -102,7 +102,8 @@ queen          "Dame"
 queenDesc      "Se déplace en ligne droite et en diagonale"
 
 king           "Roi"
-kingDesc       "Se déplace d’une case dans n’importe quelle direction"
+kingDescYou    "Une case dans toute direction. Si votre roi est pris, vous perdez!"
+kingDescThem   "Une case dans toute direction. Prenez le roi ennemi pour gagner!"
 
 laserRook      "Tour laser"
 laserRookDesc  "Tire des lasers en ligne droite après s’être déplacée"

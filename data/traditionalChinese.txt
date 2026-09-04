@@ -73,7 +73,7 @@ unlockLockedA  "關卡"
 unlockLockedB  "將死解鎖"
 
 
-contraband     "XXX"
+contraband     " "
 common         "普通"
 uncommon       "少見"
 rare           "稀有"
@@ -98,7 +98,8 @@ queen          "后"
 queenDesc      "直斜皆可走"
 
 king           "王"
-kingDesc       "每步走一格，方向不限"
+kingDescYou    "走一格，方向不限。己王被吃即敗！"
+kingDescThem   "走一格，方向不限。吃敵王即勝！"
 
 laserRook      "雷射車"
 laserRookDesc  "移動後沿直線發射雷射"

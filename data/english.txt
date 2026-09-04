@@ -86,6 +86,11 @@ legendary      "Legendary"
 impossible     "Impossible"
 
 
+formationKing       "King Spot"
+formationOther      "Army Spot"
+formationKingDesc   "Your king goes here.  Protect him at all costs!"
+formationOtherDesc  "Pieces will be drawn from your deck to fill this spot."
+
 
 pawn           "Pawn"
 pawnDesc       "Moves 1 or 2 spaces forward, captures diagonally"

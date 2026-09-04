@@ -212,7 +212,11 @@ static int findNextSpaceIndex(  const char  *inString ) {
 
 
 
-static void pieceSplitWords( const char  *inString ) {
+/* if inMaxNumWords = -1, then there is no max
+   otherwise, after inMaxNumWords found, remaining words are included
+   in final word (with spaces) */
+static void pieceSplitWords( const char  *inString,
+                             int          inMaxNumWords ) {
 
     const char  *working  = inString;
 
@@ -222,7 +226,14 @@ static void pieceSplitWords( const char  *inString ) {
 
     i = findNextSpaceIndex( working );
 
-    while( i != -1 ) {
+    if( inMaxNumWords == -1 ) {
+        /* pick a large value that we will never hit */
+        inMaxNumWords = 9999;
+        }
+
+    while( i != -1
+           &&
+           pieceNumWords < inMaxNumWords - 1 ) {
 
         int j;
 
@@ -529,7 +540,8 @@ static void pieceSplitLines( const char  *inString,
         return;
         }
 
-    pieceSplitWords( inString );
+    pieceSplitWords( inString,
+                     -1 );
 
     pieceClearLines();
 
@@ -690,7 +702,11 @@ void drawDescriptionText( int            inLangTitle,
 
     title = maxigin_getLangText( inLangTitle );
 
-    pieceSplitWords( title );
+    /* title has at most 2 "words"
+       b/c we don't want to split it into more than 2 lines
+       extra words go on second line */
+    pieceSplitWords( title,
+                     2 );
 
     /* small font for title */
     maxigin_setLanguageFontIndex( 1 );

@@ -86,6 +86,11 @@ legendary      "Légendaire"
 impossible     "Impossible"
 
 
+formationKing       "Case du roi"
+formationOther      "Case d’armée"
+formationKingDesc   "Votre roi va ici. Protégez-le à tout prix!"
+formationOtherDesc  "Des pièces de votre deck sont tirées pour remplir cette case."
+
 pawn           "Pion"
 pawnDesc       "Avance de 1 ou 2 cases, capture en diagonale"
 

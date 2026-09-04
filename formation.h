@@ -95,6 +95,11 @@ static  int            formationSize           =   0;
 
 static  int            lang_newSpot;
 
+static  int            lang_kingSpot;
+static  int            lang_otherSpot;
+static  int            lang_kingSpotDesc;
+static  int            lang_otherSpotDesc;
+
 static  int            fmOverSlotX             =  -1;
 static  int            fmOverSlotY             =  -1;
 static  char           fmPickedWithController  =   0;
@@ -137,7 +142,13 @@ void formationInit( int  inPointerActionHandle,
                                /* fixme... need controller mapping for this */
                                inDynamicDoneButtonHandle );
 
-    lang_newSpot = maxigin_initTranslationKey( "newFormationSpot" );
+    lang_newSpot   = maxigin_initTranslationKey( "newFormationSpot" );
+    
+    lang_kingSpot  = maxigin_initTranslationKey( "formationKing" );
+    lang_otherSpot = maxigin_initTranslationKey( "formationOther" );
+    
+    lang_kingSpotDesc  = maxigin_initTranslationKey( "formationKingDesc" );
+    lang_otherSpotDesc = maxigin_initTranslationKey( "formationOtherDesc" );
 
     REGISTER_ARRAY_MEM( formation              );
     REGISTER_ARRAY_MEM( formationHighlightFade );
@@ -249,6 +260,43 @@ void formationDraw( int  inBoardCenterX,
                     }
                 }
             }
+        }
+
+    if( fmOverSlotX != -1
+        &&
+        fmOverSlotY != -1
+        &&
+        ! unlocksIsViewerActive()
+        &&
+        formation[ fmOverSlotY ][ fmOverSlotX ] > 0 ) {
+
+        int            f         =  formation[ fmOverSlotY ][ fmOverSlotX ];
+        int            titleKey  =  lang_otherSpot;
+        int            descKey   =  lang_otherSpotDesc;
+        int            centX     =  MAXIGIN_GAME_NATIVE_W - 42;
+        int            centY     =  MAXIGIN_GAME_NATIVE_H / 2;
+        unsigned char  fade      =  formationHighlightFade[ fmOverSlotY ]
+                                                          [ fmOverSlotX ];
+        
+        if( f == 2 ) {
+            titleKey = lang_kingSpot;
+            descKey  = lang_kingSpotDesc;
+            }
+        
+
+        drawDescriptionText( titleKey,
+                             descKey,
+                             centX,
+                             centY,
+                             fade );
+
+        maxigin_drawSetColor( 70,
+                              198,
+                              87,
+                              fade  );
+            
+        drawDescriptionFrame( centX,
+                              centY );
         }
 
     if( fmNewSpotWaiting ) {

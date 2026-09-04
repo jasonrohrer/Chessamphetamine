@@ -81,6 +81,10 @@ legendary      "傳說"
 impossible     "不可能"
 
 
+formationKing       "王格"
+formationOther      "軍格"
+formationKingDesc   "你的王放這裡。務必保護！"
+formationOtherDesc  "從牌組抽棋子填入此格"
 
 pawn           "兵"
 pawnDesc       "向前一或兩格，斜前吃子"

@@ -310,6 +310,7 @@ void sparseGridNav( char  *inPresentGrid,
 
     int  curCol  =  *inOutPickedX;
     int  curRow  =  *inOutPickedY;
+    int  t;
     
     navGetDir( 0,
                &dirX,
@@ -319,210 +320,139 @@ void sparseGridNav( char  *inPresentGrid,
         ||
         dirY != 0 ) {
 
-        if( curCol != -1
-            &&
-            curRow != -1 ) {
+        for( t = 0;
+             t < 2;
+             t ++ ) {
+            
+            if( curCol != -1
+                ||
+                curRow != -1 ) {
 
-            /* somewhere in the grid already */
+                /* somewhere in the grid already */
 
-            /* search for closest spot in the area that is in the direction
-               we are pushing */
-            int  startX      =   1;
-            int  endX        =   0;
-            int  startY      =   1;
-            int  endY        =   0;
-            int  x;
-            int  y;
+                /* search for closest spot in the area that is in the direction
+                   we are pushing */
+                int  startX      =   1;
+                int  endX        =   0;
+                int  startY      =   1;
+                int  endY        =   0;
+                int  x;
+                int  y;
 
-            int  closeX      =  -1;
-            int  closeY      =  -1;
-            int  closeDist2  =  ( inGridW + inGridH ) * ( inGridW + inGridH );
+                int  closeX      =  -1;
+                int  closeY      =  -1;
+                int  closeDist2  =  ( inGridW + inGridH ) *
+                                    ( inGridW + inGridH );
 
-            /* only one of x or y is non-zero */
-            if( dirX > 0 ) {
-                startX = curCol + 1;
-                endX   = inGridW - 1;
-                startY = 0;
-                endY   = inGridH - 1;
-                }
-            else if( dirX < 0 ) {
-                startX = 0;
-                endX   = curCol -1;
-                startY = 0;
-                endY   = inGridH - 1;
-                }
-            else if( dirY > 0 ) {
-                startX = 0;
-                endX   = inGridW - 1;
-                startY = curRow + 1;
-                endY   = inGridH - 1;
-                }
-            else if( dirY < 0 ) {
-                startX = 0;
-                endX   = inGridW - 1;
-                startY = 0;
-                endY   = curRow - 1;
-                }
+                /* only one of x or y is non-zero */
+                if( dirX > 0 ) {
+                    startX = curCol + 1;
+                    endX   = inGridW - 1;
+                    startY = 0;
+                    endY   = inGridH - 1;
+                    }
+                else if( dirX < 0 ) {
+                    startX = 0;
+                    endX   = curCol -1;
+                    startY = 0;
+                    endY   = inGridH - 1;
+                    }
+                else if( dirY > 0 ) {
+                    startX = 0;
+                    endX   = inGridW - 1;
+                    startY = curRow + 1;
+                    endY   = inGridH - 1;
+                    }
+                else if( dirY < 0 ) {
+                    startX = 0;
+                    endX   = inGridW - 1;
+                    startY = 0;
+                    endY   = curRow - 1;
+                    }
 
-            for( y =  startY;
-                 y <= endY;
-                 y ++ ) {
+                for( y =  startY;
+                     y <= endY;
+                     y ++ ) {
                 
-                for( x =  startX;
-                     x <= endX;
-                     x ++ ) {
-                    if( inPresentGrid[ y * inGridW + x ] ) {
+                    for( x =  startX;
+                         x <= endX;
+                         x ++ ) {
+                        if( inPresentGrid[ y * inGridW + x ] ) {
 
-                        int  dx     =  curCol - x;
-                        int  dy     =  curRow - y;
-                        int  dist2  =  dx * dx + dy * dy;
+                            int  dx     =  curCol - x;
+                            int  dy     =  curRow - y;
+                            int  dist2  =  dx * dx + dy * dy;
 
-                        if( dist2 < closeDist2 ) {
-                            closeDist2 = dist2;
-                            closeX = x;
-                            closeY = y;
+                            if( dist2 < closeDist2 ) {
+                                closeDist2 = dist2;
+                                closeX = x;
+                                closeY = y;
+                                }
                             }
                         }
                     }
-                }
 
-            if( closeX != -1
-                &&
-                closeY != -1 ) {
-
-                *inOutPickedX = closeX;
-                *inOutPickedY = closeY;
-                return;
-                }
-            else {
-                /* didn't find anything in that direction
-                   wrap around and re-enter from the other side instead */
-                curCol = -1;
-                curRow = -1;
-                }
-            }
-
-        /* older code than found matching row when moving left/right
-
-           but still use this code when re-entering grid from edge */
-            
-        if( curCol == -1
-            ||
-            curRow == -1 ) {
-
-            /* allow enter based on dir */
-
-            if( dirX == -1 ) {
-                curCol = inGridW;
-                curRow = 0;
-                }
-            else if( dirX == 1 ) {
-                curCol = -1;
-                curRow =  0;
-                }
-            else if( dirY == -1 ) {
-                curRow = inGridH;
-                curCol = 0;
-                }
-            else if( dirY == 1 ) {
-                curRow = -1;
-                curCol =  0;
-                }
-            }
-
-        curRow += dirY;
-        curCol += dirX;
-
-        if( dirX > 0
-            &&
-            curCol >= inGridW ) {
-            curCol = 0;
-            curRow ++;
-            if( curRow >= inGridH ) {
-                curRow = 0;
-                }
-            }
-        if( dirX < 0
-            &&
-            curCol < 0 ) {
-            curCol =  inGridW - 1;
-            curRow --;
-            if( curRow < 0 ) {
-                curRow = inGridH - 1;
-                }
-            }
-
-        if( dirY > 0
-            &&
-            curRow >= inGridH ) {
-            curRow = 0;
-            curCol ++;
-            if( curCol >= inGridW ) {
-                curCol = 0;
-                }
-            }
-        if( dirY < 0
-            &&
-            curRow < 0 ) {
-            curRow =  inGridH - 1;
-            curCol --;
-            if( curCol < 0 ) {
-                curCol = inGridW - 1;
-                }
-            }
-
-        while( inPresentGrid[ curRow * inGridW + curCol ] == 0 ) {
-
-            if( dirX != 0 ) {
-                curCol += dirX;
-
-                if( dirX > 0
+                if( closeX != -1
                     &&
-                    curCol >= inGridW ) {
-                    curCol = 0;
-                    curRow ++;
-                    if( curRow >= inGridH ) {
+                    closeY != -1 ) {
+
+                    *inOutPickedX = closeX;
+                    *inOutPickedY = closeY;
+                    return;
+                    }
+                else {
+                    /* didn't find anything in that direction
+                       wrap around and re-enter from the other side instead */
+                    curCol = -1;
+                    curRow = -1;
+                    }
+                }
+
+            /*  use this code when re-entering grid from edge,
+                or for second try when moving off edget */
+            
+            if( curCol == -1
+                ||
+                curRow == -1 ) {
+
+                /* allow enter based on dir */
+
+                if( dirX == -1 ) {
+                    curCol = inGridW;
+                    curRow = *inOutPickedY;
+                    if( curRow == -1 ) {
                         curRow = 0;
                         }
                     }
-                if( dirX < 0
-                    &&
-                    curCol < 0 ) {
-                    curCol =  inGridW - 1;
-                    curRow --;
-                    if( curRow < 0 ) {
-                        curRow = inGridH - 1;
+                else if( dirX == 1 ) {
+                    curCol = -1;
+                    curRow =  *inOutPickedY;
+                    if( curRow == -1 ) {
+                        curRow = 0;
                         }
                     }
-                }
-            else {
-                /* move in y dir only */
-                curRow += dirY;
-
-                if( dirY > 0
-                    &&
-                    curRow >= inGridH ) {
-                    curRow = 0;
-                    curCol ++;
-                    if( curCol >= inGridW ) {
+                else if( dirY == -1 ) {
+                    curRow = inGridH;
+                    curCol = *inOutPickedX;
+                    if( curCol == -1 ) {
                         curCol = 0;
                         }
                     }
-                if( dirY < 0
-                    &&
-                    curRow < 0 ) {
-                    curRow =  inGridH - 1;
-                    curCol --;
-                    if( curCol < 0 ) {
-                        curCol = inGridW - 1;
+                else if( dirY == 1 ) {
+                    curRow = -1;
+                    curCol =  *inOutPickedX;
+                    if( curCol == -1 ) {
+                        curCol = 0;
                         }
                     }
                 }
             }
+
+        /* didn't find another cell after two tries
+           leave inOutPicked alone */
         }
 
-    *inOutPickedX = curCol;
-    *inOutPickedY = curRow;
+    /* no dir pressed at all, leave inOutPicked alone */
     }
 
 

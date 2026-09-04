@@ -548,6 +548,20 @@ static void pieceSplitLines( const char  *inString,
 
     while( nextWord < pieceNumWords ) {
 
+        if( pieceWordBuffer[ nextWord ][ 0 ] == '#'
+            &&
+            pieceWordBuffer[ nextWord ][ 1 ] == '#' ) {
+            /* ## by itself means that we prematurely end a line */
+            pieceNumLines++;
+
+            if( pieceNumLines >= MAX_NUM_LINES ) {
+                return;
+                }
+            /* skip this word entirely */
+            nextWord ++;
+            continue;
+            }
+
         if( addWordToLine( pieceNumLines,
                            nextWord ) ) {
 

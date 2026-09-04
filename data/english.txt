@@ -88,8 +88,8 @@ impossible     "Impossible"
 
 formationKing       "King Spot"
 formationOther      "Army Spot"
-formationKingDesc   "Your king goes here.  Protect him at all costs!"
-formationOtherDesc  "Pieces will be drawn from your deck to fill this spot."
+formationKingDesc   "Your king goes here. ## ## Protect him at all costs!  ## ## Select spot to move it."
+formationOtherDesc  "Pieces will be drawn from your deck to fill this spot.  ## ## Select spot to move it."
 
 
 pawn           "Pawn"
@@ -108,8 +108,8 @@ queen          "Queen"
 queenDesc      "Moves in straight lines and diagonally"
 
 king           "King"
-kingDescYou    "Moves 1 space in any direction.  If your king gets captured, you lose!"
-kingDescThem   "Moves 1 space in any direction.  Capture the enemy king to win!"
+kingDescYou    "Moves 1 space in any direction. ## ## If your king gets captured, you lose!"
+kingDescThem   "Moves 1 space in any direction. ## ##  Capture the enemy king to win!"
 
 laserRook      "Laser Rook"
 laserRookDesc  "Fires lasers in straight lines after moving"

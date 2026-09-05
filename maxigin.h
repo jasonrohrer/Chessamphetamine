@@ -13205,7 +13205,8 @@ void minginGame_step( char  inFinalStep ) {
         int            menuPanel;
         int            fadeStep;
         int            ySlideInPos;
-
+        int            r             =   mingin_getStepsPerSecond();
+        
         ySlideInPos =
             - MAXIGIN_GAME_NATIVE_H * ( mx_menuFadeMax - mx_menuFade )
             / mx_menuFadeMax;
@@ -13231,6 +13232,9 @@ void minginGame_step( char  inFinalStep ) {
             mx_menuFade < mx_menuFadeMax ) {
             /* Purho easing function, go 20% of remaining distance */
             fadeStep = ( mx_menuFadeMax - mx_menuFade ) / 5;
+
+            fadeStep = ( fadeStep * 60 ) / r;
+            
             if( fadeStep < 1 ) {
                 fadeStep = 1;
                 }
@@ -13242,6 +13246,9 @@ void minginGame_step( char  inFinalStep ) {
                  mx_menuFade > 0 ) {
 
             fadeStep = ( mx_menuFadeMax - mx_menuFade ) / 3;
+
+            fadeStep = ( fadeStep * 60 ) / r;
+            
             if( fadeStep < 30 ) {
                 fadeStep = 30;
                 }

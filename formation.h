@@ -331,9 +331,14 @@ void formationDraw( int   inBoardCenterX,
                 MAXIGIN_CENTER );
         maxigin_setLanguageFontIndex( 0 );
         }
-    else if( ! inSlidingUp ) {
+    else if( ! inSlidingUp
+             &&
+             ( formationPickedX == -1
+               ||
+               formationPickedY == -1 ) ) {
         /* hide done button if new spot waiting */
         /* also hide if sliding up  */
+        /* also hide if currently have a slot picked */
         
         buttonDraw( fmDoneButton );
         }
@@ -658,7 +663,13 @@ char formationStep( int  inBoardCenterX,
         }
     
 
+    /* no done button pressable if they are still picking a slot
+       and haven't set it down yet */
     if( ! fmNewSpotWaiting
+        &&
+        ( formationPickedX == -1
+          ||
+          formationPickedY == -1 )
         &&
         buttonIsNewPressed( fmDoneButton ) ) {
         formationPickedX = -1;

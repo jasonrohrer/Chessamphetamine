@@ -61,6 +61,8 @@ newSpotInA           "Purchase"
 newSpotInB           "more for new army formation spot"
 
 shopTitle      "Shop!"
+shopInstructA  "Improve your deck!"
+shopInstructB  "Click a piece to buy it"
 sale           "Sale!"
 permanent      "Perma"
 

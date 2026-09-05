@@ -57,6 +57,8 @@ newSpotInA           "再購買"
 newSpotInB           "次即可獲得新的軍隊陣形位置"
 
 shopTitle      "商店！"
+shopInstructA  "強化你的牌組！"
+shopInstructB  "點選棋子購買"
 sale           "折"
 permanent      "永久"
 

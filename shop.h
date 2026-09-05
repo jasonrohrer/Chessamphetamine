@@ -134,6 +134,8 @@ static  char           shopActionDown                             =   0;
 static  int            purchaseSound                              =  -1;
 
 static  int            lang_shopTitle                             =  -1;
+static  int            lang_shopInstructA                         =  -1;
+static  int            lang_shopInstructB                         =  -1;
 static  int            lang_sale                                  =  -1;
 static  int            lang_permanent                             =  -1;
 static  int            lang_newSpotInA                            =  -1;
@@ -316,11 +318,13 @@ void shopInit( int  inPointerActionHandle,
 
     purchaseSound = maxigin_initSoundEffect( "purchase_sd_30.wav" );
 
-    lang_shopTitle  = maxigin_initTranslationKey( "shopTitle"  );
-    lang_sale       = maxigin_initTranslationKey( "sale"       );
-    lang_permanent  = maxigin_initTranslationKey( "permanent"  );
-    lang_newSpotInA = maxigin_initTranslationKey( "newSpotInA" );
-    lang_newSpotInB = maxigin_initTranslationKey( "newSpotInB" );
+    lang_shopTitle      = maxigin_initTranslationKey( "shopTitle"      );
+    lang_shopInstructA  = maxigin_initTranslationKey( "shopInstructA"  );
+    lang_shopInstructB  = maxigin_initTranslationKey( "shopInstructB"  );
+    lang_sale           = maxigin_initTranslationKey( "sale"           );
+    lang_permanent      = maxigin_initTranslationKey( "permanent"      );
+    lang_newSpotInA     = maxigin_initTranslationKey( "newSpotInA"     );
+    lang_newSpotInB     = maxigin_initTranslationKey( "newSpotInB"     );
     
 
     /* all have discount turned off, but potential 50 % discount for now */
@@ -478,10 +482,21 @@ void shopDraw( void ) {
     maxigin_drawResetColor();
 
     maxigin_setLanguageFontIndex( 1 );
-    
+
+    /* skip shop title for now */
+    if( 0 )
     maxigin_drawLangText( lang_shopTitle,
                           shopCenterX,
                           shopCenterY - 70,
+                          MAXIGIN_CENTER );
+
+    maxigin_drawLangText( lang_shopInstructA,
+                          shopCenterX,
+                          shopCenterY - 95,
+                          MAXIGIN_CENTER );
+    maxigin_drawLangText( lang_shopInstructB,
+                          shopCenterX,
+                          shopCenterY - 75,
                           MAXIGIN_CENTER );
     
     maxigin_setLanguageFontIndex( 0 );

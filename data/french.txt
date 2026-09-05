@@ -60,6 +60,8 @@ newSpotInA           "Encore"
 newSpotInB           "pour une case de formation"
 
 shopTitle      "Boutique!"
+shopInstructA  "Améliorez votre deck!"
+shopInstructB  "Cliquez sur une pièce pour l’acheter"
 sale           "Promo!"
 permanent      "À vie"
 

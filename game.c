@@ -537,7 +537,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         if( formationShowing ) {
 
             formationDraw( boardCenterX,
-                           boardLiveCenterY );
+                           boardLiveCenterY,
+                           deckViewShowing );
 
             }
         else {
@@ -666,7 +667,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
           ||
           draftingPieces )
         &&
-        ! chessGameOver ) {
+        ! chessGameOver
+        &&
+        ! deckViewShowing ) {
 
         int  stringKey  =  lang_drawInstruct;
 

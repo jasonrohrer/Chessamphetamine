@@ -19,8 +19,9 @@ void formationInit( int  inPointerActionHandle,
                     int  inDynamicDoneButtonHandle );
 
 
-void formationDraw( int  inBoardCenterX,
-                    int  inBoardCenterY );
+void formationDraw( int   inBoardCenterX,
+                    int   inBoardCenterY,
+                    char  inSlidingUp );
 
 
 /* returns 1 if done adjusting formation */
@@ -167,8 +168,9 @@ void formationInit( int  inPointerActionHandle,
 
 
 
-void formationDraw( int  inBoardCenterX,
-                    int  inBoardCenterY ) {
+void formationDraw( int   inBoardCenterX,
+                    int   inBoardCenterY,
+                    char  inSlidingUp ) {
 
     int            y;
     int            x;
@@ -329,9 +331,10 @@ void formationDraw( int  inBoardCenterX,
                 MAXIGIN_CENTER );
         maxigin_setLanguageFontIndex( 0 );
         }
-    else {
+    else if( ! inSlidingUp ) {
         /* hide done button if new spot waiting */
-
+        /* also hide if sliding up  */
+        
         buttonDraw( fmDoneButton );
         }
     }
@@ -700,10 +703,10 @@ void formationBackToStart( void ) {
        k in back, 2 pieces in front */
     
     /* king */
-    formation[ 7 ][ 4 ] = 2;
+    formation[ 6 ][ 4 ] = 2;
     
-    formation[ 7 ][ 0 ] = 1;
-    formation[ 7 ][ 7 ] = 1;
+    formation[ 6 ][ 1 ] = 1;
+    formation[ 6 ][ 6 ] = 1;
 
     formationSize = 3;
     }

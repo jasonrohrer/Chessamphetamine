@@ -53,7 +53,6 @@ defaults       "恢復預設"
 drawInstruct   "徵召你的軍隊"
 formationInstruct   "調整軍隊陣形"
 newFormationSpot    "新增軍隊陣形位置！"
-newFormationBuy     "選擇購買！"
 newSpotInA           "再購買"
 newSpotInB           "次即可獲得新的軍隊陣形位置"
 

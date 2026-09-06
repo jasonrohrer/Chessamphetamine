@@ -57,7 +57,6 @@ defaults       "Defaults"
 drawInstruct   "Draft your army"
 formationInstruct   "Adjust army formation"
 newFormationSpot    "New army formation spot!"
-newFormationBuy     "Pick to buy!"
 newSpotInA           "Purchase"
 newSpotInB           "more for new army formation spot"
 

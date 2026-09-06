@@ -4586,6 +4586,14 @@ char isForcedCheckmatePossible( BoardState  *inState ) {
         return 1;
         }
 
+    if( knightCount <= 2
+        &&
+        bishopCountTot <= 1 ) {
+        /* this is a very hard checkmate to find
+           count it as impossible, at least for this engine */
+        return 0;
+        }
+
     if( knightCount > 0
         &&
         bishopCountTot > 0 ) {

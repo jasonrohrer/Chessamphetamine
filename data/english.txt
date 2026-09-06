@@ -57,12 +57,17 @@ defaults       "Defaults"
 drawInstruct   "Draft your army"
 formationInstruct   "Adjust army formation"
 newFormationSpot    "New army formation spot!"
+newFormationBuy     "Pick to buy!"
 newSpotInA           "Purchase"
 newSpotInB           "more for new army formation spot"
 
+newSpotTitle         "Buy new spot"
+newSpotDescription   "Adds a new spot to your army formation, allowing you to place more pieces on the board."
+
+
 shopTitle      "Shop!"
 shopInstructA  "Improve your deck!"
-shopInstructB  "Click a piece to buy it"
+shopInstructB  "Pick a piece to buy it"
 sale           "Sale!"
 permanent      "Perma"
 

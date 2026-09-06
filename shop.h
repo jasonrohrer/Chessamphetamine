@@ -140,6 +140,9 @@ static  int            lang_sale                                  =  -1;
 static  int            lang_permanent                             =  -1;
 static  int            lang_newSpotInA                            =  -1;
 static  int            lang_newSpotInB                            =  -1;
+static  int            lang_newFormationBuy                       =  -1;
+static  int            lang_newSpotTitle                          =  -1;
+static  int            lang_newSpotDescription                    =  -1;
 
 static  char           shoppingDone                               =   0;
 
@@ -165,6 +168,9 @@ static  unsigned char  newSpotHighlightFade                       =  0;
 static  int            numLeftForNewSpot                          =  0;
 
 static  char           shopSlotPickedWithController               =  0;
+
+static  unsigned char  newFormationBuyFlashFade                   =  0;
+static  char           newFormationBuyFlashFadeDir                =  1;
 
 
 static void shopResetHightlighFades( void ) {
@@ -254,6 +260,8 @@ static void shopSetNewSpotAvail( Deck  *inPlayerDeck ) {
     if( formationGetNumNonKingSpots() < deckGetSize( inPlayerDeck ) / 6  ) {
         newSpotAvail = 1;
         numLeftForNewSpot = 0;
+        newFormationBuyFlashFade = 0;
+        newFormationBuyFlashFadeDir = 1;
         }
     else {
         numLeftForNewSpot =
@@ -318,14 +326,16 @@ void shopInit( int  inPointerActionHandle,
 
     purchaseSound = maxigin_initSoundEffect( "purchase_sd_30.wav" );
 
-    lang_shopTitle      = maxigin_initTranslationKey( "shopTitle"      );
-    lang_shopInstructA  = maxigin_initTranslationKey( "shopInstructA"  );
-    lang_shopInstructB  = maxigin_initTranslationKey( "shopInstructB"  );
-    lang_sale           = maxigin_initTranslationKey( "sale"           );
-    lang_permanent      = maxigin_initTranslationKey( "permanent"      );
-    lang_newSpotInA     = maxigin_initTranslationKey( "newSpotInA"     );
-    lang_newSpotInB     = maxigin_initTranslationKey( "newSpotInB"     );
-    
+    lang_shopTitle          = maxigin_initTranslationKey( "shopTitle"          );
+    lang_shopInstructA      = maxigin_initTranslationKey( "shopInstructA"      );
+    lang_shopInstructB      = maxigin_initTranslationKey( "shopInstructB"      );
+    lang_sale               = maxigin_initTranslationKey( "sale"               );
+    lang_permanent          = maxigin_initTranslationKey( "permanent"          );
+    lang_newSpotInA         = maxigin_initTranslationKey( "newSpotInA"         );
+    lang_newSpotInB         = maxigin_initTranslationKey( "newSpotInB"         );
+    lang_newFormationBuy    = maxigin_initTranslationKey( "newFormationBuy"    );
+    lang_newSpotTitle       = maxigin_initTranslationKey( "newSpotTitle"       );
+    lang_newSpotDescription = maxigin_initTranslationKey( "newSpotDescription" );
 
     /* all have discount turned off, but potential 50 % discount for now */
     shopIsOnSale[ 0 ] = 0;
@@ -421,6 +431,8 @@ void shopInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( shopOverNewSpot );
 
     REGISTER_VAL_MEM( shopSlotPickedWithController );
+
+    REGISTER_VAL_MEM( newFormationBuyFlashFade );
     }
 
 
@@ -619,6 +631,33 @@ void shopDraw( void ) {
                               shopCenterX,
                               newFormSpotY - 17,
                               MAXIGIN_CENTER );
+        if(0)
+        maxigin_drawLangText( lang_newFormationBuy,
+                              shopCenterX - 20,
+                              newFormSpotY,
+                              MAXIGIN_RIGHT );
+
+        if( newFormationBuyFlashFade > 0 ) {
+
+            int  fade  =  newFormationBuyFlashFade + 100;
+            
+            if( fade > 255 ) {
+                fade = 255;
+                }
+            
+            maxigin_drawSetColor( 70,
+                                  198,
+                                  87,
+                                  (unsigned char)fade );
+            
+            maxigin_drawLangText( lang_newFormationBuy,
+                              shopCenterX - 15,
+                              newFormSpotY,
+                              MAXIGIN_RIGHT );
+            
+            maxigin_drawResetColor();
+            }
+           
     
         maxigin_setLanguageFontIndex( 0 ); 
 
@@ -626,13 +665,34 @@ void shopDraw( void ) {
                             shopCenterX,
                             newFormSpotY );
 
+        
         if( newSpotHighlightFade > 0 ) {
+            
+            int  centX  =  MAXIGIN_GAME_NATIVE_W - 42;
+            int  centY  =  MAXIGIN_GAME_NATIVE_H / 2;
 
             maxigin_drawSetAlpha( newSpotHighlightFade );
             
             maxigin_drawSpriteGlowOnly( spotSprite,
                                         shopCenterX,
                                         newFormSpotY );
+            maxigin_drawResetColor();
+        
+
+            drawDescriptionText( lang_newSpotTitle,
+                                 lang_newSpotDescription,
+                                 centX,
+                                 centY,
+                                 newSpotHighlightFade );
+
+            maxigin_drawSetColor( 70,
+                                  198,
+                                  87,
+                                  newSpotHighlightFade  );
+            
+            drawDescriptionFrame( centX,
+                                  centY );
+            
             maxigin_drawResetColor();
             }
 
@@ -1053,6 +1113,31 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
             }
         shopActionDown = 1;
         }
+
+
+    if( newSpotAvail ) {
+
+        int  newFadeVal  =  newFormationBuyFlashFade +
+                            ( newFormationBuyFlashFadeDir * 5 * 60 ) / r;
+
+        if( newFormationBuyFlashFadeDir == 1
+            &&
+            newFadeVal >= 255 ) {
+            
+            newFadeVal = 255;
+            newFormationBuyFlashFadeDir = -1;
+            }
+        else if( newFormationBuyFlashFadeDir == -1
+            &&
+            newFadeVal <= 1 ) {
+            
+            newFadeVal = 1;
+            newFormationBuyFlashFadeDir = 1;
+            }
+
+        newFormationBuyFlashFade = (unsigned char)newFadeVal;
+        }
+    
 
     if( shopSelectedSlot == -1 ) {
         return noPiece;

@@ -56,12 +56,17 @@ defaults       "Par défaut"
 drawInstruct   "Composez votre armée"
 formationInstruct   "Ajustez la formation"
 newFormationSpot    "Nouvelle case de formation!"
+newFormationBuy     "Choisir pour achat!"
 newSpotInA           "Encore"
 newSpotInB           "pour une case de formation"
 
+newSpotTitle         "Acheter une case"
+newSpotDescription   "Ajoute une case à votre formation pour placer plus de pièces sur le plateau."
+
+
 shopTitle      "Boutique!"
 shopInstructA  "Améliorez votre deck!"
-shopInstructB  "Cliquez sur une pièce pour l’acheter"
+shopInstructB  "Choisissez une pièce pour l’acheter"
 sale           "Promo!"
 permanent      "À vie"
 

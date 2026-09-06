@@ -1485,9 +1485,9 @@ void maxiginGame_step( void ) {
         &&
         ! formationShowing
         &&
-        !( sideBoardShowing
-           &&
-           sideBoardIsMouseOver() ) ) {
+        sideBoardShowing
+        &&
+        ! sideBoardIsMouseOver() ) {
 
         int         mouseX;
         int         mouseY;

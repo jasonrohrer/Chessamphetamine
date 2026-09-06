@@ -108,8 +108,8 @@ CHECK_CHESS_ARRAY( shopPrices,
    and two paid decks with more and more rarity */
 #define                NUM_SHOP_SLOTS  6
 
-static  int            shopBaseVisibleSlots                       =  5;
-static  int            shopNumVisibleSlots                        =  5;
+static  int            shopBaseVisibleSlots                       =  4;
+static  int            shopNumVisibleSlots                        =  4;
 
 static  char           shopIsPermaSale       [ NUM_SHOP_SLOTS ];
 static  char           shopIsOnSale          [ NUM_SHOP_SLOTS ];
@@ -166,6 +166,10 @@ static  int            newSpotBought                              =  0;
 static  int            newSpotAvail                               =  0;
 static  unsigned char  newSpotHighlightFade                       =  0;
 static  int            numLeftForNewSpot                          =  0;
+
+static  int            newFormSpotSlotX;
+static  int            newFormSpotSlotY;
+
 
 static  char           shopSlotPickedWithController               =  0;
 
@@ -367,6 +371,13 @@ void shopInit( int  inPointerActionHandle,
     
     curPos  = - startHop;
 
+    /* move one over to leave room for new formation spot */
+    newFormSpotSlotX = curPos + shopCenterX;
+    newFormSpotSlotY = shopCenterY - 6;
+    
+
+    curPos += hopSize;
+    
     for( i = 0;
          i < NUM_SHOP_SLOTS;
          i ++ ) {
@@ -637,7 +648,7 @@ void shopDraw( void ) {
                               newFormSpotY,
                               MAXIGIN_RIGHT );
 
-        if( newFormationBuyFlashFade > 0 ) {
+        if( 0 && newFormationBuyFlashFade > 0 ) {
 
             int  fade  =  newFormationBuyFlashFade + 100;
             
@@ -662,8 +673,8 @@ void shopDraw( void ) {
         maxigin_setLanguageFontIndex( 0 ); 
 
         maxigin_drawSprite( spotSprite,
-                            shopCenterX,
-                            newFormSpotY );
+                            newFormSpotSlotX,
+                            newFormSpotSlotY );
 
         
         if( newSpotHighlightFade > 0 ) {
@@ -674,8 +685,8 @@ void shopDraw( void ) {
             maxigin_drawSetAlpha( newSpotHighlightFade );
             
             maxigin_drawSpriteGlowOnly( spotSprite,
-                                        shopCenterX,
-                                        newFormSpotY );
+                                        newFormSpotSlotX,
+                                        newFormSpotSlotY );
             maxigin_drawResetColor();
         
 
@@ -707,8 +718,8 @@ void shopDraw( void ) {
             }
 
         numberDrawCenter( costGet( newFormationSpotCost ),
-                          shopCenterX,
-                          newFormSpotY + 17,
+                          newFormSpotSlotX,
+                          shopCenterY + 12,
                           1 );
         }
     else if( formationHasRoomForNewSpot()
@@ -861,13 +872,13 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
 
             int  spotR  =  BOARD_SQUARE_SIZE / 2;
 
-            if( pointerX > shopCenterX - spotR
+            if( pointerX > newFormSpotSlotX - spotR
                 &&
-                pointerX < shopCenterX + spotR
+                pointerX < newFormSpotSlotX + spotR
                 &&
-                pointerY > newFormSpotY - spotR
+                pointerY > newFormSpotSlotY - spotR
                 &&
-                pointerY < newFormSpotY + spotR ) {
+                pointerY < newFormSpotSlotY + spotR ) {
 
                 shopOverNewSpot = 1;
 

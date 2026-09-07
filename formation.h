@@ -104,7 +104,7 @@ static  int            lang_otherSpotDesc;
 static  int            fmOverSlotX             =  -1;
 static  int            fmOverSlotY             =  -1;
 static  char           fmPickedWithController  =   0;
-
+static  char           fmPointerDrag           =   0;
 
 
 void formationInit( int  inPointerActionHandle,
@@ -164,6 +164,8 @@ void formationInit( int  inPointerActionHandle,
 
     REGISTER_VAL_MEM  ( fmNewSpotWaiting       );
     REGISTER_VAL_MEM  ( fmPickedWithController );
+
+    REGISTER_VAL_MEM  ( fmPointerDrag );
     }
 
 
@@ -437,6 +439,14 @@ char formationStep( int  inBoardCenterX,
                                                      256 );
                             }
 
+                        if( maxigin_isButtonDown( fmPointerActionHandle ) ) {
+                            /* button still held down while they moused
+                               to actually move the active cell
+                               Count it as a drag, and clear active
+                               status on release of mouse */
+                            fmPointerDrag = 1;
+                            }
+                        
                         formationPickedX = fmOverSlotX;
                         formationPickedY = fmOverSlotY;
                         }
@@ -445,11 +455,16 @@ char formationStep( int  inBoardCenterX,
             }
         }
     else {
+        /* pointer not available, consider controller */
         
         static  char  presentMap[ BH * BW ];
 
         int  oldX  =  fmOverSlotX;
         int  oldY  =  fmOverSlotY;
+
+        /* end any pointer drag, in case pointer left screen */
+        
+        fmPointerDrag = 0; 
 
         if( formationPickedX != -1
             &&
@@ -660,6 +675,17 @@ char formationStep( int  inBoardCenterX,
 
     if( ! maxigin_isButtonDown( fmPointerActionHandle ) ) {
         fmActionDown = 0;
+
+        if( fmPointerDrag ) {
+            /* they were dragging before, and now they have let go */
+
+            formationPickedX = -1;
+            formationPickedY = -1;
+            fmPointerDrag = 0;
+
+            playBeepDownSound();
+            unlocksCancelViewer();
+            }
         }
     
 

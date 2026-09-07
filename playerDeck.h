@@ -45,6 +45,12 @@ int playerDeckGetSize( void );
 
 
 
+/* gets a static array of flags indicating whether each position
+   in deck is played or not */
+char *playerDeckGetPiecePlayedMap( void );
+
+
+
 
 
 #endif
@@ -56,8 +62,7 @@ int playerDeckGetSize( void );
 #ifndef PLAYER_DECK_IMPLEMENTATION_INCLUDED
 #define PLAYER_DECK_IMPLEMENTATION_INCLUDED
 
-
-#define  MAX_DECK_SIZE   256
+#include "deck.h"
 
 
 static  int         playerDeckNumPlayed                 =  0;
@@ -160,6 +165,52 @@ void playerDeckAddPiece( ChessPiece   inPiece ) {
 
 int playerDeckGetSize( void ) {
     return deckGetSize( &playerDrawDeck );
+    }
+
+
+char *playerDeckGetPiecePlayedMap( void ) {
+
+    static  char  map[ MAX_DECK_SIZE ];
+
+    static  char  playedUsed[ MAX_DECK_SIZE ];
+
+    int  i;
+    int  deckSize  =  deckGetSize( &playerDrawDeck );
+
+    for( i = 0;
+         i < MAX_DECK_SIZE;
+         i ++ ) {
+        
+        map       [ i ] = 0;
+        playedUsed[ i ] = 0;
+        }
+
+    for( i = 0;
+         i < deckSize;
+         i ++ ) {
+
+        int  j;
+
+        ChessPiece  p  =  playerDrawDeck.pieces[ i ];
+
+        for( j = 0;
+             j < playerDeckNumPlayed;
+             j ++ ) {
+
+            if( ! playedUsed[ j ]
+                &&
+                playerDeckPlayed[ j ] == p ) {
+
+                map[ i ] = 1;
+                playedUsed[ j ] = 1;
+                
+                break;
+                }
+            }
+        }
+    
+
+    return map;
     }
 
 

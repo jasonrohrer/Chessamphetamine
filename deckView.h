@@ -60,6 +60,8 @@ typedef struct DeckViewSlot {
         ChessPiece  piece;
 
         char        present;
+
+        char        played;
         
     } DeckViewSlot;
 
@@ -86,6 +88,8 @@ static  int            nextButton                       =  -1;
 static  int            prevButton                       =  -1;
 
 static  int            deckViewOverSlot                 =  -1;
+
+static  int            deckViewPlayedCheckSprite        =  -1;
 
 
 static void deckViewClear( void ) {
@@ -168,6 +172,23 @@ void deckViewInit(  int  inCenterX,
                              0,
                              inPointerActionHandle,
                              inPrevButtonActionHandle );
+
+
+    deckViewPlayedCheckSprite = maxigin_initSprite( "playedCheck.tga" );
+    
+    maxigin_initMakeGlowSprite( deckViewPlayedCheckSprite,
+                                4,
+                                2 );
+
+    maxigin_initMakeDropShadowSprite( deckViewPlayedCheckSprite,
+                                      5,
+                                      2,
+                                      255,
+                                      255,
+                                      0,
+                                      100,
+                                      100,
+                                      0 );
     
     REGISTER_ARRAY_MEM( deckViewSlots        );
     REGISTER_ARRAY_MEM( deckViewHighlightFade );
@@ -185,13 +206,14 @@ static void deckViewSetDebug( void ) {
 
     int    p;
     Deck  *deck  =  playerDeckGetDrawDeck();
-    
+    char  *map   =  playerDeckGetPiecePlayedMap();
     for( p = 0;
          p < deck->numPieces;
          p ++ ) {
 
-        deckViewSlots[p].piece   = deck->pieces[p];
+        deckViewSlots[p].piece   = deck->pieces [p];
         deckViewSlots[p].present = deck->present[p];
+        deckViewSlots[p].played  = map          [p];
         }
 
     deckViewNumFullSlots = deck->numPieces;
@@ -224,19 +246,21 @@ void deckViewSet( void ) {
         signed char  present;
 
         /* show present pieces of this type first,
-           followed by non-present ones */
+           followed by non-present ones,
+           followed by played ones */
         for( present = 1;
-             present >= 0;
+             present >= -1;
              present -- ) {
 
-            int  p;
-
+            int    p;
+            char  *map  =  playerDeckGetPiecePlayedMap();
+            
             for( p = 0;
                  p < deck->numPieces;
                  p ++ ) {
 
                 char  piecePresence  =  deck->present[p];
-
+                
                 if( piecePresence
                     &&
                     deck->drawPos < p ) {
@@ -245,13 +269,31 @@ void deckViewSet( void ) {
                     piecePresence = 0;
                     }
 
-                if( piecePresence == present ) {
+                if( piecePresence == present
+                    &&
+                    ! map[ p ] ) {
                     
                     ChessPiece  thisPiece  =  deck->pieces[p];
 
                     if( thisPiece == i ) {
                         deckViewSlots[n].piece   = thisPiece;
                         deckViewSlots[n].present = present;
+                        deckViewSlots[n].played  = 0;
+                        
+                        n++;
+                        }
+                    }
+                else if( present == -1
+                         &&
+                         map[ p ] ) {
+                    
+                    ChessPiece  thisPiece  =  deck->pieces[p];
+
+                    if( thisPiece == i ) {
+                        deckViewSlots[n].piece   = thisPiece;
+                        deckViewSlots[n].present = present;
+                        deckViewSlots[n].played  = 1;
+                        
                         n++;
                         }
                     }
@@ -316,6 +358,14 @@ void deckViewDraw( void ) {
                                      xPos,
                                      yPos,
                                      deckViewHighlightFade[ i -  skip ] );
+                }
+
+            if( deckViewSlots[ i ].played ) {
+                maxigin_drawResetColor();
+                
+                maxigin_drawSprite( deckViewPlayedCheckSprite ,
+                                    xPos,
+                                    yPos - 5 );
                 }
             
             i ++;

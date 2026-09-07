@@ -91,6 +91,13 @@ static  int            deckViewOverSlot                 =  -1;
 
 static  int            deckViewPlayedCheckSprite        =  -1;
 
+static  int            lang_exhausted;
+static  int            lang_exhaustDesc;
+
+static  char           deckExhaustDescShowing           =   0;
+static  char           deckExhaustedShowing             =   0;
+static  unsigned char  deckExhaustedFade                =   0;
+
 
 static void deckViewClear( void ) {
     deckViewNumFullSlots = 0;
@@ -189,14 +196,22 @@ void deckViewInit(  int  inCenterX,
                                       100,
                                       100,
                                       0 );
+
+    lang_exhausted   = maxigin_initTranslationKey( "exhausted"   );
+    lang_exhaustDesc = maxigin_initTranslationKey( "exhaustDesc" );
+
     
-    REGISTER_ARRAY_MEM( deckViewSlots        );
+    REGISTER_ARRAY_MEM( deckViewSlots         );
     REGISTER_ARRAY_MEM( deckViewHighlightFade );
 
-    REGISTER_VAL_MEM( deckViewNumFullSlots );
-    REGISTER_VAL_MEM( deckViewPageNumber   );
+    REGISTER_VAL_MEM( deckViewNumFullSlots    );
+    REGISTER_VAL_MEM( deckViewPageNumber      );
 
-    REGISTER_VAL_MEM( deckViewOverSlot );
+    REGISTER_VAL_MEM( deckViewOverSlot        );
+    
+    REGISTER_VAL_MEM( deckExhaustDescShowing  );
+    REGISTER_VAL_MEM( deckExhaustedShowing    );
+    REGISTER_VAL_MEM( deckExhaustedFade       );
     }
 
 
@@ -300,6 +315,10 @@ void deckViewSet( void ) {
                 }
             }
         }
+
+    deckExhaustedFade      = 0;
+    deckExhaustedShowing   = 0;
+    deckExhaustDescShowing = 0;
     }
 
 
@@ -372,6 +391,31 @@ void deckViewDraw( void ) {
             }
         
         }
+
+    maxigin_setLanguageFontIndex( 1 );
+    if( deckExhaustedFade > 0 ) {
+        maxigin_drawResetColor();
+        maxigin_drawSetAlpha( deckExhaustedFade );
+        
+
+        maxigin_drawLangText( lang_exhausted,
+                              MAXIGIN_GAME_NATIVE_W - 42,
+                              MAXIGIN_GAME_NATIVE_H / 2 + 75,
+                              MAXIGIN_CENTER );
+        }
+
+    if( deckExhaustDescShowing ) {
+        maxigin_drawResetColor();
+
+        maxigin_drawLangText( lang_exhaustDesc,
+                              deckViewCenterX,
+                              deckViewCenterY + 90,
+                              MAXIGIN_CENTER );
+        }
+
+    maxigin_setLanguageFontIndex( 0 );
+    
+        
 
     }
 
@@ -523,16 +567,39 @@ ChessPiece deckViewStep( int  inPageSound ) {
             }
         }
 
+    if( ! deckExhaustedShowing
+        &&
+        deckExhaustedFade > 0 ) {
+
+        int  newFade  =  deckExhaustedFade -  deltaFade;
+
+        if( newFade > 0 ) {
+            deckExhaustedFade = (unsigned char)newFade;
+            }
+        else {
+            deckExhaustedFade = 0;
+            }
+        }
+    
+
     if( controllerMovedSlot ) {
         /* return noPiece for one step, to allow piece info panel
            to fade slightly, and so that game will play sound */
+        deckExhaustedShowing = 0;
         return noPiece;
         }
     
     if( deckViewOverSlot != -1 ) {
+
+        if( deckViewSlots[ deckViewOverSlot + skip ].played ) {
+            deckExhaustDescShowing = 1;
+            deckExhaustedShowing   = 1;
+            deckExhaustedFade      = 255;
+            }
         return deckViewSlots[ deckViewOverSlot + skip ].piece;
         }
     else {
+        deckExhaustedShowing = 0;
         return noPiece;
         }
     }

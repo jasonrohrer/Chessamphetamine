@@ -78,6 +78,9 @@ unlock2        "商店中總有一項商品特價"
 unlockLockedA  "關卡"
 unlockLockedB  "將死解鎖"
 
+exhausted      "耗盡"
+exhaustDesc    "耗盡所有棋子以刷新牌組"
+
 
 contraband     " "
 common         "普通"

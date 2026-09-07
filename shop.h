@@ -256,13 +256,13 @@ static void shopSetNewSpotAvail( void ) {
     /* they start with a 15-piece deck and 2 spots
        Once they have an 18-piece deck, they can buy another spot
        Then they can buy another when they have a 24-piece deck */
-    if( formationGetNumNonKingSpots() < playerDeckGetSize() / 6  ) {
+    if( formationGetNumNonKingSpots() < playerDeckGetSize() / 5  ) {
         newSpotAvail = 1;
         numLeftForNewSpot = 0;
         }
     else {
         numLeftForNewSpot =
-            ( formationGetNumNonKingSpots() + 1 ) * 6
+            ( formationGetNumNonKingSpots() + 1 ) * 5
             - playerDeckGetSize();
         }
     }

@@ -514,6 +514,27 @@ void mingin_getRunningTime( long  *outSeconds,
 
 
 /*
+  How many milliseconds total has the program been running?
+
+  Value might be set to -1 on platforms that don't have clocks.
+
+  NOTE:
+
+  This value caps-out at  2,147,483,647 ms, beyond which it returns
+  that fixed value forever.  This is approximately 24 days.
+
+  Returns:
+
+      the elapsed milliseconds
+            
+  [jumpMinginProvides]                         
+*/
+long mingin_getRunningTimeMilliseconds( void );
+
+
+
+
+/*
   Gets a seed value from an entropy source.
 
   A static value might be returned on some platforms.
@@ -1999,6 +2020,33 @@ char mingin_getStickPosition( int   inStickAxisHandle,
     }
 
 
+
+long mingin_getRunningTimeMilliseconds( void ) {
+
+    long  sec;
+    long  msec;
+
+    /* long can at least hold this value on every c89 platform */
+    long  maxMSec  =  2147483647L;
+
+    mingin_getRunningTime( &sec,
+                           &msec );
+
+    if( sec  < 0
+        ||
+        msec < 0 ) {
+        return -1;
+        }
+
+    if( sec > ( maxMSec - msec ) / 1000 ) {
+        return maxMSec;
+        }
+
+    return sec * 1000 + msec;
+    }
+
+    
+
 /*
   Returns a static buffer that must be used before next call to mn_intToString
 */
@@ -2397,6 +2445,8 @@ static  const char     *mn_settingsDirName      =  "settings";
 static  const char     *mn_bulkDataDirName      =  "data";
 static  char            mn_steamDeck            =  0;
 
+static  char            mn_actualFPSMeasured    =  0;
+static  int             mn_measuredRefreshRate  =  0;
 
 
 static void mn_getMonitorSize( Display  *inXDisplay,
@@ -2422,8 +2472,12 @@ static char mn_isRunningOnSteamDeck( void );
 
 
 int mingin_getStepsPerSecond( void ) {
-    if(1)return mn_screenRefreshRate;
-    return 5 * mn_screenRefreshRate/12;
+
+    if( mn_actualFPSMeasured ) {
+        return mn_measuredRefreshRate;
+        }
+    
+    return mn_screenRefreshRate;
     }
 
 
@@ -3775,7 +3829,10 @@ int main( void ) {
     int   gamepadFD            =  -1;
     char  vsyncOn              =   0;
     long  frameNS              =   0;
-
+    long  loopStartMS          =   0;
+    char  firstStepDone        =   0;
+    long  stepCount            =   0;
+    
     struct timespec  nextFrameTime;
 
     
@@ -4167,6 +4224,43 @@ int main( void ) {
            to give us a fresh start on our next step timing */
         gettimeofday( & mn_lastRedrawTime,
                       NULL );
+
+
+        if( ! firstStepDone ) {
+
+            /* first step may contain a bunch of slow init code
+               don't include this in measurment of actual refresh rate */
+
+            loopStartMS = mingin_getRunningTimeMilliseconds();
+            
+            firstStepDone = 1;
+            }
+        else {
+
+            stepCount ++;
+        
+            if( ! mn_actualFPSMeasured
+                &&
+                loopStartMS != -1 ) {
+
+                long  loopRunMS  =
+                    mingin_getRunningTimeMilliseconds() - loopStartMS;
+
+                if( loopRunMS > 3000 ) {
+                    /* ran for at least 3 seconds */
+
+                    mn_measuredRefreshRate =
+                        (int)( ( stepCount * 1000 ) / loopRunMS );
+
+                    mingin_log( "Mingin measured actual steps per second: " );
+                    mingin_log( mn_intToString( mn_measuredRefreshRate ) );
+                    mingin_log( "\n" );
+
+                    mn_actualFPSMeasured = 1;
+                    }
+                }
+            }
+        
         
         } /* end of  while( ! mn_shouldQuit )  */
 
@@ -6828,6 +6922,8 @@ static  const char    *mn_settingsDirName          =  "settings";
 static  const char    *mn_bulkDataDirName          =  "data";
 
 static  char           mn_firstStepRun             =  0;
+static  char           mn_actualFPSMeasured        =  0;
+static  int            mn_measuredRefreshRate      =  0;
 
 
 
@@ -8105,7 +8201,10 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     int            i;
     int            b;
     char           currentlyFullscreen;
-
+    char           firstStepDone;
+    long           loopStartMS;
+    long           stepCount             =  0;
+    
     QueryPerformanceCounter( &mn_programStartCount );
 
     /* tell windows NOT to scale our application according to DPI settings
@@ -8369,6 +8468,44 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
             
             mn_frameEndTarget.QuadPart =
                 frameEndTime.QuadPart + mn_ticksPerFrame.QuadPart;
+
+            
+            if( ! firstStepDone ) {
+
+                /* first step may contain a bunch of slow init code
+                   don't include this in measurment of actual refresh rate */
+
+                loopStartMS = mingin_getRunningTimeMilliseconds();
+            
+                firstStepDone = 1;
+                }
+            else {
+
+                stepCount ++;
+        
+                if( ! mn_actualFPSMeasured
+                    &&
+                    loopStartMS != -1 ) {
+
+                    long  loopRunMS  =
+                        mingin_getRunningTimeMilliseconds() - loopStartMS;
+
+                    if( loopRunMS > 3000 ) {
+                        /* ran for at least 3 seconds */
+
+                        mn_measuredRefreshRate =
+                            (int)( ( stepCount * 1000 ) / loopRunMS );
+
+                        mingin_log(
+                            "Mingin measured actual steps per second: " );
+                        
+                        mingin_log( mn_intToString( mn_measuredRefreshRate ) );
+                        mingin_log( "\n" );
+
+                        mn_actualFPSMeasured = 1;
+                        }
+                    }
+                }
             }
         }
 
@@ -8417,6 +8554,10 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
 
 
 int mingin_getStepsPerSecond( void ) {
+    if( mn_actualFPSMeasured ) {
+        return mn_measuredRefreshRate;
+        }
+    
     return mn_screenRefreshRate;
     }
 

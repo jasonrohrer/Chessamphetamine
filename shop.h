@@ -1108,6 +1108,7 @@ ChessPiece shopStep( int  inPickFailedSound,
                 moneyAdd( - shopSlotPrices[ shopSelectedSlot ] );
 
                 playerDeckAddPiece( shopItems[ shopSelectedSlot ] );
+                playerDeckReshuffle();
 
                 /* deck grew... does this make new slot purchase avail? */
                 shopSetNewSpotAvail();

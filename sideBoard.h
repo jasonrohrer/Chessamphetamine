@@ -29,6 +29,10 @@ void sideBoardInit( int  inPointerActionHandle,
 void sideBoardRedraw( void );
 
 
+/* returns pieces to player deck and fills sideboard with noPiece */
+void sideBoardReturnPieces( void );
+
+
 /* swaps a piece onto the side board if anything on the side board is selected
    returns noPiece if the swap failed */
 ChessPiece sideBoardSwap( ChessPiece  inNewPiece );
@@ -194,6 +198,30 @@ void sideBoardRedraw( void ) {
         }
     else {
         sbOverSlot = -1;
+        }
+    }
+
+
+
+void sideBoardReturnPieces( void ) {
+
+    int  i;
+    
+    sbNumSlots = sbBaseNumSlots + unlocksGetExtraSideboardSlots();
+
+    if( sbNumSlots > SIDE_BOARD_MAX_SLOTS ) {
+        sbNumSlots = SIDE_BOARD_MAX_SLOTS;
+        }
+
+    for( i = 0;
+         i < sbNumSlots;
+         i ++ ) {
+
+        if( sideBoard[ i ] != noPiece ) {
+            playerDeckReturnPieceUnplayed( sideBoard[ i ] );
+            }
+        
+        sideBoard[ i ] = noPiece;
         }
     }
 

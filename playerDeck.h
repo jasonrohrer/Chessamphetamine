@@ -30,6 +30,9 @@ Deck *playerDeckGetDrawDeck( void );
 ChessPiece playerDeckDraw( void );
 
 
+void playerDeckReshuffle( void );
+
+
 void playerDeckReturnPieceUnplayed( ChessPiece   inPiece );
 
 void playerDeckReturnPiecePlayed( ChessPiece   inPiece );
@@ -132,6 +135,10 @@ ChessPiece playerDeckDraw( void ) {
     }
 
 
+void playerDeckReshuffle( void ) {
+    deckReshuffleAll( &playerDrawDeck );
+    }
+
 
 void playerDeckReturnPieceUnplayed( ChessPiece   inPiece ) {
 
@@ -192,6 +199,11 @@ char *playerDeckGetPiecePlayedMap( void ) {
         int  j;
 
         ChessPiece  p  =  playerDrawDeck.pieces[ i ];
+
+        if( playerDrawDeck.present[ i ] ) {
+            /* present pieces never marked as played */
+            continue;
+            }
 
         for( j = 0;
              j < playerDeckNumPlayed;

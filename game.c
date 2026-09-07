@@ -1086,7 +1086,7 @@ void maxiginGame_step( void ) {
         int  x;
 
         /* whatever pieces the player actually has on the board get put
-           back in their deck now */
+           back in their deck now, but marked as played */
         for( y = 0;
              y < BH;
              y ++ ) {
@@ -1110,6 +1110,9 @@ void maxiginGame_step( void ) {
                 }
             }
 
+        /* side board pieces get put back in deck and marked as unplayed */
+        sideBoardReturnPieces();
+        
         unlocksCancelViewer();
         
         clearDrawMarkers();
@@ -2018,6 +2021,9 @@ void maxiginGame_step( void ) {
                 endMessageFade = 0;
 
                 if( ! heartsIsDead() ) {
+
+                    playerDeckReshuffle();
+                    
                     shopShowing = 1;
                     shopDone    = 0;
 
@@ -2330,7 +2336,9 @@ void maxiginGame_step( void ) {
                 costResetIncrement( drawCost );
 
                 costLevelIncrement( drawCost );
-                
+
+                playerDeckReshuffle();
+                                
                 currentLevel ++;
 
                 formationShowing = 1;

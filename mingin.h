@@ -7088,6 +7088,10 @@ static void mn_getMonitorSpecs( int  *outW,
         *outW  = devMode.dmPelsWidth;
         *outH  = devMode.dmPelsHeight;
         *outHz = devMode.dmDisplayFrequency;
+
+        mingin_log( "Found Windows monitor refresh rate from EnumDisplaySettings ");
+        mingin_log( mn_intToString( *outHz ) );
+        mingin_log( "\n" );
         }
     else {
         *outW  = -1;
@@ -7264,12 +7268,16 @@ static void mn_getRefreshRate( void ) {
                                   &devMode ) ) {
             if( devMode.dmDisplayFrequency > 1 ) {
                 mn_screenRefreshRate = (int)( devMode.dmDisplayFrequency );
+
+                mingin_log( "Found Windows monitor refresh rate from GetMonitorInfoA " );
+                mingin_log( mn_intToString( mn_screenRefreshRate ) );
+                mingin_log( "\n" );
                 }
             }
         }
 
     if( mn_screenRefreshRate == 0 ) {
-        mingin_log( "Failed to get Windows refresh rate from either "
+        mingin_log( "Failed to get Windows refresh rate from EnumDisplaySettings or "
                     "GetMonitorInfoA, falling "
                     "back to 60 Hz default." );
         mn_screenRefreshRate = 60;
@@ -8201,7 +8209,7 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
     int            i;
     int            b;
     char           currentlyFullscreen;
-    char           firstStepDone;
+    char           firstStepDone         =  0;
     long           loopStartMS;
     long           stepCount             =  0;
     

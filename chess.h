@@ -314,10 +314,10 @@ char isForcedCheckmatePossible( BoardState  *inState );
 static  MaxiginRand  chessRand;
 
 
-static  BoardState  chessRepeatCheckState;
-static  char        chessRepeatCheckStateSet     =  0;
-static  int         chessRepeatCheckStateAge     =  0;
-static  int         chessRepeatCheckStateMaxAge  =  6;
+#define  CHESS_REPEAT_CHECK_NUM_STATES         6
+
+static  BoardState  chessRepeatCheckStates[ CHESS_REPEAT_CHECK_NUM_STATES ];
+static  int         chessNextRepeatToWrite  =  0;
 
 
 /* this is enabled to force rockets and other random-target pieces
@@ -2135,9 +2135,8 @@ void chessInit( void ) {
     
     REGISTER_VAL_MEM( chessRand );
 
-    REGISTER_VAL_MEM( chessRepeatCheckState );
-    REGISTER_VAL_MEM( chessRepeatCheckStateSet );
-    REGISTER_VAL_MEM( chessRepeatCheckStateAge );
+    REGISTER_ARRAY_MEM( chessRepeatCheckStates );
+    REGISTER_VAL_MEM( chessNextRepeatToWrite );
     }
 
 
@@ -3788,32 +3787,34 @@ static char getChessMoveInternal( BoardState  *inState,
                                       outCaptured,
                                       outNewState );
 
-        if( ! chessRepeatCheckStateSet
-            ||
-            chessRepeatCheckStateAge >= chessRepeatCheckStateMaxAge ) {
-            
-            chessRepeatCheckState = *outNewState;
-            chessRepeatCheckStateSet = 1;
-            chessRepeatCheckStateAge = 0;
-            }
-        else {
+        int   i;
 
+        for( i = 0;
+             i < CHESS_REPEAT_CHECK_NUM_STATES;
+             i ++ ) {
+
+            if( i == chessNextRepeatToWrite ) {
+                continue;
+                }
+            
             if( chessBoardStatesEqual( outNewState,
-                                       & chessRepeatCheckState ) ) {
+                                      & chessRepeatCheckStates[ i ] ) ) {
                 
                 /* repeat hit, switch to random move */
                 retVal = getRandomMoveInternal( inState,
                                                 outMove,
                                                 outCaptured,
                                                 outNewState );
+                break;
+                }
+            }
 
-                /* clear the repeat check state */
-                chessRepeatCheckStateSet = 0;
-                }
-            else {
-                /* not a repeat, keep the age count going */
-                chessRepeatCheckStateAge ++;
-                }
+        chessRepeatCheckStates[ chessNextRepeatToWrite ] = *outNewState;
+
+        chessNextRepeatToWrite ++;
+
+        if( chessNextRepeatToWrite >= CHESS_REPEAT_CHECK_NUM_STATES ) {
+            chessNextRepeatToWrite = 0;
             }
         
         return retVal;

@@ -2645,14 +2645,17 @@ static int isKingAlone( BoardState  *inState,
                         int         *outKingX,
                         int         *outKingY ) {
 
-    char  whiteKingFound   =  0;
-    char  blackKingFound   =  0;
-    int   otherWhiteCount  =  0;
-    int   otherBlackCount  =  0;
-    int   whiteKingX       =  0;
-    int   whiteKingY       =  0;
-    int   blackKingX       =  0;
-    int   blackKingY       =  0;
+    char  whiteKingFound         =  0;
+    char  blackKingFound         =  0;
+    int   otherWhiteCount        =  0;
+    int   otherBlackCount        =  0;
+    /* if something better than knight or bishop found */
+    char  otherWhiteBetterFound  =  0;
+    char  otherBlackBetterFound  =  0;
+    int   whiteKingX             =  0;
+    int   whiteKingY             =  0;
+    int   blackKingX             =  0;
+    int   blackKingY             =  0;
     
     int   y;
     int   x;
@@ -2688,6 +2691,21 @@ static int isKingAlone( BoardState  *inState,
                     }
                 }
             else {
+                
+                if( t != bishop
+                    &&
+                    t != knight
+                    &&
+                    t != pawn ) {
+
+                    if( c == CHESS_WHITE ) {
+                        otherWhiteBetterFound = 1;
+                        }
+                    else {
+                        otherBlackBetterFound = 1;
+                        }
+                    }
+                    
                 if( c == CHESS_WHITE ) {
                     otherWhiteCount ++;
                     
@@ -2716,6 +2734,8 @@ static int isKingAlone( BoardState  *inState,
         &&
         otherWhiteCount <  2
         &&
+        ! otherWhiteBetterFound
+        &&
         otherBlackCount >  0
         && 
         otherBlackCount > otherWhiteCount
@@ -2733,6 +2753,8 @@ static int isKingAlone( BoardState  *inState,
     if( blackKingFound
         &&
         otherBlackCount <  2
+        &&
+        ! otherBlackBetterFound
         &&
         otherWhiteCount >  0
         &&

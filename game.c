@@ -36,6 +36,7 @@
 #define SLOT_LIFT_IMPLEMENTATION
 #define FORMATION_IMPLEMENTATION
 #define UNLOCKS_IMPLEMENTATION
+#define PLAYER_DECK_IMPLEMENTATION
 
 #include "chess.h"
 
@@ -94,6 +95,8 @@
 #include "formation.h"
 
 #include "unlocks.h"
+
+#include "playerDeck.h"
 
 
 enum GameUserAction {
@@ -205,8 +208,6 @@ static Captured       postMoveCaptured;
 static BoardState     postMoveState;
 static Move           boardMove;
 static AnimProgress   moveProgress;
-
-static Deck           playerDeck;
 
 static char           boardMarkers[ BH ][ BW ];
 static int            boardMarkersDownCount      =  0;
@@ -844,13 +845,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             }
         
         }
-
-
-    if(0)
-    deckDrawDebugInfo( &playerDeck,
-                       smallCapsFont,
-                       MAXIGIN_GAME_NATIVE_W - 42,
-                       50 );
     
 
     if( infoPanelPiece != noPiece ) {
@@ -1111,8 +1105,7 @@ void maxiginGame_step( void ) {
                     &&
                     c == CHESS_WHITE ) {
 
-                    deckReturnPiece( &playerDeck,
-                                     p );
+                    playerDeckReturnPiecePlayed( p );
                     }
                 }
             }
@@ -1897,37 +1890,11 @@ void maxiginGame_step( void ) {
                                              256 );
                     }
                 else {
-
-                    for( y = 0;
-                         y < BH;
-                         y ++ ) {
-                        for( x = 0;
-                             x < BW;
-                             x ++ ) {
-
-                            if( boardMarkers[y][x] ) {
-                                deckReturnPiece( &playerDeck,
-                                                 boardState.grid[y][x] );
-                                }
-                            }
-                        }
-                
-                    for( y = 0;
-                         y < BH;
-                         y ++ ) {
-                        for( x = 0;
-                             x < BW;
-                             x ++ ) {
-
-                            if( boardMarkers[y][x] ) {
-
-                                boardState.grid[y][x] =
-                                    CHESS_WHITE | deckDraw( &playerDeck );
-                                }
-                            }
-                        }
-                    redrawRemoveRunning = 0;
-                    redrawAddRunning    = 1;
+                    /* this is a vestigial case, back
+                       from when we used to redraw the whole board,
+                       that we should never reach */
+                    
+                    mingin_log( "Unexpected Case A reached\n" );
                     }
                 }
             }
@@ -2051,13 +2018,10 @@ void maxiginGame_step( void ) {
                 endMessageFade = 0;
 
                 if( ! heartsIsDead() ) {
-                    deckReturnAll   ( &playerDeck );
-                    deckReshuffleAll( &playerDeck );
-                    
                     shopShowing = 1;
                     shopDone    = 0;
 
-                    shopReroll( &playerDeck );
+                    shopReroll();
                 
                     maxigin_playSoundEffect( boardSlideSound,
                                              256 );
@@ -2145,11 +2109,11 @@ void maxiginGame_step( void ) {
 
             heartsReset();
 
-            getPlayerStartDeck( &playerDeck );
+            playerDeckSetupFresh();
 
             formationBackToStart();
 
-            shopReset( &playerDeck );
+            shopReset();
 
             /* mark all remaining pieces as ready to be lifted */
             for( y = 0;
@@ -2251,12 +2215,12 @@ void maxiginGame_step( void ) {
                 
                 if( sideBoardLift() ) {
                     /* lifting done */
-                    sideBoardRedraw( &playerDeck );
+                    sideBoardRedraw();
                     sideBoardRedrawDone = 1;
                     sideBoardUnlift();
 
                     if( deckViewShowing ) {
-                        deckViewSet( &playerDeck );
+                        deckViewSet();
                         }
                     }
                 }
@@ -2283,7 +2247,6 @@ void maxiginGame_step( void ) {
 
         getLevel( currentLevel,
                   &boardState,
-                  &playerDeck,
                   CHESS_BLACK );
 
         dropNewLevelPiecesIn( CHESS_BLACK );
@@ -2311,7 +2274,7 @@ void maxiginGame_step( void ) {
         
 
         if( ! deckViewShowing ) {
-            deckViewSet( &playerDeck );
+            deckViewSet();
             deckViewShowing = 1;
             deckViewDone    = 0;
             }
@@ -2333,8 +2296,7 @@ void maxiginGame_step( void ) {
 
         if( ! shopDone ) {
             
-            ChessPiece  newInfoPiece  =  shopStep( &playerDeck,
-                                                   pickFailedSound,
+            ChessPiece  newInfoPiece  =  shopStep( pickFailedSound,
                                                    examinePieceSound ); 
 
             if( newInfoPiece != infoPanelPiece ) {
@@ -2368,9 +2330,6 @@ void maxiginGame_step( void ) {
                 costResetIncrement( drawCost );
 
                 costLevelIncrement( drawCost );
-
-                deckReturnAll   ( &playerDeck );
-                deckReshuffleAll( &playerDeck );
                 
                 currentLevel ++;
 
@@ -2414,7 +2373,6 @@ void maxiginGame_step( void ) {
 
             getLevel( currentLevel,
                       &boardState,
-                      &playerDeck,
                       CHESS_WHITE );
 
             /* don't give
@@ -2422,7 +2380,7 @@ void maxiginGame_step( void ) {
             if( 0 ) moneyAdd( 5 ); 
 
             
-            sideBoardRedraw( &playerDeck );
+            sideBoardRedraw();
             sideBoardShowing = 1;
             dropNewLevelPiecesIn( CHESS_WHITE );
             boardMarkersHidden  = 1;
@@ -2987,6 +2945,8 @@ void maxiginGame_init( void ) {
 
     deckInit();
 
+    playerDeckInit();
+
     rarityInit();
 
     shopInit( ACTION,
@@ -3030,8 +2990,8 @@ void maxiginGame_init( void ) {
     
     if(0) getStartBoard( &boardState );
     if(0) getTestBoard( &boardState );
-    
-    getPlayerStartDeck( &playerDeck );
+
+    playerDeckSetupFresh();
     
     if(1) {
 
@@ -3039,7 +2999,7 @@ void maxiginGame_init( void ) {
         
         }
     else {
-        sideBoardRedraw( &playerDeck );
+        sideBoardRedraw();
         sideBoardShowing = 1;
         dropNewLevelPiecesIn( CHESS_WHITE );
         dropNewLevelPiecesIn( CHESS_BLACK );
@@ -3095,8 +3055,6 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( boardMarkersDownCount );
     REGISTER_ARRAY_MEM( boardMarkers );
-
-    REGISTER_VAL_MEM( playerDeck );
 
     /* need to register both, in case we stop playback during a lift */
     REGISTER_VAL_MEM( redrawLift );

@@ -267,13 +267,8 @@ void deckReshuffleAll( Deck  *inDeck ) {
             inDeck->present[i] = tempPresent[ i ];
             }
 
-        /* skip non-present when drawing,
-           but only if we can
-           if all pieces are not present, leave drawPos alone
-           and allow redrawing of non-present pieces */
-        if( numPresent > 0 ) {
-            inDeck->drawPos = numPresent - 1;
-            }
+        /* if numPresent is 0, this will leave drawPos at -1 */
+        inDeck->drawPos = numPresent - 1;
         }
     }
 
@@ -397,7 +392,7 @@ ChessPiece deckDraw( Deck  *inDeck ) {
         }
 
     if( inDeck->drawPos < 0 ) {
-        /* empty deck */
+        /* empty deck, or no pieces present */
         return noPiece;
         }
 

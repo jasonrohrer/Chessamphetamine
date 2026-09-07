@@ -27,13 +27,13 @@ void shopInit( int  inPointerActionHandle,
    and incrementing prices
    size of deck determines whether a new formation slot is offered
    for sale */
-void shopReroll( Deck  *inPlayerDeck );
+void shopReroll( void );
 
 
 /* resets the shop back to its starting state
    ( starting prices, fully shuffled decks )
 */
-void shopReset( Deck  *inPlayerDeck );
+void shopReset( void );
 
 
 
@@ -44,8 +44,7 @@ void shopDraw( void );
    or noPiece if nothing moused over
 
 */
-ChessPiece shopStep( Deck  *inPlayerDeck,
-                     int    inPickFailedSound,
+ChessPiece shopStep( int    inPickFailedSound,
                      int    inPieceLiftSound );
 
 
@@ -66,7 +65,7 @@ char isShoppingDone( void );
 
 
 
-#include "deck.h"
+#include "playerDeck.h"
 #include "numbers.h"
 #include "pieceSprites.h"
 
@@ -251,20 +250,20 @@ static void shopInternalReroll( void ) {
 
 
 
-static void shopSetNewSpotAvail( Deck  *inPlayerDeck ) {
+static void shopSetNewSpotAvail( void ) {
     newSpotAvail = 0;
 
     /* they start with a 15-piece deck and 2 spots
        Once they have an 18-piece deck, they can buy another spot
        Then they can buy another when they have a 24-piece deck */
-    if( formationGetNumNonKingSpots() < deckGetSize( inPlayerDeck ) / 6  ) {
+    if( formationGetNumNonKingSpots() < playerDeckGetSize() / 6  ) {
         newSpotAvail = 1;
         numLeftForNewSpot = 0;
         }
     else {
         numLeftForNewSpot =
             ( formationGetNumNonKingSpots() + 1 ) * 6
-            - deckGetSize( inPlayerDeck );
+            - playerDeckGetSize();
         }
     }
 
@@ -439,7 +438,7 @@ void shopInit( int  inPointerActionHandle,
 
 
 
-void shopReroll( Deck  *inPlayerDeck ) {
+void shopReroll( void ) {
     shopInternalReroll();
 
     shopSelectedSlot = -1;
@@ -452,7 +451,7 @@ void shopReroll( Deck  *inPlayerDeck ) {
     shoppingDone   = 0;
     newSpotBought  = 0;
 
-    shopSetNewSpotAvail( inPlayerDeck );
+    shopSetNewSpotAvail();
 
     newSpotHighlightFade = 0;
 
@@ -465,7 +464,7 @@ void shopReroll( Deck  *inPlayerDeck ) {
 
 
 
-void shopReset( Deck  *inPlayerDeck ) {
+void shopReset( void ) {
 
     shopInternalReroll();
 
@@ -476,7 +475,7 @@ void shopReset( Deck  *inPlayerDeck ) {
     
     shopSlotPickedWithController = 0;
 
-    shopSetNewSpotAvail( inPlayerDeck );
+    shopSetNewSpotAvail();
     
     
     newSpotHighlightFade = 0;
@@ -722,8 +721,7 @@ void shopDraw( void ) {
 
 
 
-ChessPiece shopStep( Deck  *inPlayerDeck,
-                     int  inPickFailedSound,
+ChessPiece shopStep( int  inPickFailedSound,
                      int  inPieceLiftSound ) {
 
     /* fixme
@@ -1109,14 +1107,10 @@ ChessPiece shopStep( Deck  *inPlayerDeck,
 
                 moneyAdd( - shopSlotPrices[ shopSelectedSlot ] );
 
-                deckAddPiece( inPlayerDeck,
-                              shopItems[ shopSelectedSlot ] );
-
-                deckReturnAll   ( inPlayerDeck );
-                deckReshuffleAll( inPlayerDeck );
+                playerDeckAddPiece( shopItems[ shopSelectedSlot ] );
 
                 /* deck grew... does this make new slot purchase avail? */
-                shopSetNewSpotAvail( inPlayerDeck );
+                shopSetNewSpotAvail();
 
                 shopItems[ shopSelectedSlot ] = noPiece;
 

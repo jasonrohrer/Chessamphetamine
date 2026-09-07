@@ -26,7 +26,7 @@ void sideBoardInit( int  inPointerActionHandle,
                     int  inBottomSlotY );
 
 
-void sideBoardRedraw( Deck *inDeck );
+void sideBoardRedraw( void );
 
 
 /* swaps a piece onto the side board if anything on the side board is selected
@@ -165,7 +165,7 @@ void sideBoardInit( int  inPointerActionHandle,
 
 
 
-void sideBoardRedraw( Deck *inDeck ) {
+void sideBoardRedraw( void ) {
     
     int  i;
     
@@ -180,11 +180,10 @@ void sideBoardRedraw( Deck *inDeck ) {
          i ++ ) {
 
         if( sideBoard[ i ] != noPiece ) {
-            deckReturnPiece( inDeck,
-                             sideBoard[ i ] );
+            playerDeckReturnPieceUnplayed( sideBoard[ i ] );
             }
 
-        sideBoard[i] = deckDraw( inDeck );
+        sideBoard[i] = playerDeckDraw();
         }
 
     sbPickedIndex = -1;

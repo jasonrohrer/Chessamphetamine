@@ -29,7 +29,6 @@ void levelsInit( void );
 */
 void getLevel( int          inLevelNumber,
                BoardState  *outState,
-               Deck        *inPlayerDeck,
                int          inSideToAdd );
 
 
@@ -53,6 +52,7 @@ void getEmptyLevel( BoardState  *outState );
 #include "memoryRegister.h"
 
 #include "formation.h"
+#include "playerDeck.h"
 
 
 static  MaxiginRand  levelsRand;
@@ -250,7 +250,6 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
 
 void getLevel( int          inLevelNumber,
                BoardState  *outState,
-               Deck        *inPlayerDeck,
                int          inSide ) {
 
     int   y;
@@ -280,7 +279,7 @@ void getLevel( int          inLevelNumber,
 
                 if( fSpot == 1 ) {
                     outState->grid[ y ][ x ] =
-                        deckDraw( inPlayerDeck ) | CHESS_WHITE;
+                        playerDeckDraw() | CHESS_WHITE;
                     continue;
                     }
                 else if( fSpot == 2 ) {

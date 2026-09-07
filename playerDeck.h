@@ -1,0 +1,168 @@
+/*
+  Include in your C code wherever like so:
+
+      #include "playerDeck.h"
+
+  Include exactly once, in one .c file, like so, to compile in the
+  implementation:
+
+      #define PLAYER_DECK_IMPLEMENTATION
+      #include "playerDeck.h"
+
+*/
+
+#ifndef PLAYER_DECK_H_INCLUDED
+#define PLAYER_DECK_H_INCLUDED
+
+
+void playerDeckInit( void );
+
+
+/* returns player deck setup to initial, starting configuration */
+void  playerDeckSetupFresh( void );
+
+
+/* gets pointer to internal player draw deck */
+Deck *playerDeckGetDrawDeck( void );
+
+
+
+ChessPiece playerDeckDraw( void );
+
+
+void playerDeckReturnPieceUnplayed( ChessPiece   inPiece );
+
+void playerDeckReturnPiecePlayed( ChessPiece   inPiece );
+
+
+
+/* adds a newly purchased piece to the player deck setup */
+void playerDeckAddPiece( ChessPiece   inPiece );
+
+
+/* total size, including played and unplayed */
+int playerDeckGetSize( void );
+
+
+
+
+
+#endif
+
+
+
+#ifdef  PLAYER_DECK_IMPLEMENTATION
+
+#ifndef PLAYER_DECK_IMPLEMENTATION_INCLUDED
+#define PLAYER_DECK_IMPLEMENTATION_INCLUDED
+
+
+#define  MAX_DECK_SIZE   256
+
+
+static  int         playerDeckNumPlayed                 =  0;
+
+static  ChessPiece  playerDeckPlayed[ MAX_DECK_SIZE ];
+
+
+static  Deck  playerDrawDeck;
+
+
+
+void playerDeckInit( void ) {
+
+    REGISTER_VAL_MEM( playerDeckNumPlayed );
+    REGISTER_ARRAY_MEM( playerDeckPlayed );
+
+    REGISTER_VAL_MEM( playerDrawDeck );
+    }
+
+
+
+void  playerDeckSetupFresh( void ) {
+    playerDeckNumPlayed = 0;
+
+    getPlayerStartDeck( &playerDrawDeck );
+    }
+
+
+
+Deck *playerDeckGetDrawDeck( void ) {
+    return &playerDrawDeck;
+    }
+
+
+
+ChessPiece playerDeckDraw( void ) {
+
+    ChessPiece  p  =  deckDraw( &playerDrawDeck );
+
+    if( p == noPiece
+        &&
+        playerDeckGetSize() > 0 ) {
+
+        /* a non-empty deck, but all pieces not present
+           means we've played through all pieces
+           Return all played pieces back to present status */
+        int  i;
+
+        for( i = 0;
+             i < playerDeckNumPlayed;
+             i ++ ) {
+            deckReturnPiece( &playerDrawDeck,
+                             playerDeckPlayed[ i ] );
+            }
+        playerDeckNumPlayed = 0;
+
+        /* Note that if we still have some pieces out that haven't
+           been marked as played yet, those would NOT be re-marked
+           as present in that case.
+           So, even after we return all pieces and trigger a reshuffle
+           with a redraw here, some pieces might still be marked as
+           not present */
+        p = deckDraw( &playerDrawDeck );
+        }
+
+    return p;
+    }
+
+
+
+void playerDeckReturnPieceUnplayed( ChessPiece   inPiece ) {
+
+    /* this returns a piece to the back of the deck, and
+       remarks it as present, but we still have to draw through
+       the rest of the un-drawn deck before we can ever re-draw this
+       returned piece */
+    deckReturnPiece( &playerDrawDeck,
+                     inPiece );
+    }
+
+
+
+void playerDeckReturnPiecePlayed( ChessPiece   inPiece ) {
+
+    if( playerDeckNumPlayed < MAX_DECK_SIZE - 1 ) {
+
+        playerDeckPlayed[ playerDeckNumPlayed ] = inPiece;
+        playerDeckNumPlayed ++;
+        }
+    }
+
+
+
+void playerDeckAddPiece( ChessPiece   inPiece ) {
+    deckAddPiece( &playerDrawDeck,
+                  inPiece );
+    }
+
+
+
+int playerDeckGetSize( void ) {
+    return deckGetSize( &playerDrawDeck );
+    }
+
+
+
+#endif
+#endif

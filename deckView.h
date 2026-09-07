@@ -24,7 +24,7 @@ void deckViewInit(  int  inCenterX,
                     int  inPrevButtonActionHandle );
 
 
-void deckViewSet( Deck *inDeck );
+void deckViewSet( void );
 
 
 void deckViewDraw( void );
@@ -181,36 +181,38 @@ void deckViewInit(  int  inCenterX,
 
 
 /* show deck in order for debugging */
-static void deckViewSetDebug( Deck *inDeck ) {
+static void deckViewSetDebug( void ) {
 
-    int  p;
+    int    p;
+    Deck  *deck  =  playerDeckGetDrawDeck();
     
     for( p = 0;
-         p < inDeck->numPieces;
+         p < deck->numPieces;
          p ++ ) {
 
-        deckViewSlots[p].piece   = inDeck->pieces[p];
-        deckViewSlots[p].present = inDeck->present[p];
+        deckViewSlots[p].piece   = deck->pieces[p];
+        deckViewSlots[p].present = deck->present[p];
         }
 
-    deckViewNumFullSlots = inDeck->numPieces;
+    deckViewNumFullSlots = deck->numPieces;
     }
     
 
 
-void deckViewSet( Deck *inDeck ) {
+void deckViewSet( void ) {
 
-    int  i;
-    int  n   =  0;
-
+    int    i;
+    int    n     =  0;
+    Deck  *deck  =  playerDeckGetDrawDeck();
+    
     if( 0 ) {
-        deckViewSetDebug( inDeck );
+        deckViewSetDebug();
         return;
         }
 
     deckViewOverSlot     = -1;
     deckViewPageNumber   =  0;
-    deckViewNumFullSlots =  inDeck->numPieces;
+    deckViewNumFullSlots =  deck->numPieces;
     
 
     /* show in order
@@ -230,14 +232,14 @@ void deckViewSet( Deck *inDeck ) {
             int  p;
 
             for( p = 0;
-                 p < inDeck->numPieces;
+                 p < deck->numPieces;
                  p ++ ) {
 
-                char  piecePresence  =  inDeck->present[p];
+                char  piecePresence  =  deck->present[p];
 
                 if( piecePresence
                     &&
-                    inDeck->drawPos < p ) {
+                    deck->drawPos < p ) {
                     /* pieces present in discard pile are still
                        marked as dark in deck view */
                     piecePresence = 0;
@@ -245,7 +247,7 @@ void deckViewSet( Deck *inDeck ) {
 
                 if( piecePresence == present ) {
                     
-                    ChessPiece  thisPiece  =  inDeck->pieces[p];
+                    ChessPiece  thisPiece  =  deck->pieces[p];
 
                     if( thisPiece == i ) {
                         deckViewSlots[n].piece   = thisPiece;

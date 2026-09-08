@@ -3460,8 +3460,11 @@ static char getGreedyDepthMove( BoardState  *inState,
                            leaf nodes are all at the same depth, does
                            nothing.
 
-                           Testing what happens if it's disabled.  */
-                        if( 0 && inOurDepth > 0 ) {
+                           However, disabling it entirely does change
+                           scores slightly, resulting in different moves
+                           being chosen in some cases, so leave it alone
+                           for now */
+                        if( inOurDepth > 0 ) {
                             if( colorToMove == CHESS_WHITE ) {
                                 score -= inOurDepth;
                                 }

@@ -3491,6 +3491,23 @@ static char getGreedyDepthMove( BoardState  *inState,
                         char  nextFound;
                         int   nextScore;
 
+                        int   nextAlpha  =  inAlpha;
+                        int   nextBeta   =  inBeta;
+
+                        if( inOurDepth == 0
+                            &&
+                            foundBest ) {
+
+                            /* set safe alpha/beta values, given
+                               the gap that we're considering for
+                               very close-scoring candidate moves */
+                            if( colorToMove == CHESS_WHITE ) {
+                                nextAlpha = bestScore - closeScoreGap - 1;
+                                }
+                            else {
+                                nextBeta  = bestScore + closeScoreGap + 1;
+                                }
+                            }
                         
                         /* avoid check at first when looking at next move */
                         nextFound =
@@ -3501,8 +3518,8 @@ static char getGreedyDepthMove( BoardState  *inState,
                                 &( nextMoveCaptured[ nextDepth ] ),
                                 &( nextMoveState   [ nextDepth ] ),
                                 &nextScore,
-                                inAlpha,
-                                inBeta,
+                                nextAlpha,
+                                nextBeta,
                                 nextDepth,
                                 inOurDepth + 1 );
 
@@ -3546,51 +3563,87 @@ static char getGreedyDepthMove( BoardState  *inState,
 
 
                 
+                newScoreBetter = 0;
 
-                if( colorToMove == CHESS_WHITE
-                    &&
-                    score > bestScore ) {
+                if( inOurDepth == 0 ) {
 
-                    if( score > bestScore + closeScoreGap ) {
-                        /* new score is way better than old score */
-                        newScoreBetter = 1;
-                        }
-                    else if( foundBest ) {
-                        /* new score is close to our existing best score.
-                           prefer the one with the better immediate
-                           score (best score one move ahead ) */
-                        
-                        int  oldImmediateScore = getScore( outNewState );
-                        int  newImmediateScore =
-                            getScore( &( possibleStates[ inDepthLeft ][m] ) );
+                    /* we can prefer immediate score gains for
+                       moves that are close in score at the top layer
+                       of our search without messing up alpha beta pruning */
+                    
+                    if( colorToMove == CHESS_WHITE ) {
 
-                        if( newImmediateScore > oldImmediateScore ) {
+                        if( ! foundBest ) {
+
+                            if( score > bestScore ) {
+                                newScoreBetter = 1;
+                                }
+                            }
+                        else if( score > bestScore + closeScoreGap ) {
+                            /* new score is way better than old score */
                             newScoreBetter = 1;
+                            }
+                        else if( score >= bestScore - closeScoreGap ) {
+                            /* new score is close to our existing best score.
+                               prefer the one with the better immediate
+                               score (best score one move ahead ) */
+                        
+                            int  oldImmediateScore = getScore( outNewState );
+                            int  newImmediateScore =
+                               getScore( &( possibleStates[ inDepthLeft ][m] ) );
+
+                            if( newImmediateScore > oldImmediateScore ) {
+                                newScoreBetter = 1;
+                                }
+                            }
+                        }
+                    else if( colorToMove == CHESS_BLACK ) {
+
+                        if( ! foundBest ) {
+
+                            if( score < bestScore ) {
+                                newScoreBetter = 1;
+                                }
+                            }
+                        else if( score < bestScore - closeScoreGap ) {
+                            /* new score is way better than old score */
+                            newScoreBetter = 1;
+                            }
+                        else if( score <= bestScore + closeScoreGap ) {
+                            /* new score is close to our existing best score.
+                               prefer the one with the better immediate
+                               score (best score one move ahead ) */
+                        
+                            int  oldImmediateScore = getScore( outNewState );
+                            int  newImmediateScore =
+                               getScore( &( possibleStates[ inDepthLeft ][m] ) );
+
+                            if( newImmediateScore < oldImmediateScore ) {
+                                newScoreBetter = 1;
+                                }
                             }
                         }
                     }
-                else if( colorToMove == CHESS_BLACK
-                         &&
-                         score < bestScore ) {
+                else {
 
-                    if( score < bestScore - closeScoreGap ) {
-                        /* new score is way better than old score */
+                    /* we're on a deeper layer, in a sub tree off
+                       of the root node.
+                       
+                       strictly prefer better scores down there,
+                       so we don't mess up alpha/beta pruning */
+
+                    if( ( colorToMove == CHESS_WHITE
+                          &&
+                          score > bestScore )
+                        ||
+                        ( colorToMove == CHESS_BLACK
+                          &&
+                          score < bestScore ) ) {
+
                         newScoreBetter = 1;
                         }
-                    else if( foundBest ) {
-                        /* new score is close to our existing best score.
-                           prefer the one with the better immediate
-                           score (best score one move ahead ) */
-                        
-                        int  oldImmediateScore = getScore( outNewState );
-                        int  newImmediateScore =
-                            getScore( &( possibleStates[ inDepthLeft ][m] ) );
-
-                        if( newImmediateScore < oldImmediateScore ) {
-                            newScoreBetter = 1;
-                            }
-                        }
                     }
+                
 
 
                 if( newScoreBetter ) {

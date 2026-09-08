@@ -682,8 +682,8 @@ void shopDraw( void ) {
 
             maxigin_drawButtonHintSprite(
                 shopPointerActionHandle,
-                shopCenterX - 13,
-                newFormSpotY + 5 );
+                newFormSpotSlotX - 11,
+                newFormSpotSlotY + 6 );
             }
 
         numberDrawCenter( costGet( newFormationSpotCost ),
@@ -867,68 +867,101 @@ ChessPiece shopStep( int  inPickFailedSound,
         
         if( shopSelectedSlot != -1 ) {
 
-            navGetDir( 0,
-                       &dirX,
-                       &dirY );
-
-            if( dirY == 1
-                &&
-                formationHasRoomForNewSpot()
+            char  newSpotReachable  =  0;
+            char  goToNewSpot       =  0;
+            
+            if( formationHasRoomForNewSpot()
                 &&
                 ! newSpotBought
                 &&
                 newSpotAvail ) {
                 
-                /* down to new spot */
-                shopSelectedSlot = -1;
-                shopOverNewSpot = 1;
-
-                unlocksCancelViewer();
-            
-                if( newSpotHighlightFade < 255 ) {
-                    maxigin_playSoundEffect( inPieceLiftSound,
-                                             256 );
-                    }
-                newSpotHighlightFade = 255;
+                newSpotReachable = 1;
                 }
-            else if( dirX != 0 ) {
+            
+
+            navGetDir( 0,
+                       &dirX,
+                       &dirY );
+
+            if( dirX != 0
+                ||
+                dirY != 0 ) {
 
                 /* left or right in shop row */
 
+                int  dir  =  dirX;
+
                 int  start  = shopSelectedSlot;
 
-                shopSelectedSlot += dirX;
+                if( dir == 0 ) {
+                    dir = dirY;
+                    }
+
+                shopSelectedSlot += dir;
                 if( shopSelectedSlot < 0 ) {
                     shopSelectedSlot = shopNumVisibleSlots - 1;
+
+                    if( newSpotReachable ) {
+                        goToNewSpot = 1;
+                        }
                     }
                 else if( shopSelectedSlot >= shopNumVisibleSlots ) {
                     
                     shopSelectedSlot = 0;
+                    
+                    if( newSpotReachable ) {
+                        goToNewSpot = 1;
+                        }
                     }
-                while( shopSelectedSlot != start
+                while( ! goToNewSpot
+                       &&
+                       shopSelectedSlot != start
                        &&
                        shopItems[ shopSelectedSlot ] == noPiece ) {
                     
-                    shopSelectedSlot += dirX;
+                    shopSelectedSlot += dir;
                     if( shopSelectedSlot < 0 ) {
+                        
                         shopSelectedSlot = shopNumVisibleSlots - 1;
+                        
+                        if( newSpotReachable ) {
+                            goToNewSpot = 1;
+                            }
                         }
                     else if( shopSelectedSlot >= shopNumVisibleSlots ) {
                         shopSelectedSlot = 0;
+                        
+                        if( newSpotReachable) {
+                            goToNewSpot = 1;
+                            }
                         }
                     }
                 if( shopItems[ shopSelectedSlot ] == noPiece ) {
                     shopSelectedSlot = -1;
                     }
-                else {
+                else if( ! goToNewSpot ) {
                     shopSlotHighlightFade[ shopSelectedSlot ] = 255;
                     }
 
                 if( shopSelectedSlot != start ) {
                     controllerMovedSlot = 1;
                     }
-                
-                shopOverNewSpot = 0;
+
+                if( goToNewSpot ) {
+
+                    shopSelectedSlot = -1;
+                    shopOverNewSpot = 1;
+            
+                    if( newSpotHighlightFade < 255 ) {
+                        maxigin_playSoundEffect( inPieceLiftSound,
+                                                 256 );
+                        }
+                    newSpotHighlightFade = 255;
+                    }
+                else {
+                    shopOverNewSpot = 0;
+                    }
                 unlocksCancelViewer();
                 }
             }
@@ -937,11 +970,11 @@ ChessPiece shopStep( int  inPickFailedSound,
                        &dirX,
                        &dirY );
 
-            if( dirX != 0
+            if( dirX == 1
                 ||
-                dirY < 0 ) {
+                dirY == 1 ) {
 
-                /* up back to shop row */
+                /* down back to shop row */
                 shopSelectedSlot = -1;
                 
                 for( i = 0;
@@ -953,10 +986,26 @@ ChessPiece shopStep( int  inPickFailedSound,
                         break;
                         }
                     }
-                if( shopSelectedSlot != -1 ) {
-                    shopOverNewSpot = 0;
-                    unlocksCancelViewer();
+                }
+            else if( dirX == -1
+                     ||
+                     dirY == -1 ) {
+                shopSelectedSlot = -1;
+                
+                for( i = shopNumVisibleSlots - 1;
+                     i >= 0;
+                     i -- ) {
+                    if( shopItems[ i ] != noPiece ) {
+                        shopSelectedSlot = i;
+                        shopSlotHighlightFade[ i ] = 255;
+                        break;
+                        }
                     }
+                }
+            
+            if( shopSelectedSlot != -1 ) {
+                shopOverNewSpot = 0;
+                unlocksCancelViewer();
                 }
             }
         else if( shopSelectedSlot == -1
@@ -966,7 +1015,9 @@ ChessPiece shopStep( int  inPickFailedSound,
                        &dirX,
                        &dirY );
 
-            if( dirY == 1
+            if( ( dirX == 1
+                  ||
+                  dirY == 1 )
                 &&
                 formationHasRoomForNewSpot()
                 &&
@@ -988,7 +1039,7 @@ ChessPiece shopStep( int  inPickFailedSound,
                 }
             else if( dirX == 1
                      ||
-                     dirY == -1 ) {
+                     dirY == 1 ) {
                 shopSelectedSlot = 0;
                 while( shopSelectedSlot < shopNumVisibleSlots
                        &&
@@ -1003,7 +1054,9 @@ ChessPiece shopStep( int  inPickFailedSound,
                     }
                 unlocksCancelViewer();
                 }
-            else if( dirX == -1 ) {
+            else if( dirX == -1
+                     ||
+                     dirY == -1 ) {
                 shopSelectedSlot = shopNumVisibleSlots - 1;
                 
                 while( shopSelectedSlot >= 0

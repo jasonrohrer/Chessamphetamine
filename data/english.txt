@@ -86,6 +86,7 @@ unlockLockedB  "to unlock"
 
 exhausted      "Exhausted"
 ready          "Ready"
+deployed       "Deployed"
 exhaustDesc    "Deck refreshes when ready pieces run out"
 
 

@@ -80,6 +80,7 @@ unlockLockedB  "將死解鎖"
 
 exhausted      "耗盡"
 ready          "待命"
+deployed       "部署"
 exhaustDesc    "待命棋子用完時刷新牌組"
 
 

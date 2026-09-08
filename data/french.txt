@@ -84,6 +84,7 @@ unlockLockedB  "pour débloquer"
 
 exhausted      "Épuisée"
 ready          "Prête"
+deployed       "Déployée"
 exhaustDesc    "Deck rafraîchi sans pièces prêtes"
 
 

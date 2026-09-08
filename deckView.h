@@ -94,12 +94,12 @@ static  int            deckViewPlayedCheckSprite        =  -1;
 static  int            lang_exhausted;
 static  int            lang_exhaustDesc;
 static  int            lang_ready;
+static  int            lang_deployed;
 
 static  char           deckExhaustDescShowing           =   0;
-static  char           deckExhaustedShowing             =   0;
-static  unsigned char  deckExhaustedFade                =   0;
-static  char           deckReadyShowing                 =   0;
-static  unsigned char  deckReadyFade                    =   0;
+static  char           deckTagShowing                   =   0;
+static  unsigned char  deckTagFade                      =   0;
+static  int            deckTagKey;
 
 
 static void deckViewClear( void ) {
@@ -203,6 +203,10 @@ void deckViewInit(  int  inCenterX,
     lang_exhausted   = maxigin_initTranslationKey( "exhausted"   );
     lang_exhaustDesc = maxigin_initTranslationKey( "exhaustDesc" );
     lang_ready       = maxigin_initTranslationKey( "ready"       );
+    lang_deployed    = maxigin_initTranslationKey( "deployed"    );
+
+    deckTagKey = lang_ready;
+
     
     REGISTER_ARRAY_MEM( deckViewSlots         );
     REGISTER_ARRAY_MEM( deckViewHighlightFade );
@@ -213,11 +217,10 @@ void deckViewInit(  int  inCenterX,
     REGISTER_VAL_MEM( deckViewOverSlot        );
     
     REGISTER_VAL_MEM( deckExhaustDescShowing  );
-    REGISTER_VAL_MEM( deckExhaustedShowing    );
-    REGISTER_VAL_MEM( deckExhaustedFade       );
-
-    REGISTER_VAL_MEM( deckReadyShowing    );
-    REGISTER_VAL_MEM( deckReadyFade       );
+    
+    REGISTER_VAL_MEM( deckTagShowing    );
+    REGISTER_VAL_MEM( deckTagFade       );
+    REGISTER_VAL_MEM( deckTagKey        );
     }
 
 
@@ -244,11 +247,12 @@ static void deckViewSetDebug( void ) {
 
 void deckViewSet( void ) {
 
-    int    i;
-    int    n     =  0;
-    Deck  *deck  =  playerDeckGetDrawDeck();
-    char   e;
-    char  *map   =  playerDeckGetPiecePlayedMap();
+    int          i;
+    int          n         =  0;
+    Deck        *deck      =  playerDeckGetDrawDeck();
+    signed char  present; 
+    
+    char        *map       =  playerDeckGetPiecePlayedMap();
     
     if( 0 ) {
         deckViewSetDebug();
@@ -260,74 +264,59 @@ void deckViewSet( void ) {
     deckViewNumFullSlots =  deck->numPieces;
     
 
-    /* show non-exhausted pieces first */
-
-    for( e =  0;
-         e <= 1;
-         e ++ ) {
+    /* Show all present pieces
+       then all non-present, non-played ones (deployed)
+       then all played ones (exhausted) */
+    
+    for( present = 1;
+         present >= -1;
+         present -- ) {
     
         /* show in order
            so we don't give away shuffled order */
         for( i = NUM_CHESS_PIECES - 1;
              i >= FIRST_CHESS_PIECE;
              i -- ) {
-        
-            signed char  present;
 
-            /* show present pieces of this type first,
-               followed by non-present ones
-               skip non-present step for e = played step*/
-            for( present = 1;
-                 present >= e;
-                 present -- ) {
-
-                int    p;
+            int    p;
             
-                for( p = 0;
-                     p < deck->numPieces;
-                     p ++ ) {
+            for( p = 0;
+                 p < deck->numPieces;
+                 p ++ ) {
 
-                    char  piecePresence  =  deck->present[p];
+                signed  char  piecePresence  =  deck->present[p];
 
-                    if( map[ p ] != e ) {
-                        continue;
-                        }
-
-                    if( piecePresence
-                        &&
-                        deck->drawPos < p ) {
-                        /* pieces present in discard pile are still
-                           marked as dark in deck view */
-                        piecePresence = 0;
-                        }
-
-                    /* all played pieces are not present */
+                if( map[ p ] == 1 ) {
+                    piecePresence = -1;
+                    }
                 
-                    if( e == 1
-                        ||
-                        piecePresence == present ) {
+                if( piecePresence == present ) {
                     
-                        ChessPiece  thisPiece  =  deck->pieces[p];
+                    ChessPiece  thisPiece  =  deck->pieces[p];
 
-                        if( thisPiece == i ) {
-                            deckViewSlots[n].piece   = thisPiece;
+                    if( thisPiece == i ) {
+                        deckViewSlots[n].piece   = thisPiece;
+
+                        if( present >= 0 ) {
                             deckViewSlots[n].present = present;
-                            deckViewSlots[n].played  = e;
-                        
-                            n++;
                             }
+                        else {
+                            /* color played/exhausted pieces as present */
+                            deckViewSlots[n].present = 1;
+                            }
+                        
+                        deckViewSlots[n].played  = map[ p ];
+                        
+                        n++;
                         }
                     }
                 }
             }
         }
 
-    deckExhaustedFade      = 0;
-    deckExhaustedShowing   = 0;
+    deckTagFade      = 0;
+    deckTagShowing   = 0;
     deckExhaustDescShowing = 0;
-
-    deckReadyShowing = 0;
-    deckReadyFade    = 0;
     }
 
 
@@ -402,22 +391,12 @@ void deckViewDraw( void ) {
         }
 
     maxigin_setLanguageFontIndex( 1 );
-    if( deckExhaustedFade > 0 ) {
+    if( deckTagFade > 0 ) {
         maxigin_drawResetColor();
-        maxigin_drawSetAlpha( deckExhaustedFade );
+        maxigin_drawSetAlpha( deckTagFade );
         
 
-        maxigin_drawLangText( lang_exhausted,
-                              MAXIGIN_GAME_NATIVE_W - 42,
-                              MAXIGIN_GAME_NATIVE_H / 2 + 75,
-                              MAXIGIN_CENTER );
-        }
-    if( deckReadyFade > 0 ) {
-        maxigin_drawResetColor();
-        maxigin_drawSetAlpha( deckReadyFade );
-        
-
-        maxigin_drawLangText( lang_ready,
+        maxigin_drawLangText( deckTagKey,
                               MAXIGIN_GAME_NATIVE_W - 42,
                               MAXIGIN_GAME_NATIVE_H / 2 + 75,
                               MAXIGIN_CENTER );
@@ -586,31 +565,17 @@ ChessPiece deckViewStep( int  inPageSound ) {
             }
         }
 
-    if( ! deckExhaustedShowing
+    if( ! deckTagShowing
         &&
-        deckExhaustedFade > 0 ) {
+        deckTagFade > 0 ) {
 
-        int  newFade  =  deckExhaustedFade -  deltaFade;
+        int  newFade  =  deckTagFade -  deltaFade;
 
         if( newFade > 0 ) {
-            deckExhaustedFade = (unsigned char)newFade;
+            deckTagFade = (unsigned char)newFade;
             }
         else {
-            deckExhaustedFade = 0;
-            }
-        }
-
-    if( ! deckReadyShowing
-        &&
-        deckReadyFade > 0 ) {
-
-        int  newFade  =  deckReadyFade -  deltaFade;
-
-        if( newFade > 0 ) {
-            deckReadyFade = (unsigned char)newFade;
-            }
-        else {
-            deckReadyFade = 0;
+            deckTagFade = 0;
             }
         }
     
@@ -618,8 +583,7 @@ ChessPiece deckViewStep( int  inPageSound ) {
     if( controllerMovedSlot ) {
         /* return noPiece for one step, to allow piece info panel
            to fade slightly, and so that game will play sound */
-        deckExhaustedShowing = 0;
-        deckReadyShowing     = 0;
+        deckTagShowing = 0;
         
         return noPiece;
         }
@@ -628,19 +592,26 @@ ChessPiece deckViewStep( int  inPageSound ) {
 
         if( deckViewSlots[ deckViewOverSlot + skip ].played ) {
             deckExhaustDescShowing = 1;
-            deckExhaustedShowing   = 1;
-            deckExhaustedFade      = 255;
+            deckTagShowing   = 1;
+            deckTagFade      = 255;
+            deckTagKey       = lang_exhausted;
+            }
+        else if( deckViewSlots[ deckViewOverSlot + skip ].present ) {
+            deckExhaustDescShowing = 1;
+            deckTagShowing   = 1;
+            deckTagFade      = 255;
+            deckTagKey       = lang_ready;
             }
         else {
             deckExhaustDescShowing = 1;
-            deckReadyShowing   = 1;
-            deckReadyFade      = 255;
+            deckTagShowing   = 1;
+            deckTagFade      = 255;
+            deckTagKey       = lang_deployed;
             }
         return deckViewSlots[ deckViewOverSlot + skip ].piece;
         }
     else {
-        deckExhaustedShowing = 0;
-        deckReadyShowing     = 0;
+        deckTagShowing = 0;
         
         return noPiece;
         }

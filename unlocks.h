@@ -618,6 +618,29 @@ void unlocksBeatLevel( int  inLevel ) {
 void unlocksHardReset( void ) {
     
     int  i;
+
+    if( unlocksAreAnyUnlocked() ) {
+
+        const char  *backupFileName;
+        long         sec;
+        long         msec;
+        
+        mingin_getRunningTime( &sec,
+                               &msec );
+
+        backupFileName = maxigin_stringConcat5( "unlocks_backup_",
+                                                maxigin_intToString( (int)sec ),
+                                                "_",
+                                                maxigin_intToString( (int)msec ),
+                                                ".ini" );
+            
+        mingin_renamePersistData( "unlocks.ini",
+                                  backupFileName );
+
+        maxigin_playSoundEffect( unlockSound,
+                                 512 );
+        }
+    
     
     for( i = 0;
          i < NUM_UNLOCKS;

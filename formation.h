@@ -412,9 +412,7 @@ char formationStep( int  inBoardCenterX,
                     fmOverSlotX = x;
                     fmOverSlotY = y;
 
-                    if( ! fmNewSpotWaiting
-                        &&
-                        fmOverSlotY >= 5
+                    if( fmOverSlotY >= 5
                         &&
                         formationPickedX != -1
                         &&
@@ -635,6 +633,8 @@ char formationStep( int  inBoardCenterX,
                 formationPickedY = -1;
                 playBeepDownSound();
                 unlocksCancelViewer();
+                
+                fmNewSpotWaiting = 0;
                 }
             else if( formationPickedX == -1
                      &&
@@ -685,6 +685,8 @@ char formationStep( int  inBoardCenterX,
 
             playBeepDownSound();
             unlocksCancelViewer();
+
+            fmNewSpotWaiting = 0;
             }
         }
     

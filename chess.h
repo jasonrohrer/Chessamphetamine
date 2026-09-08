@@ -3196,11 +3196,14 @@ static char getGreedyDepthMove( BoardState  *inState,
                     }
                 else {
                     
-                    score = getScore( &( possibleStates[ inDepthLeft ][m] ) );
+                    
 
 
                     if( inDepthLeft == 0 ) {
                         /* only perform this evaluation on leaf nodes */
+
+                        score =
+                            getScore( &( possibleStates[ inDepthLeft ][m] ) );
                         
                         /* check for lone enemy king
                            increase score by how little room the king has,
@@ -3442,24 +3445,34 @@ static char getGreedyDepthMove( BoardState  *inState,
                                     }
                                 }
                             }
+
+                        /* weaken scores by search depth, so that distant
+                           possibilities with the same score are worth
+                           less than immediate possibilities with that same
+                           score.
+                           Just like we prefer checkmate NOW to LATER, we also
+                           prefer improving the score NOW to making the
+                           same improvement later.
+                        */
+
+                        /* I realized that this bit of code,
+                           since it only affects leaf nodes, and
+                           leaf nodes are all at the same depth, does
+                           nothing.
+
+                           Testing what happens if it's disabled.  */
+                        if( 0 && inOurDepth > 0 ) {
+                            if( colorToMove == CHESS_WHITE ) {
+                                score -= inOurDepth;
+                                }
+                            else {
+                                score += inOurDepth;
+                                }
+                            }
                         }
 
                     
-                    /* weaken scores by search depth, so that distant
-                       possibilities with the same score are worth
-                       less than immediate possibilities with that same score.
-                       Just like we prefer checkmate NOW to LATER, we also
-                       prefer improving the score NOW to making the
-                       same improvement later.
-                    */
-                    if( inOurDepth > 0 ) {
-                        if( colorToMove == CHESS_WHITE ) {
-                            score -= inOurDepth;
-                            }
-                        else {
-                            score += inOurDepth;
-                            }
-                        }
+                    
 
                     
                     if( inDepthLeft > 0 ) {

@@ -85,7 +85,8 @@ unlockLockedB  "to unlock"
 
 
 exhausted      "Exhausted"
-exhaustDesc    "Exhaust every piece to refresh the deck"
+ready          "Ready"
+exhaustDesc    "Deck refreshes when ready pieces run out"
 
 
 contraband     " "

@@ -93,10 +93,13 @@ static  int            deckViewPlayedCheckSprite        =  -1;
 
 static  int            lang_exhausted;
 static  int            lang_exhaustDesc;
+static  int            lang_ready;
 
 static  char           deckExhaustDescShowing           =   0;
 static  char           deckExhaustedShowing             =   0;
 static  unsigned char  deckExhaustedFade                =   0;
+static  char           deckReadyShowing                 =   0;
+static  unsigned char  deckReadyFade                    =   0;
 
 
 static void deckViewClear( void ) {
@@ -199,7 +202,7 @@ void deckViewInit(  int  inCenterX,
 
     lang_exhausted   = maxigin_initTranslationKey( "exhausted"   );
     lang_exhaustDesc = maxigin_initTranslationKey( "exhaustDesc" );
-
+    lang_ready       = maxigin_initTranslationKey( "ready"       );
     
     REGISTER_ARRAY_MEM( deckViewSlots         );
     REGISTER_ARRAY_MEM( deckViewHighlightFade );
@@ -212,6 +215,9 @@ void deckViewInit(  int  inCenterX,
     REGISTER_VAL_MEM( deckExhaustDescShowing  );
     REGISTER_VAL_MEM( deckExhaustedShowing    );
     REGISTER_VAL_MEM( deckExhaustedFade       );
+
+    REGISTER_VAL_MEM( deckReadyShowing    );
+    REGISTER_VAL_MEM( deckReadyFade       );
     }
 
 
@@ -241,6 +247,8 @@ void deckViewSet( void ) {
     int    i;
     int    n     =  0;
     Deck  *deck  =  playerDeckGetDrawDeck();
+    char   e;
+    char  *map   =  playerDeckGetPiecePlayedMap();
     
     if( 0 ) {
         deckViewSetDebug();
@@ -252,64 +260,62 @@ void deckViewSet( void ) {
     deckViewNumFullSlots =  deck->numPieces;
     
 
-    /* show in order
-       so we don't give away shuffled order */
-    for( i = NUM_CHESS_PIECES - 1;
-         i >= FIRST_CHESS_PIECE;
-         i -- ) {
+    /* show non-exhausted pieces first */
+
+    for( e =  0;
+         e <= 1;
+         e ++ ) {
+    
+        /* show in order
+           so we don't give away shuffled order */
+        for( i = NUM_CHESS_PIECES - 1;
+             i >= FIRST_CHESS_PIECE;
+             i -- ) {
         
-        signed char  present;
+            signed char  present;
 
-        /* show present pieces of this type first,
-           followed by non-present ones,
-           followed by played ones */
-        for( present = 1;
-             present >= -1;
-             present -- ) {
+            /* show present pieces of this type first,
+               followed by non-present ones
+               skip non-present step for e = played step*/
+            for( present = 1;
+                 present >= e;
+                 present -- ) {
 
-            int    p;
-            char  *map  =  playerDeckGetPiecePlayedMap();
+                int    p;
             
-            for( p = 0;
-                 p < deck->numPieces;
-                 p ++ ) {
+                for( p = 0;
+                     p < deck->numPieces;
+                     p ++ ) {
 
-                char  piecePresence  =  deck->present[p];
-                
-                if( piecePresence
-                    &&
-                    deck->drawPos < p ) {
-                    /* pieces present in discard pile are still
-                       marked as dark in deck view */
-                    piecePresence = 0;
-                    }
+                    char  piecePresence  =  deck->present[p];
 
-                if( piecePresence == present
-                    &&
-                    ! map[ p ] ) {
-                    
-                    ChessPiece  thisPiece  =  deck->pieces[p];
-
-                    if( thisPiece == i ) {
-                        deckViewSlots[n].piece   = thisPiece;
-                        deckViewSlots[n].present = present;
-                        deckViewSlots[n].played  = 0;
-                        
-                        n++;
+                    if( map[ p ] != e ) {
+                        continue;
                         }
-                    }
-                else if( present == -1
-                         &&
-                         map[ p ] ) {
-                    
-                    ChessPiece  thisPiece  =  deck->pieces[p];
 
-                    if( thisPiece == i ) {
-                        deckViewSlots[n].piece   = thisPiece;
-                        deckViewSlots[n].present = present;
-                        deckViewSlots[n].played  = 1;
+                    if( piecePresence
+                        &&
+                        deck->drawPos < p ) {
+                        /* pieces present in discard pile are still
+                           marked as dark in deck view */
+                        piecePresence = 0;
+                        }
+
+                    /* all played pieces are not present */
+                
+                    if( e == 1
+                        ||
+                        piecePresence == present ) {
+                    
+                        ChessPiece  thisPiece  =  deck->pieces[p];
+
+                        if( thisPiece == i ) {
+                            deckViewSlots[n].piece   = thisPiece;
+                            deckViewSlots[n].present = present;
+                            deckViewSlots[n].played  = e;
                         
-                        n++;
+                            n++;
+                            }
                         }
                     }
                 }
@@ -319,6 +325,9 @@ void deckViewSet( void ) {
     deckExhaustedFade      = 0;
     deckExhaustedShowing   = 0;
     deckExhaustDescShowing = 0;
+
+    deckReadyShowing = 0;
+    deckReadyFade    = 0;
     }
 
 
@@ -383,7 +392,7 @@ void deckViewDraw( void ) {
                 maxigin_drawResetColor();
                 
                 maxigin_drawSprite( deckViewPlayedCheckSprite ,
-                                    xPos,
+                                    xPos + 3,
                                     yPos - 5 );
                 }
             
@@ -403,12 +412,22 @@ void deckViewDraw( void ) {
                               MAXIGIN_GAME_NATIVE_H / 2 + 75,
                               MAXIGIN_CENTER );
         }
+    if( deckReadyFade > 0 ) {
+        maxigin_drawResetColor();
+        maxigin_drawSetAlpha( deckReadyFade );
+        
+
+        maxigin_drawLangText( lang_ready,
+                              MAXIGIN_GAME_NATIVE_W - 42,
+                              MAXIGIN_GAME_NATIVE_H / 2 + 75,
+                              MAXIGIN_CENTER );
+        }
 
     if( deckExhaustDescShowing ) {
         maxigin_drawResetColor();
 
         maxigin_drawLangText( lang_exhaustDesc,
-                              deckViewCenterX,
+                              deckViewCenterX + 5,
                               deckViewCenterY + 90,
                               MAXIGIN_CENTER );
         }
@@ -580,12 +599,28 @@ ChessPiece deckViewStep( int  inPageSound ) {
             deckExhaustedFade = 0;
             }
         }
+
+    if( ! deckReadyShowing
+        &&
+        deckReadyFade > 0 ) {
+
+        int  newFade  =  deckReadyFade -  deltaFade;
+
+        if( newFade > 0 ) {
+            deckReadyFade = (unsigned char)newFade;
+            }
+        else {
+            deckReadyFade = 0;
+            }
+        }
     
 
     if( controllerMovedSlot ) {
         /* return noPiece for one step, to allow piece info panel
            to fade slightly, and so that game will play sound */
         deckExhaustedShowing = 0;
+        deckReadyShowing     = 0;
+        
         return noPiece;
         }
     
@@ -596,10 +631,17 @@ ChessPiece deckViewStep( int  inPageSound ) {
             deckExhaustedShowing   = 1;
             deckExhaustedFade      = 255;
             }
+        else {
+            deckExhaustDescShowing = 1;
+            deckReadyShowing   = 1;
+            deckReadyFade      = 255;
+            }
         return deckViewSlots[ deckViewOverSlot + skip ].piece;
         }
     else {
         deckExhaustedShowing = 0;
+        deckReadyShowing     = 0;
+        
         return noPiece;
         }
     }

@@ -83,7 +83,9 @@ unlockLockedA  "Mat au niveau"
 unlockLockedB  "pour débloquer"
 
 exhausted      "Épuisée"
-exhaustDesc    "Épuisez chaque pièce pour rafraîchir le deck"
+ready          "Prête"
+exhaustDesc    "Deck rafraîchi sans pièces prêtes"
+
 
 
 contraband     " "

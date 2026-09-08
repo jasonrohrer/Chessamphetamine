@@ -79,7 +79,8 @@ unlockLockedA  "關卡"
 unlockLockedB  "將死解鎖"
 
 exhausted      "耗盡"
-exhaustDesc    "耗盡所有棋子以刷新牌組"
+ready          "待命"
+exhaustDesc    "待命棋子用完時刷新牌組"
 
 
 contraband     " "

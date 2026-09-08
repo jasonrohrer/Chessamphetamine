@@ -119,7 +119,9 @@ enum GameUserAction {
     PRINT_COLORS,
     DECK_NEXT,
     DECK_PREV,
-    UNLOCK_VIEW
+    UNLOCK_VIEW,
+    UNLOCK_CLEAR_A,
+    UNLOCK_CLEAR_B
     };
 
 
@@ -1060,6 +1062,17 @@ void maxiginGame_step( void ) {
 
 
     r = mingin_getStepsPerSecond();
+
+
+    if( maxigin_isButtonDown( UNLOCK_CLEAR_A )
+        &&
+        maxigin_isButtonDown( UNLOCK_CLEAR_B )
+        &&
+        unlocksAreAnyUnlocked() ) {
+
+        unlocksHardReset();
+        }
+    
 
     if( maxigin_isButtonDown( SPIN ) ) {
         spinPressed = 1;
@@ -2408,6 +2421,10 @@ void maxiginGame_step( void ) {
 
 
 
+static MinginButton unlockClearA[] =  { MGN_KEY_1,     MGN_MAP_END };
+static MinginButton unlockClearB[] =  { MGN_KEY_6,     MGN_MAP_END };
+
+
 static MinginButton spinMapping[]    =  { MGN_BUTTON_XBOX_A,
                                           MGN_BUTTON_PS_X,
                                           MGN_MAP_END };
@@ -2806,6 +2823,10 @@ void maxiginGame_init( void ) {
     maxigin_registerButtonMapping( DECK_PREV,
                                    deckPrevMapping );
                                    
+    maxigin_registerButtonMapping( UNLOCK_CLEAR_A,
+                                   unlockClearA );
+    maxigin_registerButtonMapping( UNLOCK_CLEAR_B,
+                                   unlockClearB );
     
     maxigin_registerDynamicButtonMapping(
         ACTION,

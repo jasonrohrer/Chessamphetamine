@@ -47,6 +47,14 @@ void unlocksCancelViewer( void );
 char unlocksIsViewerActive( void );
 
 
+/* clears all permanent unlocks */
+void unlocksHardReset( void );
+
+
+char unlocksAreAnyUnlocked( void );
+
+
+
 #endif
 
 
@@ -603,6 +611,37 @@ void unlocksBeatLevel( int  inLevel ) {
             }
         }
     
+    }
+
+
+
+void unlocksHardReset( void ) {
+    
+    int  i;
+    
+    for( i = 0;
+         i < NUM_UNLOCKS;
+         i ++ ) {
+
+        unlockEnabled[ i ] = 0;
+
+        }
+    unlocksWrite();
+    }
+
+
+char unlocksAreAnyUnlocked( void ) {
+    int  i;
+    
+    for( i = 0;
+         i < NUM_UNLOCKS;
+         i ++ ) {
+
+        if( unlockEnabled[ i ] ) {
+            return 1;
+            }
+        }
+    return 0;
     }
 
 

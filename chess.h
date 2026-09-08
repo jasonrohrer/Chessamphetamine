@@ -4607,8 +4607,12 @@ char isForcedCheckmatePossible( BoardState  *inState ) {
            In that case, checkmate not possible */
         char  whiteKingFound   =  0;
         char  blackKingFound   =  0;
-        char  whiteOtherFound  =  0;
-        char  blackOtherFound  =  0;
+        int   whiteOtherCount  =  0;
+        int   blackOtherCount  =  0;
+        int   whiteBishopCount =  0;
+        int   blackBishopCount =  0;
+        int   whiteKnightCount =  0;
+        int   blackKnightCount =  0;
 
         for( y = 0;
              y < BH;
@@ -4638,10 +4642,27 @@ char isForcedCheckmatePossible( BoardState  *inState ) {
                     }
                 else {
                     if( c == CHESS_WHITE ) {
-                        whiteOtherFound = 1;
+                        whiteOtherCount ++;
                         }
                     else {
-                        blackOtherFound = 1;
+                        blackOtherCount ++;
+                        }
+                    }
+
+                if( t == bishop ) {
+                    if( c == CHESS_WHITE ) {
+                        whiteBishopCount ++;
+                        }
+                    else {
+                        blackBishopCount ++;
+                        }
+                    }
+                if( t == knight ) {
+                    if( c == CHESS_WHITE ) {
+                        whiteKnightCount ++;
+                        }
+                    else {
+                        blackKnightCount ++;
                         }
                     }
                 }
@@ -4650,13 +4671,55 @@ char isForcedCheckmatePossible( BoardState  *inState ) {
 
         if( whiteKingFound
             &&
-            ! whiteOtherFound
+            whiteOtherCount == 0
             &&
             blackKingFound
             &&
-            ! blackOtherFound ) {
+            blackOtherCount == 0 ) {
             /* two lone kings, no checkmate */
             return 0;
+            }
+
+        if( whiteKingFound
+            &&
+            blackKingFound
+            &&
+            blackOtherCount == 1
+            &&
+            whiteOtherCount == 1 ) {
+
+            
+            if( whiteBishopCount == 1
+                &&
+                blackBishopCount == 1 ) {
+
+                /* two kings with one bishop each */
+                return 0;
+                }
+            
+            if( whiteKnightCount == 1
+                &&
+                blackKnightCount == 1 ) {
+
+                /* two kings with one knight each */
+                return 0;
+                }
+
+            if( whiteKnightCount == 1
+                &&
+                blackBishopCount == 1 ) {
+
+                /* two kings with one knight or bishop each */
+                return 0;
+                }
+
+            if( whiteBishopCount == 1
+                &&
+                blackKnightCount == 1 ) {
+
+                /* two kings with one knight or bishop each */
+                return 0;
+                }
             }
 
         /* neither king alone, don't check any farther,

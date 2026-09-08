@@ -912,7 +912,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
 
-/* inSide  is CHESS_WHITE or CHESS_BLACK */
+/* inSide  is CHESS_WHITE or CHESS_BLACK
+              or  -1 for both*/
 static void dropNewLevelPiecesIn( int  inSide ) {
 
     int  y;
@@ -935,7 +936,9 @@ static void dropNewLevelPiecesIn( int  inSide ) {
 
             if( p != noPiece
                 &&
-                c == inSide ) {
+                ( c == inSide
+                  ||
+                  inSide == -1 ) ) {
                                 
                 int  val;
                                 
@@ -2251,14 +2254,8 @@ void maxiginGame_step( void ) {
 
         draftingPieces = 0;
 
-        getLevel( currentLevel,
-                  &boardState,
-                  CHESS_BLACK );
-
-        dropNewLevelPiecesIn( CHESS_BLACK );
         boardMarkersHidden  = 1;
         redrawRemoveRunning = 0;
-        redrawAddRunning    = 1;
         sideBoardShowing    = 0;
         
         maxigin_playSoundEffect( boardSlideSound,
@@ -2390,7 +2387,13 @@ void maxiginGame_step( void ) {
             
             sideBoardRedraw();
             sideBoardShowing = 1;
-            dropNewLevelPiecesIn( CHESS_WHITE );
+            
+            getLevel( currentLevel,
+                      &boardState,
+                      CHESS_BLACK );
+            
+            dropNewLevelPiecesIn( -1 );
+            
             boardMarkersHidden  = 1;
             redrawRemoveRunning = 0;
             redrawAddRunning    = 1;

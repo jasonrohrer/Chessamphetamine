@@ -103,6 +103,9 @@ CHECK_CHESS_ARRAY( shopPrices,
                    SHOP_PRICE_LIST );
 
 
+/* new slot unlocks after how many purchases */
+static  int            shopNewSlotFactor                          =  6;
+
 /* one free deck, one paid deck with everything
    and two paid decks with more and more rarity */
 #define                NUM_SHOP_SLOTS  6
@@ -256,14 +259,17 @@ static void shopSetNewSpotAvail( void ) {
     /* they start with a 15-piece deck and 2 spots
        Once they have an 18-piece deck, they can buy another spot
        Then they can buy another when they have a 24-piece deck */
-    if( formationGetNumNonKingSpots() < playerDeckGetSize() / 5  ) {
+    if( formationGetNumNonKingSpots()
+        <
+        ( playerDeckGetSize() + 3 )/ shopNewSlotFactor  ) {
+        
         newSpotAvail = 1;
         numLeftForNewSpot = 0;
         }
     else {
         numLeftForNewSpot =
-            ( formationGetNumNonKingSpots() + 1 ) * 5
-            - playerDeckGetSize();
+            ( formationGetNumNonKingSpots() + 1 ) * shopNewSlotFactor
+            - ( playerDeckGetSize() + 3 );
         }
     }
 

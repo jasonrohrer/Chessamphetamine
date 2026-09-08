@@ -3145,7 +3145,10 @@ static char getGreedyDepthMove( BoardState  *inState,
                 int   checkmateVictimColor;
                 char  forcedCheckmate;
                 char  checkmate;
+
+                char  newScoreBetter  =  0;
                 
+                int   closeScoreGap   =  5;
                 
                 
                 m = moveLookOrder[ inDepthLeft ][ i ];
@@ -3540,15 +3543,57 @@ static char getGreedyDepthMove( BoardState  *inState,
 
                     
                     }
+
+
                 
 
-                if( ( colorToMove == CHESS_WHITE
-                      &&
-                      score > bestScore )
-                    ||
-                    ( colorToMove == CHESS_BLACK
-                      &&
-                      score < bestScore ) ) {
+                if( colorToMove == CHESS_WHITE
+                    &&
+                    score > bestScore ) {
+
+                    if( score > bestScore + closeScoreGap ) {
+                        /* new score is way better than old score */
+                        newScoreBetter = 1;
+                        }
+                    else if( foundBest ) {
+                        /* new score is close to our existing best score.
+                           prefer the one with the better immediate
+                           score (best score one move ahead ) */
+                        
+                        int  oldImmediateScore = getScore( outNewState );
+                        int  newImmediateScore =
+                            getScore( &( possibleStates[ inDepthLeft ][m] ) );
+
+                        if( newImmediateScore > oldImmediateScore ) {
+                            newScoreBetter = 1;
+                            }
+                        }
+                    }
+                else if( colorToMove == CHESS_BLACK
+                         &&
+                         score < bestScore ) {
+
+                    if( score < bestScore - closeScoreGap ) {
+                        /* new score is way better than old score */
+                        newScoreBetter = 1;
+                        }
+                    else if( foundBest ) {
+                        /* new score is close to our existing best score.
+                           prefer the one with the better immediate
+                           score (best score one move ahead ) */
+                        
+                        int  oldImmediateScore = getScore( outNewState );
+                        int  newImmediateScore =
+                            getScore( &( possibleStates[ inDepthLeft ][m] ) );
+
+                        if( newImmediateScore < oldImmediateScore ) {
+                            newScoreBetter = 1;
+                            }
+                        }
+                    }
+
+
+                if( newScoreBetter ) {
 
                     foundBest = 1;
                     bestScore = score;

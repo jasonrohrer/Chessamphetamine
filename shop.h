@@ -422,6 +422,7 @@ void shopInit( int  inPointerActionHandle,
 
     REGISTER_ARRAY_MEM( shopSlotLift );
     REGISTER_ARRAY_MEM( shopSlotSmoothLift );
+    REGISTER_ARRAY_MEM( shopSlotHighlightFade );
 
     REGISTER_VAL_MEM( shopSlotsLifting );
     REGISTER_VAL_MEM( shopSlotsDropping );

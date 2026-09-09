@@ -420,7 +420,12 @@ char formationStep( int  inBoardCenterX,
                         &&
                         ( formationPickedX != fmOverSlotX
                           ||
-                          formationPickedY != fmOverSlotY ) ) {
+                          formationPickedY != fmOverSlotY )
+                        &&
+                        ( ! fmNewSpotWaiting
+                          ||
+                          formation[ fmOverSlotY ][ fmOverSlotX ]
+                          == noPiece ) ) {
 
                         /* swap when simply moving around with the mouse */
                         

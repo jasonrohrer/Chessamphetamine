@@ -15,6 +15,11 @@
 #define BUTTON_H_INCLUDED
 
 
+
+void buttonGlobalInit( int  inButtonHoveSound );
+
+
+
 /* base sprite required
    hover and pressed sprite can be -1
 
@@ -97,7 +102,15 @@ typedef struct Button {
 
 static  Button  buttonRecords[ MAX_NUM_BUTTONS ];
 
-static  int     numButtons  =  0;
+static  int     numButtons        =   0;
+
+static  int     buttonHoverSound  =  -1;
+
+
+
+void buttonGlobalInit( int  inButtonHoveSound ) {
+    buttonHoverSound = inButtonHoveSound;
+    }
 
 
 
@@ -203,6 +216,26 @@ void buttonDraw( int  inButtonHandle ) {
                             b->centerX,
                             b->centerY );
 
+        if( b->hover
+            &&
+            b->hoverSprite == -1 ) {
+
+            /* no hover sprite, draw brighter instead */
+
+            maxigin_drawToggleAdditive( 1 );
+
+            maxigin_drawSetAlpha( 92 );
+            
+            maxigin_drawSprite( s,
+                                b->centerX,
+                                b->centerY );
+            
+            maxigin_drawResetColor();
+            
+            maxigin_drawToggleAdditive( 0 );
+            }
+        
+
         if( b->actionHandle != -1 ) {
             
             int  spriteW;
@@ -292,16 +325,25 @@ char buttonIsNewPressed( int  inButtonHandle ) {
             }
         }
     else {
+        char  old  =  b->hover;
+        
         if( pointerInButton( b ) ) {
             b->hover = 1;
             }
         else {
             b->hover = 0;
             }
+        if( b->hover
+            &&
+            ! old ) {
+            maxigin_playSoundEffect( buttonHoverSound,
+                                     256 );
+            }
         }
 
     if( pressedNow ) {
         b->pressed = 1;
+        b->hover   = 0;
         }
     else {
         if( ! b->sticky ) {

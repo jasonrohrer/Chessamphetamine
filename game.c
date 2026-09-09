@@ -2655,6 +2655,10 @@ void maxiginGame_init( void ) {
                                 5,
                                 3 );
 
+    examinePieceSound = maxigin_initSoundEffect( "examinePiece_misc_10.wav" );
+
+    buttonGlobalInit( examinePieceSound );
+
 
     drawButton = buttonInit( maxigin_initSprite( "drawButton.tga" ),
                              -1,
@@ -2931,8 +2935,6 @@ void maxiginGame_init( void ) {
     
     plunkSound = maxigin_initSoundEffect( "plunk1.wav" );
     thunkSound = maxigin_initSoundEffect( "thunk1.wav" );
-
-    examinePieceSound = maxigin_initSoundEffect( "examinePiece_misc_10.wav" );
 
     pickFailedSound = maxigin_initSoundEffect( "pickFailed_sd_3.wav" );
 

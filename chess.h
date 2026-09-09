@@ -340,23 +340,25 @@ static  char        chessRandomPiecesShouldPickWorstMove  =  0;
 
 
 /*
-  using 10x values (instead of traditional values) allows us to have
+  using 1000x values (instead of traditional values) allows us to have
   more nuance, for special pieces, and also for pawns that advance
-  up the field (they can be worth slightly more as they advance)
+  up the field (they can be worth slightly more as they advance),
+  and also makes room for a king-cornering bonus when looking for
+  endgame checkmates that are beyond 3 plies.
 */
 #define PIECE_VALUE_LIST( C, V )   \
-    V( C, 0,   noPiece,       0   ) \
-    V( C, 1,   pawn,         10   ) \
-    V( C, 2,   bishop,       32   ) \
-    V( C, 3,   knight,       30   ) \
-    V( C, 4,   rook,         50   ) \
-    V( C, 5,   queen,        90   ) \
-    V( C, 6,   king,         999  ) \
-    V( C, 7,   laserRook,    70   ) \
-    V( C, 8,   laserPawn,    20   ) \
-    V( C, 9,   doublingPawn, 20   ) \
-    V( C, 10,  addingRook,   60   ) \
-    V( C, 11,  rocket,       20   )
+    V( C, 0,   noPiece,           0   ) \
+    V( C, 1,   pawn,           1000   ) \
+    V( C, 2,   bishop,         3200   ) \
+    V( C, 3,   knight,         3000   ) \
+    V( C, 4,   rook,           5000   ) \
+    V( C, 5,   queen,          9000   ) \
+    V( C, 6,   king,         999900   ) \
+    V( C, 7,   laserRook,      7000   ) \
+    V( C, 8,   laserPawn,      2000   ) \
+    V( C, 9,   doublingPawn,   2000   ) \
+    V( C, 10,  addingRook,     6000   ) \
+    V( C, 11,  rocket,         2000   )
 
 static int pieceValue[] = {
     MAKE_CHESS_ARRAY( PIECE_VALUE_LIST )
@@ -2132,11 +2134,13 @@ void chessInit( void ) {
                     p == laserPawn
                     ||
                     p == doublingPawn ) {
-                    /* pawns get 1 point bonus per square
+                    /* pawns get 100 point bonus per square
                        as they advance farther */
-                    pieceScores[ p |  CHESS_BLACK ][y][x] -= y;
+                    pieceScores[ p |  CHESS_BLACK ][y][x] -=
+                        100 * y;
 
-                    pieceScores[ p |  CHESS_WHITE ][y][x] += ( BH - y - 1 );
+                    pieceScores[ p |  CHESS_WHITE ][y][x] +=
+                        100 * ( BH - y - 1 );
                     }
                 }
             }
@@ -2227,6 +2231,23 @@ void getTestBoard( BoardState  *outState ) {
 
     clearBoard( outState );
 
+    outState->grid[0][5] = king   | CHESS_BLACK;
+
+outState->grid[1][4] = bishop | CHESS_BLACK;
+outState->grid[1][5] = knight | CHESS_BLACK;
+
+outState->grid[2][5] = pawn   | CHESS_BLACK;
+
+
+outState->grid[6][0] = queen  | CHESS_WHITE;
+outState->grid[6][1] = bishop | CHESS_WHITE;
+outState->grid[6][2] = pawn   | CHESS_WHITE;
+outState->grid[6][7] = bishop | CHESS_WHITE;
+
+outState->grid[7][0] = king   | CHESS_WHITE;
+
+    /*
+
     outState->grid[2][4] = king   | CHESS_BLACK;
 
     outState->grid[7][4] = king   | CHESS_WHITE;
@@ -2235,6 +2256,7 @@ void getTestBoard( BoardState  *outState ) {
 
     if(0)outState->grid[7][6] = rook  | CHESS_WHITE;
     if(0)outState->grid[7][7] = rook  | CHESS_WHITE;
+    */
     
     /*
     outState->grid[1][4] = pawn   | CHESS_BLACK;
@@ -2955,7 +2977,7 @@ static int getKingReachableSquares( BoardState  *inState,
 
 
 #define  MAX_DEPTH  5
-#define  MAX_SCORE  9999
+#define  MAX_SCORE  999900
 
 
 static  int  checkmateScore  =  MAX_SCORE - 1;
@@ -3253,6 +3275,11 @@ static char getGreedyDepthMove( BoardState  *inState,
                                 int  attackerColor;
                                 int  reachable;
                                 int  r;
+
+                                int  scoreMod = 0;
+                                int  modWeightA  =  100;
+                                int  modWeightB  =  1;
+                                
                                 
                                 /* don't bother computing the expensive
                                    king reachability test if the possible
@@ -3295,10 +3322,10 @@ static char getGreedyDepthMove( BoardState  *inState,
                             
                                 /* closer to edges of board is better */
                                 if( attackerColor == CHESS_WHITE ) {
-                                    score += edgeScoreFactor;
+                                    scoreMod += edgeScoreFactor;
                                     }
                                 else {
-                                    score -= edgeScoreFactor;
+                                    scoreMod -= edgeScoreFactor;
                                     }
 
                                 
@@ -3329,24 +3356,32 @@ static char getGreedyDepthMove( BoardState  *inState,
                                     kingDist /= 3;
 
                                     if( attackerColor == CHESS_WHITE ) {
-                                        score += kingDist;
+                                        scoreMod += kingDist;
                                         }
                                     else {
-                                        score -= kingDist;
+                                        scoreMod -= kingDist;
                                         }
                                     }
 
-                                maxBonusScore = score;
+                                maxBonusScore =
+                                    score +
+                                    ( modWeightA * scoreMod ) / modWeightB;
 
                                 if( attackerColor == colorToMove ) {
                                 
                                     if( colorToMove == CHESS_WHITE ) {
                                         maxBonusScore =
-                                            score + maxReachableBonus;
+                                            score +
+                                            ( modWeightA *
+                                              ( scoreMod + maxReachableBonus ) )
+                                            / modWeightB;
                                         }
                                     else {
                                         maxBonusScore =
-                                            score - maxReachableBonus;
+                                            score +
+                                            ( modWeightA *
+                                              ( scoreMod - maxReachableBonus ) )
+                                            / modWeightB;
                                         }
                                     }
 
@@ -3390,12 +3425,20 @@ static char getGreedyDepthMove( BoardState  *inState,
 
                                             int  testBonus = BN - r;
                                             int  testScore;
-                                        
+                                            
                                             if( attackerColor == CHESS_WHITE ) {
-                                                testScore = score + testBonus;
+                                                testScore =
+                                                    score +
+                                                    ( modWeightA *
+                                                      ( scoreMod + testBonus ) )
+                                                    / modWeightB;
                                                 }
                                             else {
-                                                testScore = score - testBonus;
+                                                testScore =
+                                                    score +
+                                                    ( modWeightA *
+                                                      ( scoreMod - testBonus ) )
+                                                    / modWeightB;
                                                 }
 
                                             if( colorToMove == CHESS_WHITE
@@ -3449,13 +3492,28 @@ static char getGreedyDepthMove( BoardState  *inState,
 
                                     /* fewer squares reachable is better */
                                     if( attackerColor == CHESS_WHITE ) {
-                                        score += reachable;
+                                        scoreMod += reachable;
                                         }
                                     else {
-                                        score -= reachable;
+                                        scoreMod -= reachable;
                                         }
                                 
                                     }
+
+                                /* tweak total score mod by a factor
+                                   Thus allows us to bring the whole
+                                   thing down a bit, relative to the
+                                   value of captures and other score-altering
+                                   factors, without adjusting the relative
+                                   weights of the components of
+                                   the scoreMod */
+
+                                scoreMod =
+                                    ( modWeightA * scoreMod ) / modWeightB;
+
+                                /* scoreMod is already positive or negative
+                                   for white or black */
+                                score += scoreMod;
                                 }
                             }
 

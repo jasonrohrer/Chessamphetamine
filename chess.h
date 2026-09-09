@@ -295,6 +295,16 @@ char isForcedCheckmatePossible( BoardState  *inState );
 
 
 
+int getPiecePossibleMoves( BoardState     *inState,
+                           int             inPieceRow,
+                           int             inPieceCol,
+                           char            inAvoidCheck,
+                           unsigned char   outRows    [BN],
+                           unsigned char   outCols    [BN],
+                           Captured        outCaptured[BN],
+                           BoardState      outStates  [BN] );
+
+
 #endif
 
 
@@ -2314,14 +2324,14 @@ char getLoggedState( int          inLogNumber,
 
 
 
-static int getPiecePossibleMoves( BoardState     *inState,
-                                  int             inPieceRow,
-                                  int             inPieceCol,
-                                  char            inAvoidCheck,
-                                  unsigned char   outRows    [BN],
-                                  unsigned char   outCols    [BN],
-                                  Captured        outCaptured[BN],
-                                  BoardState      outStates  [BN] ) {
+int getPiecePossibleMoves( BoardState     *inState,
+                           int             inPieceRow,
+                           int             inPieceCol,
+                           char            inAvoidCheck,
+                           unsigned char   outRows    [BN],
+                           unsigned char   outCols    [BN],
+                           Captured        outCaptured[BN],
+                           BoardState      outStates  [BN] ) {
     
     static  BoardState     resultStates  [BN];
     static  unsigned char  resultRows    [BN];

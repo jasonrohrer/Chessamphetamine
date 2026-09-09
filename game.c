@@ -272,6 +272,12 @@ static ChessPiece     infoPanelLastPiece          =  noPiece;
 static unsigned char  infoPanelFade               =  0;
 static char           sideBoardHadController      =  0;
 
+/* 0 for no mark
+   1 for move
+   2 for capture */
+static char           infoPanelPieceMoveMarkers[ BH ][ BW ];
+
+
 #define  INFO_HIGHLIGHT_BUFFER_SIZE  5
 static int            infoRow [ INFO_HIGHLIGHT_BUFFER_SIZE ];
 static int            infoCol [ INFO_HIGHLIGHT_BUFFER_SIZE ];
@@ -308,6 +314,74 @@ static void clearDrawMarkers( void ) {
             }
         }
     boardMarkersDownCount = 0;
+    }
+
+
+
+static void clearInfoPanelPieceMoveMarkers( void ) {
+    int  y;
+    int  x;
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+            infoPanelPieceMoveMarkers[y][x] = 0;
+            }
+        }
+    }
+
+
+
+static void setInfoPanelPieceMoveMarkers( void ) {
+
+    static  unsigned char  rows    [ BN ];
+    static  unsigned char  cols    [ BN ];
+    static  Captured       captured[ BN ];
+    static  BoardState     states  [ BN ];
+    
+    int  x;
+    int  y;
+    int  numMoves;
+    int  i;
+
+    clearInfoPanelPieceMoveMarkers();
+
+    if( infoPanelPiece == noPiece ) {
+        return;
+        }
+
+    x = infoCol[ curInfoIndex ];
+    y = infoRow[ curInfoIndex ];
+
+
+    numMoves = getPiecePossibleMoves( &boardState,
+                                      y,
+                                      x,
+                                      0,
+                                      rows,
+                                      cols,
+                                      captured,
+                                      states );
+    for( i = 0;
+         i < numMoves;
+         i ++ ) {
+
+        int  c;
+
+        infoPanelPieceMoveMarkers[ rows[i] ][ cols[i] ] = 1;
+
+        for( c = 0;
+             c < captured[i].num;
+             c ++ ) {
+
+            infoPanelPieceMoveMarkers[ captured[i].pieces[c].row ]
+                                     [ captured[i].pieces[c].col ] = 2;
+            }
+        }
     }
 
 
@@ -558,6 +632,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                 boardDrawMarkers( boardCenterX,
                                   boardLiveCenterY,
                                   boardMarkers );
+                
+                boardDrawMoveMarkers( boardCenterX,
+                                      boardLiveCenterY,
+                                      infoPanelPieceMoveMarkers );
                 }
 
             drawBoardState( &boardState,
@@ -1518,6 +1596,7 @@ void maxiginGame_step( void ) {
 
             if( unlocksIsViewerActive() ) {
                 infoPanelPiece = noPiece;
+                clearInfoPanelPieceMoveMarkers();
 
                 curInfoIndex ++;
 
@@ -1641,6 +1720,7 @@ void maxiginGame_step( void ) {
                         panRow = -1;
                         panCol = -1;
                         infoPanelPiece = noPiece;
+                        clearInfoPanelPieceMoveMarkers();
 
                         curInfoIndex ++;
 
@@ -1678,11 +1758,14 @@ void maxiginGame_step( void ) {
                                                     &panRow,
                                                     &panCol );
 
-            if( oldPiece != infoPanelPiece
-                &&
-                infoPanelPiece != noPiece ) {
-                maxigin_playSoundEffect( examinePieceSound,
-                                         256 );
+            if( oldPiece != infoPanelPiece ) {
+                if( infoPanelPiece != noPiece ) {
+                    maxigin_playSoundEffect( examinePieceSound,
+                                             256 );
+                    }
+                else {
+                    clearInfoPanelPieceMoveMarkers();
+                    }
                 }
 
             
@@ -1743,7 +1826,13 @@ void maxiginGame_step( void ) {
                     }
                 infoRow [ curInfoIndex ] = panRow;
                 infoCol [ curInfoIndex ] = panCol;
+                
+                setInfoPanelPieceMoveMarkers();
                 }
+            else if( infoPanelPiece != oldPiece ) {
+                setInfoPanelPieceMoveMarkers();
+                }
+                
             
             infoFade[ curInfoIndex ] = 255;
             }
@@ -1765,6 +1854,7 @@ void maxiginGame_step( void ) {
                    ||
                    sideBoardStillHoldingController() ) ) ) {
         infoPanelPiece = noPiece;
+        clearInfoPanelPieceMoveMarkers();
         }
 
     if( ! maxigin_isButtonDown( ACTION ) ) {
@@ -2186,6 +2276,8 @@ void maxiginGame_step( void ) {
             sideBoardStillHoldingController() ) {
             
             if( newInfoPiece != infoPanelPiece ) {
+
+                clearInfoPanelPieceMoveMarkers();
                 
                 infoPanelLastPiece = infoPanelPiece;
                 infoPanelPiece = newInfoPiece;
@@ -2324,6 +2416,7 @@ void maxiginGame_step( void ) {
             if( newInfoPiece != infoPanelPiece ) {
                 infoPanelLastPiece = infoPanelPiece;
                 infoPanelPiece = newInfoPiece;
+                clearInfoPanelPieceMoveMarkers();
 
                 if( infoPanelPiece != noPiece ) {
                     maxigin_playSoundEffect( examinePieceSound,
@@ -2373,6 +2466,7 @@ void maxiginGame_step( void ) {
         if( newInfoPiece != infoPanelPiece ) {
             infoPanelLastPiece = infoPanelPiece;
             infoPanelPiece = newInfoPiece;
+            clearInfoPanelPieceMoveMarkers();
 
             if( infoPanelPiece != noPiece ) {
                 maxigin_playSoundEffect( examinePieceSound,
@@ -2595,6 +2689,8 @@ void maxiginGame_init( void ) {
         infoCol [i] = -1;
         infoFade[i] = 0;
         }
+
+    clearInfoPanelPieceMoveMarkers();
         
     
     boardCenterX = MAXIGIN_GAME_NATIVE_W / 2 - 23;

@@ -34,6 +34,9 @@ void boardDrawMarkers( int   inCenterX,
                        int   inCenterY,
                        char  inMarkers[ BH ][ BW ] );
 
+void boardDrawMoveMarkers( int   inCenterX,
+                           int   inCenterY,
+                           char  inMarkers[ BH ][ BW ] );
 
 
 /* row and col are 0,0 at top left corner (a8) */
@@ -244,6 +247,48 @@ void boardDrawMarkers( int   inCenterX,
         }
     }
 
+
+
+void boardDrawMoveMarkers( int   inCenterX,
+                           int   inCenterY,
+                           char  inMarkers[ BH ][ BW ] ) {
+
+    int  y;
+    int  x;
+    
+    int  yOff  =  ( squareSize * BH ) / 2;
+    int  xOff  =  ( squareSize * BW ) / 2;
+
+    maxigin_drawResetColor();
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+
+        for( x = 0;
+             x < BW;
+             x ++  ) {
+
+            if( inMarkers[ y ][ x ] > 0 ) {
+                
+                int  yPos  =  inCenterY - yOff + y * squareSize + squareSize / 2;
+                int  xPos  =  inCenterX - xOff + x * squareSize + squareSize / 2;
+
+                if( inMarkers[ y ][ x ] == 2 ){
+                    maxigin_drawSetColor( 255,
+                                          0,
+                                          0,
+                                          255 );
+                    }
+                
+                maxigin_drawSprite( squareSpriteWhite,
+                                    xPos,
+                                    yPos );
+                maxigin_drawResetColor();
+                }
+            }
+        }
+    }
 
 
 

@@ -3275,11 +3275,6 @@ static char getGreedyDepthMove( BoardState  *inState,
                                 int  attackerColor;
                                 int  reachable;
                                 int  r;
-
-                                int  scoreMod = 0;
-                                int  modWeightA  =  100;
-                                int  modWeightB  =  1;
-                                
                                 
                                 /* don't bother computing the expensive
                                    king reachability test if the possible
@@ -3322,10 +3317,10 @@ static char getGreedyDepthMove( BoardState  *inState,
                             
                                 /* closer to edges of board is better */
                                 if( attackerColor == CHESS_WHITE ) {
-                                    scoreMod += edgeScoreFactor;
+                                    score += edgeScoreFactor;
                                     }
                                 else {
-                                    scoreMod -= edgeScoreFactor;
+                                    score -= edgeScoreFactor;
                                     }
 
                                 
@@ -3356,32 +3351,24 @@ static char getGreedyDepthMove( BoardState  *inState,
                                     kingDist /= 3;
 
                                     if( attackerColor == CHESS_WHITE ) {
-                                        scoreMod += kingDist;
+                                        score += kingDist;
                                         }
                                     else {
-                                        scoreMod -= kingDist;
+                                        score -= kingDist;
                                         }
                                     }
 
-                                maxBonusScore =
-                                    score +
-                                    ( modWeightA * scoreMod ) / modWeightB;
+                                maxBonusScore = score;
 
                                 if( attackerColor == colorToMove ) {
                                 
                                     if( colorToMove == CHESS_WHITE ) {
                                         maxBonusScore =
-                                            score +
-                                            ( modWeightA *
-                                              ( scoreMod + maxReachableBonus ) )
-                                            / modWeightB;
+                                            score + maxReachableBonus;
                                         }
                                     else {
                                         maxBonusScore =
-                                            score +
-                                            ( modWeightA *
-                                              ( scoreMod - maxReachableBonus ) )
-                                            / modWeightB;
+                                            score - maxReachableBonus;
                                         }
                                     }
 
@@ -3425,20 +3412,12 @@ static char getGreedyDepthMove( BoardState  *inState,
 
                                             int  testBonus = BN - r;
                                             int  testScore;
-                                            
+                                        
                                             if( attackerColor == CHESS_WHITE ) {
-                                                testScore =
-                                                    score +
-                                                    ( modWeightA *
-                                                      ( scoreMod + testBonus ) )
-                                                    / modWeightB;
+                                                testScore = score + testBonus;
                                                 }
                                             else {
-                                                testScore =
-                                                    score +
-                                                    ( modWeightA *
-                                                      ( scoreMod - testBonus ) )
-                                                    / modWeightB;
+                                                testScore = score - testBonus;
                                                 }
 
                                             if( colorToMove == CHESS_WHITE
@@ -3492,28 +3471,13 @@ static char getGreedyDepthMove( BoardState  *inState,
 
                                     /* fewer squares reachable is better */
                                     if( attackerColor == CHESS_WHITE ) {
-                                        scoreMod += reachable;
+                                        score += reachable;
                                         }
                                     else {
-                                        scoreMod -= reachable;
+                                        score -= reachable;
                                         }
                                 
                                     }
-
-                                /* tweak total score mod by a factor
-                                   Thus allows us to bring the whole
-                                   thing down a bit, relative to the
-                                   value of captures and other score-altering
-                                   factors, without adjusting the relative
-                                   weights of the components of
-                                   the scoreMod */
-
-                                scoreMod =
-                                    ( modWeightA * scoreMod ) / modWeightB;
-
-                                /* scoreMod is already positive or negative
-                                   for white or black */
-                                score += scoreMod;
                                 }
                             }
 

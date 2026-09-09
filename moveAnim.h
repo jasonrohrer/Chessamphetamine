@@ -116,6 +116,13 @@ void drawMoveAnimation( int            inBoardCenterX,
                         AnimProgress  *inMoveProgress );
 
 
+/* speed increment to call after each completed move in a match */
+void moveAnimIncrementSpeed( void );
+
+/* speed can be reset after the match is over */
+void moveAnimClearRisingSpeed( void );
+
+
 
 void playBeepUpSound  ( void );
 void playBeepDownSound( void );
@@ -208,6 +215,11 @@ static  int          rocketHeadSprite;
 static  int          particleInstanceCount;
 
 
+#define              BASE_MOVE_SPEED                             50
+static  int          maxMoveSpeed               =               320;
+static  int          currentMoveSpeed           =   BASE_MOVE_SPEED;
+static  int          moveSpeedIncrement         =                 1;
+
 
 void moveAnimInit( void ) {
 
@@ -269,6 +281,8 @@ void moveAnimInit( void ) {
                                 2 );
 
     particleInstanceCount = 0;
+
+    REGISTER_VAL_MEM( currentMoveSpeed );
     }
 
 
@@ -511,7 +525,7 @@ static char defaultPieceStep( BoardState    *inState,
 
         /* still on piece movement portion of animtion */
         
-        inMoveProgress->phaseProgress += ( 4 * 60 ) / r;
+        inMoveProgress->phaseProgress += ( currentMoveSpeed * 60 ) / ( r * 10 );
 
         if( inMoveProgress->phaseProgress >= pixDist ) {
 
@@ -3178,6 +3192,25 @@ void drawMoveAnimation( int            inBoardCenterX,
                         inCaptured,
                         inNewState,
                         inMoveProgress );
+    }
+
+
+
+void moveAnimIncrementSpeed( void ) {
+    currentMoveSpeed += moveSpeedIncrement;
+
+    if( currentMoveSpeed > maxMoveSpeed ) {
+        currentMoveSpeed = maxMoveSpeed;
+        }
+
+    maxigin_logInt( "Move speed = ",
+                    currentMoveSpeed );
+    }
+
+
+
+void moveAnimClearRisingSpeed( void ) {
+    currentMoveSpeed = BASE_MOVE_SPEED;
     }
 
 

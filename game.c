@@ -1140,6 +1140,9 @@ void maxiginGame_step( void ) {
         spinning = 1;
         spinningPaused = 0;
 
+        /* reset the move speed for each new spin */
+        moveAnimClearRisingSpeed();
+
         maxigin_playSoundEffect( thunkSound,
                                  512 );
         }
@@ -1395,6 +1398,9 @@ void maxiginGame_step( void ) {
                                            &moveProgress );
 
         if( moveDone ) {
+
+            /* after each move done, increment the move speed */
+            moveAnimIncrementSpeed();
 
             if( isCheckmate( &postMoveState,
                              &gameLoserColor ) ) {

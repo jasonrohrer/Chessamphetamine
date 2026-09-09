@@ -2231,23 +2231,6 @@ void getTestBoard( BoardState  *outState ) {
 
     clearBoard( outState );
 
-    outState->grid[0][5] = king   | CHESS_BLACK;
-
-outState->grid[1][4] = bishop | CHESS_BLACK;
-outState->grid[1][5] = knight | CHESS_BLACK;
-
-outState->grid[2][5] = pawn   | CHESS_BLACK;
-
-
-outState->grid[6][0] = queen  | CHESS_WHITE;
-outState->grid[6][1] = bishop | CHESS_WHITE;
-outState->grid[6][2] = pawn   | CHESS_WHITE;
-outState->grid[6][7] = bishop | CHESS_WHITE;
-
-outState->grid[7][0] = king   | CHESS_WHITE;
-
-    /*
-
     outState->grid[2][4] = king   | CHESS_BLACK;
 
     outState->grid[7][4] = king   | CHESS_WHITE;
@@ -2256,7 +2239,6 @@ outState->grid[7][0] = king   | CHESS_WHITE;
 
     if(0)outState->grid[7][6] = rook  | CHESS_WHITE;
     if(0)outState->grid[7][7] = rook  | CHESS_WHITE;
-    */
     
     /*
     outState->grid[1][4] = pawn   | CHESS_BLACK;

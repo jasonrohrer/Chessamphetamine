@@ -2093,6 +2093,15 @@ void chessSeed( unsigned long  inSeed ) {
     }
 
 
+#define  MAX_DEPTH  5
+
+#define  SCORE_SCALE   100
+#define  MAX_SCORE  999900
+
+
+static  int  checkmateScore  =  MAX_SCORE - SCORE_SCALE;
+
+
 
 void chessInit( void ) {
 
@@ -2134,13 +2143,13 @@ void chessInit( void ) {
                     p == laserPawn
                     ||
                     p == doublingPawn ) {
-                    /* pawns get 100 point bonus per square
+                    /* pawns get 100 (SCORE_SCALE) point bonus per square
                        as they advance farther */
                     pieceScores[ p |  CHESS_BLACK ][y][x] -=
-                        100 * y;
+                        SCORE_SCALE * y;
 
                     pieceScores[ p |  CHESS_WHITE ][y][x] +=
-                        100 * ( BH - y - 1 );
+                        SCORE_SCALE * ( BH - y - 1 );
                     }
                 }
             }
@@ -2958,11 +2967,7 @@ static int getKingReachableSquares( BoardState  *inState,
 
 
 
-#define  MAX_DEPTH  5
-#define  MAX_SCORE  999900
 
-
-static  int  checkmateScore  =  MAX_SCORE - 1;
 
 
 /* inBailAboveScore and inBailBelowScore are used for alpha-beta style
@@ -3001,7 +3006,7 @@ static char getGreedyDepthMove( BoardState  *inState,
     
     
     int             foundBest          =  0;
-    int             bestScore          =  - MAX_SCORE - 1;
+    int             bestScore          =  - MAX_SCORE - SCORE_SCALE;
     int             numPossiblePieces  =  0;
     int             piecePick;
     int             p;
@@ -3071,7 +3076,7 @@ static char getGreedyDepthMove( BoardState  *inState,
         }
 
     if( colorToMove == CHESS_BLACK ) {
-        bestScore = MAX_SCORE + 1;
+        bestScore = MAX_SCORE + SCORE_SCALE;
         }
 
     if( inDepthLeft == 1 ) {
@@ -3162,7 +3167,7 @@ static char getGreedyDepthMove( BoardState  *inState,
 
                 char  newScoreBetter  =  0;
                 
-                int   closeScoreGap   =  5;
+                int   closeScoreGap   =  5 * SCORE_SCALE;
                 
                 
                 m = moveLookOrder[ inDepthLeft ][ i ];
@@ -3516,10 +3521,12 @@ static char getGreedyDepthMove( BoardState  *inState,
                                the gap that we're considering for
                                very close-scoring candidate moves */
                             if( colorToMove == CHESS_WHITE ) {
-                                nextAlpha = bestScore - closeScoreGap - 1;
+                                nextAlpha = bestScore -
+                                    closeScoreGap - SCORE_SCALE;
                                 }
                             else {
-                                nextBeta  = bestScore + closeScoreGap + 1;
+                                nextBeta  = bestScore +
+                                    closeScoreGap + SCORE_SCALE;
                                 }
                             }
                         
@@ -3791,8 +3798,8 @@ char getGreedyMove( BoardState  *inState,
                                   outCaptured,
                                   outNewState,
                                   &nextScore,
-                                  - MAX_SCORE - 1,
-                                  MAX_SCORE + 1,
+                                  - MAX_SCORE - SCORE_SCALE,
+                                  MAX_SCORE + SCORE_SCALE,
                                   depth,
                                   0 );
 
@@ -3810,8 +3817,8 @@ char getGreedyMove( BoardState  *inState,
                                       outCaptured,
                                       outNewState,
                                       &nextScore,
-                                      - MAX_SCORE - 1,
-                                      MAX_SCORE + 1,
+                                      - MAX_SCORE - SCORE_SCALE,
+                                      MAX_SCORE + SCORE_SCALE,
                                       0,
                                       0 );
         }

@@ -170,7 +170,8 @@ void deckViewInit(  int  inCenterX,
                              inCenterY - 10,
                              0,
                              inPointerActionHandle,
-                             inNextButtonActionHandle );
+                             inNextButtonActionHandle,
+                             -1 );
     
     prevButton = buttonInit( maxigin_initSprite( "prevButton.tga" ),
                              -1,
@@ -181,7 +182,8 @@ void deckViewInit(  int  inCenterX,
                              inCenterY - 10,
                              0,
                              inPointerActionHandle,
-                             inPrevButtonActionHandle );
+                             inPrevButtonActionHandle,
+                             1 );
 
 
     deckViewPlayedCheckSprite = maxigin_initSprite( "playedCheck.tga" );

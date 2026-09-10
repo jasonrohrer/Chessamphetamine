@@ -957,7 +957,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                 &&
                 sideBoardShowing
                 &&
-                ( infoPanelPiece & CHESS_TYPE_MASK ) != king ) {
+                ( infoPanelPiece & CHESS_TYPE_MASK ) != king
+                &&
+                ( infoPanelPiece & CHESS_COLOR_MASK ) == CHESS_WHITE ) {
 
                 int  cX;
                 int  cY;
@@ -2502,8 +2504,7 @@ static MinginButton unlockClearA[] =  { MGN_KEY_1,     MGN_MAP_END };
 static MinginButton unlockClearB[] =  { MGN_KEY_6,     MGN_MAP_END };
 
 
-static MinginButton spinMapping[]    =  { MGN_BUTTON_XBOX_A,
-                                          MGN_BUTTON_PS_X,
+static MinginButton spinMapping[]    =  { MGN_BUTTON_R2,
                                           MGN_MAP_END };
 
 static MinginButton moveLogMapping[] =  { MGN_KEY_Y,     MGN_MAP_END };
@@ -2740,7 +2741,8 @@ void maxiginGame_init( void ) {
                              drawButtonPosY,
                              1,
                              ACTION,
-                             DRAW );
+                             DRAW,
+                             1 );
 
     deckButton = buttonInit( maxigin_initSprite( "deckButton.tga" ),
                              -1,
@@ -2749,7 +2751,8 @@ void maxiginGame_init( void ) {
                              deckButtonPosY,
                              0,
                              ACTION,
-                             DECK );
+                             DECK,
+                             0 );
     
 
     newGameButton = buttonInit( maxigin_initSprite( "newGameButton.tga" ),
@@ -2759,7 +2762,8 @@ void maxiginGame_init( void ) {
                                 newGameButtonPosY,
                                 0,
                                 ACTION,
-                                DRAW );
+                                DRAW,
+                                1 );
     
 
     logoSprite = maxigin_initSprite( "logo.tga" );

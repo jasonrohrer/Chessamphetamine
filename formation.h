@@ -141,7 +141,8 @@ void formationInit( int  inPointerActionHandle,
                                0,
                                fmPointerActionHandle,
                                /* fixme... need controller mapping for this */
-                               inDynamicDoneButtonHandle );
+                               inDynamicDoneButtonHandle,
+                               1 );
 
     lang_newSpot   = maxigin_initTranslationKey( "newFormationSpot" );
     

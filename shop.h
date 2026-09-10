@@ -399,7 +399,8 @@ void shopInit( int  inPointerActionHandle,
                                shopCenterY + 50,
                                1,
                                shopPointerActionHandle,
-                               inDynamicRerollButtonHandle );
+                               inDynamicRerollButtonHandle,
+                               -1 );
     
     doneButton = buttonInit( maxigin_initSprite( "doneButton.tga" ),
                              -1,
@@ -408,7 +409,8 @@ void shopInit( int  inPointerActionHandle,
                              shopCenterY + 50,
                              1,
                              shopPointerActionHandle,
-                             inDynamicDoneButtonHandle );
+                             inDynamicDoneButtonHandle,
+                             -1 );
 
     REGISTER_VAL_MEM( shopRand );
 

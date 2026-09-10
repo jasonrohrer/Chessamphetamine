@@ -30,15 +30,18 @@ void buttonGlobalInit( int  inButtonHoveSound );
                           
    inActionHandle         is a registered action that should trigger the button,
                           or -1
+
+   inHintPos              0 for center, -1 for left, 1 for right
 */
-int buttonInit( int  inBaseSprite,
-                int  inHoverSprite,
-                int  inPressedSprite,
-                int  inCenterX,
-                int  inCenterY,
-                char inSticky,
-                int  inPointerActionHandle,
-                int  inActionHandle );
+int buttonInit( int   inBaseSprite,
+                int   inHoverSprite,
+                int   inPressedSprite,
+                int   inCenterX,
+                int   inCenterY,
+                char  inSticky,
+                int   inPointerActionHandle,
+                int   inActionHandle,
+                char  inHintPos );
 
 
 void buttonDraw( int  inButtonHandle );
@@ -95,6 +98,8 @@ typedef struct Button {
 
         char pressed;
         char hover;
+
+        char hintPos;
     } Button;
 
 #define MAX_NUM_BUTTONS  20
@@ -114,14 +119,15 @@ void buttonGlobalInit( int  inButtonHoveSound ) {
 
 
 
-int buttonInit( int  inBaseSprite,
-                int  inHoverSprite,
-                int  inPressedSprite,
-                int  inCenterX,
-                int  inCenterY,
-                char inSticky,
-                int  inPointerActionHandle,
-                int  inActionHandle ) {
+int buttonInit( int   inBaseSprite,
+                int   inHoverSprite,
+                int   inPressedSprite,
+                int   inCenterX,
+                int   inCenterY,
+                char  inSticky,
+                int   inPointerActionHandle,
+                int   inActionHandle,
+                char  inHintPos ) {
 
     Button  *b;
     int      newHandle;
@@ -144,6 +150,7 @@ int buttonInit( int  inBaseSprite,
     b->sticky              = inSticky;
     b->pointerActionHandle = inPointerActionHandle;
     b->actionHandle        = inActionHandle;
+    b->hintPos             = inHintPos;
 
     b->pressed = 0;
     b->hover = 0;
@@ -240,21 +247,21 @@ void buttonDraw( int  inButtonHandle ) {
             
             int  spriteW;
             int  spriteH;
-
-            int  dir       =  -1;
-
-            if( b->centerX < MAXIGIN_GAME_NATIVE_W / 3 ) {
-                dir = 1;
-                }
-
+            int  yOffset  = 0;
+            
             maxigin_getSpriteDimensions( s,
                                          &spriteW,
                                          &spriteH );
+
+            if( b->hintPos == 0 ) {
+                /* move center hint down a bit */
+                yOffset = 6;
+                }
             
             maxigin_drawButtonHintSprite(
                 b->actionHandle,
-                b->centerX + dir * ( 4 + spriteW / 2 ),
-                b->centerY + spriteH / 2 - 7 );
+                b->centerX + b->hintPos * ( 4 + spriteW / 2 ),
+                b->centerY + spriteH / 2 - 7 + yOffset );
             }
         }
     }

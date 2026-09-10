@@ -152,6 +152,7 @@ static int          spinPressedTextSprite      = -1;
 static int          spinPressedTextGlowSprite  = -1;
 static int          spinButtonX                = MAXIGIN_GAME_NATIVE_W - 41;
 static int          spinButtonY                = MAXIGIN_GAME_NATIVE_H - 25;
+static char         spinButtonHover            =  0;
 
 static int          drawCost                   = -1;
 static int          drawButton                 = -1;
@@ -463,6 +464,22 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             maxigin_drawSprite( spinUnpressedSprite,
                                 spinButtonX,
                                 spinButtonY );
+
+            if( spinButtonHover ) {
+                /* draw brighter */
+                maxigin_drawToggleAdditive( 1 );
+
+                maxigin_drawSetAlpha( 92 );
+                maxigin_drawSprite( spinUnpressedSprite,
+                                    spinButtonX,
+                                    spinButtonY );
+            
+            
+                maxigin_drawResetColor();
+            
+                maxigin_drawToggleAdditive( 0 );
+                }
+            
 
             maxigin_drawButtonHintSprite( SPIN,
                                           spinButtonX - 30,
@@ -1157,6 +1174,28 @@ void maxiginGame_step( void ) {
 
         spinPressed = 1;
         }
+
+    if( ! spinning ) {
+
+        char  oldHover  =  spinButtonHover;
+
+        if( maxigin_isPointerInsideSprite( spinUnpressedSprite,
+                                           spinButtonX,
+                                           spinButtonY ) ) {
+            spinButtonHover = 1;
+
+            if( ! oldHover ) {
+                maxigin_playSoundEffect( examinePieceSound,
+                                         256 );
+                }
+            }
+        else {
+            spinButtonHover = 0;
+            }
+        }
+        
+
+        
 
     if( ! spinning
         &&
@@ -3112,7 +3151,12 @@ void maxiginGame_init( void ) {
         boardMarkersHidden  = 1;
         redrawRemoveRunning = 0;
         redrawAddRunning    = 1;
-
+        draftingPieces      = 1;
+        formationShowing    = 0;
+        shopShowing         = 0;
+        deckViewShowing     = 0;
+        chessGameOver       = 0;
+        
         sideBoardForceFullLift();
         }
     
@@ -3139,6 +3183,7 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( endMessagePreFadeSteps );
 
     REGISTER_VAL_MEM( spinning );
+    REGISTER_VAL_MEM( spinButtonHover );
 
     REGISTER_VAL_MEM( statesTested );
 

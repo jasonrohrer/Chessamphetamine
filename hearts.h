@@ -184,7 +184,7 @@ void heartsGain( void ) {
     if( heartsCount < heartsNumVisible ) {
 
         maxigin_playSoundEffect( heartsGainSound,
-                                 256 );
+                                 512 );
 
         heartsStartFlash( heartsCount,
                           3 );

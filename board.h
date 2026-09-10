@@ -34,9 +34,10 @@ void boardDrawMarkers( int   inCenterX,
                        int   inCenterY,
                        char  inMarkers[ BH ][ BW ] );
 
-void boardDrawMoveMarkers( int   inCenterX,
-                           int   inCenterY,
-                           char  inMarkers[ BH ][ BW ] );
+void boardDrawMoveMarkers( int            inCenterX,
+                           int            inCenterY,
+                           char           inMarkers[ BH ][ BW ],
+                           unsigned char  inFade );
 
 
 /* row and col are 0,0 at top left corner (a8) */
@@ -249,9 +250,10 @@ void boardDrawMarkers( int   inCenterX,
 
 
 
-void boardDrawMoveMarkers( int   inCenterX,
-                           int   inCenterY,
-                           char  inMarkers[ BH ][ BW ] ) {
+void boardDrawMoveMarkers( int            inCenterX,
+                           int            inCenterY,
+                           char           inMarkers[ BH ][ BW ],
+                           unsigned char  inFade ) {
 
     int  y;
     int  x;
@@ -278,7 +280,10 @@ void boardDrawMoveMarkers( int   inCenterX,
                     maxigin_drawSetColor( 255,
                                           0,
                                           0,
-                                          255 );
+                                          inFade );
+                    }
+                else {
+                    maxigin_drawSetAlpha( inFade );
                     }
                 
                 maxigin_drawSprite( squareSpriteWhite,

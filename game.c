@@ -632,7 +632,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                 
                 boardDrawMoveMarkers( boardCenterX,
                                       boardLiveCenterY,
-                                      infoPanelPieceMoveMarkers );
+                                      infoPanelPieceMoveMarkers,
+                                      infoPanelFade );
                 }
 
             drawBoardState( &boardState,
@@ -1593,7 +1594,6 @@ void maxiginGame_step( void ) {
 
             if( unlocksIsViewerActive() ) {
                 infoPanelPiece = noPiece;
-                clearInfoPanelPieceMoveMarkers();
 
                 curInfoIndex ++;
 
@@ -1760,9 +1760,6 @@ void maxiginGame_step( void ) {
                     maxigin_playSoundEffect( examinePieceSound,
                                              256 );
                     }
-                else {
-                    clearInfoPanelPieceMoveMarkers();
-                    }
                 }
 
             
@@ -1871,6 +1868,7 @@ void maxiginGame_step( void ) {
                 }
             else {
                 infoPanelFade = 0;
+                clearInfoPanelPieceMoveMarkers();
                 }
             }
         if( infoFade[ curInfoIndex ] > 0 ) {

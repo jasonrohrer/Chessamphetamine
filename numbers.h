@@ -17,6 +17,10 @@
 
 void numbersInit( void );
 
+/* on by default */
+void numbersToggleBorder( char  inBorderOn );
+
+
 
 /* draws a right-aligned number centered on inPosY and butted against inPosX */
 void numberDraw( int   inValue,
@@ -55,7 +59,10 @@ void numberDrawText( const char   *inText,
 
 
 
-static  int  numbersFont  =  -1;
+static  int  numbersFont          =  -1;
+static  int  numbersFontNoBorder  =  -1;
+
+static  int  numbersCurrentFont   =  -1;
 
 
 void numbersInit( void ) {
@@ -88,8 +95,40 @@ void numbersInit( void ) {
                                         0,
                                         8 );
         }
+
+    
+    /* repeat for non-border version with no drop shadow */
+    fontStrip = maxigin_initSpriteStrip( "modifierFontNoBorder.tga",
+                                         8 );
+
+    if( fontStrip != -1 ) {
+
+        maxigin_initMakeGlowSpriteStrip( fontStrip,
+                                         2,
+                                         2 );
+
+        numbersFontNoBorder = maxigin_initFont( fontStrip,
+                                                "modifierFont.txt",
+                                                0,
+                                                4,
+                                                0,
+                                                8 );
+        }
+
+    numbersCurrentFont = numbersFont;
     }
 
+
+
+void numbersToggleBorder( char  inBorderOn ) {
+    if( inBorderOn ) {
+        numbersCurrentFont = numbersFont;
+        }
+    else {
+        numbersCurrentFont = numbersFontNoBorder;
+        }
+    }
+    
 
 
 void numberDraw( int   inValue,
@@ -139,21 +178,21 @@ void numberDrawText( const char   *inText,
                      char          inFixedWidth,
                      MaxiginAlign  inAlign ) {
     if( inFixedWidth ) {
-        maxigin_adjustFontSpacing( numbersFont,
+        maxigin_adjustFontSpacing( numbersCurrentFont,
                                    0,
                                    4,
                                    7,
                                    8 );
         }
     else {
-        maxigin_adjustFontSpacing( numbersFont,
+        maxigin_adjustFontSpacing( numbersCurrentFont,
                                    0,
                                    4,
                                    0,
                                    8 );
         }
         
-    maxigin_drawText( numbersFont,
+    maxigin_drawText( numbersCurrentFont,
                       inText,
                       inPosX,
                       inPosY,

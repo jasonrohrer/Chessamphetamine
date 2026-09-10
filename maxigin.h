@@ -923,7 +923,7 @@ void maxigin_initMakeDropShadowSpriteStrip( int            inSpriteStripHandle,
 
   [jumpMaxiginInit]  
 */
-void maxigin_initSetLanguageFontGLow( int  inBlurRadius,
+void maxigin_initSetLanguageFontGlow( int  inBlurRadius,
                                       int  inBlurIterations );
 
 
@@ -22038,11 +22038,11 @@ void maxigin_setLanguageFontIndex( int  inFontIndex ) {
 
 
 
-void maxigin_initSetLanguageFontGLow( int  inBlurRadius,
+void maxigin_initSetLanguageFontGlow( int  inBlurRadius,
                                       int  inBlurIterations ) {
 
     if( ! mx_areWeInMaxiginGameInitFunction ) {
-        mingin_log( "Error:  called maxigin_initSetLanguageFontGLow from "
+        mingin_log( "Error:  called maxigin_initSetLanguageFontGlow from "
                     "outside maxiginGame_init function\n" );
         return;
         }

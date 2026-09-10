@@ -153,6 +153,7 @@ static int          spinPressedTextGlowSprite  = -1;
 static int          spinButtonX                = MAXIGIN_GAME_NATIVE_W - 41;
 static int          spinButtonY                = MAXIGIN_GAME_NATIVE_H - 25;
 static char         spinButtonHover            =  0;
+static int          readyCountScreenSprite     = -1;
 
 static int          drawCost                   = -1;
 static int          drawButton                 = -1;
@@ -529,10 +530,22 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         maxigin_drawResetColor();
 
+        maxigin_drawSprite( readyCountScreenSprite,
+                            deckButtonPosX,
+                            deckButtonPosY - 26 );
+
+        maxigin_drawSetColor( 255,
+                              218,
+                              112,
+                              255 );
+
+        numbersToggleBorder( 0 );
+        
         numberDrawCenter( playerDeckGetReadyCount(),
                           deckButtonPosX,
                           deckButtonPosY - 30,
                           1 );
+        numbersToggleBorder( 1 );
         
         maxigin_setLanguageFontIndex( 1 );
 
@@ -542,6 +555,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                               MAXIGIN_CENTER );
         
         maxigin_setLanguageFontIndex( 0 );
+        
+        maxigin_drawResetColor();
         }
 
     if( sideBoardShowing
@@ -2798,6 +2813,9 @@ void maxiginGame_init( void ) {
                                 5,
                                 3 );
 
+    readyCountScreenSprite = maxigin_initSprite( "readyCountScreen.tga" );
+    
+
     examinePieceSound = maxigin_initSoundEffect( "examinePiece_misc_10.wav" );
 
     buttonGlobalInit( examinePieceSound );
@@ -3089,7 +3107,7 @@ void maxiginGame_init( void ) {
 
     
 
-    maxigin_initSetLanguageFontGLow( 2,
+    maxigin_initSetLanguageFontGlow( 2,
                                      2 );
 
     unlocksInit( UNLOCK_VIEW,

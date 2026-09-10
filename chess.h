@@ -2672,8 +2672,8 @@ static int isKingAlone( BoardState  *inState,
     int   otherWhiteCount        =  0;
     int   otherBlackCount        =  0;
     /* if something better than knight or bishop found */
-    char  otherWhiteBetterFound  =  0;
-    char  otherBlackBetterFound  =  0;
+    char  otherWhiteBetterCount  =  0;
+    char  otherBlackBetterCount  =  0;
     int   whiteKingX             =  0;
     int   whiteKingY             =  0;
     int   blackKingX             =  0;
@@ -2721,10 +2721,10 @@ static int isKingAlone( BoardState  *inState,
                     t != pawn ) {
 
                     if( c == CHESS_WHITE ) {
-                        otherWhiteBetterFound = 1;
+                        otherWhiteBetterCount ++;
                         }
                     else {
-                        otherBlackBetterFound = 1;
+                        otherBlackBetterCount ++;
                         }
                     }
                     
@@ -2755,12 +2755,13 @@ static int isKingAlone( BoardState  *inState,
     if( whiteKingFound
         &&
         otherWhiteCount <  2
-        &&
-        ! otherWhiteBetterFound
+        &&otherWhiteBetterCount == 0
         &&
         otherBlackCount >  0
-        && 
-        otherBlackCount > otherWhiteCount
+        &&
+        ( otherBlackCount > otherWhiteCount
+          ||
+          otherBlackBetterCount > otherWhiteBetterCount )
         &&
         score < 0
         &&
@@ -2776,11 +2777,13 @@ static int isKingAlone( BoardState  *inState,
         &&
         otherBlackCount <  2
         &&
-        ! otherBlackBetterFound
+        otherBlackBetterCount == 0
         &&
         otherWhiteCount >  0
         &&
-        otherWhiteCount > otherBlackCount
+        ( otherWhiteCount > otherBlackCount
+          ||
+          otherWhiteBetterCount > otherBlackBetterCount )
         &&
         score > 0
         &&

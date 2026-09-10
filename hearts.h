@@ -70,7 +70,8 @@ static  int            heartsGainSound                   =  -1;
 static  int            heartsLossPulseSound              =  -1;
 
 static  int            heartsCount                       =   0;
-static  int            heartsStarting                    =   3;
+static  int            heartsStarting                    =   2;
+static  int            heartsNumVisible                  =   2;
 
 static  unsigned char  heartsFlashCount[ HEARTS_MAX ];
 static  unsigned char  heartsShineFade [ HEARTS_MAX ];
@@ -144,6 +145,7 @@ void heartsInit( void ) {
     REGISTER_VAL_MEM  ( heartsSkullFlashCount );
 
     REGISTER_VAL_MEM  ( heartsJustLost        );
+    REGISTER_VAL_MEM  ( heartsNumVisible      );
     }
 
 
@@ -179,7 +181,7 @@ void heartsReset( void ) {
 
 void heartsGain( void ) {
     heartsJustLost = 0;
-    if( heartsCount < HEARTS_MAX ) {
+    if( heartsCount < heartsNumVisible ) {
 
         maxigin_playSoundEffect( heartsGainSound,
                                  256 );
@@ -223,7 +225,7 @@ void heartsDraw( int  inPosX,
 
     int  i;
     int  j;
-    int  offset     =  15;
+    int  offset     =  17;
     int  glowRep    =   3;
     int  glintFade  = 255;
 
@@ -272,10 +274,10 @@ void heartsDraw( int  inPosX,
     
 
     
-    inPosY -= offset;
+    inPosX += offset;
 
     for( i = 0;
-         i < HEARTS_MAX;
+         i < heartsNumVisible;
          i ++ ) {
 
         glintFade = 255;
@@ -317,7 +319,7 @@ void heartsDraw( int  inPosX,
                                 inPosY );
             }
 
-        inPosY -= offset;
+        inPosX += offset;
         }
     
 

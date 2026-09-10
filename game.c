@@ -534,10 +534,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                     drawButtonPosY + 6,
                     0 );
         }
-    else {
-        heartsDraw( 18,
-                    MAXIGIN_GAME_NATIVE_H - 18 );
-        }
+
+    
+    heartsDraw( 50,
+                10 );
+        
 
 
     

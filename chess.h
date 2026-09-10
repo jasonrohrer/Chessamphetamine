@@ -3199,10 +3199,10 @@ static char getGreedyDepthMove( BoardState  *inState,
                     /* already at checkmate state here, don't search
                        deeper */
                     if( checkmateVictimColor == CHESS_BLACK ) {
-                        score =    checkmateScore - inOurDepth;
+                        score =    checkmateScore - SCORE_SCALE * inOurDepth;
                         }
                     else {
-                        score =  - ( checkmateScore - inOurDepth );
+                        score =  - ( checkmateScore - SCORE_SCALE * inOurDepth );
                         }
                     }
                 else if( forcedCheckmate ) {
@@ -3210,10 +3210,14 @@ static char getGreedyDepthMove( BoardState  *inState,
                     /* not quite as valuable as immediately taking
                        the king */
                     if( checkmateVictimColor == CHESS_BLACK ) {
-                        score =      checkmateScore - 1 - inOurDepth;
+                        score =
+                                checkmateScore -
+                                SCORE_SCALE - SCORE_SCALE * inOurDepth;
                         }
                     else {
-                        score =  - ( checkmateScore - 1 - inOurDepth );
+                        score =
+                            - ( checkmateScore -
+                                SCORE_SCALE - SCORE_SCALE * inOurDepth );
                         }
                     }
                 else {
@@ -3488,10 +3492,10 @@ static char getGreedyDepthMove( BoardState  *inState,
                            for now */
                         if( inOurDepth > 0 ) {
                             if( colorToMove == CHESS_WHITE ) {
-                                score -= inOurDepth;
+                                score -= SCORE_SCALE * inOurDepth;
                                 }
                             else {
-                                score += inOurDepth;
+                                score += SCORE_SCALE * inOurDepth;
                                 }
                             }
                         }
@@ -3570,10 +3574,14 @@ static char getGreedyDepthMove( BoardState  *inState,
                             if( possibleStates[ inDepthLeft ][ m ].nextToMove
                                 == CHESS_BLACK ) {
                                 
-                                score =      checkmateScore - 2 - inOurDepth;
+                                score =
+                                        checkmateScore - 2 * SCORE_SCALE -
+                                        SCORE_SCALE * inOurDepth;
                                 }
                             else {
-                                score =  - ( checkmateScore - 2 - inOurDepth );
+                                score =
+                                    - ( checkmateScore - 2 * SCORE_SCALE -
+                                        SCORE_SCALE * inOurDepth );
                                 }
                             }
                         }
@@ -3586,7 +3594,14 @@ static char getGreedyDepthMove( BoardState  *inState,
                 
                 newScoreBetter = 0;
 
-                if( inOurDepth == 0 ) {
+                if( inOurDepth == 0
+                    &&
+                    score < checkmateScore / 2 ) {
+
+                    /* ignore this case if we're finding checkmates
+                       already, since we want the "soonest checkmate"
+                       factors to dominate, and not find better-scoring
+                       immediate moves (like pawns advancing) */
 
                     /* we can prefer immediate score gains for
                        moves that are close in score at the top layer

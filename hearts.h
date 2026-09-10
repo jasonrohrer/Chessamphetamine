@@ -53,7 +53,7 @@ void heartsStep( void );
 #include "util.h"
 
 
-#define                HEARTS_MAX                            8
+#define                HEARTS_MAX                            6
 
 static  int            heartsHousingSprite               =  -1;
 static  int            heartsGlintSprite                 =  -1;

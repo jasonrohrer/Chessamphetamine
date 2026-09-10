@@ -150,7 +150,7 @@ static int          spinUnpressedSprite        = -1;
 static int          spinPressedSprite          = -1;
 static int          spinPressedTextSprite      = -1;
 static int          spinPressedTextGlowSprite  = -1;
-static int          spinButtonX                = MAXIGIN_GAME_NATIVE_W - 35;
+static int          spinButtonX                = MAXIGIN_GAME_NATIVE_W - 41;
 static int          spinButtonY                = MAXIGIN_GAME_NATIVE_H - 25;
 
 static int          drawCost                   = -1;
@@ -159,14 +159,13 @@ static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
 static int          drawButtonPosX             =  19;
 
 static int          deckButton                 = -1;
-static int          deckButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
-static int          deckButtonPosX             =  MAXIGIN_GAME_NATIVE_W - 90;
+static int          deckButtonPosY             =  MAXIGIN_GAME_NATIVE_H / 2 - 20;
+static int          deckButtonPosX             =  19;
 
 static int          newGameButton              = -1;
 static int          newGameButtonPosY          =  MAXIGIN_GAME_NATIVE_H - 10;
 static int          newGameButtonPosX          =  MAXIGIN_GAME_NATIVE_W / 2 + 25;
 
-static int          commitButton               =  -1;
 
 static char         redrawRemoveRunning        =  0;
 static char         redrawAddRunning           =  0;
@@ -446,7 +445,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( ! formationShowing
         &&
-        ! draftingPieces
+        draftingPieces
+        &&
+        ! deckViewShowing
         &&
         ! shopShowing
         &&
@@ -494,6 +495,16 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         deckViewDraw();
         }
 
+    if( ! gameOver
+        &&
+        ( sideBoardShowing
+          ||
+          shopShowing
+          ||
+          formationShowing ) ) {
+        buttonDraw( deckButton );
+        }
+
     if( sideBoardShowing
         &&
         ! formationShowing ) {
@@ -511,20 +522,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                     MAXIGIN_GAME_NATIVE_H - 18 );
         }
 
-
-    if( draftingPieces
-        &&
-        ! deckViewShowing ) {
-
-        int  comPosX;
-        int  comPosY;
-        
-        buttonDraw( commitButton );
-
-        buttonGetPos( commitButton,
-                      &comPosX,
-                      &comPosY );
-        }
 
     
     if( moveMade ) {
@@ -654,15 +651,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
 
-    if( ! gameOver
-        &&
-        ( sideBoardShowing
-          ||
-          shopShowing
-          ||
-          formationShowing ) ) {
-        buttonDraw( deckButton );
-        }
+    
     
 
     
@@ -753,9 +742,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         ! deckViewShowing ) {
 
         int  stringKey  =  lang_drawInstruct;
+        int  xOffset    =  0;
 
         if( formationShowing ) {
             stringKey = lang_formInstruct;
+            xOffset   = 0;
             }
         
         maxigin_drawResetColor();
@@ -764,7 +755,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         
         maxigin_drawLangText(
                 stringKey,
-                boardCenterX,
+                boardCenterX - xOffset,
                 drawButtonPosY,
                 MAXIGIN_CENTER );
         maxigin_setLanguageFontIndex( 0 );
@@ -929,7 +920,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( infoPanelPiece != noPiece ) {
         drawPieceInfoPanel( infoPanelPiece,
-                            MAXIGIN_GAME_NATIVE_W - 42,
+                            MAXIGIN_GAME_NATIVE_W - 41,
                             boardCenterY,
                             infoPanelFade );
         
@@ -938,7 +929,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
              &&
              infoPanelFade > 0 ) {
         drawPieceInfoPanel( infoPanelLastPiece,
-                            MAXIGIN_GAME_NATIVE_W - 42,
+                            MAXIGIN_GAME_NATIVE_W - 41,
                             boardCenterY,
                             infoPanelFade );
         }
@@ -1170,7 +1161,7 @@ void maxiginGame_step( void ) {
         &&
         ! formationShowing
         &&
-        ! draftingPieces
+        draftingPieces
         &&
         ! chessGameOver
         &&
@@ -1214,6 +1205,10 @@ void maxiginGame_step( void ) {
         buttonReset( drawButton );
 
         sideBoardShowing = 0;
+        draftingPieces = 0;
+
+        boardMarkersHidden  = 1;
+        redrawRemoveRunning = 0;
 
         spinning = 1;
         spinningPaused = 0;
@@ -2354,24 +2349,6 @@ void maxiginGame_step( void ) {
 
         swapMarkedPieces();
         }
-
-    if( draftingPieces
-        &&
-        ! deckViewShowing
-        &&
-        buttonIsNewPressed( commitButton ) ) {
-
-        unlocksCancelViewer();
-
-        draftingPieces = 0;
-
-        boardMarkersHidden  = 1;
-        redrawRemoveRunning = 0;
-        sideBoardShowing    = 0;
-        
-        maxigin_playSoundEffect( boardSlideSound,
-                                 256 );
-        }
     
 
     if( ! gameOver
@@ -2693,7 +2670,7 @@ void maxiginGame_init( void ) {
     clearInfoPanelPieceMoveMarkers();
         
     
-    boardCenterX = MAXIGIN_GAME_NATIVE_W / 2 - 23;
+    boardCenterX = MAXIGIN_GAME_NATIVE_W / 2 - 21;
     boardCenterY = MAXIGIN_GAME_NATIVE_H / 2;
 
     
@@ -2773,15 +2750,6 @@ void maxiginGame_init( void ) {
                              0,
                              ACTION,
                              DECK );
-
-    commitButton = buttonInit( maxigin_initSprite( "commitButton.tga" ),
-                               -1,
-                               maxigin_initSprite( "commitButtonPressed.tga" ),
-                               boardCenterX,
-                               10,
-                               0,
-                               ACTION,
-                               COMMIT );
     
 
     newGameButton = buttonInit( maxigin_initSprite( "newGameButton.tga" ),

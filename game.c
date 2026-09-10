@@ -271,6 +271,8 @@ static ChessPiece     infoPanelPiece              =  noPiece;
 static ChessPiece     infoPanelLastPiece          =  noPiece;
 static unsigned char  infoPanelFade               =  0;
 static char           sideBoardHadController      =  0;
+static char           heartsGainWaiting           =  0;
+
 
 /* 0 for no mark
    1 for move
@@ -1527,6 +1529,8 @@ void maxiginGame_step( void ) {
                                              512 );
                     endMessageColor = CHESS_WHITE;
                     levelForUnlock = currentLevel;
+
+                    heartsGainWaiting = 1;
                     }
                 else {
                     maxigin_playSoundEffect( checkmateBad,
@@ -1619,9 +1623,10 @@ void maxiginGame_step( void ) {
         &&
         ! formationShowing
         &&
-        sideBoardShowing
-        &&
-        ! sideBoardIsMouseOver() ) {
+        ( ( sideBoardShowing
+            &&
+            ! sideBoardIsMouseOver() )
+          || gameOver ) ) {
 
         int         mouseX;
         int         mouseY;
@@ -2140,6 +2145,12 @@ void maxiginGame_step( void ) {
             /* when end-game message done exploding, release any pent-up
                money */
             moneyReleaseDelayed();
+
+            /* show hearts gained now */
+            if( heartsGainWaiting ) {
+                heartsGain();
+                heartsGainWaiting = 0;
+                }
             }
         }
     else if( chessGameOver
@@ -3238,6 +3249,9 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( draftingPieces );
 
     REGISTER_ARRAY_MEM( infoPanelPieceMoveMarkers );
+
+    REGISTER_VAL_MEM( heartsGainWaiting );
+    
     
 
     if( ! maxigin_initRestoreStaticMemoryFromLastRun() ) {

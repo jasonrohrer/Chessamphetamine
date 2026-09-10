@@ -651,7 +651,7 @@ void shopDraw( void ) {
         
         if( newSpotHighlightFade > 0 ) {
             
-            int  centX  =  MAXIGIN_GAME_NATIVE_W - 42;
+            int  centX  =  MAXIGIN_GAME_NATIVE_W - 41;
             int  centY  =  MAXIGIN_GAME_NATIVE_H / 2;
 
             maxigin_drawSetAlpha( newSpotHighlightFade );
@@ -668,10 +668,9 @@ void shopDraw( void ) {
                                  centY,
                                  newSpotHighlightFade );
 
-            maxigin_drawSetColor( 70,
-                                  198,
-                                  87,
-                                  newSpotHighlightFade  );
+            raritySetDrawColorFromRarity( common );
+            
+            maxigin_drawSetAlpha( newSpotHighlightFade  );
             
             drawDescriptionFrame( centX,
                                   centY );

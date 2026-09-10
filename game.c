@@ -2531,7 +2531,7 @@ static MinginButton drawMapping[]  =  { MGN_BUTTON_PS_TRIANGLE,
                                         MGN_BUTTON_XBOX_Y,
                                         MGN_MAP_END };
 
-static MinginButton deckMapping[]  =  { MGN_BUTTON_R1,
+static MinginButton deckMapping[]  =  { MGN_BUTTON_L1,
                                         MGN_MAP_END };
 
 static MinginButton commitMapping[]  =  { MGN_BUTTON_L2,

@@ -298,12 +298,14 @@ void formationDraw( int   inBoardCenterX,
         int            f         =  formation[ descY ][ descX ];
         int            titleKey  =  lang_otherSpot;
         int            descKey   =  lang_otherSpotDesc;
-        int            centX     =  MAXIGIN_GAME_NATIVE_W - 42;
+        int            centX     =  MAXIGIN_GAME_NATIVE_W - 41;
         int            centY     =  MAXIGIN_GAME_NATIVE_H / 2;
+        int            rarity    =  common;
         
         if( f == 2 ) {
             titleKey = lang_kingSpot;
             descKey  = lang_kingSpotDesc;
+            rarity   = contraband;
             }
         
 
@@ -313,10 +315,9 @@ void formationDraw( int   inBoardCenterX,
                              centY,
                              descFade );
 
-        maxigin_drawSetColor( 70,
-                              198,
-                              87,
-                              descFade  );
+        raritySetDrawColorFromRarity( rarity );
+
+        maxigin_drawSetAlpha( descFade  );
             
         drawDescriptionFrame( centX,
                               centY );

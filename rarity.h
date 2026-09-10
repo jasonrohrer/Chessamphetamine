@@ -45,6 +45,9 @@ int rarityGet( ChessPiece  inPiece );
 void raritySetDrawColor( ChessPiece  inPiece );
 
 
+void raritySetDrawColorFromRarity( int  inRarity );
+
+
 int rarityGetLangKey( ChessPiece  inPiece );
 
 
@@ -199,15 +202,14 @@ int rarityGet( ChessPiece  inPiece ) {
     return pieceRarity[ inPiece & CHESS_TYPE_MASK ];
     }
 
-    
 
 
-void raritySetDrawColor( ChessPiece  inPiece ) {
+void raritySetDrawColorFromRarity( int  inRarity ) {
 
     MaxiginColor  c;
 
     maxigin_getSpritePixel( rarityColorMapSprite,
-                            rarityGet( inPiece ),
+                            inRarity,
                             0,
                             &c );
 
@@ -215,6 +217,12 @@ void raritySetDrawColor( ChessPiece  inPiece ) {
                           c.comp.green,
                           c.comp.blue,
                           c.comp.alpha );
+    }
+
+
+void raritySetDrawColor( ChessPiece  inPiece ) {
+
+    raritySetDrawColorFromRarity( rarityGet( inPiece ) );
     }
 
 

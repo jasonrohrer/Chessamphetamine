@@ -3616,6 +3616,13 @@ static char getGreedyDepthMove( BoardState  *inState,
                             if( newImmediateScore > oldImmediateScore ) {
                                 newScoreBetter = 1;
                                 }
+                            else if( newImmediateScore == oldImmediateScore
+                                     &&
+                                     score > bestScore ) {
+                                /* no distinction in immediate scores
+                                   still honor best true score */
+                                newScoreBetter = 1;
+                                }
                             }
                         }
                     else if( colorToMove == CHESS_BLACK ) {
@@ -3640,6 +3647,13 @@ static char getGreedyDepthMove( BoardState  *inState,
                                getScore( &( possibleStates[ inDepthLeft ][m] ) );
 
                             if( newImmediateScore < oldImmediateScore ) {
+                                newScoreBetter = 1;
+                                }
+                            else if( newImmediateScore == oldImmediateScore
+                                     &&
+                                     score < bestScore ) {
+                                /* no distinction in immediate scores
+                                   still honor best true score */
                                 newScoreBetter = 1;
                                 }
                             }

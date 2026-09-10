@@ -160,7 +160,7 @@ static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
 static int          drawButtonPosX             =  19;
 
 static int          deckButton                 = -1;
-static int          deckButtonPosY             =  MAXIGIN_GAME_NATIVE_H / 2 - 20;
+static int          deckButtonPosY             =  MAXIGIN_GAME_NATIVE_H / 2 - 25;
 static int          deckButtonPosX             =  19;
 
 static int          newGameButton              = -1;
@@ -201,6 +201,8 @@ static int          lang_drawInstruct;
 static int          lang_formInstruct;
 static int          lang_level;
 static int          lang_gameOverInstruct;
+
+static int          lang_readyCount;
 
 static int          lang_corrupted[3];
 
@@ -521,7 +523,25 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
           shopShowing
           ||
           formationShowing ) ) {
+
+        
         buttonDraw( deckButton );
+
+        maxigin_drawResetColor();
+
+        numberDrawCenter( playerDeckGetReadyCount(),
+                          deckButtonPosX,
+                          deckButtonPosY - 30,
+                          1 );
+        
+        maxigin_setLanguageFontIndex( 1 );
+
+        maxigin_drawLangText( lang_readyCount,
+                              deckButtonPosX,
+                              deckButtonPosY - 20,
+                              MAXIGIN_CENTER );
+        
+        maxigin_setLanguageFontIndex( 0 );
         }
 
     if( sideBoardShowing
@@ -2912,6 +2932,7 @@ void maxiginGame_init( void ) {
     lang_level            = maxigin_initTranslationKey( "level" );
     lang_gameOverInstruct = maxigin_initTranslationKey( "gameOverInstruct" );
     lang_unlockView       = maxigin_initTranslationKey( "unlockView" );
+    lang_readyCount       = maxigin_initTranslationKey( "readyCount" );
     
     lang_corrupted[0]     = maxigin_initTranslationKey( "corruptedA" );
     lang_corrupted[1]     = maxigin_initTranslationKey( "corruptedB" );

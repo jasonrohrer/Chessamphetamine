@@ -47,6 +47,9 @@ void playerDeckAddPiece( ChessPiece   inPiece );
 int playerDeckGetSize( void );
 
 
+int playerDeckGetReadyCount( void );
+
+
 
 /* gets a static array of flags indicating whether each position
    in deck is played or not */
@@ -173,6 +176,26 @@ void playerDeckAddPiece( ChessPiece   inPiece ) {
 int playerDeckGetSize( void ) {
     return deckGetSize( &playerDrawDeck );
     }
+
+
+
+int playerDeckGetReadyCount( void ) {
+
+    int  count  =  0;
+    int  i;
+
+    for( i = 0;
+         i < playerDrawDeck.numPieces;
+         i ++ ) {
+
+        if( playerDrawDeck.present[ i ] ) {
+            count ++;
+            }
+        }
+
+    return count;
+    }
+
 
 
 char *playerDeckGetPiecePlayedMap( void ) {

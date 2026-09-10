@@ -89,6 +89,8 @@ ready          "Ready"
 deployed       "Deployed"
 exhaustDesc    "Deck refreshes when ready pieces run out"
 
+readyCount     "Ready"
+
 
 contraband     " "
 common         "Common"

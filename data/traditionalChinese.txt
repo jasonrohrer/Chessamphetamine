@@ -83,6 +83,8 @@ ready          "待命"
 deployed       "部署"
 exhaustDesc    "待命棋子用完時刷新牌組"
 
+readyCount     "可抽"
+
 
 contraband     " "
 common         "普通"

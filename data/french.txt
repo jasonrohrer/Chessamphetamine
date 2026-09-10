@@ -87,6 +87,8 @@ ready          "Prête"
 deployed       "Déployée"
 exhaustDesc    "Deck rafraîchi sans pièces prêtes"
 
+readyCount     "Dispo"
+
 
 
 contraband     " "

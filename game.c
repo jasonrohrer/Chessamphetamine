@@ -3190,6 +3190,8 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( formationShowing );
     REGISTER_VAL_MEM( draftingPieces );
+
+    REGISTER_ARRAY_MEM( infoPanelPieceMoveMarkers );
     
 
     if( ! maxigin_initRestoreStaticMemoryFromLastRun() ) {

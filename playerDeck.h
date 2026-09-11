@@ -30,6 +30,9 @@ Deck *playerDeckGetDrawDeck( void );
 ChessPiece playerDeckDraw( void );
 
 
+char playerDeckJustRefreshed( void );
+
+
 void playerDeckReshuffle( void );
 
 
@@ -78,10 +81,15 @@ static  ChessPiece  playerDeckPlayed[ MAX_DECK_SIZE ];
 
 static  Deck  playerDrawDeck;
 
+static  int   playerDeckRefreshSound  =  -1;
+
+static  char  justRefreshed           =   0;
 
 
 void playerDeckInit( void ) {
 
+    playerDeckRefreshSound = maxigin_initSoundEffect( "deckRefresh_sd_20.wav" );
+    
     REGISTER_VAL_MEM( playerDeckNumPlayed );
     REGISTER_ARRAY_MEM( playerDeckPlayed );
 
@@ -125,6 +133,11 @@ ChessPiece playerDeckDraw( void ) {
             }
         playerDeckNumPlayed = 0;
 
+        maxigin_playSoundEffect( playerDeckRefreshSound,
+                                 256 );
+
+        justRefreshed = 1;
+
         /* Note that if we still have some pieces out that haven't
            been marked as played yet, those would NOT be re-marked
            as present in that case.
@@ -138,9 +151,22 @@ ChessPiece playerDeckDraw( void ) {
     }
 
 
+
+char playerDeckJustRefreshed( void ) {
+
+    char  val  =  justRefreshed;
+
+    justRefreshed = 0;
+
+    return val;
+    }
+
+
+
 void playerDeckReshuffle( void ) {
     deckReshuffleAll( &playerDrawDeck );
     }
+
 
 
 void playerDeckReturnPieceUnplayed( ChessPiece   inPiece ) {

@@ -244,6 +244,8 @@ static int            explodingEndMessageMax       =  512;
 static unsigned char  endMessageFade               =  0;
 static int            endMessagePreFadeSteps       =  0;
 
+static unsigned char  readyCountGlowFade           =  0;
+
 
 static char           spinning                    =  0;
 static char           spinningPaused              =  0;
@@ -525,6 +527,22 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
           ||
           formationShowing ) ) {
 
+        int  displayBounce  =  0;
+
+        if( readyCountGlowFade > 0 ) {
+
+            int  bounceTime = 126 - readyCountGlowFade;
+
+            /* three bounces */
+            while( bounceTime > 42 ) {
+                bounceTime -= 42;
+                }
+
+            displayBounce = parabola( bounceTime,
+                                      42,
+                                      4 );
+            }
+        
         
         buttonDraw( deckButton );
 
@@ -543,7 +561,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         
         numberDrawCenter( playerDeckGetReadyCount(),
                           deckButtonPosX,
-                          deckButtonPosY - 30,
+                          deckButtonPosY - 30 - displayBounce,
                           1 );
         numbersToggleBorder( 1 );
         
@@ -551,12 +569,26 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         maxigin_drawLangText( lang_readyCount,
                               deckButtonPosX,
-                              deckButtonPosY - 20,
+                              deckButtonPosY - 20 - displayBounce,
                               MAXIGIN_CENTER );
         
         maxigin_setLanguageFontIndex( 0 );
         
         maxigin_drawResetColor();
+
+        if( readyCountGlowFade > 0 ) {
+
+            maxigin_drawToggleAdditive( 1 );
+
+            maxigin_drawSetAlpha( readyCountGlowFade );
+            
+            maxigin_drawSprite( readyCountScreenSprite,
+                                deckButtonPosX,
+                                deckButtonPosY - 26 );
+            maxigin_drawResetColor();
+
+            maxigin_drawToggleAdditive( 0 );
+            }
         }
 
     if( sideBoardShowing
@@ -2580,6 +2612,22 @@ void maxiginGame_step( void ) {
                                      256 );
             }
         }
+
+    if( playerDeckJustRefreshed() ) {
+        readyCountGlowFade = 126;
+        }
+
+    if( readyCountGlowFade > 0 ) {
+
+        int  newVal  =  readyCountGlowFade - ( 2 * 60 ) / r;
+
+        if( newVal > 0 ) {
+            readyCountGlowFade = (unsigned char)newVal;
+            }
+        else {
+            readyCountGlowFade = 0;
+            }
+        }
     }
 
 
@@ -3290,7 +3338,8 @@ void maxiginGame_init( void ) {
     REGISTER_ARRAY_MEM( infoPanelPieceMoveMarkers );
 
     REGISTER_VAL_MEM( heartsGainWaiting );
-    
+
+    REGISTER_VAL_MEM( readyCountGlowFade );
     
 
     if( ! maxigin_initRestoreStaticMemoryFromLastRun() ) {

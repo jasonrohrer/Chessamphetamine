@@ -58,6 +58,8 @@ void getEmptyLevel( BoardState  *outState );
 static  MaxiginRand  levelsRand;
 static  Deck         enemyDeck;
 
+static  int          lastLevelGenerated  =  0;
+static  int          lastLevelNumPieces  =  0;
 
 
 static int saturationCurve( int  inStart,
@@ -78,11 +80,11 @@ static int saturationCurve( int  inStart,
 static int getNumEnemyPieces( int  inLevelNumber ) {
 
     /* start at 2 */
-    int  start  =   2;
+    int  start      =   2;
     /* reach halfway in max curve by level 20 */
-    int  kmax   =  20;
+    int  kmax       =  20;
     /* reach halfway in min curve by level 30 */
-    int  kmin   =  30;
+    int  kmin       =  30;
 
     /* the min and max curves define a growing window of
        possible piece densities as we go up in levels.
@@ -90,20 +92,48 @@ static int getNumEnemyPieces( int  inLevelNumber ) {
        For level 8,   we have between  4 and  8 pieces.
        For level 100, we have between 12 and 19 pieces.
     */
-    int  max    =  saturationCurve( start,
-                                    23,
-                                    kmax,
-                                    inLevelNumber );
+    int  max        =  saturationCurve( start,
+                                        23,
+                                        kmax,
+                                        inLevelNumber );
     
-    int  min    =  saturationCurve( start,
-                                    15,
-                                    kmin,
-                                    inLevelNumber );
+    int  min        =  saturationCurve( start,
+                                        15,
+                                        kmin,
+                                        inLevelNumber );
+    
+    
+    int  numPieces  = maxigin_randRange( &levelsRand,
+                                         min,
+                                         max );
 
-    
-    return maxigin_randRange( &levelsRand,
-                              min,
-                              max );
+ 
+    /* reset every time we return to level 0
+       we always pick 2 at level 0, and don't adjust it */
+
+    if( inLevelNumber > 0 ) {
+        /* cut numPieces off at number of pieces in last level
+           
+           Thus, we have the min curve and the max curve that keep going
+           up, and we pick a value between those two curves for each level,
+           but then we make sure the value for level N+1 is never lower
+           than the value that we picked for level N.
+           
+           Number of pieces has variability from run to run, but is
+           always monotonically increasing in a given run */
+
+        if( numPieces < lastLevelNumPieces ) {
+            numPieces = lastLevelNumPieces;
+            }
+        else if( numPieces > lastLevelNumPieces + 1 ) {
+            /* don't ever jump by more than 1 new formation spot per level */
+            numPieces = lastLevelNumPieces + 1;
+            }
+        }
+    lastLevelGenerated = inLevelNumber;
+    lastLevelNumPieces = numPieces;
+
+    return numPieces;
     }
     
     
@@ -120,6 +150,9 @@ void levelsInit( void ) {
 
     REGISTER_VAL_MEM( levelsRand );
     REGISTER_VAL_MEM( enemyDeck  );
+
+    REGISTER_VAL_MEM( lastLevelGenerated );
+    REGISTER_VAL_MEM( lastLevelNumPieces );
     }
 
 

@@ -306,7 +306,7 @@ void colorsSetClassic( void ) {
                0 );
 
     colorsSet( &colorsBoard,
-               255,
+               0,
                255,
                255  );
 

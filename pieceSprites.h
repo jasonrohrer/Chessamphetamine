@@ -535,8 +535,6 @@ void pieceSpritesInit( void ) {
 
 
 void drawSetPieceColor( int  inPieceColor ) {
-    return;
-    
     if( inPieceColor == CHESS_BLACK ) {
         colorsApplyBlackPieceColor();
         }
@@ -566,22 +564,14 @@ void drawPiece( ChessPiece  inPiece,
     ChessPiece  rawP          =  inPiece & CHESS_TYPE_MASK;
     ChessPiece  c             =  inPiece & CHESS_COLOR_MASK;
     int         cIndex        =  getPieceColorIndex( c );
-
-    maxigin_drawResetColor();
-
-    maxigin_drawSpriteShadowOnly( pieceSpriteHandles[ rawP ][ cIndex ],
-                                  inBaseCenterX,
-                                  inBaseCenterY + pieceOffsetY[ rawP ] );
     
     drawSetPieceColor( c );
     
-    maxigin_drawBaseSprite( pieceSpriteHandles[ rawP ][ cIndex ],
-                            inBaseCenterX,
-                            inBaseCenterY + pieceOffsetY[ rawP ] );
+    maxigin_drawSprite( pieceSpriteHandles[ rawP ][ cIndex ],
+                        inBaseCenterX,
+                        inBaseCenterY + pieceOffsetY[ rawP ] );
 
     maxigin_drawResetColor();
-
-    
 
     if( pieceSpriteExtraHandles[ rawP ][ cIndex ] != -1 ) {
         maxigin_drawSprite( pieceSpriteExtraHandles[ rawP ][ cIndex ],
@@ -623,8 +613,7 @@ void drawPieceGlowOnly( ChessPiece     inPiece,
     drawSetPieceColor( c );
 
     maxigin_drawSetAlpha( inAlpha );
-
-    if( 0 )
+    
     maxigin_drawSpriteGlowOnly( pieceSpriteHandles[ rawP ][ cIndex ],
                                 inBaseCenterX,
                                 inBaseCenterY + pieceOffsetY[ rawP ] );
@@ -732,7 +721,7 @@ void drawPieceSparkles( ChessPiece     inPiece,
     
     drawSetPieceColor( c );
 
-    if( 0 && c == CHESS_WHITE ) {
+    if( c == CHESS_WHITE ) {
 
         /* desaturate gold color to make it clip white */
         maxigin_drawSetColorSaturation( 8500 );
@@ -845,7 +834,7 @@ void drawExplodingPiece( ChessPiece  inPiece,
         drawSetPieceColor( c );
 
     
-        if( 0 && c == CHESS_WHITE ) {
+        if( c == CHESS_WHITE ) {
 
             /* desaturate gold color to make it clip white */
             maxigin_drawSetColorSaturation( 8500 );

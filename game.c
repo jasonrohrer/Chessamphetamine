@@ -762,7 +762,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         maxigin_drawToggleAdditive( 1 );
 
 
-        if( 0 && endMessageColor == CHESS_WHITE ) {
+        if( endMessageColor == CHESS_WHITE ) {
             /* desaturate gold color to make it clip white */
             maxigin_drawSetColorSaturation( 8500 );
             }

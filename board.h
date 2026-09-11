@@ -107,13 +107,13 @@ void boardInit( void ) {
 
     squareSpriteWhite = maxigin_initSprite( "squareWhite.tga" );
 
-    if(0)maxigin_initMakeGlowSprite( squareSpriteWhite,
+    maxigin_initMakeGlowSprite( squareSpriteWhite,
                                 4,
                                 2 );
 
     squareSpriteBlack = maxigin_initSprite( "squareBlack.tga" );
 
-    if(0)maxigin_initMakeGlowSprite( squareSpriteBlack,
+    maxigin_initMakeGlowSprite( squareSpriteBlack,
                                 4,
                                 2 );
 

@@ -453,7 +453,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( ! formationShowing
         &&
-        draftingPieces
+        ( draftingPieces
+          ||
+          spinning )
         &&
         ! deckViewShowing
         &&
@@ -496,14 +498,17 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             maxigin_drawSprite( spinPressedSprite,
                                 spinButtonX,
                                 spinButtonY );
-    
-            maxigin_drawSprite( spinPressedTextSprite,
-                                spinButtonX,
-                                spinButtonY );
+            if( 0 ) {
+                
+                maxigin_drawSprite( spinPressedTextSprite,
+                                    spinButtonX,
+                                    spinButtonY );
 
-            maxigin_drawSpriteGlowOnly( spinPressedTextGlowSprite,
-                                        spinButtonX,
-                                        spinButtonY );
+                maxigin_drawSpriteGlowOnly( spinPressedTextGlowSprite,
+                                            spinButtonX,
+                                            spinButtonY );
+                }
+            
             }
         }
 

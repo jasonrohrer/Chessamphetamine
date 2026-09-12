@@ -184,11 +184,6 @@ void colorsInit( void )  {
 
     maxigin_randSeed( &colorsRand,
                       13873879 );
-
-    REGISTER_VAL_MEM( colorsWhitePlayer );
-    REGISTER_VAL_MEM( colorsBlackPlayer );
-    REGISTER_VAL_MEM( colorsBoard );
-    REGISTER_VAL_MEM( colorsRand );
     }
 
 

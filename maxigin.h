@@ -910,6 +910,7 @@ void maxigin_initMakeDropShadowSpriteStrip( int            inSpriteStripHandle,
 
 
 
+
 /*
   Sets glow parameters for internally-loaded language fonts.
 
@@ -2142,6 +2143,25 @@ char maxigin_loadTempSprite( const char      *inBulkResourceName,
                              unsigned char  **outRGBABytePointer,
                              int             *outWidth,
                              int             *outHeight );
+
+
+
+/*
+  Gets whether a sprite has changed (and been hot-reloaded from disk)
+  since the last call to this function.
+     
+  Parameters:
+
+      inSpriteHandle     the sprite to check.
+
+  Returns:
+
+      1  if the sprite has changed
+      0  if not
+
+  [jumpMaxiginGeneral]
+*/
+char maxigin_getSpriteChanged( int  inSpriteHandle );
 
 
 
@@ -4665,6 +4685,8 @@ typedef struct MaxiginSprite {
         /* if this sprite is the parent of a strip of sprites, this
            is the handle to the sprite strip, or -1 if not */
         int            stripChildHandle;
+
+        char           changedOnDisk;
         
         unsigned char  hash[ MAXIGIN_SPRITE_HASH_LENGTH ];
         
@@ -5469,6 +5491,8 @@ static  char  mx_spriteTempOnly  =  0;
 
 int maxigin_initSprite( const char  *inBulkResourceName ) {
 
+    int  handle;
+    
     if( ! mx_areWeInMaxiginGameInitFunction ) {
         mingin_log( "Game tried to call maxigin_initSprite "
                     "from outside of maxiginGame_init\n" );
@@ -5498,8 +5522,31 @@ int maxigin_initSprite( const char  *inBulkResourceName ) {
         }
     
 
-    return mx_reloadSprite( inBulkResourceName,
-                            -1 );
+    handle = mx_reloadSprite( inBulkResourceName,
+                              -1 );
+
+    if( handle != -1 ) {
+        /* don't count as changed until next reload */
+        mx_sprites[ handle ].changedOnDisk = 0;
+        }
+
+    return handle;
+    }
+
+
+
+char maxigin_getSpriteChanged( int  inSpriteHandle ) {
+
+    char  changed;
+    
+    if( inSpriteHandle == -1 ) {
+        return 0;
+        }
+    changed = mx_sprites[ inSpriteHandle ].changedOnDisk;
+
+    mx_sprites[ inSpriteHandle ].changedOnDisk = 0;
+
+    return changed;
     }
 
 
@@ -7573,6 +7620,8 @@ static void mx_postReloadStep( int  inSpriteHandle ) {
                 }
             }
         }
+
+    s->changedOnDisk = 1;
     }
 
 

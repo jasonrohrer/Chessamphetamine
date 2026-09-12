@@ -1202,7 +1202,8 @@ void maxiginGame_step( void ) {
     int   deltaFade;
 
     char  spinPressed  =  0;
-    
+
+    colorsStep();
 
     if( saveCorrupted ) {
         if( autoQuitFrameCount > 0 ) { 

@@ -17,7 +17,12 @@
 
 void colorsInit( void );
 
+void colorsStep( void );
+
 void colorsSetClassic( void );
+
+void colorsSetFromFileMap( void );
+
 
 void colorsSetRandom( void );
 
@@ -166,9 +171,16 @@ static  ColorsColor  colorsBoard;
 
 static  MaxiginRand  colorsRand;
 
+static  int          colorMapSprite;
+
+
 
 void colorsInit( void )  {
     colorsSetClassic();
+
+    colorMapSprite = maxigin_initSprite( "colorMap.tga" );
+
+    colorsSetFromFileMap();
 
     maxigin_randSeed( &colorsRand,
                       13873879 );
@@ -177,6 +189,15 @@ void colorsInit( void )  {
     REGISTER_VAL_MEM( colorsBlackPlayer );
     REGISTER_VAL_MEM( colorsBoard );
     REGISTER_VAL_MEM( colorsRand );
+    }
+
+
+
+void colorsStep( void ) {
+    if( maxigin_getSpriteChanged( colorMapSprite ) ) {
+
+        colorsSetFromFileMap();
+        }
     }
 
 
@@ -191,6 +212,23 @@ static void colorsSet( ColorsColor   *inColor,
     inColor->c.comp.blue  =  inB;
     inColor->index      =  -1;
     }
+
+
+
+static void colorsSetMaxigin( ColorsColor   *inDestColor,
+                              MaxiginColor  *inSourceColor ) {
+
+    int  i;
+
+    for( i = 0;
+         i < 3;
+         i ++ ) {
+
+        inDestColor->c.val[ i ] = inSourceColor->val[ i ];
+        }
+    inDestColor->index = -1;
+    }
+
 
 
 /* index into palette */
@@ -312,6 +350,55 @@ void colorsSetClassic( void ) {
 
     logColors();
     }
+
+
+
+void colorsSetFromFileMap( void ) {
+
+    int           w;
+    int           h;
+    MaxiginColor  c;
+
+    if( colorMapSprite == -1 ) {
+        return;
+        }
+
+    maxigin_getSpriteDimensions( colorMapSprite,
+                                 &w,
+                                 &h );
+
+    if( w < 3 ) {
+        return;
+        }
+
+    maxigin_getSpritePixel( colorMapSprite,
+                            0,
+                            0,
+                            &c );
+
+    colorsSetMaxigin( &colorsBoard,
+                      &c );
+
+    
+    maxigin_getSpritePixel( colorMapSprite,
+                            1,
+                            0,
+                            &c );
+    
+    colorsSetMaxigin( &colorsWhitePlayer,
+                      &c );
+
+    
+    maxigin_getSpritePixel( colorMapSprite,
+                            2,
+                            0,
+                            &c );
+    
+    colorsSetMaxigin( &colorsBlackPlayer,
+                      &c );
+    
+    }
+
 
 
 

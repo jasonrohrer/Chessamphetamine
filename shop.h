@@ -175,6 +175,12 @@ static  int            newFormSpotSlotY;
 static  char           shopSlotPickedWithController               =  0;
 
 
+/* switch on to remove limits on new formation spots (so players don't have
+   to buy more pieces in their deck to unlock more formation spots) */
+static  char           newSpotsUnlimited                          =  1;
+
+
+
 static void shopResetHightlighFades( void ) {
     int  i;
 
@@ -256,6 +262,12 @@ static void shopInternalReroll( void ) {
 static void shopSetNewSpotAvail( void ) {
     newSpotAvail = 0;
 
+    if( newSpotsUnlimited ) {
+        newSpotAvail = 1;
+        numLeftForNewSpot = 0;
+        return;
+        }
+
     /* they start with a 15-piece deck and 2 spots
        Once they have an 18-piece deck, they can buy another spot
        Then they can buy another when they have a 24-piece deck */
@@ -300,8 +312,8 @@ void shopInit( int  inPointerActionHandle,
                                -1,
                                0 );
 
-    /* new slots cost 3, 4, 5, 6, 7, etc */
-    newFormationSpotCost = costInit( 3,
+    /* new slots cost 13, 15, 17, 19, 21, etc */
+    newFormationSpotCost = costInit( 13,
                                      2,
                                      -1,
                                      -1,

@@ -3841,49 +3841,6 @@ char getGreedyMove( BoardState  *inState,
     int          oldStatesTested   =   statesTestedLastMove;
     MaxiginRand  oldRand;
     
-    /* no longer need to make depth larger in endgame, since
-       we have new king-trapping heuristics now */
-    if( 0 ) {
-        
-        int   countOpLeft  =  0;
-        int   countUsLeft  =  0;
-        int   y;
-        int   x;
-
-        for( y = 0;
-             y < BH;
-             y ++ ) {
-        
-            for( x = 0;
-                 x < BW;
-                 x ++ ) {
-
-                if( inState->grid[y][x] != noPiece ) {
-
-                    if( ( inState->grid[y][x] & CHESS_COLOR_MASK )
-                        !=
-                        inState->nextToMove ) {
-
-                        /* opponent piece! */
-                        countOpLeft ++;
-                        }
-                    else {
-                        /* our piece */
-                        countUsLeft ++;
-                        }
-                    }
-                }
-            }
-
-        if( countOpLeft == 1
-            &&
-            countUsLeft <= 4 ) {
-
-            /* lone king left, with small team trying to get him
-               increase depth by 1 to give them a better chance of mating him */
-            depth = 3;
-            }
-        }
 
     statesTestedLastMove = 0;
 

@@ -1578,6 +1578,14 @@ static int laserRookMove( BoardState     *inState,
                         
                         /* destroy piece */
                         s->grid[ dy ][ dx ] = noPiece;
+
+                        if( inMaySkipNonKingCaptureMoves
+                            &&
+                            ( p & CHESS_TYPE_MASK ) == king ) {
+
+                            /* stop at first king-capturing move */
+                            return numMoves;
+                            }
                         }
                     /* if it's our piece, we don't destroy it, but
                        stop laser */

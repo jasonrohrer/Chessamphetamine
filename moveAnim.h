@@ -774,7 +774,7 @@ static int getLaserHitDepth( int          inPieceRow,
             dirCounts[1] ++;
             }
         else if( c < inPieceCol ) {
-            oldDirCount = dirCounts[2];
+            oldDirCount = dirCounts[3];
             dirCounts[3] ++;
             }
         else if( c > inPieceCol ) {

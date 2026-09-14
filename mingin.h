@@ -2436,6 +2436,13 @@ static  int             mn_windowH              =  0;
 static  int             mn_realWindowW          =  0;
 static  int             mn_realWindowH          =  0;
 
+/* these are only used if mn_realWindowW/H is too big for our buffer.
+   These are used to scale and offset mouse coordinates */
+static  int             mn_windowScaleFactor    =  1;
+static  int             mn_windowOffsetX        =  0;
+static  int             mn_windowOffsetY        =  0;
+
+
 static  char            mn_areWeInStepFunction  =  0;
 static  char            mn_xFullscreen          =  0;
 static  int             mn_screenRefreshRate    =  0;
@@ -3357,9 +3364,27 @@ static void mn_reconfigureWindowSize( Display  *inXDisplay ) {
     /* make sure we're never bigger than our statically allocated
        framebuffer */
     if( mn_windowW > MINGIN_LINUX_MAX_WIN_W ) {
+
+        mingin_log( "Desired window width " );
+        mingin_log( mn_intToString( mn_windowW ) );
+        mingin_log( " larger that static max (" );
+        mingin_log( mn_intToString( MINGIN_LINUX_MAX_WIN_W ) );
+        mingin_log( "), reducing to " );
+        mingin_log( mn_intToString( MINGIN_LINUX_MAX_WIN_W ) );
+        mingin_log( "\n" );
+        
         mn_windowW = MINGIN_LINUX_MAX_WIN_W;
         }
     if( mn_windowH > MINGIN_LINUX_MAX_WIN_H ) {
+
+        mingin_log( "Desired window height " );
+        mingin_log( mn_intToString( mn_windowH ) );
+        mingin_log( " larger that static max (" );
+        mingin_log( mn_intToString( MINGIN_LINUX_MAX_WIN_H ) );
+        mingin_log( "), reducing to " );
+        mingin_log( mn_intToString( MINGIN_LINUX_MAX_WIN_H ) );
+        mingin_log( "\n" );
+        
         mn_windowH = MINGIN_LINUX_MAX_WIN_H;
         }
 
@@ -3371,10 +3396,16 @@ static void mn_reconfigureWindowSize( Display  *inXDisplay ) {
         mn_realWindowH = mn_windowH;
         }
     
-    mingin_log( "Window = " );
+    mingin_log( "Settling on Linux window size = " );
     mingin_log( mn_intToString( mn_windowW ) );
     mingin_log( "," );
     mingin_log( mn_intToString( mn_windowH ) );
+    mingin_log( "\n" );
+
+    mingin_log( "Settling on Linux real window size = " );
+    mingin_log( mn_intToString( mn_realWindowW ) );
+    mingin_log( "," );
+    mingin_log( mn_intToString( mn_realWindowH ) );
     mingin_log( "\n" );
     }
 
@@ -3752,6 +3783,20 @@ char mingin_getPointerLocation( int  *outX,
         return 0;
         }
     
+
+    if( mn_windowOffsetX > 0 ) {
+        winX -= mn_windowOffsetX;
+        }
+    if( mn_windowOffsetY > 0 ) {
+        winY -= mn_windowOffsetY;
+        }
+    
+
+    if( mn_windowScaleFactor > 1 ) {
+        winX /= mn_windowScaleFactor;
+        winY /= mn_windowScaleFactor;
+        }
+    
     if( winX < 0
         ||
         winX > mn_windowW
@@ -4106,6 +4151,10 @@ int main( void ) {
             
             glPixelZoom(  1,
                          -1 );
+
+            mn_windowScaleFactor = 1;
+            mn_windowOffsetX     = 0;
+            mn_windowOffsetY     = 0;
             }
         else {
             /* we must be in fullscreen mode, and fullscreen size
@@ -4116,27 +4165,30 @@ int main( void ) {
                entirely on screen */
             int scaleFactorW;
             int scaleFactorH;
-            int scaleFactor;
-            int offsetX;
-            int offsetY;
             
             scaleFactorW = mn_realWindowW / mn_windowW;
             scaleFactorH = mn_realWindowH / mn_windowH;
 
-            scaleFactor = scaleFactorW;
+            mn_windowScaleFactor = scaleFactorW;
 
-            if( scaleFactorH < scaleFactor ) {
-                scaleFactor = scaleFactorH;
+            if( scaleFactorH < mn_windowScaleFactor ) {
+                mn_windowScaleFactor = scaleFactorH;
                 }
 
-            offsetX = ( mn_realWindowW - mn_windowW * scaleFactor );
-            offsetY = ( mn_realWindowH - mn_windowH * scaleFactor );
+            mn_windowOffsetX =
+                ( mn_realWindowW - mn_windowW * mn_windowScaleFactor );
+            mn_windowOffsetY =
+                ( mn_realWindowH - mn_windowH * mn_windowScaleFactor );
 
-            glRasterPos2f( -1 + (GLfloat)offsetX / (GLfloat)mn_realWindowW,
-                            1 - (GLfloat)offsetY / (GLfloat)mn_realWindowH );
+            glRasterPos2f(
+                -1 + (GLfloat)mn_windowOffsetX / (GLfloat)mn_realWindowW,
+                 1 - (GLfloat)mn_windowOffsetY / (GLfloat)mn_realWindowH );
             
-            glPixelZoom(   (GLfloat)scaleFactor,
-                         - (GLfloat)scaleFactor );
+            glPixelZoom(   (GLfloat)mn_windowScaleFactor,
+                         - (GLfloat)mn_windowScaleFactor );
+
+            mn_windowOffsetX /= 2;
+            mn_windowOffsetY /= 2;
             }
 
         glClearColor( 0, 0, 0, 1 );

@@ -138,6 +138,7 @@ static int          plunkSound         =  -1;
 static int          thunkSound         =  -1;
 static int          examinePieceSound  =  -1;
 static int          pickFailedSound    =  -1;
+static int          deckAllSameSound   =  -1;
 
 static int          checkmateGood      =  -1;
 static int          checkmateBad       =  -1;
@@ -1185,6 +1186,7 @@ static void swapMarkedPieces( void ) {
 
             clearDrawMarkers();
             sideBoardClearPick();
+            buttonReset( drawButton );
             }
         }
     }
@@ -2429,21 +2431,30 @@ void maxiginGame_step( void ) {
             unlocksCancelViewer();
             
             /* press attempt */
-            if( moneyGetTotal() < costGet( drawCost ) ) {
-                /* fail */
-                maxigin_playSoundEffect( pickFailedSound,
-                                         256 );
-                sideBoardRedrawBlocked = 1;
+
+            if( sideBoardIsRedrawHelpful() ) {
+                if( moneyGetTotal() < costGet( drawCost ) ) {
+                    /* fail */
+                    maxigin_playSoundEffect( pickFailedSound,
+                                             256 );
+                    sideBoardRedrawBlocked = 1;
+                    }
+                else {
+                    maxigin_playSoundEffect( examinePieceSound,
+                                             256 );
+
+                    moneyAdd( - costGet( drawCost ) );
+
+                    sideBoardLift();
+                    sideBoardRedrawBlocked = 0;
+                    costIncrement( drawCost );
+                    }
                 }
             else {
-                maxigin_playSoundEffect( examinePieceSound,
-                                         256 );
-
-                moneyAdd( - costGet( drawCost ) );
-
-                sideBoardLift();
-                sideBoardRedrawBlocked = 0;
-                costIncrement( drawCost );
+                maxigin_playSoundEffect( deckAllSameSound,
+                                         384 );
+                sideBoardRedrawBlocked = 1;
+                readyCountGlowFade = 126;
                 }
             }
         else if( ! sideBoardRedrawBlocked
@@ -2871,6 +2882,8 @@ void maxiginGame_init( void ) {
     
 
     examinePieceSound = maxigin_initSoundEffect( "examinePiece_misc_10.wav" );
+
+    deckAllSameSound  = maxigin_initSoundEffect( "deckAllSame_sd_31.wav" );
 
     buttonGlobalInit( examinePieceSound );
 

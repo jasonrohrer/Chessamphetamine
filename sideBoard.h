@@ -26,6 +26,11 @@ void sideBoardInit( int  inPointerActionHandle,
                     int  inBottomSlotY );
 
 
+/* returns 0 if side board contains same pieces that are available in
+   the deck (i.e. redrawing is a waste of money) */
+char sideBoardIsRedrawHelpful( void );
+
+
 void sideBoardRedraw( void );
 
 
@@ -165,6 +170,50 @@ void sideBoardInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( sbHoldingController );
 
     REGISTER_VAL_MEM( sbOverSlot );
+    }
+
+
+
+char sideBoardIsRedrawHelpful( void ) {
+
+    ChessPiece   p  =  sideBoard[ 0 ];
+    int          i;
+    Deck        *d;
+    
+    if( p == noPiece ) {
+        return 1;
+        }
+
+    for( i = 1;
+         i < sbNumSlots;
+         i   ++ ) {
+
+        if( sideBoard[ i ] != p ) {
+            return 1;
+            }
+        }
+
+    /* got to here:  side board contains identical pieces */
+
+    /* does deck contain all the same piece, in ready pieces */
+
+    d = playerDeckGetDrawDeck();
+
+    for( i = 0;
+         i < d->numPieces;
+         i   ++ ) {
+
+        if( d->present[ i ] ) {
+
+            if( d->pieces[ i ] != p ) {
+                /* found some piece in present section of deck that
+                   isn't same */
+                return 1;
+                }
+            }
+        }
+    
+    return 0;
     }
 
 

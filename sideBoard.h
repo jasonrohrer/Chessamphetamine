@@ -179,6 +179,10 @@ char sideBoardIsRedrawHelpful( void ) {
     ChessPiece   p  =  sideBoard[ 0 ];
     int          i;
     Deck        *d;
+
+    if( playerDeckGetReadyCount() == 0 ) {
+        return 0;
+        }
     
     if( p == noPiece ) {
         return 1;

@@ -3835,11 +3835,12 @@ char getGreedyMove( BoardState  *inState,
                     Captured    *outCaptured,
                     BoardState  *outNewState ) {
 
-    int   nextScore;
-    char  canMove;
-    int   depth        =  2;
-
-
+    int          nextScore;
+    char         canMove;
+    int          depth             =  2;
+    int          oldStatesTested   =   statesTestedLastMove;
+    MaxiginRand  oldRand;
+    
     /* no longer need to make depth larger in endgame, since
        we have new king-trapping heuristics now */
     if( 0 ) {
@@ -3883,7 +3884,13 @@ char getGreedyMove( BoardState  *inState,
             depth = 3;
             }
         }
-    
+
+    statesTestedLastMove = 0;
+
+    /* start with shallower depth, and see how many states we visit */
+    depth = 1;
+
+    oldRand = chessRand;
     
     canMove = getGreedyDepthMove( inState,
                                   1,
@@ -3895,6 +3902,40 @@ char getGreedyMove( BoardState  *inState,
                                   MAX_SCORE + SCORE_SCALE,
                                   depth,
                                   0 );
+
+    oldStatesTested += statesTestedLastMove;
+
+    if( canMove && statesTestedLastMove < 1000 ) {
+        /* not too many states at shallow depth
+           re-do with full depth */
+
+        /* clear the logs, so they only reflect the order of the states
+           visited in our final search  */
+        logCount             = 0;
+        bestTopLevelScore    = 0;
+
+        statesTestedLastMove = 0;
+
+        /* restore rand to repeat same search, but go deeper this time */
+        chessRand = oldRand;
+        depth     = 2;
+
+        canMove = getGreedyDepthMove( inState,
+                                  1,
+                                  outMove,
+                                  outCaptured,
+                                  outNewState,
+                                  &nextScore,
+                                  - MAX_SCORE - SCORE_SCALE,
+                                  MAX_SCORE + SCORE_SCALE,
+                                  depth,
+                                  0 );
+        oldStatesTested += statesTestedLastMove;
+        }
+
+    /* update to count ALL states visited, including shallow
+       initial test, and deeper test after that */
+    statesTestedLastMove = oldStatesTested;
 
     if( ! canMove ) {
         /* stuck with no moves that don't move into check */

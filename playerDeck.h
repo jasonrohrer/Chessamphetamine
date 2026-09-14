@@ -118,7 +118,14 @@ ChessPiece playerDeckDraw( void ) {
 
     if( p == noPiece
         &&
-        playerDeckGetSize() > 0 ) {
+        playerDeckGetSize() > 0
+        &&
+        ! justRefreshed ) {
+
+        /* don't repeat this if justRefreshed,
+           becuase it means each draw from the deck is failing with noPiece,
+           which means our deck is empty, and we don't want to play the
+           playerDeckRefreshSound multiple times */
 
         /* a non-empty deck, but all pieces not present
            means we've played through all pieces

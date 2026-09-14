@@ -121,6 +121,49 @@ static  const char  *rarityNames             [ NUM_RARITIES ] = { "contraband",
 static  char         rarityDescriptionBuffers[ NUM_RARITIES ][ 32 ];
 
 
+
+static void rarityTest( void ) {
+    int  i;
+    int  counts[ NUM_RARITIES ];
+    int  t                        =  100000;
+
+    
+    for( i = 0;
+         i < NUM_RARITIES;
+         i   ++ ) {
+        counts[ i ] = 0;
+        }
+    
+    for( i = 0;
+         i < t;
+         i   ++ ) {
+
+        ChessPiece  p   =  rarityRollPiece();
+
+        counts[ rarityGet( p ) ] ++;
+        }
+
+    for( i = 0;
+         i < NUM_RARITIES;
+         i   ++ ) {
+
+        int  oneIn  =  -1;
+
+        if( counts[ i ] > 0 ) {
+            oneIn = t / counts[ i ] + 1;
+            }
+        
+        maxigin_logInt2( maxigin_stringConcat( rarityNames[ i ],
+                                               " = " ),
+                         counts[ i ],
+                         " or 1 in ",
+                         oneIn,
+                         "\n" );             
+        }
+    }
+
+
+
 void rarityInit( void ) {
 
     int  i;
@@ -138,8 +181,8 @@ void rarityInit( void ) {
     rarityOneInCount[ contraband ] =   -1;
     rarityOneInCount[ common     ] =    1;
     rarityOneInCount[ uncommon   ] =    4;
-    rarityOneInCount[ rare       ] =   20;
-    rarityOneInCount[ legendary  ] =  100;
+    rarityOneInCount[ rare       ] =   15;
+    rarityOneInCount[ legendary  ] =   75;
     rarityOneInCount[ impossible ] = 1000;
 
     for( i = FIRST_ROLLABLE_RARITY;
@@ -194,7 +237,12 @@ void rarityInit( void ) {
                                           1,
                                           rarityNames[ i ] );
         }
+
+
+    /* suppress unused warning */
+    (void) rarityTest;
     }
+
 
 
 int rarityGet( ChessPiece  inPiece ) {

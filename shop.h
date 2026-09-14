@@ -89,7 +89,7 @@ char isShoppingDone( void );
     V( C, 4,   rook,         4   )    \
     V( C, 5,   queen,        7   )    \
     V( C, 6,   king,         0   )    \
-    V( C, 7,   laserRook,    10  )    \
+    V( C, 7,   laserRook,    15  )    \
     V( C, 8,   laserPawn,    6   )    \
     V( C, 9,   doublingPawn, 6   )    \
     V( C, 10,  addingRook,   7   )    \

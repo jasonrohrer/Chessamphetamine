@@ -7241,29 +7241,29 @@ static void mn_setupWindowSize( void ) {
     
     /* make sure we're never bigger than our statically allocated
        framebuffer */
-    if( mn_windowW > MINGIN_LINUX_MAX_WIN_W ) {
+    if( mn_windowW > MINGIN_MAX_SCREEN_W ) {
 
         mingin_log( "Desired window width " );
         mingin_log( mn_intToString( mn_windowW ) );
         mingin_log( " larger that static max (" );
-        mingin_log( mn_intToString( MINGIN_LINUX_MAX_WIN_W ) );
+        mingin_log( mn_intToString( MINGIN_MAX_SCREEN_W ) );
         mingin_log( "), reducing to " );
-        mingin_log( mn_intToString( MINGIN_LINUX_MAX_WIN_W ) );
+        mingin_log( mn_intToString( MINGIN_MAX_SCREEN_W ) );
         mingin_log( "\n" );
         
-        mn_windowW = MINGIN_LINUX_MAX_WIN_W;
+        mn_windowW = MINGIN_MAX_SCREEN_W;
         }
-    if( mn_windowH > MINGIN_LINUX_MAX_WIN_H ) {
+    if( mn_windowH > MINGIN_MAX_SCREEN_H ) {
 
         mingin_log( "Desired window height " );
         mingin_log( mn_intToString( mn_windowH ) );
         mingin_log( " larger that static max (" );
-        mingin_log( mn_intToString( MINGIN_LINUX_MAX_WIN_H ) );
+        mingin_log( mn_intToString( MINGIN_MAX_SCREEN_H ) );
         mingin_log( "), reducing to " );
-        mingin_log( mn_intToString( MINGIN_LINUX_MAX_WIN_H ) );
+        mingin_log( mn_intToString( MINGIN_MAX_SCREEN_H ) );
         mingin_log( "\n" );
         
-        mn_windowH = MINGIN_LINUX_MAX_WIN_H;
+        mn_windowH = MINGIN_MAX_SCREEN_H;
         }
 
     if( mn_realWindowW == 0 ) {
@@ -8910,8 +8910,8 @@ char mingin_getPointerLocation( int  *outX,
                 p.y -= offsetY;
                 
                 if( scaleFactor > 1 ) {
-                    winX /= mn_windowScaleFactor;
-                    winY /= mn_windowScaleFactor;
+                    p.x /= scaleFactor;
+                    p.y /= scaleFactor;
                     }
                 }
 

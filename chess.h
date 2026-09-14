@@ -1503,7 +1503,7 @@ static int laserRookMove( BoardState     *inState,
                                 outStates );
     
     char  hasEffects  =  hasAnySpaceEffects( inState,
-                                             inPieceCol );
+                                             inPieceColor );
 
     (void)inMaySkipNonKingCaptureMoves;
     
@@ -1633,7 +1633,7 @@ static int laserPawnMove( BoardState     *inState,
                                 outStates );
     
     char  hasEffects  =  hasAnySpaceEffects( inState,
-                                             inPieceCol );
+                                             inPieceColor );
 
     (void)inMaySkipNonKingCaptureMoves;
     

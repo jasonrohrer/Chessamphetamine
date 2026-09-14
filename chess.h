@@ -1505,9 +1505,6 @@ static int laserRookMove( BoardState     *inState,
     char  hasEffects  =  hasAnySpaceEffects( inState,
                                              inPieceColor );
 
-    (void)inMaySkipNonKingCaptureMoves;
-    
-
     if( BW - 1 > maxDist ) {
         /* non-square board, consider moves as long as longest side */
         maxDist = BW - 1;
@@ -1526,6 +1523,29 @@ static int laserRookMove( BoardState     *inState,
         int          d;
         int          repeatVal  =  1;
 
+        int          kingHit    =  0;
+
+        if( inMaySkipNonKingCaptureMoves ) {
+            /* check if our basic rook move already killed the king
+               in that case, we still need to complete firing our lasers,
+               just for that one move, so the move is complete */
+
+            int  cap;
+
+            for( cap = 0;
+                 cap < outCaptured[i].num;
+                 cap   ++ ) {
+
+                if( ( outCaptured[i].pieces[ cap ].p & CHESS_TYPE_MASK )
+                    ==
+                    king ) {
+                    
+                    kingHit = 1;
+                    break;
+                    }
+                }
+            }
+        
 
         if( hasEffects ) {
             repeatVal = getTotalEffectsRepeatValue( s,
@@ -1583,8 +1603,7 @@ static int laserRookMove( BoardState     *inState,
                             &&
                             ( p & CHESS_TYPE_MASK ) == king ) {
 
-                            /* stop at first king-capturing move */
-                            return numMoves;
+                            kingHit = 1;
                             }
                         }
                     /* if it's our piece, we don't destroy it, but
@@ -1595,6 +1614,15 @@ static int laserRookMove( BoardState     *inState,
                     }
                 }
 
+            }
+
+        if( inMaySkipNonKingCaptureMoves
+            &&
+            kingHit ){
+            /* stop after first move that hits king,
+               but process all pieces hit by the lasers (so that the
+               move is complete) */
+            return i + 1;
             }
 
         }

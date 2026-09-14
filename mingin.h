@@ -7241,11 +7241,29 @@ static void mn_setupWindowSize( void ) {
     
     /* make sure we're never bigger than our statically allocated
        framebuffer */
-    if( mn_windowW > MINGIN_MAX_SCREEN_W ) {
-        mn_windowW = MINGIN_MAX_SCREEN_W;
+    if( mn_windowW > MINGIN_LINUX_MAX_WIN_W ) {
+
+        mingin_log( "Desired window width " );
+        mingin_log( mn_intToString( mn_windowW ) );
+        mingin_log( " larger that static max (" );
+        mingin_log( mn_intToString( MINGIN_LINUX_MAX_WIN_W ) );
+        mingin_log( "), reducing to " );
+        mingin_log( mn_intToString( MINGIN_LINUX_MAX_WIN_W ) );
+        mingin_log( "\n" );
+        
+        mn_windowW = MINGIN_LINUX_MAX_WIN_W;
         }
-    if( mn_windowH > MINGIN_MAX_SCREEN_H ) {
-        mn_windowH = MINGIN_MAX_SCREEN_H;
+    if( mn_windowH > MINGIN_LINUX_MAX_WIN_H ) {
+
+        mingin_log( "Desired window height " );
+        mingin_log( mn_intToString( mn_windowH ) );
+        mingin_log( " larger that static max (" );
+        mingin_log( mn_intToString( MINGIN_LINUX_MAX_WIN_H ) );
+        mingin_log( "), reducing to " );
+        mingin_log( mn_intToString( MINGIN_LINUX_MAX_WIN_H ) );
+        mingin_log( "\n" );
+        
+        mn_windowH = MINGIN_LINUX_MAX_WIN_H;
         }
 
     if( mn_realWindowW == 0 ) {
@@ -7277,11 +7295,16 @@ static void mn_setupWindowSize( void ) {
             }
         }
     
-    
-    mingin_log( "Window = " );
+    mingin_log( "Settling on Windows window size = " );
     mingin_log( mn_intToString( mn_windowW ) );
     mingin_log( "," );
     mingin_log( mn_intToString( mn_windowH ) );
+    mingin_log( "\n" );
+
+    mingin_log( "Settling on Windows real window size = " );
+    mingin_log( mn_intToString( mn_realWindowW ) );
+    mingin_log( "," );
+    mingin_log( mn_intToString( mn_realWindowH ) );
     mingin_log( "\n" );
     }
 
@@ -8859,12 +8882,45 @@ char mingin_getPointerLocation( int  *outX,
 
                 return 0;
                 }
+
+            if( mn_realWindowW != mn_windowW
+                ||
+                mn_realWindowH != mn_windowH ) {
+
+                int scaleFactorW;
+                int scaleFactorH;
+                int scaleFactor;
+                int offsetX;
+                int offsetY;
+            
+                scaleFactorW = mn_realWindowW / mn_windowW;
+                scaleFactorH = mn_realWindowH / mn_windowH;
+
+                scaleFactor = scaleFactorW;
+
+                if( scaleFactorH < scaleFactor ) {
+                    scaleFactor = scaleFactorH;
+                    }
+
+                offsetX = ( mn_realWindowW - mn_windowW * scaleFactor ) / 2;
+                offsetY = ( mn_realWindowH - mn_windowH * scaleFactor ) / 2;
+
+                p.x -= offsetX;
+                    
+                p.y -= offsetY;
+                
+                if( scaleFactor > 1 ) {
+                    winX /= mn_windowScaleFactor;
+                    winY /= mn_windowScaleFactor;
+                    }
+                }
+
             
             *outX = p.x;
             *outY = p.y;
             
-            *outMaxX = mn_realWindowW;
-            *outMaxY = mn_realWindowH;
+            *outMaxX = mn_windowW;
+            *outMaxY = mn_windowH;
     
             return 1;
             }

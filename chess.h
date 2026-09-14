@@ -156,7 +156,13 @@ typedef struct TotalSpaceEffects {
         
     } TotalSpaceEffects;
         
-    
+
+
+/* returns 0 if board has no space effects at all, 1 otherwise */
+char hasAnySpaceEffects( BoardState   *inState,
+                         int           inAffectedColor );
+
+
 
 /* gets the per-square, non-compounded space effects for the whole board */
 void getSpaceEffects( BoardState             *inState,
@@ -1495,6 +1501,9 @@ static int laserRookMove( BoardState     *inState,
                                 outDestCols,
                                 outCaptured,
                                 outStates );
+    
+    char  hasEffects  =  hasAnySpaceEffects( inState,
+                                             inPieceCol );
 
     (void)inMaySkipNonKingCaptureMoves;
     
@@ -1515,10 +1524,16 @@ static int laserRookMove( BoardState     *inState,
         BoardState  *s          =  &( outStates[i] );
         int          v;
         int          d;
-        int          repeatVal  =  getTotalEffectsRepeatValue( s,
-                                                               inPieceColor,
-                                                               r,
-                                                               c );
+        int          repeatVal  =  1;
+
+
+        if( hasEffects ) {
+            repeatVal = getTotalEffectsRepeatValue( s,
+                                                    inPieceColor,
+                                                    r,
+                                                    c  );
+            }
+        
         for( v = 0;
              v < repeatVal;
              v++ )
@@ -1608,6 +1623,9 @@ static int laserPawnMove( BoardState     *inState,
                                 outDestCols,
                                 outCaptured,
                                 outStates );
+    
+    char  hasEffects  =  hasAnySpaceEffects( inState,
+                                             inPieceCol );
 
     (void)inMaySkipNonKingCaptureMoves;
     
@@ -1627,10 +1645,17 @@ static int laserPawnMove( BoardState     *inState,
         BoardState  *s          =  &( outStates[i] );
         int          dist;
         int          v;
-        int          repeatVal  =  getTotalEffectsRepeatValue( s,
-                                                               inPieceColor,
-                                                               r,
-                                                               c );
+        int          repeatVal  =  1;
+
+
+        if( hasEffects ) {
+            repeatVal = getTotalEffectsRepeatValue( s,
+                                                    inPieceColor,
+                                                    r,
+                                                    c );
+            }
+
+        
         for( v = 0;
              v < repeatVal;
              v++ )
@@ -4358,6 +4383,46 @@ static void clearSpaceEffects( FullBoardSpaceEffects  *outEffects ) {
             }
         }
     }
+
+
+
+char hasAnySpaceEffects( BoardState   *inState,
+                         int           inAffectedColor ) {
+    int  y;
+    int  x;
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            ChessPiece  p  = inState->grid[y][x];
+            ChessPiece  t;
+            ChessPiece  c;
+            
+            if( p == noPiece ) {
+                continue;
+                }
+
+            c = p & CHESS_COLOR_MASK;
+
+            if( c != inAffectedColor ) {
+                /* only compute effects for next to move */
+                continue;
+                }
+            t = p & CHESS_TYPE_MASK;
+
+            if( effectsFunctions[ t ] != nullEffects ) {
+                return 1;
+                }
+            }
+        }
+    return 0;
+    }
+
 
 
 void getSpaceEffects( BoardState             *inState,

@@ -251,12 +251,28 @@ void moneyStep( void ) {
                                      256 );
             }
         else {
-            moneyVal -= 1;
+            if( moneyToAdd <= -50 ) {
+                moneyVal   -= 10;
+                moneyToAdd += 10;
 
-            moneyToAdd += 1;
-    
-            maxigin_playSoundEffect( spendSound,
+                maxigin_playSoundEffect( spendSound,
+                                         512 );
+                }
+            else if( moneyToAdd <= -10 ) {
+                moneyVal   -= 5;
+                moneyToAdd += 5;
+                
+                maxigin_playSoundEffect( spendSound,
+                                         384 );
+                }
+            else {
+                moneyVal -= 1;
+
+                moneyToAdd += 1;
+                
+                maxigin_playSoundEffect( spendSound,
                                      256 );
+                }
             }
 
         moneyProgressMidPeak = 1;

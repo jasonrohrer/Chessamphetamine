@@ -2816,7 +2816,12 @@ static int isKingAlone( BoardState  *inState,
     if( whiteKingFound
         &&
         otherWhiteCount <  2
-        &&otherWhiteBetterCount == 0
+        &&
+        ( otherWhiteBetterCount == 0
+          ||
+          ( otherWhiteBetterCount == 1
+            &&
+            otherBlackBetterCount >  1 ) )
         &&
         otherBlackCount >  0
         &&
@@ -2838,7 +2843,11 @@ static int isKingAlone( BoardState  *inState,
         &&
         otherBlackCount <  2
         &&
-        otherBlackBetterCount == 0
+        ( otherBlackBetterCount == 0
+          ||
+          ( otherBlackBetterCount == 1
+            &&
+            otherWhiteBetterCount >  1 ) )
         &&
         otherWhiteCount >  0
         &&

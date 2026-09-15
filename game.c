@@ -175,7 +175,10 @@ static char         redrawAddRunning           =  0;
 static int          redrawProgressMax          =  100;
 
 
-static int          logoSprite                 = -1;
+static int          logoBGSprite               = -1;
+static int          logoFGSprite               = -1;
+static int          logoFGGlowSprite           = -1;
+static int          logoFGGlowAndShadowSprite  = -1;
 static int          logoSubSprite              = -1;
 static int          microdoseSprite            = -1;
 static int          microdoseSpriteA           = -1;
@@ -932,14 +935,14 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
     
     
-    if( 0 ) {
+    if( 1 ) {
 
         int  cX = MAXIGIN_GAME_NATIVE_W / 2;
         int  cY = MAXIGIN_GAME_NATIVE_H / 2;
         
         maxigin_drawResetColor();
 
-        maxigin_drawSetColor( 0,
+        maxigin_drawSetColor( 255,
                               0,
                               0,
                               255 );
@@ -962,10 +965,21 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                               MAXIGIN_CENTER );
             }
         else if( 1 ) {
+
+            int  yOff  =  0;
             
-            maxigin_drawSprite( logoSprite,
+            if(1)maxigin_drawSprite( logoBGSprite,
                                 cX,
-                                cY );
+                                cY + yOff );
+            if(1)maxigin_drawSprite( logoFGSprite,
+                                cX,
+                                cY + yOff );
+            if(1)maxigin_drawSprite( logoFGGlowSprite,
+                                cX,
+                                cY + yOff );
+            if(0)maxigin_drawSprite( logoFGGlowAndShadowSprite,
+                                cX,
+                                cY + yOff );
 
             /*
             maxigin_drawSetColor( 255,
@@ -2920,22 +2934,35 @@ void maxiginGame_init( void ) {
                                 1 );
     
 
-    logoSprite = maxigin_initSprite( "logo.tga" );
+    logoBGSprite = maxigin_initSprite( "logo_bg_glow.tga" );
+    logoFGSprite = maxigin_initSprite( "logo_fg_noglow.tga" );
+    logoFGGlowSprite = maxigin_initSprite( "logo_fg_glow.tga" );
+    logoFGGlowAndShadowSprite =
+        maxigin_initSprite( "logo_fg_glow_and_shadow.tga" );
+    
     logoSubSprite = maxigin_initSprite( "logoSub.tga" );
 
-    maxigin_initMakeGlowSprite( logoSprite,
+    maxigin_initMakeGlowSprite( logoBGSprite,
+                                4,
+                                2 );
+    maxigin_initMakeGlowSprite( logoFGGlowSprite,
                                 4,
                                 2 );
 
-    maxigin_initMakeDropShadowSprite( logoSprite,
+    maxigin_initMakeGlowSprite( logoFGGlowAndShadowSprite,
+                                4,
+                                2 );
+
+    if(1)maxigin_initMakeDropShadowSprite( logoFGGlowAndShadowSprite,
                                       4,
                                       2,
                                       255,
                                       255,
                                       100,
                                       0,
-                                      200,
+                                      50,
                                       0 );
+    
     
     maxigin_initMakeGlowSprite( logoSubSprite,
                                 2,

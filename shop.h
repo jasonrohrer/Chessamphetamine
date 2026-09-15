@@ -312,12 +312,12 @@ void shopInit( int  inPointerActionHandle,
                                -1,
                                0 );
 
-    /* new army formation spots cost 15, 16, etc */
-    newFormationSpotCost = costInit( 15,
+    /* new army formation spots cost 8, 11, 15, 20, 26 etc */
+    newFormationSpotCost = costInit( 8,
+                                     3,
+                                     -1,
+                                     -1,
                                      1,
-                                     -1,
-                                     -1,
-                                     0,
                                      0,
                                      -1,
                                      -1,

@@ -429,31 +429,35 @@ char formationStep( int  inBoardCenterX,
                           formation[ fmOverSlotY ][ fmOverSlotX ]
                           == noPiece ) ) {
 
-                        /* swap when simply moving around with the mouse */
+                        if( fmPointerDrag ) {
+                            
+                            /* swap when dragging around with the mouse */
                         
-                        char  temp  =
-                              formation[ formationPickedY ][ formationPickedX ];
+                            char  temp  =  formation[ formationPickedY ]
+                                                    [ formationPickedX ];
 
-                        formation[ formationPickedY ][ formationPickedX ] =
-                            formation[ fmOverSlotY ][ fmOverSlotX ];
+                            formation[ formationPickedY ][ formationPickedX ] =
+                                formation[ fmOverSlotY ][ fmOverSlotX ];
 
-                        formation[ fmOverSlotY ][ fmOverSlotX ] = temp;
-
-                        if( ! soundAlreadyPlayed ) {
-                            maxigin_playSoundEffect( inPieceLiftSound,
-                                                     256 );
+                            formation[ fmOverSlotY ][ fmOverSlotX ] = temp;
+                        
+                            if( ! soundAlreadyPlayed ) {
+                                maxigin_playSoundEffect( inPieceLiftSound,
+                                                         256 );
+                                }
+                            formationPickedX = fmOverSlotX;
+                            formationPickedY = fmOverSlotY;
                             }
-
-                        if( maxigin_isButtonDown( fmPointerActionHandle ) ) {
+                        
+                        if( fmActionDown
+                            &&
+                            maxigin_isButtonDown( fmPointerActionHandle ) ) {
                             /* button still held down while they moused
                                to actually move the active cell
                                Count it as a drag, and clear active
                                status on release of mouse */
                             fmPointerDrag = 1;
                             }
-                        
-                        formationPickedX = fmOverSlotX;
-                        formationPickedY = fmOverSlotY;
                         }
                     }
                 }

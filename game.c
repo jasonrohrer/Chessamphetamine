@@ -1895,6 +1895,56 @@ void maxiginGame_step( void ) {
                                                     &panRow,
                                                     &panCol );
 
+            if( infoPanelPiece == noPiece ) {
+                /* try again and see if we're over a square
+                   with a piece on it */
+
+                int  squareR        =  BOARD_SQUARE_SIZE / 2;
+                char done           =  0;
+                int  y;
+                int  x;
+                
+                for( y = 0;
+                     y < BH;
+                     y ++ ) {
+                    
+                    for( x = 0;
+                         x < BW;
+                         x ++ ) {
+
+                        int  cX;
+                        int  cY;
+                
+                        boardGetSquareCenter( boardCenterX,
+                                              boardCenterY,
+                                              y,
+                                              x,
+                                              &cX,
+                                              &cY );
+
+                        if( mouseX > cX - squareR
+                            &&
+                            mouseX < cX + squareR
+                            &&
+                            mouseY > cY - squareR
+                            &&
+                            mouseY < cY + squareR ) {
+
+                            infoPanelPiece = boardState.grid[y][x];
+                            panRow = y;
+                            panCol = x;
+                            
+                            done = 1;
+                            break;
+                            }
+
+                        if( done ) {
+                            break;
+                            }
+                        }
+                    }
+                }
+
             if( oldPiece != infoPanelPiece ) {
                 if( infoPanelPiece != noPiece ) {
                     maxigin_playSoundEffect( examinePieceSound,

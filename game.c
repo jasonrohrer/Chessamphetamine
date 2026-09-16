@@ -374,6 +374,9 @@ static void setInfoPanelPieceMoveMarkers( void ) {
                                       cols,
                                       captured,
                                       states );
+
+    infoPanelPieceMoveMarkers[ y ][ x ] = 1;
+    
     for( i = 0;
          i < numMoves;
          i ++ ) {
@@ -723,14 +726,26 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                 &&
                 ! boardMarkersHidden ) {
 
+                unsigned char  markerColor;
+
                 boardDrawMarkers( boardCenterX,
                                   boardLiveCenterY,
                                   boardMarkers );
+
+                if( infoPanelPiece != noPiece ) {
+                    markerColor = infoPanelPiece & CHESS_COLOR_MASK;
+                    }
+                else if( infoPanelLastPiece != noPiece ) {
+                    markerColor = infoPanelLastPiece & CHESS_COLOR_MASK;
+                    }
+                else {
+                    markerColor = CHESS_WHITE;
+                    }
                 
                 boardDrawMoveMarkers( boardCenterX,
                                       boardLiveCenterY,
                                       infoPanelPieceMoveMarkers,
-                                      infoPanelPiece & CHESS_COLOR_MASK,
+                                      markerColor,
                                       infoPanelFade );
                 }
 

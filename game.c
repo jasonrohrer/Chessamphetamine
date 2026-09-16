@@ -1936,6 +1936,8 @@ void maxiginGame_step( void ) {
                     ! boardMarkers[ panRow ][ panCol ];
                 
                 swapMarkedPieces();
+
+                infoPanelPiece = boardState.grid[ panRow ][ panCol ];
                 }
             else {
                 /* tried to click on an unpickable piece */

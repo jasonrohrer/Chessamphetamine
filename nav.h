@@ -381,7 +381,17 @@ void sparseGridNav( char  *inPresentGrid,
 
                             int  dx     =  curCol - x;
                             int  dy     =  curRow - y;
-                            int  dist2  =  dx * dx + dy * dy;
+                            int  dist2;
+
+                            /* penalize off-direction distance more */
+                            int  offDirectionFactor  =  6;
+                               
+                            if( dirX != 0 ) {
+                                dist2 = dx * dx + offDirectionFactor * dy * dy;
+                                }
+                            else {
+                                dist2 = offDirectionFactor * dx * dx + dy * dy;
+                                }
 
                             if( dist2 < closeDist2 ) {
                                 closeDist2 = dist2;

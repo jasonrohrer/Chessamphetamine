@@ -1756,7 +1756,8 @@ void maxiginGame_step( void ) {
                 int  curCol  =  -1;
                 int  oldRow  =  -1;
                 int  oldCol  =  -1;
-
+                int  sbSize  =  sideBoardGetNumSlots();
+                
                 /* extra col on side to represent sideboard */
                 static  char  presentMap[ BH * ( BW + 1 ) ];
 
@@ -1765,8 +1766,11 @@ void maxiginGame_step( void ) {
                      y ++ ) {
                     if( sideBoardShowing
                         &&
-                        infoCol[ curInfoIndex ] != -1 ) {
-                        /* trough of full squares to slide off into on side */
+                        infoCol[ curInfoIndex ] != -1
+                        &&
+                        y >= BH - sbSize ) {
+                        /* trough of squares at bottom
+                           to slide off into on side */
                         presentMap[ y * ( BW + 1 ) ] = 1;
                         }
                     else {
@@ -1800,16 +1804,22 @@ void maxiginGame_step( void ) {
                     /* coming back from sideboard
                        find first piece on left of main board
                        and make that active */
+
+                    /* only consider bottom 3 rows */
+                    /* and don't bother landing on our own king */
                         
                     sideBoardHadController = 0;
                         
                     for( x = 0;
                          x < BW;
-                         x ++ ) {
-                        for( y = BH -1;
-                             y >= 0;
-                             y -- ) {
-                            if( boardState.grid[ y ][ x ] != noPiece ) {
+                         x   ++ ) {
+                        for( y =  BH - 1;
+                             y >= BH - 3;
+                             y    -- ) {
+                            if( boardState.grid[ y ][ x ] != noPiece
+                                &&
+                                ( boardState.grid[ y ][ x ] & CHESS_TYPE_MASK )
+                                != king ) {
 
                                 infoPanelPiece =
                                     boardState.grid[ y ][ x ];

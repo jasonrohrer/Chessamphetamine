@@ -358,6 +358,7 @@ static void pieceSplitLinesNoSpaces( const char  *inString,
     char  *workingString     =  (char*)inString;
     int    lineI             =  0;
     int    prevCodePointLen  =  0;
+    char   highlightOn       =  0;
     
     pieceClearLines();
 
@@ -387,6 +388,24 @@ static void pieceSplitLinesNoSpaces( const char  *inString,
             }
 
         /* room on line for more bytes */
+
+        if( codePointLen == 1
+            &&
+            workingString[ 0 ] == '^' ) {
+            highlightOn = ! highlightOn;
+            }
+        else {
+
+            if( lineI == 0
+                &&
+                highlightOn ) {
+
+                /* highlight on from previous line
+                   insert new ^ to keep it going here */
+                pieceLineBuffer[ pieceNumLines ][ lineI ++ ] = '^';
+                }
+
+            }
 
         if( pieceNumLines > 0
             &&
@@ -481,8 +500,15 @@ static char addWordToLine( int  inLineIndex,
         int  i;
 
         
-        if( lineLen > 0 ) {
+        if( lineLen > 0
+            &&
+            !( lineLen == 1
+               &&
+               pieceLineBuffer[ inLineIndex ][ 0 ] == '^' ) ) {
+            
             /* replace previous term with space */
+            /* but not in case were line starts with a
+               ^  highlight continuation */
             pieceLineBuffer[ inLineIndex ][ lineLen ] = ' ';
             lineLen ++;
             }
@@ -531,7 +557,9 @@ static void pieceSplitLines( const char  *inString,
                              int          inMaxPixelWidth ) {
 
 
-    int  nextWord  =  0;
+    int  nextWord     =  0;
+    /* track highlights that continue across line boundaries */
+    char highlightOn  =  0;
     
     if( ! maxigin_doesLanguageHaveWords() ) {
         
@@ -562,6 +590,16 @@ static void pieceSplitLines( const char  *inString,
             continue;
             }
 
+        if( highlightOn
+            &&
+            pieceLineBuffer[ pieceNumLines ][ 0 ] == '\0' ) {
+
+            /* highlight on from previous line
+               keep it going on this new line */
+            pieceLineBuffer[ pieceNumLines ][ 0 ] = '^';
+            pieceLineBuffer[ pieceNumLines ][ 1 ] = '\0';
+            }
+        
         if( addWordToLine( pieceNumLines,
                            nextWord ) ) {
 
@@ -583,6 +621,35 @@ static void pieceSplitLines( const char  *inString,
                 }
             else {
                 /* word fits, go on to next */
+
+                int  wordLen =
+                    maxigin_stringLength( pieceWordBuffer[ nextWord ] );
+
+
+                if( wordLen > 1
+                    &&
+                    pieceWordBuffer[ nextWord ][0] == '^'
+                    &&
+                    pieceWordBuffer[ nextWord ][ wordLen - 1 ] == '^' ) {
+                    /* single-world highlight */
+                    highlightOn = 0;
+                    }
+                else {
+                    /* toggle highligh for potential multi-word highlight */
+
+                    if( ! highlightOn
+                        &&
+                        pieceWordBuffer[ nextWord ][0] == '^' ) {
+                        highlightOn = 1;
+                        }
+                    else if( highlightOn
+                             &&
+                             pieceWordBuffer[ nextWord    ]
+                                            [ wordLen - 1 ] == '^' ) {
+                        highlightOn = 0;
+                        }
+                    }
+                
                 nextWord ++;
                 }
             }

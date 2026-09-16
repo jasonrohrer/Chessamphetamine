@@ -119,16 +119,16 @@ kingDescYou    "走一格，方向不限。己王被吃即敗！"
 kingDescThem   "走一格，方向不限。吃敵王即勝！"
 
 laserRook      "雷射車"
-laserRookDesc  "移動後沿直線發射雷射"
+laserRookDesc  "^特殊：^移動後沿直線發射雷射"
 
 laserPawn      "雷射兵"
-laserPawnDesc  "移動後向前發射雷射"
+laserPawnDesc  "^特殊：^移動後向前發射雷射"
 
 doublingPawn   "倍增兵"
-doublingPawnDesc  "使正前方棋子的特殊能力加倍"
+doublingPawnDesc  "^特殊：^使正前方棋子的^特殊^能力加倍"
 
 addingRook     "加成車"
-addingRookDesc "直線可達的棋子特殊能力加一"
+addingRookDesc "^特殊：^直線可達的棋子^特殊^能力加一"
 
 rocket         "蘇聯火箭"
-rocketDesc     "隨機摧毀一枚敵方棋子，然後自爆"
+rocketDesc     "^特殊：^隨機摧毀一枚敵方棋子，然後自爆"

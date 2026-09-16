@@ -401,6 +401,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     int  i;
     
 
+    maxigin_drawSetTextHighlighColor( 236,
+                                      97,
+                                      74 );
+
     maxigin_drawSetAlpha( 255 );
     
     /* black background */
@@ -3185,7 +3189,7 @@ void maxiginGame_init( void ) {
     pieceSpritesInit();
     particleSpriteInit();
     moveAnimInit();
-    moneyInit( startingMoney,
+    moneyInit( 500,
                plunkSound );
     numbersInit();
     checkDisplayInit();

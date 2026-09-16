@@ -1763,6 +1763,31 @@ typedef enum{ MAXIGIN_LEFT    =  -1,
 
 
 
+
+/*
+  Sets the highlight color for ^escaped strings^ that are present in
+  drawn text.  Their alpha component will match the alpha of the rest of the
+  text
+
+  Defaults to white.
+
+  Parameters:
+
+      inRed      the red   component
+      
+      inGreen    the green component
+      
+      inBlue     the blue  component
+
+  [jumpMaxiginDraw]
+*/
+      
+void maxigin_drawSetTextHighlighColor( unsigned char  inRed,
+                                       unsigned char  inGreen,
+                                       unsigned char  inBlue );
+
+
+
 /*
   Draws text using a font to the game's native pixel buffer.
 
@@ -1771,6 +1796,10 @@ typedef enum{ MAXIGIN_LEFT    =  -1,
       inFontHandle   the font to use
 
       inText         \0-terminated string of UTF-8 single-code-point characters
+                     Any sub-strings escaped ^like this^ will be drawn
+                     with the highlight color set via
+                        maxigin_drawSetTextHighlighColor
+                     (^ is treated like a non-printable character)
 
       inLocationX    the x position in the game's native pixel buffer of the
                      drawn text
@@ -21599,6 +21628,23 @@ static void mx_kerningCacheInsert( int  inPrevSpriteHandle,
 
 
 
+static  MaxiginColor  mx_textHighlighColor  =  { { 255,
+                                                   255,
+                                                   255,
+                                                   255 } };
+
+
+
+void maxigin_drawSetTextHighlighColor( unsigned char  inRed,
+                                       unsigned char  inGreen,
+                                       unsigned char  inBlue ) {
+    mx_textHighlighColor.comp.red   = inRed;
+    mx_textHighlighColor.comp.green = inGreen;
+    mx_textHighlighColor.comp.blue  = inBlue;
+    }
+
+
+
 #define  MAXIGIN_SKIP_DRAW_AND_MEASURE  -99
 
 
@@ -21620,10 +21666,16 @@ int maxigin_drawText( int           inFontHandle,
     int           spaceW;
     int           halfSpaceW;
     int           charSpaceW;
+    char          highlightOn     =  0;
+    
+    MaxiginColor  plainColor      =  mx_drawColor;
+    MaxiginColor  highlightColor  =  mx_textHighlighColor;
+    
     enum{         BUFFER_LEN      =  256 };
     
-    static  int  spriteHandles[ BUFFER_LEN ];
+    static  int  spriteHandles           [ BUFFER_LEN ];
     static  int  charCenterOffsetFromPrev[ BUFFER_LEN ];
+    static  char highlights              [ BUFFER_LEN ];
 
     if( inFontHandle < 0 ) {
         return  0;
@@ -21651,12 +21703,22 @@ int maxigin_drawText( int           inFontHandle,
         if( codePoint == -1 ) {
             break;
             }
+
+        if( codePoint == '^' ) {
+            /* toggle highlight */
+            highlightOn = ! highlightOn;
+
+            /* skip as non-printable */
+            continue;
+            }
+            
         spriteHandle = mx_fontSpriteLookup( f,
                                             (unsigned long)codePoint );
 
         
         spriteHandles[ numSprites ] = spriteHandle;
-
+        highlights   [ numSprites ] = highlightOn;
+        
         if( ! fixed ) {
             /* variable width chars */
 
@@ -21862,11 +21924,30 @@ int maxigin_drawText( int           inFontHandle,
             break;
         }
 
+
+    highlightOn  = 0;
+    mx_drawColor = plainColor;
+
+    /* match alpha of plain color */
+    highlightColor.comp.alpha = plainColor.comp.alpha;
+    
     for( s = 0;
          s < numSprites;
          s ++ ) {
 
         startX += charCenterOffsetFromPrev[ s ];
+
+        if( highlightOn != highlights[ s ] ) {
+            /* switch colors */
+            highlightOn = highlights[ s ];
+
+            if( highlightOn ) {
+                mx_drawColor = highlightColor;
+                }
+            else {
+                mx_drawColor = plainColor;
+                }
+            }
         
         if( spriteHandles[ s ] != -1 ) {
             maxigin_drawSprite( spriteHandles[ s ],
@@ -21876,6 +21957,9 @@ int maxigin_drawText( int           inFontHandle,
                           
         }
 
+    /* restore non-highlight color */
+    mx_drawColor = plainColor;
+    
     return totalPixWidth;
     }
 

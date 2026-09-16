@@ -279,6 +279,9 @@ static unsigned char  infoPanelFade               =  0;
 static char           sideBoardHadController      =  0;
 static char           heartsGainWaiting           =  0;
 
+static int            preSideBoardX               = -1;
+static int            preSideBoardY               = -1;
+
 
 /* 0 for no mark
    1 for move
@@ -1809,39 +1812,65 @@ void maxiginGame_step( void ) {
                     /* and don't bother landing on our own king */
                         
                     sideBoardHadController = 0;
+
+                    if( preSideBoardY != -1
+                        &&
+                        preSideBoardX != -1 ) {
+
+                        y = preSideBoardY;
+                        x = preSideBoardX;
                         
-                    for( x = 0;
-                         x < BW;
-                         x   ++ ) {
-                        for( y =  BH - 1;
-                             y >= BH - 3;
-                             y    -- ) {
-                            if( boardState.grid[ y ][ x ] != noPiece
-                                &&
-                                ( boardState.grid[ y ][ x ] & CHESS_TYPE_MASK )
-                                != king ) {
+                        infoPanelPiece = boardState.grid[ y ][ x ];
 
-                                infoPanelPiece =
-                                    boardState.grid[ y ][ x ];
+                        panRow = y;
+                        panCol = x;
 
-                                panRow = y;
-                                panCol = x;
+                        maxigin_playSoundEffect( examinePieceSound,
+                                                 256 );
 
-                                maxigin_playSoundEffect( examinePieceSound,
-                                                         256 );
+                        curInfoPickedWithController = 1;
 
-                                curInfoPickedWithController = 1;
+                        curRow = y;
+                        curCol = x;
+                        oldRow = y;
+                        oldCol = x;
+                        }
+                    else {
+                        
+                        for( x = 0;
+                             x < BW;
+                             x   ++ ) {
+                            for( y =  BH - 1;
+                                 y >= BH - 3;
+                                 y    -- ) {
+                                if( boardState.grid[ y ][ x ] != noPiece
+                                    &&
+                                    ( boardState.grid[ y ][ x ] &
+                                      CHESS_TYPE_MASK )
+                                    != king ) {
 
-                                curRow = y;
-                                curCol = x;
-                                oldRow = y;
-                                oldCol = x;
-                                foundFirst = 1;
+                                    infoPanelPiece =
+                                        boardState.grid[ y ][ x ];
+
+                                    panRow = y;
+                                    panCol = x;
+
+                                    maxigin_playSoundEffect( examinePieceSound,
+                                                             256 );
+
+                                    curInfoPickedWithController = 1;
+
+                                    curRow = y;
+                                    curCol = x;
+                                    oldRow = y;
+                                    oldCol = x;
+                                    foundFirst = 1;
+                                    break;
+                                    }
+                                }
+                            if( foundFirst ) {
                                 break;
                                 }
-                            }
-                        if( foundFirst ) {
-                            break;
                             }
                         }
                     }
@@ -1864,6 +1893,12 @@ void maxiginGame_step( void ) {
                     
                     if( curCol == 0 ) {
                         /* slid off onto sideboard */
+
+                        /* oldCol is position in sparse grid nav with
+                           extra col on left for sideboard */
+                        preSideBoardX = oldCol - 1;
+                        preSideBoardY = oldRow;
+                        
                         panRow = -1;
                         panCol = -1;
                         infoPanelPiece = noPiece;
@@ -3441,6 +3476,10 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( heartsGainWaiting );
 
     REGISTER_VAL_MEM( readyCountGlowFade );
+
+    REGISTER_VAL_MEM( preSideBoardX );
+    REGISTER_VAL_MEM( preSideBoardY );
+    
     
 
     if( ! maxigin_initRestoreStaticMemoryFromLastRun() ) {

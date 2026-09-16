@@ -332,17 +332,23 @@ void sparseGridNav( char  *inPresentGrid,
 
                 /* search for closest spot in the area that is in the direction
                    we are pushing */
-                int  startX      =   1;
-                int  endX        =   0;
-                int  startY      =   1;
-                int  endY        =   0;
+                int  startX              =   1;
+                int  endX                =   0;
+                int  startY              =   1;
+                int  endY                =   0;
                 int  x;
                 int  y;
 
-                int  closeX      =  -1;
-                int  closeY      =  -1;
-                int  closeDist2  =  ( inGridW + inGridH ) *
-                                    ( inGridW + inGridH );
+                int  closeX              =  -1;
+                int  closeY              =  -1;
+                int  closeDist2          =  ( inGridW + inGridH ) *
+                                            ( inGridW + inGridH );
+                
+                /* penalize off-direction distance more */
+                int  offDirectionFactor  =  8;
+
+                closeDist2 *= offDirectionFactor;
+                
 
                 /* only one of x or y is non-zero */
                 if( dirX > 0 ) {
@@ -382,9 +388,6 @@ void sparseGridNav( char  *inPresentGrid,
                             int  dx     =  curCol - x;
                             int  dy     =  curRow - y;
                             int  dist2;
-
-                            /* penalize off-direction distance more */
-                            int  offDirectionFactor  =  6;
                                
                             if( dirX != 0 ) {
                                 dist2 = dx * dx + offDirectionFactor * dy * dy;
@@ -419,7 +422,7 @@ void sparseGridNav( char  *inPresentGrid,
                 }
 
             /*  use this code when re-entering grid from edge,
-                or for second try when moving off edget */
+                or for second try when moving off edge */
             
             if( curCol == -1
                 ||
@@ -427,18 +430,21 @@ void sparseGridNav( char  *inPresentGrid,
 
                 /* allow enter based on dir */
 
+                /* prefer bottom row of grid, generally, if nothing
+                   specified */
+
                 if( dirX == -1 ) {
                     curCol = inGridW;
                     curRow = *inOutPickedY;
                     if( curRow == -1 ) {
-                        curRow = 0;
+                        curRow = inGridH - 1;
                         }
                     }
                 else if( dirX == 1 ) {
                     curCol = -1;
                     curRow =  *inOutPickedY;
                     if( curRow == -1 ) {
-                        curRow = 0;
+                        curRow = inGridH - 1;
                         }
                     }
                 else if( dirY == -1 ) {

@@ -1,4 +1,4 @@
-"Français"
+"FranÃ§ais"
 
 
 2
@@ -14,12 +14,12 @@ langHasWords  1
 
 
 
-corruptedA     "Données de sauvegarde corrompues."
+corruptedA     "DonnÃ©es de sauvegarde corrompues."
 corruptedB     "Veuillez relancer le jeu."
 corruptedC     "Fermeture automatique dans:"
 
 
-settings       "Paramètres"
+settings       "ParamÃ¨tres"
 
 newGame        "Nouvelle partie"
 
@@ -32,7 +32,7 @@ musicVolume    "Volume musique"
 
 effectsVolume  "Volume effets"
 
-fullscreen     "Plein écran"
+fullscreen     "Plein Ã©cran"
 
 languages      "Langues"
 
@@ -46,46 +46,46 @@ drawDesc       "Repiocher"
 deckDesc       "Voir le deck"
 commitDesc     "Valider"
 spinDesc       "Lancer"
-unlockView     "Déblocages"
+unlockView     "DÃ©blocages"
 
 
 press          "appuyez"
 
-defaults       "Par défaut"
+defaults       "Par dÃ©faut"
 
-drawInstruct   "Composez votre armée"
+drawInstruct   "Composez votre armÃ©e"
 formationInstruct   "Ajustez la formation"
 newFormationSpot    "Nouvelle case de formation!"
 newSpotInA           "Encore"
 newSpotInB           "pour une case de formation"
 
 newSpotTitle         "Acheter une case"
-newSpotDescription   "Ajoute une case à votre formation pour placer plus de pièces sur le plateau."
+newSpotDescription   "Ajoute une case Ã  votre formation pour placer plus de piÃ¨ces sur le plateau."
 
 
 shopTitle      "Boutique!"
-shopInstructA  "Améliorez votre deck!"
-shopInstructB  "Choisissez une pièce pour l?acheter"
+shopInstructA  "AmÃ©liorez votre deck!"
+shopInstructB  "Choisissez une piÃ¨ce pour lâ€™acheter"
 sale           "Promo!"
-permanent      "À vie"
+permanent      "Ã€ vie"
 
 level          "Niveau"
 
 gameOverInstruct  "Veuillez rejouer:"
 
 
-unlockDes      "Déblocage permanent"
-unlock0        "Une place de plus dans la réserve"
+unlockDes      "DÃ©blocage permanent"
+unlock0        "Une place de plus dans la rÃ©serve"
 unlock1        "Un emplacement de plus dans la boutique"
 unlock2        "Un article est toujours en promo dans la boutique"
 
 unlockLockedA  "Mat au niveau"
-unlockLockedB  "pour débloquer"
+unlockLockedB  "pour dÃ©bloquer"
 
-exhausted      "Épuisée"
-ready          "Prête"
-deployed       "Déployée"
-exhaustDesc    "Deck rafraîchi sans pièces prêtes"
+exhausted      "Ã‰puisÃ©e"
+ready          "PrÃªte"
+deployed       "DÃ©ployÃ©e"
+exhaustDesc    "Deck rafraÃ®chi sans piÃ¨ces prÃªtes"
 
 readyCount     "Dispo"
 
@@ -95,45 +95,45 @@ contraband     " "
 common         "Commun"
 uncommon       "Peu commun"
 rare           "Rare"
-legendary      "Légendaire"
+legendary      "LÃ©gendaire"
 impossible     "Impossible"
 
 
 formationKing       "Case du roi"
-formationOther      "Case d?armée"
-formationKingDesc   "Votre roi va ici. ## ## Protégez-le à tout prix! ## ## Sélectionnez pour déplacer."
-formationOtherDesc  "Des pièces de votre deck sont tirées pour remplir cette case. ## ## Sélectionnez pour déplacer."
+formationOther      "Case dâ€™armÃ©e"
+formationKingDesc   "Votre roi va ici. ## ## ProtÃ©gez-le Ã  tout prix! ## ## SÃ©lectionnez pour dÃ©placer."
+formationOtherDesc  "Des piÃ¨ces de votre deck sont tirÃ©es pour remplir cette case. ## ## SÃ©lectionnez pour dÃ©placer."
 
 pawn           "Pion"
 pawnDesc       "Avance de 1 ou 2 cases, capture en diagonale"
 
 bishop         "Fou"
-bishopDesc     "Se déplace en diagonale"
+bishopDesc     "Se dÃ©place en diagonale"
 
 knight         "Cavalier"
-knightDesc     "Se déplace en L"
+knightDesc     "Se dÃ©place en L"
 
 rook           "Tour"
-rookDesc       "Se déplace en ligne droite"
+rookDesc       "Se dÃ©place en ligne droite"
 
 queen          "Dame"
-queenDesc      "Se déplace en ligne droite et en diagonale"
+queenDesc      "Se dÃ©place en ligne droite et en diagonale"
 
 king           "Roi"
 kingDescYou    "Une case dans toute direction. Si votre roi est pris, vous perdez!"
 kingDescThem   "Une case dans toute direction. Prenez le roi ennemi pour gagner!"
 
 laserRook      "Tour laser"
-laserRookDesc  "^Spécial:^ Tire des lasers en ligne droite après s?être déplacée"
+laserRookDesc  "^SpÃ©cial:^ Tire des lasers en ligne droite aprÃ¨s sâ€™Ãªtre dÃ©placÃ©e"
 
 laserPawn      "Pion laser"
-laserPawnDesc  "^Spécial:^ Tire un laser vers l?avant après s?être déplacé"
+laserPawnDesc  "^SpÃ©cial:^ Tire un laser vers lâ€™avant aprÃ¨s sâ€™Ãªtre dÃ©placÃ©"
 
 doublingPawn   "Pion doubleur"
-doublingPawnDesc  "^Spécial:^ Double les capacités ^spéciales^ de la pièce juste devant lui"
+doublingPawnDesc  "^SpÃ©cial:^ Double les capacitÃ©s ^spÃ©ciales^ de la piÃ¨ce juste devant lui"
 
 addingRook     "Tour additive"
-addingRookDesc "^Spécial:^ Ajoute 1 aux capacités ^spéciales^ des pièces accessibles en ligne droite"
+addingRookDesc "^SpÃ©cial:^ Ajoute 1 aux capacitÃ©s ^spÃ©ciales^ des piÃ¨ces accessibles en ligne droite"
 
-rocket         "Fusée CCCP"
-rocketDesc     "^Spécial:^ Détruit une pièce ennemie au hasard, puis s?autodétruit"
+rocket         "FusÃ©e CCCP"
+rocketDesc     "^SpÃ©cial:^ DÃ©truit une piÃ¨ce ennemie au hasard, puis sâ€™autodÃ©truit"

@@ -37,6 +37,7 @@ void boardDrawMarkers( int   inCenterX,
 void boardDrawMoveMarkers( int            inCenterX,
                            int            inCenterY,
                            char           inMarkers[ BH ][ BW ],
+                           unsigned char  inPieceColor,
                            unsigned char  inFade );
 
 
@@ -71,13 +72,17 @@ int boardGetPixelDistance( int  inRowA,
 #include "colors.h"
 
 #include "fixedMath.h"
-
+#include "pieceSprites.h"
 
 static  int  borderSpriteH;
 static  int  borderSpriteV;
 
 static  int  squareSpriteWhite;
 static  int  squareSpriteBlack;
+
+static  int  moveMarkerSprite;
+static  int  moveCaptureSprite;
+
 
 static  int  drawMarkerSprite;
 
@@ -114,6 +119,18 @@ void boardInit( void ) {
     squareSpriteBlack = maxigin_initSprite( "squareBlack.tga" );
 
     maxigin_initMakeGlowSprite( squareSpriteBlack,
+                                4,
+                                2 );
+
+    moveMarkerSprite = maxigin_initSprite( "moveMarker.tga" );
+
+    maxigin_initMakeGlowSprite( moveMarkerSprite,
+                                4,
+                                2 );
+    
+    moveCaptureSprite = maxigin_initSprite( "moveCaptureMarker.tga" );
+
+    maxigin_initMakeGlowSprite( moveCaptureSprite,
                                 4,
                                 2 );
 
@@ -253,6 +270,7 @@ void boardDrawMarkers( int   inCenterX,
 void boardDrawMoveMarkers( int            inCenterX,
                            int            inCenterY,
                            char           inMarkers[ BH ][ BW ],
+                           unsigned char  inPieceColor,
                            unsigned char  inFade ) {
 
     int  y;
@@ -275,24 +293,24 @@ void boardDrawMoveMarkers( int            inCenterX,
                 
                 int  yPos  =  inCenterY - yOff + y * squareSize + squareSize / 2;
                 int  xPos  =  inCenterX - xOff + x * squareSize + squareSize / 2;
-
-                if( inMarkers[ y ][ x ] == 2 ){
-                    maxigin_drawSetColor( 255,
-                                          0,
-                                          0,
-                                          inFade );
+                int  s     =  moveMarkerSprite;
+                
+                if( inMarkers[ y ][ x ] == 2 ) {
+                    maxigin_drawResetColor();
+                    s = moveCaptureSprite;
                     }
                 else {
-                    maxigin_drawSetAlpha( inFade );
+                    drawSetPieceColor( inPieceColor );
                     }
+                maxigin_drawSetAlpha( inFade );
                 
-                maxigin_drawSprite( squareSpriteWhite,
+                maxigin_drawSprite( s,
                                     xPos,
                                     yPos );
-                maxigin_drawResetColor();
                 }
             }
         }
+    maxigin_drawResetColor();
     }
 
 

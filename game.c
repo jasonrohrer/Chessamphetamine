@@ -730,6 +730,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                 boardDrawMoveMarkers( boardCenterX,
                                       boardLiveCenterY,
                                       infoPanelPieceMoveMarkers,
+                                      infoPanelPiece & CHESS_COLOR_MASK,
                                       infoPanelFade );
                 }
 

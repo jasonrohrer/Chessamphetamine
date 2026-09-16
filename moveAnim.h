@@ -3202,9 +3202,6 @@ void moveAnimIncrementSpeed( void ) {
     if( currentMoveSpeed > maxMoveSpeed ) {
         currentMoveSpeed = maxMoveSpeed;
         }
-
-    maxigin_logInt( "Move speed = ",
-                    currentMoveSpeed );
     }
 
 

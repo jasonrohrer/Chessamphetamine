@@ -3189,7 +3189,7 @@ void maxiginGame_init( void ) {
     pieceSpritesInit();
     particleSpriteInit();
     moveAnimInit();
-    moneyInit( 500,
+    moneyInit( startingMoney,
                plunkSound );
     numbersInit();
     checkDisplayInit();

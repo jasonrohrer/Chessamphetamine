@@ -10665,7 +10665,7 @@ int main( void ) {
     (void)mn_stringsEqual;
     (void)mn_stringLength;
     (void)mn_intToString;
-    
+    (void)mn_stringsEqualLimit;
     
     /* game asked to quit ! */
     return 0;

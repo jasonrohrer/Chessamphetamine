@@ -24,7 +24,8 @@ void deckViewInit(  int  inCenterX,
                     int  inPrevButtonActionHandle );
 
 
-void deckViewSet( Deck  *inDeckToShow );
+void deckViewSet( Deck  *inDrawDeckToShow,
+                  Deck  *inDiscardDeckToShow );
 
 
 void deckViewDraw( void );
@@ -55,8 +56,17 @@ static  int  deckViewCenterX;
 static  int  deckViewCenterY;
 
 
+typedef struct DeckViewSlot {
+        
+        ChessPiece  piece;
 
-static  ChessPiece     deckViewSlots[ MAX_DECK_SIZE ];
+        char        spent;
+        
+    } DeckViewSlot;
+
+
+
+static  DeckViewSlot   deckViewSlots[ MAX_DECK_SIZE ];
 
 static  int            deckViewNumFullSlots              =  0;
 
@@ -175,37 +185,89 @@ void deckViewInit(  int  inCenterX,
 
 
 
-/* show deck in order for debugging */
-static void deckViewSetDebug( Deck  *inDeckToShow ) {
+static int deckViewCalcPadding( Deck  *inDrawDeckToShow ) {
 
-    int    p;
-    
-    for( p = 0;
-         p < inDeckToShow->numPieces;
-         p   ++ ) {
+    int    padding;
 
-        deckViewSlots[p] = inDeckToShow->pieces [p];
+    if( inDrawDeckToShow->numPieces < DECK_VIEW_VIS_SLOTS ) {
+        padding = DECK_VIEW_VIS_SLOTS - inDrawDeckToShow->numPieces;
+        }
+    else {
+        int  pages  =  inDrawDeckToShow->numPieces / DECK_VIEW_VIS_SLOTS;
+
+        int  fullPages = pages * DECK_VIEW_VIS_SLOTS;
+
+        padding = fullPages - inDrawDeckToShow->numPieces;
         }
 
-    deckViewNumFullSlots = inDeckToShow->numPieces;
+    return padding;
+    }
+    
+
+/* show deck in order for debugging */
+static void deckViewSetDebug( Deck  *inDrawDeckToShow,
+                              Deck  *inDiscardDeckToShow ) {
+
+    int    p;
+    int    s;
+    int    padding  =  deckViewCalcPadding( inDrawDeckToShow );
+    
+    for( p = 0;
+         p < inDrawDeckToShow->numPieces;
+         p   ++ ) {
+
+        deckViewSlots[s].piece = inDrawDeckToShow->pieces [p];
+        deckViewSlots[s].spent = 0;
+
+        s ++;
+        }
+
+    
+
+    for( p = 0;
+         p < padding;
+         p   ++ ) {
+
+        deckViewSlots[s].piece = noPiece;
+        deckViewSlots[s].spent = 0;
+
+        s ++;
+        }
+
+    for( p = 0;
+         p < inDiscardDeckToShow->numPieces;
+         p   ++ ) {
+
+        deckViewSlots[s].piece = inDiscardDeckToShow->pieces [p];
+        deckViewSlots[s].spent = 1;
+
+        s ++;
+        }
+    
+
+    deckViewNumFullSlots = s;
     }
     
 
 
-void deckViewSet( Deck  *inDeckToShow ) {
+void deckViewSet( Deck  *inDrawDeckToShow,
+                  Deck  *inDiscardDeckToShow ) {
 
     int          i;
+    int          p;
     int          n         =  0;
-    Deck        *deck      =  inDeckToShow;
-    
+    Deck        *deckA     =  inDrawDeckToShow;
+    Deck        *deckB     =  inDiscardDeckToShow;
+    int          padding   =  deckViewCalcPadding( inDrawDeckToShow );
     if( 0 ) {
-        deckViewSetDebug( deck );
+        deckViewSetDebug( deckA,
+                          deckB );
         return;
         }
 
     deckViewOverSlot     = -1;
     deckViewPageNumber   =  0;
-    deckViewNumFullSlots =  deck->numPieces;
+    deckViewNumFullSlots =  deckA->numPieces + padding + deckB->numPieces;
     
 
     /* show in order
@@ -213,18 +275,43 @@ void deckViewSet( Deck  *inDeckToShow ) {
     for( i = NUM_CHESS_PIECES - 1;
          i >= FIRST_CHESS_PIECE;
          i -- ) {
-
-        int    p;
-            
+  
         for( p = 0;
-             p < deck->numPieces;
+             p < deckA->numPieces;
              p ++ ) {
 
-            ChessPiece  thisPiece  =  deck->pieces[p];
+            ChessPiece  thisPiece  =  deckA->pieces[p];
 
             if( thisPiece == i ) {
-                deckViewSlots[n] = thisPiece;
-                        
+                deckViewSlots[n].piece = thisPiece;
+                deckViewSlots[n].spent = 0;
+                n++;
+                }
+            }
+        }
+
+    for( p = 0;
+         p < padding;
+         p ++ ) {
+        deckViewSlots[n].piece = noPiece;
+        deckViewSlots[n].spent = 0;
+        n++;
+        }
+    
+
+    for( i = NUM_CHESS_PIECES - 1;
+         i >= FIRST_CHESS_PIECE;
+         i -- ) {
+  
+        for( p = 0;
+             p < deckB->numPieces;
+             p ++ ) {
+
+            ChessPiece  thisPiece  =  deckB->pieces[p];
+
+            if( thisPiece == i ) {
+                deckViewSlots[n].piece = thisPiece;
+                deckViewSlots[n].spent = 1;
                 n++;
                 }
             }
@@ -264,17 +351,33 @@ void deckViewDraw( void ) {
 
             int  xPos  =  deckViewSlotPosX[ i - skip ];
             int  yPos  =  deckViewSlotPosY[ i - skip ];
-            
-            drawPiece( deckViewSlots[i],
-                       xPos,
-                       yPos );
 
 
-            if( deckViewHighlightFade[ i - skip ] > 0 ) {
-                drawPieceHighlight( deckViewSlots[i],
-                                     xPos,
-                                     yPos,
-                                     deckViewHighlightFade[ i -  skip ] );
+            if( deckViewSlots[i].piece != noPiece ) {
+                
+                drawPiece( deckViewSlots[i].piece,
+                           xPos,
+                           yPos );
+
+                if( deckViewSlots[i].spent ) {
+                    
+                    drawPieceShadowOnly( deckViewSlots[i].piece,
+                                         xPos,
+                                         yPos );
+
+                    /* this is place-holder anyway...
+                       another one lower down */
+                    drawPieceShadowOnly( deckViewSlots[i].piece,
+                                         xPos,
+                                         yPos + BOARD_SQUARE_SIZE / 2 );
+                    }
+
+                if( deckViewHighlightFade[ i - skip ] > 0 ) {
+                    drawPieceHighlight( deckViewSlots[i].piece,
+                                        xPos,
+                                        yPos,
+                                        deckViewHighlightFade[ i -  skip ] );
+                    }
                 }
             
             i ++;
@@ -342,7 +445,7 @@ ChessPiece deckViewStep( int  inPageSound ) {
                 break;
                 }
         
-            p =  deckViewSlots[ i + skip ];
+            p =  deckViewSlots[ i + skip ].piece;
 
             if( p != noPiece ) {
 
@@ -371,7 +474,7 @@ ChessPiece deckViewStep( int  inPageSound ) {
              i < DECK_VIEW_ROWS * DECK_VIEW_COLS;
              i ++ ) {
             
-            if( deckViewSlots[ i + skip ] != noPiece ) {
+            if( deckViewSlots[ i + skip ].piece != noPiece ) {
 
                 presentMap[ i ] = 1;
                 }
@@ -441,7 +544,7 @@ ChessPiece deckViewStep( int  inPageSound ) {
         }
     
     if( deckViewOverSlot != -1 ) {
-        return deckViewSlots[ deckViewOverSlot + skip ];
+        return deckViewSlots[ deckViewOverSlot + skip ].piece;
         }
     else {
         

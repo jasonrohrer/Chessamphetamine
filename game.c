@@ -2708,7 +2708,8 @@ void maxiginGame_step( void ) {
 
                     if( deckViewShowing ) {
                         /* fixme */
-                        deckViewSet( playerDeckGetDrawDeck() );
+                        deckViewSet( playerDeckGetDrawDeck(),
+                                     playerDeckGetDiscardDeck() );
                         }
                     }
                 }
@@ -2738,7 +2739,8 @@ void maxiginGame_step( void ) {
         
 
         if( ! deckViewShowing ) {
-            deckViewSet( playerDeckGetDrawDeck() );
+            deckViewSet( playerDeckGetDrawDeck(),
+                         playerDeckGetDiscardDeck() );
             deckViewShowing = 1;
             deckViewDone    = 0;
             }

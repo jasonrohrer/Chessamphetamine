@@ -59,8 +59,10 @@ newFormationSpot    "Nouvelle case de formation!"
 newSpotInA           "Encore"
 newSpotInB           "pour une case de formation"
 
-newSpotTitle         "Acheter une case"
-newSpotDescription   "Ajoute une case à votre formation pour placer plus de pièces sur le plateau."
+
+
+newSpotTitle         "Agrandir la formation"
+newSpotDescription   "Agrandit votre formation avec de nouvelles recrues pour placer plus de pièces sur le plateau."
 
 
 shopTitle      "Boutique!"

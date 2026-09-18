@@ -179,6 +179,8 @@ static  char           shopSlotPickedWithController               =  0;
    to buy more pieces in their deck to unlock more formation spots) */
 static  char           newSpotsUnlimited                          =  1;
 
+static  int            formationRecruitsSprite                    = -1;
+
 
 
 static void shopResetHightlighFades( void ) {
@@ -424,6 +426,13 @@ void shopInit( int  inPointerActionHandle,
                              inDynamicDoneButtonHandle,
                              -1 );
 
+    formationRecruitsSprite = maxigin_initSprite( "formationRecruits.tga" );
+
+    maxigin_initMakeGlowSprite( formationRecruitsSprite,
+                                4,
+                                2 );
+    
+
     REGISTER_VAL_MEM( shopRand );
 
     REGISTER_VAL_MEM( shopOnSaleRoll );
@@ -643,8 +652,9 @@ void shopDraw( void ) {
         &&
         newSpotAvail ) {
 
-        int  spotSprite  =  formationGetSpotSprite();
-
+        int  spotSprite     =  formationGetSpotSprite();
+        int  recruitOffset  =  -14;
+        
         maxigin_drawResetColor();
 
         maxigin_setLanguageFontIndex( 1 );
@@ -660,6 +670,14 @@ void shopDraw( void ) {
                             newFormSpotSlotX,
                             newFormSpotSlotY );
 
+        drawSetPieceColor( CHESS_WHITE );
+
+        maxigin_drawSprite( formationRecruitsSprite,
+                            newFormSpotSlotX,
+                            newFormSpotSlotY + recruitOffset );
+
+        maxigin_drawResetColor();
+
         
         if( newSpotHighlightFade > 0 ) {
             
@@ -671,6 +689,15 @@ void shopDraw( void ) {
             maxigin_drawSpriteGlowOnly( spotSprite,
                                         newFormSpotSlotX,
                                         newFormSpotSlotY );
+
+            drawSetPieceColor( CHESS_WHITE );
+
+            maxigin_drawSetAlpha( newSpotHighlightFade );
+
+            maxigin_drawSpriteGlowOnly( formationRecruitsSprite,
+                                        newFormSpotSlotX,
+                                        newFormSpotSlotY + recruitOffset );
+            
             maxigin_drawResetColor();
         
 

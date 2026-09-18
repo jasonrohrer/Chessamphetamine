@@ -56,8 +56,9 @@ newFormationSpot    "新增軍隊陣形位置！"
 newSpotInA           "再購買"
 newSpotInB           "次即可獲得新的軍隊陣形位置"
 
-newSpotTitle         "購買新格"
-newSpotDescription   "為軍隊陣形新增一格，可在棋盤上放置更多棋子"
+
+newSpotTitle       "擴充陣形"
+newSpotDescription "招募新兵擴充軍隊陣形，可在棋盤上放置更多棋子"
 
 
 shopTitle      "商店！"

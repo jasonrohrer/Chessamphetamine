@@ -60,8 +60,8 @@ newFormationSpot    "New army formation spot!"
 newSpotInA           "Purchase"
 newSpotInB           "more for new army formation spot"
 
-newSpotTitle         "Buy new spot"
-newSpotDescription   "Adds a new spot to your army formation, allowing you to place more pieces on the board."
+newSpotTitle         "Expand Formation"
+newSpotDescription   "Expands your army formation with new recruits, allowing you to place more pieces on the board."
 
 
 shopTitle      "Shop!"

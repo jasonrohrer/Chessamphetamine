@@ -84,12 +84,9 @@ unlockLockedA  "Checkmate level"
 unlockLockedB  "to unlock"
 
 
-exhausted      "Exhausted"
-ready          "Ready"
-deployed       "Deployed"
-exhaustDesc    "Deck refreshes when ready pieces run out"
 
 readyCount     "Ready"
+discardCount   "Spent"
 
 
 contraband     " "

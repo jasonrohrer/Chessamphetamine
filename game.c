@@ -1096,6 +1096,20 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                 }
             }
         }
+
+    if( 0 ) {
+        /* for debugging, show contents of draw and discard pile */
+        
+        deckDrawDebugInfo( playerDeckGetDrawDeck(),
+                           smallCapsFont,
+                           boardCenterX + 120,
+                           boardCenterY - 80 );
+
+        deckDrawDebugInfo( playerDeckGetDiscardDeck(),
+                           smallCapsFont,
+                           boardCenterX + 160,
+                           boardCenterY - 80 );
+        }
     
     pinchApply( inRGBBuffer );
     }
@@ -1231,7 +1245,9 @@ void maxiginGame_step( void ) {
 
     int   deltaFade;
 
-    char  spinPressed  =  0;
+    char  spinPressed       =  0;
+    char  chessGameWasOver  =  chessGameOver;
+    
 
     colorsStep();
 
@@ -1309,34 +1325,7 @@ void maxiginGame_step( void ) {
         ! chessGameOver
         &&
         spinPressed ) {
-
-        int  y;
-        int  x;
-
-        /* whatever pieces the player actually has on the board get put
-           back in their deck now, but marked as played */
-        for( y = 0;
-             y < BH;
-             y ++ ) {
         
-            for( x = 0;
-                 x < BW;
-                 x ++ ) {
-
-                ChessPiece  p  =  boardState.grid[y][x];
-                ChessPiece  t  =  p & CHESS_TYPE_MASK;
-                ChessPiece  c  =  p & CHESS_COLOR_MASK;
-
-                if( t != noPiece
-                    &&
-                    t != king
-                    &&
-                    c == CHESS_WHITE ) {
-
-                    playerDeckReturnPiecePlayed( p );
-                    }
-                }
-            }
 
         /* side board pieces get put back in deck and marked as unplayed */
         sideBoardReturnPieces();
@@ -1561,11 +1550,38 @@ void maxiginGame_step( void ) {
                               &postMoveCaptured,
                               &postMoveState ) ) {
 
+                int  c;
+                
+                /* any pieces of player's that were captured
+                   get returned to player deck as played (into discard pile) */
+                for( c = 0;
+                     c < postMoveCaptured.num;
+                     c   ++ ) {
+
+                    if( ( postMoveCaptured.pieces[ c ].p & CHESS_COLOR_MASK )
+                        ==
+                        CHESS_WHITE ) {
+
+                        playerDeckReturnPiecePlayed(
+                            postMoveCaptured.pieces[ c ].p );
+                        }
+                    }
+
+                /* also any special returns to discard pile, like rockets,
+                   etc... things that destroy themselves (instead of being
+                   captured) or do something else weird */
+                playerDeckHandleSpecialPlayedReturn( &boardState,
+                                                     &boardMove,
+                                                     &postMoveCaptured,
+                                                     &postMoveState );
+
                 initMoveAnimation( &boardState,
                                    &boardMove,
                                    &postMoveCaptured,
                                    &postMoveState,
                                    &moveProgress );
+
+                
                 moveMade     = 1;
                 }
             else {
@@ -1707,6 +1723,43 @@ void maxiginGame_step( void ) {
                 }
             }
         }
+
+
+    if( ! chessGameWasOver
+        &&
+        chessGameOver ) {
+
+        /* chess game newly over */
+
+        /* return whatever they have left on board as played */
+
+        int  y;
+        int  x;
+
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+        
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
+
+                ChessPiece  p  =  boardState.grid[y][x];
+                ChessPiece  t  =  p & CHESS_TYPE_MASK;
+                ChessPiece  c  =  p & CHESS_COLOR_MASK;
+
+                if( t != noPiece
+                    &&
+                    t != king
+                    &&
+                    c == CHESS_WHITE ) {
+
+                    playerDeckReturnPiecePlayed( p );
+                    }
+                }
+            }
+        }
+    
 
 
     if( ! redrawRemoveRunning
@@ -2587,7 +2640,8 @@ void maxiginGame_step( void ) {
                     sideBoardUnlift();
 
                     if( deckViewShowing ) {
-                        deckViewSet();
+                        /* fixme */
+                        deckViewSet( playerDeckGetDrawDeck() );
                         }
                     }
                 }
@@ -2617,7 +2671,7 @@ void maxiginGame_step( void ) {
         
 
         if( ! deckViewShowing ) {
-            deckViewSet();
+            deckViewSet( playerDeckGetDrawDeck() );
             deckViewShowing = 1;
             deckViewDone    = 0;
             }

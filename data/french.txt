@@ -82,12 +82,9 @@ unlock2        "Un article est toujours en promo dans la boutique"
 unlockLockedA  "Mat au niveau"
 unlockLockedB  "pour débloquer"
 
-exhausted      "Épuisée"
-ready          "Prête"
-deployed       "Déployée"
-exhaustDesc    "Deck rafraîchi sans pièces prêtes"
 
 readyCount     "Dispo"
+discardCount   "Joués"
 
 
 

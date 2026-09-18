@@ -78,12 +78,9 @@ unlock2        "商店中總有一項商品特價"
 unlockLockedA  "關卡"
 unlockLockedB  "將死解鎖"
 
-exhausted      "耗盡"
-ready          "待命"
-deployed       "部署"
-exhaustDesc    "待命棋子用完時刷新牌組"
 
 readyCount     "可抽"
+discardCount   "已用"
 
 
 contraband     " "

@@ -211,14 +211,10 @@ char sideBoardIsRedrawHelpful( void ) {
     for( i = 0;
          i < d->numPieces;
          i   ++ ) {
-
-        if( d->present[ i ] ) {
-
-            if( d->pieces[ i ] != p ) {
-                /* found some piece in present section of deck that
-                   isn't same */
-                return 1;
-                }
+        
+        if( d->pieces[ i ] != p ) {
+            /* found some piece in draw deck that isn't same */
+            return 1;
             }
         }
     

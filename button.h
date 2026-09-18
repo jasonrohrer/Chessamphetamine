@@ -47,6 +47,9 @@ int buttonInit( int   inBaseSprite,
 void buttonDraw( int  inButtonHandle );
 
 
+void buttonDrawDisabled( int  inButtonHandle );
+
+
 /* must be called every step, since the button has no
    internal stepping  to check for events */
 char buttonIsNewPressed( int  inButtonHandle );
@@ -264,6 +267,29 @@ void buttonDraw( int  inButtonHandle ) {
                 b->centerY + spriteH / 2 - 7 + yOffset );
             }
         }
+    }
+
+
+
+void buttonDrawDisabled( int  inButtonHandle ) {
+
+    Button        *b;
+    unsigned char  dark  =  128;
+    
+    if( inButtonHandle == -1 ) {
+        return;
+        }
+
+    b = &( buttonRecords[ inButtonHandle ] );
+
+    maxigin_drawSetColor( dark,
+                          dark,
+                          dark,
+                          255 );
+
+    maxigin_drawSprite( b->baseSprite,
+                        b->centerX,
+                        b->centerY );
     }
 
 

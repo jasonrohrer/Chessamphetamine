@@ -205,6 +205,7 @@ static int          lang_level;
 static int          lang_gameOverInstruct;
 
 static int          lang_readyCount;
+static int          lang_discardCount;
 
 static int          lang_corrupted[3];
 
@@ -245,7 +246,9 @@ static int            explodingEndMessageMax       =  512;
 static unsigned char  endMessageFade               =  0;
 static int            endMessagePreFadeSteps       =  0;
 
+static unsigned char  countGlowFadeMax             =  126;
 static unsigned char  readyCountGlowFade           =  0;
+static unsigned char  discardCountGlowFade         =  0;
 
 
 static char           spinning                    =  0;
@@ -535,32 +538,52 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         deckViewDraw();
         }
 
-    if( ! gameOver
-        &&
-        ( sideBoardShowing
-          ||
-          shopShowing
-          ||
-          formationShowing ) ) {
+    if( ! gameOver ) {
 
-        int  displayBounce  =  0;
+        int  displayBounceR  =  0;
+        int  displayBounceD  =  0;
 
         if( readyCountGlowFade > 0 ) {
 
-            int  bounceTime = 126 - readyCountGlowFade;
+            int  bounceTime = countGlowFadeMax - readyCountGlowFade;
 
             /* three bounces */
             while( bounceTime > 42 ) {
                 bounceTime -= 42;
                 }
 
-            displayBounce = parabola( bounceTime,
-                                      42,
-                                      4 );
+            displayBounceR = parabola( bounceTime,
+                                       42,
+                                       4 );
+            }
+
+        if( discardCountGlowFade > 0 ) {
+
+            int  bounceTime = countGlowFadeMax - discardCountGlowFade;
+
+            /* three bounces */
+            while( bounceTime > 42 ) {
+                bounceTime -= 42;
+                }
+
+            displayBounceD = parabola( bounceTime,
+                                       42,
+                                       4 );
             }
         
-        
-        buttonDraw( deckButton );
+
+        if( sideBoardShowing
+            ||
+            shopShowing
+            ||
+            formationShowing ) {
+
+            buttonDraw( deckButton );
+            }
+        else {
+            buttonDrawDisabled( deckButton );
+            }
+
 
         maxigin_drawResetColor();
 
@@ -568,25 +591,48 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                             deckButtonPosX,
                             deckButtonPosY - 26 );
 
+        maxigin_drawSprite( readyCountScreenSprite,
+                            deckButtonPosX,
+                            deckButtonPosY - 59 );
+
         maxigin_drawSetColor( 255,
                               218,
                               112,
                               255 );
 
         numbersToggleBorder( 0 );
-        
+
+        /* first, ready count */
         numberDrawCenter( playerDeckGetReadyCount(),
                           deckButtonPosX,
-                          deckButtonPosY - 30 - displayBounce,
+                          deckButtonPosY - 30 - displayBounceR,
                           1 );
-        numbersToggleBorder( 1 );
+        
         
         maxigin_setLanguageFontIndex( 1 );
 
         maxigin_drawLangText( lang_readyCount,
                               deckButtonPosX,
-                              deckButtonPosY - 20 - displayBounce,
+                              deckButtonPosY - 20 - displayBounceR,
                               MAXIGIN_CENTER );
+
+        
+
+        /* next, discard count */
+        
+        numberDrawCenter( playerDeckGetDiscardCount(),
+                          deckButtonPosX,
+                          deckButtonPosY - 63 - displayBounceD,
+                          1 );
+        
+
+        maxigin_drawLangText( lang_discardCount,
+                              deckButtonPosX,
+                              deckButtonPosY - 53 - displayBounceD,
+                              MAXIGIN_CENTER );
+        
+
+        numbersToggleBorder( 1 );
         
         maxigin_setLanguageFontIndex( 0 );
         
@@ -601,6 +647,20 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             maxigin_drawSprite( readyCountScreenSprite,
                                 deckButtonPosX,
                                 deckButtonPosY - 26 );
+            maxigin_drawResetColor();
+
+            maxigin_drawToggleAdditive( 0 );
+            }
+
+        if( discardCountGlowFade > 0 ) {
+
+            maxigin_drawToggleAdditive( 1 );
+
+            maxigin_drawSetAlpha( discardCountGlowFade );
+            
+            maxigin_drawSprite( readyCountScreenSprite,
+                                deckButtonPosX,
+                                deckButtonPosY - 59 );
             maxigin_drawResetColor();
 
             maxigin_drawToggleAdditive( 0 );
@@ -623,6 +683,28 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
     heartsDraw( 50,
                 10 );
+    
+
+    if( ! showingMoveLog ) {
+        /* level display overlaps with move log display */
+
+        int  numPos  =  boardCenterX + BOARD_SQUARE_SIZE * BW / 2;
+        
+        maxigin_drawResetColor();
+        maxigin_setLanguageFontIndex( 1 );
+    
+        maxigin_drawLangText(
+            lang_level,
+            numPos - 40,
+            10,
+            MAXIGIN_RIGHT );
+        maxigin_setLanguageFontIndex( 0 );
+
+        numberDraw( currentLevel,
+                    numPos,
+                    10,
+                    1);
+        }
         
 
 
@@ -826,24 +908,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
 
-    if( ! showingMoveLog ) {
-        /* level display overlaps with move log display */
-        
-        maxigin_drawResetColor();
-        maxigin_setLanguageFontIndex( 1 );
     
-        maxigin_drawLangText(
-            lang_level,
-            32,
-            10,
-            MAXIGIN_RIGHT );
-        maxigin_setLanguageFontIndex( 0 );
-
-        numberDraw( currentLevel,
-                    32,
-                    22,
-                    1);
-        }
     
 
     
@@ -1558,10 +1623,12 @@ void maxiginGame_step( void ) {
                      c < postMoveCaptured.num;
                      c   ++ ) {
 
-                    if( ( postMoveCaptured.pieces[ c ].p & CHESS_COLOR_MASK )
-                        ==
-                        CHESS_WHITE ) {
+                    ChessPiece  p  =  postMoveCaptured.pieces[ c ].p;
 
+                    if( ( p & CHESS_COLOR_MASK ) == CHESS_WHITE
+                        &&
+                        ( p & CHESS_TYPE_MASK  ) != king ) {
+                        
                         playerDeckReturnPiecePlayed(
                             postMoveCaptured.pieces[ c ].p );
                         }
@@ -2624,7 +2691,7 @@ void maxiginGame_step( void ) {
                 maxigin_playSoundEffect( deckAllSameSound,
                                          384 );
                 sideBoardRedrawBlocked = 1;
-                readyCountGlowFade = 126;
+                readyCountGlowFade = countGlowFadeMax;
                 }
             }
         else if( ! sideBoardRedrawBlocked
@@ -2802,7 +2869,7 @@ void maxiginGame_step( void ) {
         }
 
     if( playerDeckJustRefreshed() ) {
-        readyCountGlowFade = 126;
+        readyCountGlowFade = countGlowFadeMax;
         }
 
     if( readyCountGlowFade > 0 ) {
@@ -2814,6 +2881,18 @@ void maxiginGame_step( void ) {
             }
         else {
             readyCountGlowFade = 0;
+            }
+        }
+
+    if( discardCountGlowFade > 0 ) {
+
+        int  newVal  =  discardCountGlowFade - ( 2 * 60 ) / r;
+
+        if( newVal > 0 ) {
+            discardCountGlowFade = (unsigned char)newVal;
+            }
+        else {
+            discardCountGlowFade = 0;
             }
         }
     }
@@ -3189,6 +3268,7 @@ void maxiginGame_init( void ) {
     lang_gameOverInstruct = maxigin_initTranslationKey( "gameOverInstruct" );
     lang_unlockView       = maxigin_initTranslationKey( "unlockView" );
     lang_readyCount       = maxigin_initTranslationKey( "readyCount" );
+    lang_discardCount     = maxigin_initTranslationKey( "discardCount" );
     
     lang_corrupted[0]     = maxigin_initTranslationKey( "corruptedA" );
     lang_corrupted[1]     = maxigin_initTranslationKey( "corruptedB" );
@@ -3529,7 +3609,8 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( heartsGainWaiting );
 
-    REGISTER_VAL_MEM( readyCountGlowFade );
+    REGISTER_VAL_MEM( readyCountGlowFade   );
+    REGISTER_VAL_MEM( discardCountGlowFade );
 
     REGISTER_VAL_MEM( preSideBoardX );
     REGISTER_VAL_MEM( preSideBoardY );

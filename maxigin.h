@@ -13471,7 +13471,7 @@ static  int   mx_musicVolumeTarget              =  MAXIGIN_MAX_MUSIC_LOUDNESS;
 static  int          mx_buttonPhraseKeys[ MINGIN_NUM_BUTTON_MAPPINGS ];
 
 
-static void mx_loadButtonMapping( const char  *inStoreName );
+static char mx_loadButtonMapping( const char  *inStoreName );
 
 static void mx_saveButtonMapping( const char  *inStoreName );
 
@@ -13592,7 +13592,16 @@ static void mx_gameInit( void ) {
     /* now we load any overwritten dynamic button
        settings that were saved through
        our menu in the past */
-    mx_loadButtonMapping( "maxigin_savedButtons.ini" );
+    if( ! mx_loadButtonMapping( "maxigin_savedButtons.ini" ) ) {
+        /* if it failed, try re-loading the defaults */
+        mingin_log( "Loading maxigin_savedButtons.ini failed, restoring "
+                    "from maxigin_defaultButtons.ini\n" );
+
+        /* delete bad button file */
+        mingin_deletePersistData( "maxigin_savedButtons.ini" );
+
+        mx_loadButtonMapping( "maxigin_defaultButtons.ini" );
+        }
     
 
     /* our own internal translation keys */
@@ -13970,6 +13979,12 @@ static const char *mx_readShortStringFromPersistData( int  inStoreReadHandle ) {
     }
 
 
+
+typedef int (*MXDataReadFunction)( int             inBulkOrPersistDataHandle,
+                                   int             inNumBytesToRead,
+                                   unsigned char  *inByteBuffer );
+
+
 /*
   Reads a whitespace-terminated short string token (< 64 chars long) into a
   static buffer.
@@ -13984,7 +13999,9 @@ static const char *mx_readShortStringFromPersistData( int  inStoreReadHandle ) {
   Returns \0-terminated string token with no trailing whitespace
   Returns 0 on failure.
 */
-static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
+static const char *mx_readShortTokenFromDataFunction(
+                       int                 inReadHandle,
+                       MXDataReadFunction  inReadFunction ) {
 
     enum{         NUM_BUFFERS  =  10,
                   BUFFER_LEN   =  64  };
@@ -13998,7 +14015,7 @@ static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
     
 
     /* skip white space */
-    readNum = mingin_readBulkData( inBulkReadHandle,
+    readNum = inReadFunction( inReadHandle,
                                    1,
                                    (unsigned char *)&( c ) );
 
@@ -14014,7 +14031,7 @@ static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
              ||
              c == '\t' ) ) {
 
-        readNum = mingin_readBulkData( inBulkReadHandle,
+        readNum = inReadFunction( inReadHandle,
                                        1,
                                        (unsigned char *)&( c ) );
         }
@@ -14032,7 +14049,7 @@ static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
     
     /* now continue filling buffer with non-whitespace tokens */
     
-    readNum = mingin_readBulkData( inBulkReadHandle,
+    readNum = inReadFunction( inReadHandle,
                                    1,
                                    (unsigned char *)&( buffer[n][i] ) );
     
@@ -14050,7 +14067,7 @@ static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
            &&
            buffer[n][i] != '\t' ) {
         i++;
-        readNum = mingin_readBulkData( inBulkReadHandle,
+        readNum = inReadFunction( inReadHandle,
                                        1,
                                        (unsigned char *)&( buffer[n][i] ) );
         }
@@ -14146,6 +14163,23 @@ static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
     }
 
 
+
+static const char *mx_readShortTokenFromBulkData( int  inBulkReadHandle ) {
+    return mx_readShortTokenFromDataFunction( inBulkReadHandle,
+                                              mingin_readBulkData );
+    }
+
+
+
+static const char *mx_readShortTokenFromPersistentData(
+                       int  inStoreReadHandle ) {
+    
+    return mx_readShortTokenFromDataFunction( inStoreReadHandle,
+                                              mingin_readPersistData );
+    }
+
+
+
 /*
   Reads a \0-terminated string representation of an int from data store.
 
@@ -14203,6 +14237,32 @@ static char mx_writeStringToPeristentData( int          inStoreWriteHandle,
                                     maxigin_stringLength( inString ) + 1,
                                     (unsigned char*)inString );
     }
+
+
+/*
+  Writes a string to data store, not including the \0 termination, and
+  followed by a space.
+
+  Returns 1 on success, 0 on failure.
+*/
+static char mx_writeStringTokenToPeristentData( int          inStoreWriteHandle,
+                                                const char  *inString ) {
+    
+    char  success  =
+        mingin_writePersistData( inStoreWriteHandle,
+                                 maxigin_stringLength( inString ),
+                                 (unsigned char*)inString );
+
+    if( ! success ) {
+        return success;
+        }
+    success = mingin_writePersistData( inStoreWriteHandle,
+                                       1,
+                                       (unsigned char*)( " " ) );
+
+    return success;
+    }
+
 
 
 /*
@@ -24433,7 +24493,9 @@ void maxigin_initSetMenuSounds( int  inHoverSound,
 
 
 
-/* returns 1 on succes, 0 on failure */
+/* writes an int as an ASCII token, followed by a space.
+
+   returns 1 on succes, 0 on failure */
 static char mx_writeIntTokenToStore( int  inStoreHandle,
                                      int  inInt ) {
     
@@ -24526,17 +24588,18 @@ static char mx_readIntTokenFromStore( int   inStoreHandle,
 
 
 
-static void mx_loadButtonMapping( const char  *inStoreName ) {
+static char  mx_loadButtonMapping( const char  *inStoreName ) {
     
-    int  numBytes;
-    int  store      =  mingin_startReadPersistData( inStoreName,
-                                                    &numBytes );
-    int  i;
-    char success;
-    int  readInt;
-    
+    int          numBytes;
+    int          store      =  mingin_startReadPersistData( inStoreName,
+                                                            &numBytes );
+    int          i;
+    char         success;
+    int          readInt;
+    const char  *readName;
+        
     if( store == -1 ) {
-        return;
+        return 0;
         }
 
     success = mx_readIntTokenFromStore( store,
@@ -24547,8 +24610,48 @@ static void mx_loadButtonMapping( const char  *inStoreName ) {
         int    j;
 
         MinginButton mapping[ MINGIN_MAX_BUTTON_MAPPING_ELEMENTS ];
-
+        
         mapping[0] = MGN_MAP_END;
+
+        readName = mx_readShortTokenFromPersistentData( store );
+
+        if( readName == 0
+            ||
+            readName[0] == '\0' ) {
+            mingin_log( "Failed to read button mapping from "
+                        "persistent data store\n" );
+            
+            mingin_endReadPersistData( store );
+            return 0;
+            }
+
+        if( mx_buttonPhraseKeys[i] == -1 ) {
+            maxigin_logInt( "Ran into non-dynamic mapping "
+                            "when trying to read button mapping from "
+                            "persistent data storefor button ",
+                            i );
+            
+            mingin_endReadPersistData( store );
+            return 0;
+            }
+        
+        if( ! maxigin_stringsEqual(
+                mx_translationKeys[ mx_buttonPhraseKeys[i] ],
+                readName ) ) {
+
+            mingin_log( "Found " );
+            mingin_log( readName );
+            mingin_log( " but expecting " );
+            mingin_log( mx_translationKeys[ mx_buttonPhraseKeys[i] ] );
+            
+            
+            maxigin_logInt( " when reading "
+                            "mapping from persistent data store for button ",
+                            i );
+
+            mingin_endReadPersistData( store );
+            return 0;
+            }
         
         for( j = 0;
              j < MINGIN_MAX_BUTTON_MAPPING_ELEMENTS;
@@ -24563,7 +24666,7 @@ static void mx_loadButtonMapping( const char  *inStoreName ) {
                             "persistent data store\n" );
             
                 mingin_endReadPersistData( store );
-                return;
+                return 0;
                 }
         
             mapping[ j ] = readInt;
@@ -24584,6 +24687,8 @@ static void mx_loadButtonMapping( const char  *inStoreName ) {
         }
     
     mingin_endReadPersistData( store );
+
+    return 1;
     }
 
 
@@ -24611,6 +24716,17 @@ static void mx_saveButtonMapping( const char  *inStoreName ) {
         
                 if( ! mx_writeIntTokenToStore( store,
                                                i ) ) {
+                    mingin_log( "Failed to write button mapping to "
+                                "persistent data store\n" );
+            
+                    mingin_endWritePersistData( store );
+                    return;
+                    }
+
+                if( ! mx_writeStringTokenToPeristentData(
+                        store,
+                        mx_translationKeys[ mx_buttonPhraseKeys[i] ] ) ) {
+                    
                     mingin_log( "Failed to write button mapping to "
                                 "persistent data store\n" );
             

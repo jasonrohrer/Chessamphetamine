@@ -688,7 +688,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     if( ! showingMoveLog ) {
         /* level display overlaps with move log display */
 
-        int  numPos  =  boardCenterX + BOARD_SQUARE_SIZE * BW / 2;
+        int  numPos  =  boardCenterX + BOARD_SQUARE_SIZE * BW / 2 - 30;
         
         maxigin_drawResetColor();
         maxigin_setLanguageFontIndex( 1 );

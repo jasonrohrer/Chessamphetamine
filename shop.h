@@ -653,7 +653,7 @@ void shopDraw( void ) {
         newSpotAvail ) {
 
         int  spotSprite     =  formationGetSpotSprite();
-        int  recruitOffset  =  -14;
+        int  recruitOffset  =  -15;
         
         maxigin_drawResetColor();
 

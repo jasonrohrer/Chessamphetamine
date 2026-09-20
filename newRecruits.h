@@ -175,6 +175,9 @@ void newRecruitsReroll( void ) {
     newRecruitsDone       = 0;
     newRecruitsActionDown = 0;
     
+    newRecruitsSelectedSlot   = -1;
+    newRecruitsSelectedBasket = -1;
+    
     nrSlotPickedWithController = 0;
     
     for( b = 0;

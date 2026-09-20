@@ -1,0 +1,565 @@
+/*
+  Include in your C code wherever like so:
+
+      #include "newRecruits.h"
+
+  Include exactly once, in one .c file, like so, to compile in the
+  implementation:
+
+      #define NEW_RECRUITS_IMPLEMENTATION
+      #include "newRecruits.h"
+
+*/
+
+#ifndef NEW_RECRUITS_H_INCLUDED
+#define NEW_RECRUITS_H_INCLUDED
+
+
+void newRecruitsInit( int  inPointerActionHandle,
+                      int  inCenterX,
+                      int  inCenterY );
+
+
+
+/* refresh the newRecruits */
+void newRecruitsReroll( void );
+
+
+
+void newRecruitsDraw( void );
+
+
+/* returns current mouse-over or controller selected piece
+
+*/
+ChessPiece newRecruitsStep( int  inPieceLiftSound,
+                            int  inPurchaseSound );
+
+
+char newRecruitsIsDone( void );
+
+
+
+
+#endif
+
+
+
+#ifdef  NEW_RECRUITS_IMPLEMENTATION
+
+#ifndef NEW_RECRUITS_IMPLEMENTATION_INCLUDED
+#define NEW_RECRUITS_IMPLEMENTATION_INCLUDED
+
+
+
+
+#include "playerDeck.h"
+#include "numbers.h"
+#include "pieceSprites.h"
+
+#include "memoryRegister.h"
+#include "mingin.h"
+
+#include "button.h"
+#include "slotLift.h"
+#include "cost.h"
+
+#include "unlocks.h"
+
+
+
+#define                NUM_NEW_RECRUITS_BASKETS           4
+
+#define                NUM_NEW_RECRUITS_SLOTS_PER_BASKET  5
+
+static  int            newRecruitsBaseVisibleBaskets   =  3;
+static  int            newRecruitsNumVisibleBaskets    =  3;
+
+
+static  ChessPiece     newRecruitsSlots[ NUM_NEW_RECRUITS_BASKETS          ]
+                                       [ NUM_NEW_RECRUITS_SLOTS_PER_BASKET ];
+
+
+static  int            newRecruitsSelectedBasket       =  -1;
+static  int            newRecruitsSelectedSlot         =  -1;
+
+
+static  unsigned char  newRecruitsSlotHighlightFade
+                           [ NUM_NEW_RECRUITS_BASKETS          ]
+                           [ NUM_NEW_RECRUITS_SLOTS_PER_BASKET ];
+
+static  unsigned char  newRecruitsBasketHighlightFade
+                           [ NUM_NEW_RECRUITS_BASKETS          ];
+
+
+static  int            newRecruitsSlotPosX
+                           [ NUM_NEW_RECRUITS_BASKETS          ]
+                           [ NUM_NEW_RECRUITS_SLOTS_PER_BASKET ];
+static  int            newRecruitsSlotPosY
+                           [ NUM_NEW_RECRUITS_BASKETS          ]
+                           [ NUM_NEW_RECRUITS_SLOTS_PER_BASKET ];
+
+static  char           newRecruitsActionDown           =   0;
+
+
+static  int            lang_newRecruitsInstruct        =  -1;
+
+
+static  char           newRecruitsDone                 =   0;
+
+static  int            newRecruitsPointerActionHandle  =  -1;
+
+static  int            newRecruitsCenterX;
+static  int            newRecruitsCenterY;
+
+static  int            newRecruitsSlideUp              =   0;
+static  int            newRecruitsSlideUpMax           = 100;
+
+static  int            newRecruitsColOffsetX           =   0;
+
+
+
+static void newRecruitsResetHightlighFades( void ) {
+    int  b;
+    int  s;
+
+    for( b = 0;
+         b < NUM_NEW_RECRUITS_BASKETS;
+         b   ++ ) {
+        for( s = 0;
+             s < NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
+             s   ++ ) {
+
+            newRecruitsSlotHighlightFade[ b ][ s ] = 0;
+            }
+        newRecruitsBasketHighlightFade[ b ] = 0;
+        }
+    }
+
+
+
+static void newRecruitsClear( void ) {
+    int  b;
+    int  s;
+
+    for( b = 0;
+         b < NUM_NEW_RECRUITS_BASKETS;
+         b   ++ ) {
+        for( s = 0;
+             s < NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
+             s   ++ ) {
+
+            newRecruitsSlots[ b ][ s ] = noPiece;
+            }
+        }
+    }
+
+
+void newRecruitsReroll( void ) {
+    
+    int  b;
+    int  s;
+
+    int  minX  =  newRecruitsSlotPosX[ 0 ][ 0 ];
+    int  maxX  =  minX;
+    int  aveX  =  minX;
+    
+    newRecruitsClear();
+
+    newRecruitsNumVisibleBaskets = newRecruitsBaseVisibleBaskets +
+                                   unlocksGetExtraNewRecruitsBaskets();
+
+    newRecruitsSlideUp    = newRecruitsSlideUpMax;
+    newRecruitsDone       = 0;
+    newRecruitsActionDown = 0;
+    
+    for( b = 0;
+         b < newRecruitsNumVisibleBaskets;
+         b   ++ ) {
+        
+        maxX = newRecruitsSlotPosX[ b ][ 0 ];
+        
+        for( s = 0;
+             s < NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
+             s   ++ ) {
+
+            newRecruitsSlots[ b ][ s ] = rarityRollPiece();
+            }
+        }
+
+    aveX = ( minX + maxX ) / 2;
+
+    newRecruitsColOffsetX = - aveX;
+    }
+
+
+
+void newRecruitsInit( int  inPointerActionHandle,
+                      int  inCenterX,
+                      int  inCenterY ) {
+
+        
+    int  b;
+    int  s;
+    int  hopSizeX       =  50;
+    int  numStartHopsX  =  NUM_NEW_RECRUITS_BASKETS / 2;
+    int  hopSizeY       =  BOARD_SQUARE_SIZE;
+    int  numStartHopsY  =  NUM_NEW_RECRUITS_SLOTS_PER_BASKET / 2;
+    int  startHopX      =  hopSizeX * numStartHopsX;
+    int  startHopY      =  hopSizeY * numStartHopsY;
+    int  curPosX;
+    int  curPosY;
+
+    newRecruitsActionDown = 0;
+    newRecruitsSlideUp    = newRecruitsSlideUpMax;
+    newRecruitsDone       = 1;
+
+    newRecruitsPointerActionHandle = inPointerActionHandle;
+
+    newRecruitsCenterX = inCenterX;
+    newRecruitsCenterY = inCenterY;
+
+    newRecruitsClear();
+    newRecruitsResetHightlighFades();
+
+    lang_newRecruitsInstruct =
+        maxigin_initTranslationKey( "newRecruitsInstruct"  );
+
+    
+    /* set up slot positions */
+ 
+    
+    if( ( NUM_NEW_RECRUITS_BASKETS % 2 ) == 0 ) {
+        /* center between two middle slots */
+        startHopX -= hopSizeX / 2;
+        }
+
+    if( ( NUM_NEW_RECRUITS_SLOTS_PER_BASKET % 2 ) == 0 ) {
+        /* center between two middle slots */
+        startHopY -= hopSizeY / 2;
+        }
+
+    /* shift down slightly */
+    startHopY -= 10;
+    
+    curPosX = - startHopX;
+
+    for( b = 0;
+         b < NUM_NEW_RECRUITS_BASKETS;
+         b   ++ ) {
+
+        curPosY = - startHopY;
+        
+        for( s = 0;
+             s < NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
+             s   ++ ) {
+
+            newRecruitsSlotPosX[ b ][ s ] = curPosX;
+            newRecruitsSlotPosY[ b ][ s ] = curPosY;
+            
+            curPosY += hopSizeY;
+            }
+        curPosX += hopSizeX;
+        }
+
+    REGISTER_ARRAY_MEM( newRecruitsSlots );
+
+    REGISTER_ARRAY_MEM( newRecruitsSlotHighlightFade );
+    REGISTER_ARRAY_MEM( newRecruitsBasketHighlightFade );
+
+    REGISTER_VAL_MEM( newRecruitsDone );
+
+    REGISTER_VAL_MEM( newRecruitsSelectedBasket );
+    REGISTER_VAL_MEM( newRecruitsSelectedSlot );
+
+    REGISTER_VAL_MEM( newRecruitsSlideUp );
+
+    REGISTER_VAL_MEM( newRecruitsColOffsetX );
+
+    REGISTER_VAL_MEM( newRecruitsActionDown );
+    }
+
+
+
+static int nrGetLiveCenterY( void ) {
+    
+    int  liveCenterY =  newRecruitsCenterY;
+    
+    if( newRecruitsSlideUp > 0 ) {
+
+        int  slideUpY    =  0;
+        int  scaleFactor  =  ( newRecruitsSlideUpMax * newRecruitsSlideUpMax )
+            / MAXIGIN_GAME_NATIVE_H;
+
+        slideUpY =
+            ( newRecruitsSlideUp * newRecruitsSlideUp ) / scaleFactor;
+
+        liveCenterY -= slideUpY;
+        }
+    return liveCenterY;
+    }
+    
+
+void newRecruitsDraw( void ) {
+
+    int  bgW  =  BW * BOARD_SQUARE_SIZE;
+    int  bgH  =  BH * BOARD_SQUARE_SIZE;
+    int  b;
+    int  s;
+    int  liveCenterY =  nrGetLiveCenterY();
+    int  markerS     =  boardGetMoveMarkerSprite();
+    
+    maxigin_drawSetColor( 0,
+                          0,
+                          0,
+                          255 );
+
+    maxigin_drawFillRect( newRecruitsCenterX - bgW / 2,
+                          liveCenterY        - bgH / 2,
+                          newRecruitsCenterX + bgW / 2  - 1,
+                          liveCenterY        + bgH / 2  - 1);
+
+    boardDrawBorder( newRecruitsCenterX,
+                     liveCenterY );
+
+    maxigin_drawResetColor();
+
+    maxigin_setLanguageFontIndex( 1 );
+
+    maxigin_drawLangText( lang_newRecruitsInstruct,
+                          newRecruitsCenterX,
+                          liveCenterY - bgH / 2 + 20,
+                          MAXIGIN_CENTER );
+
+    maxigin_setLanguageFontIndex( 0 );
+
+   
+    for( b = 0;
+         b < newRecruitsNumVisibleBaskets;
+         b   ++ ) {
+        for( s = 0;
+             s < NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
+             s   ++ ) {
+
+            ChessPiece  p  =  newRecruitsSlots[ b ][ s ];
+
+            if( p != noPiece ) {
+
+                int  x  =  newRecruitsCenterX +
+                           newRecruitsColOffsetX +
+                           newRecruitsSlotPosX[ b ][ s ];
+                
+                int  y  =  liveCenterY        + newRecruitsSlotPosY[ b ][ s ];
+
+
+                if( newRecruitsBasketHighlightFade[ b ] > 0 ) {
+                    colorsApplyBoardColor();
+
+                    maxigin_drawSetAlpha( newRecruitsBasketHighlightFade[ b ] );
+
+                    maxigin_drawSprite( markerS,
+                                        x,
+                                        y );
+                    }
+                
+                drawPiece( p | CHESS_WHITE,
+                           x,
+                           y );
+
+                if( newRecruitsSlotHighlightFade[ b ][ s ] > 0 ) {
+                    drawPieceHighlight( p | CHESS_WHITE,
+                                        x,
+                                        y,
+                                        newRecruitsSlotHighlightFade[ b ][ s ] );
+                    }
+                }
+            }
+        }
+    }
+
+
+
+ChessPiece newRecruitsStep( int  inPieceLiftSound,
+                            int  inPurchaseSound ) {
+
+    int         r            =  mingin_getStepsPerSecond();
+    int         b;
+    int         s;
+    int         liveCenterY  =  nrGetLiveCenterY();
+    int         pointerX;
+    int         pointerY;
+    ChessPiece  overPiece    =  noPiece;
+    int         deltaFade    =  ( 20 * 60 ) / r;
+    
+    /* fixme */
+
+    (void)inPieceLiftSound;
+
+
+    if( maxigin_getPointerLocation( &pointerX,
+                                    &pointerY ) ) {
+        for( b = 0;
+             b < newRecruitsNumVisibleBaskets;
+             b   ++ ) {
+            for( s = 0;
+                 s < NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
+                 s   ++ ) {
+
+                ChessPiece  p  =  newRecruitsSlots[ b ][ s ];
+
+                if( p != noPiece ) {
+
+                    int  x  =  newRecruitsCenterX +
+                        newRecruitsColOffsetX +
+                        newRecruitsSlotPosX[ b ][ s ];
+                
+                    int  y  =  liveCenterY + newRecruitsSlotPosY[ b ][ s ];
+
+                    if( getPixelOverPiece( p | CHESS_WHITE,
+                                           x,
+                                           y,
+                                           pointerX,
+                                           pointerY ) ) {
+
+                        newRecruitsSelectedBasket = b;
+                        newRecruitsSelectedSlot   = s;
+                    
+                        newRecruitsSlotHighlightFade  [ b ][ s ] = 255;
+                        newRecruitsBasketHighlightFade[ b ]      = 255;
+                        
+                        overPiece = p;
+                        break;
+                        }
+                    }
+                }
+            if( overPiece != noPiece ) {
+                break;
+                }
+            }
+        
+        if( overPiece == noPiece ) {
+            newRecruitsSelectedBasket = -1;
+            newRecruitsSelectedSlot   = -1;
+            }
+        }
+
+
+    for( b = 0;
+         b < newRecruitsNumVisibleBaskets;
+         b   ++ ) {
+
+        if( b != newRecruitsSelectedBasket
+            &&
+            newRecruitsBasketHighlightFade[ b ] > 0 ) {
+            
+            int  newHighlight =
+                newRecruitsBasketHighlightFade[ b ] - deltaFade;
+
+            if( newHighlight > 0 ) {
+                newRecruitsBasketHighlightFade[ b ]
+                    = (unsigned char)newHighlight;
+                }
+            else {
+                newRecruitsBasketHighlightFade[ b ] = 0;
+                }
+            }
+        
+        for( s = 0;
+             s < NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
+             s   ++ ) {
+
+            if( ( b != newRecruitsSelectedBasket
+                  ||
+                  s != newRecruitsSelectedSlot )
+                &&
+                newRecruitsSlotHighlightFade[ b ][ s ] > 0 ) {
+
+                int  newHighlight =
+                    newRecruitsSlotHighlightFade[ b ][ s ] - deltaFade;
+
+                if( newHighlight > 0 ) {
+                    newRecruitsSlotHighlightFade[ b ][ s ]
+                        = (unsigned char)newHighlight;
+                    }
+                else {
+                    newRecruitsSlotHighlightFade[ b ][ s ] = 0;
+                    }
+                }
+            }
+        }
+
+    if( overPiece != noPiece
+        &&
+        newRecruitsSelectedBasket != -1
+        &&
+        ! newRecruitsActionDown
+        &&
+        maxigin_isButtonDown( newRecruitsPointerActionHandle ) ) {
+
+
+        b = newRecruitsSelectedBasket;
+        
+        for( s = 0;
+             s < NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
+             s   ++ ) {
+        
+                playerDeckAddPiece( newRecruitsSlots[ b ][ s ] );
+                newRecruitsSlots[ b ][ s ] = noPiece;
+            }
+
+        maxigin_playSoundEffect( inPurchaseSound,
+                                 256 );
+        playerDeckReshuffle();
+
+        newRecruitsActionDown = 1;
+
+        newRecruitsDone = 1;
+        }
+    
+
+    if( ! newRecruitsDone
+        &&
+        newRecruitsSlideUp > 0 ) {
+        
+        newRecruitsSlideUp -= ( 4 * 60 ) / r;
+
+        if( newRecruitsSlideUp <= 0 ) {
+            newRecruitsSlideUp = 0;
+            }
+        }
+
+    if( newRecruitsDone
+        &&
+        newRecruitsSlideUp < newRecruitsSlideUpMax ) {
+        
+        newRecruitsSlideUp += ( 4 * 60 ) / r;
+
+        if( newRecruitsSlideUp >= newRecruitsSlideUpMax ) {
+            newRecruitsSlideUp = newRecruitsSlideUpMax;
+            }
+        }
+    
+
+    return overPiece;
+    }
+
+
+
+char newRecruitsIsDone( void ) {
+
+    if( ! newRecruitsDone ) {
+        return 0;
+        }
+    else if( newRecruitsSlideUp < newRecruitsSlideUpMax ) {
+        return 0;
+        }
+    else {
+        return 1;
+        }
+    }
+
+
+
+#endif
+
+#endif

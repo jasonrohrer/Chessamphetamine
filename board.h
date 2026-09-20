@@ -26,6 +26,10 @@ void boardInit( void );
 void boardDraw( int  inCenterX,
                 int  inCenterY );
 
+void boardDrawBorder( int  inCenterX,
+                      int  inCenterY );
+
+
 void boardDrawPortion( int  inCenterX,
                        int  inCenterY,
                        int  inStartRow );
@@ -55,6 +59,9 @@ int boardGetPixelDistance( int  inRowA,
                            int  inColA,
                            int  inRowB,
                            int  inColB );
+
+
+int boardGetMoveMarkerSprite( void );
 
 
 
@@ -138,6 +145,33 @@ void boardInit( void ) {
     }
 
 
+void boardDrawBorder( int  inCenterX,
+                      int  inCenterY ) {
+
+    int  yOff  =  ( squareSize * BH ) / 2;
+    int  xOff  =  ( squareSize * BW ) / 2;
+
+    colorsApplyBoardColor();
+    
+    maxigin_drawSprite( borderSpriteH,
+                        inCenterX,
+                        inCenterY - yOff );
+
+    maxigin_drawSprite( borderSpriteH,
+                        inCenterX,
+                        inCenterY + yOff - 1 );
+    
+    maxigin_drawSprite( borderSpriteV,
+                        inCenterX - xOff,
+                        inCenterY );
+
+    maxigin_drawSprite( borderSpriteV,
+                        inCenterX + xOff - 1,
+                        inCenterY );
+
+    maxigin_drawResetColor();
+    }
+
 
 void boardDraw( int  inCenterX,
                 int  inCenterY ) {
@@ -211,21 +245,8 @@ void boardDrawPortion( int  inCenterX,
         }
     
 
-    maxigin_drawSprite( borderSpriteH,
-                        inCenterX,
-                        inCenterY - yOff );
-
-    maxigin_drawSprite( borderSpriteH,
-                        inCenterX,
-                        inCenterY + yOff - 1 );
-    
-    maxigin_drawSprite( borderSpriteV,
-                        inCenterX - xOff,
-                        inCenterY );
-
-    maxigin_drawSprite( borderSpriteV,
-                        inCenterX + xOff - 1,
-                        inCenterY );
+    boardDrawBorder( inCenterX,
+                     inCenterY );
 
     maxigin_drawResetColor();
     }
@@ -395,6 +416,10 @@ int boardGetPixelDistance( int  inRowA,
     }
 
 
+
+int boardGetMoveMarkerSprite( void ) {
+    return moveMarkerSprite;
+    }
     
 
 

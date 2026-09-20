@@ -23,10 +23,8 @@ void shopInit( int  inPointerActionHandle,
 
 
 
-/* refresh the shop, rolling new pieces from the internal shop decks,
-   and incrementing prices
-   size of deck determines whether a new formation slot is offered
-   for sale */
+/* refresh the shop, rolling new pieces into the slots,
+   and incrementing prices */
 void shopReroll( void );
 
 
@@ -63,6 +61,9 @@ char isShoppingDone( void );
 #define SHOP_IMPLEMENTATION_INCLUDED
 
 
+#define NEW_RECRUITS_IMPLEMENTATION
+
+#include "newRecruits.h"
 
 
 #include "playerDeck.h"
@@ -181,6 +182,7 @@ static  char           newSpotsUnlimited                          =  1;
 
 static  int            formationRecruitsSprite                    = -1;
 
+static  char           shopNewRecruitsShowing                     =  0;
 
 
 static void shopResetHightlighFades( void ) {
@@ -301,7 +303,12 @@ void shopInit( int  inPointerActionHandle,
     int  startHop      =  hopSize * numStartHops;
     int  curPos;
 
-
+    shopNewRecruitsShowing = 0;
+    
+    newRecruitsInit( inPointerActionHandle,
+                     inCenterX,
+                     inCenterY );
+    
     /* reroll costs are 5, 6, 8, 11, 15, etc. */
     /* don't increase as levels go up */
     shopRerollCost = costInit( 5,
@@ -464,6 +471,8 @@ void shopInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( shopOverNewSpot );
 
     REGISTER_VAL_MEM( shopSlotPickedWithController );
+
+    REGISTER_VAL_MEM( shopNewRecruitsShowing );
     }
 
 
@@ -502,6 +511,8 @@ void shopReset( void ) {
     shopActionDown   =  0;
     shoppingDone     =  0;
     newSpotBought    =  0;
+    
+    shopNewRecruitsShowing = 0;
     
     shopSlotPickedWithController = 0;
 
@@ -763,6 +774,10 @@ void shopDraw( void ) {
     
         maxigin_setLanguageFontIndex( 0 );
         }
+
+    if( shopNewRecruitsShowing ) {
+        newRecruitsDraw();
+        }
     
     }
 
@@ -786,7 +801,17 @@ ChessPiece shopStep( int  inPickFailedSound,
     int   deltaFade            =  ( 20 * 60 ) / r;
     int   liftPhaseDone        =  0;
     char  controllerMovedSlot  =  0;
+
     
+    if( shopNewRecruitsShowing ) {
+        if( newRecruitsIsDone() ) {
+            shopNewRecruitsShowing = 0;
+            }
+        else {
+            return newRecruitsStep( inPieceLiftSound,
+                                    purchaseSound );
+            }
+        }      
     
     if( buttonIsNewPressed( doneButton ) ) {
         unlocksCancelViewer();
@@ -1178,6 +1203,10 @@ ChessPiece shopStep( int  inPickFailedSound,
 
             maxigin_playSoundEffect( purchaseSound,
                                      256 );
+
+            /* show new recruits after they buy slot */
+            newRecruitsReroll();
+            shopNewRecruitsShowing = 1;
             }
         else {
             /* can't afford */

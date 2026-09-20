@@ -41,6 +41,8 @@ int unlocksGetExtraShopSlots( void );
 
 int unlocksGetMinNumSaleSlots( void );
 
+int unlocksGetExtraNewRecruitsBaskets( void );
+
 
 void unlocksCancelViewer( void );
 
@@ -702,7 +704,14 @@ int unlocksGetMinNumSaleSlots( void ) {
         return 0;
         }
     }
-    
+
+
+
+int unlocksGetExtraNewRecruitsBaskets( void ) {
+    /* not implemented yet */
+    return 0;
+    }
+
 
 
 void unlocksCancelViewer( void ) {

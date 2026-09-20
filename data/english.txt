@@ -70,6 +70,8 @@ shopInstructB  "Pick a piece to buy it"
 sale           "Sale!"
 permanent      "Perma"
 
+newRecruitsInstruct  "Pick a column of new recruits"
+
 level          "Level"
 
 gameOverInstruct  "Please Play Again:"

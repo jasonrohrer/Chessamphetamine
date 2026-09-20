@@ -71,6 +71,8 @@ shopInstructB  "Choisissez une pièce pour l’acheter"
 sale           "Promo!"
 permanent      "À vie"
 
+newRecruitsInstruct  "Choisissez une colonne de recrues"
+
 level          "Niveau"
 
 gameOverInstruct  "Veuillez rejouer:"

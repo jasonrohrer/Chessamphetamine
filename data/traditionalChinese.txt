@@ -67,6 +67,10 @@ shopInstructB  "選擇棋子購買"
 sale           "折"
 permanent      "永久"
 
+
+newRecruitsInstruct  "選擇一欄新兵"
+
+
 level          "關卡"
 
 gameOverInstruct  "請再玩一次："

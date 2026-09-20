@@ -117,6 +117,8 @@ static  int            newRecruitsSlideUpMax           = 100;
 
 static  int            newRecruitsColOffsetX           =   0;
 
+static  char           nrSlotPickedWithController      =   0;
+
 
 
 static void newRecruitsResetHightlighFades( void ) {
@@ -172,6 +174,8 @@ void newRecruitsReroll( void ) {
     newRecruitsSlideUp    = newRecruitsSlideUpMax;
     newRecruitsDone       = 0;
     newRecruitsActionDown = 0;
+    
+    nrSlotPickedWithController = 0;
     
     for( b = 0;
          b < newRecruitsNumVisibleBaskets;
@@ -277,6 +281,8 @@ void newRecruitsInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( newRecruitsColOffsetX );
 
     REGISTER_VAL_MEM( newRecruitsActionDown );
+
+    REGISTER_VAL_MEM( nrSlotPickedWithController );
     }
 
 
@@ -298,7 +304,8 @@ static int nrGetLiveCenterY( void ) {
         }
     return liveCenterY;
     }
-    
+
+
 
 void newRecruitsDraw( void ) {
 
@@ -372,6 +379,18 @@ void newRecruitsDraw( void ) {
                                         y,
                                         newRecruitsSlotHighlightFade[ b ][ s ] );
                     }
+
+                if( nrSlotPickedWithController
+                    &&
+                    b == newRecruitsSelectedBasket
+                    &&
+                    s == NUM_NEW_RECRUITS_SLOTS_PER_BASKET - 1 ) {
+
+                    maxigin_drawButtonHintSprite(
+                        newRecruitsPointerActionHandle,
+                        x,
+                        y + 20 );
+                    }
                 }
             }
         }
@@ -398,6 +417,9 @@ ChessPiece newRecruitsStep( int  inPieceLiftSound,
 
     if( maxigin_getPointerLocation( &pointerX,
                                     &pointerY ) ) {
+        
+        nrSlotPickedWithController = 0;
+        
         for( b = 0;
              b < newRecruitsNumVisibleBaskets;
              b   ++ ) {
@@ -442,6 +464,85 @@ ChessPiece newRecruitsStep( int  inPieceLiftSound,
             newRecruitsSelectedSlot   = -1;
             }
         }
+    else {
+        int  dirX;
+        int  dirY;
+
+        navGetDir( 0,
+                   &dirX,
+                   &dirY );
+
+        
+        if( dirX != 0
+            ||
+            dirY != 0 ) {
+            
+            nrSlotPickedWithController = 1;
+
+            if( newRecruitsSelectedSlot != -1
+                &&
+                newRecruitsSelectedBasket != -1 ) {
+
+                if( dirX != 0 ) {
+                    newRecruitsSelectedBasket += dirX;
+
+                    if( newRecruitsSelectedBasket
+                        >=
+                        newRecruitsNumVisibleBaskets ) {
+                        newRecruitsSelectedBasket = 0;
+                        }
+                    else if( newRecruitsSelectedBasket < 0 ) {
+                        newRecruitsSelectedBasket =
+                            newRecruitsNumVisibleBaskets - 1;
+                        }
+                    }
+                if( dirY != 0 ) {
+                    newRecruitsSelectedSlot += dirY;
+
+                    if( newRecruitsSelectedSlot
+                        >=
+                        NUM_NEW_RECRUITS_SLOTS_PER_BASKET ) {
+                        newRecruitsSelectedSlot = 0;
+                        }
+                    else if( newRecruitsSelectedSlot < 0 ) {
+                        newRecruitsSelectedSlot =
+                            NUM_NEW_RECRUITS_SLOTS_PER_BASKET - 1;
+                        }
+                    }
+
+                }
+            else {
+                /* nothing picked yet */
+
+                newRecruitsSelectedSlot = 0;
+                
+                if( dirX == -1 ) {
+                    /* enter from right */
+                    newRecruitsSelectedBasket = newRecruitsNumVisibleBaskets - 1;
+                    }
+                else {
+                    /* left */
+                    newRecruitsSelectedBasket = 0;
+                    }
+                }
+            }
+
+        if( newRecruitsSelectedSlot != -1
+            &&
+            newRecruitsSelectedBasket != -1 ) {
+            
+            overPiece = newRecruitsSlots  [ newRecruitsSelectedBasket ]
+                                          [ newRecruitsSelectedSlot ];
+
+            newRecruitsSlotHighlightFade  [ newRecruitsSelectedBasket ]
+                                          [ newRecruitsSelectedSlot   ] = 255;
+            
+            newRecruitsBasketHighlightFade[ newRecruitsSelectedBasket ] = 255;
+
+            }
+        }
+
+            
 
 
     for( b = 0;

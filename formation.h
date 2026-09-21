@@ -16,6 +16,7 @@
 
 
 void formationInit( int  inPointerActionHandle,
+                    int  inActionHandle,
                     int  inDynamicDoneButtonHandle );
 
 
@@ -82,6 +83,7 @@ static  int            formationPickedY;
 static  int            formationPickedX;
 
 static  int            fmPointerActionHandle   =  -1;
+static  int            fmActionHandle          =  -1;
 
 static  int            fmSpotSprite            =  -1;
 static  int            fmSpotPickedSprite      =  -1;
@@ -108,6 +110,7 @@ static  char           fmPointerDrag           =   0;
 
 
 void formationInit( int  inPointerActionHandle,
+                    int  inActionHandle,
                     int  inDynamicDoneButtonHandle ) {
 
     fmSpotSprite           = maxigin_initSprite( "formationSpot.tga"           );
@@ -129,6 +132,7 @@ void formationInit( int  inPointerActionHandle,
                                 2 );
 
     fmPointerActionHandle = inPointerActionHandle;
+    fmActionHandle        = inActionHandle;
 
     formationBackToStart();
 
@@ -140,7 +144,6 @@ void formationInit( int  inPointerActionHandle,
                                MAXIGIN_GAME_NATIVE_H - 10,
                                0,
                                fmPointerActionHandle,
-                               /* fixme... need controller mapping for this */
                                inDynamicDoneButtonHandle,
                                1 );
 
@@ -263,7 +266,7 @@ void formationDraw( int   inBoardCenterX,
                     fmPickedWithController ) {
 
                     maxigin_drawButtonHintSprite(
-                        fmPointerActionHandle,
+                        fmActionHandle,
                         cX - 13,
                         cY + 5 );
                     }
@@ -628,7 +631,9 @@ char formationStep( int  inBoardCenterX,
 
     if( ! fmActionDown
         &&
-        maxigin_isButtonDown( fmPointerActionHandle ) ) {
+        ( maxigin_isButtonDown( fmActionHandle )
+          ||
+          maxigin_isButtonDown( fmPointerActionHandle ) ) ) {
 
         if( fmOverSlotX != -1
             &&
@@ -684,7 +689,9 @@ char formationStep( int  inBoardCenterX,
         fmActionDown = 1;
         }
 
-    if( ! maxigin_isButtonDown( fmPointerActionHandle ) ) {
+    if( ! maxigin_isButtonDown( fmPointerActionHandle )
+        &&
+        ! maxigin_isButtonDown( fmActionHandle ) ) {
         fmActionDown = 0;
 
         if( fmPointerDrag ) {

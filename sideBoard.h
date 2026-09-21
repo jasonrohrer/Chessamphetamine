@@ -22,6 +22,7 @@
 
 
 void sideBoardInit( int  inPointerActionHandle,
+                    int  inActionHandle,
                     int  inCenterX,
                     int  inBottomSlotY );
 
@@ -108,6 +109,8 @@ static  int            sbMaxLift              =  100;
 
 
 static  int            sbPointerActionHandle  =  -1;
+static  int            sbActionHandle         =  -1;
+
 static  int            sbPickedIndex          =  -1;
 static  char           sbLifting              =   0;
 static  char           sbDropping             =   0;
@@ -124,6 +127,7 @@ static  int            sbPrevSlot             =   0;
 
 
 void sideBoardInit( int  inPointerActionHandle,
+                    int  inActionHandle,
                     int  inCenterX,
                     int  inBottomSlotY ) {
     int  i;
@@ -143,6 +147,7 @@ void sideBoardInit( int  inPointerActionHandle,
                                 2 );
     
     sbPointerActionHandle = inPointerActionHandle;
+    sbActionHandle        = inActionHandle;
 
     for( i = 0;
          i < SIDE_BOARD_MAX_SLOTS;
@@ -442,7 +447,9 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
 
     if( ! sbActionDown
         &&
-        maxigin_isButtonDown( shopPointerActionHandle ) ) {
+        ( maxigin_isButtonDown( sbPointerActionHandle )
+          ||
+          maxigin_isButtonDown( sbActionHandle ) ) ) {
 
         if( sideBoard[ sbOverSlot ] != noPiece ) {
 
@@ -463,7 +470,9 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
         sbActionDown = 1;
         }
 
-    if( ! maxigin_isButtonDown( shopPointerActionHandle ) ) {
+    if( ! maxigin_isButtonDown( sbPointerActionHandle )
+        &&
+        ! maxigin_isButtonDown( sbActionHandle ) ) {
         sbActionDown = 0;
         }
 
@@ -526,7 +535,7 @@ void sideBoardDraw( void ) {
                 sbOverSlot == i ) {
                 
                 maxigin_drawButtonHintSprite(
-                    sbPointerActionHandle,
+                    sbActionHandle,
                     sbSlotPosX[i] - 10,
                     sbSlotPosY[i] );
                 }

@@ -16,6 +16,7 @@
 
 
 void shopInit( int  inPointerActionHandle,
+               int  inActionHandle,
                int  inDynamicRerollButtonHandle,
                int  inDynamicDoneButtonHandle,
                int  inCenterX,
@@ -152,6 +153,7 @@ static  int            doneButton                                 =  -1;
 static  int            rerollButton                               =  -1;
 
 static  int            shopPointerActionHandle                    =  -1;
+static  int            shopActionHandle                           =  -1;
 
 static  int            shopCenterX;
 static  int            shopCenterY;
@@ -292,6 +294,7 @@ static void shopSetNewSpotAvail( void ) {
 
 
 void shopInit( int  inPointerActionHandle,
+               int  inActionHandle,
                int  inDynamicRerollButtonHandle,
                int  inDynamicDoneButtonHandle,
                int  inCenterX,
@@ -306,6 +309,7 @@ void shopInit( int  inPointerActionHandle,
     shopNewRecruitsShowing = 0;
     
     newRecruitsInit( inPointerActionHandle,
+                     inActionHandle,
                      inCenterX,
                      inCenterY );
     
@@ -342,7 +346,8 @@ void shopInit( int  inPointerActionHandle,
                1 );
 
     shopPointerActionHandle = inPointerActionHandle;
-
+    shopActionHandle        = inActionHandle;
+    
     shopCenterX = inCenterX;
     shopCenterY = inCenterY;
 
@@ -581,7 +586,7 @@ void shopDraw( void ) {
                 shopSlotPickedWithController ) {
 
                 maxigin_drawButtonHintSprite(
-                    shopPointerActionHandle,
+                    shopActionHandle,
                     shopCenterX + shopSlotPosX[i] - 5,
                     pieceYLifted );
                 }
@@ -733,7 +738,7 @@ void shopDraw( void ) {
             shopSlotPickedWithController ) {
 
             maxigin_drawButtonHintSprite(
-                shopPointerActionHandle,
+                shopActionHandle,
                 newFormSpotSlotX - 11,
                 newFormSpotSlotY + 6 );
             }
@@ -1179,7 +1184,9 @@ ChessPiece shopStep( int  inPickFailedSound,
         }
 
     
-    if( ! maxigin_isButtonDown( shopPointerActionHandle ) ) {
+    if( ! maxigin_isButtonDown( shopPointerActionHandle )
+        &&
+        ! maxigin_isButtonDown( shopActionHandle ) ) {
         shopActionDown = 0;
         }
 
@@ -1188,7 +1195,9 @@ ChessPiece shopStep( int  inPickFailedSound,
         &&
         shopOverNewSpot
         &&
-        maxigin_isButtonDown( shopPointerActionHandle ) ) {
+        ( maxigin_isButtonDown( shopPointerActionHandle )
+          ||
+          maxigin_isButtonDown( shopActionHandle ) ) ) {
         
         if( costGet( newFormationSpotCost )
             <= moneyGetTotal() ) {
@@ -1222,7 +1231,9 @@ ChessPiece shopStep( int  inPickFailedSound,
 
     if( ! shopActionDown
         &&
-        maxigin_isButtonDown( shopPointerActionHandle ) ) {
+        ( maxigin_isButtonDown( shopPointerActionHandle )
+          ||
+          maxigin_isButtonDown( shopActionHandle ) ) ) {
 
         if( shopItems[ shopSelectedSlot ] != noPiece ) {
 

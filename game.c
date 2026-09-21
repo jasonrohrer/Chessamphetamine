@@ -101,6 +101,7 @@
 
 enum GameUserAction {
     SPIN,
+    MOUSE_CLICK,
     ACTION,
     DRAW,
     DECK,
@@ -1348,7 +1349,7 @@ void maxiginGame_step( void ) {
     if( maxigin_isButtonDown( SPIN ) ) {
         spinPressed = 1;
         }
-    else if( maxigin_isButtonDown( ACTION )
+    else if( maxigin_isButtonDown( MOUSE_CLICK )
              &&
              maxigin_isPointerInsideSprite( spinUnpressedSprite,
                                             spinButtonX,
@@ -2126,7 +2127,9 @@ void maxiginGame_step( void ) {
             &&
             infoPanelPiece != noPiece
             &&
-            maxigin_isButtonDown( ACTION )
+            ( maxigin_isButtonDown( ACTION )
+              ||
+              maxigin_isButtonDown( MOUSE_CLICK ) )
             &&
             ! actionHeldDown
             &&
@@ -2208,7 +2211,9 @@ void maxiginGame_step( void ) {
         clearInfoPanelPieceMoveMarkers();
         }
 
-    if( ! maxigin_isButtonDown( ACTION ) ) {
+    if( ! maxigin_isButtonDown( ACTION )
+        &&
+        ! maxigin_isButtonDown( MOUSE_CLICK ) ) {
         actionHeldDown = 0;
         }
 
@@ -2923,8 +2928,10 @@ static MinginButton rotColorsAllMapping[] = { MGN_KEY_4,  MGN_MAP_END };
 static MinginButton printColorsMapping[] = { MGN_KEY_5,  MGN_MAP_END };
 
 
-static MinginButton actionMapping[]  =  { MGN_BUTTON_MOUSE_LEFT,
-                                          MGN_BUTTON_PS_X,
+static MinginButton mouseClickMapping[]  =  { MGN_BUTTON_MOUSE_LEFT,
+                                              MGN_MAP_END };
+
+static MinginButton actionMapping[]  =  { MGN_BUTTON_PS_X,
                                           MGN_BUTTON_XBOX_A,
                                           MGN_MAP_END };
 
@@ -3146,7 +3153,7 @@ void maxiginGame_init( void ) {
                              drawButtonPosX,
                              drawButtonPosY,
                              1,
-                             ACTION,
+                             MOUSE_CLICK,
                              DRAW,
                              1 );
 
@@ -3156,7 +3163,7 @@ void maxiginGame_init( void ) {
                              deckButtonPosX,
                              deckButtonPosY,
                              0,
-                             ACTION,
+                             MOUSE_CLICK,
                              DECK,
                              0 );
     
@@ -3167,7 +3174,7 @@ void maxiginGame_init( void ) {
                                 newGameButtonPosX,
                                 newGameButtonPosY,
                                 0,
-                                ACTION,
+                                MOUSE_CLICK,
                                 DRAW,
                                 1 );
     
@@ -3313,6 +3320,9 @@ void maxiginGame_init( void ) {
                                    unlockClearA );
     maxigin_registerButtonMapping( UNLOCK_CLEAR_B,
                                    unlockClearB );
+
+    maxigin_registerButtonMapping( MOUSE_CLICK,
+                                   mouseClickMapping );
     
     maxigin_registerDynamicButtonMapping(
         ACTION,
@@ -3453,7 +3463,8 @@ void maxiginGame_init( void ) {
     rollInit();
     
 
-    formationInit( ACTION,
+    formationInit( MOUSE_CLICK,
+                   ACTION,
                    COMMIT );
 
     
@@ -3465,7 +3476,8 @@ void maxiginGame_init( void ) {
 
     rarityInit();
 
-    shopInit( ACTION,
+    shopInit( MOUSE_CLICK,
+              ACTION,
               DRAW,
               COMMIT,
               boardCenterX,
@@ -3473,13 +3485,14 @@ void maxiginGame_init( void ) {
 
     heartsInit();
 
-    sideBoardInit( ACTION,
+    sideBoardInit( MOUSE_CLICK,
+                   ACTION,
                    18,
                    MAXIGIN_GAME_NATIVE_H - 30 );
 
     deckViewInit( boardCenterX,
                   boardCenterY,
-                  ACTION,
+                  MOUSE_CLICK,
                   DECK_NEXT,
                   DECK_PREV );
 

@@ -16,6 +16,7 @@
 
 
 void newRecruitsInit( int  inPointerActionHandle,
+                      int  inActionHandle,
                       int  inCenterX,
                       int  inCenterY );
 
@@ -108,6 +109,7 @@ static  int            lang_newRecruitsInstruct        =  -1;
 static  char           newRecruitsDone                 =   0;
 
 static  int            newRecruitsPointerActionHandle  =  -1;
+static  int            newRecruitsActionHandle         =  -1;
 
 static  int            newRecruitsCenterX;
 static  int            newRecruitsCenterY;
@@ -202,6 +204,7 @@ void newRecruitsReroll( void ) {
 
 
 void newRecruitsInit( int  inPointerActionHandle,
+                      int  inActionHandle,
                       int  inCenterX,
                       int  inCenterY ) {
 
@@ -222,6 +225,7 @@ void newRecruitsInit( int  inPointerActionHandle,
     newRecruitsDone       = 1;
 
     newRecruitsPointerActionHandle = inPointerActionHandle;
+    newRecruitsActionHandle        = inActionHandle;
 
     newRecruitsCenterX = inCenterX;
     newRecruitsCenterY = inCenterY;
@@ -390,7 +394,7 @@ void newRecruitsDraw( void ) {
                     s == NUM_NEW_RECRUITS_SLOTS_PER_BASKET - 1 ) {
 
                     maxigin_drawButtonHintSprite(
-                        newRecruitsPointerActionHandle,
+                        newRecruitsActionHandle,
                         x,
                         y + 20 );
                     }
@@ -598,7 +602,9 @@ ChessPiece newRecruitsStep( int  inPieceLiftSound,
         &&
         ! newRecruitsActionDown
         &&
-        maxigin_isButtonDown( newRecruitsPointerActionHandle ) ) {
+        ( maxigin_isButtonDown( newRecruitsPointerActionHandle )
+          ||
+          maxigin_isButtonDown( newRecruitsActionHandle ) ) ) {
 
 
         b = newRecruitsSelectedBasket;

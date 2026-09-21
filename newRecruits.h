@@ -367,7 +367,7 @@ void newRecruitsDraw( void ) {
 
 
                 if( newRecruitsBasketHighlightFade[ b ] > 0 ) {
-                    colorsApplyBoardColor();
+                    raritySetDrawColor( p );
 
                     maxigin_drawSetAlpha( newRecruitsBasketHighlightFade[ b ] );
 
@@ -415,6 +415,7 @@ ChessPiece newRecruitsStep( int  inPieceLiftSound,
     int         pointerX;
     int         pointerY;
     ChessPiece  overPiece    =  noPiece;
+    char        spotChange   =  0;
     int         deltaFade    =  ( 20 * 60 ) / r;
     
     /* fixme */
@@ -452,7 +453,10 @@ ChessPiece newRecruitsStep( int  inPieceLiftSound,
 
                         newRecruitsSelectedBasket = b;
                         newRecruitsSelectedSlot   = s;
-                    
+
+                        if( newRecruitsSlotHighlightFade[ b ][ s ] != 255 ) {
+                            spotChange = 1;
+                            }
                         newRecruitsSlotHighlightFade  [ b ][ s ] = 255;
                         newRecruitsBasketHighlightFade[ b ]      = 255;
                         
@@ -541,6 +545,12 @@ ChessPiece newRecruitsStep( int  inPieceLiftSound,
             overPiece = newRecruitsSlots  [ newRecruitsSelectedBasket ]
                                           [ newRecruitsSelectedSlot ];
 
+            if( newRecruitsSlotHighlightFade[ newRecruitsSelectedBasket]
+                                            [ newRecruitsSelectedSlot  ]
+                                            != 255 ) {
+                spotChange = 1;
+                }
+            
             newRecruitsSlotHighlightFade  [ newRecruitsSelectedBasket ]
                                           [ newRecruitsSelectedSlot   ] = 255;
             
@@ -650,7 +660,13 @@ ChessPiece newRecruitsStep( int  inPieceLiftSound,
         }
     
 
-    return overPiece;
+    if( spotChange ) {
+        /* tempoararily return noPiece so change sound plays */
+        return noPiece;
+        }
+    else {
+        return overPiece;
+        }
     }
 
 

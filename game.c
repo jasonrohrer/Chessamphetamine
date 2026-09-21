@@ -1346,34 +1346,45 @@ void maxiginGame_step( void ) {
         }
     
 
-    if( maxigin_isButtonDown( SPIN ) ) {
-        spinPressed = 1;
-        }
-    else if( maxigin_isButtonDown( MOUSE_CLICK )
-             &&
-             maxigin_isPointerInsideSprite( spinUnpressedSprite,
-                                            spinButtonX,
-                                            spinButtonY ) ) {
-
-        spinPressed = 1;
-        }
-
-    if( ! spinning ) {
-
-        char  oldHover  =  spinButtonHover;
-
-        if( maxigin_isPointerInsideSprite( spinUnpressedSprite,
-                                           spinButtonX,
-                                           spinButtonY ) ) {
-            spinButtonHover = 1;
-
-            if( ! oldHover ) {
-                maxigin_playSoundEffect( examinePieceSound,
-                                         256 );
-                }
+    if( ! shopShowing
+        &&
+        ! formationShowing
+        &&
+        ! deckViewShowing
+        &&
+        ! chessGameOver
+        &&
+        ! gameOver ) {
+        
+        if( maxigin_isButtonDown( SPIN ) ) {
+            spinPressed = 1;
             }
-        else {
-            spinButtonHover = 0;
+        else if( maxigin_isButtonDown( MOUSE_CLICK )
+                 &&
+                 maxigin_isPointerInsideSprite( spinUnpressedSprite,
+                                                spinButtonX,
+                                                spinButtonY ) ) {
+
+            spinPressed = 1;
+            }
+
+        if( ! spinning ) {
+
+            char  oldHover  =  spinButtonHover;
+
+            if( maxigin_isPointerInsideSprite( spinUnpressedSprite,
+                                               spinButtonX,
+                                               spinButtonY ) ) {
+                spinButtonHover = 1;
+
+                if( ! oldHover ) {
+                    maxigin_playSoundEffect( examinePieceSound,
+                                             256 );
+                    }
+                }
+            else {
+                spinButtonHover = 0;
+                }
             }
         }
         

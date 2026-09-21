@@ -197,6 +197,10 @@ static int deckViewCalcPadding( Deck  *inDrawDeckToShow ) {
 
         int  fullPages = pages * DECK_VIEW_VIS_SLOTS;
 
+        if( fullPages < inDrawDeckToShow->numPieces ) {
+            fullPages += DECK_VIEW_VIS_SLOTS;
+            }
+
         padding = fullPages - inDrawDeckToShow->numPieces;
         }
 

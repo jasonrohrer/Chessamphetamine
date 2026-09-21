@@ -483,8 +483,8 @@ void unlocksStep( int  inPosX,
     w /= 2;
     h /= 2;
 
-    if( maxigin_getPointerLocation( &pointerX,
-                                    &pointerY ) ) {
+    if( maxigin_getActivePointerLocation( &pointerX,
+                                          &pointerY ) ) {
         
         for( i = 0;
              i < NUM_UNLOCKS;

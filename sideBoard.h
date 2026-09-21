@@ -75,6 +75,8 @@ void sideBoardClearPick( void );
 
 void sideBoardGrabController( void );
 
+void sideBoardDropController( void );
+
 char sideBoardStillHoldingController( void );
 
 
@@ -646,8 +648,15 @@ void sideBoardGrabController( void ) {
     /* always jump to previous slot */
     sbOverSlot = sbPrevSlot;
     
-    sbHighlightFade[ 0 ] = 255;
+    sbHighlightFade[ sbOverSlot ] = 255;
     unlocksCancelViewer();
+    }
+
+
+
+void sideBoardDropController( void ) {
+    sbHoldingController = 0;
+    sbOverSlot = -1;
     }
 
 

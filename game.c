@@ -2755,6 +2755,11 @@ void maxiginGame_step( void ) {
                          playerDeckGetDiscardDeck() );
             deckViewShowing = 1;
             deckViewDone    = 0;
+
+            if( sideBoardShowing ) {
+                sideBoardClearPick();
+                sideBoardDropController();
+                }
             }
         else {
             deckViewDone = 1;

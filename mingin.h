@@ -7582,7 +7582,7 @@ static void mn_destroyWindow( HINSTANCE  hInstance ) {
 
 
 #define  MN_SOUND_NUM_CHANNELS                2
-#define  MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES  256
+#define  MN_SOUND_BUFFER_NUM_SAMPLE_FRAMES  512
 #define  MN_SOUND_NUM_BUFFERS                 6
 
 static  unsigned int        mn_sampleRate               =  44100;

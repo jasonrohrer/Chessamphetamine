@@ -1158,8 +1158,9 @@ char mingin_getStickPosition( int   inStickAxisHandle,
 
 /*
   Checks if any gamepad has ever been manipulated by player during this run.
-  Only button presses count (since there might be some stick noise from
-  an idle gamepad sitting on the user's desk).
+  Only button presses or more extreme stick movements count
+  (since there might be some stick noise from
+   an idle gamepad sitting on the user's desk).
   
   Returns:
 
@@ -2753,7 +2754,13 @@ static  MinginGamepad  mn_activeGamepad  =  MGN_NO_GAMEPAD;
 static  int                 mn_stickPosition
                                 [ MGN_NUM_STICKS ];
 
-
+/*
+  Tracks min and max seen by each stick,
+  for use in determining if a gamepad has been touched */
+static  int                 mn_stickMinSeenPosition
+                                [ MGN_NUM_STICKS ];
+static  int                 mn_stickMaxSeenPosition
+                                [ MGN_NUM_STICKS ];
 
 /*
   Set the first time any gamepad event happens.
@@ -3009,6 +3016,17 @@ char mingin_hasAnyGamepadBeenTouched( void ) {
 
 
 void mingin_clearGamepadTouchedStatus( void ) {
+
+    int  i;
+
+    for( i = 0;
+         i < MGN_NUM_STICKS;
+         i   ++ ) {
+
+        mn_stickMinSeenPosition[ i ] = 0;
+        mn_stickMaxSeenPosition[ i ] = 0;
+        }
+     
     mn_gamepadTouched = 0;
     }
 
@@ -3214,6 +3232,32 @@ static void mn_registerJSStickPosition( int inJSStick,
         }
 
     mn_stickPosition[ s ] = inStickPosition;
+
+    
+    if( inStickPosition < mn_stickMinSeenPosition[ s ] ) {
+        mn_stickMinSeenPosition[ s ] = inStickPosition;
+        }
+    if( inStickPosition > mn_stickMaxSeenPosition[ s ] ) {
+        mn_stickMaxSeenPosition[ s ] = inStickPosition;
+        }
+    
+    if( ! mn_gamepadTouched ) {
+
+        /* check if this stick movement is extreme enough to count
+           as touching the gamepad */
+
+        int  range =  mn_stickRange[ mn_activeGamepad ][ s ][ 1 ] -
+                      mn_stickRange[ mn_activeGamepad ][ s ][ 0 ];
+        
+        int  moveRange = mn_stickMaxSeenPosition[ s ] -
+                         mn_stickMinSeenPosition[ s ];
+        
+        if( moveRange > range / 4 ) {
+            
+            /* stick has moved through at least a quarter of its range */
+            mn_gamepadTouched = 1;
+            }
+        }
     }
     
 
@@ -4809,6 +4853,8 @@ static int mn_openActiveGamepad( void ) {
          i ++ ) {
         
         mn_stickPosition[ i ] = 0;
+        mn_stickMinSeenPosition[ i ] = 0;
+        mn_stickMaxSeenPosition[ i ] = 0;
         }
 
     for( i =  0;
@@ -7594,6 +7640,11 @@ static  int                 mn_triggerValues[2]       =  { 0, 0 };
 static  int                 mn_stickXValues[2]        =  { 0, 0 };
 static  int                 mn_stickYValues[2]        =  { 0, 0 };
 
+static  int                 mn_stickXMinSeen[2]       =  { 0, 0 };
+static  int                 mn_stickXMaxSeen[2]       =  { 0, 0 };
+static  int                 mn_stickYMinSeen[2]       =  { 0, 0 };
+static  int                 mn_stickYMaxSeen[2]       =  { 0, 0 };
+
 
 
 /* returns 0 on failure */
@@ -8258,6 +8309,67 @@ static void mn_pollControllers( void ) {
                 mn_stickYValues[1] = mn_stickMax;
                 }
 
+            /* track min and max values seen */
+            
+            if( mn_stickXValues [ 0 ] < mn_stickXMinSeen[ 0 ] ) {
+                mn_stickXMinSeen[ 0 ] = mn_stickXValues [ 0 ];
+                }
+            if( mn_stickXValues [ 1 ] < mn_stickXMinSeen[ 1 ] ) {
+                mn_stickXMinSeen[ 1 ] = mn_stickXValues [ 1 ];
+                }
+            if( mn_stickXValues [ 0 ] > mn_stickXMaxSeen[ 0 ] ) {
+                mn_stickXMaxSeen[ 0 ] = mn_stickXValues [ 0 ];
+                }
+            if( mn_stickXValues [ 1 ] > mn_stickXMaxSeen[ 1 ] ) {
+                mn_stickXMaxSeen[ 1 ] = mn_stickXValues [ 1 ];
+                }
+
+            if( mn_stickYValues [ 0 ] < mn_stickYMinSeen[ 0 ] ) {
+                mn_stickYMinSeen[ 0 ] = mn_stickYValues [ 0 ];
+                }
+            if( mn_stickYValues [ 1 ] < mn_stickYMinSeen[ 1 ] ) {
+                mn_stickYMinSeen[ 1 ] = mn_stickYValues [ 1 ];
+                }
+            if( mn_stickYValues [ 0 ] > mn_stickYMaxSeen[ 0 ] ) {
+                mn_stickYMaxSeen[ 0 ] = mn_stickYValues [ 0 ];
+                }
+            if( mn_stickYValues [ 1 ] > mn_stickYMaxSeen[ 1 ] ) {
+                mn_stickYMaxSeen[ 1 ] = mn_stickYValues [ 1 ];
+                }
+
+            if( ! mn_gamepadTouched ) {
+                
+                int  s;
+
+                int  range  =  mn_stickMax - mn_stickMin;
+                
+                for( s = 0;
+                     s < 2;
+                     s ++ ) {
+
+                    /* has stick moved through more than a quarter of
+                       its range? */
+                    int  moveRange;
+
+                    moveRange = mn_stickXMaxSeen[ s ] - mn_stickXMinSeen[ s ];
+                    
+                    if( moveRange > range / 4 ) {
+
+                        mn_gamepadTouched = 1;
+                        break;
+                        }
+
+                    moveRange = mn_stickYMaxSeen[ s ] - mn_stickYMinSeen[ s ];
+                    
+                    if( moveRange > range /  4 ) {
+
+                        mn_gamepadTouched = 1;
+                        break;
+                        }
+                    }
+                }
+            
+
             /* bail after getting info from first connected controller.
                Thus, if user plugs/unplugs controllers, we always take input
                from the lowest-index live controller */
@@ -8268,7 +8380,7 @@ static void mn_pollControllers( void ) {
 
     /* if all have been unplugged, revert back to gamepad being untouched
        even if it was touched before */
-    mn_gamepadTouched = 0;
+    mingin_clearGamepadTouchedStatus();
 
     if( ! mn_gamepadActive
         &&
@@ -9006,6 +9118,18 @@ char mingin_hasAnyGamepadBeenTouched( void ) {
 
 
 void mingin_clearGamepadTouchedStatus( void ) {
+
+    int  i;
+
+    for( i = 0;
+         i < 2;
+         i   ++ ) {
+        mn_stickXMinSeen[ i ] = 0;
+        mn_stickXMaxSeen[ i ] = 0;
+        mn_stickYMinSeen[ i ] = 0;
+        mn_stickYMaxSeen[ i ] = 0;
+        }
+    
     mn_gamepadTouched = 0;
     }
 

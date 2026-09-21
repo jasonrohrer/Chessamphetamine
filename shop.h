@@ -673,14 +673,18 @@ void shopDraw( void ) {
         
         maxigin_drawResetColor();
 
-        maxigin_setLanguageFontIndex( 1 );
+        if( 0 ) {
+            /* no longer proclaim new spot, since it's available
+               in every shop */
+            maxigin_setLanguageFontIndex( 1 );
     
-        maxigin_drawLangText( formationGetNewSpotLangHandle(),
-                              shopCenterX,
-                              newFormSpotY - 17,
-                              MAXIGIN_CENTER );
+            maxigin_drawLangText( formationGetNewSpotLangHandle(),
+                                  shopCenterX,
+                                  newFormSpotY - 17,
+                                  MAXIGIN_CENTER );
     
-        maxigin_setLanguageFontIndex( 0 ); 
+            maxigin_setLanguageFontIndex( 0 );
+            }
 
         maxigin_drawSprite( spotSprite,
                             newFormSpotSlotX,

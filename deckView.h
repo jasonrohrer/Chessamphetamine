@@ -213,7 +213,7 @@ static void deckViewSetDebug( Deck  *inDrawDeckToShow,
                               Deck  *inDiscardDeckToShow ) {
 
     int    p;
-    int    s;
+    int    s        =  0;
     int    padding  =  deckViewCalcPadding( inDrawDeckToShow );
     
     for( p = 0;

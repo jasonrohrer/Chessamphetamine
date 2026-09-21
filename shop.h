@@ -879,8 +879,8 @@ ChessPiece shopStep( int  inPickFailedSound,
         }
     
     
-    if( maxigin_getPointerLocation( &pointerX,
-                                    &pointerY ) ) {
+    if( maxigin_getActivePointerLocation( &pointerX,
+                                          &pointerY ) ) {
         shopSlotPickedWithController = 0;
         
         shopSelectedSlot = -1;

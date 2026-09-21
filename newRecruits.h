@@ -423,8 +423,8 @@ ChessPiece newRecruitsStep( int  inPieceLiftSound,
     (void)inPieceLiftSound;
 
 
-    if( maxigin_getPointerLocation( &pointerX,
-                                    &pointerY ) ) {
+    if( maxigin_getActivePointerLocation( &pointerX,
+                                          &pointerY ) ) {
         
         nrSlotPickedWithController = 0;
         

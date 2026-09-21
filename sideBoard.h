@@ -334,8 +334,8 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
         sbOverSlot = -1;
         }
     
-    if( maxigin_getPointerLocation( &pointerX,
-                                    &pointerY ) ) {
+    if( maxigin_getActivePointerLocation( &pointerX,
+                                          &pointerY ) ) {
         if( sbOverSlot != -1 ) {
             sbPrevSlot = sbOverSlot;
             }

@@ -2902,6 +2902,37 @@ char maxigin_getPointerLocation( int  *outX,
 
 
 /*
+  Similar to getPointerLocation, but returns 0 in cases where pointer
+  is present but not detective as being active in a dominant way.
+
+  I.e., user seems to be manipulating a controller and not the pointer.
+
+  This version of the function is useful for games that toggle back and
+  forth between mouse and controller.
+
+  Parameters:
+
+      outX   pointer to where the x location should be returned
+             returned value is in range 0 .. MAXIGIN_GAME_NATIVE_W
+
+      outY   pointer to where the y location should be returned
+             returned value is in range 0 .. MAXIGIN_GAME_NATIVE_H
+
+  Returns:
+
+      1   if pointer location is on-screen and available AND active
+
+      0   if pointer location is off-screen or not available OR not active
+                         
+  [jumpMaxiginGeneral] 
+ */
+char maxigin_getActivePointerLocation( int  *outX,
+                                       int  *outY );
+
+
+
+
+/*
   Maxigin listens to certain joystick axes for its own functionality that's not
   game-specific (like moving through the settings screen, adjusting sliders,
   etc.)
@@ -13751,6 +13782,53 @@ char maxigin_getPointerLocation( int  *outX,
 
     return 1;
     }
+
+
+
+static  int  lastActivePointerX  =  0;
+static  int  lastActivePointerY  =  0;
+
+
+
+char maxigin_getActivePointerLocation( int  *outX,
+                                       int  *outY ) {
+    if( ! maxigin_getPointerLocation( outX,
+                                      outY ) ) {
+        /* pointer simply not available, or outside fo window */
+        return 0;
+        }
+
+    /* pointer available, but is it active? */
+
+    if( ! mingin_hasAnyGamepadBeenTouched() ) {
+        /* gamepad never been used at all
+           count pointer as active whether it is really being used or not */
+
+        lastActivePointerX = *outX;
+        lastActivePointerY = *outY;
+        
+        return 1;
+        }
+
+    /* gamepad HAS been touched in the past... but maybe they've gone back
+       to using the mouse? */
+
+    if( *outX != lastActivePointerX
+        ||
+        *outY != lastActivePointerY ) {
+
+        /* pointer moved */
+        mingin_clearGamepadTouchedStatus();
+
+        lastActivePointerX = *outX;
+        lastActivePointerY = *outY;
+        
+        return 1;
+        }
+    
+    return 0;
+    }
+
 
 
 

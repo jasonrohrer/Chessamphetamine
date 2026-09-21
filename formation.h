@@ -439,8 +439,8 @@ char formationStep( int  inBoardCenterX,
 
     int  squareR        =  BOARD_SQUARE_SIZE / 2;
     
-    if( maxigin_getPointerLocation( &pointerX,
-                                    &pointerY ) ) {
+    if( maxigin_getActivePointerLocation( &pointerX,
+                                          &pointerY ) ) {
 
         fmPickedWithController = 0;
         

@@ -1853,8 +1853,8 @@ void maxiginGame_step( void ) {
         int         panRow    =  infoRow[ curInfoIndex ];
         int         panCol    =  infoCol[ curInfoIndex ];
         
-        if( ! maxigin_getPointerLocation( &mouseX,
-                                          &mouseY ) ) {
+        if( ! maxigin_getActivePointerLocation( &mouseX,
+                                                &mouseY ) ) {
 
             if( unlocksIsViewerActive() ) {
                 infoPanelPiece = noPiece;

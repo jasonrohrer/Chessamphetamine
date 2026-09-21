@@ -1174,6 +1174,16 @@ char mingin_hasAnyGamepadBeenTouched( void );
 
 
 /*
+  Resets the status tracked by mingin_hasAnyGamepadBeenTouched, causing it
+  not to return 1 until gamepad touched again.
+
+  [jumpMinginProvides]
+*/
+void mingin_clearGamepadTouchedStatus( void );
+
+
+
+/*
   Toggle between fullscreen and windowed mode on platforms that support
   this.
 
@@ -2994,6 +3004,12 @@ MinginButton mingin_getPlatformPrimaryButton( int inButtonHandle ) {
 
 char mingin_hasAnyGamepadBeenTouched( void ) {
     return mn_gamepadTouched;
+    }
+
+
+
+void mingin_clearGamepadTouchedStatus( void ) {
+    mn_gamepadTouched = 0;
     }
 
 
@@ -8989,6 +9005,12 @@ char mingin_hasAnyGamepadBeenTouched( void ) {
 
 
 
+void mingin_clearGamepadTouchedStatus( void ) {
+    mn_gamepadTouched = 0;
+    }
+
+
+
 /* two internal buffers, one for regular mingin_log calls
    and the other for calls from the bulk reading thread */
 void mingin_logWithBufferNumber( const char  *inString,
@@ -10774,6 +10796,11 @@ char mingin_hasAnyGamepadBeenTouched( void ) {
     return 0;
     }
 
+
+
+void mingin_clearGamepadTouchedStatus( void ) {
+
+    }
 
 
 void mingin_log( const char  *inString ) {

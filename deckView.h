@@ -430,8 +430,8 @@ ChessPiece deckViewStep( int  inPageSound ) {
     skip = deckViewPageNumber * DECK_VIEW_VIS_SLOTS;
 
     
-    if( maxigin_getPointerLocation( &pointerX,
-                                    &pointerY ) ) {
+    if( maxigin_getActivePointerLocation( &pointerX,
+                                          &pointerY ) ) {
         
         deckViewOverSlot = -1;
         

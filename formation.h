@@ -20,6 +20,9 @@ void formationInit( int  inPointerActionHandle,
                     int  inDynamicDoneButtonHandle );
 
 
+void formationSetEnemyLocations( BoardState  *inState );
+
+
 void formationDraw( int   inBoardCenterX,
                     int   inBoardCenterY,
                     char  inSlidingUp );
@@ -28,6 +31,7 @@ void formationDraw( int   inBoardCenterX,
 /* returns 1 if done adjusting formation */
 char formationStep( int  inBoardCenterX,
                     int  inBoardCenterY,
+                    int  inPickFailedSound,
                     int  inPieceLiftSound );
 
 
@@ -75,7 +79,7 @@ int formationGetNewSpotLangHandle( void );
 
 
 
-/* 0 empty, 1 regular piece, 2 king */
+/* 0 empty, 1 regular piece, 2 king, -1 enemy regular piece, -2 enemy king */
 static  char           formation             [BH][BW];
 static  unsigned char  formationHighlightFade[BH][BW];
 
@@ -102,6 +106,11 @@ static  int            lang_kingSpot;
 static  int            lang_otherSpot;
 static  int            lang_kingSpotDesc;
 static  int            lang_otherSpotDesc;
+
+static  int            lang_kingSpotEnemy;
+static  int            lang_otherSpotEnemy;
+static  int            lang_kingSpotEnemyDesc;
+static  int            lang_otherSpotEnemyDesc;
 
 static  int            fmOverSlotX             =  -1;
 static  int            fmOverSlotY             =  -1;
@@ -155,6 +164,16 @@ void formationInit( int  inPointerActionHandle,
     lang_kingSpotDesc  = maxigin_initTranslationKey( "formationKingDesc" );
     lang_otherSpotDesc = maxigin_initTranslationKey( "formationOtherDesc" );
 
+    
+    lang_kingSpotEnemy  = maxigin_initTranslationKey( "formationKingEnemy" );
+    lang_otherSpotEnemy = maxigin_initTranslationKey( "formationOtherEnemy" );
+    
+    lang_kingSpotEnemyDesc  =
+        maxigin_initTranslationKey( "formationKingEnemyDesc" );
+    lang_otherSpotEnemyDesc =
+        maxigin_initTranslationKey( "formationOtherEnemyDesc" );
+    
+
     REGISTER_ARRAY_MEM( formation              );
     REGISTER_ARRAY_MEM( formationHighlightFade );
     
@@ -197,9 +216,29 @@ void formationDraw( int   inBoardCenterX,
                           
     /* last 3 rows on white's side */
     maxigin_drawResetColor();
+    
+
+    /* darker portion under enemy formation */
     boardDrawPortion( inBoardCenterX,
                       inBoardCenterY,
-                      5 );
+                      0,
+                      4,
+                      128,
+                      0);
+
+
+    /* full brightness portion under player formation, with border */
+    boardDrawPortion( inBoardCenterX,
+                      inBoardCenterY,
+                      5,
+                      BH - 1,
+                      255,
+                      1 );
+
+    boardDrawHorizontalLine( inBoardCenterX,
+                             inBoardCenterY,
+                             4 );
+    
 
     for( y = 0;
          y < BH;
@@ -211,7 +250,7 @@ void formationDraw( int   inBoardCenterX,
             int  f  =  formation[ y ][ x ];
             
 
-            if( f  > 0 ) {
+            if( f != 0 ) {
 
                 int  cX;
                 int  cY;
@@ -224,7 +263,9 @@ void formationDraw( int   inBoardCenterX,
                                       &cX,
                                       &cY );
 
-                if( f == 1 ) {
+                if( f == 1
+                    ||
+                    f == -1 ) {
                     s = fmSpotSprite;
 
                     if( formationPickedY == y
@@ -233,7 +274,9 @@ void formationDraw( int   inBoardCenterX,
                         s = fmSpotPickedSprite;
                         }
                     }
-                if( f == 2 ) {
+                if( f == 2
+                    ||
+                    f == -2 ) {
                     s = fmSpotKingSprite;
 
                     if( formationPickedY == y
@@ -244,6 +287,10 @@ void formationDraw( int   inBoardCenterX,
                     }
 
                 maxigin_drawResetColor();
+
+                if( f < 0 ) {
+                    drawSetPieceColor( CHESS_BLACK );
+                    }
                 
                 maxigin_drawSprite( s,
                                     cX,
@@ -257,9 +304,21 @@ void formationDraw( int   inBoardCenterX,
                     maxigin_drawSpriteGlowOnly( s,
                                                 cX,
                                                 cY );
+
+                    if( f < 0 ) {
+                        /* draw a second time to make highlight brighter */
+                        maxigin_drawSprite( s,
+                                    cX,
+                                    cY-1 );
+                        if(0)maxigin_drawSpriteGlowOnly( s,
+                                                    cX,
+                                                    cY );
+                        }
                     }
 
-                if( fmOverSlotX == x
+                if( f > 0
+                    &&
+                    fmOverSlotX == x
                     &&
                     fmOverSlotY == y
                     &&
@@ -296,7 +355,7 @@ void formationDraw( int   inBoardCenterX,
         &&
         ! unlocksIsViewerActive()
         &&
-        formation[ descY ][ descX ] > 0 ) {
+        formation[ descY ][ descX ] != 0 ) {
 
         int            f         =  formation[ descY ][ descX ];
         int            titleKey  =  lang_otherSpot;
@@ -304,12 +363,23 @@ void formationDraw( int   inBoardCenterX,
         int            centX     =  MAXIGIN_GAME_NATIVE_W - 41;
         int            centY     =  MAXIGIN_GAME_NATIVE_H / 2;
         int            rarity    =  common;
-        
+
         if( f == 2 ) {
             titleKey = lang_kingSpot;
             descKey  = lang_kingSpotDesc;
             rarity   = contraband;
             }
+        else if( f == -2 ) {
+            titleKey = lang_kingSpotEnemy;
+            descKey  = lang_kingSpotEnemyDesc;
+            rarity   = contraband;
+            }
+        else if( f == -1 ) {
+            titleKey = lang_otherSpotEnemy;
+            descKey  = lang_otherSpotEnemyDesc;
+            rarity   = common;
+            }
+            
         
 
         drawDescriptionText( titleKey,
@@ -333,8 +403,8 @@ void formationDraw( int   inBoardCenterX,
         
         maxigin_drawLangText(
                 lang_newSpot,
-                inBoardCenterX,
-                inBoardCenterY - 70,
+                inBoardCenterX + BOARD_SQUARE_SIZE / 2,
+                inBoardCenterY - 10,
                 MAXIGIN_CENTER );
         maxigin_setLanguageFontIndex( 0 );
         }
@@ -355,6 +425,7 @@ void formationDraw( int   inBoardCenterX,
 
 char formationStep( int  inBoardCenterX,
                     int  inBoardCenterY,
+                    int  inPickFailedSound,
                     int  inPieceLiftSound ) {
     
 
@@ -685,6 +756,18 @@ char formationStep( int  inBoardCenterX,
                 }
 
             }
+        else if( fmOverSlotX != -1
+                 &&
+                 fmOverSlotY != -1
+                 &&
+                 fmOverSlotY < 5 ) {
+
+            /* Action on unavailable spot */
+            maxigin_playSoundEffect( inPickFailedSound,
+                                     256 );
+
+            }
+        
 
         fmActionDown = 1;
         }
@@ -771,10 +854,10 @@ void formationBackToStart( void ) {
 
 void formationAddNewSpot( void ) {
     
-    formation[ 3 ][ 4 ] = 1;
+    formation[ 4 ][ 4 ] = 1;
 
     /* force it to be picked so they have to move it next time */
-    formationPickedY = 3;
+    formationPickedY = 4;
     formationPickedX = 4;
 
     fmNewSpotWaiting = 1;
@@ -785,6 +868,54 @@ void formationAddNewSpot( void ) {
     fmOverSlotY = -1;
 
     formationSize ++;
+    }
+
+
+void formationSetEnemyLocations( BoardState  *inState ) {
+    int  y;
+    int  x;
+    
+    /* clear old */
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            if( formation[ y ][ x ] < 0 ) {
+                
+                formation[ y ][ x ] = 0;
+                }
+            }
+        }
+
+    /* set new */
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            ChessPiece  p  =  inState->grid[ y ][ x ];
+            
+
+            if( p != noPiece
+                &&
+                ( p & CHESS_COLOR_MASK ) == CHESS_BLACK ) {
+
+                int  t  =  p & CHESS_TYPE_MASK;
+
+                if( t == king ) {
+                    formation[ y ][ x ] = -2;
+                    }
+                else {
+                    formation[ y ][ x ] = -1;
+                    }
+                }
+            }
+        }
     }
 
 

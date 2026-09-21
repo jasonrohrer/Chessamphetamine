@@ -20,11 +20,14 @@
 void levelsInit( void );
 
 
-/* outState is filled with the enemy pieces and the player's king piece
+/*
+  always call getEmptyLevel first, to clear the board
+
+  outState is filled with the enemy pieces and the player's king piece
             and pieces drawn from the player's deck
 
    inSideToAdd can be CHESS_WHITE or CHESS_BLACK
-               CHESS_WHITE clears the board before adding white pieces
+               CHESS_WHITE simply adds white pieces to an existing board
                CHESS_BLACK simply adds black pieces to an existing board
 */
 void getLevel( int          inLevelNumber,
@@ -250,20 +253,17 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
 
 void getLevel( int          inLevelNumber,
                BoardState  *outState,
-               int          inSide ) {
+               int          inSideToAdd ) {
 
     int   y;
     int   x;
     
     
 
-    if( inSide == CHESS_WHITE ) {
+    if( inSideToAdd == CHESS_WHITE ) {
         /* clear board first, then draw from player
            deck into their formation  */
 
-        outState->kingExists[0] = 0;
-        outState->kingExists[1] = 0;
-    
         for( y = 0;
              y < BH;
              y ++ ) {
@@ -275,8 +275,6 @@ void getLevel( int          inLevelNumber,
                 char  fSpot  =  formationGet( y,
                                               x );
                 
-                outState->grid[ y ][ x ] = noPiece;
-
                 if( fSpot == 1 ) {
                     outState->grid[ y ][ x ] =
                         playerDeckDraw() | CHESS_WHITE;
@@ -290,7 +288,7 @@ void getLevel( int          inLevelNumber,
                 }
             }
         }
-    else if( inSide == CHESS_BLACK ) {
+    else if( inSideToAdd == CHESS_BLACK ) {
 
         int  numEnemyPieces  =  getNumEnemyPieces( inLevelNumber );
 

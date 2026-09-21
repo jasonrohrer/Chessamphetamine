@@ -101,6 +101,13 @@ formationOther      "軍格"
 formationKingDesc   "你的王放這裡。務必保護！選取以移動"
 formationOtherDesc  "從牌組抽棋子填入此格。選取以移動"
 
+
+formationKingEnemy       "敵王格"
+formationOtherEnemy      "敵軍格"
+formationKingEnemyDesc   "敵方的王放這裡。吃掉他即可獲勝！"
+formationOtherEnemyDesc  "從敵方牌組抽棋子填入此格。"
+
+
 pawn           "兵"
 pawnDesc       "向前一或兩格，斜前吃子"
 

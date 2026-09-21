@@ -212,6 +212,26 @@ static int findNextSpaceIndex(  const char  *inString ) {
 
 
 
+static void replaceChar( char  *inString,
+                         char   inOld,
+                         char   inNew ) {
+
+    int  len  =  maxigin_stringLength( inString );
+    int  i;
+
+    for( i = 0;
+         i < len;
+         i   ++ ) {
+
+        if( inString[i] == inOld ) {
+            inString[i] = inNew;
+            }
+        }
+
+    }
+
+
+
 /* if inMaxNumWords = -1, then there is no max
    otherwise, after inMaxNumWords found, remaining words are included
    in final word (with spaces) */
@@ -255,8 +275,12 @@ static void pieceSplitWords( const char  *inString,
         /* terminate where space ends word */
         pieceWordBuffer[ pieceNumWords ][ i ] = '\0';
 
-        pieceNumWords ++ ;
+        /* _ are non-breaking spaces */
+        replaceChar( pieceWordBuffer[ pieceNumWords ],
+                     '_',
+                     ' ' );
 
+        pieceNumWords ++ ;
 
         if( pieceNumWords >= MAX_NUM_WORDS ) {
             /* too many words, bail */
@@ -286,6 +310,10 @@ static void pieceSplitWords( const char  *inString,
 
     pieceWordBuffer[ pieceNumWords ][ i ] = '\0';
 
+    /* _ are non-breaking spaces */
+    replaceChar( pieceWordBuffer[ pieceNumWords ],
+                 '_',
+                 ' ' );
 
     pieceNumWords ++;
     }

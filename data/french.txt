@@ -105,6 +105,13 @@ formationOther      "Case d’armée"
 formationKingDesc   "Votre roi va ici. ## ## Protégez-le à tout prix! ## ## Sélectionnez pour déplacer."
 formationOtherDesc  "Des pièces de votre deck sont tirées pour remplir cette case. ## ## Sélectionnez pour déplacer."
 
+
+formationKingEnemy       "Case_du_roi ennemi"
+formationOtherEnemy      "Case_d’armée ennemie"
+formationKingEnemyDesc   "Le roi ennemi va ici. ## ## Capturez-le pour gagner le match!"
+formationOtherEnemyDesc  "Des pièces du deck ennemi sont tirées pour remplir cette case."
+
+
 pawn           "Pion"
 pawnDesc       "Avance de 1 ou 2 cases, capture en diagonale"
 

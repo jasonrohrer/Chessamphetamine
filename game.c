@@ -2353,6 +2353,13 @@ void maxiginGame_step( void ) {
 
                     getEmptyLevel( &boardState );
 
+                    getLevel( currentLevel,
+                              &boardState,
+                              CHESS_BLACK );
+
+                    formationSetEnemyLocations( &boardState );
+
+
                     gameOver = 0;
                     chessGameOver = 0;
                     redrawRemoveRunning = 0;
@@ -2808,6 +2815,14 @@ void maxiginGame_step( void ) {
                 currentLevel ++;
 
                 formationShowing = 1;
+
+                getEmptyLevel( &boardState );
+                
+                getLevel( currentLevel,
+                          &boardState,
+                          CHESS_BLACK );
+                
+                formationSetEnemyLocations( &boardState );
                 }
             }
         }
@@ -2840,6 +2855,7 @@ void maxiginGame_step( void ) {
         boardSlideUp == 0 ) {
         char  fmDone  = formationStep( boardCenterX,
                                        boardCenterY,
+                                       pickFailedSound,
                                        examinePieceSound );
 
         if( fmDone ) {
@@ -2858,9 +2874,7 @@ void maxiginGame_step( void ) {
             sideBoardRedraw();
             sideBoardShowing = 1;
             
-            getLevel( currentLevel,
-                      &boardState,
-                      CHESS_BLACK );
+            /* black already added during formation step */
             
             dropNewLevelPiecesIn( -1 );
             
@@ -3525,6 +3539,14 @@ void maxiginGame_init( void ) {
     if(1) {
 
         formationShowing = 1;
+
+        getEmptyLevel( &boardState );
+        
+        getLevel( currentLevel,
+                  &boardState,
+                  CHESS_BLACK );
+
+        formationSetEnemyLocations( &boardState );
         
         }
     else {

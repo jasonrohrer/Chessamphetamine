@@ -101,9 +101,14 @@ impossible     "Impossible"
 
 formationKing       "King Spot"
 formationOther      "Army Spot"
-formationKingDesc   "Your king goes here. ## ## Protect him at all costs!  ## ## Select spot to move it."
+formationKingDesc   "Your king goes here. ## ## Protect him at all costs! ## ## Select spot to move it."
 formationOtherDesc  "Pieces will be drawn from your deck to fill this spot.  ## ## Select spot to move it."
 
+
+formationKingEnemy       "Enemy King Spot"
+formationOtherEnemy      "Enemy Army Spot"
+formationKingEnemyDesc   "Enemy king goes here. ## ## Capture him to win the match!"
+formationOtherEnemyDesc  "Pieces will be drawn from enemy deck to fill this spot."
 
 pawn           "Pawn"
 pawnDesc       "Moves 1 or 2 spaces forward, captures diagonally"

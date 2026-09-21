@@ -29,10 +29,19 @@ void boardDraw( int  inCenterX,
 void boardDrawBorder( int  inCenterX,
                       int  inCenterY );
 
+void boardDrawHorizontalLine( int  inCenterX,
+                              int  inCenterY,
+                              int  inUnderRow );
 
-void boardDrawPortion( int  inCenterX,
-                       int  inCenterY,
-                       int  inStartRow );
+
+
+void boardDrawPortion( int            inCenterX,
+                       int            inCenterY,
+                       int            inStartRow,
+                       int            inEndRow,
+                       unsigned char  inFade,
+                       char           inDrawBorder );
+
 
 void boardDrawMarkers( int   inCenterX,
                        int   inCenterY,
@@ -145,6 +154,7 @@ void boardInit( void ) {
     }
 
 
+
 void boardDrawBorder( int  inCenterX,
                       int  inCenterY ) {
 
@@ -173,19 +183,41 @@ void boardDrawBorder( int  inCenterX,
     }
 
 
+
+void boardDrawHorizontalLine( int  inCenterX,
+                              int  inCenterY,
+                              int  inUnderRow ) {
+
+    int  yOff  =  squareSize * ( 1 + inUnderRow - BW / 2 );
+    
+    colorsApplyBoardColor();
+    
+    maxigin_drawSprite( borderSpriteH,
+                        inCenterX,
+                        inCenterY + yOff );
+    }
+
+
+
 void boardDraw( int  inCenterX,
                 int  inCenterY ) {
 
     boardDrawPortion( inCenterX,
                       inCenterY,
-                      0 );
+                      0,
+                      BH - 1,
+                      255,
+                      1 );
     }
 
     
 
-void boardDrawPortion( int  inCenterX,
-                       int  inCenterY,
-                       int  inStartRow ) {
+void boardDrawPortion( int            inCenterX,
+                       int            inCenterY,
+                       int            inStartRow,
+                       int            inEndRow,
+                       unsigned char  inFade,
+                       char           inDrawBorder ) {
 
     int  y;
     int  x;
@@ -197,14 +229,16 @@ void boardDrawPortion( int  inCenterX,
 
     colorsApplyBoardColor();
 
+    maxigin_drawSetAlpha( inFade );
+
     /* draw black squares in first pass, then white on top */
     for( pass = 0;
          pass < 2;
-         pass ++ ) {
+         pass   ++ ) {
         
-        for( y = inStartRow;
-             y < BH;
-             y ++ ) {
+        for( y =  inStartRow;
+             y <= inEndRow;
+             y    ++ ) {
 
             int  yPos  =  inCenterY - yOff + y * squareSize + squareSize / 2;
             
@@ -245,8 +279,10 @@ void boardDrawPortion( int  inCenterX,
         }
     
 
-    boardDrawBorder( inCenterX,
-                     inCenterY );
+    if( inDrawBorder ) {
+        boardDrawBorder( inCenterX,
+                         inCenterY );
+        }
 
     maxigin_drawResetColor();
     }

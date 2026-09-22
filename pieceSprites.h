@@ -1083,7 +1083,7 @@ void drawBoardState( BoardState     *inState,
 
                             if( liftVal > 0 ) {
 
-                                int  shadowFade = 255 - 2 * liftVal;
+                                int  shadowFade = 255 - 3 * liftVal;
 
                                 if( shadowFade > 0 ) {
 
@@ -1094,7 +1094,7 @@ void drawBoardState( BoardState     *inState,
 
                                     maxigin_drawSprite( liftShadowSpriteHandle,
                                                         pX,
-                                                        pY );
+                                                        pY + 1 );
 
                                     maxigin_drawSetAlpha( 255 );
                                     }
@@ -1110,7 +1110,7 @@ void drawBoardState( BoardState     *inState,
 
                             maxigin_drawSprite( liftShadowSpriteHandle,
                                                 pX,
-                                                pY );
+                                                pY + 1 );
                             }
                         }
                     else {
@@ -1120,7 +1120,7 @@ void drawBoardState( BoardState     *inState,
 
                         maxigin_drawSprite( liftShadowSpriteHandle,
                                             pX,
-                                            pY );
+                                            pY + 1 );
                         }
                     
                     drawPiece( p,

@@ -817,8 +817,7 @@ ChessPiece shopStep( int  inPickFailedSound,
             shopNewRecruitsShowing = 0;
             }
         else {
-            return newRecruitsStep( inPieceLiftSound,
-                                    purchaseSound );
+            return newRecruitsStep( purchaseSound );
             }
         }      
     

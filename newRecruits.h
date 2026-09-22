@@ -33,8 +33,7 @@ void newRecruitsDraw( void );
 /* returns current mouse-over or controller selected piece
 
 */
-ChessPiece newRecruitsStep( int  inPieceLiftSound,
-                            int  inPurchaseSound );
+ChessPiece newRecruitsStep( int  inPurchaseSound );
 
 
 char newRecruitsIsDone( void );
@@ -405,8 +404,7 @@ void newRecruitsDraw( void ) {
 
 
 
-ChessPiece newRecruitsStep( int  inPieceLiftSound,
-                            int  inPurchaseSound ) {
+ChessPiece newRecruitsStep( int  inPurchaseSound ) {
 
     int         r            =  mingin_getStepsPerSecond();
     int         b;

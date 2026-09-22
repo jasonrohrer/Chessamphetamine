@@ -83,11 +83,11 @@ static  int  rarityColorMapSprite  =  -1;
 
 #define PIECE_RARITY( C, V )  \
     V( C, 0,   noPiece,      contraband )    \
-    V( C, 1,   pawn,         contraband )    \
+    V( C, 1,   pawn,         rare       )    \
     V( C, 2,   bishop,       common     )    \
     V( C, 3,   knight,       common     )    \
     V( C, 4,   rook,         uncommon   )    \
-    V( C, 5,   queen,        rare       )    \
+    V( C, 5,   queen,        contraband )    \
     V( C, 6,   king,         contraband )    \
     V( C, 7,   laserRook,    legendary  )    \
     V( C, 8,   laserPawn,    rare       )    \

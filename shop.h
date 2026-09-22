@@ -85,11 +85,11 @@ char isShoppingDone( void );
 /* pawns are never sold in shop */
 #define SHOP_PRICE_LIST( C, V )  \
     V( C, 0,   noPiece,      0   )    \
-    V( C, 1,   pawn,         0   )    \
+    V( C, 1,   pawn,         7   )    \
     V( C, 2,   bishop,       2   )    \
     V( C, 3,   knight,       2   )    \
     V( C, 4,   rook,         4   )    \
-    V( C, 5,   queen,        7   )    \
+    V( C, 5,   queen,        0   )    \
     V( C, 6,   king,         0   )    \
     V( C, 7,   laserRook,    15  )    \
     V( C, 8,   laserPawn,    6   )    \

@@ -113,7 +113,7 @@ formationOtherEnemyDesc  "Des pièces du deck ennemi sont tirées pour remplir c
 
 
 pawn           "Pion"
-pawnDesc       "Avance de 1 ou 2 cases, capture en diagonale"
+pawnDesc       "Avance de 1 ou 2 cases, capture en diagonale. Devient une dame sur la dernière rangée."
 
 bishop         "Fou"
 bishopDesc     "Se déplace en diagonale"

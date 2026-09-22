@@ -1103,6 +1103,24 @@ void drawBoardState( BoardState     *inState,
                             
                             pY -= liftVal;
                             }
+                        else {
+                            /* piece in place, not lifted
+                               still draw shadow under */
+                            maxigin_drawResetColor();
+
+                            maxigin_drawSprite( liftShadowSpriteHandle,
+                                                pX,
+                                                pY );
+                            }
+                        }
+                    else {
+                        /* piece in place, not lifted
+                           still draw shadow under */
+                        maxigin_drawResetColor();
+
+                        maxigin_drawSprite( liftShadowSpriteHandle,
+                                            pX,
+                                            pY );
                         }
                     
                     drawPiece( p,

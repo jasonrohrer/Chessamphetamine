@@ -417,11 +417,13 @@ ChessPiece newRecruitsStep( int  inPieceLiftSound,
     ChessPiece  overPiece    =  noPiece;
     char        spotChange   =  0;
     int         deltaFade    =  ( 20 * 60 ) / r;
-    
-    /* fixme */
+    int  markerS             =  boardGetMoveMarkerSprite();
+    int  markerW;
+    int  markerH;
 
-    (void)inPieceLiftSound;
-
+    maxigin_getSpriteDimensions( markerS,
+                                 &markerW,
+                                 &markerH );
 
     if( maxigin_getActivePointerLocation( &pointerX,
                                           &pointerY ) ) {
@@ -431,9 +433,9 @@ ChessPiece newRecruitsStep( int  inPieceLiftSound,
         for( b = 0;
              b < newRecruitsNumVisibleBaskets;
              b   ++ ) {
-            for( s = 0;
-                 s < NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
-                 s   ++ ) {
+            for( s =  NUM_NEW_RECRUITS_SLOTS_PER_BASKET - 1;
+                 s >= 0;
+                 s    -- ) {
 
                 ChessPiece  p  =  newRecruitsSlots[ b ][ s ];
 
@@ -445,7 +447,23 @@ ChessPiece newRecruitsStep( int  inPieceLiftSound,
                 
                     int  y  =  liveCenterY + newRecruitsSlotPosY[ b ][ s ];
 
-                    if( getPixelOverPiece( p | CHESS_WHITE,
+                    char inSquare  =  0;
+
+                    if( ( pointerX - x ) < markerW / 2
+                        &&
+                        ( pointerX - x ) > - markerW / 2
+                        &&
+                        ( pointerY - y ) < markerH / 2
+                        &&
+                        ( pointerY - y ) > - markerH / 2 ) {
+
+                        inSquare = 1;
+                        }
+                    
+
+                    if( inSquare
+                        ||
+                        getPixelOverPiece( p | CHESS_WHITE,
                                            x,
                                            y,
                                            pointerX,

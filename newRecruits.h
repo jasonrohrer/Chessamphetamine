@@ -70,7 +70,7 @@ char newRecruitsIsDone( void );
 
 #define                NUM_NEW_RECRUITS_BASKETS           4
 
-#define                NUM_NEW_RECRUITS_SLOTS_PER_BASKET  5
+#define                NUM_NEW_RECRUITS_SLOTS_PER_BASKET  6
 
 static  int            newRecruitsBaseVisibleBaskets   =  3;
 static  int            newRecruitsNumVisibleBaskets    =  3;
@@ -250,7 +250,7 @@ void newRecruitsInit( int  inPointerActionHandle,
         }
 
     /* shift down slightly */
-    startHopY -= 10;
+    startHopY -= 20;
     
     curPosX = - startHopX;
 

@@ -98,6 +98,14 @@ int costLevelIncrement( int  inCostHandle );
 int costFullReset( int  inCostHandle );
 
 
+
+/* tests a cost, of 20 rolls of the cost,, up to level 100, and prints results
+   does a costFullReset both before and after the test */
+void costTest( int  inCostHandle );
+
+
+
+
 #endif
 
 
@@ -227,12 +235,6 @@ int costGet( int  inCostHandle ) {
             / costList[ inCostHandle ].incrementCountDivisor;
         }
 
-    if( costList[ inCostHandle ].levelCountDivisor != -1 ) {
-        val +=
-            costList  [ inCostHandle ].levelRiseCount
-            / costList[ inCostHandle ].levelCountDivisor;
-        }
-
     return val;
     }
 
@@ -317,7 +319,12 @@ int costLevelIncrement( int  inCostHandle ) {
 
 
     costList[ inCostHandle ].levelRiseCount ++;
-    
+
+    if( costList[ inCostHandle ].levelCountDivisor != -1 ) {
+        newIncrVal +=
+            costList  [ inCostHandle ].levelRiseCount
+            / costList[ inCostHandle ].levelCountDivisor;
+        }
 
     costList[ inCostHandle ].levelFixedIncrement +=
         costList[ inCostHandle ].levelIncrementIncrement;
@@ -354,6 +361,58 @@ int costFullReset( int  inCostHandle ) {
 
     return costGet( inCostHandle );
     }
+
+
+
+void costTest( int  inCostHandle ) {
+
+    int  level;
+    int  i;
+
+    costFullReset( inCostHandle );
+
+    costResetIncrement( inCostHandle );
+
+
+    for( level = 0;
+         level < 100;
+         level   ++ ) {
+
+        maxigin_logInt( "Level: ",
+                        level );
+
+        if( level == 15 ) {
+            mingin_log( "hey\n" );
+            }
+
+        for( i = 0;
+             i < 20;
+             i   ++ ) {
+
+            int  c  =  costGet( inCostHandle );
+            
+            maxigin_logInt2( "",
+                             i,
+                             ": ",
+                             c,
+                             "" );
+    
+            costIncrement( inCostHandle );
+            }
+
+        if( level == 14 ) {
+            mingin_log( "hey\n" );
+            }
+        costResetIncrement( inCostHandle );
+        
+        costLevelIncrement( inCostHandle );
+        }
+    
+
+    costFullReset( inCostHandle );
+    
+    }
+
     
 
 

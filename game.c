@@ -3530,7 +3530,7 @@ void maxiginGame_init( void ) {
     /* redraw costs are 1, 2, 3, 6, 10, etc */
     drawCost = costInit( 1,   /* cost starts at 1 */
                          1,   /* every redraw, cost goes up by inc=1 */
-                         5,  /* exponential growth as cost rises, * 1.20 */
+                         -1,  /* no exponential growth as cost rises */
                          -1,
                          1,   /* every redraw, we add 1 to inc */
                          0,

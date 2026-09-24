@@ -70,7 +70,7 @@ char newRecruitsIsDone( void );
 
 #define                NUM_NEW_RECRUITS_BASKETS           4
 
-#define                NUM_NEW_RECRUITS_SLOTS_PER_BASKET  6
+#define                NUM_NEW_RECRUITS_SLOTS_PER_BASKET  7
 
 static  int            newRecruitsBaseVisibleBaskets   =  3;
 static  int            newRecruitsNumVisibleBaskets    =  3;
@@ -250,7 +250,7 @@ void newRecruitsInit( int  inPointerActionHandle,
         }
 
     /* shift down slightly */
-    startHopY -= 20;
+    startHopY += 5;
     
     curPosX = - startHopX;
 
@@ -341,7 +341,7 @@ void newRecruitsDraw( void ) {
 
     maxigin_drawLangText( lang_newRecruitsInstruct,
                           newRecruitsCenterX,
-                          liveCenterY - bgH / 2 + 20,
+                          liveCenterY + bgH / 2 - 10,
                           MAXIGIN_CENTER );
 
     maxigin_setLanguageFontIndex( 0 );

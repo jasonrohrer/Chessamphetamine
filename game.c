@@ -2828,6 +2828,9 @@ void maxiginGame_step( void ) {
 
                 costLevelIncrement( drawCost );
 
+                formationCostReset();
+                formationLevelIncrement();
+
                 playerDeckReshuffle();
                                 
                 currentLevel ++;
@@ -2875,6 +2878,7 @@ void maxiginGame_step( void ) {
         boardSlideUp == 0 ) {
         char  fmDone  = formationStep( boardCenterX,
                                        boardCenterY,
+                                       pickFailedSound,
                                        examinePieceSound );
 
         if( fmDone ) {
@@ -3497,6 +3501,7 @@ void maxiginGame_init( void ) {
     
 
     formationInit( MOUSE_CLICK,
+                   DRAW,
                    COMMIT );
 
     

@@ -119,7 +119,7 @@ void costTest( int  inCostHandle );
 #include "memoryRegister.h"
 
 
-#define  MAX_NUM_COSTS   3
+#define  MAX_NUM_COSTS   4
 
 typedef struct Cost{
 

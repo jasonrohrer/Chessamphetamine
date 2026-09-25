@@ -476,7 +476,7 @@ void levelGetRandomFormation( char  outFormation[ BH ][ BW ],
         if( inSideColor == CHESS_WHITE ) {
 
             /* other back rows for white */
-            y += BH - 4;
+            y += BH - 3;
             }
             
 

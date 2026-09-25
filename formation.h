@@ -16,6 +16,7 @@
 
 
 void formationInit( int  inPointerActionHandle,
+                    int  inDynamicRerollButtonHandle,
                     int  inDynamicDoneButtonHandle );
 
 
@@ -33,6 +34,7 @@ void formationDraw( int   inBoardCenterX,
 /* returns 1 if done adjusting formation */
 char formationStep( int  inBoardCenterX,
                     int  inBoardCenterY,
+                    int  inPickFailedSound,
                     int  inPieceLiftSound );
 
 
@@ -58,6 +60,11 @@ int formationGetSpotSprite( void );
 int formationGetNewSpotLangHandle( void );
 
 
+void formationCostReset( void );
+
+void formationLevelIncrement( void );
+
+
 
 #endif
 
@@ -78,6 +85,7 @@ int formationGetNewSpotLangHandle( void );
 
 #include "unlocks.h"
 
+#include "cost.h"
 
 
 /* 0 empty, 1 regular piece, 2 king, -1 enemy regular piece, -2 enemy king */
@@ -94,6 +102,10 @@ static  int            fmSpotKingSprite        =  -1;
 static  int            fmSpotKingPickedSprite  =  -1;
 
 static  int            fmDoneButton            =  -1;
+static  int            fmRerollButton          =  -1;
+
+static  int            fmRerollCost;
+
 
 static  char           fmNewSpotMessageShowing =   0;
 static  int            formationSize           =   0;
@@ -115,6 +127,7 @@ static  int            fmOverSlotY             =  -1;
 
 
 void formationInit( int  inPointerActionHandle,
+                    int  inDynamicRerollButtonHandle,
                     int  inDynamicDoneButtonHandle ) {
 
     fmSpotSprite           = maxigin_initSprite( "formationSpot.tga"           );
@@ -135,8 +148,6 @@ void formationInit( int  inPointerActionHandle,
                                 4,
                                 2 );
 
-    formationBackToStart();
-
 
     fmDoneButton = buttonInit( maxigin_initSprite( "doneButton.tga" ),
                                -1,
@@ -147,6 +158,30 @@ void formationInit( int  inPointerActionHandle,
                                inPointerActionHandle,
                                inDynamicDoneButtonHandle,
                                1 );
+
+    fmRerollButton = buttonInit( maxigin_initSprite( "rerollButton.tga" ),
+                                 -1,
+                                 maxigin_initSprite( "rerollButtonPressed.tga" ),
+                                 50,
+                                 MAXIGIN_GAME_NATIVE_H - 10,
+                                 1,
+                                 inPointerActionHandle,
+                                 inDynamicRerollButtonHandle,
+                                 -1 );
+
+    /* redraw costs are 1, 2, 3, 6, 10, etc  on level 0 */
+    fmRerollCost = costInit( 1,   /* cost starts at 1 */
+                             1,   /* every redraw, cost goes up by inc=1 */
+                             -1,  /* no exponential growth as cost rises */
+                             -1,
+                             1,   /* every redraw, we add 1 to inc */
+                             0,
+                             -1,
+                             2,  /* base cost goes up by 1 every other level */
+                             0 );
+
+    formationBackToStart();
+    
 
     lang_newSpot   = maxigin_initTranslationKey( "newFormationSpot" );
     
@@ -367,8 +402,23 @@ void formationDraw( int   inBoardCenterX,
     
     if( ! inSlidingUp ) {
         /* hide done button if sliding up  */
+
+        int  buttonX;
+        int  buttonY;
         
         buttonDraw( fmDoneButton );
+
+        buttonDraw( fmRerollButton );
+
+        buttonGetPos( fmRerollButton,
+                      &buttonX,
+                      &buttonY );
+
+        maxigin_drawResetColor();
+        numberDrawCenter( costGet( fmRerollCost ),
+                          buttonX,
+                          buttonY + 6,
+                          1 );
         }
     }
 
@@ -376,6 +426,7 @@ void formationDraw( int   inBoardCenterX,
 
 char formationStep( int  inBoardCenterX,
                     int  inBoardCenterY,
+                    int  inPickFailedSound,
                     int  inPieceLiftSound ) {
     
 
@@ -526,6 +577,25 @@ char formationStep( int  inBoardCenterX,
         fmNewSpotMessageShowing = 0;
         return 1;
         }
+
+    if( buttonIsNewPressed( fmRerollButton ) ) {
+
+        unlocksCancelViewer();
+
+        if( moneyGetTotal() < costGet( fmRerollCost ) ) {
+            /* fail */
+            maxigin_playSoundEffect( inPickFailedSound,
+                                     256 );
+            }
+        else {
+            moneyAdd( - costGet( fmRerollCost ) );
+
+            formationPlayerReroll();
+
+            costIncrement( fmRerollCost );
+            }
+
+        }
     
     return 0;
     }
@@ -568,7 +638,10 @@ void formationBackToStart( void ) {
     formation[ 6 ][ 6 ] = 1;
 
     formationSize = 3;
+
+    costFullReset( fmRerollCost );
     }
+
 
 
 void formationAddNewSpot( void ) {
@@ -653,6 +726,8 @@ void formationPlayerReroll( void ) {
             formation[ y ][ x ] = f;
             }
         }
+
+    buttonReset( fmRerollButton );
     }
 
 
@@ -682,6 +757,18 @@ int formationGetNewSpotLangHandle( void ) {
 
 int formationGetNumNonKingSpots( void ) {
     return formationSize - 1;
+    }
+
+
+
+void formationCostReset( void ) {
+    costResetIncrement( fmRerollCost );
+    }
+
+
+
+void formationLevelIncrement( void ) {
+    costLevelIncrement( fmRerollCost );
     }
 
 

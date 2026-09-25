@@ -92,6 +92,12 @@ void formationLevelIncrement( void );
 static  char           formation             [BH][BW];
 static  unsigned char  formationHighlightFade[BH][BW];
 
+/* each column fades together */
+static  unsigned char  formationRerollFade[BW];
+
+static  char           rerollFadeDir           =   0;
+
+
 /* at most 16 pieces in back 3 rows (24 spots total) */
 static  int            fmMaxFilledPercent      =  67;
 
@@ -210,6 +216,10 @@ void formationInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM  ( formationSize          );
 
     REGISTER_VAL_MEM  ( fmNewSpotMessageShowing );
+
+    REGISTER_ARRAY_MEM( formationRerollFade    );
+
+    REGISTER_VAL_MEM( rerollFadeDir );
     }
 
 
@@ -300,6 +310,10 @@ void formationDraw( int   inBoardCenterX,
                 if( f < 0 ) {
                     drawSetPieceColor( CHESS_BLACK );
                     }
+                else {
+                    /* only player pieces can fade out during redraw */
+                    maxigin_drawSetAlpha( formationRerollFade[ x ] );
+                    }
                 
                 maxigin_drawSprite( s,
                                     cX,
@@ -308,7 +322,16 @@ void formationDraw( int   inBoardCenterX,
                 if( formationHighlightFade[ y ][ x ] > 0 ) {
 
 
-                    maxigin_drawSetAlpha( formationHighlightFade[ y ][ x ] );
+                    if( f < 0 ) {
+                        maxigin_drawSetAlpha( formationHighlightFade[ y ][ x ] );
+                        }
+                    else if( formationRerollFade[ x ] < 255 ) {
+                        int  fade  =  formationRerollFade[ x ]
+                                      *
+                                      formationHighlightFade[ y ][ x ];
+
+                        maxigin_drawSetAlpha( (unsigned char)( fade / 255 ) );
+                        }
                     
                     maxigin_drawSpriteGlowOnly( s,
                                                 cX,
@@ -419,6 +442,39 @@ void formationDraw( int   inBoardCenterX,
                           buttonX,
                           buttonY + 6,
                           1 );
+        }
+    }
+
+
+static void fmForceFade( void ) {
+    
+    int  x;
+    int  y;
+    
+    for( x = 0;
+         x < BW;
+         x ++ ) {
+
+        char  anyThere  =  0;
+        for( y = BH - 4;
+             y < BH;
+             y   ++ ) {
+
+            if( formation[ y ][ x ] != 0 ) {
+                anyThere = 1;
+                break;
+                }
+            }
+        if( ! anyThere ) {
+            /* force this column, so it's skipped */
+
+            if( rerollFadeDir > 0 ) {
+                formationRerollFade[ x ] = 255;
+                }
+            else if( rerollFadeDir < 0 ) {
+                formationRerollFade[ x ] = 0;
+                }
+            }
         }
     }
 
@@ -564,6 +620,67 @@ char formationStep( int  inBoardCenterX,
 
         }
 
+    if( rerollFadeDir != 0 ) {
+
+        char  anyStillFading  =  0;
+
+        int   rerollDeltaFade =  4 * deltaFade / 3;
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            int  oldFade  =  formationRerollFade[ x ];
+
+            if( rerollFadeDir < 0
+                &&
+                oldFade > 0 ) {
+
+                oldFade -= rerollDeltaFade;
+
+                if( oldFade <= 0 ) {
+                    oldFade = 0;
+                    playBeepDownSound();
+                    }
+                formationRerollFade[ x ] = (unsigned char)oldFade;
+                anyStillFading = 1;
+                
+                break;
+                }
+            else if( rerollFadeDir > 0
+                     &&
+                     oldFade < 255 ) {
+
+                oldFade += rerollDeltaFade;
+
+                if( oldFade >= 255 ) {
+                    oldFade = 255;
+                    playBeepUpSound();
+                    }
+                formationRerollFade[ x ] = (unsigned char)oldFade;
+                anyStillFading = 1;
+                break;
+                }
+            }
+
+        if( ! anyStillFading ) {
+            if( rerollFadeDir < 0 ) {
+                /* fading out */
+                formationPlayerReroll();
+                
+                rerollFadeDir = 1;
+
+                fmForceFade();
+                
+                }
+            else if( rerollFadeDir > 0 ) {
+                /* fading back in, done */
+
+                rerollFadeDir = 0;
+                }
+            }
+        }
+
 
     /* no done button pressable if they are still picking a slot
        and haven't set it down yet */
@@ -590,7 +707,9 @@ char formationStep( int  inBoardCenterX,
         else {
             moneyAdd( - costGet( fmRerollCost ) );
 
-            formationPlayerReroll();
+            rerollFadeDir = -1;
+
+            fmForceFade();
 
             costIncrement( fmRerollCost );
             }
@@ -624,6 +743,13 @@ void formationBackToStart( void ) {
             formationHighlightFade[ y ][ x ] = 0;
             }
         }
+
+    for( x = 0;
+         x < BW;
+         x ++ ) {
+        formationRerollFade[ x ] = 255;
+        }
+
 
     fmOverSlotX = -1;
     fmOverSlotY = -1;
@@ -768,7 +894,15 @@ void formationCostReset( void ) {
 
 
 void formationLevelIncrement( void ) {
+    int  x;
+    
     costLevelIncrement( fmRerollCost );
+
+    for( x = 0;
+         x < BW;
+         x ++ ) {
+        formationRerollFade[ x ] = 255;
+        }
     }
 
 

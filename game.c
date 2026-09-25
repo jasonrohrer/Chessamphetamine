@@ -1229,8 +1229,6 @@ static void dropNewLevelPiecesIn( int  inSide ) {
                 }
             }
         }
-
-    costResetIncrement( drawCost );
     }
 
 

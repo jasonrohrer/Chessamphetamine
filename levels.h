@@ -44,7 +44,7 @@ void getEmptyLevel( BoardState  *outState );
 
    inSideColor  is either CHESS_WHITE or CHESS_BLACK
 */
-void levelGetRandomFormation( char  outFormation[BH][BW],
+void levelGetRandomFormation( char  outFormation[ BH ][ BW ],
                               int   inNumNonKingPieces,
                               int   inSideColor );
 
@@ -373,7 +373,7 @@ void getEmptyLevel( BoardState  *outState ) {
 
 
 
-void levelGetRandomFormation( char  outFormation[BH][BW],
+void levelGetRandomFormation( char  outFormation[ BH ][ BW ],
                               int   inNumNonKingPieces,
                               int   inSideColor ) {
 
@@ -412,8 +412,8 @@ void levelGetRandomFormation( char  outFormation[BH][BW],
         }
     else {
         kingRow  =  maxigin_randRange( &levelsRand,
-                                       BH - 1,
-                                       BH - 2 );
+                                       BH - 2,
+                                       BH - 1 );
         }
     
         

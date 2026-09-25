@@ -2370,6 +2370,8 @@ void maxiginGame_step( void ) {
 
                     formationSetEnemyLocations( &boardState );
 
+                    formationPlayerReroll();
+                    
 
                     gameOver = 0;
                     chessGameOver = 0;
@@ -2839,6 +2841,8 @@ void maxiginGame_step( void ) {
                           CHESS_BLACK );
                 
                 formationSetEnemyLocations( &boardState );
+
+                formationPlayerReroll();
                 }
             }
         }
@@ -3563,6 +3567,8 @@ void maxiginGame_init( void ) {
                   CHESS_BLACK );
 
         formationSetEnemyLocations( &boardState );
+
+        formationPlayerReroll();
         
         }
     else {

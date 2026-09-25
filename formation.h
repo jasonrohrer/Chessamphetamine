@@ -23,6 +23,9 @@ void formationInit( int  inPointerActionHandle,
 void formationSetEnemyLocations( BoardState  *inState );
 
 
+void formationPlayerReroll( void );
+
+
 void formationDraw( int   inBoardCenterX,
                     int   inBoardCenterY,
                     char  inSlidingUp );
@@ -83,6 +86,10 @@ int formationGetNewSpotLangHandle( void );
 static  char           formation             [BH][BW];
 static  unsigned char  formationHighlightFade[BH][BW];
 
+/* at most 16 pieces in back 3 rows (24 spots total) */
+static  int            fmMaxFilledPercent      =  67;
+
+
 static  int            formationPickedY;
 static  int            formationPickedX;
 
@@ -97,6 +104,7 @@ static  int            fmSpotKingPickedSprite  =  -1;
 static  char           fmActionDown            =   0;
 static  int            fmDoneButton            =  -1;
 
+static  char           fmNewSpotMessageShowing =   0;
 static  char           fmNewSpotWaiting        =   0;
 static  int            formationSize           =   0;
 
@@ -185,8 +193,9 @@ void formationInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM  ( formationSize          );
     
 
-    REGISTER_VAL_MEM  ( fmNewSpotWaiting       );
-    REGISTER_VAL_MEM  ( fmPickedWithController );
+    REGISTER_VAL_MEM  ( fmNewSpotWaiting        );
+    REGISTER_VAL_MEM  ( fmNewSpotMessageShowing );
+    REGISTER_VAL_MEM  ( fmPickedWithController  );
 
     REGISTER_VAL_MEM  ( fmPointerDrag );
     }
@@ -396,7 +405,9 @@ void formationDraw( int   inBoardCenterX,
                               centY );
         }
 
-    if( fmNewSpotWaiting ) {
+
+
+    if( fmNewSpotMessageShowing ) {
         maxigin_drawResetColor();
 
         maxigin_setLanguageFontIndex( 1 );
@@ -406,7 +417,13 @@ void formationDraw( int   inBoardCenterX,
                 inBoardCenterX + BOARD_SQUARE_SIZE / 2,
                 inBoardCenterY - 10,
                 MAXIGIN_CENTER );
+        
         maxigin_setLanguageFontIndex( 0 );
+        }
+    
+    
+    if( fmNewSpotWaiting ) {
+        
         }
     else if( ! inSlidingUp
              &&
@@ -804,6 +821,8 @@ char formationStep( int  inBoardCenterX,
         formationPickedX = -1;
         formationPickedY = -1;
         unlocksCancelViewer();
+
+        fmNewSpotMessageShowing = 0;
         return 1;
         }
     return 0;
@@ -854,21 +873,27 @@ void formationBackToStart( void ) {
 
 void formationAddNewSpot( void ) {
     
-    formation[ 4 ][ 4 ] = 1;
+    if( 0 ) {
+        
+        formation[ 4 ][ 4 ] = 1;
 
-    /* force it to be picked so they have to move it next time */
-    formationPickedY = 4;
-    formationPickedX = 4;
+        /* force it to be picked so they have to move it next time */
+        formationPickedY = 4;
+        formationPickedX = 4;
 
-    fmNewSpotWaiting = 1;
+        fmNewSpotWaiting = 1;
 
-    fmPickedWithController = 0;
+        fmPickedWithController = 0;
 
-    fmOverSlotX = -1;
-    fmOverSlotY = -1;
+        fmOverSlotX = -1;
+        fmOverSlotY = -1;
+        }
+
+    fmNewSpotMessageShowing = 1;
 
     formationSize ++;
     }
+
 
 
 void formationSetEnemyLocations( BoardState  *inState ) {
@@ -921,10 +946,37 @@ void formationSetEnemyLocations( BoardState  *inState ) {
 
 
 
+void formationPlayerReroll( void ) {
+
+    static  char  form[ BH ][ BW ];
+
+    int  y;
+    int  x;
+
+    levelGetRandomFormation( form,
+                             formationSize - 1,
+                             CHESS_WHITE );
+
+    for( y = BH - 4;
+         y < BH;
+         y ++ ) {
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            char  f  =  form[ y ][ x ];
+
+            formation[ y ][ x ] = f;
+            }
+        }
+    }
+
+
+
 char formationHasRoomForNewSpot( void ) {
 
-    /* can fill first 3 rows */
-    if( formationSize < BW * 3 ) {
+    /* can fill first 3 rows, and be specified percentage full */
+    if( formationSize < ( BW * 3 * fmMaxFilledPercent ) / 100 ) {
         return 1;
         }
     else {

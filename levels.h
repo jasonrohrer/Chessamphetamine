@@ -39,6 +39,17 @@ void getEmptyLevel( BoardState  *outState );
 
 
 
+/* outFormation is where the formation will go.  0 for empty,
+   1 for regular piece, 2 for king.
+
+   inSideColor  is either CHESS_WHITE or CHESS_BLACK
+*/
+void levelGetRandomFormation( char  outFormation[BH][BW],
+                              int   inNumNonKingPieces,
+                              int   inSideColor );
+
+
+
 
 #endif
 
@@ -292,80 +303,41 @@ void getLevel( int          inLevelNumber,
 
         int  numEnemyPieces  =  getNumEnemyPieces( inLevelNumber );
 
-        /* place king anywhere in first two rows */
-        
-        int  kingRow  =  maxigin_randRange( &levelsRand,
-                                            0,
-                                            1 );
-        int  kingCol  =  maxigin_randRange( &levelsRand,
-                                            0,
-                                            BW - 1 );
 
-        int  protColA;
-        int  protColB;
-
-        /* enemy spots in first 3 rows */
-        static  int  spots[ 3 * BW ];
-
-        int  s;
-        int  numFilled;
-        
+        static  char  form[ BH ][ BW ];
 
         /* add new pieces to enemy deck based on level number */
         prepareEnemyDeck( inLevelNumber );
-        
-        
-        outState->grid[ kingRow ][ kingCol ]  = king | CHESS_BLACK;
-        outState->kingExists[ 1 ] =  1;
 
-        protColA = kingCol;
+        levelGetRandomFormation( form,
+                                 numEnemyPieces,
+                                 CHESS_BLACK );
 
-        if( kingCol >= BW / 2 ) {
-            /* king on right side of board
-               two protection pieces in front and to front left */
-            protColB = kingCol - 1;
-            }
-        else {
-            /* front right protection */
-            protColB = kingCol + 1;
-            }
+        for( y = 0;
+             y < BH;
+             y ++ ) {
 
-        outState->grid[ kingRow + 1 ][ protColA ] =
-            deckDraw( &enemyDeck ) | CHESS_BLACK;
-        
-        outState->grid[ kingRow + 1 ][ protColB ] =
-            deckDraw( &enemyDeck ) | CHESS_BLACK;
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
 
-        numEnemyPieces -= 2;
-        
+                char  fSpot  =  form[ y ][ x ];
 
-        /* random spots in first three rows */
-            
 
-        for( s = 0;
-             s < 3 * BW;
-             s ++ ) {
-            spots[ s ] = s;
-            }
-        maxigin_shuffle( &levelsRand,
-                         3 * BW,
-                         spots );
-        s = 0;
+                if( fSpot == 0 ) {
+                    continue;
+                    }
 
-        numFilled = 0;
-        while( numFilled < numEnemyPieces
-               &&
-               s < 3 * BW ) {
-
-            y = spots[ s ] / BW;
-            x = spots[ s ] - y * BW;
-
-            if( outState->grid[ y ][ x ] == noPiece ) {
-                
-                outState->grid[ y ][ x ] = deckDraw( &enemyDeck ) | CHESS_BLACK;
-                numFilled ++;
+                if( fSpot == 2 ) {
+                    outState->grid[ y ][ x ]  = king | CHESS_BLACK;
+                    outState->kingExists[ 1 ] =  1;
+                    continue;
+                    }
+                if( fSpot == 1 ) {
+                    outState->grid[ y ][ x ] =
+                        deckDraw( &enemyDeck ) | CHESS_BLACK;
+                    }
                 }
-            s ++;
             }
         }
     
@@ -398,6 +370,125 @@ void getEmptyLevel( BoardState  *outState ) {
     outState->nextToMove = CHESS_WHITE;
     outState->moveCount = 0;
     }
+
+
+
+void levelGetRandomFormation( char  outFormation[BH][BW],
+                              int   inNumNonKingPieces,
+                              int   inSideColor ) {
+
+    int   y;
+    int   x;
+    int   kingRow;
+    int   kingCol;
+    int   protRow;
+    int   protColA;
+    int   protColB;
+    int   s;
+    int   numFilled;
+    
+    /* enemy spots in first 3 rows */
+    static  int  spots[ 3 * BW ];
+
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            outFormation[ y ][ x ]  = 0;
+            }
+        }
+
+    /* place king anywhere in first two rows */
+
+    if( inSideColor == CHESS_BLACK ) {
+        kingRow  =  maxigin_randRange( &levelsRand,
+                                       0,
+                                       1 );
+        }
+    else {
+        kingRow  =  maxigin_randRange( &levelsRand,
+                                       BH - 1,
+                                       BH - 2 );
+        }
+    
+        
+    kingCol  =  maxigin_randRange( &levelsRand,
+                                   0,
+                                   BW - 1 );
+
+    outFormation[ kingRow ][ kingCol ] = 2;
+    
+
+    protColA = kingCol;
+
+    if( kingCol >= BW / 2 ) {
+        /* king on right side of board
+           two protection pieces in front and to front left */
+        protColB = kingCol - 1;
+        }
+    else {
+        /* front right protection */
+        protColB = kingCol + 1;
+        }
+
+    if( inSideColor == CHESS_BLACK ) {
+
+        protRow = kingRow + 1;
+        }
+    else {
+        protRow = kingRow - 1;
+        }
+    
+    outFormation[ protRow ][ protColA ] = 1;
+    outFormation[ protRow ][ protColB ] = 1;
+
+    inNumNonKingPieces -= 2;
+        
+
+    /* random spots in first three rows */
+            
+
+    for( s = 0;
+         s < 3 * BW;
+         s ++ ) {
+        spots[ s ] = s;
+        }
+    
+    maxigin_shuffle( &levelsRand,
+                     3 * BW,
+                     spots );
+    s = 0;
+
+    numFilled = 0;
+    
+    while( numFilled < inNumNonKingPieces
+           &&
+           s < 3 * BW ) {
+
+        y = spots[ s ] / BW;
+        x = spots[ s ] - y * BW;
+
+        if( inSideColor == CHESS_WHITE ) {
+
+            /* other back rows for white */
+            y += BH - 4;
+            }
+            
+
+        if( outFormation[ y ][ x ] == 0 ) {
+                
+            outFormation[ y ][ x ] = 1;
+            numFilled ++;
+            }
+        s ++;
+        }
+    }
+
 
 
 

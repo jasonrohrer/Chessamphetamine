@@ -181,8 +181,8 @@ void rarityInit( void ) {
     rarityOneInCount[ contraband ] =   -1;
     rarityOneInCount[ common     ] =    1;
     rarityOneInCount[ uncommon   ] =    4;
-    rarityOneInCount[ rare       ] =   15;
-    rarityOneInCount[ legendary  ] =   75;
+    rarityOneInCount[ rare       ] =   20;
+    rarityOneInCount[ legendary  ] =  100;
     rarityOneInCount[ impossible ] = 1000;
 
     for( i = FIRST_ROLLABLE_RARITY;

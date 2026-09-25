@@ -55,7 +55,7 @@ defaults       "Defaults"
 
 
 drawInstruct   "Draft your army"
-formationInstruct   "Adjust army formation"
+formationInstruct   "Reroll army formation?"
 newFormationSpot    "New army formation spot!"
 newSpotInA           "Purchase"
 newSpotInB           "more for new army formation spot"
@@ -101,8 +101,8 @@ impossible     "Impossible"
 
 formationKing       "King Spot"
 formationOther      "Army Spot"
-formationKingDesc   "Your king goes here. ## ## Protect him at all costs! ## ## Select spot to move it."
-formationOtherDesc  "Pieces will be drawn from your deck to fill this spot.  ## ## Select spot to move it."
+formationKingDesc   "Your king goes here. ## ## Protect him at all costs!"
+formationOtherDesc  "Pieces will be drawn from your deck to fill this spot."
 
 
 formationKingEnemy       "Enemy King Spot"

@@ -54,7 +54,7 @@ press          "appuyez"
 defaults       "Par défaut"
 
 drawInstruct   "Composez votre armée"
-formationInstruct   "Ajustez la formation"
+formationInstruct   "Relancer la formation?"
 newFormationSpot    "Nouvelle case de formation!"
 newSpotInA           "Encore"
 newSpotInB           "pour une case de formation"
@@ -102,8 +102,8 @@ impossible     "Impossible"
 
 formationKing       "Case du roi"
 formationOther      "Case d’armée"
-formationKingDesc   "Votre roi va ici. ## ## Protégez-le à tout prix! ## ## Sélectionnez pour déplacer."
-formationOtherDesc  "Des pièces de votre deck sont tirées pour remplir cette case. ## ## Sélectionnez pour déplacer."
+formationKingDesc   "Votre roi va ici. ## ## Protégez-le à tout prix!"
+formationOtherDesc  "Des pièces de votre deck sont tirées pour remplir cette case."
 
 
 formationKingEnemy       "Case_du_roi ennemi"

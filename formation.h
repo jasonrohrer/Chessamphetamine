@@ -16,7 +16,6 @@
 
 
 void formationInit( int  inPointerActionHandle,
-                    int  inActionHandle,
                     int  inDynamicDoneButtonHandle );
 
 
@@ -34,7 +33,6 @@ void formationDraw( int   inBoardCenterX,
 /* returns 1 if done adjusting formation */
 char formationStep( int  inBoardCenterX,
                     int  inBoardCenterY,
-                    int  inPickFailedSound,
                     int  inPieceLiftSound );
 
 
@@ -90,22 +88,14 @@ static  unsigned char  formationHighlightFade[BH][BW];
 static  int            fmMaxFilledPercent      =  67;
 
 
-static  int            formationPickedY;
-static  int            formationPickedX;
-
-static  int            fmPointerActionHandle   =  -1;
-static  int            fmActionHandle          =  -1;
-
 static  int            fmSpotSprite            =  -1;
 static  int            fmSpotPickedSprite      =  -1;
 static  int            fmSpotKingSprite        =  -1;
 static  int            fmSpotKingPickedSprite  =  -1;
 
-static  char           fmActionDown            =   0;
 static  int            fmDoneButton            =  -1;
 
 static  char           fmNewSpotMessageShowing =   0;
-static  char           fmNewSpotWaiting        =   0;
 static  int            formationSize           =   0;
 
 static  int            lang_newSpot;
@@ -122,12 +112,9 @@ static  int            lang_otherSpotEnemyDesc;
 
 static  int            fmOverSlotX             =  -1;
 static  int            fmOverSlotY             =  -1;
-static  char           fmPickedWithController  =   0;
-static  char           fmPointerDrag           =   0;
 
 
 void formationInit( int  inPointerActionHandle,
-                    int  inActionHandle,
                     int  inDynamicDoneButtonHandle ) {
 
     fmSpotSprite           = maxigin_initSprite( "formationSpot.tga"           );
@@ -148,9 +135,6 @@ void formationInit( int  inPointerActionHandle,
                                 4,
                                 2 );
 
-    fmPointerActionHandle = inPointerActionHandle;
-    fmActionHandle        = inActionHandle;
-
     formationBackToStart();
 
 
@@ -160,7 +144,7 @@ void formationInit( int  inPointerActionHandle,
                                MAXIGIN_GAME_NATIVE_W - 100,
                                MAXIGIN_GAME_NATIVE_H - 10,
                                0,
-                               fmPointerActionHandle,
+                               inPointerActionHandle,
                                inDynamicDoneButtonHandle,
                                1 );
 
@@ -185,19 +169,12 @@ void formationInit( int  inPointerActionHandle,
     REGISTER_ARRAY_MEM( formation              );
     REGISTER_ARRAY_MEM( formationHighlightFade );
     
-    REGISTER_VAL_MEM  ( formationPickedY       );
-    REGISTER_VAL_MEM  ( formationPickedX       );
     REGISTER_VAL_MEM  ( fmOverSlotX            );
     REGISTER_VAL_MEM  ( fmOverSlotY            );
 
     REGISTER_VAL_MEM  ( formationSize          );
-    
 
-    REGISTER_VAL_MEM  ( fmNewSpotWaiting        );
     REGISTER_VAL_MEM  ( fmNewSpotMessageShowing );
-    REGISTER_VAL_MEM  ( fmPickedWithController  );
-
-    REGISTER_VAL_MEM  ( fmPointerDrag );
     }
 
 
@@ -276,23 +253,11 @@ void formationDraw( int   inBoardCenterX,
                     ||
                     f == -1 ) {
                     s = fmSpotSprite;
-
-                    if( formationPickedY == y
-                        &&
-                        formationPickedX == x ) {
-                        s = fmSpotPickedSprite;
-                        }
                     }
                 if( f == 2
                     ||
                     f == -2 ) {
                     s = fmSpotKingSprite;
-
-                    if( formationPickedY == y
-                        &&
-                        formationPickedX == x ) {
-                        s = fmSpotKingPickedSprite;
-                        }
                     }
 
                 maxigin_drawResetColor();
@@ -324,38 +289,16 @@ void formationDraw( int   inBoardCenterX,
                                                     cY );
                         }
                     }
-
-                if( f > 0
-                    &&
-                    fmOverSlotX == x
-                    &&
-                    fmOverSlotY == y
-                    &&
-                    fmPickedWithController ) {
-
-                    maxigin_drawButtonHintSprite(
-                        fmActionHandle,
-                        cX - 13,
-                        cY + 5 );
-                    }
                 }
             }
         }
     
 
-    if( formationPickedX != -1
-        &&
-        formationPickedY != -1 ) {
 
-        descX    = formationPickedX;
-        descY    = formationPickedY;
-        descFade = 255;
-        }
-    else {
-        descX    = fmOverSlotX;
-        descY    = fmOverSlotY;
-        descFade = formationHighlightFade[ descY ][ descX ];
-        }
+    descX    = fmOverSlotX;
+    descY    = fmOverSlotY;
+    descFade = formationHighlightFade[ descY ][ descX ];
+        
     
 
     if( descX != -1
@@ -422,17 +365,8 @@ void formationDraw( int   inBoardCenterX,
         }
     
     
-    if( fmNewSpotWaiting ) {
-        
-        }
-    else if( ! inSlidingUp
-             &&
-             ( formationPickedX == -1
-               ||
-               formationPickedY == -1 ) ) {
-        /* hide done button if new spot waiting */
-        /* also hide if sliding up  */
-        /* also hide if currently have a slot picked */
+    if( ! inSlidingUp ) {
+        /* hide done button if sliding up  */
         
         buttonDraw( fmDoneButton );
         }
@@ -442,7 +376,6 @@ void formationDraw( int   inBoardCenterX,
 
 char formationStep( int  inBoardCenterX,
                     int  inBoardCenterY,
-                    int  inPickFailedSound,
                     int  inPieceLiftSound ) {
     
 
@@ -458,8 +391,6 @@ char formationStep( int  inBoardCenterX,
     
     if( maxigin_getActivePointerLocation( &pointerX,
                                           &pointerY ) ) {
-
-        fmPickedWithController = 0;
         
         fmOverSlotX = -1;
         fmOverSlotY = -1;
@@ -489,67 +420,17 @@ char formationStep( int  inBoardCenterX,
                     &&
                     pointerY < cY + squareR ) {
 
-                    char  soundAlreadyPlayed  =  0;
-                    
-
                     if( formation[ y ][ x ] != 0
                         &&
                         formationHighlightFade[ y ][ x ] < 255 ) {
                         
                         maxigin_playSoundEffect( inPieceLiftSound,
                                                  256 );
-                        soundAlreadyPlayed = 1;
                         }
                     formationHighlightFade[ y ][ x ] = 255;
 
                     fmOverSlotX = x;
                     fmOverSlotY = y;
-
-                    if( fmOverSlotY >= 5
-                        &&
-                        formationPickedX != -1
-                        &&
-                        formationPickedY != -1
-                        &&
-                        ( formationPickedX != fmOverSlotX
-                          ||
-                          formationPickedY != fmOverSlotY )
-                        &&
-                        ( ! fmNewSpotWaiting
-                          ||
-                          formation[ fmOverSlotY ][ fmOverSlotX ]
-                          == noPiece ) ) {
-
-                        if( fmPointerDrag ) {
-                            
-                            /* swap when dragging around with the mouse */
-                        
-                            char  temp  =  formation[ formationPickedY ]
-                                                    [ formationPickedX ];
-
-                            formation[ formationPickedY ][ formationPickedX ] =
-                                formation[ fmOverSlotY ][ fmOverSlotX ];
-
-                            formation[ fmOverSlotY ][ fmOverSlotX ] = temp;
-                        
-                            if( ! soundAlreadyPlayed ) {
-                                maxigin_playSoundEffect( inPieceLiftSound,
-                                                         256 );
-                                }
-                            formationPickedX = fmOverSlotX;
-                            formationPickedY = fmOverSlotY;
-                            }
-                        
-                        if( fmActionDown
-                            &&
-                            maxigin_isButtonDown( fmPointerActionHandle ) ) {
-                            /* button still held down while they moused
-                               to actually move the active cell
-                               Count it as a drag, and clear active
-                               status on release of mouse */
-                            fmPointerDrag = 1;
-                            }
-                        }
                     }
                 }
             }
@@ -563,127 +444,43 @@ char formationStep( int  inBoardCenterX,
         int  oldY  =  fmOverSlotY;
 
         /* end any pointer drag, in case pointer left screen */
-        
-        fmPointerDrag = 0; 
+    
+        for( y = 0;
+             y < BH;
+             y ++ ) {
+            for( x = 0;
+                 x < BW;
+                 x ++ ) {
 
-        if( formationPickedX != -1
+                if( formation[ y ][ x ] == 0 ) {
+                    presentMap[ y * BW + x ] = 0;
+                    }
+                else {
+                    presentMap[ y * BW + x ] = 1;
+                    }
+                }
+            }
+        sparseGridNav( presentMap,
+                       BW,
+                       BH,
+                       &fmOverSlotX,
+                       &fmOverSlotY);
+
+        if( fmOverSlotX != -1
             &&
-            formationPickedY != -1 ) {
+            fmOverSlotY != -1
+            &&
+            ( fmOverSlotX != oldX
+              ||
+              fmOverSlotY != oldY ) ) {
 
-            oldX = formationPickedX;
-            oldY = formationPickedY;
+            maxigin_playSoundEffect( inPieceLiftSound,
+                                     256 );
+            formationHighlightFade[ fmOverSlotY ][ fmOverSlotX ] = 255;
 
-            /* something picked, allow them to move it around */
-            for( y = 0;
-                 y < BH;
-                 y ++ ) {
-                for( x = 0;
-                     x < BW;
-                     x ++ ) {
-
-                    if( y < BH - 3 ) {
-                        /* formation only allowed in first 3 rows */
-                        presentMap[ y * BW + x ] = 0;
-                        }
-                    else {
-
-                        if( fmNewSpotWaiting ) {
-                            /* can only move it into empty spot
-                               can't swap it, because the thing we're
-                               swapping with would jump up into the
-                               forbidden "new spot" area */
-                            if( formation[ y ][ x ] == 0 ) {
-                                presentMap[ y * BW + x ] = 1;
-                                }
-                            else {
-                                presentMap[ y * BW + x ] = 0;
-                                }
-                            }
-                        else {
-                            /* can swap it with any space */
-                            presentMap[ y * BW + x ] = 1;
-                            }
-                        }
-                    }
-                }
-            
-            sparseGridNav( presentMap,
-                           BW,
-                           BH,
-                           &formationPickedX,
-                           &formationPickedY);
-
-            if( formationPickedX != oldX
-                ||
-                formationPickedY != oldY ) {
-
-                char  temp  =  formation[ formationPickedY ][ formationPickedX ];
-
-                formation[ formationPickedY ][ formationPickedX ] =
-                    formation[ oldY ][ oldX ];
-                
-                formation[ oldY ][ oldX ] = temp;
-                
-                maxigin_playSoundEffect( inPieceLiftSound,
-                                         256 );
-                unlocksCancelViewer();
-
-                fmOverSlotX = formationPickedX;
-                fmOverSlotY = formationPickedY;
-                fmNewSpotWaiting = 0;
-                }
-
-            if( formationPickedX != -1
-                &&
-                formationPickedY != -1 ) {
-                fmPickedWithController = 1;
-                }
+            unlocksCancelViewer();
             }
-        else {
-            /* nothing picked, allow them to pick one */
-        
-            for( y = 0;
-                 y < BH;
-                 y ++ ) {
-                for( x = 0;
-                     x < BW;
-                     x ++ ) {
-
-                    if( formation[ y ][ x ] == 0 ) {
-                        presentMap[ y * BW + x ] = 0;
-                        }
-                    else {
-                        presentMap[ y * BW + x ] = 1;
-                        }
-                    }
-                }
-            sparseGridNav( presentMap,
-                           BW,
-                           BH,
-                           &fmOverSlotX,
-                           &fmOverSlotY);
-
-            if( fmOverSlotX != -1
-                &&
-                fmOverSlotY != -1
-                &&
-                ( fmOverSlotX != oldX
-                  ||
-                  fmOverSlotY != oldY ) ) {
-
-                maxigin_playSoundEffect( inPieceLiftSound,
-                                         256 );
-                formationHighlightFade[ fmOverSlotY ][ fmOverSlotX ] = 255;
-
-                unlocksCancelViewer();
-                }
-            
-            if( fmOverSlotX != -1
-                &&
-                fmOverSlotY != -1 ) {
-                fmPickedWithController = 1;
-                }
-            }
+      
         }
     
     
@@ -717,114 +514,19 @@ char formationStep( int  inBoardCenterX,
         }
 
 
-    if( ! fmActionDown
-        &&
-        ( maxigin_isButtonDown( fmActionHandle )
-          ||
-          maxigin_isButtonDown( fmPointerActionHandle ) ) ) {
-
-        if( fmOverSlotX != -1
-            &&
-            fmOverSlotY != -1
-            &&
-            fmOverSlotY >= 5 ) {
-
-            if( formationPickedX == fmOverSlotX
-                &&
-                formationPickedY == fmOverSlotY ) {
-                
-                formationPickedX = -1;
-                formationPickedY = -1;
-                playBeepDownSound();
-                unlocksCancelViewer();
-                
-                fmNewSpotWaiting = 0;
-                }
-            else if( formationPickedX == -1
-                     &&
-                     formationPickedY == -1 ) {
-
-                if( formation[ fmOverSlotY ][ fmOverSlotX ] != 0 ) {
-                    formationPickedX = fmOverSlotX;
-                    formationPickedY = fmOverSlotY;
-                    playBeepUpSound();
-                    unlocksCancelViewer();
-                    }
-                }
-            else if( ! fmNewSpotWaiting
-                     ||
-                     formation[ fmOverSlotY ][ fmOverSlotX ] == 0 ) {
-                
-                /* swap */
-
-                char  temp  =  formation[ formationPickedY ][ formationPickedX ];
-
-                formation[ formationPickedY ][ formationPickedX ] =
-                    formation[ fmOverSlotY ][ fmOverSlotX ];
-
-                formation[ fmOverSlotY ][ fmOverSlotX ] = temp;
-
-                formationPickedX = -1;
-                formationPickedY = -1;
-                playBeepDownSound();
-                unlocksCancelViewer();
-
-                fmNewSpotWaiting = 0;
-                }
-
-            }
-        else if( fmOverSlotX != -1
-                 &&
-                 fmOverSlotY != -1
-                 &&
-                 fmOverSlotY < 5 ) {
-
-            /* Action on unavailable spot */
-            maxigin_playSoundEffect( inPickFailedSound,
-                                     256 );
-
-            }
-        
-
-        fmActionDown = 1;
-        }
-
-    if( ! maxigin_isButtonDown( fmPointerActionHandle )
-        &&
-        ! maxigin_isButtonDown( fmActionHandle ) ) {
-        fmActionDown = 0;
-
-        if( fmPointerDrag ) {
-            /* they were dragging before, and now they have let go */
-
-            formationPickedX = -1;
-            formationPickedY = -1;
-            fmPointerDrag = 0;
-
-            playBeepDownSound();
-            unlocksCancelViewer();
-
-            fmNewSpotWaiting = 0;
-            }
-        }
-    
-
     /* no done button pressable if they are still picking a slot
        and haven't set it down yet */
-    if( ! fmNewSpotWaiting
-        &&
-        ( formationPickedX == -1
-          ||
-          formationPickedY == -1 )
-        &&
-        buttonIsNewPressed( fmDoneButton ) ) {
-        formationPickedX = -1;
-        formationPickedY = -1;
+    if( buttonIsNewPressed( fmDoneButton ) ) {
+
+        fmOverSlotX = -1;
+        fmOverSlotY = -1;
+
         unlocksCancelViewer();
 
         fmNewSpotMessageShowing = 0;
         return 1;
         }
+    
     return 0;
     }
 
@@ -852,11 +554,9 @@ void formationBackToStart( void ) {
             formationHighlightFade[ y ][ x ] = 0;
             }
         }
-    
-    formationPickedY = -1;
-    formationPickedX = -1;
-    
-    fmPickedWithController = 0;
+
+    fmOverSlotX = -1;
+    fmOverSlotY = -1;
 
     /* default starting formation
        k in back, 2 pieces in front */
@@ -872,22 +572,6 @@ void formationBackToStart( void ) {
 
 
 void formationAddNewSpot( void ) {
-    
-    if( 0 ) {
-        
-        formation[ 4 ][ 4 ] = 1;
-
-        /* force it to be picked so they have to move it next time */
-        formationPickedY = 4;
-        formationPickedX = 4;
-
-        fmNewSpotWaiting = 1;
-
-        fmPickedWithController = 0;
-
-        fmOverSlotX = -1;
-        fmOverSlotY = -1;
-        }
 
     fmNewSpotMessageShowing = 1;
 
@@ -933,8 +617,8 @@ void formationSetEnemyLocations( BoardState  *inState ) {
                 int  t  =  p & CHESS_TYPE_MASK;
 
                 if( t == king ) {
-                    /* for now, keep king spot hidden */
-                    formation[ y ][ x ] = -1;
+                    /* for now, keep showing enemy king spot */
+                    formation[ y ][ x ] = -2;
                     }
                 else {
                     formation[ y ][ x ] = -1;

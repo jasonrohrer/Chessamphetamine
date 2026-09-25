@@ -908,7 +908,8 @@ void formationSetEnemyLocations( BoardState  *inState ) {
                 int  t  =  p & CHESS_TYPE_MASK;
 
                 if( t == king ) {
-                    formation[ y ][ x ] = -2;
+                    /* for now, keep king spot hidden */
+                    formation[ y ][ x ] = -1;
                     }
                 else {
                     formation[ y ][ x ] = -1;

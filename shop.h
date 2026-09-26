@@ -239,8 +239,29 @@ static void shopInternalReroll( void ) {
     for( i = 0;
          i < shopNumVisibleSlots;
          i ++ ) {
+
+        char  sameAsOther  =  1;
+
+        /* make sure each shop item is unique */
+        while( sameAsOther ) {
+
+            int  o;
         
-        shopItems[ i ] = rarityRollPiece();
+            shopItems[ i ] = rarityRollPiece();
+
+            sameAsOther = 0;
+
+            for( o = 0;
+                 o < i;
+                 o   ++ ) {
+
+                if( shopItems[ o ] == shopItems[ i ] ) {
+                    sameAsOther = 1;
+                    break;
+                    }
+                }
+            }
+        
 
         shopSlotPrices[ i ] = shopPrices[ shopItems[ i ] ];
 

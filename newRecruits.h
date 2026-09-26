@@ -234,7 +234,7 @@ void newRecruitsReroll( int  inNewSlotNumber ) {
     int  maxX       =  minX;
     int  aveX       =  minX;
 
-    int  numToFill  =  2;
+    int  numToFill  =  1;
 
 
     numToFill += ( inNewSlotNumber - 1 );

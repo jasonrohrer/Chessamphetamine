@@ -506,8 +506,6 @@ void shopReroll( void ) {
 
     newSpotHighlightFade = 0;
 
-    costResetIncrement( shopRerollCost );
-
     buttonReset( doneButton );
     buttonReset( rerollButton );
     }
@@ -515,6 +513,7 @@ void shopReroll( void ) {
 
 
 void shopLevelIncrement( void ) {
+    costResetIncrement( shopRerollCost );
     costLevelIncrement( shopRerollCost );
     }
 

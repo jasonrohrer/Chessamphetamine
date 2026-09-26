@@ -28,6 +28,9 @@ void shopInit( int  inPointerActionHandle,
    and incrementing prices */
 void shopReroll( void );
 
+void shopLevelIncrement( void );
+
+
 
 /* resets the shop back to its starting state
    ( starting prices, fully shuffled decks )
@@ -86,16 +89,16 @@ char isShoppingDone( void );
 #define SHOP_PRICE_LIST( C, V )  \
     V( C, 0,   noPiece,      0   )    \
     V( C, 1,   pawn,         7   )    \
-    V( C, 2,   bishop,       2   )    \
+    V( C, 2,   bishop,       4   )    \
     V( C, 3,   knight,       2   )    \
-    V( C, 4,   rook,         4   )    \
+    V( C, 4,   rook,         8   )    \
     V( C, 5,   queen,        0   )    \
     V( C, 6,   king,         0   )    \
     V( C, 7,   laserRook,    15  )    \
-    V( C, 8,   laserPawn,    6   )    \
-    V( C, 9,   doublingPawn, 6   )    \
-    V( C, 10,  addingRook,   7   )    \
-    V( C, 11,  rocket,       7   )
+    V( C, 8,   laserPawn,    10   )    \
+    V( C, 9,   doublingPawn, 10   )    \
+    V( C, 10,  addingRook,   12   )    \
+    V( C, 11,  rocket,       12   )
 
 static  int  shopPrices[] = {
     MAKE_CHESS_ARRAY( SHOP_PRICE_LIST )
@@ -185,6 +188,8 @@ static  char           newSpotsUnlimited                          =  1;
 static  int            formationRecruitsSprite                    = -1;
 
 static  char           shopNewRecruitsShowing                     =  0;
+
+static  int            shopNumNewFormationSpotsBought             =  0;
 
 
 static void shopResetHightlighFades( void ) {
@@ -313,16 +318,16 @@ void shopInit( int  inPointerActionHandle,
                      inCenterX,
                      inCenterY );
     
-    /* reroll costs are 5, 6, 8, 11, 15, etc. */
-    /* don't increase as levels go up */
-    shopRerollCost = costInit( 5,
+    /* reroll costs are 1, 2, 4, 7, etc. */
+    /* increase every other level too */
+    shopRerollCost = costInit( 1,
                                1,
                                -1,
                                -1,
                                1,
                                0,
                                -1,
-                               -1,
+                               2,
                                0 );
 
     /* new army formation spots cost 8, 11, 15, 20, 26 etc */
@@ -478,6 +483,8 @@ void shopInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( shopSlotPickedWithController );
 
     REGISTER_VAL_MEM( shopNewRecruitsShowing );
+
+    REGISTER_VAL_MEM( shopNumNewFormationSpotsBought );
     }
 
 
@@ -500,10 +507,15 @@ void shopReroll( void ) {
     newSpotHighlightFade = 0;
 
     costResetIncrement( shopRerollCost );
-    costLevelIncrement( shopRerollCost );
 
     buttonReset( doneButton );
     buttonReset( rerollButton );
+    }
+
+
+
+void shopLevelIncrement( void ) {
+    costLevelIncrement( shopRerollCost );
     }
 
 
@@ -528,6 +540,8 @@ void shopReset( void ) {
 
     costFullReset( shopRerollCost );
     costFullReset( newFormationSpotCost );
+
+    shopNumNewFormationSpotsBought = 0;
 
     buttonReset( doneButton );
     }
@@ -1216,8 +1230,11 @@ ChessPiece shopStep( int  inPickFailedSound,
             maxigin_playSoundEffect( purchaseSound,
                                      256 );
 
+            shopNumNewFormationSpotsBought ++;
+
             /* show new recruits after they buy slot */
-            newRecruitsReroll();
+            newRecruitsReroll( shopNumNewFormationSpotsBought );
+            
             shopNewRecruitsShowing = 1;
             }
         else {

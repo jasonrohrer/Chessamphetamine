@@ -23,7 +23,7 @@ void newRecruitsInit( int  inPointerActionHandle,
 
 
 /* refresh the newRecruits */
-void newRecruitsReroll( void );
+void newRecruitsReroll( int  inNewSlotNumber );
 
 
 
@@ -158,14 +158,91 @@ static void newRecruitsClear( void ) {
     }
 
 
-void newRecruitsReroll( void ) {
+
+/* assumes that we call this in order for each basket index, starting from 0,
+   so we don't recompute counts for previous baskets */
+static char isBasketEqualToAnyPrevious( int  inBasketIndex ) {
+
+    static  char  typeCounts[ NUM_NEW_RECRUITS_BASKETS ][ NUM_CHESS_PIECES ];
+
+    int  b;
+    int  c;
+    int  s;
+
+    for( c = 0;
+         c < NUM_CHESS_PIECES;
+         c   ++ ) {
+
+        typeCounts[ inBasketIndex ][ c ] = 0;
+
+        for( s = 0;
+             s < NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
+             s   ++ ) {
+            }
+        }
+
+    for( s = 0;
+         s < NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
+         s   ++ ) {
+        typeCounts[ inBasketIndex ][ newRecruitsSlots[ inBasketIndex ][ s ] ] ++;
+        }
+    
+
+    if( inBasketIndex == 0 ) {
+        /* nothing to compare it to, but we've done our count for
+           future comparisons to use */
+        return 0;
+        }
+
+    /* else there are other baskets for which we've computed counts
+       Make sure there are no exact matches */
+
+    for( b = 0;
+         b < inBasketIndex;
+         b   ++ ) {
+
+        char  equal  =  1;
+
+        for( c = 0;
+             c < NUM_CHESS_PIECES;
+             c   ++ ) {
+
+            if( typeCounts[ b ][ c ] != typeCounts[ inBasketIndex ][ c ] ) {
+                equal = 0;
+                break;
+                }
+            }
+
+        if( equal ) {
+            /* found match */
+            return 1;
+            }
+        }
+
+    /* found no match */
+    return 0;
+    }
+
+
+
+void newRecruitsReroll( int  inNewSlotNumber ) {
     
     int  b;
     int  s;
 
-    int  minX  =  newRecruitsSlotPosX[ 0 ][ 0 ];
-    int  maxX  =  minX;
-    int  aveX  =  minX;
+    int  minX       =  newRecruitsSlotPosX[ 0 ][ 0 ];
+    int  maxX       =  minX;
+    int  aveX       =  minX;
+
+    int  numToFill  =  2;
+
+
+    numToFill += ( inNewSlotNumber - 1 );
+
+    if( numToFill > NUM_NEW_RECRUITS_SLOTS_PER_BASKET ) {
+        numToFill = NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
+        }
+    
     
     newRecruitsClear();
 
@@ -184,14 +261,31 @@ void newRecruitsReroll( void ) {
     for( b = 0;
          b < newRecruitsNumVisibleBaskets;
          b   ++ ) {
-        
-        maxX = newRecruitsSlotPosX[ b ][ 0 ];
-        
-        for( s = 0;
-             s < NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
-             s   ++ ) {
 
-            newRecruitsSlots[ b ][ s ] = rarityRollPiece();
+        char  keepTrying  =  1;
+
+        maxX = newRecruitsSlotPosX[ b ][ 0 ];
+
+        while( keepTrying ) {
+
+            keepTrying = 0;
+            
+            for( s =  NUM_NEW_RECRUITS_SLOTS_PER_BASKET - 1;
+                 s >= NUM_NEW_RECRUITS_SLOTS_PER_BASKET - numToFill;
+                 s    -- ) {
+
+                newRecruitsSlots[ b ][ s ] = rarityRollPiece();
+                }
+        
+            for( s =  NUM_NEW_RECRUITS_SLOTS_PER_BASKET - numToFill - 1;
+                 s >= 0;
+                 s    -- ) {
+                newRecruitsSlots[ b ][ s ] = noPiece;
+                }
+
+            if( isBasketEqualToAnyPrevious( b ) ) {
+                keepTrying = 1;
+                }
             }
         }
 
@@ -638,9 +732,11 @@ ChessPiece newRecruitsStep( int  inPurchaseSound ) {
         for( s = 0;
              s < NUM_NEW_RECRUITS_SLOTS_PER_BASKET;
              s   ++ ) {
-        
+
+            if( newRecruitsSlots[ b ][ s ] != noPiece ) {
                 playerDeckAddPiece( newRecruitsSlots[ b ][ s ] );
                 newRecruitsSlots[ b ][ s ] = noPiece;
+                }
             }
 
         maxigin_playSoundEffect( inPurchaseSound,

@@ -2828,6 +2828,7 @@ void maxiginGame_step( void ) {
 
                 formationCostReset();
                 formationLevelIncrement();
+                shopLevelIncrement();
 
                 playerDeckReshuffle();
                                 

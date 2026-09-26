@@ -415,8 +415,8 @@ void formationDraw( int   inBoardCenterX,
         
         maxigin_drawLangText(
                 lang_newSpot,
-                inBoardCenterX + BOARD_SQUARE_SIZE / 2,
-                inBoardCenterY - 10,
+                inBoardCenterX,
+                inBoardCenterY + BOARD_SQUARE_SIZE / 2,
                 MAXIGIN_CENTER );
         
         maxigin_setLanguageFontIndex( 0 );

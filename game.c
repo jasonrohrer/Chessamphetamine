@@ -1280,6 +1280,8 @@ static void startDraftingPieces( void ) {
     int  sY;
 
     sideBoardDestSpotFade = 0;
+
+    sideBoardResetCost();
     
     draftingPieces   = 1;
 
@@ -2657,6 +2659,7 @@ void maxiginGame_step( void ) {
 
         ChessPiece  boughtPiece;
         ChessPiece  newInfoPiece  =  sideBoardStep( examinePieceSound,
+                                                    pickFailedSound,
                                                     &boughtPiece,
                                                     &sideBoardDestSpotFade );
 

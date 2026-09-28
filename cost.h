@@ -86,6 +86,23 @@ int  costInit( int  inBaseCost,
                int  inLevelCountDivisor,
                int  inLevelIncrementIncrement );
 
+
+/* A plateau cost is one that slows down as it grows, stopping
+   for longer and longer on various plateaus on the way up.
+
+   The above costInit can make very slowly-rising costs, but
+   they are always linear or exponential.
+
+   A plateau cost can be more in the shape of a square root function
+
+   costPlateauInit( 1, 1, 1, 0 ) produces the sequence 1,2,2,3,3,3,4,4,4,4,...
+*/
+int  costPlateauInit( int  inStartingValue,
+                      int  inStartingPlateauLength,
+                      int  inPlateauLengthIncrement,
+                      int  inPlateauLegthIncrementIncrement );
+
+
 int costGet( int  inCostHandle );
 
 int costIncrement( int  inCostHandle );
@@ -119,7 +136,12 @@ void costTest( int  inCostHandle );
 #include "memoryRegister.h"
 
 
-#define  MAX_NUM_COSTS   4
+#define  MAX_NUM_COSTS               4
+
+/* add this to the handle returned for plateau costs to differentiate them */
+#define  PLATEAU_COST_HANDLE_OFFSET  MAX_NUM_COSTS
+
+
 
 typedef struct Cost{
 
@@ -147,9 +169,31 @@ typedef struct Cost{
     } Cost;
 
 
-static  Cost  costList[ MAX_NUM_COSTS ];
+
+typedef struct CostPlateau{
+        
+        int  startingValue;
+        int  startingPlateauLength;
+        int  startingPlateauLengthIncrement;
+        int  plateauLegthIncrementIncrement;
+
+        int  currentValue;
+        int  currentPlateauLength;
+        int  currentPlateauLengthIncrement;
+        int  currentPlateauProgress;
+        
+    } CostPlateau;
+
+
+
+static  Cost  costList              [ MAX_NUM_COSTS ];
+
+static  CostPlateau  costPlateauList[ MAX_NUM_COSTS ];
 
 static  int   numCosts                    =  0;
+static  int   numPlateauCosts             =  0;
+
+
 
 
 int  costInit( int  inBaseCost,
@@ -220,6 +264,50 @@ int  costInit( int  inBaseCost,
 
 
 
+int  costPlateauInit( int  inStartingValue,
+                      int  inStartingPlateauLength,
+                      int  inStartingPlateauLengthIncrement,
+                      int  inPlateauLegthIncrementIncrement ) {
+    int  handle;
+
+    if( numPlateauCosts >= MAX_NUM_COSTS ) {
+
+        mingin_log( "Too many plateau costs initialized with "
+                    "costPlateauInit in cost.h\n" );
+        
+        return -1;
+        }
+
+    handle = numPlateauCosts;
+    numPlateauCosts ++;
+
+    costPlateauList[ handle ].startingValue                  =
+                                  inStartingValue;
+    
+    costPlateauList[ handle ].startingPlateauLength          =
+                                  inStartingPlateauLength;
+    
+    costPlateauList[ handle ].startingPlateauLengthIncrement  =
+                                  inStartingPlateauLengthIncrement;
+    
+    costPlateauList[ handle ].plateauLegthIncrementIncrement =
+                                  inPlateauLegthIncrementIncrement;
+
+    costPlateauList[ handle ].currentValue           =  inStartingValue;
+    costPlateauList[ handle ].currentPlateauLength   =  inStartingPlateauLength;
+    costPlateauList[ handle ].currentPlateauLengthIncrement  =
+                                  inStartingPlateauLengthIncrement;
+    
+    costPlateauList[ handle ].currentPlateauProgress = 0;
+    
+
+    REGISTER_VAL_MEM( costPlateauList[ handle ] );
+
+    return handle + PLATEAU_COST_HANDLE_OFFSET;
+    }
+
+
+
 int costGet( int  inCostHandle ) {
 
     int  val;
@@ -227,6 +315,14 @@ int costGet( int  inCostHandle ) {
     if( inCostHandle == -1 ) {
         return 0;
         }
+
+    if( inCostHandle >= PLATEAU_COST_HANDLE_OFFSET ) {
+
+        inCostHandle -= PLATEAU_COST_HANDLE_OFFSET;
+
+        return costPlateauList[ inCostHandle ].currentValue;
+        }
+    
     val = costList[ inCostHandle ].currentIncrementedVal;
 
     if( costList[ inCostHandle ].incrementCountDivisor != -1 ) {
@@ -247,6 +343,31 @@ int costIncrement( int  inCostHandle ) {
     
     if( inCostHandle == -1 ) {
         return 0;
+        }
+
+    if( inCostHandle >= PLATEAU_COST_HANDLE_OFFSET ) {
+
+        int  h  =  inCostHandle - PLATEAU_COST_HANDLE_OFFSET;
+
+        costPlateauList[ h ].currentPlateauProgress ++;
+
+        if( costPlateauList[ h ].currentPlateauProgress >=
+            costPlateauList[ h ].currentPlateauLength ) {
+
+            /* done with this step */
+            costPlateauList[ h ].currentValue ++;
+
+            costPlateauList[ h ].currentPlateauProgress = 0;
+            
+            costPlateauList[ h ].currentPlateauLength +=
+                costPlateauList[ h ].currentPlateauLengthIncrement;
+            
+            costPlateauList[ h ].currentPlateauLengthIncrement +=
+                costPlateauList[ h ].plateauLegthIncrementIncrement;
+            
+            }
+        
+        return costGet( inCostHandle );
         }
 
     curIncrVal = costList[ inCostHandle ].currentIncrementedVal;
@@ -279,6 +400,24 @@ int costResetIncrement( int  inCostHandle ) {
         return 0;
         }
 
+    if( inCostHandle >= PLATEAU_COST_HANDLE_OFFSET ) {
+
+        int  handle  =  inCostHandle - PLATEAU_COST_HANDLE_OFFSET;
+
+        costPlateauList[ handle ].currentValue                =
+            costPlateauList[ handle ].startingValue;
+        
+        costPlateauList[ handle ].currentPlateauLength        =
+            costPlateauList[ handle ].startingPlateauLength;
+        
+        costPlateauList[ handle ].currentPlateauProgress      =  0;
+        
+        costPlateauList[ handle ].currentPlateauLengthIncrement =
+            costPlateauList[ handle ].startingPlateauLengthIncrement;
+
+        return costGet( inCostHandle );
+        }
+
     costList[ inCostHandle ].currentIncrementedVal =
         costList[ inCostHandle ].currentVal;
     
@@ -301,6 +440,11 @@ int costLevelIncrement( int  inCostHandle ) {
     
     if( inCostHandle == -1 ) {
         return 0;
+        }
+
+    if( inCostHandle >= PLATEAU_COST_HANDLE_OFFSET ) {
+        /* plateaus have no level increment */
+        return costGet( inCostHandle );
         }
 
     curVal = costList[ inCostHandle ].currentVal;
@@ -341,6 +485,16 @@ int costLevelIncrement( int  inCostHandle ) {
 int costFullReset( int  inCostHandle ) {
     if( inCostHandle == -1 ) {
         return 0;
+        }
+
+    if( inCostHandle >= PLATEAU_COST_HANDLE_OFFSET ) {
+
+        costResetIncrement( inCostHandle );
+        
+        inCostHandle -= PLATEAU_COST_HANDLE_OFFSET;
+
+        /* fixme */
+        return costGet( inCostHandle );
         }
     
     costList[ inCostHandle ].currentVal              =

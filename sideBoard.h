@@ -54,10 +54,14 @@ char sideBoardUnlift( void );
 void sideBoardShowRedraw( char  inShow );
 
 
+void sideBoardResetCost( void );
+
+
 
 
 /* returns piece being moused over */
 ChessPiece sideBoardStep( int             inPieceLiftSound,
+                          int             inPickFailedSound,
                           ChessPiece     *outPurchasedPiece,
                           unsigned char  *outOverPieceFade );
 
@@ -93,6 +97,9 @@ int sideBoardGetNumSlots( void );
 
 #include "unlocks.h"
 
+#include "cost.h"
+
+#include "money.h"
 
 
 static  ChessPiece     sideBoard      [ SIDE_BOARD_MAX_SLOTS ];
@@ -123,6 +130,9 @@ static  char           sbRedrawShowing        =   0;
 static  char           sbHoldingController    =   0;
 static  int            sbOverSlot             =  -1;
 static  int            sbPrevSlot             =   0;
+
+static  int            sbPlacePieceCost       =  -1;
+
 
 
 void sideBoardInit( int  inPointerActionHandle,
@@ -162,6 +172,10 @@ void sideBoardInit( int  inPointerActionHandle,
         yPos -= ySep;
         }
 
+    sbPlacePieceCost = costPlateauInit( 1,
+                                        1,
+                                        1,
+                                        0 );
 
     REGISTER_ARRAY_MEM( sideBoard );
     REGISTER_ARRAY_MEM( sbLift );
@@ -292,6 +306,7 @@ static void sbForceFullLiftOneSpot( int  inSpotIndex ) {
 
 
 ChessPiece sideBoardStep( int             inPieceLiftSound,
+                          int             inPickFailedSound,
                           ChessPiece     *outPurchasedPiece,
                           unsigned char  *outOverPieceFade ) {
     
@@ -450,24 +465,38 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
 
         if( sideBoard[ sbOverSlot ] != noPiece ) {
 
-            *outPurchasedPiece = sideBoard[ sbOverSlot ];
-
-            sideBoard[ sbOverSlot ] = playerDeckDraw();
-
-            if( sideBoard[ sbOverSlot ] != noPiece ) {
-                sbForceFullLiftOneSpot( sbOverSlot );
-                sbDropping = 1;
+            if( moneyGetTotal() < costGet( sbPlacePieceCost ) ) {
+                /* can't afford */
+                
+                maxigin_playSoundEffect( inPickFailedSound,
+                                         256 );
                 }
+            else {
+                moneyAdd( - costGet( sbPlacePieceCost ) );
+                costIncrement( sbPlacePieceCost );
+                
+                *outPurchasedPiece = sideBoard[ sbOverSlot ];
 
-            playBeepUpSound();
+                sideBoard[ sbOverSlot ] = playerDeckDraw();
 
-            for( i = 0;
-                 i < sbNumSlots;
-                 i ++ ) {
+            
+            
 
-                sbHighlightFade[i] = 0;
+                if( sideBoard[ sbOverSlot ] != noPiece ) {
+                    sbForceFullLiftOneSpot( sbOverSlot );
+                    sbDropping = 1;
+                    }
+
+                playBeepUpSound();
+
+                for( i = 0;
+                     i < sbNumSlots;
+                     i ++ ) {
+
+                    sbHighlightFade[i] = 0;
+                    }
+                *outOverPieceFade = 0;
                 }
-            *outOverPieceFade = 0;
             }
         sbActionDown = 1;
         }
@@ -493,6 +522,9 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
 void sideBoardDraw( void ) {
 
     int  i;
+
+    int  cost  = costGet( sbPlacePieceCost );
+    
 
     for( i = sbNumSlots -  1;
          i >= 0;
@@ -530,6 +562,14 @@ void sideBoardDraw( void ) {
                                     sbSlotPosX     [i],
                                     sbSlotPosY     [i] - sbSmoothLift[i],
                                     sbHighlightFade[i] );
+
+                maxigin_drawResetColor();
+                maxigin_drawSetAlpha( sbHighlightFade[i] );
+
+                numberDrawCenter( cost,
+                                  sbSlotPosX[i] + 16,
+                                  sbSlotPosY[i],
+                                  1 );
                 }
 
             if( sbHoldingController
@@ -574,6 +614,12 @@ char  sideBoardIsMouseOver( void ) {
 
 void sideBoardShowRedraw( char  inShow ) {
     sbRedrawShowing = inShow;
+    }
+
+
+
+void sideBoardResetCost( void ) {
+    costResetIncrement( sbPlacePieceCost );
     }
 
 

@@ -335,7 +335,13 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
 
                     sbOverSlot = i;
                     sbPrevSlot = i;
-                    sbHighlightFade[ i ] = 255;
+
+                    if( sbLift[ sbOverSlot ] == 0 ) {
+                        sbHighlightFade[ sbOverSlot ] = 255;
+                        }
+                    else {
+                        sbHighlightFade[ sbOverSlot ] = 0;
+                        }
                     break;
                     }
                 }
@@ -369,7 +375,12 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
             sbPrevSlot = sbOverSlot;
             
             controllerMovedSlot = 1;
-            sbHighlightFade[ sbOverSlot ] = 255;
+            if( sbLift[ sbOverSlot ] == 0 ) {
+                sbHighlightFade[ sbOverSlot ] = 255;
+                }
+            else {
+                sbHighlightFade[ sbOverSlot ] = 0;
+                }
             unlocksCancelViewer();
             }
         else if( navX > 0 ) {

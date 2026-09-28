@@ -1300,6 +1300,43 @@ static char  randColorsDown = 0;
 static char  printColorsDown = 0;
 
 
+static void startDraftingPieces( void ) {
+    formationShowing = 0;
+    draftingPieces   = 1;
+
+    getEmptyLevel( &boardState );
+
+    getLevel( currentLevel,
+              &boardState,
+              CHESS_BLACK );
+
+    getLevel( currentLevel,
+              &boardState,
+              CHESS_WHITE );
+
+    /* don't give
+       give them an allowance for drafting army in each level */
+    if( 0 ) moneyAdd( 5 ); 
+
+            
+    sideBoardRedraw();
+    sideBoardShowing = 1;
+            
+    /* black already added during formation step */
+            
+    dropNewLevelPiecesIn( -1 );
+            
+    boardMarkersHidden  = 1;
+    redrawRemoveRunning = 0;
+    redrawAddRunning    = 1;
+
+    sideBoardForceFullLift();
+
+    maxigin_playSoundEffect( boardSlideSound,
+                             256 );
+    }
+
+
 
 void maxiginGame_step( void ) {
     
@@ -2357,18 +2394,7 @@ void maxiginGame_step( void ) {
                     checkmate = 0;
                     stalemate = 0;
                     drawGame  = 0;
-                    
-                    formationShowing = 1;
 
-                    getEmptyLevel( &boardState );
-
-                    getLevel( currentLevel,
-                              &boardState,
-                              CHESS_BLACK );
-
-                    formationSetEnemyLocations( &boardState );
-
-                    formationPlayerReroll();
                     
 
                     gameOver = 0;
@@ -2376,8 +2402,7 @@ void maxiginGame_step( void ) {
                     redrawRemoveRunning = 0;
                     redrawAddRunning    = 0;
 
-                    maxigin_playSoundEffect( boardSlideSound,
-                                             256 );
+                    startDraftingPieces();
                     }
                 else {
                     /* this is a vestigial case, back
@@ -2834,17 +2859,7 @@ void maxiginGame_step( void ) {
                                 
                 currentLevel ++;
 
-                formationShowing = 1;
-
-                getEmptyLevel( &boardState );
-                
-                getLevel( currentLevel,
-                          &boardState,
-                          CHESS_BLACK );
-                
-                formationSetEnemyLocations( &boardState );
-
-                formationPlayerReroll();
+                startDraftingPieces();
                 }
             }
         }
@@ -2881,33 +2896,7 @@ void maxiginGame_step( void ) {
                                        examinePieceSound );
 
         if( fmDone ) {
-            formationShowing = 0;
-            draftingPieces   = 1;
-
-            getLevel( currentLevel,
-                      &boardState,
-                      CHESS_WHITE );
-
-            /* don't give
-               give them an allowance for drafting army in each level */
-            if( 0 ) moneyAdd( 5 ); 
-
-            
-            sideBoardRedraw();
-            sideBoardShowing = 1;
-            
-            /* black already added during formation step */
-            
-            dropNewLevelPiecesIn( -1 );
-            
-            boardMarkersHidden  = 1;
-            redrawRemoveRunning = 0;
-            redrawAddRunning    = 1;
-
-            sideBoardForceFullLift();
-
-            maxigin_playSoundEffect( boardSlideSound,
-                                     256 );
+            startDraftingPieces();
             }
         }
 
@@ -3560,18 +3549,7 @@ void maxiginGame_init( void ) {
     
     if(1) {
 
-        formationShowing = 1;
-
-        getEmptyLevel( &boardState );
-        
-        getLevel( currentLevel,
-                  &boardState,
-                  CHESS_BLACK );
-
-        formationSetEnemyLocations( &boardState );
-
-        formationPlayerReroll();
-        
+        startDraftingPieces();
         }
     else {
         sideBoardRedraw();

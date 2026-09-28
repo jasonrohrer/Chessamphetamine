@@ -39,11 +39,6 @@ void sideBoardRedraw( void );
 void sideBoardReturnPieces( void );
 
 
-/* swaps a piece onto the side board if anything on the side board is selected
-   returns noPiece if the swap failed */
-ChessPiece sideBoardSwap( ChessPiece  inNewPiece );
-
-
 /* initiates lift, which happens over sideBoardSteps
    call again to check if lift is done */
 char sideBoardLift( void );
@@ -63,6 +58,7 @@ void sideBoardShowRedraw( char  inShow );
 
 /* returns piece being moused over */
 ChessPiece sideBoardStep( int             inPieceLiftSound,
+                          ChessPiece     *outPurchasedPiece,
                           unsigned char  *outOverPieceFade );
 
 
@@ -288,38 +284,16 @@ void sideBoardReturnPieces( void ) {
 
 
 
-/* swaps a piece onto the side board if anything on the side board is selected
-   returns noPiece if the swap failed */
-ChessPiece sideBoardSwap( ChessPiece  inNewPiece ) {
-
-    ChessPiece  retVal  =  noPiece;
-
-    if( sbPickedIndex < sbNumSlots
-        &&
-        sbPickedIndex >= 0 ) {
-
-        retVal = sideBoard[ sbPickedIndex ];
-        
-        sideBoard[ sbPickedIndex ] = inNewPiece & CHESS_TYPE_MASK;
-        }
-
-    return retVal;
+static void sbForceFullLiftOneSpot( int  inSpotIndex ) {
+    sbLift      [ inSpotIndex ] = sbMaxLift;
+    sbSmoothLift[ inSpotIndex ] = MAXIGIN_GAME_NATIVE_H;
     }
 
 
 
-
 ChessPiece sideBoardStep( int             inPieceLiftSound,
+                          ChessPiece     *outPurchasedPiece,
                           unsigned char  *outOverPieceFade ) {
-
-    /* fixme
-       react to controller
-
-       show piece info panel
-    */
-
-    /* fixme:
-       also handle case where controller is used */
     
     int            pointerX;
     int            pointerY;
@@ -450,7 +424,8 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
         
         sbDropping = 0;
         }
-    
+
+    *outPurchasedPiece = noPiece;
 
     if( sbOverSlot == -1 ) {
         return noPiece;
@@ -464,19 +439,24 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
 
         if( sideBoard[ sbOverSlot ] != noPiece ) {
 
-            /* picking a piece to swap */
-            if( sbOverSlot != sbPickedIndex ) {
-                    
-            
-                sbPickedIndex = sbOverSlot;
+            *outPurchasedPiece = sideBoard[ sbOverSlot ];
 
-                playBeepDownSound();
+            sideBoard[ sbOverSlot ] = playerDeckDraw();
+
+            if( sideBoard[ sbOverSlot ] != noPiece ) {
+                sbForceFullLiftOneSpot( sbOverSlot );
+                sbDropping = 1;
                 }
-            else {
-                /* unpick */
-                sbPickedIndex = -1;
-                playBeepUpSound();
+
+            playBeepUpSound();
+
+            for( i = 0;
+                 i < sbNumSlots;
+                 i ++ ) {
+
+                sbHighlightFade[i] = 0;
                 }
+            *outOverPieceFade = 0;
             }
         sbActionDown = 1;
         }
@@ -618,8 +598,7 @@ void sideBoardForceFullLift( void ) {
          i < sbNumSlots;
          i ++ ) {
 
-        sbLift[ i ] = sbMaxLift;
-        sbSmoothLift[ i ] = MAXIGIN_GAME_NATIVE_H;
+        sbForceFullLiftOneSpot( i );
         }
     }
 

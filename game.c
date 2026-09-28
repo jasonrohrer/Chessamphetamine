@@ -1264,20 +1264,6 @@ static void swapMarkedPieces( void ) {
 
         clearDrawMarkers();     
         }
-    else if( i == 1 ) {
-        /* try swapping with side board */
-
-        ChessPiece  newPiece =
-            sideBoardSwap( boardState.grid[ rows[0] ][ cols[0] ] );
-
-        if( newPiece != noPiece ) {
-            boardState.grid[ rows[0] ][ cols[0] ] = newPiece | CHESS_WHITE;
-
-            clearDrawMarkers();
-            sideBoardClearPick();
-            buttonReset( drawButton );
-            }
-        }
     }
     
     
@@ -2668,13 +2654,37 @@ void maxiginGame_step( void ) {
     heartsStep();
 
     if( sideBoardShowing ) {
-        
+
+        ChessPiece  boughtPiece;
         ChessPiece  newInfoPiece  =  sideBoardStep( examinePieceSound,
+                                                    &boughtPiece,
                                                     &sideBoardDestSpotFade );
+
+        if( boughtPiece != noPiece ) {
+            int  sX;
+            int  sY;
+            /* fixme */
+            if( formationSpotGet( numPiecesPlaced,
+                                  &sX,
+                                  &sY ) ) {
+
+                boardState.grid[ sY ][ sX ] = boughtPiece | CHESS_WHITE;
+
+                numPiecesPlaced ++;
+                }
+            }
+        
 
         if( sideBoardIsMouseOver()
             ||
             sideBoardStillHoldingController() ) {
+
+            if( boardMarkersDownCount != 0 ) {
+
+                clearDrawMarkers();
+
+                playBeepUpSound();
+                }
             
             if( newInfoPiece != infoPanelPiece ) {
 

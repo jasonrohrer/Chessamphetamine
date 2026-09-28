@@ -306,7 +306,7 @@ static int            currentLevel                =  0;
 
 static char           gameOver                    =  0;
 
-static int            startingMoney               =  5;
+static int            startingMoney               =  7;
 
 
 static int            draftingPieces              =  0;
@@ -1306,9 +1306,10 @@ static void startDraftingPieces( void ) {
         }
     
 
-    /* don't give
-       give them an allowance for drafting army in each level */
-    if( 0 ) moneyAdd( 5 ); 
+    /* give them an allowance for drafting army in each subsequent level */
+    if( currentLevel > 0 ) {
+        moneyAdd( 3 );
+        }
 
             
     sideBoardRedraw();

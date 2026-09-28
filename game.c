@@ -1323,9 +1323,6 @@ static void startDraftingPieces( void ) {
     redrawAddRunning    = 1;
 
     sideBoardForceFullLift();
-
-    maxigin_playSoundEffect( boardSlideSound,
-                             256 );
     }
 
 

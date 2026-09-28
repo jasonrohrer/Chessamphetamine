@@ -54,15 +54,7 @@ press          "appuyez"
 defaults       "Par défaut"
 
 drawInstruct   "Composez votre armée"
-formationInstruct   "Relancer la formation?"
-newFormationSpot    "Nouvelle case de formation!"
-newSpotInA           "Encore"
-newSpotInB           "pour une case de formation"
 
-
-
-newSpotTitle         "Agrandir la formation"
-newSpotDescription   "Agrandit votre formation avec de nouvelles recrues pour placer plus de pièces sur le plateau."
 
 
 shopTitle      "Boutique!"
@@ -71,7 +63,6 @@ shopInstructB  "Choisissez une pièce pour l’acheter"
 sale           "Promo!"
 permanent      "À vie"
 
-newRecruitsInstruct  "Choisissez une colonne de recrues"
 
 level          "Niveau"
 
@@ -99,17 +90,6 @@ rare           "Rare"
 legendary      "Légendaire"
 impossible     "Impossible"
 
-
-formationKing       "Case du roi"
-formationOther      "Case d’armée"
-formationKingDesc   "Votre roi va ici. ## ## Protégez-le à tout prix!"
-formationOtherDesc  "Des pièces de votre deck sont tirées pour remplir cette case."
-
-
-formationKingEnemy       "Case_du_roi ennemi"
-formationOtherEnemy      "Case_d’armée ennemie"
-formationKingEnemyDesc   "Le roi ennemi va ici. ## ## Capturez-le pour gagner le match!"
-formationOtherEnemyDesc  "Des pièces du deck ennemi sont tirées pour remplir cette case."
 
 
 pawn           "Pion"

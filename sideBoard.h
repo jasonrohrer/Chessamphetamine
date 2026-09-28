@@ -62,7 +62,8 @@ void sideBoardShowRedraw( char  inShow );
 
 
 /* returns piece being moused over */
-ChessPiece sideBoardStep( int  inPieceLiftSound );
+ChessPiece sideBoardStep( int             inPieceLiftSound,
+                          unsigned char  *outOverPieceFade );
 
 
 void sideBoardDraw( void );
@@ -308,7 +309,8 @@ ChessPiece sideBoardSwap( ChessPiece  inNewPiece ) {
 
 
 
-ChessPiece sideBoardStep( int  inPieceLiftSound ) {
+ChessPiece sideBoardStep( int             inPieceLiftSound,
+                          unsigned char  *outOverPieceFade ) {
 
     /* fixme
        react to controller
@@ -319,13 +321,14 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
     /* fixme:
        also handle case where controller is used */
     
-    int   pointerX;
-    int   pointerY;
-    int   i;
-    int   r                    =  mingin_getStepsPerSecond();
-    int   deltaFade            =  ( 20 * 60 ) / r;
-    char  liftPhaseDone        =  0;
-    char  controllerMovedSlot  =  0;
+    int            pointerX;
+    int            pointerY;
+    int            i;
+    int            r                    =  mingin_getStepsPerSecond();
+    int            deltaFade            =  ( 20 * 60 ) / r;
+    char           liftPhaseDone        =  0;
+    char           controllerMovedSlot  =  0;
+    unsigned char  maxFade              =  0;
 
     if( unlocksIsViewerActive() ) {
         if( sbOverSlot != -1 ) {
@@ -424,7 +427,13 @@ ChessPiece sideBoardStep( int  inPieceLiftSound ) {
                 sbHighlightFade[i] = 0;
                 }
             }
+
+        if( sbHighlightFade[i] > maxFade ) {
+            maxFade = sbHighlightFade[i];
+            }
         }
+
+    *outOverPieceFade = maxFade;
 
 
     liftPhaseDone = slotLiftStep( sbLifting,

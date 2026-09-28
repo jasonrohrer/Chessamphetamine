@@ -51,14 +51,6 @@ defaults       "恢復預設"
 
 
 drawInstruct   "徵召你的軍隊"
-formationInstruct   "重擲軍隊陣形？"
-newFormationSpot    "新增軍隊陣形位置！"
-newSpotInA           "再購買"
-newSpotInB           "次即可獲得新的軍隊陣形位置"
-
-
-newSpotTitle       "擴充陣形"
-newSpotDescription "招募新兵擴充軍隊陣形，可在棋盤上放置更多棋子"
 
 
 shopTitle      "商店！"
@@ -68,7 +60,6 @@ sale           "折"
 permanent      "永久"
 
 
-newRecruitsInstruct  "選擇一欄新兵"
 
 
 level          "關卡"
@@ -95,17 +86,6 @@ rare           "稀有"
 legendary      "傳說"
 impossible     "不可能"
 
-
-formationKing       "王格"
-formationOther      "軍格"
-formationKingDesc   "你的王放這裡。務必保護！"
-formationOtherDesc  "從牌組抽棋子填入此格。"
-
-
-formationKingEnemy       "敵王格"
-formationOtherEnemy      "敵軍格"
-formationKingEnemyDesc   "敵方的王放這裡。吃掉他即可獲勝！"
-formationOtherEnemyDesc  "從敵方牌組抽棋子填入此格。"
 
 
 pawn           "兵"

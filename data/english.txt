@@ -55,13 +55,6 @@ defaults       "Defaults"
 
 
 drawInstruct   "Draft your army"
-formationInstruct   "Reroll army formation?"
-newFormationSpot    "New army formation spot!"
-newSpotInA           "Purchase"
-newSpotInB           "more for new army formation spot"
-
-newSpotTitle         "Expand Formation"
-newSpotDescription   "Expands your army formation with new recruits, allowing you to place more pieces on the board."
 
 
 shopTitle      "Shop!"
@@ -69,8 +62,6 @@ shopInstructA  "Improve your deck!"
 shopInstructB  "Pick a piece to buy it"
 sale           "Sale!"
 permanent      "Perma"
-
-newRecruitsInstruct  "Pick a column of new recruits"
 
 level          "Level"
 
@@ -99,16 +90,6 @@ legendary      "Legendary"
 impossible     "Impossible"
 
 
-formationKing       "King Spot"
-formationOther      "Army Spot"
-formationKingDesc   "Your king goes here. ## ## Protect him at all costs!"
-formationOtherDesc  "Pieces will be drawn from your deck to fill this spot."
-
-
-formationKingEnemy       "Enemy King Spot"
-formationOtherEnemy      "Enemy Army Spot"
-formationKingEnemyDesc   "Enemy king goes here. ## ## Capture him to win the match!"
-formationOtherEnemyDesc  "Pieces will be drawn from enemy deck to fill this spot."
 
 pawn           "Pawn"
 pawnDesc       "Moves 1 or 2 spaces forward, captures diagonally.  Promotes to queen in last row."

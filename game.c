@@ -201,7 +201,6 @@ static int          lang_spin;
 static int          lang_unlockView;
 
 static int          lang_drawInstruct;
-static int          lang_formInstruct;
 static int          lang_level;
 static int          lang_gameOverInstruct;
 
@@ -286,6 +285,9 @@ static char           heartsGainWaiting           =  0;
 static int            preSideBoardX               = -1;
 static int            preSideBoardY               = -1;
 
+static unsigned char  sideBoardDestSpotFade       =  0;
+
+
 
 /* 0 for no mark
    1 for move
@@ -307,8 +309,8 @@ static char           gameOver                    =  0;
 static int            startingMoney               =  5;
 
 
-static int            formationShowing            =  0;
 static int            draftingPieces              =  0;
+static int            numPiecesPlaced             =  0;
 
 static int            levelForUnlock              = -1;
 
@@ -466,9 +468,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
 
-    if( ! formationShowing
-        &&
-        ( draftingPieces
+    if( ( draftingPieces
           ||
           spinning )
         &&
@@ -575,9 +575,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         if( sideBoardShowing
             ||
-            shopShowing
-            ||
-            formationShowing ) {
+            shopShowing ) {
 
             buttonDraw( deckButton );
             }
@@ -668,9 +666,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             }
         }
 
-    if( sideBoardShowing
-        &&
-        ! formationShowing ) {
+    if( sideBoardShowing ) {
+        
         sideBoardDraw();
 
         buttonDraw( drawButton );
@@ -792,62 +789,60 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
             boardLiveCenterY -= boardSlideUpY;
             }
+        
 
+        boardDraw( boardCenterX,
+                   boardLiveCenterY );
 
-        if( formationShowing ) {
-
+        if( draftingPieces ) {
             formationDraw( boardCenterX,
                            boardLiveCenterY,
-                           deckViewShowing );
-
+                           numPiecesPlaced,
+                           sideBoardDestSpotFade );
             }
-        else {
 
-            boardDraw( boardCenterX,
-                       boardLiveCenterY );
+        if( ! spinning
+            &&
+            ! chessGameOver
+            &&
+            ! boardMarkersHidden ) {
 
-            if( ! spinning
-                &&
-                ! chessGameOver
-                &&
-                ! boardMarkersHidden ) {
+            unsigned char  markerColor;
 
-                unsigned char  markerColor;
+            boardDrawMarkers( boardCenterX,
+                              boardLiveCenterY,
+                              boardMarkers );
 
-                boardDrawMarkers( boardCenterX,
-                                  boardLiveCenterY,
-                                  boardMarkers );
-
-                if( infoPanelPiece != noPiece ) {
-                    markerColor = infoPanelPiece & CHESS_COLOR_MASK;
-                    }
-                else if( infoPanelLastPiece != noPiece ) {
-                    markerColor = infoPanelLastPiece & CHESS_COLOR_MASK;
-                    }
-                else {
-                    markerColor = CHESS_WHITE;
-                    }
-                
-                boardDrawMoveMarkers( boardCenterX,
-                                      boardLiveCenterY,
-                                      infoPanelPieceMoveMarkers,
-                                      markerColor,
-                                      infoPanelFade );
+            if( infoPanelPiece != noPiece ) {
+                markerColor = infoPanelPiece & CHESS_COLOR_MASK;
                 }
-
-            drawBoardState( &boardState,
-                            checkmate,
-                            stalemate,
-                            drawGame,
-                            gameLoserColor,
-                            &boardMove,
-                            0,
-                            0,
-                            boardCenterX,
-                            boardLiveCenterY,
-                            0,
-                            &redrawSmoothLift );
+            else if( infoPanelLastPiece != noPiece ) {
+                markerColor = infoPanelLastPiece & CHESS_COLOR_MASK;
+                }
+            else {
+                markerColor = CHESS_WHITE;
+                }
+                
+            boardDrawMoveMarkers( boardCenterX,
+                                  boardLiveCenterY,
+                                  infoPanelPieceMoveMarkers,
+                                  markerColor,
+                                  infoPanelFade );
             }
+
+        drawBoardState( &boardState,
+                        checkmate,
+                        stalemate,
+                        drawGame,
+                        gameLoserColor,
+                        &boardMove,
+                        0,
+                        0,
+                        boardCenterX,
+                        boardLiveCenterY,
+                        0,
+                        &redrawSmoothLift );
+            
         }
 
 
@@ -916,9 +911,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     if( ! spinning
         &&
-        ( formationShowing
-          ||
-          draftingPieces )
+        draftingPieces
         &&
         ! chessGameOver
         &&
@@ -926,11 +919,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         int  stringKey  =  lang_drawInstruct;
         int  xOffset    =  0;
-
-        if( formationShowing ) {
-            stringKey = lang_formInstruct;
-            xOffset   = 0;
-            }
         
         maxigin_drawResetColor();
 
@@ -1301,18 +1289,34 @@ static char  printColorsDown = 0;
 
 
 static void startDraftingPieces( void ) {
-    formationShowing = 0;
+
+    int  sX;
+    int  sY;
+
+    sideBoardDestSpotFade = 0;
+    
     draftingPieces   = 1;
 
     getEmptyLevel( &boardState );
 
-    getLevel( currentLevel,
-              &boardState,
-              CHESS_BLACK );
+    getEnemyLevel( currentLevel,
+                   &boardState );
 
-    getLevel( currentLevel,
-              &boardState,
-              CHESS_WHITE );
+    formationPlayerReroll();
+
+    numPiecesPlaced = 0;
+
+    /* spot 0 in formation is king, insert it now */
+    if( formationSpotGet( 0,
+                          &sX,
+                          &sY ) ) {
+
+        boardState.grid      [ sY ][ sX ] = king | CHESS_WHITE;
+        boardState.kingExists[ 0  ]       = 1;
+        
+        numPiecesPlaced = 1;
+        }
+    
 
     /* don't give
        give them an allowance for drafting army in each level */
@@ -1383,8 +1387,6 @@ void maxiginGame_step( void ) {
 
     if( ! shopShowing
         &&
-        ! formationShowing
-        &&
         ! deckViewShowing
         &&
         ! chessGameOver
@@ -1429,8 +1431,6 @@ void maxiginGame_step( void ) {
     if( ! spinning
         &&
         ! shopShowing
-        &&
-        ! formationShowing
         &&
         draftingPieces
         &&
@@ -1885,8 +1885,6 @@ void maxiginGame_step( void ) {
         ! shopShowing
         &&
         ! deckViewShowing
-        &&
-        ! formationShowing
         &&
         ( ( sideBoardShowing
             &&
@@ -2635,8 +2633,6 @@ void maxiginGame_step( void ) {
 
             playerDeckSetupFresh();
 
-            formationBackToStart();
-
             shopReset();
 
             /* mark all remaining pieces as ready to be lifted */
@@ -2671,11 +2667,10 @@ void maxiginGame_step( void ) {
 
     heartsStep();
 
-    if( sideBoardShowing
-        &&
-        ! formationShowing ) {
+    if( sideBoardShowing ) {
         
-        ChessPiece  newInfoPiece  =  sideBoardStep( examinePieceSound );
+        ChessPiece  newInfoPiece  =  sideBoardStep( examinePieceSound,
+                                                    &sideBoardDestSpotFade );
 
         if( sideBoardIsMouseOver()
             ||
@@ -2777,9 +2772,7 @@ void maxiginGame_step( void ) {
         &&
         ( sideBoardShowing
           ||
-          shopShowing
-          ||
-          formationShowing )
+          shopShowing )
         &&
         buttonIsNewPressed( deckButton ) ) {
 
@@ -2851,8 +2844,6 @@ void maxiginGame_step( void ) {
 
                 costLevelIncrement( drawCost );
 
-                formationCostReset();
-                formationLevelIncrement();
                 shopLevelIncrement();
 
                 playerDeckReshuffle();
@@ -2887,18 +2878,6 @@ void maxiginGame_step( void ) {
             }
         }
 
-    if( formationShowing
-        &&
-        boardSlideUp == 0 ) {
-        char  fmDone  = formationStep( boardCenterX,
-                                       boardCenterY,
-                                       pickFailedSound,
-                                       examinePieceSound );
-
-        if( fmDone ) {
-            startDraftingPieces();
-            }
-        }
 
     if( playerDeckJustRefreshed() ) {
         readyCountGlowFade = countGlowFadeMax;
@@ -3297,7 +3276,6 @@ void maxiginGame_init( void ) {
     lang_commit           = maxigin_initTranslationKey( "commitDesc" );
     lang_spin             = maxigin_initTranslationKey( "spinDesc" );
     lang_drawInstruct     = maxigin_initTranslationKey( "drawInstruct" );
-    lang_formInstruct     = maxigin_initTranslationKey( "formationInstruct" );
     lang_level            = maxigin_initTranslationKey( "level" );
     lang_gameOverInstruct = maxigin_initTranslationKey( "gameOverInstruct" );
     lang_unlockView       = maxigin_initTranslationKey( "unlockView" );
@@ -3488,9 +3466,7 @@ void maxiginGame_init( void ) {
     rollInit();
     
 
-    formationInit( MOUSE_CLICK,
-                   DRAW,
-                   COMMIT );
+    formationInit();
 
     
     levelsInit();
@@ -3560,7 +3536,6 @@ void maxiginGame_init( void ) {
         redrawRemoveRunning = 0;
         redrawAddRunning    = 1;
         draftingPieces      = 1;
-        formationShowing    = 0;
         shopShowing         = 0;
         deckViewShowing     = 0;
         chessGameOver       = 0;
@@ -3641,8 +3616,8 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( noScoreMoveCount );
 
-    REGISTER_VAL_MEM( formationShowing );
     REGISTER_VAL_MEM( draftingPieces );
+    REGISTER_VAL_MEM( numPiecesPlaced );
 
     REGISTER_ARRAY_MEM( infoPanelPieceMoveMarkers );
 
@@ -3653,6 +3628,8 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( preSideBoardX );
     REGISTER_VAL_MEM( preSideBoardY );
+
+    REGISTER_VAL_MEM( sideBoardDestSpotFade );
     
     
 

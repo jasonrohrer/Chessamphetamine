@@ -65,11 +65,6 @@ char isShoppingDone( void );
 #define SHOP_IMPLEMENTATION_INCLUDED
 
 
-#define NEW_RECRUITS_IMPLEMENTATION
-
-#include "newRecruits.h"
-
-
 #include "playerDeck.h"
 #include "numbers.h"
 #include "pieceSprites.h"
@@ -108,9 +103,6 @@ CHECK_CHESS_ARRAY( shopPrices,
                    SHOP_PRICE_LIST );
 
 
-/* new slot unlocks after how many purchases */
-static  int            shopNewSlotFactor                          =  6;
-
 /* one free deck, one paid deck with everything
    and two paid decks with more and more rarity */
 #define                NUM_SHOP_SLOTS  6
@@ -132,7 +124,6 @@ static  char           shopSlotsLifting                           =  0;
 static  char           shopSlotsDropping                          =  0;
 
 static  int            shopSelectedSlot                           =  -1;
-static  char           shopOverNewSpot                            =   0;
 
 static  unsigned char  shopSlotHighlightFade [ NUM_SHOP_SLOTS ];
 static  char           shopActionDown                             =   0;
@@ -145,10 +136,7 @@ static  int            lang_shopInstructA                         =  -1;
 static  int            lang_shopInstructB                         =  -1;
 static  int            lang_sale                                  =  -1;
 static  int            lang_permanent                             =  -1;
-static  int            lang_newSpotInA                            =  -1;
-static  int            lang_newSpotInB                            =  -1;
-static  int            lang_newSpotTitle                          =  -1;
-static  int            lang_newSpotDescription                    =  -1;
+
 
 static  char           shoppingDone                               =   0;
 
@@ -166,30 +154,10 @@ static  int            shopOnSaleOneIn                            =  10;
 static  RollInfo       shopOnSaleRoll;
 
 static  int            shopRerollCost;
-static  int            newFormationSpotCost;
-
-static  int            newFormSpotY;
-static  int            newSpotBought                              =  0;
-static  int            newSpotAvail                               =  0;
-static  unsigned char  newSpotHighlightFade                       =  0;
-static  int            numLeftForNewSpot                          =  0;
-
-static  int            newFormSpotSlotX;
-static  int            newFormSpotSlotY;
 
 
 static  char           shopSlotPickedWithController               =  0;
 
-
-/* switch on to remove limits on new formation spots (so players don't have
-   to buy more pieces in their deck to unlock more formation spots) */
-static  char           newSpotsUnlimited                          =  1;
-
-static  int            formationRecruitsSprite                    = -1;
-
-static  char           shopNewRecruitsShowing                     =  0;
-
-static  int            shopNumNewFormationSpotsBought             =  0;
 
 
 static void shopResetHightlighFades( void ) {
@@ -290,35 +258,6 @@ static void shopInternalReroll( void ) {
 
 
 
-
-static void shopSetNewSpotAvail( void ) {
-    newSpotAvail = 0;
-
-    if( newSpotsUnlimited ) {
-        newSpotAvail = 1;
-        numLeftForNewSpot = 0;
-        return;
-        }
-
-    /* they start with a 15-piece deck and 2 spots
-       Once they have an 18-piece deck, they can buy another spot
-       Then they can buy another when they have a 24-piece deck */
-    if( formationGetNumNonKingSpots()
-        <
-        ( playerDeckGetSize() + 3 )/ shopNewSlotFactor  ) {
-        
-        newSpotAvail = 1;
-        numLeftForNewSpot = 0;
-        }
-    else {
-        numLeftForNewSpot =
-            ( formationGetNumNonKingSpots() + 1 ) * shopNewSlotFactor
-            - ( playerDeckGetSize() + 3 );
-        }
-    }
-
-
-
 void shopInit( int  inPointerActionHandle,
                int  inActionHandle,
                int  inDynamicRerollButtonHandle,
@@ -332,12 +271,6 @@ void shopInit( int  inPointerActionHandle,
     int  startHop      =  hopSize * numStartHops;
     int  curPos;
 
-    shopNewRecruitsShowing = 0;
-    
-    newRecruitsInit( inPointerActionHandle,
-                     inActionHandle,
-                     inCenterX,
-                     inCenterY );
     
     /* reroll costs are 1, 2, 4, 7, etc. */
     /* increase every other level too */
@@ -350,17 +283,6 @@ void shopInit( int  inPointerActionHandle,
                                -1,
                                2,
                                0 );
-
-    /* new army formation spots cost 15, 18, 23, 30 etc */
-    newFormationSpotCost = costInit( 15,
-                                     3,
-                                     -1,
-                                     -1,
-                                     2,
-                                     0,
-                                     -1,
-                                     -1,
-                                     0 );
     
     
     maxigin_randSeed( &shopRand,
@@ -377,7 +299,6 @@ void shopInit( int  inPointerActionHandle,
     shopCenterX = inCenterX;
     shopCenterY = inCenterY;
 
-    newFormSpotY = shopCenterY + 95;
 
     purchaseSound = maxigin_initSoundEffect( "purchase_sd_30.wav" );
 
@@ -386,11 +307,7 @@ void shopInit( int  inPointerActionHandle,
     lang_shopInstructB      = maxigin_initTranslationKey( "shopInstructB"      );
     lang_sale               = maxigin_initTranslationKey( "sale"               );
     lang_permanent          = maxigin_initTranslationKey( "permanent"          );
-    lang_newSpotInA         = maxigin_initTranslationKey( "newSpotInA"         );
-    lang_newSpotInB         = maxigin_initTranslationKey( "newSpotInB"         );
-    lang_newSpotTitle       = maxigin_initTranslationKey( "newSpotTitle"       );
-    lang_newSpotDescription = maxigin_initTranslationKey( "newSpotDescription" );
-
+    
     /* all have discount turned off, but potential 50 % discount for now */
     shopIsOnSale[ 0 ] = 0;
     shopDiscountPercent[ 0 ] = 50;
@@ -420,10 +337,6 @@ void shopInit( int  inPointerActionHandle,
         }
     
     curPos  = - startHop;
-
-    /* move one over to leave room for new formation spot */
-    newFormSpotSlotX = curPos + shopCenterX;
-    newFormSpotSlotY = shopCenterY - 6;
     
 
     curPos += hopSize;
@@ -463,12 +376,6 @@ void shopInit( int  inPointerActionHandle,
                              shopPointerActionHandle,
                              inDynamicDoneButtonHandle,
                              -1 );
-
-    formationRecruitsSprite = maxigin_initSprite( "formationRecruits.tga" );
-
-    maxigin_initMakeGlowSprite( formationRecruitsSprite,
-                                4,
-                                2 );
     
 
     REGISTER_VAL_MEM( shopRand );
@@ -489,23 +396,12 @@ void shopInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( shopSlotsDropping );
 
     REGISTER_VAL_MEM( shoppingDone );
-
-    REGISTER_VAL_MEM( newSpotBought );
-    REGISTER_VAL_MEM( newSpotAvail );
-    REGISTER_VAL_MEM( numLeftForNewSpot );
-
-    REGISTER_VAL_MEM( newSpotHighlightFade );
-
+    
     REGISTER_VAL_MEM( shopNumVisibleSlots );
 
     REGISTER_VAL_MEM( shopSelectedSlot );
-    REGISTER_VAL_MEM( shopOverNewSpot );
 
     REGISTER_VAL_MEM( shopSlotPickedWithController );
-
-    REGISTER_VAL_MEM( shopNewRecruitsShowing );
-
-    REGISTER_VAL_MEM( shopNumNewFormationSpotsBought );
     }
 
 
@@ -514,19 +410,13 @@ void shopReroll( void ) {
     shopInternalReroll();
 
     shopSelectedSlot = -1;
-    shopOverNewSpot  =  0;
-    
+
     shopSlotPickedWithController = 0;
     
     shopResetHightlighFades();
     shopActionDown = 0;
     shoppingDone   = 0;
-    newSpotBought  = 0;
-
-    shopSetNewSpotAvail();
-
-    newSpotHighlightFade = 0;
-
+    
     buttonReset( doneButton );
     buttonReset( rerollButton );
     }
@@ -547,21 +437,11 @@ void shopReset( void ) {
     shopSelectedSlot = -1;
     shopActionDown   =  0;
     shoppingDone     =  0;
-    newSpotBought    =  0;
-    
-    shopNewRecruitsShowing = 0;
+
     
     shopSlotPickedWithController = 0;
 
-    shopSetNewSpotAvail();
-    
-    
-    newSpotHighlightFade = 0;
-
     costFullReset( shopRerollCost );
-    costFullReset( newFormationSpotCost );
-
-    shopNumNewFormationSpotsBought = 0;
 
     buttonReset( doneButton );
     }
@@ -695,133 +575,6 @@ void shopDraw( void ) {
                     shopCenterX,
                     shopCenterY + 59,
                     1 );
-
-    if( formationHasRoomForNewSpot()
-        &&
-        ! newSpotBought
-        &&
-        newSpotAvail ) {
-
-        int  spotSprite     =  formationGetSpotSprite();
-        int  recruitOffset  =  -15;
-        
-        maxigin_drawResetColor();
-
-        if( 0 ) {
-            /* no longer proclaim new spot, since it's available
-               in every shop */
-            maxigin_setLanguageFontIndex( 1 );
-    
-            maxigin_drawLangText( formationGetNewSpotLangHandle(),
-                                  shopCenterX,
-                                  newFormSpotY - 17,
-                                  MAXIGIN_CENTER );
-    
-            maxigin_setLanguageFontIndex( 0 );
-            }
-
-        maxigin_drawSprite( spotSprite,
-                            newFormSpotSlotX,
-                            newFormSpotSlotY );
-
-        drawSetPieceColor( CHESS_WHITE );
-
-        maxigin_drawSprite( formationRecruitsSprite,
-                            newFormSpotSlotX,
-                            newFormSpotSlotY + recruitOffset );
-
-        maxigin_drawResetColor();
-
-        
-        if( newSpotHighlightFade > 0 ) {
-            
-            int  centX  =  MAXIGIN_GAME_NATIVE_W - 41;
-            int  centY  =  MAXIGIN_GAME_NATIVE_H / 2;
-
-            maxigin_drawSetAlpha( newSpotHighlightFade );
-            
-            maxigin_drawSpriteGlowOnly( spotSprite,
-                                        newFormSpotSlotX,
-                                        newFormSpotSlotY );
-
-            drawSetPieceColor( CHESS_WHITE );
-
-            maxigin_drawSetAlpha( newSpotHighlightFade );
-
-            maxigin_drawSpriteGlowOnly( formationRecruitsSprite,
-                                        newFormSpotSlotX,
-                                        newFormSpotSlotY + recruitOffset );
-            
-            maxigin_drawResetColor();
-        
-
-            drawDescriptionText( lang_newSpotTitle,
-                                 lang_newSpotDescription,
-                                 centX,
-                                 centY,
-                                 newSpotHighlightFade );
-
-            raritySetDrawColorFromRarity( common );
-            
-            maxigin_drawSetAlpha( newSpotHighlightFade  );
-            
-            drawDescriptionFrame( centX,
-                                  centY );
-            
-            maxigin_drawResetColor();
-            }
-
-        if( shopOverNewSpot
-            &&
-            shopSlotPickedWithController ) {
-
-            maxigin_drawButtonHintSprite(
-                shopActionHandle,
-                newFormSpotSlotX - 11,
-                newFormSpotSlotY + 6 );
-            }
-
-        numberDrawCenter( costGet( newFormationSpotCost ),
-                          newFormSpotSlotX,
-                          shopCenterY + 12,
-                          1 );
-        }
-    else if( formationHasRoomForNewSpot()
-             &&
-             ! newSpotBought
-             &&
-             ! newSpotAvail ) {
-
-        maxigin_drawResetColor();
-        
-        maxigin_setLanguageFontIndex( 1 );
-    
-        maxigin_drawLangText( lang_newSpotInA,
-                              shopCenterX - 57,
-                              newFormSpotY - 17,
-                              MAXIGIN_RIGHT );
-
-        maxigin_drawSetColor( 255, 255, 0, 255 );
-        
-        numberDrawCenter( numLeftForNewSpot,
-                          shopCenterX - 50,
-                          newFormSpotY - 17,
-                          1 );
-        
-        maxigin_drawResetColor();
-        
-        maxigin_drawLangText( lang_newSpotInB,
-                              shopCenterX - 43,
-                              newFormSpotY - 17,
-                              MAXIGIN_LEFT );
-    
-        maxigin_setLanguageFontIndex( 0 );
-        }
-
-    if( shopNewRecruitsShowing ) {
-        newRecruitsDraw();
-        }
-    
     }
 
 
@@ -844,16 +597,7 @@ ChessPiece shopStep( int  inPickFailedSound,
     int   deltaFade            =  ( 20 * 60 ) / r;
     int   liftPhaseDone        =  0;
     char  controllerMovedSlot  =  0;
-
     
-    if( shopNewRecruitsShowing ) {
-        if( newRecruitsIsDone() ) {
-            shopNewRecruitsShowing = 0;
-            }
-        else {
-            return newRecruitsStep( purchaseSound );
-            }
-        }      
     
     if( buttonIsNewPressed( doneButton ) ) {
         unlocksCancelViewer();
@@ -908,7 +652,6 @@ ChessPiece shopStep( int  inPickFailedSound,
 
     if( unlocksIsViewerActive() ) {
         shopSelectedSlot = -1;
-        shopOverNewSpot  =  0;
         }
     
     
@@ -917,7 +660,6 @@ ChessPiece shopStep( int  inPickFailedSound,
         shopSlotPickedWithController = 0;
         
         shopSelectedSlot = -1;
-        shopOverNewSpot  =  0;
     
         for( i = 0;
              i < shopNumVisibleSlots;
@@ -939,32 +681,6 @@ ChessPiece shopStep( int  inPickFailedSound,
                     }
                 }
             }
-
-        if( formationHasRoomForNewSpot()
-            &&
-            ! newSpotBought
-            &&
-            newSpotAvail ) {
-
-            int  spotR  =  BOARD_SQUARE_SIZE / 2;
-
-            if( pointerX > newFormSpotSlotX - spotR
-                &&
-                pointerX < newFormSpotSlotX + spotR
-                &&
-                pointerY > newFormSpotSlotY - spotR
-                &&
-                pointerY < newFormSpotSlotY + spotR ) {
-
-                shopOverNewSpot = 1;
-
-                if( newSpotHighlightFade < 255 ) {
-                    maxigin_playSoundEffect( inPieceLiftSound,
-                                             256 );
-                    }
-                newSpotHighlightFade = 255;
-                }
-            }
         }
     else {
         /* controller can pan through slots and potentially new spot beneath */
@@ -974,19 +690,6 @@ ChessPiece shopStep( int  inPickFailedSound,
         shopSlotPickedWithController = 1;
         
         if( shopSelectedSlot != -1 ) {
-
-            char  newSpotReachable  =  0;
-            char  goToNewSpot       =  0;
-            
-            if( formationHasRoomForNewSpot()
-                &&
-                ! newSpotBought
-                &&
-                newSpotAvail ) {
-                
-                newSpotReachable = 1;
-                }
-            
 
             navGetDir( 0,
                        &dirX,
@@ -1009,22 +712,12 @@ ChessPiece shopStep( int  inPickFailedSound,
                 shopSelectedSlot += dir;
                 if( shopSelectedSlot < 0 ) {
                     shopSelectedSlot = shopNumVisibleSlots - 1;
-
-                    if( newSpotReachable ) {
-                        goToNewSpot = 1;
-                        }
                     }
                 else if( shopSelectedSlot >= shopNumVisibleSlots ) {
                     
                     shopSelectedSlot = 0;
-                    
-                    if( newSpotReachable ) {
-                        goToNewSpot = 1;
-                        }
                     }
-                while( ! goToNewSpot
-                       &&
-                       shopSelectedSlot != start
+                while( shopSelectedSlot != start
                        &&
                        shopItems[ shopSelectedSlot ] == noPiece ) {
                     
@@ -1032,23 +725,15 @@ ChessPiece shopStep( int  inPickFailedSound,
                     if( shopSelectedSlot < 0 ) {
                         
                         shopSelectedSlot = shopNumVisibleSlots - 1;
-                        
-                        if( newSpotReachable ) {
-                            goToNewSpot = 1;
-                            }
                         }
                     else if( shopSelectedSlot >= shopNumVisibleSlots ) {
                         shopSelectedSlot = 0;
-                        
-                        if( newSpotReachable) {
-                            goToNewSpot = 1;
-                            }
                         }
                     }
                 if( shopItems[ shopSelectedSlot ] == noPiece ) {
                     shopSelectedSlot = -1;
                     }
-                else if( ! goToNewSpot ) {
+                else {
                     shopSlotHighlightFade[ shopSelectedSlot ] = 255;
                     }
 
@@ -1056,96 +741,15 @@ ChessPiece shopStep( int  inPickFailedSound,
                     controllerMovedSlot = 1;
                     }
 
-                if( goToNewSpot ) {
-
-                    shopSelectedSlot = -1;
-                    shopOverNewSpot = 1;
-            
-                    if( newSpotHighlightFade < 255 ) {
-                        maxigin_playSoundEffect( inPieceLiftSound,
-                                                 256 );
-                        }
-                    newSpotHighlightFade = 255;
-                    }
-                else {
-                    shopOverNewSpot = 0;
-                    }
                 unlocksCancelViewer();
                 }
             }
-        else if( shopOverNewSpot ) {
-            navGetDir( 1,
-                       &dirX,
-                       &dirY );
-
-            if( dirX == 1
-                ||
-                dirY == 1 ) {
-
-                /* down back to shop row */
-                shopSelectedSlot = -1;
-                
-                for( i = 0;
-                     i < shopNumVisibleSlots;
-                     i ++ ) {
-                    if( shopItems[ i ] != noPiece ) {
-                        shopSelectedSlot = i;
-                        shopSlotHighlightFade[ i ] = 255;
-                        break;
-                        }
-                    }
-                }
-            else if( dirX == -1
-                     ||
-                     dirY == -1 ) {
-                shopSelectedSlot = -1;
-                
-                for( i = shopNumVisibleSlots - 1;
-                     i >= 0;
-                     i -- ) {
-                    if( shopItems[ i ] != noPiece ) {
-                        shopSelectedSlot = i;
-                        shopSlotHighlightFade[ i ] = 255;
-                        break;
-                        }
-                    }
-                }
-            
-            if( shopSelectedSlot != -1 ) {
-                shopOverNewSpot = 0;
-                unlocksCancelViewer();
-                }
-            }
-        else if( shopSelectedSlot == -1
-                 &&
-                 ! shopOverNewSpot ) {
+        else if( shopSelectedSlot == -1 ) {
             navGetDir( 0,
                        &dirX,
                        &dirY );
 
-            if( ( dirX == 1
-                  ||
-                  dirY == 1 )
-                &&
-                formationHasRoomForNewSpot()
-                &&
-                ! newSpotBought
-                &&
-                newSpotAvail ) {
-                
-                /* down to new spot */
-                shopSelectedSlot = -1;
-                shopOverNewSpot = 1;
-
-                unlocksCancelViewer();
-            
-                if( newSpotHighlightFade < 255 ) {
-                    maxigin_playSoundEffect( inPieceLiftSound,
-                                             256 );
-                    }
-                newSpotHighlightFade = 255;
-                }
-            else if( dirX == 1
+            if( dirX == 1
                      ||
                      dirY == 1 ) {
                 shopSelectedSlot = 0;
@@ -1183,22 +787,6 @@ ChessPiece shopStep( int  inPickFailedSound,
             
             }
         }
-    
-
-    
-    if( ! shopOverNewSpot ) {
-        int  newHighlight;
-
-        newHighlight = newSpotHighlightFade - deltaFade;
-
-        if( newHighlight > 0 ) {
-            newSpotHighlightFade = (unsigned char)newHighlight;
-            }
-        else {
-            newSpotHighlightFade = 0;
-            }
-        }
-    
         
 
     for( i = 0;
@@ -1226,44 +814,7 @@ ChessPiece shopStep( int  inPickFailedSound,
         ! maxigin_isButtonDown( shopActionHandle ) ) {
         shopActionDown = 0;
         }
-
     
-    if( ! shopActionDown
-        &&
-        shopOverNewSpot
-        &&
-        ( maxigin_isButtonDown( shopPointerActionHandle )
-          ||
-          maxigin_isButtonDown( shopActionHandle ) ) ) {
-        
-        if( costGet( newFormationSpotCost )
-            <= moneyGetTotal() ) {
-
-            moneyAdd( - costGet( newFormationSpotCost ) );
-
-            formationAddNewSpot();
-
-            costIncrement( newFormationSpotCost );
-
-            newSpotBought = 1;
-
-            maxigin_playSoundEffect( purchaseSound,
-                                     256 );
-
-            shopNumNewFormationSpotsBought ++;
-
-            /* show new recruits after they buy slot */
-            newRecruitsReroll( shopNumNewFormationSpotsBought );
-            
-            shopNewRecruitsShowing = 1;
-            }
-        else {
-            /* can't afford */
-            maxigin_playSoundEffect( inPickFailedSound,
-                                     256 );
-            }
-        shopActionDown = 1;
-        }
 
     if( shopSelectedSlot == -1 ) {
         return noPiece;
@@ -1289,9 +840,6 @@ ChessPiece shopStep( int  inPickFailedSound,
 
                 playerDeckAddPiece( shopItems[ shopSelectedSlot ] );
                 playerDeckReshuffle();
-
-                /* deck grew... does this make new slot purchase avail? */
-                shopSetNewSpotAvail();
 
                 shopItems[ shopSelectedSlot ] = noPiece;
 

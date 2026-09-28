@@ -23,16 +23,10 @@ void levelsInit( void );
 /*
   always call getEmptyLevel first, to clear the board
 
-  outState is filled with the enemy pieces and the player's king piece
-            and pieces drawn from the player's deck
-
-   inSideToAdd can be CHESS_WHITE or CHESS_BLACK
-               CHESS_WHITE simply adds white pieces to an existing board
-               CHESS_BLACK simply adds black pieces to an existing board
+  outState is filled with the enemy pieces
 */
-void getLevel( int          inLevelNumber,
-               BoardState  *outState,
-               int          inSideToAdd );
+void getEnemyLevel( int          inLevelNumber,
+                    BoardState  *outState );
 
 
 void getEmptyLevel( BoardState  *outState );
@@ -262,81 +256,45 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
 
 
 
-void getLevel( int          inLevelNumber,
-               BoardState  *outState,
-               int          inSideToAdd ) {
+void getEnemyLevel( int inLevelNumber,
+                    BoardState  *outState ) {
 
     int   y;
     int   x;
-    
-    
+    int   numEnemyPieces  =  getNumEnemyPieces( inLevelNumber );
 
-    if( inSideToAdd == CHESS_WHITE ) {
-        /* clear board first, then draw from player
-           deck into their formation  */
+    static  char  form[ BH ][ BW ];
 
-        for( y = 0;
-             y < BH;
-             y ++ ) {
+    /* add new pieces to enemy deck based on level number */
+    prepareEnemyDeck( inLevelNumber );
 
-            for( x = 0;
-                 x < BW;
-                 x ++ ) {
+    levelGetRandomFormation( form,
+                             numEnemyPieces,
+                             CHESS_BLACK );
 
-                char  fSpot  =  formationGet( y,
-                                              x );
-                
-                if( fSpot == 1 ) {
-                    outState->grid[ y ][ x ] =
-                        playerDeckDraw() | CHESS_WHITE;
-                    continue;
-                    }
-                else if( fSpot == 2 ) {
-                    outState->grid[ y ][ x ]  = king | CHESS_WHITE;
-                    outState->kingExists[ 0 ] =  1;
-                    continue;
-                    }
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            char  fSpot  =  form[ y ][ x ];
+
+
+            if( fSpot == 0 ) {
+                continue;
                 }
-            }
-        }
-    else if( inSideToAdd == CHESS_BLACK ) {
 
-        int  numEnemyPieces  =  getNumEnemyPieces( inLevelNumber );
-
-
-        static  char  form[ BH ][ BW ];
-
-        /* add new pieces to enemy deck based on level number */
-        prepareEnemyDeck( inLevelNumber );
-
-        levelGetRandomFormation( form,
-                                 numEnemyPieces,
-                                 CHESS_BLACK );
-
-        for( y = 0;
-             y < BH;
-             y ++ ) {
-
-            for( x = 0;
-                 x < BW;
-                 x ++ ) {
-
-                char  fSpot  =  form[ y ][ x ];
-
-
-                if( fSpot == 0 ) {
-                    continue;
-                    }
-
-                if( fSpot == 2 ) {
-                    outState->grid[ y ][ x ]  = king | CHESS_BLACK;
-                    outState->kingExists[ 1 ] =  1;
-                    continue;
-                    }
-                if( fSpot == 1 ) {
-                    outState->grid[ y ][ x ] =
-                        deckDraw( &enemyDeck ) | CHESS_BLACK;
-                    }
+            if( fSpot == 2 ) {
+                outState->grid[ y ][ x ]  = king | CHESS_BLACK;
+                outState->kingExists[ 1 ] =  1;
+                continue;
+                }
+            if( fSpot == 1 ) {
+                outState->grid[ y ][ x ] =
+                    deckDraw( &enemyDeck ) | CHESS_BLACK;
                 }
             }
         }

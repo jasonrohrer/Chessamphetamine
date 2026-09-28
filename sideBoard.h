@@ -57,6 +57,9 @@ void sideBoardShowRedraw( char  inShow );
 void sideBoardResetCost( void );
 
 
+int sideBoardGetPlacementCost( void );
+
+
 
 
 /* returns piece being moused over */
@@ -714,6 +717,13 @@ char sideBoardStillHoldingController( void ) {
 
 int sideBoardGetNumSlots( void ) {
     return sbNumSlots;
+    }
+
+
+
+int sideBoardGetPlacementCost( void ) {
+
+    return costGet( sbPlacePieceCost );
     }
 
 

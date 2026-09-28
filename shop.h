@@ -219,6 +219,8 @@ static void shopInternalReroll( void ) {
 
             sameAsOther = 0;
 
+            /* disable prevention of duplicate pieces in shop */
+            if( 0 )
             for( o = 0;
                  o < i;
                  o   ++ ) {

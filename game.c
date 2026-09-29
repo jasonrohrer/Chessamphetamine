@@ -2751,7 +2751,25 @@ void maxiginGame_step( void ) {
             /* press attempt */
 
             if( sideBoardIsRedrawHelpful() ) {
+
+                char  notEnoughMoney  =  0;
+
                 if( moneyGetTotal() < costGet( drawCost ) ) {
+                    /* straight up not enough money to even press the redraw
+                       button */
+                    notEnoughMoney = 1;
+                    }
+                else if( numPiecesPlaced == 1
+                         &&
+                         moneyGetTotal() <
+                         costGet( drawCost ) + sideBoardGetPlacementCost() ) {
+                    /* they have enough money to press the button, but they
+                       still haven't placed their first non-king piece,
+                       and they won't be able to afford one after this press */
+                    notEnoughMoney = 1;
+                    }
+                
+                if( notEnoughMoney ) {
                     /* fail */
                     maxigin_playSoundEffect( pickFailedSound,
                                              256 );

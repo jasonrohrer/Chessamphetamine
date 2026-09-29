@@ -86,22 +86,24 @@ void moneyForce( int  inVal );
 /*
   how much money you get for capturing a given piece
   pawns are 1
-  non-pawns are 2
-  except for king, which is 4
+  non-pawns are 3
+  except for king, which is 6
 */
+#define NON_PAWN_CAPTURE_VALUE  3
+
 #define PIECE_CAPTURE_MONEY_LIST( C, V )   \
-    V( C, 0,   noPiece,      0   ) \
-    V( C, 1,   pawn,         1   ) \
-    V( C, 2,   bishop,       2   ) \
-    V( C, 3,   knight,       2   ) \
-    V( C, 4,   rook,         2   ) \
-    V( C, 5,   queen,        2   ) \
-    V( C, 6,   king,         6   ) \
-    V( C, 7,   laserRook,    2   ) \
-    V( C, 8,   laserPawn,    2   ) \
-    V( C, 9,   doublingPawn, 2   ) \
-    V( C, 10,  addingRook,   2   ) \
-    V( C, 11,  rocket,       2   )
+    V( C, 0,   noPiece,      0                        ) \
+    V( C, 1,   pawn,         1                        ) \
+    V( C, 2,   bishop,       NON_PAWN_CAPTURE_VALUE   ) \
+    V( C, 3,   knight,       NON_PAWN_CAPTURE_VALUE   ) \
+    V( C, 4,   rook,         NON_PAWN_CAPTURE_VALUE   ) \
+    V( C, 5,   queen,        NON_PAWN_CAPTURE_VALUE   ) \
+    V( C, 6,   king,         6                        ) \
+    V( C, 7,   laserRook,    NON_PAWN_CAPTURE_VALUE   ) \
+    V( C, 8,   laserPawn,    NON_PAWN_CAPTURE_VALUE   ) \
+    V( C, 9,   doublingPawn, NON_PAWN_CAPTURE_VALUE   ) \
+    V( C, 10,  addingRook,   NON_PAWN_CAPTURE_VALUE   ) \
+    V( C, 11,  rocket,       NON_PAWN_CAPTURE_VALUE   )
 
 static int pieceCaptureMoney[] = {
     MAKE_CHESS_ARRAY( PIECE_CAPTURE_MONEY_LIST )

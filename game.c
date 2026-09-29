@@ -794,7 +794,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         boardDraw( boardCenterX,
                    boardLiveCenterY );
 
-        if( draftingPieces ) {
+        if( draftingPieces
+            &&
+            boardMarkersDownCount == 0 ) {
             formationDraw( boardCenterX,
                            boardLiveCenterY,
                            numPiecesPlaced,
@@ -2655,21 +2657,53 @@ void maxiginGame_step( void ) {
 
     if( sideBoardShowing ) {
 
-        ChessPiece  boughtPiece;
-        ChessPiece  newInfoPiece  =  sideBoardStep( examinePieceSound,
-                                                    pickFailedSound,
-                                                    &boughtPiece,
-                                                    &sideBoardDestSpotFade );
+        ChessPiece  pickedPiece;
+        char        blockPurchase  =  ( boardMarkersDownCount > 0 );
+        ChessPiece  newInfoPiece   =  sideBoardStep( examinePieceSound,
+                                                     pickFailedSound,
+                                                     blockPurchase,
+                                                     &pickedPiece,
+                                                     &sideBoardDestSpotFade );
 
-        if( boughtPiece != noPiece ) {
+        if( pickedPiece != noPiece ) {
             int  sX;
             int  sY;
-            /* fixme */
-            if( formationSpotGet( numPiecesPlaced,
+
+            if( boardMarkersDownCount == 1 ) {
+                /* swap sideboard piece with selected piece for free */
+                int   y;
+                int   x;
+                char  found  = 0;
+        
+                for( y = 0;
+                     y < BH;
+                     y ++ ) {
+        
+                    for( x = 0;
+                         x < BW;
+                         x ++ ) {
+
+                        if( boardMarkers[y][x] ) {
+
+                            boardState.grid[y][x] =
+                                sideBoardSwap( boardState.grid[y][x] );
+
+                            playBeepDownSound();
+                            
+                            found = 1;
+                            break;
+                            }
+                        }
+                    if( found ) {
+                        break;
+                        }
+                    }
+                }
+            else if( formationSpotGet( numPiecesPlaced,
                                   &sX,
                                   &sY ) ) {
 
-                boardState.grid[ sY ][ sX ] = boughtPiece | CHESS_WHITE;
+                boardState.grid[ sY ][ sX ] = pickedPiece | CHESS_WHITE;
 
                 numPiecesPlaced ++;
                 }
@@ -2679,13 +2713,6 @@ void maxiginGame_step( void ) {
         if( sideBoardIsMouseOver()
             ||
             sideBoardStillHoldingController() ) {
-
-            if( boardMarkersDownCount != 0 ) {
-
-                clearDrawMarkers();
-
-                playBeepUpSound();
-                }
             
             if( newInfoPiece != infoPanelPiece ) {
 

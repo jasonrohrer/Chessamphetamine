@@ -39,6 +39,11 @@ void sideBoardRedraw( void );
 void sideBoardReturnPieces( void );
 
 
+/* swaps a piece onto the side board if anything on the side board is selected
+   returns noPiece if the swap failed */
+ChessPiece sideBoardSwap( ChessPiece  inNewPiece );
+
+
 /* initiates lift, which happens over sideBoardSteps
    call again to check if lift is done */
 char sideBoardLift( void );
@@ -65,7 +70,8 @@ int sideBoardGetPlacementCost( void );
 /* returns piece being moused over */
 ChessPiece sideBoardStep( int             inPieceLiftSound,
                           int             inPickFailedSound,
-                          ChessPiece     *outPurchasedPiece,
+                          char            inBlockPurchase,
+                          ChessPiece     *outPickedPiece,
                           unsigned char  *outOverPieceFade );
 
 
@@ -136,6 +142,8 @@ static  int            sbPrevSlot             =   0;
 
 static  int            sbPlacePieceCost       =  -1;
 
+static  char           sbPurchaseBlocked      =   0;
+
 
 
 void sideBoardInit( int  inPointerActionHandle,
@@ -196,6 +204,8 @@ void sideBoardInit( int  inPointerActionHandle,
 
     REGISTER_VAL_MEM( sbOverSlot );
     REGISTER_VAL_MEM( sbPrevSlot );
+
+    REGISTER_VAL_MEM( sbPurchaseBlocked );
     }
 
 
@@ -300,6 +310,26 @@ void sideBoardReturnPieces( void ) {
     }
 
 
+/* swaps a piece onto the side board if anything on the side board is selected
+   returns noPiece if the swap failed */
+ChessPiece sideBoardSwap( ChessPiece  inNewPiece ) {
+
+    ChessPiece  retVal  =  noPiece;
+
+    if( sbPickedIndex < sbNumSlots
+        &&
+        sbPickedIndex >= 0 ) {
+
+        retVal = sideBoard[ sbPickedIndex ];
+        
+        sideBoard[ sbPickedIndex ] = inNewPiece & CHESS_TYPE_MASK;
+        }
+
+    sbPickedIndex = -1;
+
+    return retVal;
+    }
+
 
 static void sbForceFullLiftOneSpot( int  inSpotIndex ) {
     sbLift      [ inSpotIndex ] = sbMaxLift;
@@ -310,7 +340,8 @@ static void sbForceFullLiftOneSpot( int  inSpotIndex ) {
 
 ChessPiece sideBoardStep( int             inPieceLiftSound,
                           int             inPickFailedSound,
-                          ChessPiece     *outPurchasedPiece,
+                          char            inBlockPurchase,
+                          ChessPiece     *outPickedPiece,
                           unsigned char  *outOverPieceFade ) {
     
     int            pointerX;
@@ -321,6 +352,8 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
     char           liftPhaseDone        =  0;
     char           controllerMovedSlot  =  0;
     unsigned char  maxFade              =  0;
+
+    sbPurchaseBlocked = inBlockPurchase;
 
     if( unlocksIsViewerActive() ) {
         if( sbOverSlot != -1 ) {
@@ -454,7 +487,7 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
         sbDropping = 0;
         }
 
-    *outPurchasedPiece = noPiece;
+    *outPickedPiece = noPiece;
 
     if( sbOverSlot == -1 ) {
         return noPiece;
@@ -468,37 +501,49 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
 
         if( sideBoard[ sbOverSlot ] != noPiece ) {
 
-            if( moneyGetTotal() < costGet( sbPlacePieceCost ) ) {
-                /* can't afford */
-                
-                maxigin_playSoundEffect( inPickFailedSound,
-                                         256 );
+            if( inBlockPurchase ) {
+
+                /* purchase blocked, return picked piece without acting
+                   on it */
+                *outPickedPiece = sideBoard[ sbOverSlot ];
+
+                sbPickedIndex = sbOverSlot;
                 }
             else {
-                moneyAdd( - costGet( sbPlacePieceCost ) );
-                costIncrement( sbPlacePieceCost );
+                /* treat click/action as purchase */
+
+                if( moneyGetTotal() < costGet( sbPlacePieceCost ) ) {
+                    /* can't afford */
                 
-                *outPurchasedPiece = sideBoard[ sbOverSlot ];
+                    maxigin_playSoundEffect( inPickFailedSound,
+                                             256 );
+                    }
+                else {
+                    moneyAdd( - costGet( sbPlacePieceCost ) );
+                    costIncrement( sbPlacePieceCost );
+                
+                    *outPickedPiece = sideBoard[ sbOverSlot ];
 
-                sideBoard[ sbOverSlot ] = playerDeckDraw();
+                    sideBoard[ sbOverSlot ] = playerDeckDraw();
 
             
             
 
-                if( sideBoard[ sbOverSlot ] != noPiece ) {
-                    sbForceFullLiftOneSpot( sbOverSlot );
-                    sbDropping = 1;
+                    if( sideBoard[ sbOverSlot ] != noPiece ) {
+                        sbForceFullLiftOneSpot( sbOverSlot );
+                        sbDropping = 1;
+                        }
+
+                    playBeepUpSound();
+
+                    for( i = 0;
+                         i < sbNumSlots;
+                         i ++ ) {
+
+                        sbHighlightFade[i] = 0;
+                        }
+                    *outOverPieceFade = 0;
                     }
-
-                playBeepUpSound();
-
-                for( i = 0;
-                     i < sbNumSlots;
-                     i ++ ) {
-
-                    sbHighlightFade[i] = 0;
-                    }
-                *outOverPieceFade = 0;
                 }
             }
         sbActionDown = 1;
@@ -565,14 +610,17 @@ void sideBoardDraw( void ) {
                                     sbSlotPosX     [i],
                                     sbSlotPosY     [i] - sbSmoothLift[i],
                                     sbHighlightFade[i] );
+                
+                if( ! sbPurchaseBlocked ) {
+                    maxigin_drawResetColor();
+                    maxigin_drawSetAlpha( sbHighlightFade[i] );
 
-                maxigin_drawResetColor();
-                maxigin_drawSetAlpha( sbHighlightFade[i] );
+                    numberDrawCenter( cost,
+                                      sbSlotPosX[i] + 16,
+                                      sbSlotPosY[i],
+                                      1 );
+                    }
 
-                numberDrawCenter( cost,
-                                  sbSlotPosX[i] + 16,
-                                  sbSlotPosY[i],
-                                  1 );
                 }
 
             if( sbHoldingController

@@ -107,8 +107,8 @@ CHECK_CHESS_ARRAY( shopPrices,
    and two paid decks with more and more rarity */
 #define                NUM_SHOP_SLOTS  6
 
-static  int            shopBaseVisibleSlots                       =  4;
-static  int            shopNumVisibleSlots                        =  4;
+static  int            shopBaseVisibleSlots                       =  5;
+static  int            shopNumVisibleSlots                        =  5;
 
 static  char           shopIsPermaSale       [ NUM_SHOP_SLOTS ];
 static  char           shopIsOnSale          [ NUM_SHOP_SLOTS ];
@@ -347,8 +347,6 @@ void shopInit( int  inPointerActionHandle,
     
     curPos  = - startHop;
     
-
-    curPos += hopSize;
     
     for( i = 0;
          i < NUM_SHOP_SLOTS;

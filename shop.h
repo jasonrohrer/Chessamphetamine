@@ -580,7 +580,7 @@ void shopDraw( void ) {
             
     numberDrawCenter( costGet( shopRerollCost ),
                     shopCenterX,
-                    shopCenterY + 59,
+                    shopCenterY + 66,
                     1 );
     }
 

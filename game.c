@@ -157,7 +157,9 @@ static int          spinButtonY                = MAXIGIN_GAME_NATIVE_H - 25;
 static char         spinButtonHover            =  0;
 static int          readyCountScreenSprite     = -1;
 
-static int          drawCost                   = -1;
+static int          drawsLeft                  =  0;
+static int          baseNumDraws               =  4;
+
 static int          drawButton                 = -1;
 static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
 static int          drawButtonPosX             =  19;
@@ -672,10 +674,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         buttonDraw( drawButton );
             
-        numberDrawCenter( costGet( drawCost ),
-                    drawButtonPosX,
-                    drawButtonPosY + 6,
-                    0 );
+        numberDrawCenter( drawsLeft,
+                          drawButtonPosX,
+                          drawButtonPosY + 6,
+                          0 );
         }
 
     
@@ -1267,8 +1269,13 @@ static void swapMarkedPieces( void ) {
         clearDrawMarkers();     
         }
     }
-    
-    
+
+
+
+static void resetDrawsLeft( void ) {
+    drawsLeft = baseNumDraws + unlocksGetExtraDraws();
+    }
+
 
 
 static char  randColorsDown = 0;
@@ -1284,6 +1291,8 @@ static void startDraftingPieces( void ) {
     sideBoardDestSpotFade = 0;
 
     sideBoardResetCost();
+
+    resetDrawsLeft();
     
     draftingPieces   = 1;
 
@@ -2538,6 +2547,12 @@ void maxiginGame_step( void ) {
 
                     /* give them an allowance of 3 every time shop appears */
                     moneyAddDelayed( 3 );
+                    
+                    if( drawsLeft > 0 ) {
+                        /* they get money for each unused draw from the
+                           last round too */
+                        moneyAdd( drawsLeft );
+                        }
                     }
                 else {
                     gameOver = 1;
@@ -2610,7 +2625,9 @@ void maxiginGame_step( void ) {
             int  y;
 
             /* reset everything for new game */
-            costFullReset( drawCost );
+
+            resetDrawsLeft();
+            
             currentLevel = 0;
 
             noScoreMoveCount = 0;
@@ -2751,25 +2768,8 @@ void maxiginGame_step( void ) {
             /* press attempt */
 
             if( sideBoardIsRedrawHelpful() ) {
-
-                char  notEnoughMoney  =  0;
-
-                if( moneyGetTotal() < costGet( drawCost ) ) {
-                    /* straight up not enough money to even press the redraw
-                       button */
-                    notEnoughMoney = 1;
-                    }
-                else if( numPiecesPlaced == 1
-                         &&
-                         moneyGetTotal() <
-                         costGet( drawCost ) + sideBoardGetPlacementCost() ) {
-                    /* they have enough money to press the button, but they
-                       still haven't placed their first non-king piece,
-                       and they won't be able to afford one after this press */
-                    notEnoughMoney = 1;
-                    }
                 
-                if( notEnoughMoney ) {
+                if( drawsLeft <= 0 ) {
                     /* fail */
                     maxigin_playSoundEffect( pickFailedSound,
                                              256 );
@@ -2779,11 +2779,10 @@ void maxiginGame_step( void ) {
                     maxigin_playSoundEffect( examinePieceSound,
                                              256 );
 
-                    moneyAdd( - costGet( drawCost ) );
+                    drawsLeft --;
 
                     sideBoardLift();
                     sideBoardRedrawBlocked = 0;
-                    costIncrement( drawCost );
                     }
                 }
             else {
@@ -2896,9 +2895,9 @@ void maxiginGame_step( void ) {
                 noScoreMoveCount = 0;
                 sideBoardShowing = 0;
 
-                costResetIncrement( drawCost );
 
-                costLevelIncrement( drawCost );
+                resetDrawsLeft();
+                
 
                 shopLevelIncrement();
 
@@ -3552,18 +3551,6 @@ void maxiginGame_init( void ) {
                   MOUSE_CLICK,
                   DECK_NEXT,
                   DECK_PREV );
-
-
-    /* redraw costs are 1, 2, 3, 4, 5, etc */
-    drawCost = costInit( 1,   /* cost starts at 1 */
-                         1,   /* every redraw, cost goes up by inc=1 */
-                         -1,  /* no exponential growth as cost rises */
-                         -1,
-                         0,   /* no increment to redraw increment */
-                         0,
-                         -1,
-                         3,  /* base cost goes up by 1 every 3 levels */
-                         0 );
                          
     
 

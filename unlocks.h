@@ -43,6 +43,8 @@ int unlocksGetMinNumSaleSlots( void );
 
 int unlocksGetExtraNewRecruitsBaskets( void );
 
+int unlocksGetExtraDraws( void );
+
 
 void unlocksCancelViewer( void );
 
@@ -708,6 +710,13 @@ int unlocksGetMinNumSaleSlots( void ) {
 
 
 int unlocksGetExtraNewRecruitsBaskets( void ) {
+    /* not implemented yet */
+    return 0;
+    }
+
+
+
+int unlocksGetExtraDraws( void ) {
     /* not implemented yet */
     return 0;
     }

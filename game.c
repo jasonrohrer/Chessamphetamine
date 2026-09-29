@@ -2751,12 +2751,8 @@ void maxiginGame_step( void ) {
             /* press attempt */
 
             if( sideBoardIsRedrawHelpful() ) {
-                if( moneyGetTotal() <
-                    costGet( drawCost ) + sideBoardGetPlacementCost() ) {
-                    
-                    /* fail... they don't have enough money to redraw AND
-                       place a piece that they redraw */
-                    
+                if( moneyGetTotal() < costGet( drawCost ) ) {
+                    /* fail */
                     maxigin_playSoundEffect( pickFailedSound,
                                              256 );
                     sideBoardRedrawBlocked = 1;

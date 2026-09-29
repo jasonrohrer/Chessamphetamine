@@ -3554,15 +3554,15 @@ void maxiginGame_init( void ) {
                   DECK_PREV );
 
 
-    /* redraw costs are 1, 2, 3, 6, 10, etc */
+    /* redraw costs are 1, 2, 3, 4, 5, etc */
     drawCost = costInit( 1,   /* cost starts at 1 */
                          1,   /* every redraw, cost goes up by inc=1 */
                          -1,  /* no exponential growth as cost rises */
                          -1,
-                         1,   /* every redraw, we add 1 to inc */
+                         0,   /* no increment to redraw increment */
                          0,
                          -1,
-                         2,  /* base cost goes up by 1 every other level */
+                         3,  /* base cost goes up by 1 every 3 levels */
                          0 );
                          
     

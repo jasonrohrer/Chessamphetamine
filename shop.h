@@ -290,7 +290,7 @@ void shopInit( int  inPointerActionHandle,
                                1,
                                0,
                                -1,
-                               2,
+                               3,  /* base cost goes up by 1 every 3 levels */
                                0 );
     
     

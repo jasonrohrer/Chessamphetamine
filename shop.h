@@ -83,9 +83,9 @@ char isShoppingDone( void );
 /* pawns are never sold in shop */
 #define SHOP_PRICE_LIST( C, V )  \
     V( C, 0,   noPiece,      0   )    \
-    V( C, 1,   pawn,         7   )    \
-    V( C, 2,   bishop,       4   )    \
-    V( C, 3,   knight,       2   )    \
+    V( C, 1,   pawn,         1   )    \
+    V( C, 2,   bishop,       2   )    \
+    V( C, 3,   knight,       1   )    \
     V( C, 4,   rook,         8   )    \
     V( C, 5,   queen,        0   )    \
     V( C, 6,   king,         0   )    \
@@ -253,7 +253,14 @@ static void shopInternalReroll( void ) {
 
             discount /= 100;
 
-            shopSlotPrices[ i ] -= discount;
+            if( discount > 0 ) {
+                shopSlotPrices[ i ] -= discount;
+                }
+            else {
+                /* price already too low to discount, disable
+                   sale status to avoid confusion */
+                shopIsOnSale[ i ] = 0;
+                }
             }
         }
     }

@@ -1094,7 +1094,7 @@ void drawBoardState( BoardState     *inState,
 
                                     maxigin_drawSprite( liftShadowSpriteHandle,
                                                         pX,
-                                                        pY + 1 );
+                                                        pY + 4 );
 
                                     maxigin_drawSetAlpha( 255 );
                                     }
@@ -1110,7 +1110,7 @@ void drawBoardState( BoardState     *inState,
 
                             maxigin_drawSprite( liftShadowSpriteHandle,
                                                 pX,
-                                                pY + 1 );
+                                                pY + 4 );
                             }
                         }
                     else {
@@ -1120,7 +1120,7 @@ void drawBoardState( BoardState     *inState,
 
                         maxigin_drawSprite( liftShadowSpriteHandle,
                                             pX,
-                                            pY + 1 );
+                                            pY + 4 );
                         }
                     
                     drawPiece( p,

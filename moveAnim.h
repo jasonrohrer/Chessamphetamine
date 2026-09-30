@@ -1821,13 +1821,13 @@ static void drawLaser( int  inBoardCenterX,
 
             if( numLaserSteps == 1 ) {
                 xOffStart = -16;
-                yOffStart = -16;
+                yOffStart = -14;
                 }
             else {
                 xOffStart = -16;
-                yOffStart = -16;
+                yOffStart = -14;
                 xOffEnd   =   0;
-                yOffEnd   = -16;
+                yOffEnd   = -14;
 
                 midColStart = inToCol   + 1;
                 midColEnd   = inFromCol - 2;
@@ -1841,13 +1841,13 @@ static void drawLaser( int  inBoardCenterX,
 
             if( numLaserSteps == 1 ) {
                 xOffStart = +16;
-                yOffStart = -16;
+                yOffStart = -14;
                 }
             else {
                 xOffStart = +16;
-                yOffStart = -16;
+                yOffStart = -14;
                 xOffEnd   =   0;
-                yOffEnd   = -16;
+                yOffEnd   = -14;
 
                 midColStart = inFromCol + 2;
                 midColEnd   = inToCol   - 1;
@@ -1889,7 +1889,7 @@ static void drawLaser( int  inBoardCenterX,
 
             if( numLaserSteps == 1 ) {
                 xOffStart = 0;
-                yOffStart = -5;
+                yOffStart = -1;
                 }
             else {
                 xOffStart =  0;

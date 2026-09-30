@@ -1,0 +1,23 @@
+
+
+To make glows for lasers:
+
+1.  Import laser sprite into gimp.
+
+2.  Place it on a black background with plent of room around.
+
+3.  Flatten a copy onto the black background (keep the transparent original
+    as a separate layer).
+
+4.  Blur the backgrounded version with Gaussian Blur, 2.0 radius, and IIR
+    for Filter Type (very important not to use Auto).
+
+5.  Select all black area around the blurred version, and crop all layers to the
+    non-black region.
+
+6.  Save cropped black region as glow sprite.
+
+7.  Shrink canvas size in centered manner to contain just the sprite itself,
+    and then save that as the sprite (to make sure centering on sprite and
+	glow are identical... there may be some extra pixels on one end of the
+	sprite).

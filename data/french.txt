@@ -55,6 +55,7 @@ defaults       "Par défaut"
 
 drawInstruct   "Composez votre armée"
 
+unusedDraws    "Tirages:"
 
 
 shopTitle      "Boutique!"

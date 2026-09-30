@@ -52,6 +52,8 @@ defaults       "恢復預設"
 
 drawInstruct   "徵召你的軍隊"
 
+unusedDraws    "餘抽："
+
 
 shopTitle      "商店！"
 shopInstructA  "強化你的牌組！"

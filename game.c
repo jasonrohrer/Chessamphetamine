@@ -1093,20 +1093,24 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
     
 
-    if( infoPanelPiece != noPiece ) {
-        drawPieceInfoPanel( infoPanelPiece,
-                            MAXIGIN_GAME_NATIVE_W - 41,
-                            boardCenterY,
-                            infoPanelFade );
+    /* info panel overlaps with unused draw counter */
+    if( ! moneyGetUnusedDrawsShowing() ) {
         
-        }
-    else if( infoPanelLastPiece != noPiece
-             &&
-             infoPanelFade > 0 ) {
-        drawPieceInfoPanel( infoPanelLastPiece,
-                            MAXIGIN_GAME_NATIVE_W - 41,
-                            boardCenterY,
-                            infoPanelFade );
+        if( infoPanelPiece != noPiece ) {
+            drawPieceInfoPanel( infoPanelPiece,
+                                MAXIGIN_GAME_NATIVE_W - 41,
+                                boardCenterY,
+                                infoPanelFade );
+        
+            }
+        else if( infoPanelLastPiece != noPiece
+                 &&
+                 infoPanelFade > 0 ) {
+            drawPieceInfoPanel( infoPanelLastPiece,
+                                MAXIGIN_GAME_NATIVE_W - 41,
+                                boardCenterY,
+                                infoPanelFade );
+            }
         }
 
     for( i = 0;
@@ -2551,7 +2555,7 @@ void maxiginGame_step( void ) {
                     if( drawsLeft > 0 ) {
                         /* they get money for each unused draw from the
                            last round too */
-                        moneyAdd( drawsLeft );
+                        moneyAddUnusedDraws( drawsLeft );
                         }
                     }
                 else {

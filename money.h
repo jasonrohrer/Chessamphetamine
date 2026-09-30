@@ -32,6 +32,11 @@ void moneyAddCapture( ChessPiece  inPiece );
 int  moneyGetTotal( void );
 
 
+/* will wait until all added money and delayed money is done
+   before releasing bonus */
+void moneyAddUnusedDraws( int  inNumUnused );
+
+
 /* adds captured money value that is delayed until later */
 void moneyAddCaptureDelayed( ChessPiece  inPiece );
 
@@ -53,6 +58,8 @@ char moneyIsSettled( void );
 
 void moneyForce( int  inVal );
 
+
+char moneyGetUnusedDrawsShowing( void );
 
 
 
@@ -80,7 +87,9 @@ void moneyForce( int  inVal );
    The cheapest pieces in shop are 2, so you can always
    buy something, and you're never totally stuck
 */
-#define  OVERRUN_MONEY_VALUE  2
+#define  OVERRUN_MONEY_VALUE          2
+
+#define  EXTRA_BONUS_PER_UNUSED_DRAW  2
 
 
 /*
@@ -117,21 +126,33 @@ CHECK_CHESS_ARRAY( pieceCaptureMoney,
 static int   coinSprite;
 
 static int   coinSound;
+static int   unusedDrawSound;
 static int   spendSound;
 
 static int   moneyVal;
 static int   moneyToAdd            =  0;
 static int   delayedMoneyToAdd     =  0;
 
+static int   unusedDraws           =  0;
+static char  unusedDrawsShowing    =  0;
+
+static int   unusedDrawPreSteps    =  0;
+static int   unusedDrawPostSteps   =  0;
+
+
 static int   moneyAddProgress;
 static int   moneyAddProgressMax   =  100;
 static char  moneyProgressMidPeak  =  0;
+
+static int   lang_unusedDraws;
 
 
 
 void moneyInit( int inStartVal,
                 int inSpendSound ) {
-    
+
+    lang_unusedDraws = maxigin_initTranslationKey( "unusedDraws" );
+        
     coinSprite = maxigin_initSprite( "coin.tga" );
 
     if( coinSprite != -1 ) {
@@ -146,6 +167,7 @@ void moneyInit( int inStartVal,
     moneyProgressMidPeak = 0;
 
     coinSound = maxigin_initSoundEffect( "coin_sd_4.wav" );
+    unusedDrawSound = maxigin_initSoundEffect( "unusedDraw_sd_10.wav" );
 
     spendSound = inSpendSound;
     
@@ -153,6 +175,9 @@ void moneyInit( int inStartVal,
     REGISTER_VAL_MEM( moneyToAdd );
     REGISTER_VAL_MEM( moneyAddProgress );
     REGISTER_VAL_MEM( moneyProgressMidPeak );
+
+    REGISTER_VAL_MEM( unusedDraws );
+    REGISTER_VAL_MEM( unusedDrawsShowing );
     }
 
 
@@ -224,6 +249,24 @@ void moneyDraw( int  inPosX,
         maxigin_drawToggleAdditive( 0 );
         maxigin_drawSetAlpha( 255 );
         }
+
+    if( unusedDrawsShowing ) {
+
+        maxigin_drawResetColor();
+
+        maxigin_setLanguageFontIndex( 1 );
+
+        maxigin_drawLangText( lang_unusedDraws,
+                              inPosX + 5,
+                              inPosY + 14,
+                              MAXIGIN_RIGHT );
+        numberDraw( unusedDraws,
+                    inPosX + 15,
+                    inPosY + 14,
+                    1 );
+
+        maxigin_setLanguageFontIndex( 0 );
+        }
     }
 
 
@@ -234,59 +277,132 @@ void moneyStep( void ) {
 
     if( moneyToAdd == 0
         &&
-        moneyAddProgress == 0 ) {
+        moneyAddProgress == 0
+        &&
+        unusedDraws == 0
+        &&
+        ! unusedDrawsShowing ) {
         return;
         }
 
-    moneyAddProgress += ( 10 * 60 ) / r;
+    if( moneyToAdd != 0
+        ||
+        moneyAddProgress != 0 ) {
+        
+        moneyAddProgress += ( 10 * 60 ) / r;
 
-    if( ! moneyProgressMidPeak
-        &&
-        moneyAddProgress >= moneyAddProgressMax / 2 ) {
+        if( ! moneyProgressMidPeak
+            &&
+            moneyAddProgress >= moneyAddProgressMax / 2 ) {
 
-        if( moneyToAdd > 0 ) {
-            moneyVal += 1;
+            if( moneyToAdd > 0 ) {
+                moneyVal += 1;
 
-            moneyToAdd -= 1;
+                moneyToAdd -= 1;
     
-            maxigin_playSoundEffect( coinSound,
-                                     256 );
-            }
-        else {
-            if( moneyToAdd <= -50 ) {
-                moneyVal   -= 10;
-                moneyToAdd += 10;
-
-                maxigin_playSoundEffect( spendSound,
-                                         512 );
-                }
-            else if( moneyToAdd <= -10 ) {
-                moneyVal   -= 5;
-                moneyToAdd += 5;
-                
-                maxigin_playSoundEffect( spendSound,
-                                         384 );
+                maxigin_playSoundEffect( coinSound,
+                                         256 );
                 }
             else {
-                moneyVal -= 1;
+                if( moneyToAdd <= -50 ) {
+                    moneyVal   -= 10;
+                    moneyToAdd += 10;
 
-                moneyToAdd += 1;
+                    maxigin_playSoundEffect( spendSound,
+                                             512 );
+                    }
+                else if( moneyToAdd <= -10 ) {
+                    moneyVal   -= 5;
+                    moneyToAdd += 5;
                 
-                maxigin_playSoundEffect( spendSound,
-                                     256 );
+                    maxigin_playSoundEffect( spendSound,
+                                             384 );
+                    }
+                else {
+                    moneyVal -= 1;
+
+                    moneyToAdd += 1;
+                
+                    maxigin_playSoundEffect( spendSound,
+                                             256 );
+                    }
+                }
+
+            moneyProgressMidPeak = 1;
+            }
+        else if( moneyProgressMidPeak
+                 &&
+                 moneyAddProgress >= moneyAddProgressMax ) {
+            /* start next increment */
+            moneyProgressMidPeak = 0;
+            moneyAddProgress = 0;
+            }
+        }
+    
+
+    if( ( unusedDraws > 0
+          ||
+          unusedDrawsShowing )
+        &&
+        moneyToAdd == 0
+        &&
+        delayedMoneyToAdd == 0 ) {
+
+        int  stepDur  =  ( r * 15 ) / 60;
+
+        if( unusedDraws > 0
+            &&
+            unusedDrawPreSteps < stepDur ) {
+            
+            unusedDrawPreSteps ++;
+
+            if( ! unusedDrawsShowing
+                &&
+                unusedDrawPreSteps >= 0 ) {
+                /* just crossed the threshold where we should show it */
+                unusedDrawsShowing = 1;
+
+                /* rewind back to negative, now that it's showing, to
+                   give the user a chance to see it before the first decrement */
+                unusedDrawPreSteps = - stepDur;
+                }
+
+            if( unusedDrawPreSteps >= stepDur ) {
+                maxigin_playSoundEffect( unusedDrawSound,
+                                 256 );
+                unusedDraws --;
+                
+                unusedDrawPostSteps = 1;
                 }
             }
+        else if( unusedDrawPostSteps > 0
+                 &&
+                 unusedDrawPostSteps < stepDur ) {
+            unusedDrawPostSteps ++;
+            
+            if( unusedDrawPostSteps >= stepDur ) {
 
-        moneyProgressMidPeak = 1;
-        }
-    else if( moneyProgressMidPeak
-             &&
-             moneyAddProgress >= moneyAddProgressMax ) {
-        /* start next increment */
-        moneyProgressMidPeak = 0;
-        moneyAddProgress = 0;
+                moneyToAdd += EXTRA_BONUS_PER_UNUSED_DRAW;
+                unusedDrawPostSteps = 0;
+                unusedDrawPreSteps = 0;
+                }
+            }
         }
 
+    if( unusedDrawsShowing
+        &&
+        unusedDrawPostSteps == 0
+        &&
+        moneyToAdd == 0
+        &&
+        moneyAddProgress == 0
+        &&
+        unusedDraws == 0 ) {
+
+        /* completely done adding money for unused draws */
+        unusedDrawsShowing = 0;
+        }
+    
     }
 
 
@@ -354,6 +470,35 @@ char moneyIsSettled( void ) {
         }
     return 0;
     }
+
+
+
+void moneyAddUnusedDraws( int  inNumUnused ) {
+    
+    int  r        =  mingin_getStepsPerSecond();
+    int  stepDur  =  ( r * 15 ) / 60;
+
+    /* first pre-step is longer, to give previous money a chance to settle */
+    unusedDrawPreSteps  =  -stepDur;
+    unusedDrawPostSteps =   0;
+
+    /* hide them at first, until first pre-step becomes positive */
+    unusedDrawsShowing = 0;
+    
+    
+    unusedDraws += inNumUnused;
+    }
+
+
+char moneyGetUnusedDrawsShowing( void ) {
+    /* return 1 if they are showing now or going to be showing soon */
+    
+    return
+        unusedDraws > 0
+        ||
+        unusedDrawsShowing;
+    }
+
 
 
 

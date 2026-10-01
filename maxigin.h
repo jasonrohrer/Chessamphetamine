@@ -1506,6 +1506,22 @@ char maxigin_drawGetAdditive( void );
 
 
 
+/* Sets a horizontal skew to use when drawing sprites.
+
+   Defaults to 0.
+
+   If set, each subsequent row of the sprite will move horizontally
+   by the specified skew amount.
+
+   Parameters:
+
+       inSkewH   the horizontal skew amount for each subsequent row of
+                 the sprite, top down.  Set to 0 (default) to disable skew.
+*/
+void maxigin_drawSetSpriteSkew( int  inSkewH );
+
+
+
 /*
   Sets the clipping rectangle for future sprite draw calls.
 
@@ -8529,6 +8545,18 @@ void maxigin_drawSetColorSaturation( int  inSaturation ) {
 
 
 
+static  int  mx_spriteSkewH  =  0;
+
+
+
+void maxigin_drawSetSpriteSkew( int  inSkewH ) {
+    
+    mx_spriteSkewH = inSkewH;
+    
+    }
+
+
+
 void maxigin_drawBaseSprite( int  inSpriteHandle,
                              int  inCenterX,
                              int  inCenterY ) {
@@ -8628,6 +8656,14 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
     startImageY   =  inCenterY - h / 2;
     endImageX     =  startImageX + w;
     endImageY     =  startImageY + h;
+
+    if( mx_spriteSkewH != 0 ) {
+        /* compensate for skew that will happen so that
+           skewed sprite is still centered on the same spot
+           as unskewed sprite */
+        startImageX -= ( h / 2 ) * mx_spriteSkewH;
+        }
+        
 
     startSpriteX  =  0;
     startSpriteY  =  0;
@@ -8881,6 +8917,8 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
                 spriteByte ++;
                 }
             }
+
+        startImageX += mx_spriteSkewH;
         
         imY ++;
         }

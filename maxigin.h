@@ -1522,6 +1522,19 @@ void maxigin_drawSetSpriteSkew( int  inSkewH );
 
 
 
+/* Toggles vertical flip when drawing sprites.
+
+   Defaults to 0, off.
+
+   Parameters:
+
+       inFlipV   1 to flip sprites vertically
+                 0 to not
+*/
+void maxigin_drawSetSpriteFlipVertical( char  inFlipV );
+
+
+
 /*
   Sets the clipping rectangle for future sprite draw calls.
 
@@ -8557,6 +8570,16 @@ void maxigin_drawSetSpriteSkew( int  inSkewH ) {
 
 
 
+static  char  mx_spriteFlipV  =  0;
+
+
+
+void maxigin_drawSetSpriteFlipVertical( char  inFlipV ) {
+    mx_spriteFlipV = inFlipV;
+    }
+
+
+
 void maxigin_drawBaseSprite( int  inSpriteHandle,
                              int  inCenterX,
                              int  inCenterY ) {
@@ -8574,6 +8597,7 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
     int  x;
     int  y;
     int  imY;
+    int  imYDelta = 1;
     
     int  w;
     int  h;
@@ -8663,6 +8687,17 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
            as unskewed sprite */
         startImageX -= ( h / 2 ) * mx_spriteSkewH;
         }
+
+    if( mx_spriteFlipV ) {
+        
+        int  temp  =  endImageY;
+            
+        endImageY = startImageY;
+
+        startImageY = temp;
+            
+        imYDelta = -1;
+        }
         
 
     startSpriteX  =  0;
@@ -8688,28 +8723,67 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
         startSpriteX += clipStartX - startImageX;
         startImageX = clipStartX;
         }
-    if( startImageY < clipStartY ) {
-        startSpriteY += clipStartY - startImageY;
-        startImageY = clipStartY;
-        }
-
+    
     if( endImageX > clipEndX + 1 ) {
         endSpriteX -= ( endImageX - ( clipEndX + 1 ) );
-        }
-    if( endImageY > clipEndY + 1 ) {
-        endSpriteY -= ( endImageY - ( clipEndY + 1 ) );
+        endImageX = clipEndX;
         }
 
-    if( startImageX >= imW
-        ||
-        startImageY >= imH
-        ||
-        endImageX   <=  0
-        ||
-        endImageY   <=  0 ) {
+    if( mx_spriteFlipV ) {  
+        if( endImageY < clipStartY ) {
+            endSpriteY -= clipStartY - endImageY;
+            endImageY = clipStartY;
+            }
 
-        /* sprite drawn completely out of bounds, affecting no pixels at all */
-        return;
+        if( startImageY > clipEndY + 1 ) {
+            startSpriteY += ( startImageY - ( clipEndY + 1 ) );
+            startImageY = clipEndY;
+            }
+        }
+    else {
+        
+        if( startImageY < clipStartY ) {
+            startSpriteY += clipStartY - startImageY;
+            startImageY = clipStartY;
+            }
+        
+        if( endImageY > clipEndY + 1 ) {
+            endSpriteY -= ( endImageY - ( clipEndY + 1 ) );
+            endImageY = clipEndY;
+            }
+        }
+
+    
+    if( mx_spriteFlipV ) {
+
+        if( startImageX >= imW
+            ||
+            endImageY >= imH
+            ||
+            endImageX   <=  0
+            ||
+            startImageY   <=  0 ) {
+
+            /* sprite drawn completely out of bounds,
+               affecting no pixels at all */
+            return;
+            }
+
+        }
+    else {
+        
+        if( startImageX >= imW
+            ||
+            startImageY >= imH
+            ||
+            endImageX   <=  0
+            ||
+            endImageY   <=  0 ) {
+
+            /* sprite drawn completely out of bounds,
+               affecting no pixels at all */
+            return;
+            }
         }
     
     
@@ -8920,7 +8994,7 @@ void maxigin_drawBaseSprite( int  inSpriteHandle,
 
         startImageX += mx_spriteSkewH;
         
-        imY ++;
+        imY += imYDelta;
         }
     
     }

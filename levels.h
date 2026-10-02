@@ -289,7 +289,7 @@ void getEnemyLevel( int inLevelNumber,
 
             if( fSpot == 2 ) {
                 outState->grid[ y ][ x ]  = king | CHESS_BLACK;
-                outState->kingExists[ 1 ] =  1;
+                outState->kingExists[ CHESS_BLACK >> 7 ] =  1;
                 continue;
                 }
             if( fSpot == 1 ) {

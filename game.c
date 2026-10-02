@@ -1315,7 +1315,7 @@ static void startDraftingPieces( void ) {
                           &sY ) ) {
 
         boardState.grid      [ sY ][ sX ] = king | CHESS_WHITE;
-        boardState.kingExists[ 0  ]       = 1;
+        boardState.kingExists[ CHESS_WHITE >> 7 ]       = 1;
         
         numPiecesPlaced = 1;
         }

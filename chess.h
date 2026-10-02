@@ -2297,53 +2297,103 @@ void getStartBoard( BoardState  *outState ) {
 
 void getTestBoard( BoardState  *outState ) {
 
-    /*int  i;*/
+    int  dataSize;
+    int  dataHandle  =  mingin_startReadBulkData( "testBoard.txt",
+                                                  &dataSize );
+    int  y;
+    int  x;
 
     clearBoard( outState );
 
-    outState->grid[2][4] = king   | CHESS_BLACK;
-
-    outState->grid[7][4] = king   | CHESS_WHITE;
-
-    outState->grid[7][0] = rook | CHESS_WHITE;
-
-    if(0)outState->grid[7][6] = rook  | CHESS_WHITE;
-    if(0)outState->grid[7][7] = rook  | CHESS_WHITE;
-    
-    /*
-    outState->grid[1][4] = pawn   | CHESS_BLACK;
-    outState->grid[2][4] = pawn   | CHESS_BLACK;
-    outState->grid[2][5] = rook  | CHESS_BLACK;
-    outState->grid[3][3] = rook  | CHESS_BLACK;
-    outState->grid[3][4] = rook  | CHESS_BLACK;
-    outState->grid[3][5] = rook  | CHESS_BLACK;
-    
-    outState->grid[4][0] = laserRook | CHESS_WHITE;
-    if(0)outState->grid[4][2] = pawn | CHESS_WHITE;
-    outState->grid[3][0] = pawn | CHESS_WHITE;
-    outState->grid[6][5] = king | CHESS_WHITE;
-
-
-    if(1)outState->grid[4][4] = rocket | CHESS_WHITE;
-    if(0)outState->grid[6][4] = doublingPawn  | CHESS_WHITE;
-    outState->grid[5][4] = doublingPawn  | CHESS_WHITE;
-    if(0)outState->grid[5][5] = addingRook  | CHESS_WHITE;
-    outState->grid[5][5] = pawn  | CHESS_WHITE;
-    outState->grid[5][6] = addingRook  | CHESS_WHITE;
-
-
-    for( i = 0;
-         i < BW;
-         i ++ ) {
-        outState->grid[7][i] = addingRook  | CHESS_WHITE;
+    if( dataHandle == -1 ) {
+        mingin_log( "Failed to open testBoard.txt\n" );
+        return;
         }
-    */
+
+    if( dataSize < BW * BH ) {
+        mingin_log( "testBoard.txt to small to contain full board.\n" );
+        mingin_endReadBulkData( dataHandle );
+        return;
+        }
+
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            unsigned char  byte;
+            char           readChar  =  ' ';
+            int            numRead;
+            ChessPiece     p;
+            char           found     =  0;
+            
+            /* skip any whitespace encountered */
+            while( readChar == ' '
+                   ||
+                   readChar == '\n'
+                   ||
+                   readChar == '\r'
+                   ||
+                   readChar == '\t' ) {
+                
+                numRead = mingin_readBulkData( dataHandle,
+                                               1,
+                                               &byte );
+
+                if( numRead != 1 ) {
+                    mingin_log( "Failed to read byte from testBoard.txt\n" );
+                    mingin_endReadBulkData( dataHandle );
+                    return;
+                    }
+
+                readChar = (char)( byte );
+
+                for( p = noPiece;
+                     p < NUM_CHESS_PIECES;
+                     p   ++ ) {
+
+                    if( readChar == '+' ) {
+                        outState->grid[y][x] = noPiece;
+                        }
+                    else if( readChar == pieceChars[ p ] ) {
+                        /* hit black */
+
+                        outState->grid[y][x] = p | CHESS_BLACK;
+
+                        if( p == king ) {
+                            outState->kingExists[ CHESS_BLACK >> 7 ] = 1;
+                            }
+                        found = 1;
+                        break;
+                        }
+                    else if( readChar == pieceChars[ p ] - 32 ) {
+                        /* uppercase, white */
+                        outState->grid[y][x] = p | CHESS_WHITE;
+                        if( p == king ) {
+                            outState->kingExists[ CHESS_WHITE >> 7 ] = 1;
+                            }
+                        found = 1;
+                        break;
+                        } 
+                    }
+                }
+
+            if( ! found ) {
+
+                outState->grid[y][x] = noPiece;
+                }
+            }
+        }
 
     outState->nextToMove = CHESS_WHITE;
     outState->moveCount  = 0;
     outState->kingExists[0] = 1;
     outState->kingExists[1] = 1;
     }
+
 
 /*
 void getTestBoard( BoardState  *outState ) {

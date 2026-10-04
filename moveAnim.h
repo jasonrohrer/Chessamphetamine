@@ -22,6 +22,8 @@
 void moveAnimInit( void );
 
 
+int moveAnimGetShooshGoodSound( void );
+
 
 typedef unsigned char AnimPhase;
 
@@ -3208,6 +3210,12 @@ void moveAnimIncrementSpeed( void ) {
 
 void moveAnimClearRisingSpeed( void ) {
     currentMoveSpeed = BASE_MOVE_SPEED;
+    }
+
+
+
+int moveAnimGetShooshGoodSound( void ) {
+    return shooshGood;
     }
 
 

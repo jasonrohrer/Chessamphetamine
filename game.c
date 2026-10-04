@@ -140,6 +140,7 @@ static int          thunkSound         =  -1;
 static int          examinePieceSound  =  -1;
 static int          pickFailedSound    =  -1;
 static int          deckAllSameSound   =  -1;
+static int          redrawSound        =  -1;
 
 static int          checkmateGood      =  -1;
 static int          checkmateBad       =  -1;
@@ -2780,7 +2781,7 @@ void maxiginGame_step( void ) {
                     sideBoardRedrawBlocked = 1;
                     }
                 else {
-                    maxigin_playSoundEffect( examinePieceSound,
+                    maxigin_playSoundEffect( redrawSound,
                                              256 );
 
                     drawsLeft --;
@@ -3207,6 +3208,8 @@ void maxiginGame_init( void ) {
 
     deckAllSameSound  = maxigin_initSoundEffect( "deckAllSame_sd_31.wav" );
 
+    redrawSound       = maxigin_initSoundEffect( "redraw_sd_10.wav" );
+    
     buttonGlobalInit( examinePieceSound );
 
 
@@ -3511,7 +3514,8 @@ void maxiginGame_init( void ) {
     particleSpriteInit();
     moveAnimInit();
     moneyInit( startingMoney,
-               plunkSound );
+               plunkSound,
+               moveAnimGetShooshGoodSound() );
     numbersInit();
     checkDisplayInit();
     colorsInit();

@@ -16,7 +16,8 @@
 
 
 void moneyInit( int  inStartVal,
-                int  inSpendSound );
+                int  inSpendSound,
+                int  inUnusedDrawSound );
 
 
 void moneyAdd( int  inValToAdd );
@@ -148,8 +149,9 @@ static int   lang_unusedDraws;
 
 
 
-void moneyInit( int inStartVal,
-                int inSpendSound ) {
+void moneyInit( int  inStartVal,
+                int  inSpendSound,
+                int  inUnusedDrawSound ) {
 
     lang_unusedDraws = maxigin_initTranslationKey( "unusedDraws" );
         
@@ -167,7 +169,7 @@ void moneyInit( int inStartVal,
     moneyProgressMidPeak = 0;
 
     coinSound = maxigin_initSoundEffect( "coin_sd_4.wav" );
-    unusedDrawSound = maxigin_initSoundEffect( "unusedDraw_sd_10.wav" );
+    unusedDrawSound = inUnusedDrawSound;
 
     spendSound = inSpendSound;
     
@@ -369,7 +371,7 @@ void moneyStep( void ) {
 
             if( unusedDrawPreSteps >= stepDur ) {
                 maxigin_playSoundEffect( unusedDrawSound,
-                                 256 );
+                                 512 );
                 unusedDraws --;
                 
                 unusedDrawPostSteps = 1;

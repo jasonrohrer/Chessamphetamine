@@ -1324,7 +1324,7 @@ static void startDraftingPieces( void ) {
 
     /* give them an allowance for drafting army in each subsequent level */
     if( currentLevel > 0 ) {
-        moneyAdd( 3 );
+        if( 0 ) moneyAdd( 3 );
         }
 
             
@@ -2551,7 +2551,7 @@ void maxiginGame_step( void ) {
                                              256 );
 
                     /* give them an allowance of 3 every time shop appears */
-                    moneyAddDelayed( 3 );
+                    if( 0 ) moneyAddDelayed( 3 );
                     
                     if( drawsLeft > 0 ) {
                         /* they get money for each unused draw from the

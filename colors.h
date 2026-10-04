@@ -39,7 +39,7 @@ void colorsApplyWhitePieceColor( void );
 void colorsApplyBlackPieceColor( void );
 void colorsApplyBoardColor     ( void );
 
-
+void colorsApplyMoneyColor     ( void );
 
 
 
@@ -168,6 +168,7 @@ typedef struct ColorsColor {
 static  ColorsColor  colorsWhitePlayer;
 static  ColorsColor  colorsBlackPlayer;
 static  ColorsColor  colorsBoard;
+static  ColorsColor  colorsMoney;
 
 static  MaxiginRand  colorsRand;
 
@@ -362,7 +363,7 @@ void colorsSetFromFileMap( void ) {
                                  &w,
                                  &h );
 
-    if( w < 3 ) {
+    if( w < 4 ) {
         return;
         }
 
@@ -390,6 +391,15 @@ void colorsSetFromFileMap( void ) {
                             &c );
     
     colorsSetMaxigin( &colorsBlackPlayer,
+                      &c );
+
+    
+    maxigin_getSpritePixel( colorMapSprite,
+                            3,
+                            0,
+                            &c );
+
+    colorsSetMaxigin( &colorsMoney,
                       &c );
     
     }
@@ -438,6 +448,12 @@ void colorsApplyBlackPieceColor( void ) {
 void colorsApplyBoardColor( void ) {
     colorsApplyColor( &colorsBoard );
     }
+
+
+void colorsApplyMoneyColor( void ) {
+    colorsApplyColor( &colorsMoney );
+    }
+
 
 
 static void colorsRotateColor( ColorsColor  *inColor ) {

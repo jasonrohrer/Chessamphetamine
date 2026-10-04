@@ -514,8 +514,12 @@ void shopDraw( void ) {
             
 
             if( ! shopSlotsLifting ) {
+
+                moneyDrawCoin( shopCenterX + shopSlotPosX[i],
+                               pieceYBase + 12 + 8,
+                               64 );
                 
-                maxigin_drawResetColor();
+                colorsApplyMoneyColor();
             
                 numberDrawCenter( shopSlotPrices[ i ],
                                   shopCenterX + shopSlotPosX[i],
@@ -576,7 +580,12 @@ void shopDraw( void ) {
     buttonDraw( rerollButton );
     buttonDraw( doneButton );
 
-    maxigin_drawResetColor();
+
+    moneyDrawCoin( shopCenterX,
+                   shopCenterY + 66 + 8,
+                   64 );
+    
+    colorsApplyMoneyColor();
             
     numberDrawCenter( costGet( shopRerollCost ),
                     shopCenterX,

@@ -50,6 +50,13 @@ void moneyDraw( int  inPosX,
                 int  inPosY );
 
 
+
+void moneyDrawCoin( int            inPosX,
+                    int            inPosY,
+                    unsigned char  inFade );
+
+
+
 void moneyStep( void );
 
 
@@ -192,6 +199,19 @@ void moneyForce( int  inVal ) {
     
 
 
+void moneyDrawCoin( int            inPosX,
+                    int            inPosY,
+                    unsigned char  inFade ) {
+    
+    colorsApplyMoneyColor();
+
+    maxigin_drawSetAlpha( inFade );
+    
+    maxigin_drawSprite( coinSprite,
+                        inPosX,
+                        inPosY );
+    }
+
 
 void moneyDraw( int  inPosX,
                 int  inPosY ) {
@@ -211,7 +231,7 @@ void moneyDraw( int  inPosX,
         }
         
     
-    drawSetPieceColor( CHESS_WHITE );
+    colorsApplyMoneyColor();
 
     
     maxigin_drawSprite( coinSprite,

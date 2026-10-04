@@ -141,9 +141,44 @@ static  int            sbOverSlot             =  -1;
 static  int            sbPrevSlot             =   0;
 
 static  int            sbPlacePieceCost       =  -1;
-
+static  int            sbNumPlaced            =   0;
 static  char           sbPurchaseBlocked      =   0;
 
+
+
+
+/* These functions create a hybrid cost that starts at 0 and goes up like
+   this:
+
+   0, 2, 3, 3, 4, 4, 4, 5, 5, 5, 5, 6, ...
+*/
+
+static int getNextPlacementCost( void ) {
+    if( sbNumPlaced == 0 ) {
+        return 0;
+        }
+    else {
+        return costGet( sbPlacePieceCost );
+        }
+    }
+
+
+
+static void resetPlacementCost( void ) {
+
+    costResetIncrement( sbPlacePieceCost );
+    sbNumPlaced = 0;
+    }
+
+
+
+static void incrementPlacementCost( void ) {
+    if( sbNumPlaced > 0 ) {
+        costIncrement( sbPlacePieceCost );
+        }
+        
+    sbNumPlaced ++;
+    }
 
 
 void sideBoardInit( int  inPointerActionHandle,
@@ -183,7 +218,9 @@ void sideBoardInit( int  inPointerActionHandle,
         yPos -= ySep;
         }
 
-    sbPlacePieceCost = costPlateauInit( 1,
+    /* part of hybrid cost provided by functions above,
+       2, 3, 3, 4, 4, 4, 5, 5, 5, 5, ....   */
+    sbPlacePieceCost = costPlateauInit( 2,
                                         1,
                                         1,
                                         0 );
@@ -206,6 +243,8 @@ void sideBoardInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( sbPrevSlot );
 
     REGISTER_VAL_MEM( sbPurchaseBlocked );
+
+    REGISTER_VAL_MEM( sbNumPlaced );
     }
 
 
@@ -512,15 +551,15 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
             else {
                 /* treat click/action as purchase */
 
-                if( moneyGetTotal() < costGet( sbPlacePieceCost ) ) {
+                if( moneyGetTotal() < getNextPlacementCost() ) {
                     /* can't afford */
                 
                     maxigin_playSoundEffect( inPickFailedSound,
                                              256 );
                     }
                 else {
-                    moneyAdd( - costGet( sbPlacePieceCost ) );
-                    costIncrement( sbPlacePieceCost );
+                    moneyAdd( - getNextPlacementCost() );
+                    incrementPlacementCost();
                 
                     *outPickedPiece = sideBoard[ sbOverSlot ];
 
@@ -571,7 +610,7 @@ void sideBoardDraw( void ) {
 
     int  i;
 
-    int  cost  = costGet( sbPlacePieceCost );
+    int  cost  = getNextPlacementCost();
     
 
     for( i = sbNumSlots -  1;
@@ -612,7 +651,13 @@ void sideBoardDraw( void ) {
                                     sbHighlightFade[i] );
                 
                 if( ! sbPurchaseBlocked ) {
-                    maxigin_drawResetColor();
+
+                    moneyDrawCoin( sbSlotPosX[i] + 16,
+                                   sbSlotPosY[i] - 8,
+                                   sbHighlightFade[i] / 4 );
+                    
+                    colorsApplyMoneyColor();
+                    
                     maxigin_drawSetAlpha( sbHighlightFade[i] );
 
                     numberDrawCenter( cost,
@@ -670,7 +715,7 @@ void sideBoardShowRedraw( char  inShow ) {
 
 
 void sideBoardResetCost( void ) {
-    costResetIncrement( sbPlacePieceCost );
+    resetPlacementCost();
     }
 
 
@@ -771,7 +816,7 @@ int sideBoardGetNumSlots( void ) {
 
 int sideBoardGetPlacementCost( void ) {
 
-    return costGet( sbPlacePieceCost );
+    return getNextPlacementCost();
     }
 
 

@@ -1,0 +1,3 @@
+./clearSave.sh
+
+./hotReloadRun.sh

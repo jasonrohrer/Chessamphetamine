@@ -1842,7 +1842,7 @@ static void drawLaser( int  inBoardCenterX,
             numLaserSteps = inToCol - inFromCol;
 
             if( numLaserSteps == 1 ) {
-                xOffStart = +16;
+                xOffStart = +17;
                 yOffStart = -14;
                 }
             else {

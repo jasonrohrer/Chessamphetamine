@@ -2204,13 +2204,13 @@ void chessInit( void ) {
                     p == laserPawn
                     ||
                     p == doublingPawn ) {
-                    /* pawns get 100 (SCORE_SCALE) point bonus per square
+                    /* pawns get 300 (3 * SCORE_SCALE) point bonus per square
                        as they advance farther */
                     pieceScores[ p |  CHESS_BLACK ][y][x] -=
-                        SCORE_SCALE * y;
+                        3 * SCORE_SCALE * y;
 
                     pieceScores[ p |  CHESS_WHITE ][y][x] +=
-                        SCORE_SCALE * ( BH - y - 1 );
+                        3 * SCORE_SCALE * ( BH - y - 1 );
                     }
                 }
             }

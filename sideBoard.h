@@ -219,8 +219,8 @@ void sideBoardInit( int  inPointerActionHandle,
         }
 
     /* part of hybrid cost provided by functions above,
-       2, 3, 3, 4, 4, 4, 5, 5, 5, 5, ....   */
-    sbPlacePieceCost = costPlateauInit( 2,
+       1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, ....   */
+    sbPlacePieceCost = costPlateauInit( 1,
                                         1,
                                         1,
                                         0 );

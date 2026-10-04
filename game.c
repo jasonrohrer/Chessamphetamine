@@ -3681,7 +3681,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( preSideBoardY );
 
     REGISTER_VAL_MEM( sideBoardDestSpotFade );
-    
+
+    REGISTER_VAL_MEM( drawsLeft );
     
 
     if( ! maxigin_initRestoreStaticMemoryFromLastRun() ) {

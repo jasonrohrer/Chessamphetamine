@@ -105,6 +105,12 @@ int  costPlateauInit( int  inStartingValue,
 
 int costGet( int  inCostHandle );
 
+
+/* peeks at future cost after one more increment.
+   Does not modify state of cost */
+int costIncrementPeek( int  inCostHandle );
+
+
 int costIncrement( int  inCostHandle );
 
 int costResetIncrement( int  inCostHandle );
@@ -333,6 +339,44 @@ int costGet( int  inCostHandle ) {
 
     return val;
     }
+
+
+int costIncrementPeek( int  inCostHandle ) {
+
+    int  peekedVal;
+
+    if( inCostHandle == -1 ) {
+        return 0;
+        }
+
+    if( inCostHandle >= PLATEAU_COST_HANDLE_OFFSET ) {
+
+        static  CostPlateau  temp;
+
+        inCostHandle -= PLATEAU_COST_HANDLE_OFFSET;
+
+        temp = costPlateauList[ inCostHandle ];
+
+        peekedVal = costIncrement( inCostHandle + PLATEAU_COST_HANDLE_OFFSET );
+
+        /* restore */
+        costPlateauList[ inCostHandle ] = temp;
+        }
+    else {
+        static  Cost  temp;
+
+        temp = costList[ inCostHandle ];
+
+        peekedVal = costIncrement( inCostHandle );
+
+        /* restore */
+        costList[ inCostHandle ] = temp;
+        }
+    
+
+    return peekedVal;  
+    }
+
 
     
 

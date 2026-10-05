@@ -64,6 +64,8 @@ void sideBoardResetCost( void );
 
 int sideBoardGetPlacementCost( void );
 
+int sideBoardGetNextPlacementCost( void );
+
 
 
 
@@ -190,6 +192,17 @@ static int getNextPlacementCost( void ) {
         }
     else {
         return costGet( sbPlacePieceCost );
+        }
+    }
+
+
+
+static int getNextNextPlacementCost( void ) {
+    if( sbNumPlaced == 0 ) {
+        return costGet( sbPlacePieceCost );
+        }
+    else {
+        return costIncrementPeek( sbPlacePieceCost );
         }
     }
 
@@ -853,6 +866,13 @@ int sideBoardGetNumSlots( void ) {
 int sideBoardGetPlacementCost( void ) {
 
     return getNextPlacementCost();
+    }
+
+
+
+int sideBoardGetNextPlacementCost( void ) {
+
+    return getNextNextPlacementCost();
     }
 
 

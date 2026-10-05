@@ -97,7 +97,7 @@ char moneyGetUnusedDrawsShowing( void );
 */
 #define  OVERRUN_MONEY_VALUE          2
 
-#define  EXTRA_BONUS_PER_UNUSED_DRAW  1
+#define  EXTRA_BONUS_PER_UNUSED_DRAW  0
 
 
 /*
@@ -499,6 +499,11 @@ void moneyAddUnusedDraws( int  inNumUnused ) {
     
     int  r        =  mingin_getStepsPerSecond();
     int  stepDur  =  ( r * 15 ) / 60;
+
+    if( EXTRA_BONUS_PER_UNUSED_DRAW == 0 ) {
+        /* nothing to add */
+        return;
+        }
 
     /* first pre-step is longer, to give previous money a chance to settle */
     unusedDrawPreSteps  =  -stepDur;

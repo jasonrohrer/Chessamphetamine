@@ -2169,9 +2169,9 @@ void chessInit( void ) {
     int  i;
 
     /* stalemate */
-    chessSeed( 12036707 );
+    if( 0 ) chessSeed( 12036707 );
 
-    if( 0 ) chessSeed( mingin_getEntropySeed() );
+    if( 1 ) chessSeed( mingin_getEntropySeed() );
 
     /* draw */
     if(0)chessSeed( 12035857 );
@@ -4997,21 +4997,16 @@ char isForcedCheckmatePossible( BoardState  *inState ) {
         return 1;
         }
 
-    if( knightCount <= 2
+    if( knightCount == 1
         &&
-        bishopCountTot <= 1 ) {
-        /* this is a very hard checkmate to find
-           count it as impossible, at least for this engine */
-        return 0;
-        }
-
-    if( knightCount > 0
-        &&
-        bishopCountTot > 0 ) {
+        bishopCountTot == 1 ) {
+        /* let white OR black attempt a N/B checkmate */
         return 1;
         }
     
-    if( knightCount > 2 ) {
+
+    if( knightCount == 2 ) {
+        /* let white OR black attempt a N/N checkmate */
         return 1;
         }
 
@@ -5021,9 +5016,16 @@ char isForcedCheckmatePossible( BoardState  *inState ) {
         return 1;
         }
 
+    if( bishopCountTot >= 2
+        &&
+        loneKingColor == CHESS_BLACK ) {
+        /* only white can attempt 2-same-color bishop checkmate */
+        return 1;
+        }
+
     /* lone bishop
-       lone 2 or fewer knights
-       2 or more bishops on the same color square
+       lone 1 or fewer white knights
+       2 or more black bishops on the same color square
 
        impossible to checkmate */
     

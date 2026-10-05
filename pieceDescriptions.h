@@ -802,12 +802,21 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
     if( inShowDeploymentExtraCost ) {
 
+        int  totalH;
+        int  extraY  =  0;
+
         maxigin_setLanguageFontIndex( 1 );
 
         maxigin_measureLangTextVertical( lang_deploymentCost,
                                          &upperH,
                                          &lowerH );
 
+        totalH = lowerH + upperH;
+
+        if( totalH < 8 ) {
+            extraY = 8 - totalH;
+            }
+        
         raritySetDrawColor( inPiece );
 
         maxigin_drawSetAlpha( inFade );
@@ -818,7 +827,7 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
     
         maxigin_drawLangText( lang_deploymentCost,
                               inCenterX,
-                              inCenterY + pH / 2 + upperH + 1,
+                              inCenterY + pH / 2 + upperH + 1 + extraY,
                               MAXIGIN_CENTER );
         maxigin_setLanguageFontIndex( 0 );
 
@@ -826,12 +835,10 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
         maxigin_drawSetAlpha( inFade );
         
-        numberDrawTextRublesRight(
-            maxigin_stringConcat( "+",
-                                  maxigin_intToString(
-                                      sideBoardGetExtraDeploymentCost( t ) ) ),
+        numberDrawRublesRight(
+            sideBoardGetExtraDeploymentCost( t ),
             inCenterX + 10,
-            inCenterY + pH / 2 + upperH + 2 + lowerH + 4,
+            inCenterY + pH / 2 + upperH + 2 + lowerH + 4 + extraY,
             1 );
         }
     }

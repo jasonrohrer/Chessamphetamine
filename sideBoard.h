@@ -646,9 +646,6 @@ void sideBoardDraw( void ) {
 
     int  i;
 
-    int  cost  = getNextPlacementCost();
-    
-
     for( i = sbNumSlots -  1;
          i >= 0;
          i -- ) {

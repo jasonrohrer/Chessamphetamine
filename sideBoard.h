@@ -93,6 +93,9 @@ char sideBoardStillHoldingController( void );
 int sideBoardGetNumSlots( void );
 
 
+int sideBoardGetExtraDeploymentCost( ChessPiece  inPiece );
+
+
 
 #endif
 
@@ -109,6 +112,13 @@ int sideBoardGetNumSlots( void );
 #include "cost.h"
 
 #include "money.h"
+
+#include "playerDeck.h"
+
+#include "nav.h"
+
+#include "slotLift.h"
+
 
 
 static  ChessPiece     sideBoard      [ SIDE_BOARD_MAX_SLOTS ];
@@ -145,6 +155,27 @@ static  int            sbNumPlaced            =   0;
 static  char           sbPurchaseBlocked      =   0;
 
 
+
+#define PIECE_DEPLOYMENT_COST_LIST( C, V )   \
+    V( C, 0,   noPiece,      0   ) \
+    V( C, 1,   pawn,         0   ) \
+    V( C, 2,   bishop,       2   ) \
+    V( C, 3,   knight,       1   ) \
+    V( C, 4,   rook,         4   ) \
+    V( C, 5,   queen,        6   ) \
+    V( C, 6,   king,         0   ) \
+    V( C, 7,   laserRook,    8   ) \
+    V( C, 8,   laserPawn,    3   ) \
+    V( C, 9,   doublingPawn, 2   ) \
+    V( C, 10,  addingRook,   5   ) \
+    V( C, 11,  rocket,       2   )
+
+static int pieceDeploymentCost[] = {
+    MAKE_CHESS_ARRAY( PIECE_DEPLOYMENT_COST_LIST )
+    };
+
+CHECK_CHESS_ARRAY( pieceDeploymentCost,
+                   PIECE_DEPLOYMENT_COST_LIST );
 
 
 /* These functions create a hybrid cost that starts at 0 and goes up like
@@ -551,14 +582,19 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
             else {
                 /* treat click/action as purchase */
 
-                if( moneyGetTotal() < getNextPlacementCost() ) {
+                int  totalCost =
+                     getNextPlacementCost() +
+                     sideBoardGetExtraDeploymentCost( sideBoard[ sbOverSlot ] );
+                
+
+                if( moneyGetTotal() < totalCost ) {
                     /* can't afford */
                 
                     maxigin_playSoundEffect( inPickFailedSound,
                                              256 );
                     }
                 else {
-                    moneyAdd( - getNextPlacementCost() );
+                    moneyAdd( - totalCost );
                     incrementPlacementCost();
                 
                     *outPickedPiece = sideBoard[ sbOverSlot ];
@@ -652,6 +688,9 @@ void sideBoardDraw( void ) {
                 
                 if( ! sbPurchaseBlocked ) {
 
+                    int  deployCost =
+                        sideBoardGetExtraDeploymentCost( sideBoard[i] );
+
                     moneyDrawCoin( sbSlotPosX[i] + 16,
                                    sbSlotPosY[i] - 8,
                                    sbHighlightFade[i] / 4 );
@@ -660,7 +699,7 @@ void sideBoardDraw( void ) {
                     
                     maxigin_drawSetAlpha( sbHighlightFade[i] );
 
-                    numberDrawCenter( cost,
+                    numberDrawCenter( deployCost,
                                       sbSlotPosX[i] + 16,
                                       sbSlotPosY[i],
                                       1 );
@@ -817,6 +856,12 @@ int sideBoardGetNumSlots( void ) {
 int sideBoardGetPlacementCost( void ) {
 
     return getNextPlacementCost();
+    }
+
+
+
+int sideBoardGetExtraDeploymentCost( ChessPiece  inPiece ) {
+    return pieceDeploymentCost[ inPiece ];
     }
 
 

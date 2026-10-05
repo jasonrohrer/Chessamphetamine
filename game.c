@@ -1096,12 +1096,21 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     /* info panel overlaps with unused draw counter */
     if( ! moneyGetUnusedDrawsShowing() ) {
+
+        char  showDeployCost  =  0;
+
+        if( deckViewShowing
+            ||
+            shopShowing ) {
+            showDeployCost = 1;
+            }
         
         if( infoPanelPiece != noPiece ) {
             drawPieceInfoPanel( infoPanelPiece,
                                 MAXIGIN_GAME_NATIVE_W - 41,
                                 boardCenterY,
-                                infoPanelFade );
+                                infoPanelFade,
+                                showDeployCost );
         
             }
         else if( infoPanelLastPiece != noPiece
@@ -1110,7 +1119,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             drawPieceInfoPanel( infoPanelLastPiece,
                                 MAXIGIN_GAME_NATIVE_W - 41,
                                 boardCenterY,
-                                infoPanelFade );
+                                infoPanelFade,
+                                showDeployCost );
             }
         }
 

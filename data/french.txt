@@ -92,6 +92,8 @@ legendary      "Légendaire"
 impossible     "Impossible"
 
 
+deployCost     "Déploiement:"
+
 
 pawn           "Pion"
 pawnDesc       "Avance de 1 ou 2 cases, capture en diagonale. Devient une dame sur la dernière rangée."

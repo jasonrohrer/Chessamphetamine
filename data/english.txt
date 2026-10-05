@@ -92,6 +92,8 @@ legendary      "Legendary"
 impossible     "Impossible"
 
 
+deployCost     "Deploy Cost:"
+
 
 pawn           "Pawn"
 pawnDesc       "Moves 1 or 2 spaces forward, captures diagonally.  Promotes to queen in last row."

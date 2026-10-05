@@ -40,6 +40,18 @@ void numberDrawLeft( int   inValue,
                      char  inFixedWidth );
 
 
+void numberDrawRublesRight( int   inValue,
+                            int   inPosX,
+                            int   inPosY,
+                            char  inFixedWidth );
+
+
+void numberDrawTextRublesRight( const char  *inText,
+                                int   inPosX,
+                                int   inPosY,
+                                char  inFixedWidth );
+
+
 void numberDrawText( const char   *inText,
                      int           inPosX,
                      int           inPosY,
@@ -59,10 +71,14 @@ void numberDrawText( const char   *inText,
 
 
 
-static  int  numbersFont          =  -1;
-static  int  numbersFontNoBorder  =  -1;
+static  int          numbersFont          =  -1;
+static  int          numbersFontNoBorder  =  -1;
 
-static  int  numbersCurrentFont   =  -1;
+static  int          numbersCurrentFont   =  -1;
+
+
+static  const char  *rubleSymbol          =  "\xE2\x82\xBD";
+
 
 
 void numbersInit( void ) {
@@ -168,6 +184,41 @@ void numberDrawLeft( int   inValue,
                     inPosY,
                     inFixedWidth,
                     MAXIGIN_LEFT );
+    }
+
+
+
+void numberDrawTextRublesRight( const char  *inText,
+                                int          inPosX,
+                                int          inPosY,
+                                char         inFixedWidth ) {
+
+    numberDrawText( rubleSymbol,
+                    inPosX,
+                    inPosY,
+                    inFixedWidth,
+                    MAXIGIN_RIGHT );
+
+    numberDrawText( inText,
+                    inPosX - 10,
+                    inPosY,
+                    inFixedWidth,
+                    MAXIGIN_RIGHT );
+
+    }
+
+
+
+void numberDrawRublesRight( int   inValue,
+                            int   inPosX,
+                            int   inPosY,
+                            char  inFixedWidth ) {
+    
+    
+    numberDrawTextRublesRight( maxigin_intToString( inValue ),
+                               inPosX,
+                               inPosY,
+                               inFixedWidth );
     }
 
 

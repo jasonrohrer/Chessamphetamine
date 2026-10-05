@@ -55,6 +55,9 @@ void formationDraw( int            inBoardCenterX,
 
 #include "cost.h"
 
+#include "sideBoard.h"
+
+
 
 #define              MAX_FORMATION_SLOTS  BW * 3
 
@@ -95,8 +98,14 @@ void formationDraw( int            inBoardCenterX,
     int  cX;
     int  cY;
 
+    int  moneyXOffset  =  13;
+
     if( inSpotIndexToShow >= MAX_FORMATION_SLOTS ) {
         return;
+        }
+
+    if( formationX[ inSpotIndexToShow ] > BW / 2 ) {
+        moneyXOffset = -13;
         }
                 
     boardGetSquareCenter( inBoardCenterX,
@@ -113,6 +122,22 @@ void formationDraw( int            inBoardCenterX,
     maxigin_drawSprite( fmSpotSprite,
                         cX,
                         cY );
+
+    
+    moneyDrawCoin( cX + moneyXOffset,
+                   cY - 13,
+                   inSpotFade / 2 );
+
+    
+    colorsApplyMoneyColor();      
+
+    maxigin_drawSetAlpha( inSpotFade );
+
+    numberDrawCenter( sideBoardGetPlacementCost(),
+                      cX + moneyXOffset,
+                      cY - 13 + 8,
+                      1 );
+    
 
     /* draw fading view of future */
     inSpotFade /= 4;

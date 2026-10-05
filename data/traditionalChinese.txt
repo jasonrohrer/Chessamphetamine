@@ -89,6 +89,8 @@ legendary      "傳說"
 impossible     "不可能"
 
 
+deployCost     "部署費："
+
 
 pawn           "兵"
 pawnDesc       "向前一或兩格，斜前吃子。最後一排升變為后"

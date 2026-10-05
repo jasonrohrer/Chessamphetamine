@@ -253,20 +253,20 @@ void moneyDraw( int  inPosX,
         maxigin_drawSetAlpha( 255 );
         }
 
-    numberDraw( moneyVal,
-                inPosX - 9,
-                inPosY,
-                1 );
+    numberDrawRublesRight( moneyVal,
+                           inPosX - 9,
+                           inPosY,
+                           1 );
 
     if( glowFade > 0 ) {
         maxigin_drawSetAlpha( glowFade / 2 );
 
         maxigin_drawToggleAdditive( 1 );
 
-        numberDraw( moneyVal,
-                    inPosX - 9,
-                    inPosY,
-                    1 );
+        numberDrawRublesRight( moneyVal,
+                               inPosX - 9,
+                               inPosY,
+                               1 );
 
         maxigin_drawToggleAdditive( 0 );
         maxigin_drawSetAlpha( 255 );

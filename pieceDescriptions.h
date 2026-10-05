@@ -26,7 +26,8 @@ void pieceDescriptionsInit( void );
 void drawPieceInfoPanel( ChessPiece     inPiece,
                          int            inCenterX,
                          int            inCenterY,
-                         unsigned char  inFade );
+                         unsigned char  inFade,
+                         char           inShowDeploymentExtraCost );
 
 
 
@@ -58,6 +59,7 @@ void drawDescriptionFrame( int  inCenterX,
 #include "maxigin.h"
 #include "particleSprite.h"
 #include "rarity.h"
+#include "sideBoard.h"
 
 
 #define PIECE_NAME_KEY_STRING_LIST( C, V )    \
@@ -116,9 +118,14 @@ static const char  *kingDescriptionKeyStrings[2]  =  {  "kingDescYou",
 static  int  kingDescriptionKeys[ 2 ];
 
 
-static  int  infoPanelSprite    =  -1;
-static  int  diagramBoardStrip  =  -1;
-static  int  diagramPieceStrip  =  -1;
+static  int  infoPanelSprite          =  -1;
+static  int  deployCostPanelSprite    =  -1;
+static  int  diagramBoardStrip        =  -1;
+static  int  diagramPieceStrip        =  -1;
+
+
+static  int  lang_deploymentCost;
+
 
 
 
@@ -158,7 +165,13 @@ void pieceDescriptionsInit( void ) {
     maxigin_initMakeGlowSprite( infoPanelSprite,
                                 4,
                                 2 );
+    
 
+    deployCostPanelSprite = maxigin_initSprite( "deployCostPanel.tga" );
+
+    maxigin_initMakeGlowSprite( deployCostPanelSprite,
+                                4,
+                                2 );
 
     diagramBoardStrip = maxigin_initSpriteStrip( "moveDiagrams_boards.tga",
                                                  27 );
@@ -173,7 +186,10 @@ void pieceDescriptionsInit( void ) {
     maxigin_initMakeGlowSpriteStrip( diagramPieceStrip,
                                      4,
                                      2 );
+
+    lang_deploymentCost = maxigin_initTranslationKey( "deployCost" );
     }
+
 
 
 #define  MAX_NUM_WORDS  100
@@ -694,7 +710,8 @@ static void pieceSplitLines( const char  *inString,
 void drawPieceInfoPanel( ChessPiece     inPiece,
                          int            inCenterX,
                          int            inCenterY,
-                         unsigned char  inFade ) {
+                         unsigned char  inFade,
+                         char           inShowDeploymentExtraCost ) {
     
     ChessPiece   t  =  inPiece & CHESS_TYPE_MASK;
     
@@ -782,6 +799,41 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
                          inCenterX,
                          inCenterY,
                          inFade );
+
+    if( inShowDeploymentExtraCost ) {
+
+        maxigin_setLanguageFontIndex( 1 );
+
+        maxigin_measureLangTextVertical( lang_deploymentCost,
+                                         &upperH,
+                                         &lowerH );
+
+        raritySetDrawColor( inPiece );
+
+        maxigin_drawSetAlpha( inFade );
+
+        maxigin_drawSprite( deployCostPanelSprite,
+                            inCenterX,
+                            inCenterY + pH / 2 + 11 );
+    
+        maxigin_drawLangText( lang_deploymentCost,
+                              inCenterX,
+                              inCenterY + pH / 2 + upperH + 1,
+                              MAXIGIN_CENTER );
+        maxigin_setLanguageFontIndex( 0 );
+
+        colorsApplyMoneyColor();
+
+        maxigin_drawSetAlpha( inFade );
+        
+        numberDrawTextRublesRight(
+            maxigin_stringConcat( "+",
+                                  maxigin_intToString(
+                                      sideBoardGetExtraDeploymentCost( t ) ) ),
+            inCenterX + 10,
+            inCenterY + pH / 2 + upperH + 2 + lowerH + 4,
+            1 );
+        }
     }
 
 

@@ -2702,34 +2702,11 @@ void maxiginGame_step( void ) {
             int  sY;
 
             if( boardMarkersDownCount == 1 ) {
-                /* swap sideboard piece with selected piece for free */
-                int   y;
-                int   x;
-                char  found  = 0;
-        
-                for( y = 0;
-                     y < BH;
-                     y ++ ) {
-        
-                    for( x = 0;
-                         x < BW;
-                         x ++ ) {
 
-                        if( boardMarkers[y][x] ) {
-
-                            boardState.grid[y][x] =
-                                sideBoardSwap( boardState.grid[y][x] );
-
-                            playBeepDownSound();
-                            
-                            found = 1;
-                            break;
-                            }
-                        }
-                    if( found ) {
-                        break;
-                        }
-                    }
+                /* no swapping with sideboard */
+                /* fail */
+                maxigin_playSoundEffect( pickFailedSound,
+                                         256 );   
                 }
             else if( formationSpotGet( numPiecesPlaced,
                                   &sX,

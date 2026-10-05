@@ -671,8 +671,11 @@ void sideBoardDraw( void ) {
                                     sbSlotPosY[i] );
             }
         else {
-            
-            if( sbPickedIndex == i ) {
+
+            /* no longer draw special highlight of picked slot */
+            if( 0
+                &&
+                sbPickedIndex == i ) {
                 maxigin_drawSprite( sbSlotPickedSprite,
                                     sbSlotPosX[i],
                                     sbSlotPosY[i] );

@@ -2715,6 +2715,10 @@ void maxiginGame_step( void ) {
 
                 boardState.grid[ sY ][ sX ] = pickedPiece | CHESS_WHITE;
 
+                if( drawsLeft > 0 ) {
+                    buttonReset( drawButton );
+                    }
+
                 numPiecesPlaced ++;
                 }
             }

@@ -309,7 +309,7 @@ static int            currentLevel                =  0;
 
 static char           gameOver                    =  0;
 
-static int            startingMoney               =  5;
+static int            startingMoney               =  6;
 
 
 static int            draftingPieces              =  0;

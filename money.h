@@ -97,7 +97,7 @@ char moneyGetUnusedDrawsShowing( void );
 */
 #define  OVERRUN_MONEY_VALUE          2
 
-#define  EXTRA_BONUS_PER_UNUSED_DRAW  2
+#define  EXTRA_BONUS_PER_UNUSED_DRAW  1
 
 
 /*

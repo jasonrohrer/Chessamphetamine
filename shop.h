@@ -86,14 +86,14 @@ char isShoppingDone( void );
     V( C, 1,   pawn,         1   )    \
     V( C, 2,   bishop,       2   )    \
     V( C, 3,   knight,       1   )    \
-    V( C, 4,   rook,         10   )    \
+    V( C, 4,   rook,         6   )    \
     V( C, 5,   queen,        0   )    \
     V( C, 6,   king,         0   )    \
-    V( C, 7,   laserRook,    16  )    \
-    V( C, 8,   laserPawn,    10   )    \
-    V( C, 9,   doublingPawn, 10   )    \
+    V( C, 7,   laserRook,    12  )    \
+    V( C, 8,   laserPawn,    8   )    \
+    V( C, 9,   doublingPawn, 8   )    \
     V( C, 10,  addingRook,   12   )    \
-    V( C, 11,  rocket,       12   )
+    V( C, 11,  rocket,       8   )
 
 static  int  shopPrices[] = {
     MAKE_CHESS_ARRAY( SHOP_PRICE_LIST )

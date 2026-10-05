@@ -309,7 +309,7 @@ static int            currentLevel                =  0;
 
 static char           gameOver                    =  0;
 
-static int            startingMoney               =  8;
+static int            startingMoney               =  800;
 
 
 static int            draftingPieces              =  0;
@@ -2690,21 +2690,31 @@ void maxiginGame_step( void ) {
     if( sideBoardShowing ) {
 
         ChessPiece  pickedPiece;
+        int         sX;
+        int         sY;
         char        blockPurchase  =  ( boardMarkersDownCount > 0 );
-        ChessPiece  newInfoPiece   =  sideBoardStep( examinePieceSound,
+        ChessPiece  newInfoPiece;
+
+        
+        blockPurchase = blockPurchase
+                        ||
+                        ! formationSpotGet( numPiecesPlaced,
+                                            &sX,
+                                            &sY );
+
+        newInfoPiece   =  sideBoardStep( examinePieceSound,
                                                      pickFailedSound,
                                                      blockPurchase,
                                                      &pickedPiece,
                                                      &sideBoardDestSpotFade );
-
+        
         if( pickedPiece != noPiece ) {
-            int  sX;
-            int  sY;
 
-            if( boardMarkersDownCount == 1 ) {
+            if( blockPurchase ) {
 
-                /* no swapping with sideboard */
-                /* fail */
+                /* no swapping with sideboard
+                   or purchase blocked b/c we're out of formation spots
+                   fail */
                 maxigin_playSoundEffect( pickFailedSound,
                                          256 );
                 clearDrawMarkers();

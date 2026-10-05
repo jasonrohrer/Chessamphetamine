@@ -56,14 +56,16 @@ void formationDraw( int            inBoardCenterX,
 #include "cost.h"
 
 
-#define              MAX_FORMATION_SLOTS  BW * 3
+#define              MAX_FORMATION_SLOTS                    BW * 3
 
 static  int          formationX[ MAX_FORMATION_SLOTS ];
 static  int          formationY[ MAX_FORMATION_SLOTS ];
 
-static  int          fmSpotSprite  =  -1;
+static  int          fmSpotSprite                        =  -1;
 
 static  MaxiginRand  fmRand;
+
+static  int          fmPlayerNonKingSpotLimit            =  16;
 
 
 
@@ -96,6 +98,12 @@ void formationDraw( int            inBoardCenterX,
     int  cY;
 
     if( inSpotIndexToShow >= MAX_FORMATION_SLOTS ) {
+        return;
+        }
+
+    if( formationX[ inSpotIndexToShow ] == -1
+        ||
+        formationY[ inSpotIndexToShow ] == -1 ) {
         return;
         }
                 
@@ -166,6 +174,15 @@ void formationPlayerReroll( void ) {
     levelGetRandomFormation( form,
                              2,
                              CHESS_WHITE );
+
+    for( i = 0;
+         i < MAX_FORMATION_SLOTS;
+         i   ++ ) {
+
+        formationX[ i ] = -1;
+        formationY[ i ] = -1;
+        }
+    
 
     /* find king */
     found = 0;
@@ -273,6 +290,9 @@ void formationPlayerReroll( void ) {
                      numExtra,
                      extraIndex );
 
+    /* limit how many extra can be placed. */
+    numExtra = fmPlayerNonKingSpotLimit - 2;
+
     for( i = 0;
          i < numExtra;
          i   ++ ) {
@@ -290,6 +310,12 @@ char formationSpotGet(  int   inSpotIndex,
                         int  *outY ) {
     
     if( inSpotIndex >= MAX_FORMATION_SLOTS ) {
+        return 0;
+        }
+
+    if( formationX[ inSpotIndex ] == -1
+        ||
+        formationY[ inSpotIndex ] == -1 ) {
         return 0;
         }
 

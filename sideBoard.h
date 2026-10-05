@@ -187,6 +187,10 @@ CHECK_CHESS_ARRAY( pieceDeploymentCost,
 */
 
 static int getNextPlacementCost( void ) {
+
+    /* temporarily disabled entirely */
+    return 0;
+    
     if( sbNumPlaced == 0 ) {
         return 0;
         }
@@ -198,6 +202,10 @@ static int getNextPlacementCost( void ) {
 
 
 static int getNextNextPlacementCost( void ) {
+    
+    /* temporarily disabled entirely */
+    return 0;
+    
     if( sbNumPlaced == 0 ) {
         return costGet( sbPlacePieceCost );
         }

@@ -55,9 +55,6 @@ void formationDraw( int            inBoardCenterX,
 
 #include "cost.h"
 
-#include "sideBoard.h"
-
-
 
 #define              MAX_FORMATION_SLOTS  BW * 3
 
@@ -94,22 +91,12 @@ void formationDraw( int            inBoardCenterX,
                     int            inBoardCenterY,
                     int            inSpotIndexToShow,
                     unsigned char  inSpotFade ) {
-
-    unsigned char  origFade       =  inSpotFade;
-    int            cX;
-    int            cY;
-    int            moneyXOffset   =  13;
-    int            offsetVal      =  13;
-    int            secondX;
-    int            firstNumX;
-    int            secondNumX;
+    
+    int  cX;
+    int  cY;
 
     if( inSpotIndexToShow >= MAX_FORMATION_SLOTS ) {
         return;
-        }
-
-    if( formationX[ inSpotIndexToShow ] >= BW - 2 ) {
-        moneyXOffset = - offsetVal;
         }
                 
     boardGetSquareCenter( inBoardCenterX,
@@ -118,7 +105,7 @@ void formationDraw( int            inBoardCenterX,
                           formationX[ inSpotIndexToShow ],
                           &cX,
                           &cY );
-    
+
     maxigin_drawResetColor();
 
     maxigin_drawSetAlpha( inSpotFade );
@@ -126,23 +113,6 @@ void formationDraw( int            inBoardCenterX,
     maxigin_drawSprite( fmSpotSprite,
                         cX,
                         cY );
-
-    firstNumX = cX + moneyXOffset;
-    
-    moneyDrawCoin( firstNumX,
-                   cY - 13,
-                   inSpotFade / 2 );
-
-    
-    colorsApplyMoneyColor();      
-
-    maxigin_drawSetAlpha( inSpotFade );
-
-    numberDrawCenter( sideBoardGetPlacementCost(),
-                      firstNumX,
-                      cY - 13 + 8,
-                      1 );
-    
 
     /* draw fading view of future */
     inSpotFade /= 4;
@@ -164,51 +134,6 @@ void formationDraw( int            inBoardCenterX,
         maxigin_drawSprite( fmSpotSprite,
                             cX,
                             cY );
-
-        secondX    = formationX[ inSpotIndexToShow ];
-
-        secondNumX = cX + moneyXOffset;
-
-        if( secondNumX == firstNumX ) {
-            moneyXOffset *= -1;
-            
-            secondNumX = cX + moneyXOffset;
-            }
-        else if( secondX == BW - 1  ) {
-            moneyXOffset = - offsetVal;
-            secondNumX = cX + moneyXOffset;
-            }
-        else if( secondX != 0
-                 &&
-                 secondX != BW - 1 ) {
-
-            /* try flipping and pushing farther away from firstNumX */
-            int  try2 = cX - moneyXOffset;
-            int  diff1 = firstNumX - secondNumX;
-            int  diff2 = firstNumX - try2;
-
-            diff1 *= diff1;
-            diff2 *= diff2;
-
-            if( diff2 > diff1 ) {
-                secondNumX = try2;
-                }
-            }
-        
-
-        moneyDrawCoin( secondNumX,
-                       cY - 13,
-                       inSpotFade / 2 );
-
-    
-        colorsApplyMoneyColor();
-
-        maxigin_drawSetAlpha( origFade );
-
-        numberDrawCenter( sideBoardGetNextPlacementCost(),
-                          secondNumX,
-                          cY - 13 + 8,
-                          1 );
         }
     }
 

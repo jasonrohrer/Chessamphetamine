@@ -160,7 +160,7 @@ static  char           sbPurchaseBlocked      =   0;
 
 #define PIECE_DEPLOYMENT_COST_LIST( C, V )   \
     V( C, 0,   noPiece,      0   ) \
-    V( C, 1,   pawn,         0   ) \
+    V( C, 1,   pawn,         2   ) \
     V( C, 2,   bishop,       2   ) \
     V( C, 3,   knight,       1   ) \
     V( C, 4,   rook,         4   ) \

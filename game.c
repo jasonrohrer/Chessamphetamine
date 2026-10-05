@@ -2706,7 +2706,8 @@ void maxiginGame_step( void ) {
                 /* no swapping with sideboard */
                 /* fail */
                 maxigin_playSoundEffect( pickFailedSound,
-                                         256 );   
+                                         256 );
+                clearDrawMarkers();
                 }
             else if( formationSpotGet( numPiecesPlaced,
                                   &sX,

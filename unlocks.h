@@ -274,9 +274,9 @@ void unlocksInit( int  inViewActionHandle,
         unlockExtraGlowFade[ i ] = 0;
         }
 
-    unlockAtLevel[ 0 ] = 8;
-    unlockAtLevel[ 1 ] = 16;
-    unlockAtLevel[ 2 ] = 32;
+    unlockAtLevel[ 0 ] = 16;
+    unlockAtLevel[ 1 ] = 32;
+    unlockAtLevel[ 2 ] = 48;
 
     unlockSound = maxigin_initSoundEffect( "unlock_sd_24.wav" );
 

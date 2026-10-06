@@ -41,6 +41,8 @@ void colorsApplyBoardColor     ( void );
 
 void colorsApplyMoneyColor     ( void );
 
+void colorsApplyOverrunColor   ( void );
+
 
 
 
@@ -169,6 +171,7 @@ static  ColorsColor  colorsWhitePlayer;
 static  ColorsColor  colorsBlackPlayer;
 static  ColorsColor  colorsBoard;
 static  ColorsColor  colorsMoney;
+static  ColorsColor  colorsOverrun;
 
 static  MaxiginRand  colorsRand;
 
@@ -363,7 +366,7 @@ void colorsSetFromFileMap( void ) {
                                  &w,
                                  &h );
 
-    if( w < 4 ) {
+    if( w < 5 ) {
         return;
         }
 
@@ -401,7 +404,15 @@ void colorsSetFromFileMap( void ) {
 
     colorsSetMaxigin( &colorsMoney,
                       &c );
+
     
+    maxigin_getSpritePixel( colorMapSprite,
+                            4,
+                            0,
+                            &c );
+
+    colorsSetMaxigin( &colorsOverrun,
+                      &c );
     }
 
 
@@ -454,6 +465,10 @@ void colorsApplyMoneyColor( void ) {
     colorsApplyColor( &colorsMoney );
     }
 
+
+void colorsApplyOverrunColor( void ) {
+    colorsApplyColor( &colorsOverrun );
+    }
 
 
 static void colorsRotateColor( ColorsColor  *inColor ) {

@@ -144,6 +144,7 @@ static int          redrawSound        =  -1;
 
 static int          checkmateGood      =  -1;
 static int          checkmateBad       =  -1;
+static int          overrunSound       =  -1;
 
 static int          boardSlideSound    =  -1;
 
@@ -242,6 +243,9 @@ static int            endMessageSprites[ 3 ]  = { -1,
                                                   -1,
                                                   -1 };
 
+
+#define               OVERRUN_COLOR_FLAG              256
+    
 static int            endMessageColor              =  CHESS_WHITE;
 static int            endMessageIndex              =  -1;
 static int            explodingEndMessageProgress  =  -1;
@@ -414,7 +418,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     int  numPixels  =  MAXIGIN_GAME_NATIVE_W * MAXIGIN_GAME_NATIVE_H;
     int  p;
     int  i;
-    
+
+    /* step colors here, instead of in step function,
+       so that changes to color map are noticed even during playback */
+    colorsStep();
 
     maxigin_drawSetTextHighlighColor( 236,
                                       97,
@@ -859,7 +866,12 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         unsigned char  a;
 
-        drawSetPieceColor( endMessageColor );
+        if( endMessageColor == OVERRUN_COLOR_FLAG ) {
+            colorsApplyOverrunColor();
+            }
+        else {
+            drawSetPieceColor( endMessageColor );
+            }
 
 
         a = (unsigned char)( ( (long)( explodingEndMessageMax -
@@ -898,7 +910,12 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
              &&
              endMessageFade > 0 ) {
 
-        drawSetPieceColor( endMessageColor );
+        if( endMessageColor == OVERRUN_COLOR_FLAG ) {
+            colorsApplyOverrunColor();
+            }
+        else {
+            drawSetPieceColor( endMessageColor );
+            }
 
         maxigin_drawSetAlpha( endMessageFade );
 
@@ -1364,9 +1381,6 @@ void maxiginGame_step( void ) {
 
     char  spinPressed       =  0;
     char  chessGameWasOver  =  chessGameOver;
-    
-
-    colorsStep();
 
     if( saveCorrupted ) {
         if( autoQuitFrameCount > 0 ) { 
@@ -1813,9 +1827,9 @@ void maxiginGame_step( void ) {
                        they miss out on the $6 from taking the enemy king.
                     */
                     
-                    maxigin_playSoundEffect( checkmateGood,
+                    maxigin_playSoundEffect( overrunSound,
                                              512 );
-                    endMessageColor = CHESS_WHITE;
+                    endMessageColor = OVERRUN_COLOR_FLAG;
                     gameLoserColor  = CHESS_BLACK;
 
 
@@ -3485,7 +3499,8 @@ void maxiginGame_init( void ) {
     pickFailedSound = maxigin_initSoundEffect( "pickFailed_sd_3.wav" );
 
     checkmateGood = maxigin_initSoundEffect( "checkmateGood.wav" );
-    checkmateBad = maxigin_initSoundEffect( "checkmateBad.wav" );
+    checkmateBad  = maxigin_initSoundEffect( "checkmateBad.wav"  );
+    overrunSound  = maxigin_initSoundEffect( "overrun_sd_27.wav" );
 
     boardSlideSound = maxigin_initSoundEffect( "boardSlide_sd_11.wav" );
 

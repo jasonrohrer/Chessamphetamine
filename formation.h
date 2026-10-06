@@ -122,27 +122,37 @@ void formationDraw( int            inBoardCenterX,
                         cX,
                         cY );
 
-    /* draw fading view of future */
-    inSpotFade /= 4;
-    inSpotIndexToShow ++;
+    if( 0 ) {
+        
+        /* draw fading view of future */
+        inSpotFade /= 4;
+        inSpotIndexToShow ++;
 
-    if( inSpotFade > 0
-        &&
-        inSpotIndexToShow < MAX_FORMATION_SLOTS ) {
+        if( inSpotFade > 0
+            &&
+            inSpotIndexToShow < MAX_FORMATION_SLOTS ) {
 
-        boardGetSquareCenter( inBoardCenterX,
-                              inBoardCenterY,
-                              formationY[ inSpotIndexToShow ],
-                              formationX[ inSpotIndexToShow ],
-                              &cX,
-                              &cY );
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  formationY[ inSpotIndexToShow ],
+                                  formationX[ inSpotIndexToShow ],
+                                  &cX,
+                                  &cY );
 
-        maxigin_drawSetAlpha( inSpotFade );
+            if( formationX[ inSpotIndexToShow ] == -1
+                ||
+                formationY[ inSpotIndexToShow ] == -1 ) {
+                return;
+                }
+
+            maxigin_drawSetAlpha( inSpotFade );
                 
-        maxigin_drawSprite( fmSpotSprite,
-                            cX,
-                            cY );
+            maxigin_drawSprite( fmSpotSprite,
+                                cX,
+                                cY );
+            }
         }
+    
     }
 
 

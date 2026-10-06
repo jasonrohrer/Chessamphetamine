@@ -1112,7 +1112,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
 
     /* info panel overlaps with unused draw counter */
-    if( ! moneyGetUnusedDrawsShowing() ) {
+    if( ! moneyGetSubMessageShowing() ) {
 
         char  showDeployCost  =  0;
 
@@ -1744,6 +1744,7 @@ void maxiginGame_step( void ) {
                     endMessageColor = CHESS_BLACK;
                     gameLoserColor  = CHESS_WHITE;
                     heartsLose();
+                    moneyAddBailout( currentLevel );
                     }
 
                 /* start TRAPPED explosion */
@@ -1791,6 +1792,7 @@ void maxiginGame_step( void ) {
                                              512 );
                     endMessageColor = CHESS_BLACK;
                     heartsLose();
+                    moneyAddBailout( currentLevel );
                     }
 
                 checkmate = 1;
@@ -2608,6 +2610,7 @@ void maxiginGame_step( void ) {
             shopShowing ) {
             /* release shop allowance money now that it's showing */
             moneyReleaseDelayed();
+            moneyReleaseBailout();
             }
             
         }

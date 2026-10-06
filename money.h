@@ -38,6 +38,10 @@ int  moneyGetTotal( void );
 void moneyAddUnusedDraws( int  inNumUnused );
 
 
+void moneyAddBailout( int  inLevelNumber );
+void moneyReleaseBailout( void );
+
+
 /* adds captured money value that is delayed until later */
 void moneyAddCaptureDelayed( ChessPiece  inPiece );
 
@@ -67,7 +71,7 @@ char moneyIsSettled( void );
 void moneyForce( int  inVal );
 
 
-char moneyGetUnusedDrawsShowing( void );
+char moneyGetSubMessageShowing( void );
 
 
 
@@ -147,12 +151,15 @@ static char  unusedDrawsShowing    =  0;
 static int   unusedDrawPreSteps    =  0;
 static int   unusedDrawPostSteps   =  0;
 
+static int   moneyBailout          =  0;
+
 
 static int   moneyAddProgress;
 static int   moneyAddProgressMax   =  100;
 static char  moneyProgressMidPeak  =  0;
 
 static int   lang_unusedDraws;
+static int   lang_bailout;
 
 
 
@@ -161,6 +168,7 @@ void moneyInit( int  inStartVal,
                 int  inUnusedDrawSound ) {
 
     lang_unusedDraws = maxigin_initTranslationKey( "unusedDraws" );
+    lang_bailout     = maxigin_initTranslationKey( "bailout"     );
         
     coinSprite = maxigin_initSprite( "coin.tga" );
 
@@ -187,6 +195,8 @@ void moneyInit( int  inStartVal,
 
     REGISTER_VAL_MEM( unusedDraws );
     REGISTER_VAL_MEM( unusedDrawsShowing );
+
+    REGISTER_VAL_MEM( moneyBailout );
     }
 
 
@@ -272,7 +282,28 @@ void moneyDraw( int  inPosX,
         maxigin_drawSetAlpha( 255 );
         }
 
-    if( unusedDrawsShowing ) {
+    
+    if( moneyBailout > 0
+        &&
+        moneyToAdd > 0 ) {
+
+        maxigin_drawResetColor();
+
+        maxigin_setLanguageFontIndex( 1 );
+
+        maxigin_drawLangText( lang_bailout,
+                              inPosX,
+                              inPosY + 14,
+                              MAXIGIN_RIGHT );
+        numberDraw( moneyBailout,
+                    inPosX + 15,
+                    inPosY + 14,
+                    1 );
+
+        maxigin_setLanguageFontIndex( 0 );
+
+        }
+    else if( unusedDrawsShowing ) {
 
         maxigin_drawResetColor();
 
@@ -321,6 +352,17 @@ void moneyStep( void ) {
                 moneyVal += 1;
 
                 moneyToAdd -= 1;
+                
+                if( moneyBailout > 0 ) {
+                    moneyBailout -= 1;
+                    }
+
+                if( moneyToAdd == 0
+                    &&
+                    moneyBailout > 0 ) {
+                    /* done adding delayed bailout money, clear it */
+                    moneyBailout = 0;
+                    }
     
                 maxigin_playSoundEffect( coinSound,
                                          256 );
@@ -517,15 +559,35 @@ void moneyAddUnusedDraws( int  inNumUnused ) {
     }
 
 
-char moneyGetUnusedDrawsShowing( void ) {
+char moneyGetSubMessageShowing( void ) {
     /* return 1 if they are showing now or going to be showing soon */
     
     return
         unusedDraws > 0
         ||
-        unusedDrawsShowing;
+        unusedDrawsShowing
+        ||
+        moneyBailout > 0;
     }
 
+
+
+void moneyAddBailout( int  inLevelNumber ) {
+
+    moneyBailout = 10 + inLevelNumber;
+
+    if( moneyBailout > 25 ) {
+        moneyBailout = 25;
+        }
+    }
+
+
+
+void moneyReleaseBailout( void ) {
+    if( moneyBailout > 0 ) {
+        moneyToAdd += moneyBailout;
+        }
+    }
 
 
 

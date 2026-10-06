@@ -59,6 +59,9 @@ drawInstruct   "Draft your army"
 
 unusedDraws    "Unused draws:"
 
+bailout        "Bailout:"
+
+
 shopTitle      "Shop!"
 shopInstructA  "Improve your deck!"
 shopInstructB  "Pick a piece to buy it"

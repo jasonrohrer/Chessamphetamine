@@ -57,6 +57,8 @@ drawInstruct   "Composez votre armée"
 
 unusedDraws    "Tirages:"
 
+bailout        "Secours:"
+
 
 shopTitle      "Boutique!"
 shopInstructA  "Améliorez votre deck!"

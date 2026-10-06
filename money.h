@@ -152,7 +152,7 @@ static int   unusedDrawPreSteps    =  0;
 static int   unusedDrawPostSteps   =  0;
 
 static int   moneyBailout          =  0;
-
+static char  moneyBailoutShowing   =  0;
 
 static int   moneyAddProgress;
 static int   moneyAddProgressMax   =  100;
@@ -197,6 +197,7 @@ void moneyInit( int  inStartVal,
     REGISTER_VAL_MEM( unusedDrawsShowing );
 
     REGISTER_VAL_MEM( moneyBailout );
+    REGISTER_VAL_MEM( moneyBailoutShowing );
     }
 
 
@@ -283,9 +284,7 @@ void moneyDraw( int  inPosX,
         }
 
     
-    if( moneyBailout > 0
-        &&
-        moneyToAdd > 0 ) {
+    if( moneyBailoutShowing ) {
 
         colorsApply( COLOR_BAILOUT );
 
@@ -327,6 +326,18 @@ void moneyDraw( int  inPosX,
 void moneyStep( void ) {
 
     int  r  = mingin_getStepsPerSecond();
+
+    if( moneyBailoutShowing
+        &&
+        moneyToAdd == 0
+        &&
+        moneyAddProgress == 0 ) {
+
+        /* final bounce for last bit of bailout is done */
+
+        moneyBailoutShowing = 0;
+        }
+    
 
     if( moneyToAdd == 0
         &&
@@ -579,6 +590,8 @@ void moneyAddBailout( int  inLevelNumber ) {
     if( moneyBailout > 25 ) {
         moneyBailout = 25;
         }
+
+    moneyBailoutShowing = 0;
     }
 
 
@@ -586,6 +599,7 @@ void moneyAddBailout( int  inLevelNumber ) {
 void moneyReleaseBailout( void ) {
     if( moneyBailout > 0 ) {
         moneyToAdd += moneyBailout;
+        moneyBailoutShowing = 1;
         }
     }
 

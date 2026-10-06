@@ -867,7 +867,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         unsigned char  a;
 
         if( endMessageColor == OVERRUN_COLOR_FLAG ) {
-            colorsApplyOverrunColor();
+            colorsApply( COLOR_OVERRUN );
             }
         else {
             drawSetPieceColor( endMessageColor );
@@ -911,7 +911,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
              endMessageFade > 0 ) {
 
         if( endMessageColor == OVERRUN_COLOR_FLAG ) {
-            colorsApplyOverrunColor();
+            colorsApply( COLOR_OVERRUN );
             }
         else {
             drawSetPieceColor( endMessageColor );

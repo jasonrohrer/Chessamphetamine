@@ -77,7 +77,7 @@ char isShoppingDone( void );
 #include "cost.h"
 
 #include "unlocks.h"
-
+#include "colors.h"
 
 
 /* pawns are never sold in shop */
@@ -533,10 +533,8 @@ void shopDraw( void ) {
                                       pieceYBase + 22,
                                       1 );
 
-                    maxigin_drawSetColor( 255,
-                                          0,
-                                          0,
-                                          255 );
+                    colorsApply( COLOR_SALE );
+                    
                     maxigin_setLanguageFontIndex( 1 );
     
                     maxigin_drawLangText( lang_sale,

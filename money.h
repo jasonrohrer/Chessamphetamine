@@ -287,7 +287,7 @@ void moneyDraw( int  inPosX,
         &&
         moneyToAdd > 0 ) {
 
-        maxigin_drawResetColor();
+        colorsApply( COLOR_BAILOUT );
 
         maxigin_setLanguageFontIndex( 1 );
 

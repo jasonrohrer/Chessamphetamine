@@ -14,6 +14,16 @@
 #ifndef COLORS_H_INCLUDED
 #define COLORS_H_INCLUDED
 
+enum{
+    COLOR_BOARD         =  0,
+    COLOR_WHITE_PIECE,
+    COLOR_BLACK_PIECE,
+    COLOR_MONEY,
+    COLOR_OVERRUN,
+    COLOR_SALE,
+    COLOR_BAILOUT,
+    NUM_COLORS };
+
 
 void colorsInit( void );
 
@@ -35,13 +45,13 @@ void colorsPrint( void );
 
 
 /* these call maxigin_drawSetColor */
+void colorsApply( int  inColorHandle );
+
 void colorsApplyWhitePieceColor( void );
 void colorsApplyBlackPieceColor( void );
 void colorsApplyBoardColor     ( void );
-
 void colorsApplyMoneyColor     ( void );
 
-void colorsApplyOverrunColor   ( void );
 
 
 
@@ -167,11 +177,7 @@ typedef struct ColorsColor {
 
 
 
-static  ColorsColor  colorsWhitePlayer;
-static  ColorsColor  colorsBlackPlayer;
-static  ColorsColor  colorsBoard;
-static  ColorsColor  colorsMoney;
-static  ColorsColor  colorsOverrun;
+static  ColorsColor  colorsList[ NUM_COLORS ];
 
 static  MaxiginRand  colorsRand;
 
@@ -316,13 +322,13 @@ static void logColor( ColorsColor  *inColor ) {
 static void logColors( void ) {
 
     mingin_log( "Black Player: " );
-    logColor( &colorsBlackPlayer );
+    logColor( &( colorsList[ COLOR_BLACK_PIECE ] ) );
     mingin_log( "\n" );
     mingin_log( "White Player: " );
-    logColor( &colorsWhitePlayer );
+    logColor( &( colorsList[ COLOR_WHITE_PIECE ] ) );
     mingin_log( "\n" );
     mingin_log( "Board: " );
-    logColor( &colorsBoard );
+    logColor( &( colorsList[ COLOR_BOARD ] ) );
     mingin_log( "\n\n" );
     }
 
@@ -332,17 +338,17 @@ static void logColors( void ) {
 
 void colorsSetClassic( void ) {
 
-    colorsSet( &colorsBlackPlayer,
+    colorsSet( &( colorsList[ COLOR_BLACK_PIECE ] ),
                128,
                64,
                128 );
 
-    colorsSet( &colorsWhitePlayer,
+    colorsSet( &( colorsList[ COLOR_WHITE_PIECE ] ),
                192,
                128,
                0 );
 
-    colorsSet( &colorsBoard,
+    colorsSet( &( colorsList[ COLOR_BOARD ] ),
                0,
                255,
                255  );
@@ -352,67 +358,56 @@ void colorsSetClassic( void ) {
 
 
 
-void colorsSetFromFileMap( void ) {
+static void colorsMapSpriteColor( int           inSpriteHandle,
+                                  int           inPosX,
+                                  ColorsColor  *inDestColor ) {
 
     int           w;
     int           h;
     MaxiginColor  c;
 
+    maxigin_getSpriteDimensions( inSpriteHandle,
+                                 &w,
+                                 &h );
+
+    if( w <= inPosX ) {
+
+        c.comp.red   = 255;
+        c.comp.green = 255;
+        c.comp.blue  = 255;
+        c.comp.alpha = 255;
+
+        return;
+        }
+
+    maxigin_getSpritePixel( inSpriteHandle,
+                            inPosX,
+                            0,
+                            &c );
+
+    colorsSetMaxigin( inDestColor,
+                      &c );
+    }
+        
+
+
+void colorsSetFromFileMap( void ) {
+
+    int  i;
+    
     if( colorMapSprite == -1 ) {
         return;
         }
 
-    maxigin_getSpriteDimensions( colorMapSprite,
-                                 &w,
-                                 &h );
-
-    if( w < 5 ) {
-        return;
+    for( i = 0;
+         i < NUM_COLORS;
+         i   ++ ) {
+        
+        colorsMapSpriteColor( colorMapSprite,
+                              i,
+                              &( colorsList[ i ] ) );
         }
-
-    maxigin_getSpritePixel( colorMapSprite,
-                            0,
-                            0,
-                            &c );
-
-    colorsSetMaxigin( &colorsBoard,
-                      &c );
-
-    
-    maxigin_getSpritePixel( colorMapSprite,
-                            1,
-                            0,
-                            &c );
-    
-    colorsSetMaxigin( &colorsWhitePlayer,
-                      &c );
-
-    
-    maxigin_getSpritePixel( colorMapSprite,
-                            2,
-                            0,
-                            &c );
-    
-    colorsSetMaxigin( &colorsBlackPlayer,
-                      &c );
-
-    
-    maxigin_getSpritePixel( colorMapSprite,
-                            3,
-                            0,
-                            &c );
-
-    colorsSetMaxigin( &colorsMoney,
-                      &c );
-
-    
-    maxigin_getSpritePixel( colorMapSprite,
-                            4,
-                            0,
-                            &c );
-
-    colorsSetMaxigin( &colorsOverrun,
-                      &c );
+   
     }
 
 
@@ -420,9 +415,9 @@ void colorsSetFromFileMap( void ) {
 
 void colorsSetRandom( void ) {
 
-    colorsSetFromRandomIndex( &colorsBlackPlayer );
-    colorsSetFromRandomIndex( &colorsWhitePlayer );
-    colorsSetFromRandomIndex( &colorsBoard       );
+    colorsSetFromRandomIndex( &( colorsList[ COLOR_BLACK_PIECE ] ) );
+    colorsSetFromRandomIndex( &( colorsList[ COLOR_WHITE_PIECE ] ) );
+    colorsSetFromRandomIndex( &( colorsList[ COLOR_BOARD ] ) );
 
     logColors();
     }
@@ -444,31 +439,34 @@ static void colorsApplyColor( ColorsColor  *inColor ) {
 
 
 
-void colorsApplyWhitePieceColor( void ) {
-    colorsApplyColor( &colorsWhitePlayer );
+void colorsApply( int  inColorHandle ) {
+    colorsApplyColor( &( colorsList[ inColorHandle ] ) );
     }
 
 
-    
+
+void colorsApplyWhitePieceColor( void ) {
+    colorsApply( COLOR_WHITE_PIECE );
+    }
+
+
+
 void colorsApplyBlackPieceColor( void ) {
-    colorsApplyColor( &colorsBlackPlayer );
+    colorsApply( COLOR_BLACK_PIECE );
     }
 
 
 
 void colorsApplyBoardColor( void ) {
-    colorsApplyColor( &colorsBoard );
+    colorsApply( COLOR_BOARD );
     }
+
 
 
 void colorsApplyMoneyColor( void ) {
-    colorsApplyColor( &colorsMoney );
+    colorsApply( COLOR_MONEY );
     }
 
-
-void colorsApplyOverrunColor( void ) {
-    colorsApplyColor( &colorsOverrun );
-    }
 
 
 static void colorsRotateColor( ColorsColor  *inColor ) {
@@ -495,20 +493,20 @@ static void colorsRotateColor( ColorsColor  *inColor ) {
 void colorsRotate( int  inColorPick ) {
 
     if( inColorPick == -1 ) {
-        colorsRotateColor( &colorsWhitePlayer );
-        colorsRotateColor( &colorsBlackPlayer );
-        colorsRotateColor( &colorsBoard       );
+        colorsRotateColor( &( colorsList[ COLOR_WHITE_PIECE ] ) );
+        colorsRotateColor( &( colorsList[ COLOR_BLACK_PIECE ] ) );
+        colorsRotateColor( &( colorsList[ COLOR_BOARD ] )       );
         }
     else {
         switch( inColorPick ) {
             case 0:
-                colorsRotateColor( &colorsWhitePlayer );
+                colorsRotateColor( &( colorsList[ COLOR_WHITE_PIECE ] ) );
                 break;
             case 1:
-                colorsRotateColor( &colorsBlackPlayer );
+                colorsRotateColor( &( colorsList[ COLOR_BLACK_PIECE ] ) );
                 break;
             case 2:
-                colorsRotateColor( &colorsBoard       );
+                colorsRotateColor( &( colorsList[ COLOR_BOARD ] )       );
                 break;
             }
         }

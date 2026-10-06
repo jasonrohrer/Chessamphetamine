@@ -1770,7 +1770,7 @@ void maxiginGame_step( void ) {
                     endMessageColor = CHESS_WHITE;
                     levelForUnlock = currentLevel;
 
-                    heartsGainWaiting = 1;
+                    /* no more heart gain on positive checkmate */
                     }
                 else {
                     maxigin_playSoundEffect( checkmateBad,
@@ -1801,30 +1801,23 @@ void maxiginGame_step( void ) {
 
                 if( noScoreMoveCount > noScoreLimit ) {
                     /* overrun condition */
-                    
-                    int  newScore  =  getScore( &postMoveState );
 
                     drawGame      = 1;
                     chessGameOver = 1;
 
-                    if( newScore >= 0 ) {
-                        /* for now, count tie overrun as win for white */
-                        maxigin_playSoundEffect( checkmateGood,
-                                                 512 );
-                        endMessageColor = CHESS_WHITE;
-                        gameLoserColor  = CHESS_BLACK;
+                    /* all overruns are displayed as "good" outcomes
+                       player doesn't lose heart when enemy has more
+                       material, but they also don't gain a heart when
+                       they overrun the enemy.
+                       No extra money earned on overrun, but
+                       they miss out on the $6 from taking the enemy king.
+                    */
+                    
+                    maxigin_playSoundEffect( checkmateGood,
+                                             512 );
+                    endMessageColor = CHESS_WHITE;
+                    gameLoserColor  = CHESS_BLACK;
 
-                        /* no longer give them overrun money
-                           since they get a shop allowance anyway */
-                        /* moneyAddOverrunDelayed(); */
-                        }
-                    else {
-                        maxigin_playSoundEffect( checkmateBad,
-                                                 512 );
-                        endMessageColor = CHESS_BLACK;
-                        gameLoserColor  = CHESS_WHITE;
-                        heartsLose();
-                        }
 
                     /* start OVERRUN explosion */
                     endMessageIndex = 2;

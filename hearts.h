@@ -70,8 +70,8 @@ static  int            heartsGainSound                   =  -1;
 static  int            heartsLossPulseSound              =  -1;
 
 static  int            heartsCount                       =   0;
-static  int            heartsStarting                    =   2;
-static  int            heartsNumVisible                  =   2;
+static  int            heartsStarting                    =   4;
+static  int            heartsNumVisible                  =   4;
 
 static  unsigned char  heartsFlashCount[ HEARTS_MAX ];
 static  unsigned char  heartsShineFade [ HEARTS_MAX ];

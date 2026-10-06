@@ -283,7 +283,6 @@ CHECK_CHESS_ARRAY( pieceSpriteExtraFiles,
 
 
 static  int            slashSpriteHandle       =  -1;
-static  int            whiteFlagSpriteHandle   =  -1;
 static  int            noMoveSpriteHandle      =  -1;
 static  int            liftShadowSpriteHandle  =  -1;
 
@@ -491,24 +490,6 @@ void pieceSpritesInit( void ) {
                                           0 );
         }
 
-    whiteFlagSpriteHandle = maxigin_initSprite( "whiteFlag.tga" );
-
-    if( whiteFlagSpriteHandle != -1 ) {
-        maxigin_initMakeGlowSprite( whiteFlagSpriteHandle,
-                                    4,
-                                    2 );
-
-        /* hazy drop shadow top to bottom */
-        maxigin_initMakeDropShadowSprite( whiteFlagSpriteHandle,
-                                          5,
-                                          2,
-                                          255,
-                                          255,
-                                          100,
-                                          0,
-                                          100,
-                                          0 );
-        }
 
     noMoveSpriteHandle = maxigin_initSprite( "noMoveSquare.tga" );
 
@@ -1144,12 +1125,8 @@ void drawBoardState( BoardState     *inState,
                                                     pX,
                                                     pY + pieceOffsetY[ t ] );
                                 }
-                            else {
-                                /* draw white flag  */
-                                maxigin_drawSprite( whiteFlagSpriteHandle,
-                                                    pX,
-                                                    pY + pieceOffsetY[ t ] );
-                                }
+                            
+                            /* no longer drawing white flag on overrun */
                             }
                         }  
                     }

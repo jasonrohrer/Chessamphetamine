@@ -22,6 +22,7 @@ enum{
     COLOR_OVERRUN,
     COLOR_SALE,
     COLOR_BAILOUT,
+    COLOR_WAGES,
     NUM_COLORS };
 
 

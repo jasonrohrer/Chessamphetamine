@@ -61,6 +61,8 @@ unusedDraws    "Unused draws:"
 
 bailout        "Bailout:"
 
+wages          "Wages:"
+
 
 shopTitle      "Shop!"
 shopInstructA  "Improve your deck!"

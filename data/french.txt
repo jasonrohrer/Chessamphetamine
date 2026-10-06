@@ -59,6 +59,7 @@ unusedDraws    "Tirages:"
 
 bailout        "Secours:"
 
+wages          "Salaire:"
 
 shopTitle      "Boutique!"
 shopInstructA  "Améliorez votre deck!"

@@ -42,6 +42,10 @@ void moneyAddBailout( int  inLevelNumber );
 void moneyReleaseBailout( void );
 
 
+void moneyAddWages( int  inLevelNumber );
+void moneyReleaseWages( void );
+
+
 /* adds captured money value that is delayed until later */
 void moneyAddCaptureDelayed( ChessPiece  inPiece );
 
@@ -151,8 +155,10 @@ static char  unusedDrawsShowing    =  0;
 static int   unusedDrawPreSteps    =  0;
 static int   unusedDrawPostSteps   =  0;
 
-static int   moneyBailout          =  0;
-static char  moneyBailoutShowing   =  0;
+static int   moneyLabeledAdd       =  0;
+static char  moneyLabeledShowing   =  0;
+static int   moneyLabeledColor     =  0;
+static int   moneyLabeledLang      =  0;
 
 static int   moneyAddProgress;
 static int   moneyAddProgressMax   =  100;
@@ -160,7 +166,7 @@ static char  moneyProgressMidPeak  =  0;
 
 static int   lang_unusedDraws;
 static int   lang_bailout;
-
+static int   lang_wages;
 
 
 void moneyInit( int  inStartVal,
@@ -169,6 +175,7 @@ void moneyInit( int  inStartVal,
 
     lang_unusedDraws = maxigin_initTranslationKey( "unusedDraws" );
     lang_bailout     = maxigin_initTranslationKey( "bailout"     );
+    lang_wages       = maxigin_initTranslationKey( "wages"     );
         
     coinSprite = maxigin_initSprite( "coin.tga" );
 
@@ -196,8 +203,10 @@ void moneyInit( int  inStartVal,
     REGISTER_VAL_MEM( unusedDraws );
     REGISTER_VAL_MEM( unusedDrawsShowing );
 
-    REGISTER_VAL_MEM( moneyBailout );
-    REGISTER_VAL_MEM( moneyBailoutShowing );
+    REGISTER_VAL_MEM( moneyLabeledAdd );
+    REGISTER_VAL_MEM( moneyLabeledShowing );
+    REGISTER_VAL_MEM( moneyLabeledColor );
+    REGISTER_VAL_MEM( moneyLabeledLang );
     }
 
 
@@ -284,17 +293,17 @@ void moneyDraw( int  inPosX,
         }
 
     
-    if( moneyBailoutShowing ) {
+    if( moneyLabeledShowing ) {
 
-        colorsApply( COLOR_BAILOUT );
+        colorsApply( moneyLabeledColor );
 
         maxigin_setLanguageFontIndex( 1 );
 
-        maxigin_drawLangText( lang_bailout,
+        maxigin_drawLangText( moneyLabeledLang,
                               inPosX,
                               inPosY + 14,
                               MAXIGIN_RIGHT );
-        numberDraw( moneyBailout,
+        numberDraw( moneyLabeledAdd,
                     inPosX + 15,
                     inPosY + 14,
                     1 );
@@ -327,15 +336,15 @@ void moneyStep( void ) {
 
     int  r  = mingin_getStepsPerSecond();
 
-    if( moneyBailoutShowing
+    if( moneyLabeledShowing
         &&
         moneyToAdd == 0
         &&
         moneyAddProgress == 0 ) {
 
-        /* final bounce for last bit of bailout is done */
+        /* final bounce for last bit of bailout/wages/etc. is done */
 
-        moneyBailoutShowing = 0;
+        moneyLabeledShowing = 0;
         }
     
 
@@ -363,16 +372,19 @@ void moneyStep( void ) {
                 moneyVal += 1;
 
                 moneyToAdd -= 1;
-                
-                if( moneyBailout > 0 ) {
-                    moneyBailout -= 1;
-                    }
 
-                if( moneyToAdd == 0
-                    &&
-                    moneyBailout > 0 ) {
-                    /* done adding delayed bailout money, clear it */
-                    moneyBailout = 0;
+                if( moneyLabeledShowing ) {
+                    
+                    if( moneyLabeledAdd > 0 ) {
+                        moneyLabeledAdd -= 1;
+                        }
+
+                    if( moneyToAdd == 0
+                        &&
+                        moneyLabeledAdd > 0 ) {
+                        /* done adding delayed bailout money, clear it */
+                        moneyLabeledAdd = 0;
+                        }
                     }
     
                 maxigin_playSoundEffect( coinSound,
@@ -578,29 +590,60 @@ char moneyGetSubMessageShowing( void ) {
         ||
         unusedDrawsShowing
         ||
-        moneyBailout > 0;
+        moneyLabeledShowing > 0;
     }
 
 
 
 void moneyAddBailout( int  inLevelNumber ) {
 
-    moneyBailout = 10 + inLevelNumber;
+    moneyLabeledAdd = 10 + inLevelNumber;
 
-    if( moneyBailout > 25 ) {
-        moneyBailout = 25;
+    if( moneyLabeledAdd > 25 ) {
+        moneyLabeledAdd = 25;
         }
 
-    moneyBailoutShowing = 0;
+    moneyLabeledShowing = 0;
+
+    moneyLabeledColor = COLOR_BAILOUT;
+    moneyLabeledLang = lang_bailout;
+    }
+
+
+
+static void moneyReleaseLabeled( void ) {
+    if( moneyLabeledAdd > 0 ) {
+        moneyToAdd += moneyLabeledAdd;
+        moneyLabeledShowing = 1;
+        }
     }
 
 
 
 void moneyReleaseBailout( void ) {
-    if( moneyBailout > 0 ) {
-        moneyToAdd += moneyBailout;
-        moneyBailoutShowing = 1;
+    moneyReleaseLabeled();
+    }
+
+
+
+void moneyAddWages( int  inLevelNumber ) {
+
+    moneyLabeledAdd = 8 + inLevelNumber;
+
+    if( moneyLabeledAdd > 15 ) {
+        moneyLabeledAdd = 15;
         }
+
+    moneyLabeledShowing = 0;
+
+    moneyLabeledColor = COLOR_WAGES;
+    moneyLabeledLang = lang_wages;
+    }
+
+
+
+void moneyReleaseWages( void ) {
+    moneyReleaseLabeled();
     }
 
 

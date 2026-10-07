@@ -506,7 +506,18 @@ void moneyAddDelayed( int  inValToAdd ) {
 
 
 int moneyGetTotal( void ) {
-    return  moneyVal + moneyToAdd;
+    
+    int  total  =   moneyVal + moneyToAdd + delayedMoneyToAdd;
+
+    if( moneyLabeledAdd != 0
+        &&
+        ! moneyLabeledShowing ) {
+
+        /* hidden labeled money is coming very soon */
+        total += moneyLabeledShowing;
+        }
+    
+    return total;
     }
 
 

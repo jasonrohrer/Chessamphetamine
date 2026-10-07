@@ -73,11 +73,20 @@ int rollPoolSetup( int          inNumItems,
                    int          inFlatnessDenominator,
                    const char  *inPoolName );
 
+
+/* only counts non-skipped items */
 int rollPoolGetSize( int  inRollPoolHandle );
+
 
 int rollItem( int  inRollPoolHandle );
 
 void rollPoolReset( int  inRollPoolHandle );
+
+
+/* call with inListSize = 0 to clear skip list */
+void rollPoolSetSkipList( int  inRollPoolHandle,
+                          int  inListSize,
+                          int  inListItems[] );
 
 
 void rollPoolTest( void );
@@ -104,10 +113,11 @@ static  MaxiginRand  rollRand;
 #define  ROLL_MAX_POOLS              16
 
 
-static  int  rollPoolItems            [ ROLL_MAX_TOTAL_POOL_ITEMS ];
-static  int  rollPoolMissCounts       [ ROLL_MAX_TOTAL_POOL_ITEMS ];
-static  int  rollPoolMissCountTriggers[ ROLL_MAX_TOTAL_POOL_ITEMS ];
-static  int  rollPoolWeights          [ ROLL_MAX_TOTAL_POOL_ITEMS ];
+static  int   rollPoolItems            [ ROLL_MAX_TOTAL_POOL_ITEMS ];
+static  int   rollPoolMissCounts       [ ROLL_MAX_TOTAL_POOL_ITEMS ];
+static  int   rollPoolMissCountTriggers[ ROLL_MAX_TOTAL_POOL_ITEMS ];
+static  int   rollPoolWeights          [ ROLL_MAX_TOTAL_POOL_ITEMS ];
+static  char  rollPoolSkipFlags        [ ROLL_MAX_TOTAL_POOL_ITEMS ];
 
 
 static  int  rollPoolNumTotalItems  =  0;
@@ -128,12 +138,17 @@ typedef struct RollPool {
 
         int   *weights;
 
-        int   totalWeight;
+        char  *skipFlags;
 
-        int   flatnessNumerator;
-        int   flatnessDenominator;
+        int    numNonSkippedItems;
 
-        char  descriptionBuffer[32];
+        /* does not include weight of items where skipFlag is set */
+        int    totalWeight;
+
+        int    flatnessNumerator;
+        int    flatnessDenominator;
+
+        char   descriptionBuffer[32];
         
     } RollPool;
 
@@ -157,17 +172,19 @@ void rollInit( void ) {
          i ++ ) {
 
         rollPoolItems            [ i ] = -1;
-        rollPoolMissCounts       [ i ] = 0;
-        rollPoolMissCountTriggers[ i ] = 1;
-        rollPoolWeights          [ i ] = 1;
+        rollPoolMissCounts       [ i ] =  0;
+        rollPoolMissCountTriggers[ i ] =  1;
+        rollPoolWeights          [ i ] =  1;
+        rollPoolSkipFlags        [ i ] =  0;
         }
     
     REGISTER_VAL_MEM( rollRand );
 
-    REGISTER_ARRAY_MEM( rollPoolItems      );
-    REGISTER_ARRAY_MEM( rollPoolMissCounts );
+    REGISTER_ARRAY_MEM( rollPoolItems             );
+    REGISTER_ARRAY_MEM( rollPoolMissCounts        );
     REGISTER_ARRAY_MEM( rollPoolMissCountTriggers );
-    REGISTER_ARRAY_MEM( rollPoolWeights    );
+    REGISTER_ARRAY_MEM( rollPoolWeights           );
+    REGISTER_ARRAY_MEM( rollPoolSkipFlags         );
     }
 
 
@@ -368,12 +385,15 @@ int  rollPoolSetup( int          inNumItems,
 
     rollNumPools++;
 
-    p->numItems    = inNumItems;
+    p->numItems            = inNumItems;
+    p->numNonSkippedItems  = inNumItems;
+    
     p->items       = &( rollPoolItems            [ rollPoolNumTotalItems ] );
     p->missCounts  = &( rollPoolMissCounts       [ rollPoolNumTotalItems ] );
     p->missCountTriggers
                    = &( rollPoolMissCountTriggers[ rollPoolNumTotalItems ] );
     p->weights     = &( rollPoolWeights          [ rollPoolNumTotalItems ] );
+    p->skipFlags   = &( rollPoolSkipFlags        [ rollPoolNumTotalItems ] );
 
     
     
@@ -385,8 +405,8 @@ int  rollPoolSetup( int          inNumItems,
          i < inNumItems;
          i ++ ) {
 
-        rollPoolItems[ rollPoolNumTotalItems ] = inItems[ i ];
-
+        rollPoolItems    [ rollPoolNumTotalItems ] = inItems[ i ];
+        
         rollPoolNumTotalItems ++;
         }
     
@@ -434,7 +454,7 @@ int rollPoolGetSize( int  inRollPoolHandle ) {
         return 0;
         }
 
-    return rollPools[ inRollPoolHandle ].numItems;
+    return rollPools[ inRollPoolHandle ].numNonSkippedItems;
     }
 
 
@@ -462,17 +482,20 @@ int  rollItem( int  inRollPoolHandle ) {
          i < p->numItems;
          i ++ ) {
 
-        cumulativeWeight += p->weights[i];
-
-        if( pick == -1
-            &&
-            cumulativeWeight >= weightPick ) {
-
-            pick = i;
+        if( ! p->skipFlags[ i ] ) {
             
-            }
-        else {
-            p->missCounts[i] ++;
+            cumulativeWeight += p->weights[i];
+
+            if( pick == -1
+                &&
+                cumulativeWeight >= weightPick ) {
+
+                pick = i;
+            
+                }
+            else {
+                p->missCounts[i] ++;
+                }
             }
         }
 
@@ -570,8 +593,12 @@ void  rollPoolReset( int  inRollPoolHandle ) {
         p->missCounts       [ i ] = 0;
         p->missCountTriggers[ i ] = p->numItems;
         p->weights          [ i ] = 1;
+        p->skipFlags        [ i ] = 0;
         }
-    p->totalWeight = p->numItems;
+    
+    p->totalWeight        = p->numItems;
+    p->numNonSkippedItems = p->numItems;
+    
     }
 
 
@@ -703,6 +730,51 @@ void rollPoolTest( void ) {
                              "" );
             }
         
+        }
+    }
+
+
+
+void rollPoolSetSkipList( int  inRollPoolHandle,
+                          int  inListSize,
+                          int  inListItems[] ) {
+
+    RollPool  *p;
+    int        i;
+    int        j;
+    
+    if( inRollPoolHandle == -1 ) {
+        return;
+        }
+
+    p = &( rollPools[ inRollPoolHandle ] );
+
+
+    p->totalWeight = 0;
+    p->numNonSkippedItems = 0;
+    
+    for( i = 0;
+         i < p->numItems;
+         i   ++ ) {
+
+        p->skipFlags[i] = 0;
+
+        for( j = 0;
+             j < inListSize;
+             j   ++ ) {
+
+            if( inListItems[j] == p->items[ i ] ) {
+
+                /* hit */
+                p->skipFlags[i] = 1;
+                break;
+                }
+            }
+        
+        if( ! p->skipFlags[i] ) {
+            p->totalWeight        +=  p->weights[i];
+            p->numNonSkippedItems ++;
+            }
         }
     }
 

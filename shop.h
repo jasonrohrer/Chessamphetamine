@@ -158,6 +158,9 @@ static  int            shopRerollCost;
 
 static  char           shopSlotPickedWithController               =  0;
 
+/* show things that are at most double what the player currently has to spend */
+static  int            shopMaxBudgetPercentToShow                 =  200;
+
 
 
 static void shopResetHightlighFades( void ) {
@@ -178,6 +181,33 @@ static void shopInternalReroll( void ) {
 
     int  i;
     int  minNumSale;
+
+    int  skipListSize  =  0;
+    int  maxPrice;
+    
+    static  ChessPiece  skipList[ NUM_CHESS_PIECES ];
+
+
+    maxPrice = ( moneyGetTotal() * shopMaxBudgetPercentToShow ) / 100;
+
+    /* if they have very little money, still show them the bare basics */
+    if( maxPrice < 10 ) {
+        maxPrice = 10;
+        }
+    
+    
+    for( i = 0;
+         i < NUM_CHESS_PIECES;
+         i ++ ) {
+        if( shopPrices[ i ] > maxPrice ) {
+
+            skipList[ skipListSize ] = (ChessPiece)i;
+            skipListSize ++;
+            }
+        }
+
+    raritySetSkipList( skipListSize,
+                       skipList );
     
     shopNumVisibleSlots = shopBaseVisibleSlots + unlocksGetExtraShopSlots();
 

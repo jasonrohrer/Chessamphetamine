@@ -36,6 +36,10 @@ enum{
 void rarityInit( void );
 
 
+void raritySetSkipList( int         inListSize,
+                        ChessPiece  inList[] );
+
+
 ChessPiece rarityRollPiece( void );
 
 
@@ -318,7 +322,33 @@ ChessPiece rarityRollPiece( void ) {
 
     return (ChessPiece)( rollItem( rarityPools[ pickedRarity ] ) );
     }
-        
+
+
+
+void raritySetSkipList( int         inListSize,
+                        ChessPiece  inList[] ) {
+
+    int  r;
+    int  i;
+
+    static  int  workingList[ NUM_CHESS_PIECES ];
+
+    for( i = 0;
+         i < inListSize;
+         i   ++ ) {
+        workingList[ i ] = inList[ i ];
+        }
+
+    for( r = FIRST_ROLLABLE_RARITY;
+         r < NUM_RARITIES;
+         r   ++ ) {
+
+        rollPoolSetSkipList( rarityPools[ r ],
+                             inListSize,
+                             workingList );
+        }
+
+    }
 
 
 

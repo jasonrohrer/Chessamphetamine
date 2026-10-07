@@ -84,15 +84,15 @@ char isShoppingDone( void );
 #define SHOP_PRICE_LIST( C, V )  \
     V( C, 0,   noPiece,      0   )    \
     V( C, 1,   pawn,         1   )    \
-    V( C, 2,   bishop,       2   )    \
-    V( C, 3,   knight,       1   )    \
-    V( C, 4,   rook,         6   )    \
+    V( C, 2,   bishop,       1   )    \
+    V( C, 3,   knight,       3   )    \
+    V( C, 4,   rook,         5   )    \
     V( C, 5,   queen,        0   )    \
     V( C, 6,   king,         0   )    \
-    V( C, 7,   laserRook,    12  )    \
+    V( C, 7,   laserRook,    30  )    \
     V( C, 8,   laserPawn,    8   )    \
     V( C, 9,   doublingPawn, 8   )    \
-    V( C, 10,  addingRook,   12   )    \
+    V( C, 10,  addingRook,   14  )    \
     V( C, 11,  rocket,       8   )
 
 static  int  shopPrices[] = {

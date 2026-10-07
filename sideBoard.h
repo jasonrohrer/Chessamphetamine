@@ -166,7 +166,7 @@ static  char           sbPurchaseBlocked      =   0;
     V( C, 4,   rook,         5   ) \
     V( C, 5,   queen,        6   ) \
     V( C, 6,   king,         0   ) \
-    V( C, 7,   laserRook,    10  ) \
+    V( C, 7,   laserRook,    6  ) \
     V( C, 8,   laserPawn,    3   ) \
     V( C, 9,   doublingPawn, 2   ) \
     V( C, 10,  addingRook,   6   ) \

@@ -129,7 +129,7 @@ void moveAnimClearRisingSpeed( void );
 void playBeepUpSound  ( void );
 void playBeepDownSound( void );
 
-
+void playAddSound( void );
 
 
 #endif
@@ -300,6 +300,12 @@ void playBeepDownSound( void ) {
 
     maxigin_playSoundEffect( beepDown,
                              128 );
+    }
+
+void playAddSound( void ) {
+
+    maxigin_playSoundEffect( addSound,
+                             256 );
     }
 
 

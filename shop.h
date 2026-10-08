@@ -116,6 +116,7 @@ static  int            shopDiscountPercent   [ NUM_SHOP_SLOTS ];
 static  int            shopSlotPrices        [ NUM_SHOP_SLOTS ];
 static  ChessPiece     shopItems             [ NUM_SHOP_SLOTS ];
 static  char           shopSlotLocked        [ NUM_SHOP_SLOTS ];
+static  int            shopLockOver                               =  -1;
 
 static  int            shopSlotPosX          [ NUM_SHOP_SLOTS ];
 static  int            shopSlotPosY          [ NUM_SHOP_SLOTS ];
@@ -131,6 +132,7 @@ static  char           shopActionDown                             =   0;
 
 
 static  int            purchaseSound                              =  -1;
+static  int            lockSound                                  =  -1;
 
 static  int            lang_shopTitle                             =  -1;
 static  int            lang_shopInstructA                         =  -1;
@@ -163,8 +165,9 @@ static  char           shopSlotPickedWithController               =  0;
 static  int            shopMaxBudgetPercentToShow                 =  200;
 
 static  int            shopUnlockedSprite                         =  -1;
+static  int            shopUnlockedClickMaskSprite                =  -1;
 static  int            shopLockedSprite                           =  -1;
-
+static  int            shopUnlockedYOffset                        =  35;
 
 
 static void shopResetHightlighFades( void ) {
@@ -348,6 +351,7 @@ void shopInit( int  inPointerActionHandle,
 
 
     purchaseSound = maxigin_initSoundEffect( "purchase_sd_30.wav" );
+    lockSound     = maxigin_initSoundEffect( "lock_sd_6.wav" );
 
     lang_shopTitle          = maxigin_initTranslationKey( "shopTitle"          );
     lang_shopInstructA      = maxigin_initTranslationKey( "shopInstructA"      );
@@ -375,6 +379,7 @@ void shopInit( int  inPointerActionHandle,
 
     shopSlotsLifting = 0;
     shopSlotsDropping = 0;
+    shopLockOver      = -1;
 
 
     /* set up slot positions */
@@ -425,7 +430,8 @@ void shopInit( int  inPointerActionHandle,
                              -1 );
 
 
-    shopUnlockedSprite = maxigin_initSprite( "unlocked.tga" );
+    shopUnlockedSprite          = maxigin_initSprite( "unlocked.tga"          );
+    shopUnlockedClickMaskSprite = maxigin_initSprite( "unlockedClickMask.tga" );
     
 
     shopLockedSprite = maxigin_initSprite( "locked.tga" );
@@ -466,6 +472,10 @@ void shopInit( int  inPointerActionHandle,
     REGISTER_VAL_MEM( shopSelectedSlot );
 
     REGISTER_VAL_MEM( shopSlotPickedWithController );
+
+    REGISTER_ARRAY_MEM( shopSlotLocked );
+    
+    REGISTER_VAL_MEM( shopLockOver );
     }
 
 
@@ -546,8 +556,11 @@ void shopDraw( void ) {
 
         if( p != noPiece ) {
 
+            int  pieceXBase    =  shopCenterX + shopSlotPosX[i];
             int  pieceYBase    =  shopCenterY + shopSlotPosY[i];
             int  pieceYLifted  =  pieceYBase - shopSlotSmoothLift[i];
+            int  lockSprite;
+            int  lockY;
             
             drawPiece( p | CHESS_WHITE,
                        shopCenterX + shopSlotPosX[i],
@@ -555,7 +568,7 @@ void shopDraw( void ) {
 
             if( shopSlotHighlightFade[i] > 0 ) {
                 drawPieceHighlight( p | CHESS_WHITE,
-                                    shopCenterX + shopSlotPosX[i],
+                                    pieceXBase,
                                     pieceYLifted,
                                     shopSlotHighlightFade[i] );
                 }
@@ -565,28 +578,28 @@ void shopDraw( void ) {
 
                 maxigin_drawButtonHintSprite(
                     shopActionHandle,
-                    shopCenterX + shopSlotPosX[i] - 5,
+                    pieceXBase - 5,
                     pieceYLifted );
                 }
             
 
             if( ! shopSlotsLifting ) {
 
-                moneyDrawCoin( shopCenterX + shopSlotPosX[i],
+                moneyDrawCoin( pieceXBase,
                                pieceYBase + 12 + 8,
                                64 );
                 
                 colorsApplyMoneyColor();
             
                 numberDrawCenter( shopSlotPrices[ i ],
-                                  shopCenterX + shopSlotPosX[i],
+                                  pieceXBase,
                                   pieceYBase + 12,
                                   1 );
 
                 if( shopIsOnSale[ i ] ) {
 
                     numberDrawCenter( shopPrices[p],
-                                      shopCenterX + shopSlotPosX[i],
+                                      pieceXBase,
                                       pieceYBase + 22,
                                       1 );
 
@@ -595,7 +608,7 @@ void shopDraw( void ) {
                     maxigin_setLanguageFontIndex( 1 );
     
                     maxigin_drawLangText( lang_sale,
-                                          shopCenterX + shopSlotPosX[i],
+                                          pieceXBase,
                                           pieceYBase - 40,
                                           MAXIGIN_CENTER );
 
@@ -615,7 +628,7 @@ void shopDraw( void ) {
                                                          &belowP );
                         
                         maxigin_drawLangText( lang_permanent,
-                                              shopCenterX + shopSlotPosX[i],
+                                              pieceXBase,
                                               pieceYBase - 43 - aboveS - belowP,
                                               MAXIGIN_CENTER );
                         }
@@ -623,7 +636,7 @@ void shopDraw( void ) {
                     maxigin_setLanguageFontIndex( 0 );
 
                     numberDrawText( "\\",
-                                    shopCenterX + shopSlotPosX[i],
+                                    pieceXBase,
                                     pieceYBase + 22,
                                     0,
                                     MAXIGIN_CENTER );
@@ -633,16 +646,32 @@ void shopDraw( void ) {
             maxigin_drawResetColor();
             
             if( shopSlotLocked[ i ] ) {
-                
-                maxigin_drawSprite( shopLockedSprite,
-                                    shopCenterX + shopSlotPosX[i],
-                                    pieceYBase + 18 );
+                lockSprite = shopLockedSprite;
+                lockY      = pieceYBase + 18;
                 }
             else {
-                maxigin_drawSprite( shopUnlockedSprite,
-                                    shopCenterX + shopSlotPosX[i],
-                                    pieceYBase + 35 );
+                lockSprite = shopUnlockedSprite;
+                lockY      = pieceYBase + shopUnlockedYOffset;
                 }
+                                
+            maxigin_drawSprite( lockSprite,
+                                pieceXBase,
+                                lockY );
+
+            if( shopLockOver == i ) {
+                maxigin_drawToggleAdditive( 1 );
+
+                maxigin_drawSetAlpha( 92 );
+
+                maxigin_drawSprite( lockSprite,
+                                    pieceXBase,
+                                    lockY );
+            
+                maxigin_drawResetColor();
+            
+                maxigin_drawToggleAdditive( 0 );
+                }
+
             }
         }
 
@@ -742,6 +771,9 @@ ChessPiece shopStep( int  inPickFailedSound,
     
     if( maxigin_getActivePointerLocation( &pointerX,
                                           &pointerY ) ) {
+
+        char  overAnyLocks  =  0;
+
         shopSlotPickedWithController = 0;
         
         shopSelectedSlot = -1;
@@ -754,9 +786,12 @@ ChessPiece shopStep( int  inPickFailedSound,
 
             if( p != noPiece ) {
 
+                int  pieceXBase  =  shopCenterX + shopSlotPosX[i];
+                int  pieceYBase  =  shopCenterY + shopSlotPosY[i];
+                
                 if( getPixelOverPiece( p | CHESS_WHITE,
-                                       shopCenterX + shopSlotPosX[i],
-                                       shopCenterY + shopSlotPosY[i],
+                                       pieceXBase,
+                                       pieceYBase,
                                        pointerX,
                                        pointerY ) ) {
 
@@ -764,7 +799,33 @@ ChessPiece shopStep( int  inPickFailedSound,
                     shopSlotHighlightFade[ i ] = 255;
                     break;
                     }
+
+                if( maxigin_isPointerInsideSprite(
+                        shopUnlockedClickMaskSprite,
+                        pieceXBase,
+                        pieceYBase + shopUnlockedYOffset ) ) {
+
+                    int  old  = shopLockOver;
+                    
+                    shopLockOver = i;
+
+                    if( shopLockOver != old ) {
+                        maxigin_playSoundEffect( inPieceLiftSound,
+                                                 256 );
+                        }
+                    overAnyLocks = 1;
+                    }
                 }
+            }
+
+        if( ! overAnyLocks
+            &&
+            shopLockOver != -1 ) {
+            
+            shopLockOver = -1;
+            
+            maxigin_playSoundEffect( inPieceLiftSound,
+                                     256 );
             }
         }
     else {
@@ -901,9 +962,7 @@ ChessPiece shopStep( int  inPickFailedSound,
         }
     
 
-    if( shopSelectedSlot == -1 ) {
-        return noPiece;
-        }
+    
 
     if( ! shopActionDown
         &&
@@ -911,7 +970,9 @@ ChessPiece shopStep( int  inPickFailedSound,
           ||
           maxigin_isButtonDown( shopActionHandle ) ) ) {
 
-        if( shopItems[ shopSelectedSlot ] != noPiece ) {
+        if( shopSelectedSlot != -1
+            &&
+            shopItems[ shopSelectedSlot ] != noPiece ) {
 
             /* picking a piece to buy */
 
@@ -938,12 +999,30 @@ ChessPiece shopStep( int  inPickFailedSound,
                                          256 );
                 }
             }
+        else if( shopLockOver != -1 ) {
+
+            /* toggle lock/unlock */
+            shopSlotLocked[ shopLockOver ] = ! shopSlotLocked[ shopLockOver ];
+
+            if( shopSlotLocked[ shopLockOver ] ) {
+                maxigin_playSoundEffect( lockSound,
+                                         256 );
+                }
+            else {
+                playAddSound();
+                }
+            
+            }
         shopActionDown = 1;
         }
 
     if( controllerMovedSlot ) {
         /* return noPiece for one step, to allow piece info panel
            to fade slightly, and so that game will play sound */
+        return noPiece;
+        }
+    
+    if( shopSelectedSlot == -1 ) {
         return noPiece;
         }
     

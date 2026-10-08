@@ -117,6 +117,7 @@ static  int            shopSlotPrices        [ NUM_SHOP_SLOTS ];
 static  ChessPiece     shopItems             [ NUM_SHOP_SLOTS ];
 static  char           shopSlotLocked        [ NUM_SHOP_SLOTS ];
 static  int            shopLockOver                               =  -1;
+static  char           shopAllLocked                              =   0;
 
 static  int            shopSlotPosX          [ NUM_SHOP_SLOTS ];
 static  int            shopSlotPosY          [ NUM_SHOP_SLOTS ];
@@ -231,6 +232,11 @@ static void shopInternalReroll( void ) {
     for( i = 0;
          i < shopNumVisibleSlots;
          i ++ ) {
+        
+        if( shopSlotLocked[ i ] ) {
+            continue;
+            }
+        
         if( i < minNumSale ) {
             shopIsOnSale   [ i ] = 1;
             shopIsPermaSale[ i ] = 1;
@@ -289,6 +295,11 @@ static void shopInternalReroll( void ) {
     for( i = 0;
          i < shopNumVisibleSlots;
          i ++ ) {
+
+        if( shopSlotLocked[ i ] ) {
+            continue;
+            }
+        
         if( shopIsOnSale[ i ] ) {
             int  discount  =  shopDiscountPercent[ i ] * shopSlotPrices[ i ];
 
@@ -476,6 +487,7 @@ void shopInit( int  inPointerActionHandle,
     REGISTER_ARRAY_MEM( shopSlotLocked );
     
     REGISTER_VAL_MEM( shopLockOver );
+    REGISTER_VAL_MEM( shopAllLocked );
     }
 
 
@@ -506,6 +518,8 @@ void shopLevelIncrement( void ) {
 
 void shopReset( void ) {
 
+    int  i;
+
     shopInternalReroll();
 
     shopSelectedSlot = -1;
@@ -518,6 +532,15 @@ void shopReset( void ) {
     costFullReset( shopRerollCost );
 
     buttonReset( doneButton );
+
+    for( i = 0;
+         i < NUM_SHOP_SLOTS;
+         i ++ ) {
+        
+        shopSlotLocked[ i ] = 0;
+        }
+     
+    shopAllLocked = 0;
     }
 
 
@@ -561,6 +584,14 @@ void shopDraw( void ) {
             int  pieceYLifted  =  pieceYBase - shopSlotSmoothLift[i];
             int  lockSprite;
             int  lockY;
+            int  lockLimit     =  3;
+            
+
+            if( shopSlotLocked[ i ] ) {
+                if( pieceYLifted < pieceYBase - lockLimit ) {
+                    pieceYLifted = pieceYBase - lockLimit;
+                    }
+                }
             
             drawPiece( p | CHESS_WHITE,
                        shopCenterX + shopSlotPosX[i],
@@ -583,7 +614,7 @@ void shopDraw( void ) {
                 }
             
 
-            if( ! shopSlotsLifting ) {
+            if( pieceYLifted >= pieceYBase - lockLimit ) {
 
                 moneyDrawCoin( pieceXBase,
                                pieceYBase + 12 + 8,
@@ -675,7 +706,13 @@ void shopDraw( void ) {
             }
         }
 
-    buttonDraw( rerollButton );
+    if( shopAllLocked ) {
+        buttonDrawDisabled( rerollButton );
+        }
+    else {
+        buttonDraw( rerollButton );
+        }
+    
     buttonDraw( doneButton );
 
 
@@ -719,7 +756,10 @@ ChessPiece shopStep( int  inPickFailedSound,
         return noPiece;
         }
 
-    if( buttonIsNewPressed( rerollButton ) ) {
+    if( ! shopAllLocked
+        &&
+        buttonIsNewPressed( rerollButton ) ) {
+        
         unlocksCancelViewer();
 
         if( moneyGetTotal() < costGet( shopRerollCost ) ) {
@@ -933,11 +973,23 @@ ChessPiece shopStep( int  inPickFailedSound,
             
             }
         }
-        
+
+    shopAllLocked = 1;
 
     for( i = 0;
          i < shopNumVisibleSlots;
          i ++ ) {
+
+        
+        }
+
+    
+
+    for( i = 0;
+         i < shopNumVisibleSlots;
+         i ++ ) {
+
+        shopAllLocked = shopAllLocked && shopSlotLocked[ i ];
 
         if( i != shopSelectedSlot
             &&
@@ -1006,7 +1058,7 @@ ChessPiece shopStep( int  inPickFailedSound,
 
             if( shopSlotLocked[ shopLockOver ] ) {
                 maxigin_playSoundEffect( lockSound,
-                                         256 );
+                                         300 );
                 }
             else {
                 playAddSound();

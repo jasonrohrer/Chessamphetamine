@@ -115,6 +115,7 @@ static  char           shopIsOnSale          [ NUM_SHOP_SLOTS ];
 static  int            shopDiscountPercent   [ NUM_SHOP_SLOTS ];
 static  int            shopSlotPrices        [ NUM_SHOP_SLOTS ];
 static  ChessPiece     shopItems             [ NUM_SHOP_SLOTS ];
+static  char           shopSlotLocked        [ NUM_SHOP_SLOTS ];
 
 static  int            shopSlotPosX          [ NUM_SHOP_SLOTS ];
 static  int            shopSlotPosY          [ NUM_SHOP_SLOTS ];
@@ -160,6 +161,9 @@ static  char           shopSlotPickedWithController               =  0;
 
 /* show things that are at most double what the player currently has to spend */
 static  int            shopMaxBudgetPercentToShow                 =  200;
+
+static  int            shopUnlockedSprite                         =  -1;
+static  int            shopLockedSprite                           =  -1;
 
 
 
@@ -239,6 +243,10 @@ static void shopInternalReroll( void ) {
          i ++ ) {
 
         char  sameAsOther  =  1;
+
+        if( shopSlotLocked[ i ] ) {
+            continue;
+            }
 
         /* make sure each shop item is unique */
         while( sameAsOther ) {
@@ -361,6 +369,8 @@ void shopInit( int  inPointerActionHandle,
 
         shopSlotLift       [ i ] =  0;
         shopSlotSmoothLift [ i ] =  0;
+
+        shopSlotLocked     [ i ] =  0;
         }
 
     shopSlotsLifting = 0;
@@ -398,7 +408,7 @@ void shopInit( int  inPointerActionHandle,
                                -1,
                                maxigin_initSprite( "rerollButtonPressed.tga" ),
                                shopCenterX,
-                               shopCenterY + 50,
+                               shopCenterY + 60,
                                1,
                                shopPointerActionHandle,
                                inDynamicRerollButtonHandle,
@@ -408,12 +418,29 @@ void shopInit( int  inPointerActionHandle,
                              -1,
                              maxigin_initSprite( "doneButtonPressed.tga" ),
                              shopCenterX + 70,
-                             shopCenterY + 50,
+                             shopCenterY + 60,
                              1,
                              shopPointerActionHandle,
                              inDynamicDoneButtonHandle,
                              -1 );
+
+
+    shopUnlockedSprite = maxigin_initSprite( "unlocked.tga" );
     
+
+    shopLockedSprite = maxigin_initSprite( "locked.tga" );
+
+    /* hazy, faded black shadow  top-to-bottom */
+    maxigin_initMakeDropShadowSprite(
+        shopLockedSprite,
+        3,
+        2,
+        255,
+        255,
+        100,
+        0,
+        100,
+        0 );
 
     REGISTER_VAL_MEM( shopRand );
 
@@ -601,6 +628,20 @@ void shopDraw( void ) {
                                     0,
                                     MAXIGIN_CENTER );
                     }
+                }
+
+            maxigin_drawResetColor();
+            
+            if( shopSlotLocked[ i ] ) {
+                
+                maxigin_drawSprite( shopLockedSprite,
+                                    shopCenterX + shopSlotPosX[i],
+                                    pieceYBase + 18 );
+                }
+            else {
+                maxigin_drawSprite( shopUnlockedSprite,
+                                    shopCenterX + shopSlotPosX[i],
+                                    pieceYBase + 35 );
                 }
             }
         }

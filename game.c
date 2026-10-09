@@ -3275,6 +3275,12 @@ static const char  *panelFullSprites[]  =  { "panelFull200_100.tga",
                                              "panelFull300_220.tga" };
 
 
+static char versionNumberBuffer[12];
+
+static int  versionNumber;
+
+
+
 #include "memoryRegister.h"
 
 
@@ -3306,7 +3312,7 @@ void maxiginGame_init( void ) {
 
     int  i;
     int  fontStrip;
-    
+    char success;
 
     for( i = 0;
          i < INFO_HIGHLIGHT_BUFFER_SIZE;
@@ -3906,6 +3912,43 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( drawsLeft );
 
     REGISTER_VAL_MEM( successfulSwapCount );
+
+
+    /* trick:
+       invalidate memory layout every time version number changes
+       this ensures that the player doesn't have a saved game that is
+       inconsistent with latest settings (like if balancing changes,
+       or piece ID numbers change, etc.)
+    */
+
+    /* the build scripts put the version number in this file */
+
+    success = maxigin_readBulkDataStringToken( "versionNumber.txt",
+                                               sizeof( versionNumberBuffer ),
+                                               versionNumberBuffer );
+
+    if( ! success ) {
+        mingin_log( "Warning:  data/versionNumber.txt  not found\n" );
+
+        /* use default */
+        versionNumber = 7777;
+        
+        maxigin_stringCopy( maxigin_intToString( versionNumber ),
+                            versionNumberBuffer );
+        }
+    else {
+        versionNumber = maxigin_stringToInt( versionNumberBuffer );
+        }
+
+    /* by having the "description" field of the registered memory BE
+       the version number itself, the memory map gets invalidated if
+       the version number changes (because all descriptions must match) */
+    
+    maxigin_initRegisterStaticMemory(
+        &( versionNumber ),
+        sizeof( versionNumber ),
+        versionNumberBuffer );
+    
 
     if( ! maxigin_initRestoreStaticMemoryFromLastRun() ) {
         /*

@@ -23959,7 +23959,7 @@ static void mx_populateControlsPanel( void ) {
             int          spriteHandle;
             const char  *labelString;
             
-            buttonY += 25;
+            buttonY += 21;
 
             if( mx_internalGUI.forceHot != &( controlButtonHandles[i] )
                 &&

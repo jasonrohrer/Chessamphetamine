@@ -1083,6 +1083,8 @@ ChessPiece shopStep( int  inPickFailedSound,
                 playerDeckReshuffle();
 
                 shopItems[ shopSelectedSlot ] = noPiece;
+                
+                shopSlotLocked[ shopSelectedSlot ] = 0;
 
                 maxigin_playSoundEffect( purchaseSound,
                                          256 );

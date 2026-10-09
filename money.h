@@ -642,8 +642,19 @@ void moneyAddWages( int  inLevelNumber ) {
 
     moneyLabeledAdd = 8 + inLevelNumber;
 
+    /* wages are 8 on level 0, and reach 15 by level 7,
+       but are capped at 15 per level */
     if( moneyLabeledAdd > 15 ) {
         moneyLabeledAdd = 15;
+        }
+
+    /* after level 16, wages taper off back down to 0 */
+    if( inLevelNumber > 16 ) {
+        moneyLabeledAdd -= inLevelNumber -  16;
+
+        if( moneyLabeledAdd < 0 ) {
+            moneyLabeledAdd = 0;
+            }
         }
 
     moneyLabeledShowing = 0;

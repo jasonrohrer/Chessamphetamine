@@ -299,6 +299,10 @@ static int            preSideBoardY               = -1;
 
 static unsigned char  sideBoardDestSpotFade       =  0;
 
+static int            swapLineSprites    [ 4 ];
+static int            swapLineVertSprites[ 3 ];
+static int            swapLineStemSprite;
+
 
 
 /* 0 for no mark
@@ -862,12 +866,33 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             ChessPiece  firstType;
             int         spotX;
             int         spotY;
+            int         farLeftX       =  BW;
+            int         farRightX      =  0;
+            int         farY[ BW ];
+
+            for( i = 0;
+                 i < BW;
+                 i   ++ ) {
+                
+                farY[ i ] = 0;
+                }
             
             formationSpotGet( 1,
                               &spotX,
                               &spotY );
 
             firstType = boardState.grid[ spotY ][ spotX ];
+            
+            if( spotX < farLeftX ) {
+                farLeftX = spotX;
+                }
+            if( spotX > farRightX ) {
+                farRightX = spotX;
+                }
+
+            if( spotY > farY[ spotX ] ) {
+                farY[ spotX ] = spotY;
+                }
 
             for( i = 2;
                  i < numPiecesPlaced;
@@ -882,7 +907,16 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
                 if( nextType != firstType ) {
                     mulitpleTypes = 1;
-                    break;
+                    }
+
+                if( spotX < farLeftX ) {
+                    farLeftX = spotX;
+                    }
+                if( spotX > farRightX ) {
+                    farRightX = spotX;
+                    }
+                if( spotY > farY[ spotX ] ) {
+                    farY[ spotX ] = spotY;
                     }
                 }
 
@@ -904,28 +938,50 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
                 maxigin_setLanguageFontIndex( 0 );
 
-                for( i = 1;
-                     i < numPiecesPlaced;
-                     i ++ ) {
-                
-                    int  screenX;
-                    int  screenY;
-                
-                    formationSpotGet( i,
-                                      &spotX,
-                                      &spotY );
+                maxigin_drawSprite( swapLineStemSprite,
+                                    boardCenterX,
+                                    boardCenterY + 1 );
 
-                    boardGetSquareCenter( boardCenterX,
-                                          boardCenterY,
-                                          spotY,
-                                          spotX,
-                                          &screenX,
-                                          &screenY );
+                if( farRightX >= BW / 2 ) {
 
-                    maxigin_drawLine( boardCenterX,
-                                      boardCenterY,
-                                      screenX,
-                                      screenY );
+                    int  swapI   =  farRightX -  BW / 2;
+                    int  lineLen =  13 + 25 * swapI;
+
+                    maxigin_drawSprite( swapLineSprites[ swapI ],
+                                        boardCenterX + lineLen / 2,
+                                        boardCenterY + 5 );
+                    }
+                
+                if( farLeftX < BW / 2 ) {
+
+                    int  swapI   =  ( BW / 2 - 1 ) - farLeftX;
+                    int  lineLen =  13 + 25 * swapI;
+                    int  extra   =  0;
+
+                    if( lineLen % 2 != 0 ) {
+                        extra = -1;
+                        }
+
+                    maxigin_drawSprite( swapLineSprites[ swapI ],
+                                        boardCenterX - lineLen / 2 + extra,
+                                        boardCenterY + 5 );
+                    }
+
+                for( i = 0;
+                     i < BW;
+                     i   ++ ) {
+                    if( farY[ i ] >= 5 ) {
+                        
+                        int  swapI  =  farY[ i ] - 5;
+                        int  lineLen =  45 + 25 * swapI;
+                        
+                        maxigin_drawSprite( swapLineVertSprites[ swapI ],
+                                            boardCenterX +
+                                            BOARD_SQUARE_SIZE * ( i - 4 ) +
+                                            BOARD_SQUARE_SIZE / 2,
+                                            boardCenterY + lineLen / 2 );
+                        
+                        } 
                     }
                 }
             } 
@@ -3413,6 +3469,39 @@ void maxiginGame_init( void ) {
                                 4,
                                 2 );
 
+    swapLineSprites[ 0 ] = maxigin_initSprite( "swapLine1.tga" );
+    swapLineSprites[ 1 ] = maxigin_initSprite( "swapLine2.tga" );
+    swapLineSprites[ 2 ] = maxigin_initSprite( "swapLine3.tga" );
+    swapLineSprites[ 3 ] = maxigin_initSprite( "swapLine4.tga" );
+
+    swapLineVertSprites[ 0 ] = maxigin_initSprite( "swapLineVert1.tga" );
+    swapLineVertSprites[ 1 ] = maxigin_initSprite( "swapLineVert2.tga" );
+    swapLineVertSprites[ 2 ] = maxigin_initSprite( "swapLineVert3.tga" );
+
+    for( i = 0;
+         i < 4;
+         i   ++ ) {
+        
+        maxigin_initMakeGlowSprite( swapLineSprites[ i ],
+                                    4,
+                                    2 );
+        }
+    for( i = 0;
+         i < 3;
+         i   ++ ) {
+        
+        maxigin_initMakeGlowSprite( swapLineVertSprites[ i ],
+                                    4,
+                                    2 );
+        }
+
+    swapLineStemSprite = maxigin_initSprite( "swapLineStem.tga" );
+
+    maxigin_initMakeGlowSprite( swapLineStemSprite,
+                                4,
+                                2 );
+    
+    
     fontStrip = maxigin_initSpriteStrip( "5x9CapsLatinFont.tga",
                                          9 );
 

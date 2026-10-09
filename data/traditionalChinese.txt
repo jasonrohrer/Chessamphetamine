@@ -44,6 +44,8 @@ deckDesc       "查看牌組"
 commitDesc     "確認"
 spinDesc       "旋轉"
 unlockView     "查看解鎖"
+shopLock       "商店鎖定"
+
 
 press          "按下"
 

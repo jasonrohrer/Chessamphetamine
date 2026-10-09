@@ -19,6 +19,7 @@ void shopInit( int  inPointerActionHandle,
                int  inActionHandle,
                int  inDynamicRerollButtonHandle,
                int  inDynamicDoneButtonHandle,
+               int  inDynamicShopLockButtonHandle,
                int  inCenterX,
                int  inCenterY );
 
@@ -149,6 +150,7 @@ static  int            rerollButton                               =  -1;
 
 static  int            shopPointerActionHandle                    =  -1;
 static  int            shopActionHandle                           =  -1;
+static  int            shopLockActionHandle                       =  -1;
 
 static  int            shopCenterX;
 static  int            shopCenterY;
@@ -323,6 +325,7 @@ void shopInit( int  inPointerActionHandle,
                int  inActionHandle,
                int  inDynamicRerollButtonHandle,
                int  inDynamicDoneButtonHandle,
+               int  inDynamicShopLockButtonHandle,
                int  inCenterX,
                int  inCenterY ) {
     
@@ -356,6 +359,7 @@ void shopInit( int  inPointerActionHandle,
 
     shopPointerActionHandle = inPointerActionHandle;
     shopActionHandle        = inActionHandle;
+    shopLockActionHandle    = inDynamicShopLockButtonHandle;
     
     shopCenterX = inCenterX;
     shopCenterY = inCenterY;
@@ -603,15 +607,6 @@ void shopDraw( void ) {
                                     pieceYLifted,
                                     shopSlotHighlightFade[i] );
                 }
-            if( shopSelectedSlot == i
-                &&
-                shopSlotPickedWithController ) {
-
-                maxigin_drawButtonHintSprite(
-                    shopActionHandle,
-                    pieceXBase - 5,
-                    pieceYLifted );
-                }
             
 
             if( pieceYLifted >= pieceYBase - lockLimit ) {
@@ -703,6 +698,21 @@ void shopDraw( void ) {
                 maxigin_drawToggleAdditive( 0 );
                 }
 
+            if( shopSelectedSlot == i
+                &&
+                shopSlotPickedWithController ) {
+
+                maxigin_drawButtonHintSprite(
+                    shopActionHandle,
+                    pieceXBase - 5,
+                    pieceYLifted );
+
+                 maxigin_drawButtonHintSprite(
+                    shopLockActionHandle,
+                    pieceXBase + 9,
+                    pieceYBase + shopUnlockedYOffset );
+                }
+
             }
         }
 
@@ -726,6 +736,22 @@ void shopDraw( void ) {
                     shopCenterX,
                     shopCenterY + 66,
                     1 );
+    }
+
+
+
+/* toggle lock/unlock */
+static void toggleShopLock( int  inSlotIndex ) {
+    
+    shopSlotLocked[ inSlotIndex ] = ! shopSlotLocked[ inSlotIndex ];
+
+    if( shopSlotLocked[ inSlotIndex ] ) {
+        maxigin_playSoundEffect( lockSound,
+                                 300 );
+        }
+    else {
+        playAddSound();
+        }
     }
 
 
@@ -1009,11 +1035,28 @@ ChessPiece shopStep( int  inPickFailedSound,
     
     if( ! maxigin_isButtonDown( shopPointerActionHandle )
         &&
-        ! maxigin_isButtonDown( shopActionHandle ) ) {
+        ! maxigin_isButtonDown( shopActionHandle )
+        &&
+        ! maxigin_isButtonDown( shopLockActionHandle ) ) {
+        
         shopActionDown = 0;
         }
     
 
+    if( ! shopActionDown
+        &&
+        maxigin_isButtonDown( shopLockActionHandle ) ) {
+
+        if( shopSelectedSlot != -1
+            &&
+            shopItems[ shopSelectedSlot ] != noPiece ) {
+
+            toggleShopLock( shopSelectedSlot );
+            }
+
+        shopActionDown = 1;
+        }
+    
     
 
     if( ! shopActionDown
@@ -1053,16 +1096,7 @@ ChessPiece shopStep( int  inPickFailedSound,
             }
         else if( shopLockOver != -1 ) {
 
-            /* toggle lock/unlock */
-            shopSlotLocked[ shopLockOver ] = ! shopSlotLocked[ shopLockOver ];
-
-            if( shopSlotLocked[ shopLockOver ] ) {
-                maxigin_playSoundEffect( lockSound,
-                                         300 );
-                }
-            else {
-                playAddSound();
-                }
+            toggleShopLock( shopLockOver );
             
             }
         shopActionDown = 1;

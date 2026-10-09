@@ -47,6 +47,7 @@ deckDesc       "Voir le deck"
 commitDesc     "Valider"
 spinDesc       "Lancer"
 unlockView     "Déblocages"
+shopLock       "Verrouiller"
 
 
 press          "appuyez"

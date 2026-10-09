@@ -106,6 +106,7 @@ enum GameUserAction {
     DRAW,
     DECK,
     COMMIT,
+    SHOP_LOCK,
     TOGGLE_MOVE_LOG,
     ADVANCE_MOVE_LOG,
     BACK_MOVE_LOG,
@@ -203,6 +204,7 @@ static int          lang_deck;
 static int          lang_commit;
 static int          lang_spin;
 static int          lang_unlockView;
+static int          lang_shopLock;
 
 static int          lang_drawInstruct;
 static int          lang_level;
@@ -3033,6 +3035,11 @@ static  MinginButton   unlockViewMapping[]  =  { MGN_BUTTON_XBOX_BACK,
                                                  MGN_BUTTON_STEAM_VIEW,
                                                  MGN_MAP_END };
 
+static MinginButton shopLockMapping[]  =  { MGN_BUTTON_PS_SQUARE,
+                                            MGN_BUTTON_XBOX_X,
+                                            MGN_MAP_END };
+
+
 static MinginButton hintMapping[]   =  { MGN_BUTTON_MOUSE_LEFT,
                                          MGN_BUTTON_MOUSE_RIGHT,
                                          MGN_BUTTON_PS_X,
@@ -3352,6 +3359,8 @@ void maxiginGame_init( void ) {
     lang_level            = maxigin_initTranslationKey( "level" );
     lang_gameOverInstruct = maxigin_initTranslationKey( "gameOverInstruct" );
     lang_unlockView       = maxigin_initTranslationKey( "unlockView" );
+    lang_shopLock         = maxigin_initTranslationKey( "shopLock" );
+    
     lang_readyCount       = maxigin_initTranslationKey( "readyCount" );
     lang_discardCount     = maxigin_initTranslationKey( "discardCount" );
     
@@ -3429,6 +3438,11 @@ void maxiginGame_init( void ) {
         UNLOCK_VIEW,
         unlockViewMapping,
         lang_unlockView  );
+
+    maxigin_registerDynamicButtonMapping(
+        SHOP_LOCK,
+        shopLockMapping,
+        lang_shopLock  );
 
     
     maxigin_logInt( "Primary button for ACTION is: ",
@@ -3556,6 +3570,7 @@ void maxiginGame_init( void ) {
               ACTION,
               DRAW,
               COMMIT,
+              SHOP_LOCK,
               boardCenterX,
               boardCenterY );
 

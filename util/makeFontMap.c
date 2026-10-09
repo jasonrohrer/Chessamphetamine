@@ -1,6 +1,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 
 static void usage( const char  *inEXEName ) {
@@ -53,18 +54,21 @@ static char *getStringToQuote( FILE *inFile ) {
 
         i ++;
         }
+
+    if( c == EOF
+        ||
+        i >= BUFFER_SIZE ) {
+        /* reached end of file without finding anything,
+           or ran out of room in buffer */
+        return NULL;
+        }
     
 
     /* buffer has BUFFER_SIZE + 1, room for termination always */
     
     buffer[i] = '\0';
 
-    if( i > 0 ) {
-        return buffer;
-        }
-    else {
-        return NULL;
-        }
+    return buffer;
     }
 
 
@@ -409,29 +413,33 @@ int main( int          inNumArgs,
         if( s == NULL ) {
             break;
             }
-        
-        s = scanNextCodePoint( s,
-                               &point,
-                               subBytes );
 
-        while( point != -1 ) {
-
-            if( point != ' '
-                &&
-                point != '\t'
-                &&
-                point != '\r'
-                &&
-                point != '\n' ) {
-                
-                insertCodePoint( point,
-                                 subBytes );
-                }
+        /* skip any empty quoted strings */
+        if( strlen( s ) > 0 ) {
             
             s = scanNextCodePoint( s,
                                    &point,
                                    subBytes );
-            }    
+
+            while( point != -1 ) {
+
+                if( point != ' '
+                    &&
+                    point != '\t'
+                    &&
+                    point != '\r'
+                    &&
+                    point != '\n' ) {
+                
+                    insertCodePoint( point,
+                                     subBytes );
+                    }
+            
+                s = scanNextCodePoint( s,
+                                       &point,
+                                       subBytes );
+                }
+            }
         }
     
     /* done scanning language file */

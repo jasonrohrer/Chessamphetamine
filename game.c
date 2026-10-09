@@ -303,6 +303,8 @@ static int            swapLineSprites    [ 4 ];
 static int            swapLineVertSprites[ 3 ];
 static int            swapLineStemSprite;
 
+static int            successfulSwapCount         =  0;
+
 
 
 /* 0 for no mark
@@ -862,9 +864,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             &&
             ! boardMarkersHidden
             &&
-            currentLevel < 2
-            &&
-            numPiecesPlaced > 2 ) {
+            successfulSwapCount < 6 ) {
 
             char        mulitpleTypes  =  0;
             ChessPiece  firstType;
@@ -1441,6 +1441,17 @@ static void swapMarkedPieces( void ) {
         /* found both, swap them */
         ChessPiece  temp  =  boardState.grid[ rows[0] ][ cols[0] ];
 
+        if( temp != boardState.grid[ rows[1] ][ cols[1] ] ) {
+            /* different pieces swapped */
+            successfulSwapCount ++;
+
+            /* we are counting this value forever, and keeping it
+               in their saved game...  prevent overflow */
+            if( successfulSwapCount > 1000 ) {
+                successfulSwapCount = 1000;
+                }
+            }
+        
         boardState.grid[ rows[0] ][ cols[0] ] =
             boardState.grid[ rows[1] ][ cols[1] ];
 
@@ -3893,7 +3904,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( sideBoardDestSpotFade );
 
     REGISTER_VAL_MEM( drawsLeft );
-    
+
+    REGISTER_VAL_MEM( successfulSwapCount );
 
     if( ! maxigin_initRestoreStaticMemoryFromLastRun() ) {
         /*

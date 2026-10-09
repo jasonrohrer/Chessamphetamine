@@ -55,6 +55,11 @@ echo "Generating spriteCacheFingerprint.txt ..."
 find data/*.tga *.h *.c -type f -print0 | sort -z | xargs -0 md5sum | md5sum | sed "s/ .*//" > data/spriteCacheFingerprint.txt
 
 
+echo "Generating versionNumber.txt ..."
+
+echo -n "$1" > data/versionNumber.txt
+
+
 cd ..
 
 echo "Gathering files..."

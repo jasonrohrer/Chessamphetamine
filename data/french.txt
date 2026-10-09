@@ -56,6 +56,10 @@ defaults       "Par défaut"
 
 drawInstruct   "Composez votre armée"
 
+swapInstructA  "Choisissez deux pièces pour"
+swapInstructB  "intervertir leurs positions"
+
+
 unusedDraws    "Tirages:"
 
 bailout        "Secours:"

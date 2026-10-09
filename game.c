@@ -209,6 +209,9 @@ static int          lang_shopLock;
 static int          lang_drawInstruct;
 static int          lang_level;
 static int          lang_gameOverInstruct;
+static int          lang_swapInstructA;
+static int          lang_swapInstructB;
+
 
 static int          lang_readyCount;
 static int          lang_discardCount;
@@ -844,6 +847,90 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                   infoPanelFade );
             }
 
+        
+        if( ! spinning
+            &&
+            ! chessGameOver
+            &&
+            ! boardMarkersHidden
+            &&
+            currentLevel < 2
+            &&
+            numPiecesPlaced > 2 ) {
+
+            char        mulitpleTypes  =  0;
+            ChessPiece  firstType;
+            int         spotX;
+            int         spotY;
+            
+            formationSpotGet( 1,
+                              &spotX,
+                              &spotY );
+
+            firstType = boardState.grid[ spotY ][ spotX ];
+
+            for( i = 2;
+                 i < numPiecesPlaced;
+                 i ++ ) {
+
+                ChessPiece  nextType;
+
+                formationSpotGet( i,
+                                  &spotX,
+                                  &spotY );
+                nextType = boardState.grid[ spotY ][ spotX ];
+
+                if( nextType != firstType ) {
+                    mulitpleTypes = 1;
+                    break;
+                    }
+                }
+
+            if( mulitpleTypes ) {
+
+                maxigin_drawResetColor();
+
+                maxigin_setLanguageFontIndex( 1 );
+
+                maxigin_drawLangText( lang_swapInstructA,
+                                      boardCenterX,
+                                      boardCenterY - BOARD_SQUARE_SIZE / 2 - 10,
+                                      MAXIGIN_CENTER );
+                
+                maxigin_drawLangText( lang_swapInstructB,
+                                      boardCenterX,
+                                      boardCenterY - BOARD_SQUARE_SIZE / 2,
+                                      MAXIGIN_CENTER );
+
+                maxigin_setLanguageFontIndex( 0 );
+
+                for( i = 1;
+                     i < numPiecesPlaced;
+                     i ++ ) {
+                
+                    int  screenX;
+                    int  screenY;
+                
+                    formationSpotGet( i,
+                                      &spotX,
+                                      &spotY );
+
+                    boardGetSquareCenter( boardCenterX,
+                                          boardCenterY,
+                                          spotY,
+                                          spotX,
+                                          &screenX,
+                                          &screenY );
+
+                    maxigin_drawLine( boardCenterX,
+                                      boardCenterY,
+                                      screenX,
+                                      screenY );
+                    }
+                }
+            } 
+
+        
         drawBoardState( &boardState,
                         checkmate,
                         stalemate,
@@ -3358,6 +3445,9 @@ void maxiginGame_init( void ) {
     lang_drawInstruct     = maxigin_initTranslationKey( "drawInstruct" );
     lang_level            = maxigin_initTranslationKey( "level" );
     lang_gameOverInstruct = maxigin_initTranslationKey( "gameOverInstruct" );
+    lang_swapInstructA    = maxigin_initTranslationKey( "swapInstructA" );
+    lang_swapInstructB    = maxigin_initTranslationKey( "swapInstructB" );
+    
     lang_unlockView       = maxigin_initTranslationKey( "unlockView" );
     lang_shopLock         = maxigin_initTranslationKey( "shopLock" );
     

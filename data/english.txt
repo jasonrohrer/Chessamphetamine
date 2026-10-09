@@ -57,6 +57,9 @@ defaults       "Defaults"
 
 drawInstruct   "Draft your army"
 
+swapInstructA   " "
+swapInstructB   "Pick two pieces to swap positions"
+
 
 unusedDraws    "Unused draws:"
 

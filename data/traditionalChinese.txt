@@ -54,6 +54,10 @@ defaults       "恢復預設"
 
 drawInstruct   "徵召你的軍隊"
 
+swapInstructA   " "
+swapInstructB   "選取兩個棋子交換位置"
+
+
 unusedDraws    "餘抽："
 
 bailout        "紓困："

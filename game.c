@@ -834,21 +834,25 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                               boardLiveCenterY,
                               boardMarkers );
 
-            if( infoPanelPiece != noPiece ) {
-                markerColor = infoPanelPiece & CHESS_COLOR_MASK;
-                }
-            else if( infoPanelLastPiece != noPiece ) {
-                markerColor = infoPanelLastPiece & CHESS_COLOR_MASK;
-                }
-            else {
-                markerColor = CHESS_WHITE;
-                }
+            /* hide move preview markers if something selected for swap */
+            if( boardMarkersDownCount == 0 ) {
                 
-            boardDrawMoveMarkers( boardCenterX,
-                                  boardLiveCenterY,
-                                  infoPanelPieceMoveMarkers,
-                                  markerColor,
-                                  infoPanelFade );
+                if( infoPanelPiece != noPiece ) {
+                    markerColor = infoPanelPiece & CHESS_COLOR_MASK;
+                    }
+                else if( infoPanelLastPiece != noPiece ) {
+                    markerColor = infoPanelLastPiece & CHESS_COLOR_MASK;
+                    }
+                else {
+                    markerColor = CHESS_WHITE;
+                    }
+                
+                boardDrawMoveMarkers( boardCenterX,
+                                      boardLiveCenterY,
+                                      infoPanelPieceMoveMarkers,
+                                      markerColor,
+                                      infoPanelFade );
+                }
             }
 
         

@@ -105,7 +105,7 @@ char moneyGetSubMessageShowing( void );
 */
 #define  OVERRUN_MONEY_VALUE          2
 
-#define  EXTRA_BONUS_PER_UNUSED_DRAW  0
+#define  EXTRA_BONUS_PER_UNUSED_DRAW  2
 
 
 /*
@@ -433,7 +433,9 @@ void moneyStep( void ) {
         &&
         moneyToAdd == 0
         &&
-        delayedMoneyToAdd == 0 ) {
+        delayedMoneyToAdd == 0
+        &&
+        moneyLabeledAdd == 0 ) {
 
         int  stepDur  =  ( r * 15 ) / 60;
 
@@ -450,8 +452,9 @@ void moneyStep( void ) {
                 unusedDrawsShowing = 1;
 
                 /* rewind back to negative, now that it's showing, to
-                   give the user a chance to see it before the first decrement */
-                unusedDrawPreSteps = - stepDur;
+                   give the user a chance to see it before the first decrement,
+                   and hold this a bit longer */
+                unusedDrawPreSteps = - 2 * stepDur;
                 }
 
             if( unusedDrawPreSteps >= stepDur ) {
@@ -580,9 +583,7 @@ void moneyAddUnusedDraws( int  inNumUnused ) {
         /* nothing to add */
         return;
         }
-
-    /* first pre-step is longer, to give previous money a chance to settle */
-    unusedDrawPreSteps  =  -stepDur;
+    unusedDrawPreSteps  =  - stepDur;
     unusedDrawPostSteps =   0;
 
     /* hide them at first, until first pre-step becomes positive */

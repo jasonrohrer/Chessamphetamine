@@ -79,6 +79,8 @@ char isShoppingDone( void );
 
 #include "unlocks.h"
 #include "colors.h"
+#include "runStats.h"
+
 
 
 /* pawns are never sold in shop */
@@ -1081,6 +1083,8 @@ ChessPiece shopStep( int  inPickFailedSound,
 
                 playerDeckAddPiece( shopItems[ shopSelectedSlot ] );
                 playerDeckReshuffle();
+
+                runStatsLogPurchase( shopItems[ shopSelectedSlot ] );
 
                 shopItems[ shopSelectedSlot ] = noPiece;
                 

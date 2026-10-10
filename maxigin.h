@@ -478,8 +478,11 @@
   maxiginGame_init is guaranteed to be called exactly once, befor any other
   maxiginGame_ function is called.
   
-  minginGame_step is guaranteed to be called at least once, before
+  maxiginGame_step is guaranteed to be called at least once, before
   any calls to maxiginGame_getNativePixels.
+
+  maxiginGame_step will also generally be called one final time, with
+  the inFinalStep flag set, right before the game quits.
   
   Beyond that, the order and frequency of these function calls are not
   guaranteed.  For example, during recorded game playback mode, many calls
@@ -550,10 +553,15 @@ void maxiginGame_init( void );
 
   Will be called at least once, after maxiginGame_init and before any
   calls to maxiginGame_getNativePixels.
+
+  Parameters:
+
+      inFinalStep    0  for a normal step
+                     1  for the final step before the game quits
   
   [jumpGameRequired]
 */
-void maxiginGame_step( void );
+void maxiginGame_step( char  inFinalStep );
 
 
 
@@ -12844,6 +12852,11 @@ void minginGame_step( char  inFinalStep ) {
     if( mx_quitting
         &&
         mx_quittingReady ) {
+
+        /* one final step with flag set */
+        
+        maxiginGame_step( 1 );
+        
         
         mx_saveGame();
 
@@ -13394,7 +13407,7 @@ void minginGame_step( char  inFinalStep ) {
         
         mx_areWeInMaxiginGameStepFunction = 1;
     
-        maxiginGame_step();
+        maxiginGame_step( 0 );
     
         mx_areWeInMaxiginGameStepFunction = 0;
 

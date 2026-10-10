@@ -37,6 +37,8 @@
 #define FORMATION_IMPLEMENTATION
 #define UNLOCKS_IMPLEMENTATION
 #define PLAYER_DECK_IMPLEMENTATION
+#define RUN_STATS_IMPLEMENTATION
+
 
 #include "chess.h"
 
@@ -97,6 +99,9 @@
 #include "unlocks.h"
 
 #include "playerDeck.h"
+
+#include "runStats.h"
+
 
 
 enum GameUserAction {
@@ -1490,6 +1495,12 @@ static void startDraftingPieces( void ) {
 
     getEmptyLevel( &boardState );
 
+    if( currentLevel == 0 ) {
+        runStatsNewRun();
+        }
+
+    runStatsLogLevel( currentLevel );
+
     getEnemyLevel( currentLevel,
                    &boardState );
 
@@ -1530,7 +1541,7 @@ static void startDraftingPieces( void ) {
 
 
 
-void maxiginGame_step( void ) {
+void maxiginGame_step( char  inFinalStep  ) {
     
     int   r;
     int   i;
@@ -1540,6 +1551,13 @@ void maxiginGame_step( void ) {
 
     char  spinPressed       =  0;
     char  chessGameWasOver  =  chessGameOver;
+
+    if( inFinalStep ) {
+        /* finalize run stats log, but do nothing else */
+        runStatsQuit();
+        
+        return;
+        }
 
     if( saveCorrupted ) {
         if( autoQuitFrameCount > 0 ) { 
@@ -2892,6 +2910,8 @@ void maxiginGame_step( void ) {
                                   &sX,
                                   &sY ) ) {
 
+                runStatsLogDeploy( pickedPiece );
+
                 boardState.grid[ sY ][ sX ] = pickedPiece | CHESS_WHITE;
 
                 if( drawsLeft > 0 ) {
@@ -3322,6 +3342,8 @@ void maxiginGame_init( void ) {
         infoFade[i] = 0;
         }
 
+    runStatsInit();
+    
     clearInfoPanelPieceMoveMarkers();
         
     

@@ -70,18 +70,25 @@ static char  runStatsWriteString( const char  *inString ) {
 
 
 
-static  const char  *runStatsSpaces  =  "  ";
+static  const char  *runStatsSpaces   =  "  ";
+
+/* 0 for play mode
+   1 for buy mode */
+static  char         runStatsBuyMode  =  0;
 
 
 
 void runStatsLogLevel( int  inLevel ) {
 
     const char *s  =  maxigin_intToString( inLevel );
-    const char *c  =  ":";
+
+    runStatsWriteString( "\n" );
     
     runStatsWriteString( s );
 
-    runStatsWriteString( c );
+    runStatsWriteString( ":" );
+
+    runStatsBuyMode = 1;
 
     runStatsWriteString( runStatsSpaces );
     }
@@ -90,10 +97,13 @@ void runStatsLogLevel( int  inLevel ) {
 
 void runStatsLogDeploy( ChessPiece  inPiece ) {
     
-    const char   *tag   =  "p:";
     const char   *name  =  getPieceName( inPiece );
 
-    runStatsWriteString( tag  );
+    if( runStatsBuyMode ) {
+        runStatsWriteString( "\nplayed:  "  );
+        runStatsBuyMode = 0;
+        }
+    
     runStatsWriteString( name );
     runStatsWriteString( runStatsSpaces );
     }
@@ -102,10 +112,13 @@ void runStatsLogDeploy( ChessPiece  inPiece ) {
 
 void runStatsLogPurchase( ChessPiece  inPiece ) {
     
-    const char   *tag   =  "b:";
     const char   *name  =  getPieceName( inPiece );
 
-    runStatsWriteString( tag  );
+    if( ! runStatsBuyMode ) {
+        runStatsWriteString( "\nbought:  "  );
+        runStatsBuyMode = 1;
+        }
+
     runStatsWriteString( name );
     runStatsWriteString( runStatsSpaces );
     }
@@ -114,7 +127,7 @@ void runStatsLogPurchase( ChessPiece  inPiece ) {
 
 void runStatsNewRun( void ) {
 
-    const char  *newLines  =  "\n\n";
+    const char  *newLines  =  "\n\n\n";
 
     runStatsWriteString( newLines );
 

@@ -1479,6 +1479,7 @@ static char  randColorsDown = 0;
 
 static char  printColorsDown = 0;
 
+static char  firstDraftingStarted  =  0;
 
 static void startDraftingPieces( void ) {
 
@@ -1537,6 +1538,8 @@ static void startDraftingPieces( void ) {
     redrawAddRunning    = 1;
 
     sideBoardForceFullLift();
+
+    firstDraftingStarted = 1;
     }
 
 
@@ -3823,11 +3826,12 @@ void maxiginGame_init( void ) {
 
     playerDeckSetupFresh();
     
-    if(1) {
+    if( 0 ) {
 
-        startDraftingPieces();
-        }
-    else {
+        /* block drafting start below for test board */
+
+        firstDraftingStarted = 1;
+        
         sideBoardRedraw();
         sideBoardShowing = 1;
         dropNewLevelPiecesIn( CHESS_WHITE );
@@ -3935,6 +3939,8 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( successfulSwapCount );
 
+    REGISTER_VAL_MEM( firstDraftingStarted );
+    
 
     /* trick:
        invalidate memory layout every time version number changes
@@ -3984,6 +3990,17 @@ void maxiginGame_init( void ) {
         autoQuitFrameCount = autoQuitStepsPerSecond * 10;
         
         maxigin_enableHotReloadSaving( 0 );
+        }
+
+
+    /* after loading saved game, if no current game in progress,
+       then start drafting pieces,
+
+       otherwise, firstDraftingStarted will be 1 forever more,
+       as we load continued states */
+
+    if( ! firstDraftingStarted ) {
+        startDraftingPieces();
         }
     
     }

@@ -1254,6 +1254,8 @@ void mingin_quit( void );
 /*
   Opens a named persistent data store for writing.
 
+  Call mingin_endWritePersistData to end writing.
+
   Parameters:
 
       inStoreName   the name of the store as a \0-terminated string.
@@ -1267,6 +1269,27 @@ void mingin_quit( void );
   [jumpMinginProvides]
 */
 int mingin_startWritePersistData( const char  *inStoreName );
+
+
+
+/*
+  Opens a named persistent data store for writing in append mode.
+  
+  Call mingin_endWritePersistData to end writing.
+
+  Parameters:
+
+      inStoreName   the name of the store as a \0-terminated string.
+
+  Returns:
+
+      store handle   on success
+
+      -1             on failure
+  
+  [jumpMinginProvides]
+*/
+int mingin_startAppendPersistData( const char  *inStoreName );
 
 
 
@@ -4990,9 +5013,15 @@ static int mn_linuxFileOpenRead( const char  *inFolderName,
 
 
 static int mn_linuxFileOpenWrite( const char  *inFolderName,
-                                  const char  *inFileName ) {
+                                  const char  *inFileName,
+                                  char         inAppend ) {
     struct stat  statStruct;
     char         folderExists  =  0;
+    int          modeFlag      =  O_TRUNC;
+
+    if( inAppend ) {
+        modeFlag = O_APPEND;
+        }
 
     /* make sure folder exists */
     
@@ -5010,8 +5039,11 @@ static int mn_linuxFileOpenWrite( const char  *inFolderName,
         
         char  *path  =  mn_linuxGetFilePath( inFolderName,
                                              inFileName );
+        
+        /* file is readable and writeable by user, but not executable */
         int    fd    =  open( path,
-                              O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU );
+                              O_CREAT | O_WRONLY | modeFlag,
+                              (S_IRUSR | S_IWUSR) );
 
         return fd;
         }
@@ -5035,6 +5067,20 @@ static char mn_linuxFileWrite( int                   inFD,
                                                &( inByteBuffer[ numWritten ] ),
                                                numLeftToWrite );
         if( numWrittenThisTime == -1 ) {
+
+            if( errno == EINTR ) {
+                /* write failed due to an interrupt, keep trying */
+                continue;
+                }
+
+            /* write failed for some other reason, return error */
+            return 0;
+            }
+
+        if( numWrittenThisTime == 0 ) {
+            /* write didn't return an error, but 0 bytes were written.
+               treat this as an error (so we don't loop forever if we're
+               stuck not making progress)  */
             return 0;
             }
         
@@ -5105,7 +5151,16 @@ static int mn_linuxFileGetPos( int  inFD ) {
 
 int mingin_startWritePersistData( const char  *inStoreName ) {
     return mn_linuxFileOpenWrite( mn_settingsDirName,
-                                  inStoreName );
+                                  inStoreName,
+                                  0 );
+    }
+
+
+
+int mingin_startAppendPersistData( const char  *inStoreName ) {
+    return mn_linuxFileOpenWrite( mn_settingsDirName,
+                                  inStoreName,
+                                  1 );
     }
 
 
@@ -9380,12 +9435,22 @@ static int mn_windowsFileOpenRead( const char  *inFolderName,
 
 
 static int mn_windowsFileOpenWrite( const char  *inFolderName,
-                                    const char  *inFileName ) {
+                                    const char  *inFileName,
+                                    char         inAppend ) {
 
     /* make sure folder exists */
-    char  folderExists   = 0;
-    DWORD attributes     = GetFileAttributesA( inFolderName );
+    char  folderExists       =  0;
+    DWORD attributes         =  GetFileAttributesA( inFolderName );
 
+    DWORD desiredAccess      =  GENERIC_WRITE;
+    DWORD createDisposition  =  CREATE_ALWAYS;
+
+    if( inAppend ) {
+        desiredAccess     = FILE_APPEND_DATA;
+        createDisposition = OPEN_ALWAYS;
+        }
+
+    
     if( attributes != INVALID_FILE_ATTRIBUTES ) {
         if( attributes & FILE_ATTRIBUTE_DIRECTORY ) {
             folderExists = 1;
@@ -9415,10 +9480,10 @@ static int mn_windowsFileOpenWrite( const char  *inFolderName,
             }
 
         fileHandle->h = CreateFileA( path,
-                                     GENERIC_WRITE,
+                                     desiredAccess,
                                      0,
                                      NULL,
-                                     CREATE_ALWAYS,
+                                     createDisposition,
                                      FILE_ATTRIBUTE_NORMAL,
                                      NULL );
 
@@ -9465,6 +9530,13 @@ static char mn_windowsFileWrite( int                   inFD,
                          numLeftToWrite,
                          &numWrittenThisTime,
                          NULL ) ) {
+            return 0;
+            }
+
+        if( numWrittenThisTime == 0 ) {
+            /* WriteFile didn't return an error, but 0 bytes were written.
+               treat this as an error (so we don't loop forever if we're
+               stuck not making progress)  */
             return 0;
             }
         
@@ -9582,7 +9654,17 @@ static int mn_windowsFileGetPos( int  inFD ) {
 int mingin_startWritePersistData( const char  *inStoreName ) {
     
     return mn_windowsFileOpenWrite( mn_settingsDirName,
-                                    inStoreName );
+                                    inStoreName,
+                                    0 );
+    }
+
+
+
+int mingin_startAppendPersistData( const char  *inStoreName ) {
+    
+    return mn_windowsFileOpenWrite( mn_settingsDirName,
+                                    inStoreName,
+                                    1 );
     }
 
 
@@ -10959,9 +11041,14 @@ MinginButton mingin_getLastButtonPressed( void ) {
 
 
 int mingin_startWritePersistData( const char  *inStoreName ) {
-    /* suppress  warning */
-    if( inStoreName[0] == '\0' ) {
-        }
+    (void) inStoreName;
+    return -1;
+    }
+
+
+
+int mingin_startAppendPersistData( const char  *inStoreName ) {
+    (void) inStoreName;
     return -1;
     }
 

@@ -2773,6 +2773,32 @@ int getScore( BoardState *inState ) {
 
 
 
+static int countPiecesLeft( BoardState  *inState ) {
+    
+    int   y;
+    int   x;
+    int   count  =  0;
+    
+    for( y = 0;
+         y < BH;
+         y ++ ) {
+        
+        for( x = 0;
+             x < BW;
+             x ++ ) {
+
+            if( inState->grid[ y ][ x ] == noPiece ) {
+                continue;
+                }
+            count ++;
+            }
+        }
+    
+    return count;
+    }
+
+
+
 /* returns color of lone king, or -1 if neither/both alone */
 static int isKingAlone( BoardState  *inState,
                         int         *outKingX,
@@ -2945,6 +2971,105 @@ static char findPiece( BoardState  *inState,
     return 0;
     }
 
+
+
+static int computePawnDistScoreMod( BoardState  *inState ) {
+    int  wKingX;
+    int  wKingY;
+                                
+    int  bKingX;
+    int  bKingY;
+
+    int  wClosePawn  =  BW * BW + BH * BH;
+    int  bClosePawn  =  BW * BW + BH * BH;
+
+    char wAnyPawn    =  0;
+    char bAnyPawn    =  0;
+
+    if( findPiece( inState,
+                   (ChessPiece)( CHESS_WHITE | king ),
+                   &wKingY,
+                   &wKingX )
+        &&
+        findPiece( inState,
+                   (ChessPiece)( CHESS_BLACK | king ),
+                   &bKingY,
+                   &bKingX ) ) {
+
+        /* both kings exist */
+        int          pY;
+        int          pX;
+
+        /* ignore pawns in first or last row
+           king should always attack from behind the pawns */
+        for( pY = 1;
+             pY < BH - 1;
+             pY   ++ ) {
+
+            for( pX = 0;
+                 pX < BH;
+                 pX   ++ ) {
+
+                ChessPiece  pP  =  inState->grid[ pY ][ pX ];
+
+                ChessPiece  pT  =  pP & CHESS_TYPE_MASK;
+                                            
+                if( pT == pawn
+                    ||
+                    pT == doublingPawn
+                    ||
+                    pT == laserPawn ) {
+
+                    ChessPiece  pC  =
+                        pP & CHESS_COLOR_MASK;
+                    
+                    if( pC == CHESS_WHITE ) {
+
+                        int  dX  =  pX - bKingX;
+                        /* target square in front */
+                        int  dY  =  ( pY + 1 ) - bKingY;
+
+                        int  dist  =  dX * dX + dY * dY;
+
+                        if( dist < bClosePawn ) {
+                            bClosePawn = dist;
+                            }
+
+                        wAnyPawn = 1;
+                        }
+                    else {
+                        int  dX  = pX - wKingX;
+                        /* target square behind */
+                        int  dY  = ( pY - 1 ) - wKingY;
+                        
+                        int  dist  =  dX * dX + dY * dY;
+
+                        if( dist < wClosePawn ) {
+                            wClosePawn = dist;
+                            }
+                        
+                        bAnyPawn = 1;
+                        }
+                    }
+                }
+            }
+        }
+
+    if( ! wAnyPawn
+        &&
+        ! bAnyPawn ) {
+        return 0;
+        }
+
+    if( ! wAnyPawn ) {
+        bClosePawn = 0;
+        }
+    if( ! bAnyPawn ) {
+        wClosePawn = 0;
+        }
+
+    return  ( bClosePawn - wClosePawn );
+    }
 
 
 
@@ -3145,7 +3270,7 @@ static char getGreedyDepthMove( BoardState  *inState,
        reach.... this is an 8x savings */
     int             kingReachableCount       =  0;
     char            kingReachableCountValid  =  0;
-
+    int             piecesLeft               =  countPiecesLeft( inState );
 
     if( inOurDepth == 0 ) {
 
@@ -3593,7 +3718,23 @@ static char getGreedyDepthMove( BoardState  *inState,
                                 
                                     }
                                 }
+
+
+                            if( piecesLeft <= 6 ) {
+                                /* maybe lone king condition, maybe not,
+                                   but there are very few pieces left
+                                   give bonus for king being closer
+                                   to enemy pawns. */
+
+                                int  mod  = 
+                                    computePawnDistScoreMod(
+                                        &( possibleStates[ inDepthLeft ]
+                                                         [ m ] ) );
+
+                                score += mod;
+                                }
                             }
+                        
 
                         /* weaken scores by search depth, so that distant
                            possibilities with the same score are worth

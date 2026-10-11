@@ -27,6 +27,9 @@ void runStatsLogDeploy( ChessPiece  inPiece );
 void runStatsLogPurchase( ChessPiece  inPiece );
 
 
+void runStatsLogString( const char  *inString );
+
+
 void runStatsNewRun( void );
 
 
@@ -106,6 +109,13 @@ void runStatsLogDeploy( ChessPiece  inPiece ) {
     
     runStatsWriteString( name );
     runStatsWriteString( runStatsSpaces );
+    }
+
+
+
+void runStatsLogString( const char  *inString ) {
+
+    runStatsWriteString( inString );
     }
 
 

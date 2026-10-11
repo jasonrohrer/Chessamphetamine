@@ -1965,6 +1965,8 @@ void maxiginGame_step( char  inFinalStep  ) {
                     endMessageColor = CHESS_WHITE;
                     levelForUnlock = currentLevel;
 
+                    runStatsLogString( "\nwon" );
+
                     /* no more heart gain on positive checkmate */
                     }
                 else {
@@ -1973,6 +1975,8 @@ void maxiginGame_step( char  inFinalStep  ) {
                     endMessageColor = CHESS_BLACK;
                     heartsLose();
                     moneyAddBailout( currentLevel );
+
+                    runStatsLogString( "\nlost" );
                     }
 
                 checkmate = 1;
@@ -2020,6 +2024,8 @@ void maxiginGame_step( char  inFinalStep  ) {
                     explodingEndMessageProgress = 0;
                     endMessageFade = 255;
                     endMessagePreFadeSteps = 0;
+
+                    runStatsLogString( "\ntied" );
                     }
                 }
             else {
@@ -2760,6 +2766,8 @@ void maxiginGame_step( char  inFinalStep  ) {
                     }
                 else {
                     gameOver = 1;
+
+                    runStatsLogString( "\ngameOver" );
 
                     if( deckViewShowing ) {
                         deckViewDone = 1;

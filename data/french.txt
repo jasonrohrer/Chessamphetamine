@@ -136,3 +136,9 @@ addingRookDesc "^Spécial:^ Ajoute 1 aux capacités ^spéciales^ des pièces acc
 
 rocket         "Fusée CCCP"
 rocketDesc     "^Spécial:^ Détruit une pièce ennemie au hasard, puis s’autodétruit"
+
+laserBishop       "Fou laser"
+laserBishopDesc   "^Spécial :^ Tire des lasers en diagonale après déplacement"
+
+laserQueen        "Dame laser"
+laserQueenDesc    "^Spécial :^ Tire des lasers dans toutes les directions après déplacement"

@@ -97,7 +97,9 @@ static  int  rarityColorMapSprite  =  -1;
     V( C, 8,   laserPawn,    rare       )    \
     V( C, 9,   doublingPawn, rare       )    \
     V( C, 10,  addingRook,   legendary  )    \
-    V( C, 11,  rocket,       rare       )
+    V( C, 11,  rocket,       rare       )    \
+    V( C, 12,  laserBishop,  rare       )    \
+    V( C, 13,  laserQueen,   contraband )    \
 
 static  int  pieceRarity[] = {
     MAKE_CHESS_ARRAY( PIECE_RARITY )

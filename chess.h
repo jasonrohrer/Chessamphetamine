@@ -34,6 +34,8 @@ enum{
     doublingPawn,
     addingRook,
     rocket,
+    laserBishop,
+    laserQueen,
     NUM_CHESS_PIECES };
 
 
@@ -364,7 +366,9 @@ static  char        chessRandomPiecesShouldPickWorstMove  =  0;
     V( C, 8,   laserPawn,      2000   ) \
     V( C, 9,   doublingPawn,   2000   ) \
     V( C, 10,  addingRook,     6000   ) \
-    V( C, 11,  rocket,         2000   )
+    V( C, 11,  rocket,         2000   ) \
+    V( C, 12,  laserBishop,    4000   ) \
+    V( C, 13,  laserQueen,    11000   ) \
 
 static int pieceValue[] = {
     MAKE_CHESS_ARRAY( PIECE_VALUE_LIST )
@@ -387,7 +391,9 @@ CHECK_CHESS_ARRAY( pieceValue,
     V( C, 8,   laserPawn,    'o'   ) \
     V( C, 9,   doublingPawn, 'd'   ) \
     V( C, 10,  addingRook,   'a'   ) \
-    V( C, 11,  rocket,       'v'   )
+    V( C, 11,  rocket,       'v'   ) \
+    V( C, 12,  laserBishop,  'x'   ) \
+    V( C, 13,  laserQueen,   'z'   ) \
 
 static char pieceChars[] = {
     MAKE_CHESS_ARRAY( PIECE_CHAR_LIST )
@@ -410,7 +416,9 @@ CHECK_CHESS_ARRAY( pieceChars,
     V( C, 8,   laserPawn,    "laserPawn"    ) \
     V( C, 9,   doublingPawn, "doublingPawn" ) \
     V( C, 10,  addingRook,   "addingRook"   ) \
-    V( C, 11,  rocket,       "rocket"   )
+    V( C, 11,  rocket,       "rocket"       ) \
+    V( C, 12,  laserBishop,  "laserBishop"  ) \
+    V( C, 13,  laserQueen,   "laserQueen"   ) \
 
 static char *pieceNames[] = {
     MAKE_CHESS_ARRAY( PIECE_NAME_LIST )
@@ -1632,6 +1640,340 @@ static int laserRookMove( BoardState     *inState,
 
 
 
+/* same as bishop move, but fires 4-way diag lasers at end */
+static int laserBishopMove( BoardState     *inState,
+                            unsigned char   inPieceColor,
+                            int             inPieceRow,
+                            int             inPieceCol,
+                            char            inMaySkipNonKingCaptureMoves,
+                            unsigned char   outDestRows[BN],
+                            unsigned char   outDestCols[BN],
+                            Captured        outCaptured[BN],
+                            BoardState      outStates  [BN] ) {
+
+    /* diag dirs */
+    static  int  dirs[4][2] = { { -1, -1 },
+                                {  1,  1 },
+                                {  1, -1 },
+                                { -1,  1 } };
+
+    int  maxDist   =  BH - 1;
+    int  i;
+    int  numMoves  =  bishopMove( inState,
+                                  inPieceColor,
+                                  inPieceRow,
+                                  inPieceCol,
+                                  /* do NOT skip non-capture moves in bishop
+                                     call,
+                                     since then we'll miss cases where we
+                                     don't capture with move but capture with
+                                     laser after */
+                                  0,
+                                  outDestRows,
+                                  outDestCols,
+                                  outCaptured,
+                                  outStates );
+    
+    char  hasEffects  =  hasAnySpaceEffects( inState,
+                                             inPieceColor );
+
+    if( BW - 1 > maxDist ) {
+        /* non-square board, consider moves as long as longest side */
+        maxDist = BW - 1;
+        }
+
+    /* fire lasers after moving */
+
+    for( i = 0;
+         i < numMoves;
+         i ++ ) {
+        
+        int          r          =  outDestRows[i];
+        int          c          =  outDestCols[i];
+        BoardState  *s          =  &( outStates[i] );
+        int          v;
+        int          d;
+        int          repeatVal  =  1;
+
+        int          kingHit    =  0;
+
+        if( inMaySkipNonKingCaptureMoves ) {
+            /* check if our basic bishop move already killed the king
+               in that case, we still need to complete firing our lasers,
+               just for that one move, so the move is complete */
+
+            int  cap;
+
+            for( cap = 0;
+                 cap < outCaptured[i].num;
+                 cap   ++ ) {
+
+                if( ( outCaptured[i].pieces[ cap ].p & CHESS_TYPE_MASK )
+                    ==
+                    king ) {
+                    
+                    kingHit = 1;
+                    break;
+                    }
+                }
+            }
+        
+
+        if( hasEffects ) {
+            repeatVal = getTotalEffectsRepeatValue( s,
+                                                    inPieceColor,
+                                                    r,
+                                                    c  );
+            }
+        
+        for( v = 0;
+             v < repeatVal;
+             v++ )
+        for( d = 0;
+             d < 4;
+             d ++ ) {
+
+            int  dist;
+
+            for( dist =  1;
+                 dist <= maxDist;
+                 dist ++ ) {
+                
+                int         dy  =  r + dirs[ d ][ 0 ] * dist;
+                int         dx  =  c + dirs[ d ][ 1 ] * dist;
+                ChessPiece  p;
+                
+                if( dy < 0
+                    ||
+                    dy >= BH ) {
+                    /* hit top/bottom without finding piece to hit */
+                    break;
+                    }
+                if( dx < 0
+                    ||
+                    dx >= BW ) {
+                    /* hit left/right without finding piece to hit */
+                    break;
+                    }
+
+                p = s->grid[ dy ][ dx ];
+                
+                if( p != noPiece ) {
+
+                    if( ( p & CHESS_COLOR_MASK ) == s->nextToMove ) {
+                        /* opponent piece */
+
+                        addCapturedPiece( &( outCaptured[i] ),
+                                          s,
+                                          dy,
+                                          dx );
+                        
+                        /* destroy piece */
+                        s->grid[ dy ][ dx ] = noPiece;
+
+                        if( inMaySkipNonKingCaptureMoves
+                            &&
+                            ( p & CHESS_TYPE_MASK ) == king ) {
+
+                            kingHit = 1;
+                            }
+                        }
+                    /* if it's our piece, we don't destroy it, but
+                       stop laser */
+
+                    /* stop looking in dir after first piece hit */
+                    break;
+                    }
+                }
+
+            }
+
+        if( inMaySkipNonKingCaptureMoves
+            &&
+            kingHit ){
+            /* stop after first move that hits king,
+               but process all pieces hit by the lasers (so that the
+               move is complete) */
+            return i + 1;
+            }
+
+        }
+
+    return numMoves;
+    }
+
+
+
+/* same as queen move, but fires 4-way diag lasers at end */
+static int laserQueenMove( BoardState     *inState,
+                            unsigned char   inPieceColor,
+                            int             inPieceRow,
+                            int             inPieceCol,
+                            char            inMaySkipNonKingCaptureMoves,
+                            unsigned char   outDestRows[BN],
+                            unsigned char   outDestCols[BN],
+                            Captured        outCaptured[BN],
+                            BoardState      outStates  [BN] ) {
+
+    /* NSEW dirs
+       +
+       diag dirs */
+    static  int  dirs[8][2] = { { -1,  0 },
+                                {  1,  0 },
+                                {  0, -1 },
+                                {  0,  1 },
+                                { -1, -1 },
+                                {  1,  1 },
+                                {  1, -1 },
+                                { -1,  1 } };
+
+    int  maxDist   =  BH - 1;
+    int  i;
+    int  numMoves  =  queenMove( inState,
+                                 inPieceColor,
+                                 inPieceRow,
+                                 inPieceCol,
+                                 /* do NOT skip non-capture moves in bishop
+                                    call,
+                                    since then we'll miss cases where we
+                                    don't capture with move but capture with
+                                    laser after */
+                                 0,
+                                 outDestRows,
+                                 outDestCols,
+                                 outCaptured,
+                                 outStates );
+    
+    char  hasEffects  =  hasAnySpaceEffects( inState,
+                                             inPieceColor );
+
+    if( BW - 1 > maxDist ) {
+        /* non-square board, consider moves as long as longest side */
+        maxDist = BW - 1;
+        }
+
+    /* fire lasers after moving */
+
+    for( i = 0;
+         i < numMoves;
+         i ++ ) {
+        
+        int          r          =  outDestRows[i];
+        int          c          =  outDestCols[i];
+        BoardState  *s          =  &( outStates[i] );
+        int          v;
+        int          d;
+        int          repeatVal  =  1;
+
+        int          kingHit    =  0;
+
+        if( inMaySkipNonKingCaptureMoves ) {
+            /* check if our basic bishop move already killed the king
+               in that case, we still need to complete firing our lasers,
+               just for that one move, so the move is complete */
+
+            int  cap;
+
+            for( cap = 0;
+                 cap < outCaptured[i].num;
+                 cap   ++ ) {
+
+                if( ( outCaptured[i].pieces[ cap ].p & CHESS_TYPE_MASK )
+                    ==
+                    king ) {
+                    
+                    kingHit = 1;
+                    break;
+                    }
+                }
+            }
+        
+
+        if( hasEffects ) {
+            repeatVal = getTotalEffectsRepeatValue( s,
+                                                    inPieceColor,
+                                                    r,
+                                                    c  );
+            }
+        
+        for( v = 0;
+             v < repeatVal;
+             v++ )
+        for( d = 0;
+             d < 8;
+             d ++ ) {
+
+            int  dist;
+
+            for( dist =  1;
+                 dist <= maxDist;
+                 dist ++ ) {
+                
+                int         dy  =  r + dirs[ d ][ 0 ] * dist;
+                int         dx  =  c + dirs[ d ][ 1 ] * dist;
+                ChessPiece  p;
+                
+                if( dy < 0
+                    ||
+                    dy >= BH ) {
+                    /* hit top/bottom without finding piece to hit */
+                    break;
+                    }
+                if( dx < 0
+                    ||
+                    dx >= BW ) {
+                    /* hit left/right without finding piece to hit */
+                    break;
+                    }
+
+                p = s->grid[ dy ][ dx ];
+                
+                if( p != noPiece ) {
+
+                    if( ( p & CHESS_COLOR_MASK ) == s->nextToMove ) {
+                        /* opponent piece */
+
+                        addCapturedPiece( &( outCaptured[i] ),
+                                          s,
+                                          dy,
+                                          dx );
+                        
+                        /* destroy piece */
+                        s->grid[ dy ][ dx ] = noPiece;
+
+                        if( inMaySkipNonKingCaptureMoves
+                            &&
+                            ( p & CHESS_TYPE_MASK ) == king ) {
+
+                            kingHit = 1;
+                            }
+                        }
+                    /* if it's our piece, we don't destroy it, but
+                       stop laser */
+
+                    /* stop looking in dir after first piece hit */
+                    break;
+                    }
+                }
+
+            }
+
+        if( inMaySkipNonKingCaptureMoves
+            &&
+            kingHit ){
+            /* stop after first move that hits king,
+               but process all pieces hit by the lasers (so that the
+               move is complete) */
+            return i + 1;
+            }
+
+        }
+
+    return numMoves;
+    }
+
+
+
 /* same as pawn move, but fires 1 laser at end */
 static int laserPawnMove( BoardState     *inState,
                           unsigned char   inPieceColor,
@@ -1923,7 +2265,9 @@ static int rocketMove( BoardState     *inState,
     V( C, 8,   laserPawn,    laserPawnMove ) \
     V( C, 9,   doublingPawn, pawnMove      ) \
     V( C, 10,  addingRook,   rookMove      ) \
-    V( C, 11,  rocket,       rocketMove    )
+    V( C, 11,  rocket,       rocketMove    ) \
+    V( C, 12,  laserBishop,  laserBishopMove ) \
+    V( C, 13,  laserQueen,   laserQueenMove  ) \
 
 static PieceMoveFunction moveFunctions[] = {
     MAKE_CHESS_ARRAY( MOVE_FUNCTION_LIST )
@@ -1959,7 +2303,9 @@ CHECK_CHESS_ARRAY( moveFunctions,
     V( C, 8,   laserPawn,    0 )        \
     V( C, 9,   doublingPawn, 0 )        \
     V( C, 10,  addingRook,   0 )        \
-    V( C, 11,  rocket,       1 )
+    V( C, 11,  rocket,       1 )        \
+    V( C, 12,  laserBishop,  0 )        \
+    V( C, 13,  laserQueen,   0 )        \
 
 static int repickMoveAtEnd[] = {
     MAKE_CHESS_ARRAY( REPICK_MOVE_AT_END_LIST )
@@ -4590,7 +4936,9 @@ static void addingRookEffects( BoardState             *inState,
     V( C, 8,   laserPawn,    nullEffects         ) \
     V( C, 9,   doublingPawn, doublingPawnEffects ) \
     V( C, 10,  addingRook,   addingRookEffects   ) \
-    V( C, 11,  rocket,       nullEffects         )
+    V( C, 11,  rocket,       nullEffects         ) \
+    V( C, 12,  laserBishop,  nullEffects         ) \
+    V( C, 13,  laserQueen,   nullEffects         ) \
 
 static PieceEffectsFunction effectsFunctions[] = {
     MAKE_CHESS_ARRAY( EFFECTS_FUNCTION_LIST )

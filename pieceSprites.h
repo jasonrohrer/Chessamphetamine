@@ -214,7 +214,9 @@ static  int          pieceOffsetY      [ NUM_CHESS_PIECES ];
     V( C, 8,   laserPawn,    "pawn.tga"         ) \
     V( C, 9,   doublingPawn, "doublingPawn.tga" ) \
     V( C, 10,  addingRook,   "addingRook.tga"   ) \
-    V( C, 11,  rocket,       "rocket.tga"       )
+    V( C, 11,  rocket,       "rocket.tga"       ) \
+    V( C, 12,  laserBishop,  "bishop.tga"       ) \
+    V( C, 13,  laserQueen,   "queen.tga"        ) \
 
 static const char *pieceSpriteFiles[] = {
     MAKE_CHESS_ARRAY( PIECE_SPRITE_FILE_LIST )
@@ -245,7 +247,10 @@ static  int          pieceSpriteExtraHandles[ NUM_CHESS_PIECES ][2];
     V( C, 8,   laserPawn,    ARRAY_PAIR( -1,  0 )  ) \
     V( C, 9,   doublingPawn, ARRAY_PAIR(  0,  0 )  ) \
     V( C, 10,  addingRook,   ARRAY_PAIR(  0,  0 )  ) \
-    V( C, 11,  rocket,       ARRAY_PAIR(  0,  0 )  )
+    V( C, 11,  rocket,       ARRAY_PAIR(  0,  0 )  ) \
+    V( C, 12,  laserBishop,  ARRAY_PAIR(  0,  0 )  ) \
+    V( C, 13,  laserQueen,   ARRAY_PAIR(  6,  6 )  ) \
+
 
 static int pieceExtraOffsetY[][2] = {
     MAKE_CHESS_ARRAY( PIECE_EXTRA_OFFSET_Y_LIST )
@@ -270,7 +275,12 @@ CHECK_CHESS_ARRAY( pieceExtraOffsetY,
                                          "pawnLasersBlack.tga" )  ) \
     V( C, 9,   doublingPawn, ARRAY_PAIR( "", "" )  )                \
     V( C, 10,  addingRook,   ARRAY_PAIR( "", "" )  )                \
-    V( C, 11,  rocket,       ARRAY_PAIR( "", "" )  )
+    V( C, 11,  rocket,       ARRAY_PAIR( "", "" )  )                \
+    V( C, 12,  laserBishop,  ARRAY_PAIR( "bishopLasers.tga",        \
+                                         "bishopLasers.tga"    )  ) \
+    V( C, 13,  laserQueen,   ARRAY_PAIR( "queenLasers.tga",         \
+                                         "queenLasers.tga"     )  ) \
+
 
 static  const char  *pieceSpriteExtraFiles[][2] = {
     MAKE_CHESS_ARRAY( PIECE_EXTRA_SPRITE_LIST )

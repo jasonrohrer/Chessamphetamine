@@ -288,7 +288,9 @@ static void rocketSpecialReturn( BoardState  *inState,
     V( C, 8,   laserPawn,    noSpecialReturn     ) \
     V( C, 9,   doublingPawn, noSpecialReturn     ) \
     V( C, 10,  addingRook,   noSpecialReturn     ) \
-    V( C, 11,  rocket,       rocketSpecialReturn )
+    V( C, 11,  rocket,       rocketSpecialReturn ) \
+    V( C, 12,  laserBishop,  noSpecialReturn     ) \
+    V( C, 13,  laserQueen,   noSpecialReturn     ) \
 
 static SpecialReturnFunction pieceSpecialReturnFunctions[] = {
     MAKE_CHESS_ARRAY( SPECIAL_RETURN_FUNCTION_LIST )

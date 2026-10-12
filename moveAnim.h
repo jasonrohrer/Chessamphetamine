@@ -170,36 +170,54 @@ static  int          laserShortSprites    [4];
 static  int          laserShortGlowSprites[4];
 
 
-static  const char  *laserMidSpriteNames  [2] = { "laserHorMid.tga",
-                                                  "laserVertMid.tga" };
-static  const char  *laserMidGlowNames    [2] = { "laserHorMidGlow.tga",
-                                                  "laserVertMidGlow.tga" };
-static  int          laserMidSprites      [2];
-static  int          laserMidGlowSprites  [2];
+static  const char  *laserMidSpriteNames  [4] = { "laserHorMid.tga",
+                                                  "laserVertMid.tga",
+                                                  "laserDiagLeftUpMid.tga",
+                                                  "laserDiagRightUpMid.tga" };
+static  const char  *laserMidGlowNames    [4] =
+                         { "laserHorMidGlow.tga",
+                           "laserVertMidGlow.tga",
+                           "laserDiagLeftUpMidGlow.tga",
+                           "laserDiagRightUpMidGlow.tga"  };
+
+static  int          laserMidSprites      [4];
+static  int          laserMidGlowSprites  [4];
 
 
 
-static  const char  *laserStartSpriteNames[4] = { "laserLeftStart.tga",
+static  const char  *laserStartSpriteNames[6] = { "laserLeftStart.tga",
                                                   "laserRightStart.tga",
                                                   "laserUpStart.tga",
-                                                  "laserDownStart.tga" };
-static  const char  *laserStartGlowNames  [4] = { "laserLeftStartGlow.tga",
-                                                  "laserRightStartGlow.tga",
-                                                  "laserUpStartGlow.tga",
-                                                  "laserDownStartGlow.tga" };
+                                                  "laserDownStart.tga",
+                                                  "laserDiagLeftUpStart.tga",
+                                                  "laserDiagRightUpStart.tga" };
+static  const char  *laserStartGlowNames  [6] =
+                         { "laserLeftStartGlow.tga",
+                           "laserRightStartGlow.tga",
+                           "laserUpStartGlow.tga",
+                           "laserDownStartGlow.tga",
+                           "laserDiagLeftUpStartGlow.tga",
+                           "laserDiagRightUpStartGlow.tga" };
 
-static  const char  *laserEndSpriteNames  [4] = { "laserLeftEnd.tga",
+static  const char  *laserEndSpriteNames  [6] = { "laserLeftEnd.tga",
                                                   "laserRightEnd.tga",
                                                   "laserUpEnd.tga",
-                                                  "laserDownEnd.tga" };
-static  const char  *laserEndGlowNames    [4] = { "laserLeftEndGlow.tga",
-                                                  "laserRightEndGlow.tga",
-                                                  "laserUpEndGlow.tga",
-                                                  "laserDownEndGlow.tga" };
-static  int          laserStartSprites    [4];
-static  int          laserStartGlowSprites[4];
-static  int          laserEndSprites      [4];
-static  int          laserEndGlowSprites  [4];
+                                                  "laserDownEnd.tga",
+                                                  "laserDiagLeftUpEnd.tga",
+                                                  "laserDiagRightUpEnd.tga" };
+
+static  const char  *laserEndGlowNames    [6] =
+                         { "laserLeftEndGlow.tga",
+                           "laserRightEndGlow.tga",
+                           "laserUpEndGlow.tga",
+                           "laserDownEndGlow.tga",
+                           "laserDiagLeftUpEndGlow.tga",
+                           "laserDiagRightUpEndGlow.tga" };
+
+static  int          laserStartSprites    [6];
+static  int          laserStartGlowSprites[6];
+static  int          laserEndSprites      [6];
+static  int          laserEndGlowSprites  [6];
 
 
 static  int          laserBackGlintSprite;
@@ -237,12 +255,9 @@ void moveAnimInit( void ) {
     rocketSound = maxigin_initSoundEffect( "rocket_sd_25.wav" );
 
     for( i = 0;
-         i < 4;
+         i < 6;
          i ++ ) {
-
-        laserShortSprites[i] = maxigin_initSprite( laserShortSpriteNames[i] );
-        laserShortGlowSprites[i] = maxigin_initSprite( laserShortGlowNames[i] );
-
+        
         laserStartSprites[i] = maxigin_initSprite( laserStartSpriteNames[i] );
         laserStartGlowSprites[i] = maxigin_initSprite( laserStartGlowNames[i] );
 
@@ -251,8 +266,11 @@ void moveAnimInit( void ) {
         }
 
     for( i = 0;
-         i < 2;
+         i < 4;
          i ++ ) {
+
+        laserShortSprites[i] = maxigin_initSprite( laserShortSpriteNames[i] );
+        laserShortGlowSprites[i] = maxigin_initSprite( laserShortGlowNames[i] );
 
         laserMidSprites[i] = maxigin_initSprite( laserMidSpriteNames[i] );
         laserMidGlowSprites[i] = maxigin_initSprite( laserMidGlowNames[i] );
@@ -3107,7 +3125,9 @@ static void multiPhaseDraw( int            inBoardCenterX,
     V( C, 8,   laserPawn,    laserPieceInit   ) \
     V( C, 9,   doublingPawn, defaultPieceInit ) \
     V( C, 10,  addingRook,   defaultPieceInit ) \
-    V( C, 11,  rocket,       rocketPieceInit  )
+    V( C, 11,  rocket,       rocketPieceInit  ) \
+    V( C, 12,  laserBishop,  laserPieceInit   ) \
+    V( C, 13,  laserQueen,   laserPieceInit   ) \
 
 static MoveAnimInitFunction initFunctions[] = {
     MAKE_CHESS_ARRAY( INIT_FUNCTION_LIST )
@@ -3131,7 +3151,9 @@ CHECK_CHESS_ARRAY( initFunctions,
     V( C, 8,   laserPawn,    multiPhaseStep   ) \
     V( C, 9,   doublingPawn, defaultPieceStep ) \
     V( C, 10,  addingRook,   defaultPieceStep ) \
-    V( C, 11,  rocket,       multiPhaseStep  )
+    V( C, 11,  rocket,       multiPhaseStep   ) \
+    V( C, 12,  laserBishop,  multiPhaseStep   ) \
+    V( C, 13,  laserQueen,   multiPhaseStep   ) \
 
 static MoveAnimStepFunction stepFunctions[] = {
     MAKE_CHESS_ARRAY( STEP_FUNCTION_LIST )
@@ -3154,7 +3176,9 @@ CHECK_CHESS_ARRAY( stepFunctions,
     V( C, 8,   laserPawn,    multiPhaseDraw   ) \
     V( C, 9,   doublingPawn, defaultPieceDraw ) \
     V( C, 10,  addingRook,   defaultPieceDraw ) \
-    V( C, 11,  rocket,       multiPhaseDraw  )
+    V( C, 11,  rocket,       multiPhaseDraw   ) \
+    V( C, 12,  laserBishop,  multiPhaseDraw   ) \
+    V( C, 13,  laserQueen,   multiPhaseDraw   ) \
 
 static MoveAnimDrawFunction drawFunctions[] = {
     MAKE_CHESS_ARRAY( DRAW_FUNCTION_LIST )

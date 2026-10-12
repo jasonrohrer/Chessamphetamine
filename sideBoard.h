@@ -166,11 +166,13 @@ static  char           sbPurchaseBlocked      =   0;
     V( C, 4,   rook,         5   ) \
     V( C, 5,   queen,        6   ) \
     V( C, 6,   king,         0   ) \
-    V( C, 7,   laserRook,    6  ) \
+    V( C, 7,   laserRook,    6   ) \
     V( C, 8,   laserPawn,    3   ) \
     V( C, 9,   doublingPawn, 2   ) \
     V( C, 10,  addingRook,   6   ) \
-    V( C, 11,  rocket,       2   )
+    V( C, 11,  rocket,       2   ) \
+    V( C, 12,  laserBishop,  5   ) \
+    V( C, 13,  laserQueen,   8   ) \
 
 static int pieceDeploymentCost[] = {
     MAKE_CHESS_ARRAY( PIECE_DEPLOYMENT_COST_LIST )

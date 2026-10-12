@@ -74,7 +74,9 @@ void drawDescriptionFrame( int  inCenterX,
     V( C, 8,   laserPawn,    "laserPawn"    ) \
     V( C, 9,   doublingPawn, "doublingPawn" ) \
     V( C, 10,  addingRook,   "addingRook"   ) \
-    V( C, 11,  rocket,       "rocket"       )
+    V( C, 11,  rocket,       "rocket"       ) \
+    V( C, 12,  laserBishop,  "laserBishop"  ) \
+    V( C, 13,  laserQueen,   "laserQueen"   ) \
 
 static  const char  *pieceNameKeyStrings[] = {
     MAKE_CHESS_ARRAY( PIECE_NAME_KEY_STRING_LIST )
@@ -100,7 +102,9 @@ static  int  pieceNameKeys[ NUM_CHESS_PIECES ];
     V( C, 8,   laserPawn,    "laserPawnDesc"    ) \
     V( C, 9,   doublingPawn, "doublingPawnDesc" ) \
     V( C, 10,  addingRook,   "addingRookDesc"   ) \
-    V( C, 11,  rocket,       "rocketDesc"       )
+    V( C, 11,  rocket,       "rocketDesc"       ) \
+    V( C, 12,  laserBishop,  "laserBishopDesc"  ) \
+    V( C, 13,  laserQueen,   "laserQueenDesc"   ) \
 
 static  const char  *pieceDescriptionKeyStrings[] = {
     MAKE_CHESS_ARRAY( PIECE_DESCRIPTION_KEY_STRING_LIST )

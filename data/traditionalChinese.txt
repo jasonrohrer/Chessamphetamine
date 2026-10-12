@@ -136,3 +136,10 @@ addingRookDesc "^特殊：^直線可達的棋子^特殊^能力加一"
 
 rocket         "蘇聯火箭"
 rocketDesc     "^特殊：^隨機摧毀一枚敵方棋子，然後自爆"
+
+
+laserBishop       "雷射象"
+laserBishopDesc   "^特殊：^移動後沿斜線發射雷射"
+
+laserQueen        "雷射后"
+laserQueenDesc    "^特殊：^移動後向八方發射雷射"

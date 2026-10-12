@@ -128,7 +128,9 @@ char moneyGetSubMessageShowing( void );
     V( C, 8,   laserPawn,    NON_PAWN_CAPTURE_VALUE   ) \
     V( C, 9,   doublingPawn, NON_PAWN_CAPTURE_VALUE   ) \
     V( C, 10,  addingRook,   NON_PAWN_CAPTURE_VALUE   ) \
-    V( C, 11,  rocket,       NON_PAWN_CAPTURE_VALUE   )
+    V( C, 11,  rocket,       NON_PAWN_CAPTURE_VALUE   ) \
+    V( C, 12,  laserBishop,  NON_PAWN_CAPTURE_VALUE   ) \
+    V( C, 13,  laserQueen,   NON_PAWN_CAPTURE_VALUE   ) \
 
 static int pieceCaptureMoney[] = {
     MAKE_CHESS_ARRAY( PIECE_CAPTURE_MONEY_LIST )

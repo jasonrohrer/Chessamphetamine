@@ -138,3 +138,10 @@ addingRookDesc "^Special:^ Adds 1 to ^special^ abilities of reachable pieces in 
 
 rocket         "CCCP Rocket"
 rocketDesc     "^Special:^ Destroys a random enemy piece, then destroys itself"
+
+
+laserBishop       "Laser Bishop"
+laserBishopDesc   "^Special:^ Fires lasers in diagonal lines after moving"
+
+laserQueen       "Laser Queen"
+laserQueenDesc   "^Special:^ Fires lasers in all directions after moving"

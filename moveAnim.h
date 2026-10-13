@@ -41,7 +41,7 @@ enum{
 
 #define  NUM_ANIM_PARAMS       5
 
-#define  MAX_PARTICLE_SYSTEMS  4
+#define  MAX_PARTICLE_SYSTEMS  8
 
 
 typedef struct AnimProgress {
@@ -1304,15 +1304,14 @@ static void stepPinch( AnimProgress  *inMoveProgress,
     }
 
 
-/* returns n, s, e, w captured pieces for this phase of anim progress */
+/* returns n, s, e, w (and diag nw, sw, se, ne)
+   captured pieces for this phase of anim progress */
 static void getLaserCaptured( int            inDestR,
                               int            inDestC,
                               Captured      *inCaptured,
                               AnimProgress  *inMoveProgress,
-                              BoardPiece     outLaserCaptured[4],
+                              BoardPiece     outLaserCaptured[8],
                               int           *outSouthCapR ) {
-
-    /* fixme */
 
     int  pn      =  inMoveProgress->phaseNumber;
     int  startC  =  inMoveProgress->params[ pn ][ 0 ];
@@ -1322,7 +1321,7 @@ static void getLaserCaptured( int            inDestR,
     *outSouthCapR = 0;
     
     for( i = 0;
-         i < 4;
+         i < 8;
          i ++ ) {
                 
         outLaserCaptured[i].p = noPiece;
@@ -1335,26 +1334,64 @@ static void getLaserCaptured( int            inDestR,
         int  r  =  inCaptured->pieces[i].row;
         int  c  =  inCaptured->pieces[i].col;
 
-        if( r < inDestR ) {
+        if( r < inDestR
+            &&
+            c == inDestC ) {
             /* north */
             outLaserCaptured[0] = inCaptured->pieces[i];
             continue;
             }
-        if( r > inDestR ) {
+        if( r > inDestR
+            &&
+            c == inDestC ) {
             /* south */
             outLaserCaptured[1] = inCaptured->pieces[i];
             *outSouthCapR       = outLaserCaptured[1].row;
                     
             continue;
             }
-        if( c > inDestC ) {
+        if( c > inDestC
+            &&
+            r == inDestR ) {
             /* east */
             outLaserCaptured[2] = inCaptured->pieces[i];
             continue;
             }
-        if( c < inDestC ) {
+        if( c < inDestC
+            &&
+            r == inDestR ) {
             /* west */
             outLaserCaptured[3] = inCaptured->pieces[i];
+            continue;
+            }
+        
+        /* now diags */
+        if( r < inDestR
+            &&
+            c < inDestC ) {
+            outLaserCaptured[4] = inCaptured->pieces[i];
+            /* nw */
+            continue;
+            }
+        if( r > inDestR
+            &&
+            c < inDestC ) {
+            /* sw */
+            outLaserCaptured[5] = inCaptured->pieces[i];
+            continue;
+            }
+        if( r > inDestR
+            &&
+            c > inDestC ) {
+            /* se */
+            outLaserCaptured[6] = inCaptured->pieces[i];
+            continue;
+            }
+        if( r < inDestR
+            &&
+            c > inDestC ) {
+            /* ne */
+            outLaserCaptured[7] = inCaptured->pieces[i];
             continue;
             }
         }
@@ -1438,7 +1475,7 @@ static char multiPhaseStep( BoardState    *inState,
     else if( p == laser ) {
         if( inMoveProgress->phaseProgress == 0 ) {
 
-            static  BoardPiece  laserCaptured[4];
+            static  BoardPiece  laserCaptured[8];
 
             int     southCapR;
             int     capI;
@@ -1453,14 +1490,18 @@ static char multiPhaseStep( BoardState    *inState,
 
             /* kick off drawing any particles at the hit sites */
             for( capI = 0;
-                 capI < 4;
+                 capI < 8;
                  capI ++ ) {
 
                 int  hitX;
                 int  hitY;
                 int  glintOffsetY  =  -16;
 
-                if( capI == 1 ) {
+                if( capI == 1
+                    ||
+                    capI == 5
+                    ||
+                    capI == 6 ) {
                     /* south capture, glint on back side */
                     glintOffsetY = -14;
                     }
@@ -1860,6 +1901,8 @@ static void drawLaser( int  inBoardCenterX,
     int   sI;
     int   midI;
 
+    char  vFlip  =  0;
+
     int   r;
     int   c;
     int   midRowStart;
@@ -1867,12 +1910,18 @@ static void drawLaser( int  inBoardCenterX,
     
     int   midColStart;
     int   midColEnd;
+
+    int   midRowDelta  =  0;
+    int   midColDelta  =  0;
     
-    int   xOffStart;
-    int   yOffStart;
-    int   xOffEnd;
-    int   yOffEnd; 
-    int   numLaserSteps;
+    int   xOffStart  =  0;
+    int   yOffStart  =  0;
+    int   xOffEnd    =  0;
+    int   yOffEnd    =  0;
+
+    int   yOffMid    =  0;
+    
+    int   numLaserSteps = -1;
     
     int   sourcePosX;
     int   sourcePosY;
@@ -1945,7 +1994,7 @@ static void drawLaser( int  inBoardCenterX,
                 }
             }
         }
-    else {
+    else if( inFromCol == inToCol ) {
         /* vertical */
 
         midI = 1;
@@ -1993,6 +2042,84 @@ static void drawLaser( int  inBoardCenterX,
                 }
             }
         }
+    else if( inFromRow > inToRow ) {
+        /* diag up */
+
+        yOffEnd   = -6;
+        yOffMid   = -12;
+        yOffStart = -22;
+        
+
+        if( inFromCol > inToCol ) {
+            /* left up */
+            midI = 2;
+            sI   = 4;
+
+            xOffStart = -1;
+
+            midRowStart = inFromRow - 1;
+            midRowEnd   = inToRow;
+            midRowDelta = -1;
+            
+            midColStart = inFromCol - 1;
+            midColEnd   = inToCol;
+            midColDelta = -1;
+            }
+        else if( inFromCol < inToCol ) {
+            /* right up */
+            midI = 3;
+            sI   = 5;
+
+            xOffStart = 2;
+            
+            midRowStart = inFromRow - 1;
+            midRowEnd   = inToRow;
+            midRowDelta = -1;
+            
+            midColStart = inFromCol + 1;
+            midColEnd   = inToCol;
+            midColDelta = 1;
+            }
+        }
+    else if( inFromRow < inToRow ) {
+        /* diag down */
+        vFlip = 1;
+
+        yOffEnd   = -23;
+        yOffMid   =  34;
+        yOffStart = -7;
+
+        if( inFromCol > inToCol ) {
+            /* left down */
+            midI = 2;
+            sI   = 4;
+
+            xOffStart = -1;
+
+            midRowStart = inFromRow - 1;
+            midRowEnd   = inToRow;
+            midRowDelta = -1;
+                
+            midColStart = inFromCol - 1;
+            midColEnd   = inToCol;
+            midColDelta = -1;
+            }
+        else if( inFromCol < inToCol ) {
+            /* right down */
+            midI = 3;
+            sI   = 5;
+
+            xOffStart = 2;
+
+            midRowStart = inFromRow -1;
+            midRowEnd   = inToRow;
+            midRowDelta = 1;
+                
+            midColStart = inFromCol + 1;
+            midColEnd   = inToCol;
+            midColDelta = 1;
+            }
+        }  
     
     
 
@@ -2021,6 +2148,8 @@ static void drawLaser( int  inBoardCenterX,
 
     /* else draw tiled laser from start to end with at least
        one mid-section in between */
+
+    maxigin_drawSetSpriteFlipVertical( vFlip );
 
     maxigin_drawResetColor();
             
@@ -2055,7 +2184,7 @@ static void drawLaser( int  inBoardCenterX,
                                 midPosY);
             }
         }
-    else {
+    else if( midI == 1 ) {
         for( r =  midRowStart;
              r <= midRowEnd;
              r ++ ) {
@@ -2074,7 +2203,35 @@ static void drawLaser( int  inBoardCenterX,
 
             maxigin_drawSprite( laserMidSprites[ midI ],
                                 midPosX,
-                                midPosY);
+                                midPosY );
+            }
+        }
+    else {
+        /* diag */
+
+        r =  midRowStart;
+        c =  midColStart;
+
+        while( r != midRowEnd
+               &&
+               c != midColEnd ) {
+
+            int  midPosX;
+            int  midPosY;
+
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  r,
+                                  c,
+                                  &midPosX,
+                                  &midPosY );
+
+            maxigin_drawSprite( laserMidSprites[ midI ],
+                                midPosX,
+                                midPosY + yOffMid );
+
+            r += midRowDelta;
+            c += midColDelta;
             }
         }
     
@@ -2115,7 +2272,7 @@ static void drawLaser( int  inBoardCenterX,
                                 midPosY);
             }
         }
-    else {
+    else if( midI == 1 ) {
         for( r =  midRowStart;
              r <= midRowEnd;
              r ++ ) {
@@ -2137,10 +2294,40 @@ static void drawLaser( int  inBoardCenterX,
                                 midPosY);
             }
         }
+    else {
+        /* diag */
+
+        r =  midRowStart;
+        c =  midColStart;
+
+        while( r != midRowEnd
+               &&
+               c != midColEnd ) {
+
+            int  midPosX;
+            int  midPosY;
+
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  r,
+                                  c,
+                                  &midPosX,
+                                  &midPosY );
+
+            maxigin_drawSprite( laserMidGlowSprites[ midI ],
+                                midPosX,
+                                midPosY + yOffMid );
+
+            r += midRowDelta;
+            c += midColDelta;
+            }
+        }
 
     maxigin_drawToggleAdditive( 0 );
     
     maxigin_drawResetColor();
+    
+    maxigin_drawSetSpriteFlipVertical( 0 );
     }
 
 
@@ -2300,8 +2487,8 @@ static void multiPhaseDraw( int            inBoardCenterX,
         }
     else if( p == laser ) {
 
-        /* n, s, e, w order, with noPiece marking empty spots */
-        static  BoardPiece  laserCaptured[4];
+        /* n, s, e, w, and diag order, with noPiece marking empty spots */
+        static  BoardPiece  laserCaptured[8];
 
         int            laserProgress  =  inMoveProgress->phaseProgress;
         DrawBoardMask  mask;
@@ -2386,6 +2573,30 @@ static void multiPhaseDraw( int            inBoardCenterX,
                        inMove->endPos[1],
                        laserCaptured[0].row,
                        laserCaptured[0].col,
+                       laserProgress );
+            }
+        if( laserCaptured[4].p != noPiece ) {
+
+            /* draw left/up laser behind main piece */
+
+            drawLaser( inBoardCenterX,
+                       inBoardCenterY,
+                       inMove->endPos[0],
+                       inMove->endPos[1],
+                       laserCaptured[4].row,
+                       laserCaptured[4].col,
+                       laserProgress );
+            }
+        if( laserCaptured[7].p != noPiece ) {
+
+            /* draw right/up laser behind main piece */
+
+            drawLaser( inBoardCenterX,
+                       inBoardCenterY,
+                       inMove->endPos[0],
+                       inMove->endPos[1],
+                       laserCaptured[7].row,
+                       laserCaptured[7].col,
                        laserProgress );
             }
             
@@ -2493,7 +2704,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
             }
             
 
-        /* draw remaining 4 lasers on top of those pieces */
+        /* draw remaining W/E/S lasers on top of those pieces */
 
         for( i = 1;
              i < 4;
@@ -2509,7 +2720,27 @@ static void multiPhaseDraw( int            inBoardCenterX,
                            laserProgress );
                 }
             }
-            
+
+        /* south diags */
+        if( laserCaptured[5].p != noPiece ) {
+            drawLaser( inBoardCenterX,
+                       inBoardCenterY,
+                       inMove->endPos[0],
+                       inMove->endPos[1],
+                       laserCaptured[5].row,
+                       laserCaptured[5].col,
+                       laserProgress );
+            }
+        if( laserCaptured[6].p != noPiece ) {
+            drawLaser( inBoardCenterX,
+                       inBoardCenterY,
+                       inMove->endPos[0],
+                       inMove->endPos[1],
+                       laserCaptured[6].row,
+                       laserCaptured[6].col,
+                       laserProgress );
+            }
+
 
         /* now draw bottom section on top */
         if( destR < BH - 1 ) {

@@ -764,7 +764,10 @@ static int getLaserHitDepth( int          inPieceRow,
                              HitBatches  *inHit ) {
     
     /* n s e w */
-    int  dirCounts[4]  =  {  0,  0,  0,  0 };
+    int  dirCounts [4]  =  { 0,  0,  0,  0 };
+    /* four diag directions too */
+    int  diagCounts[4]  =  { 0,  0,  0,  0 };
+    
     int  i;
     int  max;
 
@@ -790,28 +793,63 @@ static int getLaserHitDepth( int          inPieceRow,
             /* direct non-laser capture */
             continue;
             }
-        
-        if( r < inPieceRow ) {
+
+        /* nsew directions */
+        if( r < inPieceRow
+            &&
+            c == inPieceCol ) {
             oldDirCount = dirCounts[0];
             dirCounts[0] ++;
             }
-        else if( r > inPieceRow ) {
+        else if( r > inPieceRow
+                 &&
+                 c == inPieceCol ) {
             oldDirCount = dirCounts[1];
             dirCounts[1] ++;
             }
-        else if( c < inPieceCol ) {
+        else if( c < inPieceCol
+                 &&
+                 r == inPieceRow ) {
             oldDirCount = dirCounts[3];
             dirCounts[3] ++;
             }
-        else if( c > inPieceCol ) {
+        else if( c > inPieceCol
+                 &&
+                 r == inPieceRow ) {
             oldDirCount = dirCounts[2];
             dirCounts[2] ++;
+            }
+        /* now diag directions */
+        else if( r < inPieceRow
+                 &&
+                 c < inPieceCol ) {
+            oldDirCount = diagCounts[0];
+            diagCounts[0] ++;
+            }
+        else if( r > inPieceRow
+                 &&
+                 c < inPieceCol ) {
+            oldDirCount = diagCounts[1];
+            diagCounts[1] ++;
+            }
+        else if( r > inPieceRow
+                 &&
+                 c > inPieceCol ) {
+            oldDirCount = diagCounts[2];
+            diagCounts[2] ++;
+            }
+        else if( r < inPieceRow
+                 &&
+                 c > inPieceCol ) {
+            oldDirCount = diagCounts[3];
+            diagCounts[3] ++;
             }
 
         /* update our batches
            This is a tricky way to do this, where oldDirCount
-           tells us which batch to update... we can have up to four
-           pieces in each batch, one from each NSEW direction */
+           tells us which batch to update... we can have up to eight
+           pieces in each batch, one from each NSEW direction,
+           and one from each diagonal */
         if( inHit->startC[ oldDirCount ] == -1 ) {
             inHit->startC[ oldDirCount ] = i;
             }
@@ -826,6 +864,9 @@ static int getLaserHitDepth( int          inPieceRow,
          i ++ ) {
         if( dirCounts[i] > max ) {
             max = dirCounts[i];
+            }
+        if( diagCounts[i] > max ) {
+            max = diagCounts[i];
             }
         }
     

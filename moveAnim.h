@@ -1189,7 +1189,7 @@ static void getCaptureMidState( BoardState  *inState,
         
         /* promote to queen now */
         outMidState->grid[ inMove->endPos  [0] ]
-                         [ inMove->endPos  [1] ] = movingC | queen;
+                         [ inMove->endPos  [1] ] = movingC | laserQueen;
         }
     else {
         /* all other special pieces work the same as laser rook for now

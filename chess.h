@@ -2025,6 +2025,27 @@ static int laserPawnMove( BoardState     *inState,
         int          v;
         int          repeatVal  =  1;
 
+        if( outDestRows[i] == 0
+            ||
+            outDestRows[i] == BH - 1 ) {
+
+            /* last row move, check for promotion to queen
+               that regular pawn move would do */
+
+            if( ( s->grid[ outDestRows[i] ][ outDestCols[i] ]
+                  & CHESS_TYPE_MASK )
+                ==
+                queen ) {
+
+                /* laser pawn promotes to laser queen */
+                ChessPiece  pC  =
+                    s->grid[ outDestRows[i] ][ outDestCols[i] ]
+                    & CHESS_COLOR_MASK;
+
+                s->grid[ outDestRows[i] ][ outDestCols[i] ] =
+                    laserQueen | pC;
+                }
+            }
 
         if( hasEffects ) {
             repeatVal = getTotalEffectsRepeatValue( s,

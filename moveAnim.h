@@ -1311,14 +1311,16 @@ static void getLaserCaptured( int            inDestR,
                               Captured      *inCaptured,
                               AnimProgress  *inMoveProgress,
                               BoardPiece     outLaserCaptured[8],
-                              int           *outSouthCapR ) {
+                              int            outSouthCapR[3] ) {
 
     int  pn      =  inMoveProgress->phaseNumber;
     int  startC  =  inMoveProgress->params[ pn ][ 0 ];
     int  endC    =  inMoveProgress->params[ pn ][ 1 ];
     int  i;
 
-    *outSouthCapR = 0;
+    outSouthCapR[0] = 0;
+    outSouthCapR[1] = 0;
+    outSouthCapR[2] = 0;
     
     for( i = 0;
          i < 8;
@@ -1346,7 +1348,7 @@ static void getLaserCaptured( int            inDestR,
             c == inDestC ) {
             /* south */
             outLaserCaptured[1] = inCaptured->pieces[i];
-            *outSouthCapR       = outLaserCaptured[1].row;
+            outSouthCapR[0]     = outLaserCaptured[1].row;
                     
             continue;
             }
@@ -1378,6 +1380,8 @@ static void getLaserCaptured( int            inDestR,
             c < inDestC ) {
             /* sw */
             outLaserCaptured[5] = inCaptured->pieces[i];
+            outSouthCapR[1]     = outLaserCaptured[5].row;
+            
             continue;
             }
         if( r > inDestR
@@ -1385,6 +1389,8 @@ static void getLaserCaptured( int            inDestR,
             c > inDestC ) {
             /* se */
             outLaserCaptured[6] = inCaptured->pieces[i];
+            outSouthCapR[2]     = outLaserCaptured[5].row;
+
             continue;
             }
         if( r < inDestR
@@ -1477,7 +1483,7 @@ static char multiPhaseStep( BoardState    *inState,
 
             static  BoardPiece  laserCaptured[8];
 
-            int     southCapR;
+            int     southCapR[3];
             int     capI;
             
             getLaserCaptured( inMove->endPos[0],
@@ -1485,7 +1491,7 @@ static char multiPhaseStep( BoardState    *inState,
                               inCaptured,
                               inMoveProgress,
                               laserCaptured,
-                              &southCapR );
+                              southCapR );
              
 
             /* kick off drawing any particles at the hit sites */
@@ -2498,7 +2504,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
         int            destX;
         int            destY;
         ChessPiece     mainP;
-        int            southCapR      =  0;
+        int            southCapR[3]   =  { 0, 0, 0 };
         int            southCapX      =  0;
         int            southCapY      =  0;
         int            startC;
@@ -2512,7 +2518,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
                           inCaptured,
                           inMoveProgress,
                           laserCaptured,
-                          &southCapR );
+                          southCapR );
 
         startC = inMoveProgress->params[ pn ][ 0 ];
 
@@ -2666,7 +2672,7 @@ static void multiPhaseDraw( int            inBoardCenterX,
                 
                 getRowRangeMask( &mask,
                                  destR + 1,
-                                 southCapR - 1 );
+                                 southCapR[0] - 1 );
                 }
             else {
                 getRowsBelowMask( &mask,
@@ -2753,12 +2759,12 @@ static void multiPhaseDraw( int            inBoardCenterX,
                 int  glintOffsetY  =  -14;
 
                 getRowMask( &mask,
-                            southCapR );
+                            southCapR[0] );
 
                 /* don't draw piece itself, since it's shadow already drawn
                    above */
                 clearMaskSpot( &mask,
-                               southCapR,
+                               southCapR[0],
                                destC );
 
                 drawBoardState( &midState,
@@ -2797,10 +2803,10 @@ static void multiPhaseDraw( int            inBoardCenterX,
                 maxigin_drawResetColor();
                 maxigin_drawToggleAdditive( 0 );
 
-                if( southCapR < BH - 1  ) {
+                if( southCapR[0] < BH - 1  ) {
 
                     getRowsBelowMask( &mask,
-                                      southCapR + 1 );
+                                      southCapR[0] + 1 );
                     
                     drawBoardState( &midState,
                                     0,

@@ -1389,7 +1389,7 @@ static void getLaserCaptured( int            inDestR,
             c > inDestC ) {
             /* se */
             outLaserCaptured[6] = inCaptured->pieces[i];
-            outSouthCapR[2]     = outLaserCaptured[5].row;
+            outSouthCapR[2]     = outLaserCaptured[6].row;
 
             continue;
             }
@@ -2659,41 +2659,10 @@ static void multiPhaseDraw( int            inBoardCenterX,
             maxigin_drawResetColor();
             maxigin_drawToggleAdditive( 0 );
             }
-                
 
 
-        /* draw everything to south,
-           not including row of south captured piece */
-
-        if( destR < BH - 1 ) {
-                
-
-            if( laserCaptured[1].p != noPiece ) {
-                
-                getRowRangeMask( &mask,
-                                 destR + 1,
-                                 southCapR[0] - 1 );
-                }
-            else {
-                getRowsBelowMask( &mask,
-                                  destR + 1 );
-                }
-            
-            
-            drawBoardState( &midState,
-                            0,
-                            0,
-                            0,
-                            0,
-                            inMove,
-                            0,
-                            0,
-                            inBoardCenterX,
-                            inBoardCenterY,
-                            &mask,
-                            0 );
-            }
-            
+        /* draw shadows for south-ish laser-destroyed pieces beneath laser
+           that hits them */
 
         if( laserCaptured[1].p != noPiece ) {
 
@@ -2708,11 +2677,39 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                  southCapX,
                                  southCapY );
             }
+
+        if( laserCaptured[5].p != noPiece ) {
+
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  laserCaptured[5].row,
+                                  laserCaptured[5].col,
+                                  &southCapX,
+                                  &southCapY );
+
+            drawPieceShadowOnly( laserCaptured[5].p,
+                                 southCapX,
+                                 southCapY );
+            }
+
+        if( laserCaptured[6].p != noPiece ) {
+
+            boardGetSquareCenter( inBoardCenterX,
+                                  inBoardCenterY,
+                                  laserCaptured[6].row,
+                                  laserCaptured[6].col,
+                                  &southCapX,
+                                  &southCapY );
+
+            drawPieceShadowOnly( laserCaptured[6].p,
+                                 southCapX,
+                                 southCapY );
+            }
             
 
-        /* draw remaining W/E/S lasers on top of those pieces */
+        /* draw remaining E/W lasers on top of those pieces */
 
-        for( i = 1;
+        for( i = 2;
              i < 4;
              i ++ ) {
                 
@@ -2727,45 +2724,69 @@ static void multiPhaseDraw( int            inBoardCenterX,
                 }
             }
 
-        /* south diags */
-        if( laserCaptured[5].p != noPiece ) {
-            drawLaser( inBoardCenterX,
-                       inBoardCenterY,
-                       inMove->endPos[0],
-                       inMove->endPos[1],
-                       laserCaptured[5].row,
-                       laserCaptured[5].col,
-                       laserProgress );
-            }
-        if( laserCaptured[6].p != noPiece ) {
-            drawLaser( inBoardCenterX,
-                       inBoardCenterY,
-                       inMove->endPos[0],
-                       inMove->endPos[1],
-                       laserCaptured[6].row,
-                       laserCaptured[6].col,
-                       laserProgress );
-            }
 
 
         /* now draw bottom section on top */
         if( destR < BH - 1 ) {
-                
 
-            if( laserCaptured[1].p != noPiece ) {
+            /* draw one row at a time, so lasers can be interleaved */
+            int  nextRow;
 
-                /* row with south captured piece */
 
+            for( nextRow = destR + 1;
+                 nextRow < BH;
+                 nextRow   ++ ) {
+
+                int  cI            =  - 1;
                 int  glintOffsetY  =  -14;
 
-                getRowMask( &mask,
-                            southCapR[0] );
+                /* fixme:  this doesn't work if they are in same row */
 
-                /* don't draw piece itself, since it's shadow already drawn
-                   above */
-                clearMaskSpot( &mask,
-                               southCapR[0],
-                               destC );
+                if( southCapR[ 0 ] == nextRow ) {
+                    cI = 1;
+                    }
+                else if( southCapR[ 1 ] == nextRow ) {
+                    cI = 5;
+                    }
+                else if( southCapR[ 2 ] == nextRow ) {
+                    cI = 6;
+                    }
+
+
+                if( cI != -1
+                    &&
+                    laserCaptured[cI].p != noPiece ) {
+
+                    /* draw south-facing laser leading up behind
+                       this row */
+
+                    drawLaser( inBoardCenterX,
+                               inBoardCenterY,
+                               inMove->endPos[0],
+                               inMove->endPos[1],
+                               laserCaptured[cI].row,
+                               laserCaptured[cI].col,
+                               laserProgress );
+                    }
+
+
+                /* draw row */
+                getRowMask( &mask,
+                            nextRow );
+
+                
+                if( cI != -1
+                    &&
+                    laserCaptured[cI].p != noPiece ) {
+
+                    /* don't draw piece itself, since it's shadow already drawn
+                       above */
+                    
+                    clearMaskSpot( &mask,
+                                   laserCaptured[cI].row,
+                                   laserCaptured[cI].col );
+                    }
+                
 
                 drawBoardState( &midState,
                                 0,
@@ -2780,47 +2801,41 @@ static void multiPhaseDraw( int            inBoardCenterX,
                                 &mask,
                                 0 );
 
-                /* now draw rest of piece, above shadow drawn behind
-                   laser before */
-                drawPieceBaseAndGlowOnly( laserCaptured[1].p,
-                                          southCapX,
-                                          southCapY );
+                if( cI != -1
+                    &&
+                    laserCaptured[cI].p != noPiece ) {
+                    /* now draw rest of piece, above shadow drawn behind
+                       laser before */
 
-                /* now draw back-side glint */
-
-                maxigin_drawResetColor();
-
-                maxigin_drawSprite( laserBackGlintSprite,
-                                    southCapX,
-                                    southCapY + glintOffsetY );
-                maxigin_drawToggleAdditive( 1 );
-
-                maxigin_drawSetAlpha( getLaserGlowFade( laserProgress ) );
-
-                maxigin_drawSprite( laserBackGlintGlow,
-                                    southCapX,
-                                    southCapY + glintOffsetY );
-                maxigin_drawResetColor();
-                maxigin_drawToggleAdditive( 0 );
-
-                if( southCapR[0] < BH - 1  ) {
-
-                    getRowsBelowMask( &mask,
-                                      southCapR[0] + 1 );
+                    boardGetSquareCenter( inBoardCenterX,
+                                          inBoardCenterY,
+                                          laserCaptured[cI].row,
+                                          laserCaptured[cI].col,
+                                          &southCapX,
+                                          &southCapY );
                     
-                    drawBoardState( &midState,
-                                    0,
-                                    0,
-                                    0,
-                                    0,
-                                    inMove,
-                                    0,
-                                    0,
-                                    inBoardCenterX,
-                                    inBoardCenterY,
-                                    &mask,
-                                    0 );
-                    } 
+                    drawPieceBaseAndGlowOnly( laserCaptured[cI].p,
+                                              southCapX,
+                                              southCapY );
+
+                    /* now draw back-side glint */
+
+                    maxigin_drawResetColor();
+
+                    maxigin_drawSprite( laserBackGlintSprite,
+                                        southCapX,
+                                        southCapY + glintOffsetY );
+                    maxigin_drawToggleAdditive( 1 );
+
+                    maxigin_drawSetAlpha( getLaserGlowFade( laserProgress ) );
+
+                    maxigin_drawSprite( laserBackGlintGlow,
+                                        southCapX,
+                                        southCapY + glintOffsetY );
+                    maxigin_drawResetColor();
+                    maxigin_drawToggleAdditive( 0 );
+                    }
+
                 }
             
             }

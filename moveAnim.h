@@ -2098,7 +2098,7 @@ static void drawLaser( int  inBoardCenterX,
 
             midRowStart = inFromRow - 1;
             midRowEnd   = inToRow;
-            midRowDelta = -1;
+            midRowDelta = 1;
                 
             midColStart = inFromCol - 1;
             midColEnd   = inToCol;

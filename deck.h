@@ -101,36 +101,6 @@ void deckDrawDebugInfo( Deck  *inDeck,
 
 
 
-
-
-/*
-  Player's starting deck contains the 15 usual chess pieces,
-  except for the king
-*/
-#define PLAYER_DECK_OCCURRENCE_LIST( C, V )  \
-    V( C, 0,   noPiece,      0   )           \
-    V( C, 1,   pawn,         8   )           \
-    V( C, 2,   bishop,       2   )           \
-    V( C, 3,   knight,       2   )           \
-    V( C, 4,   rook,         2   )           \
-    V( C, 5,   queen,        1   )           \
-    V( C, 6,   king,         0   )           \
-    V( C, 7,   laserRook,    0   )           \
-    V( C, 8,   laserPawn,    0   )           \
-    V( C, 9,   doublingPawn, 0   )           \
-    V( C, 10,  addingRook,   0   )           \
-    V( C, 11,  rocket,       0   )           \
-    V( C, 12,  laserBishop,  0   )           \
-    V( C, 13,  laserQueen,   0   )           \
-
-static  int  deckPlayerOccurrence[] = {
-    MAKE_CHESS_ARRAY( PLAYER_DECK_OCCURRENCE_LIST )
-    };
-
-CHECK_CHESS_ARRAY( deckPlayerOccurrence,
-                   PLAYER_DECK_OCCURRENCE_LIST );
-
-
 static  MaxiginRand  deckRand;
 
 
@@ -228,45 +198,40 @@ void deckReplacePiece( Deck        *inDeck,
         }
     }
 
+                          
 
+void getPlayerStartDeck( Deck  *outDeck ) {
 
-static void getFreshDeck( Deck  *outDeck,
-                          int   *inOccurenceList  ) {
     int  i;
-    int  n  =  0;
 
-    for( i = FIRST_CHESS_PIECE;
-         i < NUM_CHESS_PIECES;
-         i ++ ) {
+    getEmptyDeck( outDeck,
+                  1 );
 
-        int  o;
+    deckAddPiece( outDeck,
+                  queen );
 
-        for( o = 0;
-             o < inOccurenceList[i];
-             o ++ ) {
+    for( i = 0;
+         i < 2;
+         i   ++ ) {
 
-            outDeck->pieces[n] = (ChessPiece)i;
-            n++;
-            }
+        deckAddPiece( outDeck,
+                      rook );
+        deckAddPiece( outDeck,
+                      bishop );
+        deckAddPiece( outDeck,
+                      knight );
         }
 
-    outDeck->numPieces    = n;
-    outDeck->drawPos      = 0;
-    outDeck->removeOnDraw = 0;
+    for( i = 0;
+         i < 8;
+         i   ++ ) {
+        deckAddPiece( outDeck,
+                      pawn );
+        }
 
     deckReshuffleAll( outDeck );
     }
 
-                          
-
-void getPlayerStartDeck( Deck  *outDeck ) {
-    /* no extra copies in player deck */
-    getFreshDeck( outDeck,
-                  deckPlayerOccurrence  );
-
-    /* player's deck removes cards when they are drawn */
-    outDeck->removeOnDraw = 1;
-    }
 
 
 void getEmptyDeck( Deck  *outDeck,

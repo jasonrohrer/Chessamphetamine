@@ -6,7 +6,7 @@ listNames=$(grep "@" pieceSpecsDef.txt | sed "s/[^ ]*  *//" | sed "s/ .*//"  | t
 
 specsArray=( $specs )
 
-listNamesArray=( $lisNames )
+listNamesArray=( $listNames )
 
 pieceNum=1
 

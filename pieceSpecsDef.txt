@@ -1,0 +1,59 @@
+# lines that start with # in this file are ignored as comments
+
+# specs are defined with @ symbols at top, with a default value
+# for each, and the name of the resulting macro list
+
+
+# from chess.h
+
+@value                  PIECE_VALUE_LIST                   1000
+@char                   PIECE_CHAR_LIST                    'u'
+@name                   PIECE_NAME_LIST                    "unknown"
+@moveFunction           MOVE_FUNCTION_LIST                 noPieceMove
+@repickMoveAtEnd        REPICK_MOVE_AT_END_LIST            0
+@effectsFunction        EFFECTS_FUNCTION_LIST              nullEffects
+
+
+# from money.h
+
+@captureMoney           PIECE_CAPTURE_MONEY_LIST           NON_PAWN_CAPTURE_VALUE
+
+
+# from moveAnim.h
+
+@initFunction           INIT_FUNCTION_LIST                 defaultPieceInit
+@stepFunction           STEP_FUNCTION_LIST                 defaultPieceStep
+@drawFunction           DRAW_FUNCTION_LIST                 defaultPieceDraw
+
+
+# from pieceDesctriptions.h
+
+@nameKey                PIECE_NAME_KEY_STRING_LIST         ""
+@descriptionKey         PIECE_DESCRIPTION_KEY_STRING_LIST  ""
+
+
+# from pieceSprites.h
+
+@sprite                 PIECE_SPRITE_FILE_LIST             "pawn.tga"
+@extraOffsetY           PIECE_EXTRA_OFFSET_Y_LIST          ARRAY_PAIR(  0,  0 )
+@extraSprite            PIECE_EXTRA_SPRITE_LIST            ARRAY_PAIR( "", "" )
+
+
+# from playerDeck.h
+
+@specialReturnFunction  SPECIAL_RETURN_FUNCTION_LIST       noSpecialReturn
+
+
+# from rarity.h
+
+@rarity                 PIECE_RARITY                       common
+
+
+# from shop.h
+
+@price                  SHOP_PRICE_LIST                    1
+
+
+# from sideBoard.h
+
+@deploymentCost         PIECE_DEPLOYMENT_COST_LIST         1

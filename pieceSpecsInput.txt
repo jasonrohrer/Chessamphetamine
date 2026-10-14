@@ -1,59 +1,308 @@
-# lines that start with # in this file are ignored as comments
-
-# specs are defined with @ symbols at top, with a default value
-# for each, and the name of the resulting macro list
 
 
-# from chess.h
-
-@value                  PIECE_VALUE_LIST                   1000
-@char                   PIECE_CHAR_LIST                    'u'
-@name                   PIECE_NAME_LIST                    "unknown"
-@moveFunction           MOVE_FUNCTION_LIST                 noPieceMove
-@repickMoveAtEnd        REPICK_MOVE_AT_END_LIST            0
-@effectsFunction        EFFECTS_FUNCTION_LIST              nullEffects
-
-
-# from money.h
-
-@captureMoney           PIECE_CAPTURE_MONEY_LIST           NON_PAWN_CAPTURE_VALUE
-
-
-# from moveAnim.h
-
-@initFunction           INIT_FUNCTION_LIST                 defaultPieceInit
-@stepFunction           STEP_FUNCTION_LIST                 defaultPieceStep
-@drawFunction           DRAW_FUNCTION_LIST                 defaultPieceDraw
-
-
-# from pieceDesctriptions.h
-
-@nameKey                PIECE_NAME_KEY_STRING_LIST         ""
-@descriptionKey         PIECE_DESCRIPTION_KEY_STRING_LIST  ""
+$noPiece
+value                    0
+char                     '+'
+name                     "noPiece"
+moveFunction             noPieceMove
+repickMoveAtEnd          0
+effectsFunction          nullEffects
+captureMoney             0
+initFunction             noPieceInit
+stepFunction             noPieceStep
+drawFunction             noPieceDraw
+nameKey                  ""
+descriptionKey           ""
+sprite                   ""
+extraOffsetY             ARRAY_PAIR(  0,  0 )
+extraSprite              ARRAY_PAIR( "", "" )
+specialReturnFunction    noSpecialReturn
+rarity                   contraband
+price                    0
+deploymentCost           0
 
 
-# from pieceSprites.h
+$pawn
+value                    1000
+char                     'p'
+name                     "pawn"
+moveFunction             pawnMove
+repickMoveAtEnd          0
+effectsFunction          nullEffects
+captureMoney             1
+initFunction             defaultPieceInit
+stepFunction             defaultPieceStep
+drawFunction             defaultPieceDraw
+nameKey                  "pawn"
+descriptionKey           "pawnDesc"
+sprite                   "pawn.tga"
+extraOffsetY             ARRAY_PAIR(  0,  0 )
+extraSprite              ARRAY_PAIR( "", "" )
+specialReturnFunction    noSpecialReturn
+rarity                   rare
+price                    1
+deploymentCost           2
 
-@sprite                 PIECE_SPRITE_FILE_LIST             "pawn.tga"
-@extraOffsetY           PIECE_EXTRA_OFFSET_Y_LIST          ARRAY_PAIR(  0,  0 )
-@extraSprite            PIECE_EXTRA_SPRITE_LIST            ARRAY_PAIR( "", "" )
+
+$bishop
+value                    3200
+char                     'b'
+name                     "bishop"
+moveFunction             bishopMove
+repickMoveAtEnd          0
+effectsFunction          nullEffects
+captureMoney             NON_PAWN_CAPTURE_VALUE
+initFunction             defaultPieceInit
+stepFunction             defaultPieceStep
+drawFunction             defaultPieceDraw
+nameKey                  "bishop"
+descriptionKey           "bishopDesc"
+sprite                   "bishop.tga"
+extraOffsetY             ARRAY_PAIR(  0,  0 )
+extraSprite              ARRAY_PAIR( "", "" )
+specialReturnFunction    noSpecialReturn
+rarity                   common
+price                    1
+deploymentCost           2
 
 
-# from playerDeck.h
+$knight
+value                    3000
+char                     'n'
+name                     "knight"
+moveFunction             knightMove
+repickMoveAtEnd          0
+effectsFunction          nullEffects
+captureMoney             NON_PAWN_CAPTURE_VALUE
+initFunction             defaultPieceInit
+stepFunction             defaultPieceStep
+drawFunction             defaultPieceDraw
+nameKey                  "knight"
+descriptionKey           "knightDesc"
+sprite                   "knight.tga"
+extraOffsetY             ARRAY_PAIR(  0,  0 )
+extraSprite              ARRAY_PAIR( "", "" )
+specialReturnFunction    noSpecialReturn
+rarity                   common
+price                    3
+deploymentCost           1
 
-@specialReturnFunction  SPECIAL_RETURN_FUNCTION_LIST       noSpecialReturn
+
+$rook
+value                    5000
+char                     'r'
+name                     "rook"
+moveFunction             rookMove
+repickMoveAtEnd          0
+effectsFunction          nullEffects
+captureMoney             NON_PAWN_CAPTURE_VALUE
+initFunction             defaultPieceInit
+stepFunction             defaultPieceStep
+drawFunction             defaultPieceDraw
+nameKey                  "rook"
+descriptionKey           "rookDesc"
+sprite                   "rook.tga"
+extraOffsetY             ARRAY_PAIR(  0,  0 )
+extraSprite              ARRAY_PAIR( "", "" )
+specialReturnFunction    noSpecialReturn
+rarity                   uncommon
+price                    5
+deploymentCost           5
 
 
-# from rarity.h
+$queen
+value                    9000
+char                     'q'
+name                     "queen"
+moveFunction             queenMove
+repickMoveAtEnd          0
+effectsFunction          nullEffects
+captureMoney             NON_PAWN_CAPTURE_VALUE
+initFunction             defaultPieceInit
+stepFunction             defaultPieceStep
+drawFunction             defaultPieceDraw
+nameKey                  "queen"
+descriptionKey           "queenDesc"
+sprite                   "queen.tga"
+extraOffsetY             ARRAY_PAIR(  0,  0 )
+extraSprite              ARRAY_PAIR( "", "" )
+specialReturnFunction    noSpecialReturn
+rarity                   contraband
+price                    0
+deploymentCost           6
 
-@rarity                 PIECE_RARITY                       common
+
+$king
+value                    999900
+char                     'k'
+name                     "king"
+moveFunction             kingMove
+repickMoveAtEnd          0
+effectsFunction          nullEffects
+captureMoney             6
+initFunction             defaultPieceInit
+stepFunction             defaultPieceStep
+drawFunction             defaultPieceDraw
+nameKey                  "king"
+descriptionKey           ""
+sprite                   "king.tga"
+extraOffsetY             ARRAY_PAIR(  0,  0 )
+extraSprite              ARRAY_PAIR( "", "" )
+specialReturnFunction    noSpecialReturn
+rarity                   contraband
+price                    0
+deploymentCost           0
 
 
-# from shop.h
+$laserRook
+value                    7000
+char                     'l'
+name                     "laserRook"
+moveFunction             laserRookMove
+repickMoveAtEnd          0
+effectsFunction          nullEffects
+captureMoney             NON_PAWN_CAPTURE_VALUE
+initFunction             laserPieceInit
+stepFunction             multiPhaseStep
+drawFunction             multiPhaseDraw
+nameKey                  "laserRook"
+descriptionKey           "laserRookDesc"
+sprite                   "rook.tga"
+extraOffsetY             ARRAY_PAIR(  2,  2 )
+extraSprite              ARRAY_PAIR( "rookLasers.tga", "rookLasers.tga" )
+specialReturnFunction    noSpecialReturn
+rarity                   legendary
+price                    30
+deploymentCost           6
 
-@price                  SHOP_PRICE_LIST                    1
+
+$laserPawn
+value                    2000
+char                     'o'
+name                     "laserPawn"
+moveFunction             laserPawnMove
+repickMoveAtEnd          0
+effectsFunction          nullEffects
+captureMoney             NON_PAWN_CAPTURE_VALUE
+initFunction             laserPieceInit
+stepFunction             multiPhaseStep
+drawFunction             multiPhaseDraw
+nameKey                  "laserPawn"
+descriptionKey           "laserPawnDesc"
+sprite                   "pawn.tga"
+extraOffsetY             ARRAY_PAIR( -1,  0 )
+extraSprite              ARRAY_PAIR( "pawnLasersWhite.tga", "pawnLasersBlack.tga" )
+specialReturnFunction    noSpecialReturn
+rarity                   rare
+price                    8
+deploymentCost           3
 
 
-# from sideBoard.h
+$doublingPawn
+value                    2000
+char                     'd'
+name                     "doublingPawn"
+moveFunction             pawnMove
+repickMoveAtEnd          0
+effectsFunction          doublingPawnEffects
+captureMoney             NON_PAWN_CAPTURE_VALUE
+initFunction             defaultPieceInit
+stepFunction             defaultPieceStep
+drawFunction             defaultPieceDraw
+nameKey                  "doublingPawn"
+descriptionKey           "doublingPawnDesc"
+sprite                   "doublingPawn.tga"
+extraOffsetY             ARRAY_PAIR(  0,  0 )
+extraSprite              ARRAY_PAIR( "", "" )
+specialReturnFunction    noSpecialReturn
+rarity                   rare
+price                    8
+deploymentCost           2
 
-@deploymentCost         PIECE_DEPLOYMENT_COST_LIST         1
+
+$addingRook
+value                    6000
+char                     'a'
+name                     "addingRook"
+moveFunction             rookMove
+repickMoveAtEnd          0
+effectsFunction          addingRookEffects
+captureMoney             NON_PAWN_CAPTURE_VALUE
+initFunction             defaultPieceInit
+stepFunction             defaultPieceStep
+drawFunction             defaultPieceDraw
+nameKey                  "addingRook"
+descriptionKey           "addingRookDesc"
+sprite                   "addingRook.tga"
+extraOffsetY             ARRAY_PAIR(  0,  0 )
+extraSprite              ARRAY_PAIR( "", "" )
+specialReturnFunction    noSpecialReturn
+rarity                   legendary
+price                    14
+deploymentCost           6
+
+
+$rocket
+value                    2000
+char                     'v'
+name                     "rocket"
+moveFunction             rocketMove
+repickMoveAtEnd          1
+effectsFunction          nullEffects
+captureMoney             NON_PAWN_CAPTURE_VALUE
+initFunction             rocketPieceInit
+stepFunction             multiPhaseStep
+drawFunction             multiPhaseDraw
+nameKey                  "rocket"
+descriptionKey           "rocketDesc"
+sprite                   "rocket.tga"
+extraOffsetY             ARRAY_PAIR(  0,  0 )
+extraSprite              ARRAY_PAIR( "", "" )
+specialReturnFunction    rocketSpecialReturn
+rarity                   rare
+price                    8
+deploymentCost           2
+
+
+$laserBishop
+value                    4000
+char                     'x'
+name                     "laserBishop"
+moveFunction             laserBishopMove
+repickMoveAtEnd          0
+effectsFunction          nullEffects
+captureMoney             NON_PAWN_CAPTURE_VALUE
+initFunction             laserPieceInit
+stepFunction             multiPhaseStep
+drawFunction             multiPhaseDraw
+nameKey                  "laserBishop"
+descriptionKey           "laserBishopDesc"
+sprite                   "bishop.tga"
+extraOffsetY             ARRAY_PAIR(  0,  0 )
+extraSprite              ARRAY_PAIR( "bishopLasers.tga", "bishopLasers.tga" )
+specialReturnFunction    noSpecialReturn
+rarity                   rare
+price                    20
+deploymentCost           5
+
+
+$laserQueen
+value                    11000
+char                     'z'
+name                     "laserQueen"
+moveFunction             laserQueenMove
+repickMoveAtEnd          0
+effectsFunction          nullEffects
+captureMoney             NON_PAWN_CAPTURE_VALUE
+initFunction             laserPieceInit
+stepFunction             multiPhaseStep
+drawFunction             multiPhaseDraw
+nameKey                  "laserQueen"
+descriptionKey           "laserQueenDesc"
+sprite                   "queen.tga"
+extraOffsetY             ARRAY_PAIR(  6,  6 )
+extraSprite              ARRAY_PAIR( "queenLasers.tga", "queenLasers.tga" )
+specialReturnFunction    noSpecialReturn
+rarity                   contraband
+price                    0
+deploymentCost           8

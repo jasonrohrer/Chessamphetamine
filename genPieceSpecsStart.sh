@@ -1,8 +1,8 @@
 pieces=$(grep "enum defining all possible chess piece types" chess.h -A 15 | tail +3 | sed "s/ =.*//" | sed "s/ *//" | sed "s/,//")
 
-specs=$(grep "@" pieceSpecsInput.txt | sed "s/ .*//" | tail +2 | sed "s/@//")
+specs=$(grep "@" pieceSpecsDef.txt | sed "s/ .*//" | tail +2 | sed "s/@//")
 
-listNames=$(grep "@" pieceSpecsInput.txt | sed "s/[^ ]*  *//" | sed "s/ .*//"  | tail +2)
+listNames=$(grep "@" pieceSpecsDef.txt | sed "s/[^ ]*  *//" | sed "s/ .*//"  | tail +2)
 
 specsArray=( $specs )
 
@@ -26,7 +26,7 @@ do
 
 		val=$(grep "#define $list" *.h -A 14 -h | tail +2 | sed -n "${pieceNum}p" | sed "s/V( *C, *[0-9]*, *[A-Za-z]*, *//" | sed "s/ *//" | sed 's/  *) *\\$//')
 
-		echo "$spec $val"
+		printf "%-24s %s\n" "$spec" "$val"
 		((index++))
 	done
 

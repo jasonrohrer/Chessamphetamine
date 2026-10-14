@@ -269,17 +269,13 @@ CHECK_CHESS_ARRAY( pieceExtraOffsetY,
     V( C, 4,   rook,         ARRAY_PAIR( "", "" )  )                \
     V( C, 5,   queen,        ARRAY_PAIR( "", "" )  )                \
     V( C, 6,   king,         ARRAY_PAIR( "", "" )  )                \
-    V( C, 7,   laserRook,    ARRAY_PAIR( "rookLasers.tga",          \
-                                         "rookLasers.tga"      )  ) \
-    V( C, 8,   laserPawn,    ARRAY_PAIR( "pawnLasersWhite.tga",     \
-                                         "pawnLasersBlack.tga" )  ) \
+    V( C, 7,   laserRook,    ARRAY_PAIR( "rookLasers.tga", "rookLasers.tga" )  ) \
+    V( C, 8,   laserPawn,    ARRAY_PAIR( "pawnLasersWhite.tga", "pawnLasersBlack.tga" )  ) \
     V( C, 9,   doublingPawn, ARRAY_PAIR( "", "" )  )                \
     V( C, 10,  addingRook,   ARRAY_PAIR( "", "" )  )                \
     V( C, 11,  rocket,       ARRAY_PAIR( "", "" )  )                \
-    V( C, 12,  laserBishop,  ARRAY_PAIR( "bishopLasers.tga",        \
-                                         "bishopLasers.tga"    )  ) \
-    V( C, 13,  laserQueen,   ARRAY_PAIR( "queenLasers.tga",         \
-                                         "queenLasers.tga"     )  ) \
+    V( C, 12,  laserBishop,  ARRAY_PAIR( "bishopLasers.tga", "bishopLasers.tga" )  ) \
+    V( C, 13,  laserQueen,   ARRAY_PAIR( "queenLasers.tga", "queenLasers.tga" )  ) \
 
 
 static  const char  *pieceSpriteExtraFiles[][2] = {

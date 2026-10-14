@@ -36,7 +36,7 @@
   AND their matching piece enums are ALSO out of order.  But this can be
   detected visually, since the indices will be out of order.
 
-  #define PIECE_VALUE_LIST( C, V )   \
+  #define TEST_PIECE_VALUE_LIST( C, V )   \
       V( C, 0,   noPiece,      0   ) \
       V( C, 1,   pawn,         1   ) \
       V( C, 2,   bishop,       3   ) \
@@ -51,17 +51,17 @@
       V( C, 11,  rocket,       2   )
 
   static int pieceValue[] = {
-      MAKE_CHESS_ARRAY( PIECE_VALUE_LIST )
+      MAKE_CHESS_ARRAY( TEST_PIECE_VALUE_LIST )
       };
 
   CHECK_CHESS_ARRAY( pieceValue,
-                     PIECE_VALUE_LIST );
+                     TEST_PIECE_VALUE_LIST );
 
 
   The ARRAY_PAIR macro is provided to help with 2D arrays of pair values,
   like this:
 
-  #define PIECE_EXTRA_OFFSET_Y_LIST( C, V )            \
+  #define TEST_PIECE_EXTRA_OFFSET_Y_LIST( C, V )       \
       V( C, 0,   noPiece,      ARRAY_PAIR(  0,  0 )  ) \
       V( C, 1,   pawn,         ARRAY_PAIR(  0,  0 )  ) \
       V( C, 2,   bishop,       ARRAY_PAIR(  0,  0 )  ) \
@@ -76,11 +76,11 @@
       V( C, 11,  rocket,       ARRAY_PAIR(  0,  0 )  )
 
   static int pieceExtraOffsetY[][2] = {
-      MAKE_CHESS_ARRAY( PIECE_EXTRA_OFFSET_Y_LIST )
+      MAKE_CHESS_ARRAY( TEST_PIECE_EXTRA_OFFSET_Y_LIST )
       };
 
   CHECK_CHESS_ARRAY( pieceExtraOffsetY,
-                     PIECE_EXTRA_OFFSET_Y_LIST );
+                     TEST_PIECE_EXTRA_OFFSET_Y_LIST );
 */
 
 

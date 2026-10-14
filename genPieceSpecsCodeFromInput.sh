@@ -16,6 +16,10 @@ defaultValsArray=( $defaultVals )
 
 specNum=0
 
+echo "#ifndef PIECE_SPECS_H_INCLUDED"
+echo "#define PIECE_SPECS_H_INCLUDED"
+
+
 for spec in $specs;
 do
 
@@ -51,3 +55,9 @@ do
 	
 	((specNum++))
 done
+
+
+echo
+echo
+
+echo "#endif"

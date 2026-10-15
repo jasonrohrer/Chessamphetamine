@@ -23,7 +23,7 @@ fi
 if [ pieceSpecsInput.txt -ot pieceSpecs.h ];
 then
 	echo "pieceSpecsInput.txt is behind pieceSpecs.h"
-    ./genPieceSpecsInputFromCode.sh > pieceSpecsInput.h
+    ./genPieceSpecsInputFromCode.sh > pieceSpecsInput.txt
 
 	touch pieceSpecsDef.txt
 	touch -r pieceSpecsDef.txt pieceSpecs.h pieceSpecsInput.txt

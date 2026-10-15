@@ -2623,12 +2623,37 @@ void getTestBoard( BoardState  *outState ) {
             int             numRead;
             ChessPiece      p;
             char            found     =  0;
-            
+
+            /* first skip any whitespace/junk before next bracketed symbol */
+
             numRead = mingin_readBulkData( dataHandle,
-                                           4,
+                                           1,
                                            bytes );
 
-            if( numRead != 4 ) {
+            while( numRead == 1
+                   &&
+                   bytes[ 0 ] != '[' ) {
+
+                numRead = mingin_readBulkData( dataHandle,
+                                               1,
+                                               bytes );
+                }
+
+            if( numRead != 1 ) {
+                mingin_log( "Failed to read [2-char] code from "
+                            "testBoard.txt\n" );
+                mingin_endReadBulkData( dataHandle );
+                return;
+                }
+
+            /* read first [ already
+               read remaining 3 symbols */
+            
+            numRead = mingin_readBulkData( dataHandle,
+                                           3,
+                                           &( bytes[1] ) );
+
+            if( numRead != 3 ) {
                 mingin_log( "Failed to read [2-char] code from "
                             "testBoard.txt\n" );
                 mingin_endReadBulkData( dataHandle );

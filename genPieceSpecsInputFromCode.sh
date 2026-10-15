@@ -1,4 +1,4 @@
-pieces=$(grep "enum defining all possible chess piece types" chess.h -A 15 | tail +3 | sed "s/ =.*//" | sed "s/ *//" | sed "s/,//")
+pieces=$(cat chess.h | sed -n "/enum defining all possible chess piece types/,/NUM_CHESS_PIECES/p" | tail +3 | sed "/NUM_CHESS_PIECES/d" | sed "s/ =.*//" | sed "s/ *//g" | sed "s/,//g")
 
 
 numPieces=$( echo "$pieces" | wc -l )

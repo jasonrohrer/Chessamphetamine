@@ -17970,36 +17970,10 @@ static void mx_playbackJumpHalfBack( void ) {
 
 void maxigin_logString( const char  *inLabel,
                         const char  *inVal ) {
-    
-    enum{  BUFFER_LEN  =  256  };
-    
-    static  char  buffer[ BUFFER_LEN ];
 
-    int  i  =  0;
-    int  j  =  0;
-
-    
-    while( i < BUFFER_LEN - 2
-           &&
-           inLabel[i] != '\0' ) {
-        
-        buffer[i] = inLabel[i];
-        i++;
-        }
-    
-    while( i < BUFFER_LEN - 2
-           &&
-           inVal[j] != '\0' ) {
-        
-        buffer[i] = inVal[j];
-        i++;
-        j++;
-        }
-    
-    buffer[i] = '\n';
-    buffer[i+1] = '\0';
-
-    mingin_log( buffer );
+    mingin_log( inLabel );
+    mingin_log( inVal );
+    mingin_log( "\n" );
     }
 
 

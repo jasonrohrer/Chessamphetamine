@@ -368,12 +368,12 @@ CHECK_CHESS_ARRAY( pieceValue,
 
 
 
-static char pieceChars[] = {
-    MAKE_CHESS_ARRAY( PIECE_CHAR_LIST )
+static const char *pieceSymb[] = {
+    MAKE_CHESS_ARRAY( PIECE_SYMB_LIST )
     };
 
-CHECK_CHESS_ARRAY( pieceChars,
-                   PIECE_CHAR_LIST );
+CHECK_CHESS_ARRAY( pieceSymb,
+                   PIECE_SYMB_LIST );
 
 
 
@@ -2618,60 +2618,78 @@ void getTestBoard( BoardState  *outState ) {
              x < BW;
              x ++ ) {
 
-            unsigned char  byte;
-            char           readChar  =  ' ';
-            int            numRead;
-            ChessPiece     p;
-            char           found     =  0;
+            unsigned char   bytes[4];
+            char           *readCode;
+            int             numRead;
+            ChessPiece      p;
+            char            found     =  0;
             
-            /* skip any whitespace encountered */
-            while( readChar == ' '
-                   ||
-                   readChar == '\n'
-                   ||
-                   readChar == '\r'
-                   ||
-                   readChar == '\t' ) {
-                
-                numRead = mingin_readBulkData( dataHandle,
-                                               1,
-                                               &byte );
+            numRead = mingin_readBulkData( dataHandle,
+                                           4,
+                                           bytes );
 
-                if( numRead != 1 ) {
-                    mingin_log( "Failed to read byte from testBoard.txt\n" );
-                    mingin_endReadBulkData( dataHandle );
-                    return;
+            if( numRead != 4 ) {
+                mingin_log( "Failed to read [2-char] code from "
+                            "testBoard.txt\n" );
+                mingin_endReadBulkData( dataHandle );
+                return;
+                }
+
+            bytes[3] = '\0';
+
+            readCode = (char*)( &( bytes[1] ) );
+
+            for( p = noPiece;
+                 p < NUM_CHESS_PIECES;
+                 p   ++ ) {
+
+                if( readCode[0] == ' '
+                    &&
+                    readCode[1] == ' ' ) {
+                    
+                    outState->grid[y][x] = noPiece;
+                    
+                    found = 1;
+                    break;
                     }
+                else if( maxigin_stringsEqual( readCode,
+                                               pieceSymb[ p ] ) ) {
+                    /* hit black */
 
-                readChar = (char)( byte );
+                    outState->grid[y][x] = p | CHESS_BLACK;
 
-                for( p = noPiece;
-                     p < NUM_CHESS_PIECES;
-                     p   ++ ) {
-
-                    if( readChar == '+' ) {
-                        outState->grid[y][x] = noPiece;
+                    if( p == king ) {
+                        outState->kingExists[ CHESS_BLACK >> 7 ] = 1;
                         }
-                    else if( readChar == pieceChars[ p ] ) {
-                        /* hit black */
+                    found = 1;
+                    break;
+                    }
+                }
 
-                        outState->grid[y][x] = p | CHESS_BLACK;
+            if( found ) {
+                continue;
+                }
 
-                        if( p == king ) {
-                            outState->kingExists[ CHESS_BLACK >> 7 ] = 1;
-                            }
-                        found = 1;
-                        break;
+            /* maybe it's upper case?
+               shift lower and look for match */
+            readCode[ 0 ] += 32;
+            readCode[ 1 ] += 32;
+            
+            for( p = noPiece;
+                 p < NUM_CHESS_PIECES;
+                 p   ++ ) {
+
+                if( maxigin_stringsEqual( readCode,
+                                          pieceSymb[ p ] ) ) {
+
+                    /* hit white */
+
+                    outState->grid[y][x] = p | CHESS_WHITE;
+                    if( p == king ) {
+                        outState->kingExists[ CHESS_WHITE >> 7 ] = 1;
                         }
-                    else if( readChar == pieceChars[ p ] - 32 ) {
-                        /* uppercase, white */
-                        outState->grid[y][x] = p | CHESS_WHITE;
-                        if( p == king ) {
-                            outState->kingExists[ CHESS_WHITE >> 7 ] = 1;
-                            }
-                        found = 1;
-                        break;
-                        } 
+                    found = 1;
+                    break;
                     }
                 }
 
@@ -2814,7 +2832,7 @@ int getPiecePossibleMoves( BoardState     *inState,
 
 const char *getBoardStateString( BoardState  *inState ) {
 
-    enum{         bufferSize  =  4 * BN,
+    enum{         bufferSize  =  4 * BN + BH + 30,
                   numBuffers  =  4 };
         
     static  char  buffer[ numBuffers ][ bufferSize ];
@@ -2839,29 +2857,30 @@ const char *getBoardStateString( BoardState  *inState ) {
 
             ChessPiece  p  =  inState->grid[y][x];
             ChessPiece  t  =  p & CHESS_TYPE_MASK;
+
+            buffer[b][ i++ ] = '[';
             
             if( t == noPiece ) {
-                buffer[b][ i ] = pieceChars[ t ];
+                buffer[b][ i++ ] = ' ';
+                buffer[b][ i++ ] = ' ';
                 }
             else {
                 if( ( inState->grid[y][x] & CHESS_COLOR_MASK ) == CHESS_BLACK ) {
-                    buffer[b][ i ] = pieceChars[ t ];
+
+                    buffer[b][ i++ ] = pieceSymb[ t ][ 0 ];
+                    buffer[b][ i++ ] = pieceSymb[ t ][ 1 ];
                     }
                 else {
                     /* make upper case for white */
-                    buffer[b][ i ] = (char)( pieceChars[ t ] - 32 );
+                    buffer[b][ i++ ] = pieceSymb[ t ][ 0 ] - 32;
+                    buffer[b][ i++ ] = pieceSymb[ t ][ 1 ] - 32;
                     }
                 }
-            
-            i ++;
 
-            buffer[b][ i ] = ' ';
-
-            i ++;
+            buffer[b][ i++ ] = ']';
             }
 
-        buffer[b][ i ] = '\n';
-        i ++;
+        buffer[b][ i++ ] = '\n';
         }
 
 

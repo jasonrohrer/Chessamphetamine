@@ -2,7 +2,7 @@
 
 $noPiece
 value                    0
-char                     '+'
+char                     "  "
 name                     "noPiece"
 moveFunction             noPieceMove
 repickMoveAtEnd          0
@@ -24,7 +24,7 @@ deploymentCost           0
 
 $pawn
 value                    1000
-char                     'p'
+char                     "pp"
 name                     "pawn"
 moveFunction             pawnMove
 repickMoveAtEnd          0
@@ -46,7 +46,7 @@ deploymentCost           2
 
 $bishop
 value                    3200
-char                     'b'
+char                     "bb"
 name                     "bishop"
 moveFunction             bishopMove
 repickMoveAtEnd          0
@@ -68,7 +68,7 @@ deploymentCost           2
 
 $knight
 value                    3000
-char                     'n'
+char                     "nn"
 name                     "knight"
 moveFunction             knightMove
 repickMoveAtEnd          0
@@ -90,7 +90,7 @@ deploymentCost           1
 
 $rook
 value                    5000
-char                     'r'
+char                     "rr"
 name                     "rook"
 moveFunction             rookMove
 repickMoveAtEnd          0
@@ -112,7 +112,7 @@ deploymentCost           5
 
 $queen
 value                    9000
-char                     'q'
+char                     "qq"
 name                     "queen"
 moveFunction             queenMove
 repickMoveAtEnd          0
@@ -134,7 +134,7 @@ deploymentCost           6
 
 $king
 value                    999900
-char                     'k'
+char                     "kk"
 name                     "king"
 moveFunction             kingMove
 repickMoveAtEnd          0
@@ -156,7 +156,7 @@ deploymentCost           0
 
 $laserRook
 value                    7000
-char                     'l'
+char                     "lr"
 name                     "laserRook"
 moveFunction             laserRookMove
 repickMoveAtEnd          0
@@ -178,7 +178,7 @@ deploymentCost           6
 
 $laserPawn
 value                    2000
-char                     'o'
+char                     "lp"
 name                     "laserPawn"
 moveFunction             laserPawnMove
 repickMoveAtEnd          0
@@ -200,7 +200,7 @@ deploymentCost           3
 
 $doublingPawn
 value                    2000
-char                     'd'
+char                     "dp"
 name                     "doublingPawn"
 moveFunction             pawnMove
 repickMoveAtEnd          0
@@ -222,7 +222,7 @@ deploymentCost           2
 
 $addingRook
 value                    6000
-char                     'a'
+char                     "ar"
 name                     "addingRook"
 moveFunction             rookMove
 repickMoveAtEnd          0
@@ -244,7 +244,7 @@ deploymentCost           6
 
 $rocket
 value                    2000
-char                     'v'
+char                     "vv"
 name                     "rocket"
 moveFunction             rocketMove
 repickMoveAtEnd          1
@@ -266,7 +266,7 @@ deploymentCost           2
 
 $laserBishop
 value                    4000
-char                     'x'
+char                     "lb"
 name                     "laserBishop"
 moveFunction             laserBishopMove
 repickMoveAtEnd          0
@@ -288,7 +288,7 @@ deploymentCost           5
 
 $laserQueen
 value                    11000
-char                     'z'
+char                     "lq"
 name                     "laserQueen"
 moveFunction             laserQueenMove
 repickMoveAtEnd          0

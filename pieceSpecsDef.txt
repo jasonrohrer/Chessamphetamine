@@ -7,7 +7,7 @@
 # from chess.h
 
 @value                  PIECE_VALUE_LIST                   1000
-@char                   PIECE_CHAR_LIST                    'u'
+@char                   PIECE_SYMB_LIST                    "un"
 @name                   PIECE_NAME_LIST                    "unknown"
 @moveFunction           MOVE_FUNCTION_LIST                 noPieceMove
 @repickMoveAtEnd        REPICK_MOVE_AT_END_LIST            0

@@ -19,21 +19,21 @@
     V( C,  13,  laserQueen,     11000                   ) \
 
 
-#define PIECE_CHAR_LIST( C, V ) \
-    V( C,   0,  noPiece,        '+'                     ) \
-    V( C,   1,  pawn,           'p'                     ) \
-    V( C,   2,  bishop,         'b'                     ) \
-    V( C,   3,  knight,         'n'                     ) \
-    V( C,   4,  rook,           'r'                     ) \
-    V( C,   5,  queen,          'q'                     ) \
-    V( C,   6,  king,           'k'                     ) \
-    V( C,   7,  laserRook,      'l'                     ) \
-    V( C,   8,  laserPawn,      'o'                     ) \
-    V( C,   9,  doublingPawn,   'd'                     ) \
-    V( C,  10,  addingRook,     'a'                     ) \
-    V( C,  11,  rocket,         'v'                     ) \
-    V( C,  12,  laserBishop,    'x'                     ) \
-    V( C,  13,  laserQueen,     'z'                     ) \
+#define PIECE_SYMB_LIST( C, V ) \
+    V( C,   0,  noPiece,        "  "                     ) \
+    V( C,   1,  pawn,           "pp"                     ) \
+    V( C,   2,  bishop,         "bb"                     ) \
+    V( C,   3,  knight,         "nn"                     ) \
+    V( C,   4,  rook,           "rr"                     ) \
+    V( C,   5,  queen,          "qq"                     ) \
+    V( C,   6,  king,           "kk"                     ) \
+    V( C,   7,  laserRook,      "lr"                     ) \
+    V( C,   8,  laserPawn,      "lp"                     ) \
+    V( C,   9,  doublingPawn,   "dp"                     ) \
+    V( C,  10,  addingRook,     "ar"                     ) \
+    V( C,  11,  rocket,         "vv"                     ) \
+    V( C,  12,  laserBishop,    "lb"                     ) \
+    V( C,  13,  laserQueen,     "lq"                     ) \
 
 
 #define PIECE_NAME_LIST( C, V ) \

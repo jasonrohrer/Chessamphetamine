@@ -7,12 +7,15 @@ defaultVals=$(cat pieceSpecsDef.txt | sed "/^#/d" | grep "@" | sed "s/[^ ]*  *//
 pieceTags=$( grep '\$' pieceSpecsInput.txt )
 pieceNames=$( grep '\$' pieceSpecsInput.txt | sed 's/\$//' )
 
-
+# these lists don't have whitespace except for newlines
+# so we can split them like this
 specsArray=( $specs )
 
 listNamesArray=( $listNames )
 
-defaultValsArray=( $defaultVals )
+# need to use this to not just split on whitespace, but lines
+mapfile -t defaultValsArray <<< "$defaultVals"
+
 
 specNum=0
 

@@ -84,22 +84,9 @@ int rarityGetOneInCount( int  inRarity );
 static  int  rarityColorMapSprite  =  -1;
 
 
+/* for definition of PIECE_RARITY */
+#include "pieceSpecs.h"
 
-#define PIECE_RARITY( C, V )  \
-    V( C, 0,   noPiece,      contraband )    \
-    V( C, 1,   pawn,         rare       )    \
-    V( C, 2,   bishop,       common     )    \
-    V( C, 3,   knight,       common     )    \
-    V( C, 4,   rook,         uncommon   )    \
-    V( C, 5,   queen,        contraband )    \
-    V( C, 6,   king,         contraband )    \
-    V( C, 7,   laserRook,    legendary  )    \
-    V( C, 8,   laserPawn,    rare       )    \
-    V( C, 9,   doublingPawn, rare       )    \
-    V( C, 10,  addingRook,   legendary  )    \
-    V( C, 11,  rocket,       rare       )    \
-    V( C, 12,  laserBishop,  rare       )    \
-    V( C, 13,  laserQueen,   contraband )    \
 
 static  int  pieceRarity[] = {
     MAKE_CHESS_ARRAY( PIECE_RARITY )

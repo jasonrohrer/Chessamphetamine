@@ -83,22 +83,9 @@ char isShoppingDone( void );
 
 
 
-/* pawns are never sold in shop */
-#define SHOP_PRICE_LIST( C, V )  \
-    V( C, 0,   noPiece,      0   )    \
-    V( C, 1,   pawn,         1   )    \
-    V( C, 2,   bishop,       1   )    \
-    V( C, 3,   knight,       3   )    \
-    V( C, 4,   rook,         5   )    \
-    V( C, 5,   queen,        0   )    \
-    V( C, 6,   king,         0   )    \
-    V( C, 7,   laserRook,    30  )    \
-    V( C, 8,   laserPawn,    8   )    \
-    V( C, 9,   doublingPawn, 8   )    \
-    V( C, 10,  addingRook,   14  )    \
-    V( C, 11,  rocket,       8   )    \
-    V( C, 12,  laserBishop,  20  )    \
-    V( C, 13,  laserQueen,   0   )    \
+/* for definition of SHOP_PRICE_LIST */
+#include "pieceSpecs.h"
+
 
 static  int  shopPrices[] = {
     MAKE_CHESS_ARRAY( SHOP_PRICE_LIST )

@@ -27,7 +27,7 @@ do
 	do
 		spec=${specsArray[$index]};
 
-		val=$(grep "#define $list" *.h -A $numPieces -h | tail +2 | sed -n "${pieceNum}p" | sed "s/V( *C, *[0-9]*, *[A-Za-z]*, *//" | sed "s/ *//" | sed 's/  *) *\\$//')
+		val=$(grep "#define $list" pieceSpecs.h -A $numPieces -h | tail +2 | sed -n "${pieceNum}p" | sed "s/V( *C, *[0-9]*, *[A-Za-z]*, *//" | sed "s/ *//" | sed 's/  *) *\\$//')
 
 		printf "%-24s %s\n" "$spec" "$val"
 		((index++))

@@ -62,21 +62,12 @@ void drawDescriptionFrame( int  inCenterX,
 #include "sideBoard.h"
 
 
-#define PIECE_NAME_KEY_STRING_LIST( C, V )    \
-    V( C, 0,   noPiece,      ""             ) \
-    V( C, 1,   pawn,         "pawn"         ) \
-    V( C, 2,   bishop,       "bishop"       ) \
-    V( C, 3,   knight,       "knight"       ) \
-    V( C, 4,   rook,         "rook"         ) \
-    V( C, 5,   queen,        "queen"        ) \
-    V( C, 6,   king,         "king"         ) \
-    V( C, 7,   laserRook,    "laserRook"    ) \
-    V( C, 8,   laserPawn,    "laserPawn"    ) \
-    V( C, 9,   doublingPawn, "doublingPawn" ) \
-    V( C, 10,  addingRook,   "addingRook"   ) \
-    V( C, 11,  rocket,       "rocket"       ) \
-    V( C, 12,  laserBishop,  "laserBishop"  ) \
-    V( C, 13,  laserQueen,   "laserQueen"   ) \
+/* for definition of PIECE_NAME_KEY_STRING_LIST,
+   PIECE_DESCRIPTION_KEY_STRING_LIST */
+
+#include "pieceSpecs.h"
+
+
 
 static  const char  *pieceNameKeyStrings[] = {
     MAKE_CHESS_ARRAY( PIECE_NAME_KEY_STRING_LIST )
@@ -85,26 +76,9 @@ static  const char  *pieceNameKeyStrings[] = {
 CHECK_CHESS_ARRAY( pieceNameKeyStrings,
                    PIECE_NAME_KEY_STRING_LIST );
 
-
 static  int  pieceNameKeys[ NUM_CHESS_PIECES ];
 
 
-
-#define PIECE_DESCRIPTION_KEY_STRING_LIST( C, V ) \
-    V( C, 0,   noPiece,      ""                 ) \
-    V( C, 1,   pawn,         "pawnDesc"         ) \
-    V( C, 2,   bishop,       "bishopDesc"       ) \
-    V( C, 3,   knight,       "knightDesc"       ) \
-    V( C, 4,   rook,         "rookDesc"         ) \
-    V( C, 5,   queen,        "queenDesc"        ) \
-    V( C, 6,   king,         ""                 ) \
-    V( C, 7,   laserRook,    "laserRookDesc"    ) \
-    V( C, 8,   laserPawn,    "laserPawnDesc"    ) \
-    V( C, 9,   doublingPawn, "doublingPawnDesc" ) \
-    V( C, 10,  addingRook,   "addingRookDesc"   ) \
-    V( C, 11,  rocket,       "rocketDesc"       ) \
-    V( C, 12,  laserBishop,  "laserBishopDesc"  ) \
-    V( C, 13,  laserQueen,   "laserQueenDesc"   ) \
 
 static  const char  *pieceDescriptionKeyStrings[] = {
     MAKE_CHESS_ARRAY( PIECE_DESCRIPTION_KEY_STRING_LIST )
@@ -114,6 +88,8 @@ CHECK_CHESS_ARRAY( pieceDescriptionKeyStrings,
                    PIECE_DESCRIPTION_KEY_STRING_LIST );
 
 static  int  pieceDescriptionKeys[ NUM_CHESS_PIECES ];
+
+
 
 
 static const char  *kingDescriptionKeyStrings[2]  =  {  "kingDescYou",

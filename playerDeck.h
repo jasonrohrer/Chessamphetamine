@@ -275,22 +275,9 @@ static void rocketSpecialReturn( BoardState  *inState,
     }
 
 
+/* for definition of SPECIAL_RETURN_FUNCTION_LIST */
+#include "pieceSpecs.h"
 
-#define SPECIAL_RETURN_FUNCTION_LIST( C, V )       \
-    V( C, 0,   noPiece,      noSpecialReturn     ) \
-    V( C, 1,   pawn,         noSpecialReturn     ) \
-    V( C, 2,   bishop,       noSpecialReturn     ) \
-    V( C, 3,   knight,       noSpecialReturn     ) \
-    V( C, 4,   rook,         noSpecialReturn     ) \
-    V( C, 5,   queen,        noSpecialReturn     ) \
-    V( C, 6,   king,         noSpecialReturn     ) \
-    V( C, 7,   laserRook,    noSpecialReturn     ) \
-    V( C, 8,   laserPawn,    noSpecialReturn     ) \
-    V( C, 9,   doublingPawn, noSpecialReturn     ) \
-    V( C, 10,  addingRook,   noSpecialReturn     ) \
-    V( C, 11,  rocket,       rocketSpecialReturn ) \
-    V( C, 12,  laserBishop,  noSpecialReturn     ) \
-    V( C, 13,  laserQueen,   noSpecialReturn     ) \
 
 static SpecialReturnFunction pieceSpecialReturnFunctions[] = {
     MAKE_CHESS_ARRAY( SPECIAL_RETURN_FUNCTION_LIST )

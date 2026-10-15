@@ -354,21 +354,10 @@ static  char        chessRandomPiecesShouldPickWorstMove  =  0;
   and also makes room for a king-cornering bonus when looking for
   endgame checkmates that are beyond 3 plies.
 */
-#define PIECE_VALUE_LIST( C, V )   \
-    V( C, 0,   noPiece,           0   ) \
-    V( C, 1,   pawn,           1000   ) \
-    V( C, 2,   bishop,         3200   ) \
-    V( C, 3,   knight,         3000   ) \
-    V( C, 4,   rook,           5000   ) \
-    V( C, 5,   queen,          9000   ) \
-    V( C, 6,   king,         999900   ) \
-    V( C, 7,   laserRook,      7000   ) \
-    V( C, 8,   laserPawn,      2000   ) \
-    V( C, 9,   doublingPawn,   2000   ) \
-    V( C, 10,  addingRook,     6000   ) \
-    V( C, 11,  rocket,         2000   ) \
-    V( C, 12,  laserBishop,    4000   ) \
-    V( C, 13,  laserQueen,    11000   ) \
+
+/* for defininition of PIECE_VALUE_LIST, etc. */
+#include "pieceSpecs.h"
+
 
 static int pieceValue[] = {
     MAKE_CHESS_ARRAY( PIECE_VALUE_LIST )
@@ -379,22 +368,6 @@ CHECK_CHESS_ARRAY( pieceValue,
 
 
 
-#define PIECE_CHAR_LIST( C, V )      \
-    V( C, 0,   noPiece,      '+'   ) \
-    V( C, 1,   pawn,         'p'   ) \
-    V( C, 2,   bishop,       'b'   ) \
-    V( C, 3,   knight,       'n'   ) \
-    V( C, 4,   rook,         'r'   ) \
-    V( C, 5,   queen,        'q'   ) \
-    V( C, 6,   king,         'k'   ) \
-    V( C, 7,   laserRook,    'l'   ) \
-    V( C, 8,   laserPawn,    'o'   ) \
-    V( C, 9,   doublingPawn, 'd'   ) \
-    V( C, 10,  addingRook,   'a'   ) \
-    V( C, 11,  rocket,       'v'   ) \
-    V( C, 12,  laserBishop,  'x'   ) \
-    V( C, 13,  laserQueen,   'z'   ) \
-
 static char pieceChars[] = {
     MAKE_CHESS_ARRAY( PIECE_CHAR_LIST )
     };
@@ -403,22 +376,6 @@ CHECK_CHESS_ARRAY( pieceChars,
                    PIECE_CHAR_LIST );
 
 
-
-#define PIECE_NAME_LIST( C, V )               \
-    V( C, 0,   noPiece,      "noPiece"      ) \
-    V( C, 1,   pawn,         "pawn"         ) \
-    V( C, 2,   bishop,       "bishop"       ) \
-    V( C, 3,   knight,       "knight"       ) \
-    V( C, 4,   rook,         "rook"         ) \
-    V( C, 5,   queen,        "queen"        ) \
-    V( C, 6,   king,         "king"         ) \
-    V( C, 7,   laserRook,    "laserRook"    ) \
-    V( C, 8,   laserPawn,    "laserPawn"    ) \
-    V( C, 9,   doublingPawn, "doublingPawn" ) \
-    V( C, 10,  addingRook,   "addingRook"   ) \
-    V( C, 11,  rocket,       "rocket"       ) \
-    V( C, 12,  laserBishop,  "laserBishop"  ) \
-    V( C, 13,  laserQueen,   "laserQueen"   ) \
 
 static char *pieceNames[] = {
     MAKE_CHESS_ARRAY( PIECE_NAME_LIST )
@@ -2274,22 +2231,6 @@ static int rocketMove( BoardState     *inState,
 
 
 
-#define MOVE_FUNCTION_LIST( C, V )           \
-    V( C, 0,   noPiece,      noPieceMove   ) \
-    V( C, 1,   pawn,         pawnMove      ) \
-    V( C, 2,   bishop,       bishopMove    ) \
-    V( C, 3,   knight,       knightMove    ) \
-    V( C, 4,   rook,         rookMove      ) \
-    V( C, 5,   queen,        queenMove     ) \
-    V( C, 6,   king,         kingMove      ) \
-    V( C, 7,   laserRook,    laserRookMove ) \
-    V( C, 8,   laserPawn,    laserPawnMove ) \
-    V( C, 9,   doublingPawn, pawnMove      ) \
-    V( C, 10,  addingRook,   rookMove      ) \
-    V( C, 11,  rocket,       rocketMove    ) \
-    V( C, 12,  laserBishop,  laserBishopMove ) \
-    V( C, 13,  laserQueen,   laserQueenMove  ) \
-
 static PieceMoveFunction moveFunctions[] = {
     MAKE_CHESS_ARRAY( MOVE_FUNCTION_LIST )
     };
@@ -2312,21 +2253,7 @@ CHECK_CHESS_ARRAY( moveFunctions,
    We want them to make random moves, so we re-pick their move after
    the game tree search is done
 */
-#define REPICK_MOVE_AT_END_LIST( C, V ) \
-    V( C, 0,   noPiece,      0 )        \
-    V( C, 1,   pawn,         0 )        \
-    V( C, 2,   bishop,       0 )        \
-    V( C, 3,   knight,       0 )        \
-    V( C, 4,   rook,         0 )        \
-    V( C, 5,   queen,        0 )        \
-    V( C, 6,   king,         0 )        \
-    V( C, 7,   laserRook,    0 )        \
-    V( C, 8,   laserPawn,    0 )        \
-    V( C, 9,   doublingPawn, 0 )        \
-    V( C, 10,  addingRook,   0 )        \
-    V( C, 11,  rocket,       1 )        \
-    V( C, 12,  laserBishop,  0 )        \
-    V( C, 13,  laserQueen,   0 )        \
+
 
 static int repickMoveAtEnd[] = {
     MAKE_CHESS_ARRAY( REPICK_MOVE_AT_END_LIST )
@@ -4945,21 +4872,6 @@ static void addingRookEffects( BoardState             *inState,
 
 
 
-#define EFFECTS_FUNCTION_LIST( C, V )              \
-    V( C, 0,   noPiece,      nullEffects         ) \
-    V( C, 1,   pawn,         nullEffects         ) \
-    V( C, 2,   bishop,       nullEffects         ) \
-    V( C, 3,   knight,       nullEffects         ) \
-    V( C, 4,   rook,         nullEffects         ) \
-    V( C, 5,   queen,        nullEffects         ) \
-    V( C, 6,   king,         nullEffects         ) \
-    V( C, 7,   laserRook,    nullEffects         ) \
-    V( C, 8,   laserPawn,    nullEffects         ) \
-    V( C, 9,   doublingPawn, doublingPawnEffects ) \
-    V( C, 10,  addingRook,   addingRookEffects   ) \
-    V( C, 11,  rocket,       nullEffects         ) \
-    V( C, 12,  laserBishop,  nullEffects         ) \
-    V( C, 13,  laserQueen,   nullEffects         ) \
 
 static PieceEffectsFunction effectsFunctions[] = {
     MAKE_CHESS_ARRAY( EFFECTS_FUNCTION_LIST )

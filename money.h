@@ -116,21 +116,10 @@ char moneyGetSubMessageShowing( void );
 */
 #define NON_PAWN_CAPTURE_VALUE  3
 
-#define PIECE_CAPTURE_MONEY_LIST( C, V )   \
-    V( C, 0,   noPiece,      0                        ) \
-    V( C, 1,   pawn,         1                        ) \
-    V( C, 2,   bishop,       NON_PAWN_CAPTURE_VALUE   ) \
-    V( C, 3,   knight,       NON_PAWN_CAPTURE_VALUE   ) \
-    V( C, 4,   rook,         NON_PAWN_CAPTURE_VALUE   ) \
-    V( C, 5,   queen,        NON_PAWN_CAPTURE_VALUE   ) \
-    V( C, 6,   king,         6                        ) \
-    V( C, 7,   laserRook,    NON_PAWN_CAPTURE_VALUE   ) \
-    V( C, 8,   laserPawn,    NON_PAWN_CAPTURE_VALUE   ) \
-    V( C, 9,   doublingPawn, NON_PAWN_CAPTURE_VALUE   ) \
-    V( C, 10,  addingRook,   NON_PAWN_CAPTURE_VALUE   ) \
-    V( C, 11,  rocket,       NON_PAWN_CAPTURE_VALUE   ) \
-    V( C, 12,  laserBishop,  NON_PAWN_CAPTURE_VALUE   ) \
-    V( C, 13,  laserQueen,   NON_PAWN_CAPTURE_VALUE   ) \
+/* for definition of PIECE_CAPTURE_MONEY_LIST */
+
+#include "pieceSpecs.h"
+
 
 static int pieceCaptureMoney[] = {
     MAKE_CHESS_ARRAY( PIECE_CAPTURE_MONEY_LIST )

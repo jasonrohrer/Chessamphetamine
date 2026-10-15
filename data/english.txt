@@ -145,3 +145,7 @@ laserBishopDesc   "^Special:^ Fires lasers in diagonal lines after moving"
 
 laserQueen       "Laser Queen"
 laserQueenDesc   "^Special:^ Fires lasers in all directions after moving"
+
+
+doublingQueen      "Doubling Queen"
+doublingQueenDesc  "^Special:^ Doubles ^special^ abilities of reachable pieces in straight and diag lines"

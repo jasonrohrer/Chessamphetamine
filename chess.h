@@ -36,6 +36,7 @@ enum{
     rocket,
     laserBishop,
     laserQueen,
+    doublingQueen,
     NUM_CHESS_PIECES };
 
 
@@ -4899,6 +4900,82 @@ static void addingRookEffects( BoardState             *inState,
 
                 if( inState->grid[ targetY ][ targetX ] != noPiece ) {
                     /* adding rook only effects spaces in each straight-line
+                       direction up to and including first piece hit
+                       doesn't penetrate beyond peices to squares
+                       on other side */
+                    break;
+                    }
+                }
+            else {
+                /* fell off end of board
+                   stop pushing in that direction */
+                break;
+                }
+            }
+        }
+    }
+
+
+
+static void doublingQueenEffects( BoardState             *inState,
+                                  ChessPiece              inPiece,
+                                  int                     inPieceRow,
+                                  int                     inPieceCol,
+                                  FullBoardSpaceEffects  *inEffects ) {
+
+    static  int  dX[8]  =  { 1, -1,  0,  0, 1, -1, -1, 1  };
+    static  int  dY[8]  =  { 0,  0, -1,  1, 1,  1, -1, -1 };
+
+    int  i;
+    int  m;
+    
+    int  maxDist   =  BH - 1;
+
+    if( BW - 1 > maxDist ) {
+        /* non-square board, consider reach as long as longest side */
+        maxDist = BW - 1;
+        }
+
+    (void)inPiece;
+
+    for( i = 0;
+         i < 8;
+         i ++ ) {
+
+        for( m = 1;
+             m <= maxDist;
+             m ++ ) {
+
+            int  targetX  =  inPieceCol + m * dX[i];
+            int  targetY  =  inPieceRow + m * dY[i];
+
+            if( targetX >= 0
+                &&
+                targetX < BW
+                &&
+                targetY >= 0
+                &&
+                targetY < BH ) {
+
+                int  oldNum  =  inEffects->grid[ targetY ][ targetX ].num;
+
+                inEffects->grid[ targetY ][ targetX ].effectType [ oldNum ] =
+                    multiply;
+        
+                inEffects->grid[ targetY ][ targetX ].effectValue[ oldNum ] =
+                    2;
+        
+                inEffects->grid[ targetY ][ targetX ].sourceRow[ oldNum ] =
+                    inPieceRow;
+        
+                inEffects->grid[ targetY ][ targetX ].sourceCol[ oldNum ] =
+                    inPieceCol;
+        
+
+                inEffects->grid[ targetY ][ targetX ].num ++;
+
+                if( inState->grid[ targetY ][ targetX ] != noPiece ) {
+                    /* doubling queen only effects spaces in each straight-line
                        direction up to and including first piece hit
                        doesn't penetrate beyond peices to squares
                        on other side */

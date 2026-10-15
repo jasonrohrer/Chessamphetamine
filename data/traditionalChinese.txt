@@ -143,3 +143,7 @@ laserBishopDesc   "^特殊：^移動後沿斜線發射雷射"
 
 laserQueen        "雷射后"
 laserQueenDesc    "^特殊：^移動後向八方發射雷射"
+
+
+doublingQueen      "倍增后"
+doublingQueenDesc  "^特殊：^使直線及斜線上棋子的^特殊^能力加倍"

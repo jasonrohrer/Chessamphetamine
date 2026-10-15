@@ -306,3 +306,25 @@ specialReturnFunction    noSpecialReturn
 rarity                   contraband
 price                    0
 deploymentCost           8
+
+
+$doublingQueen
+value                    10000
+char                     "dq"
+name                     "doublingQueen"
+moveFunction             queenMove
+repickMoveAtEnd          0
+effectsFunction          doublingQueenEffects
+captureMoney             NON_PAWN_CAPTURE_VALUE
+initFunction             defaultPieceInit
+stepFunction             defaultPieceStep
+drawFunction             defaultPieceDraw
+nameKey                  "doublingQueen"
+descriptionKey           "doublingQueenDesc"
+sprite                   "doublingQueen.tga"
+extraOffsetY             ARRAY_PAIR(  0,  0 )
+extraSprite              ARRAY_PAIR( "", "" )
+specialReturnFunction    noSpecialReturn
+rarity                   contraband
+price                    0
+deploymentCost           7

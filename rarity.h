@@ -84,16 +84,16 @@ int rarityGetOneInCount( int  inRarity );
 static  int  rarityColorMapSprite  =  -1;
 
 
-/* for definition of PIECE_RARITY */
+/* for definition of PIECE_RARITY_LIST */
 #include "pieceSpecs.h"
 
 
 static  int  pieceRarity[] = {
-    MAKE_CHESS_ARRAY( PIECE_RARITY )
+    MAKE_CHESS_ARRAY( PIECE_RARITY_LIST )
     };
 
 CHECK_CHESS_ARRAY( pieceRarity,
-                   PIECE_RARITY );
+                   PIECE_RARITY_LIST );
 
 
 static  int          rarityLangKeys          [ NUM_RARITIES ];

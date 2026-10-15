@@ -46,7 +46,7 @@
 
 # from rarity.h
 
-@rarity                 PIECE_RARITY                       common
+@rarity                 PIECE_RARITY_LIST                  common
 
 
 # from shop.h

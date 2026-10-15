@@ -1,8 +1,8 @@
-specs=$(grep "@" pieceSpecsDef.txt | sed "s/ .*//" | tail +2 | sed "s/@//")
+specs=$(cat pieceSpecsDef.txt | sed "/^#/d" | grep "@" | sed "s/ .*//" | sed "s/@//")
 
-listNames=$(grep "@" pieceSpecsDef.txt | sed "s/[^ ]*  *//" | sed "s/ .*//"  | tail +2)
+listNames=$(cat pieceSpecsDef.txt | sed "/^#/d" | grep "@" | sed "s/[^ ]*  *//" | sed "s/ .*//")
 
-defaultVals=$(grep "@" pieceSpecsDef.txt | sed "s/[^ ]*  *//" | tail +2 | sed "s/[A-Z_]* *//")
+defaultVals=$(cat pieceSpecsDef.txt | sed "/^#/d" | grep "@" | sed "s/[^ ]*  *//" | sed "s/[A-Z_]* *//")
 
 pieceTags=$( grep '\$' pieceSpecsInput.txt )
 pieceNames=$( grep '\$' pieceSpecsInput.txt | sed 's/\$//' )

@@ -3,9 +3,9 @@ pieces=$(cat chess.h | sed -n "/enum defining all possible chess piece types/,/N
 
 numPieces=$( echo "$pieces" | wc -l )
 
-specs=$(grep "@" pieceSpecsDef.txt | sed "s/ .*//" | tail +2 | sed "s/@//")
+specs=$(cat pieceSpecsDef.txt | sed "/^#/d" | grep "@" | sed "s/ .*//" | sed "s/@//")
 
-listNames=$(grep "@" pieceSpecsDef.txt | sed "s/[^ ]*  *//" | sed "s/ .*//"  | tail +2)
+listNames=$(cat pieceSpecsDef.txt | sed "/^#/d" | grep "@" | sed "s/[^ ]*  *//" | sed "s/ .*//")
 
 specsArray=( $specs )
 

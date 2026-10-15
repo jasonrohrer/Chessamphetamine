@@ -5,6 +5,9 @@ then
 	echo "pieceSpecs.h is behind pieceSpecsDef.txt"
 	./genPieceSpecsCodeFromInput.sh > pieceSpecs.h
 
+	# also re-generate input from new code
+	./genPieceSpecsInputFromCode.sh > pieceSpecsInput.txt
+
 	touch pieceSpecsDef.txt
 	touch -r pieceSpecsDef.txt pieceSpecs.h pieceSpecsInput.txt
 fi

@@ -999,6 +999,14 @@ void drawBoardState( BoardState     *inState,
                        that should be in
                        front of our moving piece,
                        draw our moving piece now, just behind it */
+                    
+                    /* still draw lift shadow under a moving piece */
+                    maxigin_drawResetColor();
+
+                    maxigin_drawSprite( liftShadowSpriteHandle,
+                                        mX,
+                                        mY + 4 );
+                    
                     drawPiece( mP,
                                mX,
                                mY );

@@ -1749,7 +1749,7 @@ static char multiPhaseStep( BoardState    *inState,
         }
     else if( p == earnMoney ) {
 
-        int  stepAmount  =  ( 30 * 60 ) / r;
+        int  stepAmount  =  ( 10 * 60 ) / r;
         
         if( inMoveProgress->phaseProgress == 0 ) {
             moneyAdd( inMoveProgress->params[ pn ][ 0 ] );
@@ -3428,6 +3428,83 @@ static void multiPhaseDraw( int            inBoardCenterX,
                         0 );
         
         }
+    else if( p == earnMoney ) {
+
+        int            coinSourceX;
+        int            coinSourceY;
+        int            coinRiseY;
+        unsigned char  coinFade;
+        long           numFade;
+        
+        boardDraw( inBoardCenterX,
+                   inBoardCenterY );
+
+        getCaptureMidState( inState,
+                            inMove,
+                            inCaptured,
+                            &midState,
+                            &midCaptured );
+    
+        drawBoardState( &midState,
+                        0,
+                        0,
+                        0,
+                        0,
+                        inMove,
+                        0,
+                        0,
+                        inBoardCenterX,
+                        inBoardCenterY,
+                        0,
+                        0 );
+
+        /* draw rising stack of coins */
+
+        boardGetSquareCenter( inBoardCenterX,
+                              inBoardCenterY,
+                              inMove->endPos[0],
+                              inMove->endPos[1],
+                              &coinSourceX,
+                              &coinSourceY );
+
+
+        coinRiseY = ( inMoveProgress->phaseProgress * 60 ) / moneyPhaseLen;
+
+        coinFade =
+            (unsigned char)(
+            ( ( moneyPhaseLen -
+                inMoveProgress->phaseProgress ) * 255 ) / moneyPhaseLen );
+
+        /* halt number half way */
+        if( coinRiseY > 15 ) {
+            coinRiseY = 15;
+            }
+        
+        maxigin_drawToggleAdditive( 1 );
+        
+        moneyDrawCoin( coinSourceX,
+                       coinSourceY - 20 - coinRiseY,
+                       coinFade / 2 );
+        
+        maxigin_drawToggleAdditive( 0 );
+
+        colorsApplyMoneyColor();
+
+
+        numFade = coinFade * 4;
+        if( numFade > 255 ) {
+            numFade = 255;
+            }
+        
+        maxigin_drawSetAlpha( (unsigned char)numFade );
+
+        
+        numberDrawCenter( inMoveProgress->params[ pn ][ 0 ],
+                          coinSourceX,
+                          coinSourceY - 20 - coinRiseY,
+                          0 );
+        }
+    
     
 
 

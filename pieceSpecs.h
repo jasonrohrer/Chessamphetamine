@@ -66,7 +66,7 @@
     V( C,   6,  king,           kingMove                ) \
     V( C,   7,  laserRook,      laserRookMove           ) \
     V( C,   8,  laserPawn,      laserPawnMove           ) \
-    V( C,   9,  doublingPawn,   pawnMove                ) \
+    V( C,   9,  doublingPawn,   doublingPawnMove        ) \
     V( C,  10,  addingRook,     rookMove                ) \
     V( C,  11,  rocket,         rocketMove              ) \
     V( C,  12,  laserBishop,    laserBishopMove         ) \

@@ -202,7 +202,7 @@ $doublingPawn
 value                    2000
 char                     "dp"
 name                     "doublingPawn"
-moveFunction             pawnMove
+moveFunction             doublingPawnMove
 repickMoveAtEnd          0
 effectsFunction          doublingPawnEffects
 captureMoney             NON_PAWN_CAPTURE_VALUE

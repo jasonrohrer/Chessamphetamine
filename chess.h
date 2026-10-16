@@ -2059,6 +2059,66 @@ static int laserPawnMove( BoardState     *inState,
 
 
 
+/* same as pawn move, but promotes to doubling queen */
+static int doublingPawnMove( BoardState     *inState,
+                             unsigned char   inPieceColor,
+                             int             inPieceRow,
+                             int             inPieceCol,
+                             char            inMaySkipNonKingCaptureMoves,
+                             unsigned char   outDestRows[BN],
+                             unsigned char   outDestCols[BN],
+                             Captured        outCaptured[BN],
+                             BoardState      outStates  [BN] ) {
+    
+    int  i;
+    int  numMoves  =  pawnMove( inState,
+                                inPieceColor,
+                                inPieceRow,
+                                inPieceCol,
+                                inMaySkipNonKingCaptureMoves,
+                                outDestRows,
+                                outDestCols,
+                                outCaptured,
+                                outStates );
+ 
+    /* check for special promotion case */
+
+    for( i = 0;
+         i < numMoves;
+         i ++ ) {
+        
+        int  r  =  outDestRows[i];
+
+        if( r == 0
+            ||
+            r == BH - 1 ) {
+
+            BoardState  *s  =  &( outStates[i] );
+
+            /* last row move, check for promotion to queen
+               that regular pawn move would do */
+
+            if( ( s->grid[ outDestRows[i] ][ outDestCols[i] ]
+                  & CHESS_TYPE_MASK )
+                ==
+                queen ) {
+
+                /* doubling pawn promotes to doubling queen */
+                ChessPiece  pC  =
+                    s->grid[ outDestRows[i] ][ outDestCols[i] ]
+                    & CHESS_COLOR_MASK;
+
+                s->grid[ outDestRows[i] ][ outDestCols[i] ] =
+                    doublingQueen | pC;
+                }
+            }
+        }
+
+    return numMoves;
+    }
+
+
+
 static int rocketMove( BoardState     *inState,
                        unsigned char   inPieceColor,
                        int             inPieceRow,

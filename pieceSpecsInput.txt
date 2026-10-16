@@ -21,6 +21,7 @@ rarity                   contraband
 price                    0
 deploymentCost           0
 postEffectsFunction      nullPostEffects
+inEnemyDeck              0
 
 
 $pawn
@@ -44,6 +45,7 @@ rarity                   rare
 price                    1
 deploymentCost           2
 postEffectsFunction      nullPostEffects
+inEnemyDeck              1
 
 
 $bishop
@@ -67,6 +69,7 @@ rarity                   common
 price                    1
 deploymentCost           2
 postEffectsFunction      nullPostEffects
+inEnemyDeck              1
 
 
 $knight
@@ -90,6 +93,7 @@ rarity                   common
 price                    3
 deploymentCost           1
 postEffectsFunction      nullPostEffects
+inEnemyDeck              1
 
 
 $rook
@@ -113,6 +117,7 @@ rarity                   uncommon
 price                    5
 deploymentCost           5
 postEffectsFunction      nullPostEffects
+inEnemyDeck              1
 
 
 $queen
@@ -136,6 +141,7 @@ rarity                   contraband
 price                    0
 deploymentCost           6
 postEffectsFunction      nullPostEffects
+inEnemyDeck              1
 
 
 $king
@@ -159,6 +165,7 @@ rarity                   contraband
 price                    0
 deploymentCost           0
 postEffectsFunction      nullPostEffects
+inEnemyDeck              0
 
 
 $laserRook
@@ -182,6 +189,7 @@ rarity                   legendary
 price                    30
 deploymentCost           6
 postEffectsFunction      nullPostEffects
+inEnemyDeck              2
 
 
 $laserPawn
@@ -205,6 +213,7 @@ rarity                   rare
 price                    8
 deploymentCost           3
 postEffectsFunction      nullPostEffects
+inEnemyDeck              2
 
 
 $doublingPawn
@@ -228,6 +237,7 @@ rarity                   rare
 price                    8
 deploymentCost           2
 postEffectsFunction      nullPostEffects
+inEnemyDeck              2
 
 
 $addingRook
@@ -251,6 +261,7 @@ rarity                   legendary
 price                    14
 deploymentCost           6
 postEffectsFunction      nullPostEffects
+inEnemyDeck              2
 
 
 $rocket
@@ -274,6 +285,7 @@ rarity                   rare
 price                    8
 deploymentCost           2
 postEffectsFunction      nullPostEffects
+inEnemyDeck              2
 
 
 $laserBishop
@@ -297,6 +309,7 @@ rarity                   rare
 price                    20
 deploymentCost           5
 postEffectsFunction      nullPostEffects
+inEnemyDeck              2
 
 
 $laserQueen
@@ -320,6 +333,7 @@ rarity                   contraband
 price                    0
 deploymentCost           8
 postEffectsFunction      nullPostEffects
+inEnemyDeck              3
 
 
 $doublingQueen
@@ -343,6 +357,7 @@ rarity                   contraband
 price                    0
 deploymentCost           7
 postEffectsFunction      nullPostEffects
+inEnemyDeck              3
 
 
 $rublePawn
@@ -366,6 +381,7 @@ rarity                   rare
 price                    8
 deploymentCost           4
 postEffectsFunction      oneRubleEffects
+inEnemyDeck              0
 
 
 $rubleQueen
@@ -389,3 +405,4 @@ rarity                   contraband
 price                    0
 deploymentCost           7
 postEffectsFunction      oneRubleEffects
+inEnemyDeck              0

@@ -62,3 +62,8 @@
 # from postMoveEffects.h
 
 @postEffectsFunction    POST_EFFECTS_FUNCTION_LIST         nullPostEffects
+
+
+# from level.h
+
+@inEnemyDeck            ENEMY_DECK_FLAG_LIST               1

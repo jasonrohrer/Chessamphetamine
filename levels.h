@@ -67,6 +67,35 @@ static  MaxiginRand  levelsRand;
 static  Deck         enemyDeck;
 
 
+/* for definition of ENEMY_DECK_FLAG_LIST */
+#include "pieceSpecs.h"
+
+
+/* we use these numerical flags to mark tiers of enemy pieces
+   0 => pieces that are NEVER in enemy deck
+   1 => regular chess pieces
+   2 => special pieces tier A
+   3 => special pieces tier B (more insane pieces)
+*/
+
+static int enemyDeckFlags[] = {
+    MAKE_CHESS_ARRAY( ENEMY_DECK_FLAG_LIST )
+    };
+
+CHECK_CHESS_ARRAY( enemyDeckFlags,
+                   ENEMY_DECK_FLAG_LIST );
+
+
+
+#define NUM_ENEMY_TIERS  4
+
+int         numPerTier[ NUM_ENEMY_TIERS ];
+ChessPiece  enemyTiers[ NUM_ENEMY_TIERS ][ NUM_CHESS_PIECES ];
+
+int         numInAllTiers;
+ChessPiece  allEnemyTiers[ NUM_CHESS_PIECES ];
+
+
 
 static int saturationCurve( int  inStart,
                             int  inMax,
@@ -120,15 +149,86 @@ static int getNumEnemyPieces( int  inLevelNumber ) {
 
 void levelsInit( void ) {
 
+    int         i;
+    ChessPiece  p;
+    
+
     maxigin_randSeed( &levelsRand,
                       mingin_getEntropySeed() );
 
     getEmptyDeck( &enemyDeck,
                   0 );
 
+
+    /* set up enemy piece tiers */
+
+    for( i = 0;
+         i < NUM_ENEMY_TIERS;
+         i   ++ ) {
+        numPerTier[ i ] = 0;
+        }
+
+    numInAllTiers = 0;
+    
+
+    for( p = FIRST_CHESS_PIECE;
+         p < NUM_CHESS_PIECES;
+         p   ++ ) {
+
+        int  flag  =  enemyDeckFlags[ i ];
+
+        if( flag >= NUM_ENEMY_TIERS ) {
+            continue;
+            }
+
+        enemyTiers[ flag ][ numPerTier[ flag ] ] = p;
+
+        numPerTier[ flag ] ++;
+
+        if( flag > 0 ) {
+            /* all non-zero tiers go in here */
+
+            allEnemyTiers[ numInAllTiers ] = p;
+            numInAllTiers++;
+            }
+        }
+
+    
     REGISTER_VAL_MEM( levelsRand );
     REGISTER_VAL_MEM( enemyDeck  );
     }
+
+
+
+/* pass -1 to get from all tiers together */
+static ChessPiece getRandEnemyPieceFromTier( int  inTier ) {
+
+    int  i;
+
+    if( inTier == -1 ) {
+
+        if( numInAllTiers == 0 ) {
+            return pawn;
+            }
+        i = maxigin_randRange( &levelsRand,
+                               0,
+                               numInAllTiers - 1 );
+
+        return allEnemyTiers[ i ];
+        }
+
+    
+    if( numPerTier[ inTier ] <= 0 ) {
+        return pawn;
+        }
+
+    i = maxigin_randRange( &levelsRand,
+                           0,
+                           numPerTier[ inTier ] - 1 );
+
+    return enemyTiers[ inTier ][ i ];
+    }
+
 
 
 static void prepareEnemyDeck( int  inLevelNumber ) {
@@ -180,9 +280,7 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
            we get extra normal chess pieces added at random */
         deckAddPiece(
             &enemyDeck,
-            (ChessPiece)( maxigin_randRange( &levelsRand,
-                                             FIRST_CHESS_PIECE,
-                                             LAST_NORMAL_CHESS_PIECE ) ) );
+            getRandEnemyPieceFromTier( 1 ) );
         }
 
     /* by level 16, our deck has 20 pieces */
@@ -196,34 +294,18 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
 
         deckAddPiece(
             &enemyDeck,
-            (ChessPiece)( maxigin_randRange(
-                              &levelsRand,
-                              FIRST_SPECIAL_CHESS_PIECE,
-                              LAST_ENEMY_SPECIAL_CHESS_PIECE ) ) );
+            getRandEnemyPieceFromTier( 2 ) );
         }
 
     /* by level 46, our deck has 50 pieces */
     
     if( inLevelNumber > 46 ) {
 
-        /* add random non-King piece */
+        /* add random piece from all tiers, including
+           ridiculous level-3 tier */
 
-        int         t  =  0;
-        ChessPiece  p  =  (ChessPiece)( maxigin_randRange(
-                                            &levelsRand,
-                                            FIRST_CHESS_PIECE,
-                                            LAST_CHESS_PIECE ) );
-        /* 10 trials before giving up */
-        while( p == king
-               &&
-               t < 10 ) {
-
-            p = (ChessPiece)( maxigin_randRange(
-                                  &levelsRand,
-                                  FIRST_CHESS_PIECE,
-                                  LAST_CHESS_PIECE ) );
-            t ++;
-            }
+        ChessPiece  p  =  getRandEnemyPieceFromTier( -1 );
+  
 
         /* by level 100, our deck has 104 pieces */
 
@@ -234,21 +316,18 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
            so deck gradually keeps changing composition forever
         */
 
-        if( p != king ) {
-
-            if( inLevelNumber <= 100 ) {
-                deckAddPiece( &enemyDeck,
-                              p );
-                }
-            else {
-
-                ChessPiece  oldP  =  deckDraw( &enemyDeck );
-
-                deckReplacePiece( &enemyDeck,
-                                  oldP,
-                                  p );
-                }
+        if( inLevelNumber <= 100 ) {
+            deckAddPiece( &enemyDeck,
+                          p );
             }
+        else {
+
+            ChessPiece  oldP  =  deckDraw( &enemyDeck );
+
+            deckReplacePiece( &enemyDeck,
+                              oldP,
+                              p );
+            }  
         }
 
     deckReshuffleAll( &enemyDeck );

@@ -149,3 +149,6 @@ laserQueenDesc   "^Special:^ Fires lasers in all directions after moving"
 
 doublingQueen      "Doubling Queen"
 doublingQueenDesc  "^Special:^ Doubles ^special^ abilities of reachable pieces in straight and diag lines"
+
+rublePawn      "Ruble Pawn"
+rublePawnDesc  "^Special:^ Earns 1 ruble after moving"

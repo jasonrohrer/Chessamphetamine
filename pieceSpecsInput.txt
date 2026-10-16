@@ -328,3 +328,25 @@ specialReturnFunction    noSpecialReturn
 rarity                   contraband
 price                    0
 deploymentCost           7
+
+
+$rublePawn
+value                    1000
+char                     "rp"
+name                     "rublePawn"
+moveFunction             pawnMove
+repickMoveAtEnd          0
+effectsFunction          nullEffects
+captureMoney             1
+initFunction             defaultPieceInit
+stepFunction             defaultPieceStep
+drawFunction             defaultPieceDraw
+nameKey                  "rublePawn"
+descriptionKey           "rublePawnDesc"
+sprite                   "rublePawn.tga"
+extraOffsetY             ARRAY_PAIR(  0,  0 )
+extraSprite              ARRAY_PAIR( "", "" )
+specialReturnFunction    noSpecialReturn
+rarity                   rare
+price                    1
+deploymentCost           2

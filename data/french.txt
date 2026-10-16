@@ -146,3 +146,8 @@ laserQueenDesc    "^Spécial :^ Tire des lasers dans toutes les directions aprè
 
 doublingQueen      "Dame doubleuse"
 doublingQueenDesc  "^Spécial :^ Double les capacités ^spéciales^ des pièces à portée en ligne droite ou diagonale"
+
+
+rublePawn      "Pion à roubles"
+rublePawnDesc  "^Spécial:^ Rapporte 1 rouble après s'être déplacé"
+

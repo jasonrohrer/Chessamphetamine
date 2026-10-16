@@ -37,6 +37,7 @@ enum{
     laserBishop,
     laserQueen,
     doublingQueen,
+    rublePawn,
     NUM_CHESS_PIECES };
 
 

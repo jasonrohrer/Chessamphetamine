@@ -1773,7 +1773,7 @@ static char multiPhaseStep( BoardState    *inState,
         }
     else if( p == earnMoney ) {
 
-        int  stepAmount  =  ( 10 * 60 ) / r;
+        int  stepAmount  =  ( 30 * 60 ) / r;
         
         if( inMoveProgress->phaseProgress == 0 ) {
             moneyAdd( inMoveProgress->params[ pn ][ 0 ] );

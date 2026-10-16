@@ -17,8 +17,6 @@
 #include "chess.h"
 
 
-void postMoveEffectsInit( void );
-
 
 typedef struct PostMoveEffects {
 
@@ -100,6 +98,27 @@ static void getEmptyPostEffects( PostMoveEffects  *outEffects ) {
     }
 
 
+static char arePostEffectsEmpty( PostMoveEffects  *inEffects ) {
+
+    if( inEffects->addedMoney == 0 ) {
+        return 1;
+        }
+    return 0;
+    }
+
+
+static void applyRepeat( PostMoveEffects  *inEffects,
+                         int               inRepeat ) {
+
+    if( inRepeat == 1 ) {
+        return;
+        }
+
+    if( inEffects->addedMoney != 0 ) {
+        inEffects->addedMoney *= inRepeat;
+        }
+    }
+
 
 void postMoveEffectsCompute( BoardState       *inState,
                              Move             *inMove,
@@ -124,6 +143,16 @@ void postMoveEffectsCompute( BoardState       *inState,
                                inMove,
                                inNewState,
                                outEffects );
+
+    if( ! arePostEffectsEmpty( outEffects ) ) {
+        
+        int  repeatVal  =  getTotalEffectsRepeatValue( inNewState,
+                                                       CHESS_WHITE,
+                                                       inMove->endPos[0],
+                                                       inMove->endPos[1] );
+        applyRepeat( outEffects,
+                     repeatVal );
+        }
     }
 
 

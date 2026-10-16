@@ -34,7 +34,8 @@ enum{
     multiplier,
     addition,
     rocketUp,
-    rocketDown
+    rocketDown,
+    earnMoney
     };
 
 #define  MAX_ANIM_PHASES       BN
@@ -148,6 +149,9 @@ void playAddSound( void );
 #include "checkDisplay.h"
 
 #include "pinch.h"
+
+#include "postMoveEffects.h"
+
 
 static  int  beepUp       =  -1;
 static  int  beepDown     =  -1;
@@ -747,8 +751,8 @@ static void defaultPieceDraw( int            inBoardCenterX,
 static  int  laserPhaseLen      =  512;
 static  int  modifierPhaseLen   =  512;
 static  int  rocketUpPhaseLen   =  512;
-static  int  rocketDownPhaseLen = 512;
-
+static  int  rocketDownPhaseLen =  512;
+static  int  moneyPhaseLen      =  512;
 
 typedef struct HitBatches {
         /* at most BMAX batches */
@@ -1141,6 +1145,45 @@ static void rocketPieceInit( BoardState    *inState,
         p++;
         };
     
+    outMoveProgress->numPhases = p;
+    }
+
+
+
+static void moneyPieceInit( BoardState    *inState,
+                            Move          *inMove,
+                            Captured      *inCaptured,
+                            BoardState    *inNewState,
+                            AnimProgress  *outMoveProgress ) {
+
+    PostMoveEffects  e;
+    int              p;
+
+    postMoveEffectsCompute( inState,
+                            inMove,
+                            inNewState,
+                            &e );
+    (void)inCaptured;
+
+    initMultFactors( outMoveProgress );
+    
+    outMoveProgress->numPhases     = 1;
+    outMoveProgress->phaseNumber   = 0;
+    outMoveProgress->phaseProgress = 0;
+
+    outMoveProgress->phases[0] = move;
+
+    spaceEffectsInit( inState,
+                      inMove,
+                      outMoveProgress );
+
+    p = outMoveProgress->numPhases;
+    
+    outMoveProgress->phases[p]    = earnMoney;
+    outMoveProgress->params[p][0] = (short)( e.addedMoney );
+
+    p ++;
+
     outMoveProgress->numPhases = p;
     }
 
@@ -1700,6 +1743,20 @@ static char multiPhaseStep( BoardState    *inState,
             }
 
         if( inMoveProgress->phaseProgress >= rocketDownPhaseLen ) {
+            inMoveProgress->phaseNumber ++;
+            inMoveProgress->phaseProgress = 0;
+            }
+        }
+    else if( p == earnMoney ) {
+
+        int  stepAmount  =  ( 30 * 60 ) / r;
+        
+        if( inMoveProgress->phaseProgress == 0 ) {
+            moneyAdd( inMoveProgress->params[ pn ][ 0 ] );
+            }
+        inMoveProgress->phaseProgress += stepAmount;
+        
+        if( inMoveProgress->phaseProgress >= moneyPhaseLen ) {
             inMoveProgress->phaseNumber ++;
             inMoveProgress->phaseProgress = 0;
             }

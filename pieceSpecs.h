@@ -151,7 +151,7 @@
     V( C,  12,  laserBishop,    laserPieceInit          ) \
     V( C,  13,  laserQueen,     laserPieceInit          ) \
     V( C,  14,  doublingQueen,  defaultPieceInit        ) \
-    V( C,  15,  rublePawn,      defaultPieceInit        ) \
+    V( C,  15,  rublePawn,      moneyPieceInit          ) \
 
 
 #define STEP_FUNCTION_LIST( C, V ) \
@@ -170,7 +170,7 @@
     V( C,  12,  laserBishop,    multiPhaseStep          ) \
     V( C,  13,  laserQueen,     multiPhaseStep          ) \
     V( C,  14,  doublingQueen,  defaultPieceStep        ) \
-    V( C,  15,  rublePawn,      defaultPieceStep        ) \
+    V( C,  15,  rublePawn,      multiPhaseStep          ) \
 
 
 #define DRAW_FUNCTION_LIST( C, V ) \
@@ -189,7 +189,7 @@
     V( C,  12,  laserBishop,    multiPhaseDraw          ) \
     V( C,  13,  laserQueen,     multiPhaseDraw          ) \
     V( C,  14,  doublingQueen,  defaultPieceDraw        ) \
-    V( C,  15,  rublePawn,      defaultPieceDraw        ) \
+    V( C,  15,  rublePawn,      multiPhaseDraw          ) \
 
 
 #define PIECE_NAME_KEY_STRING_LIST( C, V ) \

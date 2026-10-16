@@ -353,9 +353,9 @@ moveFunction             pawnMove
 repickMoveAtEnd          0
 effectsFunction          nullEffects
 captureMoney             1
-initFunction             defaultPieceInit
-stepFunction             defaultPieceStep
-drawFunction             defaultPieceDraw
+initFunction             moneyPieceInit
+stepFunction             multiPhaseStep
+drawFunction             multiPhaseDraw
 nameKey                  "rublePawn"
 descriptionKey           "rublePawnDesc"
 sprite                   "rublePawn.tga"

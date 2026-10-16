@@ -199,7 +199,14 @@ void getTotalSpaceEffects( int                     inTargetRow,
 
         
         
-        
+/* returns the number of times a piece in a given spot should repeat
+   its special effect.
+   Always at least 1  */
+int getTotalEffectsRepeatValue( BoardState  *inState,
+                                int          inAffectedColor,
+                                int          inPieceRow,
+                                int          inPieceCol );
+
 
 
 
@@ -1401,11 +1408,10 @@ static void printFullBoardSpaceEffects( BoardState *inState,
 
 
 
-/* returns pointer to statically allocated effects totals */
-static int getTotalEffectsRepeatValue( BoardState  *inState,
-                                       int          inAffectedColor,
-                                       int          inPieceRow,
-                                       int          inPieceCol ) {
+int getTotalEffectsRepeatValue( BoardState  *inState,
+                                int          inAffectedColor,
+                                int          inPieceRow,
+                                int          inPieceCol ) {
 
     static  FullBoardSpaceEffects  effects;
     static  TotalSpaceEffects      totals;
@@ -2559,7 +2565,9 @@ void chessInit( void ) {
                     ||
                     p == laserPawn
                     ||
-                    p == doublingPawn ) {
+                    p == doublingPawn
+                    ||
+                    p == rublePawn ) {
                     /* pawns get 300 (3 * SCORE_SCALE) point bonus per square
                        as they advance farther */
                     pieceScores[ p |  CHESS_BLACK ][y][x] -=
@@ -3418,7 +3426,9 @@ static int computePawnDistScoreMod( BoardState  *inState ) {
                     ||
                     pT == doublingPawn
                     ||
-                    pT == laserPawn ) {
+                    pT == laserPawn
+                    ||
+                    pT == rublePawn ) {
 
                     ChessPiece  pC  =
                         pP & CHESS_COLOR_MASK;

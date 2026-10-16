@@ -149,5 +149,5 @@ doublingQueen      "倍增后"
 doublingQueenDesc  "^特殊：^使直線及斜線上棋子的^特殊^能力加倍"
 
 
-rublePawn      "盧布兵"
-rublePawnDesc  "^特殊：^移動後獲得一盧布"
+rubleQueen      "盧布后"
+rubleQueenDesc  "^特殊：^移動後獲得一盧布"

@@ -19,6 +19,7 @@
     V( C,  13,  laserQueen,     11000                   ) \
     V( C,  14,  doublingQueen,  10000                   ) \
     V( C,  15,  rublePawn,      1000                    ) \
+    V( C,  16,  rubleQueen,     10000                   ) \
 
 
 #define PIECE_SYMB_LIST( C, V ) \
@@ -38,6 +39,7 @@
     V( C,  13,  laserQueen,     "lq"                    ) \
     V( C,  14,  doublingQueen,  "dq"                    ) \
     V( C,  15,  rublePawn,      "rp"                    ) \
+    V( C,  16,  rubleQueen,     "rq"                    ) \
 
 
 #define PIECE_NAME_LIST( C, V ) \
@@ -57,6 +59,7 @@
     V( C,  13,  laserQueen,     "laserQueen"            ) \
     V( C,  14,  doublingQueen,  "doublingQueen"         ) \
     V( C,  15,  rublePawn,      "rublePawn"             ) \
+    V( C,  16,  rubleQueen,     "rubleQueen"            ) \
 
 
 #define MOVE_FUNCTION_LIST( C, V ) \
@@ -75,7 +78,8 @@
     V( C,  12,  laserBishop,    laserBishopMove         ) \
     V( C,  13,  laserQueen,     laserQueenMove          ) \
     V( C,  14,  doublingQueen,  queenMove               ) \
-    V( C,  15,  rublePawn,      pawnMove                ) \
+    V( C,  15,  rublePawn,      rublePawnMove           ) \
+    V( C,  16,  rubleQueen,     queenMove               ) \
 
 
 #define REPICK_MOVE_AT_END_LIST( C, V ) \
@@ -95,6 +99,7 @@
     V( C,  13,  laserQueen,     0                       ) \
     V( C,  14,  doublingQueen,  0                       ) \
     V( C,  15,  rublePawn,      0                       ) \
+    V( C,  16,  rubleQueen,     0                       ) \
 
 
 #define EFFECTS_FUNCTION_LIST( C, V ) \
@@ -114,6 +119,7 @@
     V( C,  13,  laserQueen,     nullEffects             ) \
     V( C,  14,  doublingQueen,  doublingQueenEffects    ) \
     V( C,  15,  rublePawn,      nullEffects             ) \
+    V( C,  16,  rubleQueen,     nullEffects             ) \
 
 
 #define PIECE_CAPTURE_MONEY_LIST( C, V ) \
@@ -133,6 +139,7 @@
     V( C,  13,  laserQueen,     NON_PAWN_CAPTURE_VALUE  ) \
     V( C,  14,  doublingQueen,  NON_PAWN_CAPTURE_VALUE  ) \
     V( C,  15,  rublePawn,      1                       ) \
+    V( C,  16,  rubleQueen,     1                       ) \
 
 
 #define INIT_FUNCTION_LIST( C, V ) \
@@ -152,6 +159,7 @@
     V( C,  13,  laserQueen,     laserPieceInit          ) \
     V( C,  14,  doublingQueen,  defaultPieceInit        ) \
     V( C,  15,  rublePawn,      moneyPieceInit          ) \
+    V( C,  16,  rubleQueen,     moneyPieceInit          ) \
 
 
 #define STEP_FUNCTION_LIST( C, V ) \
@@ -171,6 +179,7 @@
     V( C,  13,  laserQueen,     multiPhaseStep          ) \
     V( C,  14,  doublingQueen,  defaultPieceStep        ) \
     V( C,  15,  rublePawn,      multiPhaseStep          ) \
+    V( C,  16,  rubleQueen,     multiPhaseStep          ) \
 
 
 #define DRAW_FUNCTION_LIST( C, V ) \
@@ -190,6 +199,7 @@
     V( C,  13,  laserQueen,     multiPhaseDraw          ) \
     V( C,  14,  doublingQueen,  defaultPieceDraw        ) \
     V( C,  15,  rublePawn,      multiPhaseDraw          ) \
+    V( C,  16,  rubleQueen,     multiPhaseDraw          ) \
 
 
 #define PIECE_NAME_KEY_STRING_LIST( C, V ) \
@@ -209,6 +219,7 @@
     V( C,  13,  laserQueen,     "laserQueen"            ) \
     V( C,  14,  doublingQueen,  "doublingQueen"         ) \
     V( C,  15,  rublePawn,      "rublePawn"             ) \
+    V( C,  16,  rubleQueen,     "rubleQueen"            ) \
 
 
 #define PIECE_DESCRIPTION_KEY_STRING_LIST( C, V ) \
@@ -228,6 +239,7 @@
     V( C,  13,  laserQueen,     "laserQueenDesc"        ) \
     V( C,  14,  doublingQueen,  "doublingQueenDesc"     ) \
     V( C,  15,  rublePawn,      "rublePawnDesc"         ) \
+    V( C,  16,  rubleQueen,     "rubleQueenDesc"        ) \
 
 
 #define PIECE_SPRITE_FILE_LIST( C, V ) \
@@ -247,6 +259,7 @@
     V( C,  13,  laserQueen,     "queen.tga"             ) \
     V( C,  14,  doublingQueen,  "doublingQueen.tga"     ) \
     V( C,  15,  rublePawn,      "rublePawn.tga"         ) \
+    V( C,  16,  rubleQueen,     "queen.tga"             ) \
 
 
 #define PIECE_EXTRA_OFFSET_Y_LIST( C, V ) \
@@ -266,6 +279,7 @@
     V( C,  13,  laserQueen,     ARRAY_PAIR(  6,  6 )    ) \
     V( C,  14,  doublingQueen,  ARRAY_PAIR(  0,  0 )    ) \
     V( C,  15,  rublePawn,      ARRAY_PAIR(  0,  0 )    ) \
+    V( C,  16,  rubleQueen,     ARRAY_PAIR( -12,  0 )    ) \
 
 
 #define PIECE_EXTRA_SPRITE_LIST( C, V ) \
@@ -285,6 +299,7 @@
     V( C,  13,  laserQueen,     ARRAY_PAIR( "queenLasers.tga", "queenLasers.tga" ) ) \
     V( C,  14,  doublingQueen,  ARRAY_PAIR( "", "" )    ) \
     V( C,  15,  rublePawn,      ARRAY_PAIR( "", "" )    ) \
+    V( C,  16,  rubleQueen,     ARRAY_PAIR( "queenGem.tga", "queenGem.tga" ) ) \
 
 
 #define SPECIAL_RETURN_FUNCTION_LIST( C, V ) \
@@ -304,6 +319,7 @@
     V( C,  13,  laserQueen,     noSpecialReturn         ) \
     V( C,  14,  doublingQueen,  noSpecialReturn         ) \
     V( C,  15,  rublePawn,      noSpecialReturn         ) \
+    V( C,  16,  rubleQueen,     noSpecialReturn         ) \
 
 
 #define PIECE_RARITY_LIST( C, V ) \
@@ -323,6 +339,7 @@
     V( C,  13,  laserQueen,     contraband              ) \
     V( C,  14,  doublingQueen,  contraband              ) \
     V( C,  15,  rublePawn,      rare                    ) \
+    V( C,  16,  rubleQueen,     contraband              ) \
 
 
 #define SHOP_PRICE_LIST( C, V ) \
@@ -342,6 +359,7 @@
     V( C,  13,  laserQueen,     0                       ) \
     V( C,  14,  doublingQueen,  0                       ) \
     V( C,  15,  rublePawn,      1                       ) \
+    V( C,  16,  rubleQueen,     0                       ) \
 
 
 #define PIECE_DEPLOYMENT_COST_LIST( C, V ) \
@@ -361,6 +379,7 @@
     V( C,  13,  laserQueen,     8                       ) \
     V( C,  14,  doublingQueen,  7                       ) \
     V( C,  15,  rublePawn,      2                       ) \
+    V( C,  16,  rubleQueen,     7                       ) \
 
 
 #define POST_EFFECTS_FUNCTION_LIST( C, V ) \
@@ -380,6 +399,7 @@
     V( C,  13,  laserQueen,     nullPostEffects         ) \
     V( C,  14,  doublingQueen,  nullPostEffects         ) \
     V( C,  15,  rublePawn,      oneRubleEffects         ) \
+    V( C,  16,  rubleQueen,     oneRubleEffects         ) \
 
 
 #endif

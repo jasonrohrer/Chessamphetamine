@@ -349,7 +349,7 @@ $rublePawn
 value                    1000
 char                     "rp"
 name                     "rublePawn"
-moveFunction             pawnMove
+moveFunction             rublePawnMove
 repickMoveAtEnd          0
 effectsFunction          nullEffects
 captureMoney             1
@@ -365,4 +365,27 @@ specialReturnFunction    noSpecialReturn
 rarity                   rare
 price                    1
 deploymentCost           2
+postEffectsFunction      oneRubleEffects
+
+
+$rubleQueen
+value                    10000
+char                     "rq"
+name                     "rubleQueen"
+moveFunction             queenMove
+repickMoveAtEnd          0
+effectsFunction          nullEffects
+captureMoney             1
+initFunction             moneyPieceInit
+stepFunction             multiPhaseStep
+drawFunction             multiPhaseDraw
+nameKey                  "rubleQueen"
+descriptionKey           "rubleQueenDesc"
+sprite                   "queen.tga"
+extraOffsetY             ARRAY_PAIR( -12,  0 )
+extraSprite              ARRAY_PAIR( "queenGem.tga", "queenGem.tga" )
+specialReturnFunction    noSpecialReturn
+rarity                   contraband
+price                    0
+deploymentCost           7
 postEffectsFunction      oneRubleEffects

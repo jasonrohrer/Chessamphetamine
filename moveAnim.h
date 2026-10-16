@@ -1234,6 +1234,30 @@ static void getCaptureMidState( BoardState  *inState,
         outMidState->grid[ inMove->endPos  [0] ]
                          [ inMove->endPos  [1] ] = movingC | laserQueen;
         }
+    else if( ( movingP & CHESS_TYPE_MASK ) == rublePawn
+             &&
+             ( inMove->endPos[ 0 ] == 0
+               ||
+               inMove->endPos[ 0 ] == BH - 1 ) ) {
+
+        /* ruble pawn moving into last row */
+
+        ChessPiece  movingC  =  movingP & CHESS_COLOR_MASK;
+
+        *outMidState    = *inState;
+        
+        /* show whatever it captured (itself, generally, or if it
+           moved diagonally */
+        *outMidCaptured = *inCaptured;
+
+        /* leave nothing behind */
+        outMidState->grid[ inMove->startPos[0] ]
+                         [ inMove->startPos[1] ] = noPiece;
+        
+        /* promote to queen now */
+        outMidState->grid[ inMove->endPos  [0] ]
+                         [ inMove->endPos  [1] ] = movingC | rubleQueen;
+        }
     else {
         /* all other special pieces work the same as laser rook for now
            this may need to change later */

@@ -151,3 +151,6 @@ doublingQueenDesc  "^Spécial :^ Double les capacités ^spéciales^ des pièces 
 rublePawn      "Pion à roubles"
 rublePawnDesc  "^Spécial:^ Rapporte 1 rouble après s'être déplacé"
 
+
+rubleQueen      "Dame à roubles"
+rubleQueenDesc  "^Spécial:^ Rapporte 1 rouble après s'être déplacé"

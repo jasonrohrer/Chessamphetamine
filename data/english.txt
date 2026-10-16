@@ -152,3 +152,7 @@ doublingQueenDesc  "^Special:^ Doubles ^special^ abilities of reachable pieces i
 
 rublePawn      "Ruble Pawn"
 rublePawnDesc  "^Special:^ Earns 1 ruble after moving"
+
+
+rubleQueen      "Ruble Queen"
+rubleQueenDesc  "^Special:^ Earns 1 ruble after moving"

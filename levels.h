@@ -175,7 +175,7 @@ void levelsInit( void ) {
          p < NUM_CHESS_PIECES;
          p   ++ ) {
 
-        int  flag  =  enemyDeckFlags[ i ];
+        int  flag  =  enemyDeckFlags[ p ];
 
         if( flag >= NUM_ENEMY_TIERS ) {
             continue;

@@ -57,3 +57,8 @@
 # from sideBoard.h
 
 @deploymentCost         PIECE_DEPLOYMENT_COST_LIST         1
+
+
+# from postMoveEffects.h
+
+@postEffectsFunction    POST_EFFECTS_FUNCTION_LIST         nullPostEffects

@@ -38,6 +38,7 @@
 #define UNLOCKS_IMPLEMENTATION
 #define PLAYER_DECK_IMPLEMENTATION
 #define RUN_STATS_IMPLEMENTATION
+#define POST_MOVE_EFFECTS_IMPLEMENTATION
 
 
 #include "chess.h"
@@ -101,6 +102,8 @@
 #include "playerDeck.h"
 
 #include "runStats.h"
+
+#include "postMoveEffects.h"
 
 
 

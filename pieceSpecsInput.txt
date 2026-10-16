@@ -20,6 +20,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   contraband
 price                    0
 deploymentCost           0
+postEffectsFunction      nullPostEffects
 
 
 $pawn
@@ -42,6 +43,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   rare
 price                    1
 deploymentCost           2
+postEffectsFunction      nullPostEffects
 
 
 $bishop
@@ -64,6 +66,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   common
 price                    1
 deploymentCost           2
+postEffectsFunction      nullPostEffects
 
 
 $knight
@@ -86,6 +89,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   common
 price                    3
 deploymentCost           1
+postEffectsFunction      nullPostEffects
 
 
 $rook
@@ -108,6 +112,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   uncommon
 price                    5
 deploymentCost           5
+postEffectsFunction      nullPostEffects
 
 
 $queen
@@ -130,6 +135,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   contraband
 price                    0
 deploymentCost           6
+postEffectsFunction      nullPostEffects
 
 
 $king
@@ -152,6 +158,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   contraband
 price                    0
 deploymentCost           0
+postEffectsFunction      nullPostEffects
 
 
 $laserRook
@@ -174,6 +181,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   legendary
 price                    30
 deploymentCost           6
+postEffectsFunction      nullPostEffects
 
 
 $laserPawn
@@ -196,6 +204,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   rare
 price                    8
 deploymentCost           3
+postEffectsFunction      nullPostEffects
 
 
 $doublingPawn
@@ -218,6 +227,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   rare
 price                    8
 deploymentCost           2
+postEffectsFunction      nullPostEffects
 
 
 $addingRook
@@ -240,6 +250,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   legendary
 price                    14
 deploymentCost           6
+postEffectsFunction      nullPostEffects
 
 
 $rocket
@@ -262,6 +273,7 @@ specialReturnFunction    rocketSpecialReturn
 rarity                   rare
 price                    8
 deploymentCost           2
+postEffectsFunction      nullPostEffects
 
 
 $laserBishop
@@ -284,6 +296,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   rare
 price                    20
 deploymentCost           5
+postEffectsFunction      nullPostEffects
 
 
 $laserQueen
@@ -306,6 +319,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   contraband
 price                    0
 deploymentCost           8
+postEffectsFunction      nullPostEffects
 
 
 $doublingQueen
@@ -328,6 +342,7 @@ specialReturnFunction    noSpecialReturn
 rarity                   contraband
 price                    0
 deploymentCost           7
+postEffectsFunction      nullPostEffects
 
 
 $rublePawn
@@ -350,3 +365,4 @@ specialReturnFunction    noSpecialReturn
 rarity                   rare
 price                    1
 deploymentCost           2
+postEffectsFunction      oneRubleEffects

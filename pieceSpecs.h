@@ -363,4 +363,23 @@
     V( C,  15,  rublePawn,      2                       ) \
 
 
+#define POST_EFFECTS_FUNCTION_LIST( C, V ) \
+    V( C,   0,  noPiece,        nullPostEffects         ) \
+    V( C,   1,  pawn,           nullPostEffects         ) \
+    V( C,   2,  bishop,         nullPostEffects         ) \
+    V( C,   3,  knight,         nullPostEffects         ) \
+    V( C,   4,  rook,           nullPostEffects         ) \
+    V( C,   5,  queen,          nullPostEffects         ) \
+    V( C,   6,  king,           nullPostEffects         ) \
+    V( C,   7,  laserRook,      nullPostEffects         ) \
+    V( C,   8,  laserPawn,      nullPostEffects         ) \
+    V( C,   9,  doublingPawn,   nullPostEffects         ) \
+    V( C,  10,  addingRook,     nullPostEffects         ) \
+    V( C,  11,  rocket,         nullPostEffects         ) \
+    V( C,  12,  laserBishop,    nullPostEffects         ) \
+    V( C,  13,  laserQueen,     nullPostEffects         ) \
+    V( C,  14,  doublingQueen,  nullPostEffects         ) \
+    V( C,  15,  rublePawn,      oneRubleEffects         ) \
+
+
 #endif

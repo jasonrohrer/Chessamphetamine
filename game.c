@@ -1881,6 +1881,11 @@ void maxiginGame_step( char  inFinalStep  ) {
 
                     ChessPiece  p  =  postMoveCaptured.pieces[ c ].p;
 
+                    if( postMoveCaptured.replaced[ c ] ) {
+                        /* replaced pieces don't go back in deck */
+                        continue;
+                        }
+                    
                     if( ( p & CHESS_COLOR_MASK ) == CHESS_WHITE
                         &&
                         ( p & CHESS_TYPE_MASK  ) != king ) {

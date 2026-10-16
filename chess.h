@@ -111,6 +111,11 @@ typedef struct Captured {
         
         /* list of up to BN pieces, with only the first num entries populated */
         BoardPiece pieces[ BN ];
+
+        /* 0 for most captured pieces, but 1 for pawns and
+           things that "capture" themselves when promoting and are actually
+           replaced */
+        char replaced[ BN ];
         
     } Captured;
 
@@ -511,7 +516,8 @@ static int noPieceMove( BoardState     *inState,
 static void addCapturedPiece( Captured    *inCaptured,
                               BoardState  *inState,
                               int          inRow,
-                              int          inCol ) {
+                              int          inCol,
+                              char         inReplaced ) {
 
     BoardPiece  *bp  =  &( inCaptured->pieces[ inCaptured->num ] );
 
@@ -523,6 +529,8 @@ static void addCapturedPiece( Captured    *inCaptured,
 
         inState->kingExists[ ( bp->p ) >> 7 ] = 0;
         }
+
+    inCaptured->replaced[ inCaptured->num ] = inReplaced;
 
     inCaptured->num ++;
     }
@@ -615,11 +623,12 @@ static int pawnMove( BoardState     *inState,
                   &&
                   newRow == 0 ) ) {
 
-                /* count our pawn as captured during promotion */
+                /* count our pawn as "replaced" captured during promotion */
                 addCapturedPiece( &( outCaptured[n] ),
                                   &( outStates[n]   ),
                                   newRow,
-                                  inPieceCol );
+                                  inPieceCol,
+                                  1 );
                 
                 outStates[n].grid[ newRow ][ inPieceCol ] = inPieceColor | queen;
                 }
@@ -672,7 +681,8 @@ static int pawnMove( BoardState     *inState,
             addCapturedPiece( &( outCaptured[n] ),
                               &( outStates[n]   ),
                               newRow,
-                              newCol );
+                              newCol,
+                              0 );
 
             /* copy piece into new spot
                (overwrite captured piece) */
@@ -694,11 +704,12 @@ static int pawnMove( BoardState     *inState,
                   &&
                   newRow == 0 ) ) {
 
-                /* count our pawn as captured during promotion */
+                /* count our pawn as "replaced" captured during promotion */
                 addCapturedPiece( &( outCaptured[n] ),
                                   &( outStates[n]   ),
                                   newRow,
-                                  newCol );
+                                  newCol,
+                                  1 );
                 
                 outStates[n].grid[ newRow ][ newCol ] = inPieceColor | queen;
                 }
@@ -818,7 +829,8 @@ static int bishopMove( BoardState     *inState,
                     addCapturedPiece( &( outCaptured[n] ),
                                       &( outStates[n]   ),
                                       destY,
-                                      destX );
+                                      destX,
+                                      0 );
                     }
 
                 /* copy piece into new spot */
@@ -938,7 +950,8 @@ static int knightMove( BoardState     *inState,
                 addCapturedPiece( &( outCaptured[n] ),
                                   &( outStates[n]   ),
                                   destY,
-                                  destX );
+                                  destX,
+                                  0 );
                 }
             
             /* copy piece into new spot */
@@ -1066,7 +1079,8 @@ static int rookMove( BoardState     *inState,
                     addCapturedPiece( &( outCaptured[n] ),
                                       &( outStates[n]   ),
                                       destY,
-                                      destX );
+                                      destX,
+                                      0 );
                     }
 
                 /* copy piece into new spot */
@@ -1208,7 +1222,8 @@ static int queenMove( BoardState     *inState,
                     addCapturedPiece( &( outCaptured[n] ),
                                       &( outStates[n]   ),
                                       destY,
-                                      destX );
+                                      destX,
+                                      0 );
                     }
 
                 /* copy piece into new spot */
@@ -1326,7 +1341,8 @@ static int kingMove( BoardState     *inState,
                 addCapturedPiece( &( outCaptured[n] ),
                                   &( outStates[n]   ),
                                   destY,
-                                  destX );
+                                  destX,
+                                  0 );
                 }
 
             /* copy piece into new spot */
@@ -1568,7 +1584,8 @@ static int laserRookMove( BoardState     *inState,
                         addCapturedPiece( &( outCaptured[i] ),
                                           s,
                                           dy,
-                                          dx );
+                                          dx,
+                                          0 );
                         
                         /* destroy piece */
                         s->grid[ dy ][ dx ] = noPiece;
@@ -1732,7 +1749,8 @@ static int laserBishopMove( BoardState     *inState,
                         addCapturedPiece( &( outCaptured[i] ),
                                           s,
                                           dy,
-                                          dx );
+                                          dx,
+                                          0 );
                         
                         /* destroy piece */
                         s->grid[ dy ][ dx ] = noPiece;
@@ -1902,7 +1920,8 @@ static int laserQueenMove( BoardState     *inState,
                         addCapturedPiece( &( outCaptured[i] ),
                                           s,
                                           dy,
-                                          dx );
+                                          dx,
+                                          0 );
                         
                         /* destroy piece */
                         s->grid[ dy ][ dx ] = noPiece;
@@ -2048,7 +2067,8 @@ static int laserPawnMove( BoardState     *inState,
                     addCapturedPiece( &( outCaptured[i] ),
                                       s,
                                       dy,
-                                      c );
+                                      c,
+                                      0 );
                         
                     /* destroy piece */
                     s->grid[ dy ][ c ] = noPiece;
@@ -2343,7 +2363,8 @@ static int rocketMove( BoardState     *inState,
         addCapturedPiece( &( outCaptured[0] ),
                           &( outStates  [0] ),
                           r,
-                          c );
+                          c,
+                          0 );
 
         /* destroy target */
         outStates[0].grid[ r ][ c ] = noPiece;

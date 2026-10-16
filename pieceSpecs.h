@@ -358,7 +358,7 @@
     V( C,  12,  laserBishop,    20                      ) \
     V( C,  13,  laserQueen,     0                       ) \
     V( C,  14,  doublingQueen,  0                       ) \
-    V( C,  15,  rublePawn,      1                       ) \
+    V( C,  15,  rublePawn,      8                       ) \
     V( C,  16,  rubleQueen,     0                       ) \
 
 
@@ -378,7 +378,7 @@
     V( C,  12,  laserBishop,    5                       ) \
     V( C,  13,  laserQueen,     8                       ) \
     V( C,  14,  doublingQueen,  7                       ) \
-    V( C,  15,  rublePawn,      2                       ) \
+    V( C,  15,  rublePawn,      4                       ) \
     V( C,  16,  rubleQueen,     7                       ) \
 
 

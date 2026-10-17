@@ -639,9 +639,9 @@ void moneyAddWages( int  inLevelNumber ) {
         moneyLabeledAdd = 15;
         }
 
-    /* after level 16, wages taper off back down to 0 */
-    if( inLevelNumber > 16 ) {
-        moneyLabeledAdd -= inLevelNumber -  16;
+    /* starting on level 10, wages taper off back down to 0 */
+    if( inLevelNumber > 9 ) {
+        moneyLabeledAdd -= inLevelNumber -  9;
 
         if( moneyLabeledAdd < 0 ) {
             moneyLabeledAdd = 0;

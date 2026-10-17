@@ -273,23 +273,23 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
 
     if( inLevelNumber > 4
         &&
-        inLevelNumber <= 16 ) {
+        inLevelNumber <= 12 ) {
 
-        /* add up to 12 extra normal pieces
-           between level 5 and level 16,
+        /* add up to 8 extra normal pieces
+           between level 5 and level 12,
            we get extra normal chess pieces added at random */
         deckAddPiece(
             &enemyDeck,
             getRandEnemyPieceFromTier( 1 ) );
         }
 
-    /* by level 16, our deck has 20 pieces */
+    /* by level 12, our deck has 16 pieces */
 
-    if( inLevelNumber > 16
+    if( inLevelNumber > 12
         &&
         inLevelNumber <= 46 ) {
-        /* add up to 30 extra special pieces
-           between level 17 and level 46, we get extra special
+        /* add up to 34 extra special pieces
+           between level 13 and level 46, we get extra special
            chess pieces added at random */
 
         deckAddPiece(

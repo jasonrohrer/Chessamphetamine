@@ -187,7 +187,7 @@ extraSprite              ARRAY_PAIR( "rookLasers.tga", "rookLasers.tga" )
 specialReturnFunction    noSpecialReturn
 rarity                   legendary
 price                    30
-deploymentCost           6
+deploymentCost           7
 postEffectsFunction      nullPostEffects
 inEnemyDeck              2
 
@@ -305,9 +305,9 @@ sprite                   "bishop.tga"
 extraOffsetY             ARRAY_PAIR(  0,  0 )
 extraSprite              ARRAY_PAIR( "bishopLasers.tga", "bishopLasers.tga" )
 specialReturnFunction    noSpecialReturn
-rarity                   rare
+rarity                   legendary
 price                    20
-deploymentCost           5
+deploymentCost           6
 postEffectsFunction      nullPostEffects
 inEnemyDeck              2
 
@@ -331,7 +331,7 @@ extraSprite              ARRAY_PAIR( "queenLasers.tga", "queenLasers.tga" )
 specialReturnFunction    noSpecialReturn
 rarity                   contraband
 price                    0
-deploymentCost           8
+deploymentCost           10
 postEffectsFunction      nullPostEffects
 inEnemyDeck              3
 
@@ -367,7 +367,7 @@ name                     "rublePawn"
 moveFunction             rublePawnMove
 repickMoveAtEnd          0
 effectsFunction          nullEffects
-captureMoney             1
+captureMoney             NON_PAWN_CAPTURE_VALUE
 initFunction             moneyPieceInit
 stepFunction             multiPhaseStep
 drawFunction             multiPhaseDraw
@@ -391,7 +391,7 @@ name                     "rubleQueen"
 moveFunction             queenMove
 repickMoveAtEnd          0
 effectsFunction          nullEffects
-captureMoney             1
+captureMoney             NON_PAWN_CAPTURE_VALUE
 initFunction             moneyPieceInit
 stepFunction             multiPhaseStep
 drawFunction             multiPhaseDraw

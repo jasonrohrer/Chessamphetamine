@@ -347,7 +347,7 @@
     V( C,   1,  pawn,           1                       ) \
     V( C,   2,  bishop,         1                       ) \
     V( C,   3,  knight,         3                       ) \
-    V( C,   4,  rook,           5                       ) \
+    V( C,   4,  rook,           6                       ) \
     V( C,   5,  queen,          0                       ) \
     V( C,   6,  king,           0                       ) \
     V( C,   7,  laserRook,      30                      ) \
@@ -367,19 +367,19 @@
     V( C,   1,  pawn,           2                       ) \
     V( C,   2,  bishop,         2                       ) \
     V( C,   3,  knight,         1                       ) \
-    V( C,   4,  rook,           5                       ) \
-    V( C,   5,  queen,          6                       ) \
+    V( C,   4,  rook,           6                       ) \
+    V( C,   5,  queen,          8                       ) \
     V( C,   6,  king,           0                       ) \
-    V( C,   7,  laserRook,      7                       ) \
+    V( C,   7,  laserRook,      10                      ) \
     V( C,   8,  laserPawn,      3                       ) \
     V( C,   9,  doublingPawn,   2                       ) \
-    V( C,  10,  addingRook,     6                       ) \
-    V( C,  11,  rocket,         2                       ) \
+    V( C,  10,  addingRook,     8                       ) \
+    V( C,  11,  rocket,         3                       ) \
     V( C,  12,  laserBishop,    6                       ) \
-    V( C,  13,  laserQueen,     10                      ) \
-    V( C,  14,  doublingQueen,  7                       ) \
+    V( C,  13,  laserQueen,     12                      ) \
+    V( C,  14,  doublingQueen,  9                       ) \
     V( C,  15,  rublePawn,      4                       ) \
-    V( C,  16,  rubleQueen,     7                       ) \
+    V( C,  16,  rubleQueen,     9                       ) \
 
 
 #define POST_EFFECTS_FUNCTION_LIST( C, V ) \

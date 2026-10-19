@@ -315,9 +315,11 @@ static int            successfulSwapCount         =  0;
 
 static int            logoBaseSprite              = -1;
 static int            logoPulseSprite             = -1;
+static int            logoPulseGlintSprite        = -1;
 
 static unsigned char  logoFade                    =  0;
-
+static int            logoGlintXPos               =  0;
+static char           logoGlintSpeed              =  1;
 
 
 /* 0 for no mark
@@ -863,7 +865,20 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                         maxigin_drawSpriteGlowOnly( logoPulseSprite,
                                                     boardCenterX,
                                                     logoY + 15 );
+
+                    /* now draw glint */
+                    maxigin_drawPushClipRectangle( logoGlintXPos,
+                                                   logoGlintXPos + 2,
+                                                   0,
+                                                   MAXIGIN_GAME_NATIVE_H );
                     maxigin_drawToggleAdditive( 0 );
+                    
+                    maxigin_drawBaseSprite( logoPulseGlintSprite,
+                                            boardCenterX,
+                                            logoY + 15 );
+                    
+
+                    maxigin_drawPopClipRectangle();
                     }
             else {
                 /* show exploding pulse as logo fades out */
@@ -2944,6 +2959,12 @@ void maxiginGame_step( char  inFinalStep  ) {
             redrawRemoveRunning = 1;
             redrawAddRunning = 0;
             }
+        else if( buttonIsHover( newGameButton ) ) {
+            logoGlintSpeed = 2;
+            }
+        else {
+            logoGlintSpeed = 1;
+            }
         }
         
     
@@ -3254,7 +3275,26 @@ void maxiginGame_step( char  inFinalStep  ) {
             }
         
         logoFade = (unsigned char) newVal;
+
+        
         }
+
+    if( logoFade == 255 ) {
+        int  newVal  =  logoGlintXPos + logoGlintSpeed * 60 / r;
+        int  limHigh =  100;
+        int  limLow  =  100;
+
+        if( logoGlintSpeed == 2 ) {
+            limHigh = 130;
+            limLow  = 100;
+            }
+
+        if( newVal >= MAXIGIN_GAME_NATIVE_W - limHigh ) {
+            newVal = limLow;
+            }
+        logoGlintXPos = newVal;
+        }
+        
     }
 
 
@@ -3644,11 +3684,15 @@ void maxiginGame_init( void ) {
 
     logoBaseSprite = maxigin_initSprite( "logoBase.tga" );
     logoPulseSprite = maxigin_initSprite( "logoPulse.tga" );
+    logoPulseGlintSprite = maxigin_initSprite( "logoPulseGlint.tga" );
 
     maxigin_initMakeGlowSprite( logoBaseSprite,
                                 4,
                                 2 );
     maxigin_initMakeGlowSprite( logoPulseSprite,
+                                4,
+                                2 );
+    maxigin_initMakeGlowSprite( logoPulseGlintSprite,
                                 4,
                                 2 );
 
@@ -4065,6 +4109,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( successfulSwapCount );
 
     REGISTER_VAL_MEM( logoFade );
+    REGISTER_VAL_MEM( logoGlintXPos );
+    REGISTER_VAL_MEM( logoGlintSpeed );
 
     REGISTER_VAL_MEM( firstDraftingStarted );
     
@@ -4138,6 +4184,9 @@ void maxiginGame_init( void ) {
     if( ! firstDraftingStarted ) {
 
         logoFade = 255;
+        logoGlintXPos = 100;
+        logoGlintSpeed = 1;
+        
         gameOver = 1;
         heartsForceEmpty();
         }

@@ -24,7 +24,6 @@ void moneyAdd( int  inValToAdd );
 
 void moneyAddDelayed( int  inValToAdd );
 
-void moneyAddOverrunDelayed( void );
 
 
 
@@ -99,13 +98,9 @@ char moneyGetSubMessageShowing( void );
 #include "util.h"
 
 
-/* how much money you get for winning by overrun
-   The cheapest pieces in shop are 2, so you can always
-   buy something, and you're never totally stuck
-*/
-#define  OVERRUN_MONEY_VALUE          2
 
-#define  EXTRA_BONUS_PER_UNUSED_DRAW  2
+
+#define  EXTRA_BONUS_PER_UNUSED_DRAW  1
 
 
 /*
@@ -514,11 +509,6 @@ int moneyGetTotal( void ) {
     return total;
     }
 
-
-
-void moneyAddOverrunDelayed( void ) {
-    moneyAddDelayed( OVERRUN_MONEY_VALUE );
-    }
 
 
 

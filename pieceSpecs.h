@@ -324,7 +324,7 @@
 
 #define PIECE_RARITY_LIST( C, V ) \
     V( C,   0,  noPiece,        contraband              ) \
-    V( C,   1,  pawn,           rare                    ) \
+    V( C,   1,  pawn,           contraband              ) \
     V( C,   2,  bishop,         common                  ) \
     V( C,   3,  knight,         common                  ) \
     V( C,   4,  rook,           uncommon                ) \

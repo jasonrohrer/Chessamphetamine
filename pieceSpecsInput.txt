@@ -41,7 +41,7 @@ sprite                   "pawn.tga"
 extraOffsetY             ARRAY_PAIR(  0,  0 )
 extraSprite              ARRAY_PAIR( "", "" )
 specialReturnFunction    noSpecialReturn
-rarity                   rare
+rarity                   contraband
 price                    1
 deploymentCost           2
 postEffectsFunction      nullPostEffects

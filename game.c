@@ -4010,13 +4010,21 @@ void maxiginGame_init( void ) {
 
 
     /* after loading saved game, if no current game in progress,
-       then start drafting pieces,
+       then show game over state and new game button.
+
+       This gives the audio a chance to fade-in, and the new player
+       a chance to get their bearings, before wages accumulate and
+       pieces drop in.
+
+       It's like they walked up to the machine after someone else
+       just finished their game.
 
        otherwise, firstDraftingStarted will be 1 forever more,
        as we load continued states */
 
     if( ! firstDraftingStarted ) {
-        startDraftingPieces();
+        gameOver = 1;
+        heartsForceEmpty();
         }
     
     }

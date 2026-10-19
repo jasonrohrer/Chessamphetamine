@@ -35,6 +35,10 @@ void heartsDraw( int  inPosX,
 void heartsStep( void );
 
 
+void heartsForceEmpty( void );
+
+
+
 
 #endif
 
@@ -428,6 +432,23 @@ void heartsStep( void ) {
 
     return;     
     }
+
+
+
+void heartsForceEmpty( void ) {
+
+    int  i;
+    
+    heartsCount = 0;
+
+    for( i = 0;
+         i < HEARTS_MAX;
+         i ++ ) {
+        heartsShineFade[ i ] = 0;
+        }
+    heartsSkullShineFade = 255;
+    }
+
 
 
 #endif

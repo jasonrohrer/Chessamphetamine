@@ -313,6 +313,11 @@ static int            swapLineStemSprite;
 
 static int            successfulSwapCount         =  0;
 
+static int            logoBaseSprite              = -1;
+static int            logoPulseSprite             = -1;
+
+static unsigned char  logoFade                    =  0;
+
 
 
 /* 0 for no mark
@@ -822,6 +827,64 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         boardDraw( boardCenterX,
                    boardLiveCenterY );
+
+        if( logoFade > 0 ) {
+
+            int  logoY       =  boardLiveCenterY;
+            int  partSprite  =  getParticleSprite();
+            
+            maxigin_drawResetColor();
+
+            
+                maxigin_drawSetAlpha( logoFade );
+
+                maxigin_drawSprite( logoBaseSprite,
+                                    boardCenterX,
+                                    logoY );
+
+                if( logoFade == 255
+                    ||
+                    partSprite == -1 ) {
+                
+                    maxigin_drawSprite( logoPulseSprite,
+                                        boardCenterX,
+                                        logoY + 15 );
+
+                    maxigin_drawToggleAdditive( 1 );
+                    for( i = 0;
+                         i < 2;
+                         i ++ )
+                        maxigin_drawBaseSprite( logoPulseSprite,
+                                                boardCenterX,
+                                                logoY + 15 );
+                    for( i = 0;
+                         i < 3;
+                         i ++ )
+                        maxigin_drawSpriteGlowOnly( logoPulseSprite,
+                                                    boardCenterX,
+                                                    logoY + 15 );
+                    maxigin_drawToggleAdditive( 0 );
+                    }
+            else {
+                /* show exploding pulse as logo fades out */
+                maxigin_drawToggleAdditive( 1 );
+
+                maxigin_drawResetColor();
+                
+                maxigin_drawExplodingSprite( logoPulseSprite,
+                                             partSprite,
+                                             boardCenterX,
+                                             logoY + 15,
+                                             boardCenterX,
+                                             logoY + 15,
+                                             BOARD_SQUARE_SIZE / 4,
+                                             255 - logoFade,
+                                             255,
+                                             logoFade );
+                maxigin_drawToggleAdditive( 0 );
+                }
+            }
+            
 
         if( draftingPieces
             &&
@@ -2847,6 +2910,9 @@ void maxiginGame_step( char  inFinalStep  ) {
 
             /* reset everything for new game */
 
+            maxigin_playSoundEffect( moveAnimGetShooshGoodSound(),
+                                     512 );
+            
             resetDrawsLeft();
             
             currentLevel = 0;
@@ -3020,7 +3086,6 @@ void maxiginGame_step( char  inFinalStep  ) {
                     sideBoardUnlift();
 
                     if( deckViewShowing ) {
-                        /* fixme */
                         deckViewSet( playerDeckGetDrawDeck(),
                                      playerDeckGetDiscardDeck() );
                         }
@@ -3175,6 +3240,20 @@ void maxiginGame_step( char  inFinalStep  ) {
         else {
             discardCountGlowFade = 0;
             }
+        }
+
+
+    if( !gameOver
+        &&
+        logoFade > 0 ) {
+
+        int  newVal  =  logoFade - 10 * 60 / r;
+
+        if( newVal < 0 ) {
+            newVal = 0;
+            }
+        
+        logoFade = (unsigned char) newVal;
         }
     }
 
@@ -3562,6 +3641,36 @@ void maxiginGame_init( void ) {
     maxigin_initMakeGlowSprite( swapLineStemSprite,
                                 4,
                                 2 );
+
+    logoBaseSprite = maxigin_initSprite( "logoBase.tga" );
+    logoPulseSprite = maxigin_initSprite( "logoPulse.tga" );
+
+    maxigin_initMakeGlowSprite( logoBaseSprite,
+                                4,
+                                2 );
+    maxigin_initMakeGlowSprite( logoPulseSprite,
+                                4,
+                                2 );
+
+    maxigin_initMakeDropShadowSprite( logoBaseSprite,
+                                      4,
+                                      2,
+                                      255,
+                                      255,
+                                      100,
+                                      0,
+                                      100,
+                                      0 );
+
+    maxigin_initMakeDropShadowSprite( logoPulseSprite,
+                                      4,
+                                      2,
+                                      255,
+                                      255,
+                                      100,
+                                      0,
+                                      100,
+                                      0 );
     
     
     fontStrip = maxigin_initSpriteStrip( "5x9CapsLatinFont.tga",
@@ -3955,6 +4064,8 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( successfulSwapCount );
 
+    REGISTER_VAL_MEM( logoFade );
+
     REGISTER_VAL_MEM( firstDraftingStarted );
     
 
@@ -4019,10 +4130,14 @@ void maxiginGame_init( void ) {
        It's like they walked up to the machine after someone else
        just finished their game.
 
+       It also shows them the logo before their very first game.
+
        otherwise, firstDraftingStarted will be 1 forever more,
        as we load continued states */
 
     if( ! firstDraftingStarted ) {
+
+        logoFade = 255;
         gameOver = 1;
         heartsForceEmpty();
         }

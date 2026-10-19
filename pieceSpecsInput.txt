@@ -209,7 +209,7 @@ sprite                   "pawn.tga"
 extraOffsetY             ARRAY_PAIR( -1,  0 )
 extraSprite              ARRAY_PAIR( "pawnLasersWhite.tga", "pawnLasersBlack.tga" )
 specialReturnFunction    noSpecialReturn
-rarity                   rare
+rarity                   uncommon
 price                    8
 deploymentCost           3
 postEffectsFunction      nullPostEffects
@@ -233,7 +233,7 @@ sprite                   "doublingPawn.tga"
 extraOffsetY             ARRAY_PAIR(  0,  0 )
 extraSprite              ARRAY_PAIR( "", "" )
 specialReturnFunction    noSpecialReturn
-rarity                   rare
+rarity                   uncommon
 price                    8
 deploymentCost           2
 postEffectsFunction      nullPostEffects
@@ -377,7 +377,7 @@ sprite                   "rublePawn.tga"
 extraOffsetY             ARRAY_PAIR(  0,  0 )
 extraSprite              ARRAY_PAIR( "", "" )
 specialReturnFunction    noSpecialReturn
-rarity                   rare
+rarity                   uncommon
 price                    8
 deploymentCost           4
 postEffectsFunction      oneRubleEffects

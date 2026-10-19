@@ -331,14 +331,14 @@
     V( C,   5,  queen,          contraband              ) \
     V( C,   6,  king,           contraband              ) \
     V( C,   7,  laserRook,      legendary               ) \
-    V( C,   8,  laserPawn,      rare                    ) \
-    V( C,   9,  doublingPawn,   rare                    ) \
+    V( C,   8,  laserPawn,      uncommon                ) \
+    V( C,   9,  doublingPawn,   uncommon                ) \
     V( C,  10,  addingRook,     legendary               ) \
     V( C,  11,  rocket,         rare                    ) \
     V( C,  12,  laserBishop,    legendary               ) \
     V( C,  13,  laserQueen,     contraband              ) \
     V( C,  14,  doublingQueen,  contraband              ) \
-    V( C,  15,  rublePawn,      rare                    ) \
+    V( C,  15,  rublePawn,      uncommon                ) \
     V( C,  16,  rubleQueen,     contraband              ) \
 
 

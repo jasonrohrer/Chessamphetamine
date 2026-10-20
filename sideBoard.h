@@ -719,9 +719,14 @@ void sideBoardDraw( void ) {
                               218,
                               112,
                               255 );
+            /*
             drawPieceBaseAndGlowOnlyNoColor( sideBoard [i],
                                              sbSlotPosX[i],
                                              sbSlotPosY[i] - sbSmoothLift[i] );
+            */
+            drawPieceWhiteOnly( sideBoard [i],
+                                sbSlotPosX[i],
+                                sbSlotPosY[i] - sbSmoothLift[i] );
 
             
             if( sbHighlightFade[i] > 0 ) {

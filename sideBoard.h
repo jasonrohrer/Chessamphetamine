@@ -297,7 +297,9 @@ char sideBoardIsRedrawHelpful( void ) {
     Deck        *d;
 
     if( playerDeckGetReadyCount() == 0 ) {
-        return 0;
+        /* out deck is empty
+           redrawing will cause a reshuffle, so count this as helpful */
+        return 1;
         }
     
     if( p == noPiece ) {
@@ -336,7 +338,9 @@ char sideBoardIsRedrawHelpful( void ) {
 
 void sideBoardRedraw( void ) {
     
-    int  i;
+    int         i;
+    ChessPiece  tempPiece  =  noPiece;
+    
     
     sbNumSlots = sbBaseNumSlots + unlocksGetExtraSideboardSlots();
 
@@ -344,6 +348,12 @@ void sideBoardRedraw( void ) {
         sbNumSlots = SIDE_BOARD_MAX_SLOTS;
         }
 
+    if( playerDeckGetReadyCount() == 0 ) {
+        /* force a reshuffle */
+        tempPiece = playerDeckDraw();
+        }
+    
+    
     for( i = 0;
          i < sbNumSlots;
          i ++ ) {
@@ -352,7 +362,14 @@ void sideBoardRedraw( void ) {
             playerDeckReturnPieceUnplayed( sideBoard[ i ] );
             }
 
-        sideBoard[i] = playerDeckDraw();
+        if( tempPiece != noPiece ) {
+            /* use the temp piece first */
+            sideBoard[ i ] = tempPiece;
+            tempPiece = noPiece;
+            }
+        else {
+            sideBoard[i] = playerDeckDraw();
+            }
         }
 
     sbPickedIndex = -1;

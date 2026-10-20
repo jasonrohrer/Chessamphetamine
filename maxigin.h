@@ -1387,8 +1387,6 @@ void maxigin_initMusicLoop( const char  *inBulkResourceName );
 /*
   Loads a WAV-formatted sound effect from the platform's bulk data store.
 
-  Sprites must be in RGBA 32-bit uncompressed TGA format.
-
   Parameters:
 
       inBulkResourceName   the name of the bulk data resource containing

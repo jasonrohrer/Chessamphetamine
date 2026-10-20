@@ -130,6 +130,7 @@ static  unsigned char  sbHighlightFade[ SIDE_BOARD_MAX_SLOTS ];
 static  int            sbSlotPosX     [ SIDE_BOARD_MAX_SLOTS ];
 static  int            sbSlotPosY     [ SIDE_BOARD_MAX_SLOTS ];
 
+static  int            sbCenterX;
 static  int            sbBaseNumSlots         =  2;
 static  int            sbNumSlots             =  2;
 static  int            sbMaxLift              =  100;
@@ -145,6 +146,7 @@ static  char           sbDropping             =   0;
 static  int            sbSlotSprite           =  -1;
 static  int            sbSlotPickedSprite     =  -1;
 static  int            sbSlotRedrawSprite     =  -1;
+static  int            sbScreenSprite         =  -1;
 
 static  char           sbActionDown           =   0;
 static  char           sbRedrawShowing        =   0;
@@ -230,9 +232,12 @@ void sideBoardInit( int  inPointerActionHandle,
     int  ySep  =  35;
     int  yPos  =  inBottomSlotY;
 
+    sbCenterX = inCenterX;
+
     sbSlotSprite       = maxigin_initSprite( "sideBoardSlot.tga"       );
     sbSlotPickedSprite = maxigin_initSprite( "sideBoardSlotPicked.tga" );
     sbSlotRedrawSprite = maxigin_initSprite( "sideBoardSlotRedraw.tga" );
+    sbScreenSprite     = maxigin_initSprite( "sideBoardScreen.tga"     );
 
     maxigin_initMakeGlowSprite( sbSlotPickedSprite,
                                 4,
@@ -673,6 +678,13 @@ void sideBoardDraw( void ) {
 
     int  i;
 
+    maxigin_drawResetColor();
+
+    maxigin_drawSprite( sbScreenSprite,
+                        sbCenterX + 1,
+                        sbSlotPosY[0] - 45 );
+    
+
     for( i = sbNumSlots -  1;
          i >= 0;
          i -- ) {
@@ -695,17 +707,22 @@ void sideBoardDraw( void ) {
                                     sbSlotPosY[i] );
                 }
             else {
-                maxigin_drawSprite( sbSlotSprite,
+                if(0)maxigin_drawSprite( sbSlotSprite,
                                     sbSlotPosX[i],
                                     sbSlotPosY[i] );
                 }
             }
         
         if( sideBoard[i] != noPiece ) {
-            
-            drawPiece( sideBoard [i] | CHESS_WHITE,
-                       sbSlotPosX[i],
-                       sbSlotPosY[i] - sbSmoothLift[i] );
+
+            maxigin_drawSetColor( 255,
+                              218,
+                              112,
+                              255 );
+            drawPieceBaseAndGlowOnlyNoColor( sideBoard [i],
+                                             sbSlotPosX[i],
+                                             sbSlotPosY[i] - sbSmoothLift[i] );
+
             
             if( sbHighlightFade[i] > 0 ) {
                 drawPieceHighlight( sideBoard      [i] | CHESS_WHITE,

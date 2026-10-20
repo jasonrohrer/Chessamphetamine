@@ -609,15 +609,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             }
         
 
-        if( sideBoardShowing
-            ||
-            shopShowing ) {
-
-            buttonDraw( deckButton );
-            }
-        else {
-            buttonDrawDisabled( deckButton );
-            }
+        
 
 
         maxigin_drawResetColor();
@@ -701,6 +693,16 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             maxigin_drawToggleAdditive( 0 );
             }
         }
+
+    if( sideBoardShowing
+            ||
+            shopShowing ) {
+
+            buttonDraw( deckButton );
+            }
+        else {
+            buttonDrawDisabled( deckButton );
+            }
 
     if( sideBoardShowing ) {
         

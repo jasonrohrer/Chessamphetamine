@@ -950,6 +950,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             &&
             ! boardMarkersHidden
             &&
+            boardSlideUp == 0
+            &&
             successfulSwapCount < 6 ) {
 
             char        mulitpleTypes  =  0;

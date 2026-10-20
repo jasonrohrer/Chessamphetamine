@@ -128,24 +128,26 @@ laserRookDesc  "^Spécial:^ Tire des lasers en ligne droite après s’être dé
 laserPawn      "Pion laser"
 laserPawnDesc  "^Spécial:^ Tire un laser vers l’avant après s’être déplacé"
 
-doublingPawn   "Pion doubleur"
-doublingPawnDesc  "^Spécial:^ Double les capacités ^spéciales^ de la pièce juste devant lui"
+doublingPawn      "Pion doubleur"
+doublingPawnDesc  "^Spécial:^ Double les capacités ^spéciales^ sur la case juste devant lui"
+
 
 addingRook     "Tour additive"
-addingRookDesc "^Spécial:^ Ajoute 1 aux capacités ^spéciales^ des pièces accessibles en ligne droite"
+addingRookDesc "^Spécial:^ Ajoute 1 aux capacités ^spéciales^ sur les cases accessibles en ligne droite"
+
 
 rocket         "Fusée CCCP"
 rocketDesc     "^Spécial:^ Détruit une pièce ennemie au hasard, puis s’autodétruit"
 
 laserBishop       "Fou laser"
-laserBishopDesc   "^Spécial :^ Tire des lasers en diagonale après déplacement"
+laserBishopDesc   "^Spécial:^ Tire des lasers en diagonale après déplacement"
 
 laserQueen        "Dame laser"
-laserQueenDesc    "^Spécial :^ Tire des lasers dans toutes les directions après déplacement"
+laserQueenDesc    "^Spécial:^ Tire des lasers dans toutes les directions après déplacement"
 
 
 doublingQueen      "Dame doubleuse"
-doublingQueenDesc  "^Spécial :^ Double les capacités ^spéciales^ des pièces à portée en ligne droite ou diagonale"
+doublingQueenDesc "^Spécial:^ Double les capacités ^spéciales^ sur les cases à portée en ligne droite ou diagonale"
 
 
 rublePawn      "Pion à roubles"

@@ -130,11 +130,11 @@ laserPawn      "Laser Pawn"
 laserPawnDesc  "^Special:^ Fires laser forward after moving"
 
 doublingPawn   "Doubling Pawn"
-doublingPawnDesc  "^Special:^ Doubles ^special^ abilities of any piece immediately in front"
+doublingPawnDesc  "^Special:^ Doubles ^special^ abilities on space immediately in front"
 
 
 addingRook     "Adding Rook"
-addingRookDesc "^Special:^ Adds 1 to ^special^ abilities of reachable pieces in straight lines"
+addingRookDesc "^Special:^ Adds 1 to ^special^ abilities on reachable spaces in straight lines"
 
 rocket         "CCCP Rocket"
 rocketDesc     "^Special:^ Destroys a random enemy piece, then destroys itself"
@@ -148,7 +148,7 @@ laserQueenDesc   "^Special:^ Fires lasers in all directions after moving"
 
 
 doublingQueen      "Doubling Queen"
-doublingQueenDesc  "^Special:^ Doubles ^special^ abilities of reachable pieces in straight and diag lines"
+doublingQueenDesc  "^Special:^ Doubles ^special^ abilities on reachable spaces in straight and diag lines"
 
 rublePawn      "Ruble Pawn"
 rublePawnDesc  "^Special:^ Earns 1 ruble after moving"

@@ -128,11 +128,12 @@ laserRookDesc  "^特殊：^移動後沿直線發射雷射"
 laserPawn      "雷射兵"
 laserPawnDesc  "^特殊：^移動後向前發射雷射"
 
-doublingPawn   "倍增兵"
-doublingPawnDesc  "^特殊：^使正前方棋子的^特殊^能力加倍"
+doublingPawn      "倍增兵"
+doublingPawnDesc  "^特殊：^使正前方一格上的^特殊^能力加倍"
+
 
 addingRook     "加成車"
-addingRookDesc "^特殊：^直線可達的棋子^特殊^能力加一"
+addingRookDesc "^特殊：^直線可達格上的^特殊^能力加一"
 
 rocket         "蘇聯火箭"
 rocketDesc     "^特殊：^隨機摧毀一枚敵方棋子，然後自爆"
@@ -144,9 +145,8 @@ laserBishopDesc   "^特殊：^移動後沿斜線發射雷射"
 laserQueen        "雷射后"
 laserQueenDesc    "^特殊：^移動後向八方發射雷射"
 
-
 doublingQueen      "倍增后"
-doublingQueenDesc  "^特殊：^使直線及斜線上棋子的^特殊^能力加倍"
+doublingQueenDesc  "^特殊：^使直線及斜線可達格上的^特殊^能力加倍"
 
 
 rubleQueen      "盧布后"

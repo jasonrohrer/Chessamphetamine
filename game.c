@@ -143,6 +143,7 @@ static int          autoQuitStepsPerSecond;
 
 static char         actionHeldDown     =   0;
 
+static int          woodGrainSprite    =  -1;
 static int          buttonHintStrip    =  -1;
 
 static int          plunkSound         =  -1;
@@ -450,6 +451,12 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
        so that changes to color map are noticed even during playback */
     colorsStep();
 
+    maxigin_drawResetColor();
+
+    maxigin_drawSprite( woodGrainSprite,
+                        MAXIGIN_GAME_NATIVE_W / 2,
+                        MAXIGIN_GAME_NATIVE_H / 2 );
+
     maxigin_drawSetTextHighlighColor( 236,
                                       97,
                                       74 );
@@ -457,7 +464,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     maxigin_drawSetAlpha( 255 );
     
     /* black background */
-    for( p = 0; p<numPixels; p++ ) {
+    if(0)for( p = 0; p<numPixels; p++ ) {
         int pix = p * 3;
 
         inRGBBuffer[pix]     = 0;
@@ -3499,6 +3506,8 @@ void maxiginGame_init( void ) {
 
     
     maxigin_initEnableCRTOverlay();
+
+    woodGrainSprite = maxigin_initSprite( "woodGrain.tga" );
 
 
     buttonHintStrip = maxigin_initSpriteStrip( "buttonHintStrip.tga",

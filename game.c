@@ -39,7 +39,7 @@
 #define PLAYER_DECK_IMPLEMENTATION
 #define RUN_STATS_IMPLEMENTATION
 #define POST_MOVE_EFFECTS_IMPLEMENTATION
-
+#define SCREEN_IMPLEMENTATION
 
 #include "chess.h"
 
@@ -105,6 +105,7 @@
 
 #include "postMoveEffects.h"
 
+#include "screen.h"
 
 
 enum GameUserAction {
@@ -564,16 +565,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
 
-    if( shopShowing
-        &&
-        ! deckViewShowing ) {
-        /* draw shop under any board, so board can slide away to reveal it */
-        shopDraw();
-        }
 
-    if( deckViewShowing ) {
-        deckViewDraw();
-        }
 
     if( ! gameOver ) {
 
@@ -716,9 +708,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                           0 );
         }
 
-    
-    heartsDraw( 50,
-                10 );
+
     
 
     if( ! showingMoveLog ) {
@@ -744,6 +734,19 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         
 
 
+    
+    screenStartDraw();
+
+    if( shopShowing
+        &&
+        ! deckViewShowing ) {
+        /* draw shop under any board, so board can slide away to reveal it */
+        shopDraw();
+        }
+
+    if( deckViewShowing ) {
+        deckViewDraw();
+        }
     
     if( moveMade ) {
         drawMoveAnimation( boardCenterX,
@@ -1166,9 +1169,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
     
-    
+    screenEndDraw();
 
-    
+        
+    heartsDraw( 50,
+                10 );
 
     if( ! spinning
         &&
@@ -3489,8 +3494,8 @@ void maxiginGame_init( void ) {
     clearInfoPanelPieceMoveMarkers();
         
     
-    boardCenterX = MAXIGIN_GAME_NATIVE_W / 2 - 21;
-    boardCenterY = MAXIGIN_GAME_NATIVE_H / 2;
+    boardCenterX = MAXIGIN_GAME_NATIVE_W / 2 - 16;
+    boardCenterY = MAXIGIN_GAME_NATIVE_H / 2 + 21;
 
     
     maxigin_initEnableCRTOverlay();
@@ -3985,7 +3990,8 @@ void maxiginGame_init( void ) {
                   DECK_NEXT,
                   DECK_PREV );
                          
-    
+    screenInit( boardCenterX,
+                boardCenterY - 13 );
 
     clearDrawMarkers();
 

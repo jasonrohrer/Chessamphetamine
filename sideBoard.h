@@ -683,6 +683,11 @@ void sideBoardDraw( void ) {
     maxigin_drawSprite( sbScreenSprite,
                         sbCenterX + 1,
                         sbSlotPosY[0] - 45 );
+
+    maxigin_drawPushClipRectangle( sbCenterX - 14,
+                                   sbCenterX + 15,
+                                   sbSlotPosY[0] - 97,
+                                   sbSlotPosY[0] + 8 );
     
 
     for( i = sbNumSlots -  1;
@@ -758,6 +763,8 @@ void sideBoardDraw( void ) {
             }
 
         }
+
+    maxigin_drawPopClipRectangle();
     
     }
 

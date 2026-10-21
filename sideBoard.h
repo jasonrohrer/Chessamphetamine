@@ -714,17 +714,10 @@ void sideBoardDraw( void ) {
             }
         
         if( sideBoard[i] != noPiece ) {
-
             
-            /*
-            drawPieceBaseAndGlowOnlyNoColor( sideBoard [i],
-                                             sbSlotPosX[i],
-                                             sbSlotPosY[i] - sbSmoothLift[i] );
-            */
-            drawPieceLCDIcon( sideBoard [i] | CHESS_WHITE,
-                              sbSlotPosX[i],
-                              sbSlotPosY[i] - sbSmoothLift[i] );
-
+            drawPieceBaseAndGlowOnly( sideBoard [i] | CHESS_WHITE,
+                       sbSlotPosX[i],
+                       sbSlotPosY[i] - sbSmoothLift[i] );
             
             if( sbHighlightFade[i] > 0 ) {
                 drawPieceHighlight( sideBoard      [i] | CHESS_WHITE,

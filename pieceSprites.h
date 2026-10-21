@@ -39,12 +39,6 @@ void drawPieceGlowOnly( ChessPiece     inPiece,
                         unsigned char  inAlpha );
 
 
-void drawPieceLCDIcon( ChessPiece  inPiece,
-                       int         inBaseCenterX,
-                       int         inBaseCenterY );
-
-
-
 /* draws the non-shadow component of a piece (base sprite and glow) */
 /* sets color automatically based on which side piece is from */
 void drawPieceBaseAndGlowOnly( ChessPiece  inPiece,
@@ -207,8 +201,6 @@ static  int  pieceBottomHeight  =  6;
 static  int          pieceSpriteHandles[ NUM_CHESS_PIECES ][ 2 ];
 static  int          pieceOffsetY      [ NUM_CHESS_PIECES ];
 
-static  int          pieceWhiteSpriteHandles[ NUM_CHESS_PIECES ];
-
 
 /* for definition of PIECE_SPRITE_FILE_LIST, PIECE_EXTRA_OFFSET_Y_LIST,
    PIECE_EXTRA_SPRITE_LIST */
@@ -232,8 +224,6 @@ CHECK_CHESS_ARRAY( pieceSpriteFiles,
 
 static  int          pieceSpriteExtraHandles[ NUM_CHESS_PIECES ][2];
 
-static  int          pieceWhiteSpriteExtraHandles[ NUM_CHESS_PIECES ][2];
-
 
 static int pieceExtraOffsetY[][2] = {
     MAKE_CHESS_ARRAY( PIECE_EXTRA_OFFSET_Y_LIST )
@@ -250,38 +240,6 @@ static  const char  *pieceSpriteExtraFiles[][2] = {
 
 CHECK_CHESS_ARRAY( pieceSpriteExtraFiles,
                    PIECE_EXTRA_SPRITE_LIST );
-
-
-
-static const char *getWhiteSpriteFileName( const char  *inBaseSpriteFileName ) {
-
-    enum{         bufferLen  =  100  };
-    static  char  buffer[ bufferLen ];
-
-    const char  *newEnd  =  "_white.tga";
-    int          i       =  0;
-    int          j       =  0;
-
-    
-    while( inBaseSpriteFileName[i]  != '.'
-           &&
-           inBaseSpriteFileName[i]  != '\0'
-           &&
-           i < bufferLen - 15 ) {
-        
-        buffer[ i ] = inBaseSpriteFileName[ i ];
-
-        i ++;
-        }
-
-    while( newEnd[j] != '\0' ) {
-        buffer[ i++ ] = newEnd[ j ];
-        j ++;
-        }
-    buffer[ i ] = '\0';
-
-    return buffer;
-    }
 
 
 
@@ -330,14 +288,11 @@ void pieceSpritesInit( void ) {
                 
                     foundMatch = 1;
 
-                    pieceSpriteHandles         [ i ][ ci ]   =
-                        pieceSpriteHandles     [ j ][ ci ];
+                    pieceSpriteHandles    [ i ][ ci ]   =
+                        pieceSpriteHandles[ j ][ ci ];
                     
-                    pieceOffsetY               [ i ]         =
-                        pieceOffsetY           [ j ];
-
-                    pieceWhiteSpriteHandles    [ i ]         =
-                        pieceWhiteSpriteHandles[ j ];
+                    pieceOffsetY          [ i ]         =
+                        pieceOffsetY      [ j ];
 
                     break;
                     }
@@ -357,10 +312,9 @@ void pieceSpritesInit( void ) {
         
             if( pieceSpriteHandles[ i ][ ci ] != -1 ) {
 
-                int          w;
-                int          h;
-                const char  *whiteName  =  getWhiteSpriteFileName(
-                                               pieceSpriteFiles[i] );
+                int  w;
+                int  h;
+
 
                 if( colorMap != -1 ) {
                     maxigin_applyColorMap( pieceSpriteHandles[ i ][ ci ],
@@ -390,18 +344,6 @@ void pieceSpritesInit( void ) {
                                              &h );
 
                 pieceOffsetY[ i ] = -( h / 2 - pieceBottomHeight );
-
-                
-                pieceWhiteSpriteHandles[ i ] = maxigin_initSprite( whiteName );
-
-                if( pieceWhiteSpriteHandles[ i ] == -1 ) {
-                    pieceWhiteSpriteHandles[ i ]  =  pieceSpriteHandles[i][ci];
-                    }
-                else {
-                    maxigin_initMakeGlowSprite( pieceWhiteSpriteHandles[ i ],
-                                                4,
-                                                2 );
-                    }
                 }
             }
         }
@@ -416,21 +358,16 @@ void pieceSpritesInit( void ) {
              ci < 2;
              ci ++ ) {
             
-            int          j;
-            char         foundMatch  =  0;
-            const char  *whiteName;
+            int   j;
+            char  foundMatch  =  0;
 
-            pieceSpriteExtraHandles     [ i ][ ci ] = -1;
-            pieceWhiteSpriteExtraHandles[ i ][ ci ] = -1;
+            pieceSpriteExtraHandles[ i ][ ci ] = -1;
             
             if( maxigin_stringsEqual( pieceSpriteExtraFiles[ i ][ ci ],
                                       "" ) ) {
                 /* skip blank file names */
                 continue;
                 }
-
-            whiteName = getWhiteSpriteFileName(
-                            pieceSpriteExtraFiles[ i ][ ci ] );
             
             for( j = FIRST_CHESS_PIECE;
                  j <= i;
@@ -451,12 +388,9 @@ void pieceSpritesInit( void ) {
                 
                         foundMatch = 1;
 
-                        pieceSpriteExtraHandles         [ i ][ ci ] =
-                            pieceSpriteExtraHandles     [ j ][ cj ];
-                        
-                        pieceWhiteSpriteExtraHandles    [ i ][ ci ] =
-                            pieceWhiteSpriteExtraHandles[ j ][ cj ];
-                        
+                        pieceSpriteExtraHandles[ i ][ ci ] =
+                            pieceSpriteExtraHandles[ j ][ cj ];
+
                         break;
                         }
                     }
@@ -493,20 +427,6 @@ void pieceSpritesInit( void ) {
                     pieceSpriteExtraHandles[ i ][ ci ],
                     4,
                     2 );
-
-                pieceWhiteSpriteExtraHandles[ i ][ ci ]
-                    = maxigin_initSprite( whiteName );
-
-                if( pieceWhiteSpriteExtraHandles[ i ][ ci ] == -1 ) {
-                    pieceWhiteSpriteExtraHandles[ i ][ ci ] =
-                        pieceSpriteExtraHandles [ i ][ ci ] ;
-                    }
-                else {
-                    maxigin_initMakeGlowSprite(
-                        pieceWhiteSpriteExtraHandles[ i ][ ci ],
-                        4,
-                        2 );
-                    }
                 }
             }
         }
@@ -724,59 +644,6 @@ void drawPieceBaseAndGlowOnlyNoColor( ChessPiece  inPiece,
                                       inBaseCenterX,
                                       inBaseCenterY,
                                       0 );
-    }
-
-
-
-void drawPieceLCDIcon( ChessPiece  inPiece,
-                       int         inBaseCenterX,
-                       int         inBaseCenterY ) {
-
-    ChessPiece  rawP          =  inPiece & CHESS_TYPE_MASK;
-    ChessPiece  c             =  inPiece & CHESS_COLOR_MASK;
-    int         cIndex        =  getPieceColorIndex( c );
-
-    maxigin_drawSetColor( 255,
-                          218,
-                          112,
-                          255 );
-    maxigin_drawBaseSprite( pieceWhiteSpriteHandles[ rawP ],
-                        inBaseCenterX,
-                        inBaseCenterY
-                        + pieceOffsetY[ rawP ]
-                        + pieceExtraOffsetY[ rawP ][ cIndex ] );
-    maxigin_drawSetAlpha( 192 );
-    if(1)maxigin_drawSpriteGlowOnly( pieceWhiteSpriteHandles[ rawP ],
-                        inBaseCenterX,
-                        inBaseCenterY
-                        + pieceOffsetY[ rawP ]
-                                + pieceExtraOffsetY[ rawP ][ cIndex ] );
-
-    if( pieceWhiteSpriteExtraHandles[ rawP ][ cIndex ] != -1 ) {
-        /* for extra overlays, draw full sprite, including shadows, since
-           those shadows are over top of base piece itself */
-        
-        maxigin_drawSetColor( 131,
-                              151,
-                              64,
-                          128 );
-
-
-        maxigin_drawBaseSprite( pieceWhiteSpriteExtraHandles[ rawP ][ cIndex ],
-                                inBaseCenterX,
-                                inBaseCenterY
-                                + pieceOffsetY[ rawP ]
-                                + pieceExtraOffsetY[ rawP ][ cIndex ] );
-
-
-        maxigin_drawSetAlpha( 192 );
-        if(0)maxigin_drawSpriteGlowOnly(
-            pieceWhiteSpriteExtraHandles[ rawP ][ cIndex ],
-            inBaseCenterX,
-            inBaseCenterY
-            + pieceOffsetY[ rawP ]
-            + pieceExtraOffsetY[ rawP ][ cIndex ] );
-        }
     }
 
 

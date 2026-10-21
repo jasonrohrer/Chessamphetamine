@@ -716,8 +716,8 @@ void sideBoardDraw( void ) {
         if( sideBoard[i] != noPiece ) {
             
             drawPieceBaseAndGlowOnly( sideBoard [i] | CHESS_WHITE,
-                       sbSlotPosX[i],
-                       sbSlotPosY[i] - sbSmoothLift[i] );
+                                      sbSlotPosX[i],
+                                      sbSlotPosY[i] - sbSmoothLift[i] );
             
             if( sbHighlightFade[i] > 0 ) {
                 drawPieceHighlight( sideBoard      [i] | CHESS_WHITE,

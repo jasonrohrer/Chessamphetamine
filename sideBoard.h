@@ -715,18 +715,15 @@ void sideBoardDraw( void ) {
         
         if( sideBoard[i] != noPiece ) {
 
-            maxigin_drawSetColor( 255,
-                              218,
-                              112,
-                              255 );
+            
             /*
             drawPieceBaseAndGlowOnlyNoColor( sideBoard [i],
                                              sbSlotPosX[i],
                                              sbSlotPosY[i] - sbSmoothLift[i] );
             */
-            drawPieceWhiteOnly( sideBoard [i],
-                                sbSlotPosX[i],
-                                sbSlotPosY[i] - sbSmoothLift[i] );
+            drawPieceLCDIcon( sideBoard [i] | CHESS_WHITE,
+                              sbSlotPosX[i],
+                              sbSlotPosY[i] - sbSmoothLift[i] );
 
             
             if( sbHighlightFade[i] > 0 ) {

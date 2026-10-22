@@ -3505,7 +3505,7 @@ void maxiginGame_init( void ) {
         
     
     boardCenterX = MAXIGIN_GAME_NATIVE_W / 2;
-    boardCenterY = MAXIGIN_GAME_NATIVE_H / 2 + 21;
+    boardCenterY = MAXIGIN_GAME_NATIVE_H / 2 + 10;
 
     
     maxigin_initEnableCRTOverlay();

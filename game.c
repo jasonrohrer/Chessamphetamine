@@ -618,11 +618,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         maxigin_drawSprite( readyCountScreenSprite,
                             deckButtonPosX,
-                            deckButtonPosY - 26 );
+                            deckButtonPosY - 25 );
 
         maxigin_drawSprite( readyCountScreenSprite,
                             deckButtonPosX,
-                            deckButtonPosY - 59 );
+                            deckButtonPosY - 58 );
 
         maxigin_drawSetColor( 255,
                               218,

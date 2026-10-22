@@ -744,8 +744,20 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         
 
 
-    
-    screenStartDraw();
+    /* any time there can be stuff sliding off top edge of screen,
+       force clip the top.
+
+       Otherwise, clip nothing on the screen, so explosions, rockets, etc
+       can fly off the edges of the screen */
+    screenStartDraw( shopShowing
+                     ||
+                     deckViewShowing
+                     ||
+                     boardSlideUp
+                     ||
+                     redrawAddRunning
+                     ||
+                     redrawRemoveRunning );
 
     if( shopShowing
         &&

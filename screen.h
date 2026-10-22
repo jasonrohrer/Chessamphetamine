@@ -22,8 +22,11 @@ void screenInit( int  inScreenCenterX,
 
 
 /* draws screen bg color,
-   starts trimming subsequent draw commands to fit on screen */
-void screenStartDraw( void );
+   starts trimming subsequent draw commands to fit on screen,
+
+   inForceClip controls whether clipping is forced or not on top edge
+   (enable when pieces are dropping in, or board is sliding up) */
+void screenStartDraw( char  inForceClip );
 
 
 /* draws border around edge of screen, ends draw trimming */
@@ -47,6 +50,9 @@ static  int  screenRightEdgeSprite   =  -1;
 static  int  screenCenterX;
 static  int  screenCenterY;
 
+static char  screenClipForced        =   0;
+
+
 
 void screenInit( int  inScreenCenterX,
                  int  inScreenCenterY ) {
@@ -62,7 +68,7 @@ void screenInit( int  inScreenCenterX,
 
 
 
-void screenStartDraw( void ) {
+void screenStartDraw( char  inForceClip ) {
 
     maxigin_drawSetColor( 34,
                           42,
@@ -73,29 +79,10 @@ void screenStartDraw( void ) {
                           screenCenterY - 109,
                           screenCenterX + 100,
                           screenCenterY + 113 );
-    
-    /* note that clip rectangle does NOT affect left/right/bottom
-       edges, since we want glows and particle effects to bleed out
 
-    fixme */
-    maxigin_drawPushClipRectangle( screenCenterX - 101,
-                                   screenCenterX + 100,
-                                   screenCenterY - 109,
-                                   screenCenterY + 113 );
-    }
-
-
-
-/* draws border around edge of screen, ends draw trimming */
-void screenEndDraw( void ) {
-    maxigin_drawPopClipRectangle();
-
+    /* draw bottom, left, and right edges now so taht
+       glows and particles can go over top of those frame pieces */
     maxigin_drawResetColor();
-
-    maxigin_drawSprite( screenTopEdgeSprite,
-                        screenCenterX,
-                        screenCenterY - 112 );
-    
     maxigin_drawSprite( screenBottomEdgeSprite,
                         screenCenterX,
                         screenCenterY + 116 );
@@ -107,6 +94,44 @@ void screenEndDraw( void ) {
     maxigin_drawSprite( screenRightEdgeSprite,
                         screenCenterX + 104,
                         screenCenterY + 2 );
+
+    screenClipForced = inForceClip;
+
+    if( inForceClip ) {
+        /* note that clip rectangle does NOT affect left/right/bottom
+           edges, since we want glows and particle effects to bleed out */
+        maxigin_drawPushClipRectangle( -1,
+                                       -1,
+                                       screenCenterY - 109,
+                                       -1 );
+        }
+    else {
+        /* no clipping, draw top edge now */
+        maxigin_drawSprite( screenTopEdgeSprite,
+                            screenCenterX,
+                            screenCenterY - 112 );
+        }
+    
+    }
+
+
+
+/* draws border around edge of screen, ends draw trimming */
+void screenEndDraw( void ) {
+
+    if( screenClipForced ) {
+        maxigin_drawPopClipRectangle();
+        
+        screenClipForced = 0;
+
+        maxigin_drawResetColor();
+
+        /* draw top edge over top of everything, so that when pieces lift
+           off board, they disappear behind top frame edge. */
+        maxigin_drawSprite( screenTopEdgeSprite,
+                            screenCenterX,
+                            screenCenterY - 112 );
+        }
     }
 
 

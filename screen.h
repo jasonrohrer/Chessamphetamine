@@ -69,15 +69,19 @@ void screenStartDraw( void ) {
                           92,
                           255 );
     
-    maxigin_drawFillRect( screenCenterX - 98,
-                          screenCenterY - 106,
-                          screenCenterX + 97,
-                          screenCenterY + 105 );
+    maxigin_drawFillRect( screenCenterX - 101,
+                          screenCenterY - 109,
+                          screenCenterX + 100,
+                          screenCenterY + 113 );
     
-    maxigin_drawPushClipRectangle( screenCenterX - 98,
-                                   screenCenterX + 97,
-                                   screenCenterY - 106,
-                                   screenCenterY + 105 );
+    /* note that clip rectangle does NOT affect left/right/bottom
+       edges, since we want glows and particle effects to bleed out
+
+    fixme */
+    maxigin_drawPushClipRectangle( screenCenterX - 101,
+                                   screenCenterX + 100,
+                                   screenCenterY - 109,
+                                   screenCenterY + 113 );
     }
 
 
@@ -90,19 +94,19 @@ void screenEndDraw( void ) {
 
     maxigin_drawSprite( screenTopEdgeSprite,
                         screenCenterX,
-                        screenCenterY - 109 );
+                        screenCenterY - 112 );
     
     maxigin_drawSprite( screenBottomEdgeSprite,
                         screenCenterX,
-                        screenCenterY + 108 );
+                        screenCenterY + 116 );
     
     maxigin_drawSprite( screenLeftEdgeSprite,
-                        screenCenterX - 101,
-                        screenCenterY );
+                        screenCenterX - 104,
+                        screenCenterY + 2 );
     
     maxigin_drawSprite( screenRightEdgeSprite,
-                        screenCenterX + 101,
-                        screenCenterY );
+                        screenCenterX + 104,
+                        screenCenterY + 2 );
     }
 
 

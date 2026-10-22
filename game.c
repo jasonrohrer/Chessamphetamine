@@ -165,8 +165,8 @@ static int          spinUnpressedSprite        = -1;
 static int          spinPressedSprite          = -1;
 static int          spinPressedTextSprite      = -1;
 static int          spinPressedTextGlowSprite  = -1;
-static int          spinButtonX                = MAXIGIN_GAME_NATIVE_W - 41;
-static int          spinButtonY                = MAXIGIN_GAME_NATIVE_H - 25;
+static int          spinButtonX                = MAXIGIN_GAME_NATIVE_W - 34;
+static int          spinButtonY                = MAXIGIN_GAME_NATIVE_H - 21;
 static char         spinButtonHover            =  0;
 static int          readyCountScreenSprite     = -1;
 
@@ -175,11 +175,14 @@ static int          baseNumDraws               =  4;
 
 static int          drawButton                 = -1;
 static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
-static int          drawButtonPosX             =  19;
+static int          drawButtonPosX             =  23;
 
 static int          deckButton                 = -1;
 static int          deckButtonPosY             =  MAXIGIN_GAME_NATIVE_H / 2 - 25;
-static int          deckButtonPosX             =  19;
+static int          deckButtonPosX             =  23;
+
+static int          infoLightsX                =  53;
+static int          unlocksY                   =  40;
 
 static int          newGameButton              = -1;
 static int          newGameButtonPosY          =  MAXIGIN_GAME_NATIVE_H - 10;
@@ -721,14 +724,14 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     if( ! showingMoveLog ) {
         /* level display overlaps with move log display */
 
-        int  numPos  =  boardCenterX + BOARD_SQUARE_SIZE * BW / 2 - 30;
+        int  numPos  =  infoLightsX + 2;
         
         maxigin_drawResetColor();
         maxigin_setLanguageFontIndex( 1 );
     
         maxigin_drawLangText(
             lang_level,
-            numPos - 40,
+            numPos - 20,
             10,
             MAXIGIN_RIGHT );
         maxigin_setLanguageFontIndex( 0 );
@@ -1179,8 +1182,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     screenEndDraw();
 
         
-    heartsDraw( 50,
-                10 );
+    heartsDraw( infoLightsX,
+                MAXIGIN_GAME_NATIVE_H - 40 );
 
     if( ! spinning
         &&
@@ -1236,8 +1239,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
                30 );
 
-    unlocksDraw( MAXIGIN_GAME_NATIVE_W - 56,
-                 10 );
+    unlocksDraw( infoLightsX,
+                 unlocksY );
     
 
     if( 0 ) {
@@ -2986,8 +2989,8 @@ void maxiginGame_step( char  inFinalStep  ) {
     
 
 
-    unlocksStep( MAXIGIN_GAME_NATIVE_W - 56,
-                 10 );
+    unlocksStep( infoLightsX,
+                 unlocksY );
     
     moneyStep();
     checkDisplayStep();
@@ -3501,7 +3504,7 @@ void maxiginGame_init( void ) {
     clearInfoPanelPieceMoveMarkers();
         
     
-    boardCenterX = MAXIGIN_GAME_NATIVE_W / 2 - 16;
+    boardCenterX = MAXIGIN_GAME_NATIVE_W / 2;
     boardCenterY = MAXIGIN_GAME_NATIVE_H / 2 + 21;
 
     
@@ -3549,9 +3552,6 @@ void maxiginGame_init( void ) {
     spinPressedTextGlowSprite =
         maxigin_initSprite( "spinButtonPressedTextGlow.tga" );
     
-    maxigin_initMakeGlowSprite( spinFrameSprite,
-                                4,
-                                2 );
 
     maxigin_initMakeGlowSprite( spinPressedSprite,
                                 8,
@@ -3990,7 +3990,7 @@ void maxiginGame_init( void ) {
 
     sideBoardInit( MOUSE_CLICK,
                    ACTION,
-                   18,
+                   22,
                    MAXIGIN_GAME_NATIVE_H - 30 );
 
     deckViewInit( boardCenterX,

@@ -278,7 +278,7 @@ void heartsDraw( int  inPosX,
     
 
     
-    inPosX += offset;
+    inPosY -= offset;
 
     for( i = 0;
          i < heartsNumVisible;
@@ -323,7 +323,7 @@ void heartsDraw( int  inPosX,
                                 inPosY );
             }
 
-        inPosX += offset;
+        inPosY -= offset;
         }
     
 

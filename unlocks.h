@@ -242,8 +242,8 @@ void unlocksInit( int  inViewActionHandle,
 
     int  i;
 
-    int  offsetX  =  15;
-    int  curX     =  - ( ( NUM_UNLOCKS - 1 ) * offsetX ) / 2;
+    int  offsetY  =  15;
+    int  curY     =  - ( ( NUM_UNLOCKS - 1 ) * offsetY ) / 2;
 
     unlockViewActionHandle = inViewActionHandle;
     unlockViewSound        = inViewSound;
@@ -264,10 +264,10 @@ void unlocksInit( int  inViewActionHandle,
         maxigin_initMakeGlowSprite( unlockSprites[ i ],
                                     4,
                                     2 );
-        unlockPosX[ i ] = curX;
-        unlockPosY[ i ] = 0;
+        unlockPosX[ i ] = 0;
+        unlockPosY[ i ] = curY;
 
-        curX += offsetX;
+        curY += offsetY;
 
         unlockEnabled[ i ] = 0;
 

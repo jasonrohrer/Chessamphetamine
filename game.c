@@ -1390,7 +1390,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         
         if( infoPanelPiece != noPiece ) {
             drawPieceInfoPanel( infoPanelPiece,
-                                MAXIGIN_GAME_NATIVE_W - 41,
+                                MAXIGIN_GAME_NATIVE_W - 30,
                                 boardCenterY,
                                 infoPanelFade,
                                 showDeployCost );
@@ -1400,7 +1400,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                  &&
                  infoPanelFade > 0 ) {
             drawPieceInfoPanel( infoPanelLastPiece,
-                                MAXIGIN_GAME_NATIVE_W - 41,
+                                MAXIGIN_GAME_NATIVE_W - 30,
                                 boardCenterY,
                                 infoPanelFade,
                                 showDeployCost );

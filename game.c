@@ -1239,7 +1239,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
                30 );
 
-    unlocksDraw( infoLightsX,
+    unlocksDraw( infoLightsX + 1,
                  unlocksY );
     
 
@@ -2989,7 +2989,7 @@ void maxiginGame_step( char  inFinalStep  ) {
     
 
 
-    unlocksStep( infoLightsX,
+    unlocksStep( infoLightsX + 1,
                  unlocksY );
     
     moneyStep();

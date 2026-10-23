@@ -40,6 +40,8 @@
 #define RUN_STATS_IMPLEMENTATION
 #define POST_MOVE_EFFECTS_IMPLEMENTATION
 #define SCREEN_IMPLEMENTATION
+#define RARITY_WINDOW_IMPLEMENTATION
+
 
 #include "chess.h"
 
@@ -106,6 +108,8 @@
 #include "postMoveEffects.h"
 
 #include "screen.h"
+
+#include "rarityWindow.h"
 
 
 enum GameUserAction {
@@ -775,6 +779,39 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     unlocksDraw( infoLightsX + 1,
                  unlocksY );
 
+
+    rarityWindowDraw();
+    
+    
+    /* info panel overlaps with unused draw counter */
+    if( ! moneyGetSubMessageShowing() ) {
+
+        char  showDeployCost  =  0;
+
+        if( deckViewShowing
+            ||
+            shopShowing ) {
+            showDeployCost = 1;
+            }
+        
+        if( infoPanelPiece != noPiece ) {
+            drawPieceInfoPanel( infoPanelPiece,
+                                MAXIGIN_GAME_NATIVE_W - 38,
+                                boardCenterY,
+                                infoPanelFade,
+                                showDeployCost );
+        
+            }
+        else if( infoPanelLastPiece != noPiece
+                 &&
+                 infoPanelFade > 0 ) {
+            drawPieceInfoPanel( infoPanelLastPiece,
+                                MAXIGIN_GAME_NATIVE_W - 38,
+                                boardCenterY,
+                                infoPanelFade,
+                                showDeployCost );
+            }
+        }
     
 
     if( shopShowing
@@ -1392,35 +1429,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
     
-    /* info panel overlaps with unused draw counter */
-    if( ! moneyGetSubMessageShowing() ) {
-
-        char  showDeployCost  =  0;
-
-        if( deckViewShowing
-            ||
-            shopShowing ) {
-            showDeployCost = 1;
-            }
-        
-        if( infoPanelPiece != noPiece ) {
-            drawPieceInfoPanel( infoPanelPiece,
-                                MAXIGIN_GAME_NATIVE_W - 38,
-                                boardCenterY,
-                                infoPanelFade,
-                                showDeployCost );
-        
-            }
-        else if( infoPanelLastPiece != noPiece
-                 &&
-                 infoPanelFade > 0 ) {
-            drawPieceInfoPanel( infoPanelLastPiece,
-                                MAXIGIN_GAME_NATIVE_W - 38,
-                                boardCenterY,
-                                infoPanelFade,
-                                showDeployCost );
-            }
-        }
 
     for( i = 0;
          i < INFO_HIGHLIGHT_BUFFER_SIZE;
@@ -3026,6 +3034,8 @@ void maxiginGame_step( char  inFinalStep  ) {
 
     heartsStep();
 
+    rarityWindowStep();
+
     if( sideBoardShowing ) {
 
         ChessPiece  pickedPiece;
@@ -4030,6 +4040,10 @@ void maxiginGame_init( void ) {
                          
     screenInit( boardCenterX,
                 boardCenterY - 13 );
+
+    rarityWindowInit( MAXIGIN_GAME_NATIVE_W - 39,
+                      boardCenterY - 78 );
+    
 
     clearDrawMarkers();
 

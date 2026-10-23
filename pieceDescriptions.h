@@ -708,34 +708,14 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
     int          pH;
     int          upperH;
     int          lowerH;
-    int          rarityKey;
     int          desKey;
     
-    raritySetDrawColor( inPiece );
 
-    maxigin_drawSetAlpha( inFade );
 
-    if(0)maxigin_drawSprite( infoPanelSprite,
-                        inCenterX,
-                        inCenterY );
 
     maxigin_getSpriteDimensions( infoPanelSprite,
                                  &pW,
                                  &pH );
-
-    maxigin_setLanguageFontIndex( 1 );
-
-    rarityKey = rarityGetLangKey( inPiece );
-
-    maxigin_measureLangTextVertical( rarityKey,
-                                     &upperH,
-                                     &lowerH );
-    
-    maxigin_drawLangText( rarityGetLangKey( inPiece ),
-                          inCenterX,
-                          inCenterY - pH / 2 - lowerH,
-                          MAXIGIN_CENTER );
-    maxigin_setLanguageFontIndex( 0 );
     
     
 

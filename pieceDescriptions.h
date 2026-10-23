@@ -99,6 +99,8 @@ static  int  kingDescriptionKeys[ 2 ];
 
 
 static  int  infoPanelSprite          =  -1;
+static  int  infoLineSprite           =  -1;
+
 static  int  deployCostPanelSprite    =  -1;
 static  int  diagramBoardStrip        =  -1;
 static  int  diagramPieceStrip        =  -1;
@@ -143,6 +145,12 @@ void pieceDescriptionsInit( void ) {
     infoPanelSprite = maxigin_initSprite( "pieceInfoPanel.tga" );
 
     maxigin_initMakeGlowSprite( infoPanelSprite,
+                                4,
+                                2 );
+
+    infoLineSprite = maxigin_initSprite( "pieceInfoLine.tga" );
+
+    maxigin_initMakeGlowSprite( infoLineSprite,
                                 4,
                                 2 );
     
@@ -868,7 +876,11 @@ void drawDescriptionText( int            inLangTitle,
 
         if( ! maxigin_doesLanguageHaveWords() ) {
             /* non-word langs are always one line */
-            startOffset   =  59;
+            startOffset = 59;
+            }
+        if( pieceNumWords == 1 ) {
+            /* if it's a single word (one line), center it vertically */
+            startOffset = 58;
             }
         
         for( w = 0;
@@ -883,6 +895,9 @@ void drawDescriptionText( int            inLangTitle,
             }
         }
 
+    maxigin_drawSprite( infoLineSprite,
+                        inCenterX,
+                        inCenterY - 47 );
 
     
     desc = maxigin_getLangText( inLangDescription );

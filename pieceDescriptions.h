@@ -707,7 +707,7 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
 
     maxigin_drawSetAlpha( inFade );
 
-    maxigin_drawSprite( infoPanelSprite,
+    if(0)maxigin_drawSprite( infoPanelSprite,
                         inCenterX,
                         inCenterY );
 
@@ -843,10 +843,11 @@ void drawDescriptionText( int            inLangTitle,
     const char  *title;
     const char  *desc;
 
-    maxigin_drawSetColor( 255,
-                          255,
-                          255,
-                          inFade );
+
+    colorsApply( COLOR_LCD_TEXT );
+
+    maxigin_drawSetAlpha( inFade );
+    
 
     title = maxigin_getLangText( inLangTitle );
 

@@ -23,6 +23,7 @@ enum{
     COLOR_SALE,
     COLOR_BAILOUT,
     COLOR_WAGES,
+    COLOR_LCD_TEXT,
     NUM_COLORS };
 
 

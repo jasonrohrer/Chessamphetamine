@@ -169,19 +169,20 @@ static int          spinButtonX                = MAXIGIN_GAME_NATIVE_W - 34;
 static int          spinButtonY                = MAXIGIN_GAME_NATIVE_H - 21;
 static char         spinButtonHover            =  0;
 static int          readyCountScreenSprite     = -1;
+static int          pieceInfoScreenSprite      = -1;
 
 static int          drawsLeft                  =  0;
 static int          baseNumDraws               =  4;
 
 static int          drawButton                 = -1;
 static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
-static int          drawButtonPosX             =  23;
+static int          drawButtonPosX             =  21;
 
 static int          deckButton                 = -1;
 static int          deckButtonPosY             =  MAXIGIN_GAME_NATIVE_H / 2 - 25;
-static int          deckButtonPosX             =  23;
+static int          deckButtonPosX             =  21;
 
-static int          infoLightsX                =  53;
+static int          infoLightsX                =  50;
 static int          unlocksY                   =  40;
 
 static int          newGameButton              = -1;
@@ -624,10 +625,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                             deckButtonPosX,
                             deckButtonPosY - 58 );
 
-        maxigin_drawSetColor( 255,
-                              218,
-                              112,
-                              255 );
+        colorsApply( COLOR_LCD_TEXT );
 
         numbersToggleBorder( 0 );
 
@@ -742,15 +740,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                     1);
         }
 
-
-    heartsDraw( infoLightsX,
-                MAXIGIN_GAME_NATIVE_H - 40 );
-
-    moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
-               30 );
-
-    unlocksDraw( infoLightsX + 1,
-                 unlocksY );
+    
 
     /* any time there can be stuff sliding off top edge of screen,
        force clip the top.
@@ -766,6 +756,25 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                      redrawAddRunning
                      ||
                      redrawRemoveRunning );
+
+
+    /* draw these here, so glows/shadows can hang over edges of screen border */
+    maxigin_drawResetColor();
+
+    maxigin_drawSprite( pieceInfoScreenSprite,
+                        MAXIGIN_GAME_NATIVE_W - 39,
+                        boardCenterY - 13 );
+
+    heartsDraw( infoLightsX,
+                MAXIGIN_GAME_NATIVE_H - 40 );
+
+    moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
+               30 );
+
+    unlocksDraw( infoLightsX + 1,
+                 unlocksY );
+
+    
 
     if( shopShowing
         &&
@@ -1380,6 +1389,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
     
 
+
+    
     /* info panel overlaps with unused draw counter */
     if( ! moneyGetSubMessageShowing() ) {
 
@@ -1393,7 +1404,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         
         if( infoPanelPiece != noPiece ) {
             drawPieceInfoPanel( infoPanelPiece,
-                                MAXIGIN_GAME_NATIVE_W - 30,
+                                MAXIGIN_GAME_NATIVE_W - 38,
                                 boardCenterY,
                                 infoPanelFade,
                                 showDeployCost );
@@ -1403,7 +1414,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                  &&
                  infoPanelFade > 0 ) {
             drawPieceInfoPanel( infoPanelLastPiece,
-                                MAXIGIN_GAME_NATIVE_W - 30,
+                                MAXIGIN_GAME_NATIVE_W - 38,
                                 boardCenterY,
                                 infoPanelFade,
                                 showDeployCost );
@@ -3519,7 +3530,7 @@ void maxiginGame_init( void ) {
     clearInfoPanelPieceMoveMarkers();
         
     
-    boardCenterX = MAXIGIN_GAME_NATIVE_W / 2;
+    boardCenterX = MAXIGIN_GAME_NATIVE_W / 2 - 7;
     boardCenterY = MAXIGIN_GAME_NATIVE_H / 2 + 10;
 
     
@@ -3577,6 +3588,8 @@ void maxiginGame_init( void ) {
                                 3 );
 
     readyCountScreenSprite = maxigin_initSprite( "readyCountScreen.tga" );
+
+    pieceInfoScreenSprite = maxigin_initSprite( "pieceInfoScreen.tga" );
     
 
     examinePieceSound = maxigin_initSoundEffect( "examinePiece_misc_10.wav" );
@@ -3955,7 +3968,7 @@ void maxiginGame_init( void ) {
 
     
 
-    maxigin_initSetLanguageFontGlow( 2,
+    maxigin_initSetLanguageFontGlow( 4,
                                      2 );
 
     unlocksInit( UNLOCK_VIEW,
@@ -4005,7 +4018,7 @@ void maxiginGame_init( void ) {
 
     sideBoardInit( MOUSE_CLICK,
                    ACTION,
-                   22,
+                   drawButtonPosX - 1,
                    MAXIGIN_GAME_NATIVE_H - 30 );
 
     deckViewInit( boardCenterX,

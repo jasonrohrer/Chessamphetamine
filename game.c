@@ -461,9 +461,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                         MAXIGIN_GAME_NATIVE_W / 2,
                         MAXIGIN_GAME_NATIVE_H / 2 );
 
-    maxigin_drawSetTextHighlighColor( 236,
-                                      97,
-                                      74 );
+    maxigin_drawSetTextHighlighColor( 255,
+                                      218,
+                                      112,
+                                      128 );
 
     maxigin_drawSetAlpha( 255 );
     

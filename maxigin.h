@@ -1801,8 +1801,8 @@ typedef enum{ MAXIGIN_LEFT    =  -1,
 
 /*
   Sets the highlight color for ^escaped strings^ that are present in
-  drawn text.  Their alpha component will match the alpha of the rest of the
-  text
+  drawn text.  Their alpha component will be multiplied with the alpha of the
+  rest of the text.
 
   Defaults to white.
 
@@ -1814,12 +1814,15 @@ typedef enum{ MAXIGIN_LEFT    =  -1,
       
       inBlue     the blue  component
 
+      inAlpha    the alpha component
+
   [jumpMaxiginDraw]
 */
       
 void maxigin_drawSetTextHighlighColor( unsigned char  inRed,
                                        unsigned char  inGreen,
-                                       unsigned char  inBlue );
+                                       unsigned char  inBlue,
+                                       unsigned char  inAlpha );
 
 
 
@@ -21872,10 +21875,12 @@ static  MaxiginColor  mx_textHighlighColor  =  { { 255,
 
 void maxigin_drawSetTextHighlighColor( unsigned char  inRed,
                                        unsigned char  inGreen,
-                                       unsigned char  inBlue ) {
+                                       unsigned char  inBlue,
+                                       unsigned char  inAlpha ) {
     mx_textHighlighColor.comp.red   = inRed;
     mx_textHighlighColor.comp.green = inGreen;
     mx_textHighlighColor.comp.blue  = inBlue;
+    mx_textHighlighColor.comp.alpha = inAlpha;
     }
 
 
@@ -21905,6 +21910,9 @@ int maxigin_drawText( int           inFontHandle,
     
     MaxiginColor  plainColor      =  mx_drawColor;
     MaxiginColor  highlightColor  =  mx_textHighlighColor;
+
+    long          alphaMix;
+    
     
     enum{         BUFFER_LEN      =  256 };
     
@@ -22163,8 +22171,11 @@ int maxigin_drawText( int           inFontHandle,
     highlightOn  = 0;
     mx_drawColor = plainColor;
 
-    /* match alpha of plain color */
-    highlightColor.comp.alpha = plainColor.comp.alpha;
+    /* multiply alpha of plain color, so that highlight can
+       possibly make text more transparent */
+    alphaMix = ( highlightColor.comp.alpha * plainColor.comp.alpha ) / 255;
+    
+    highlightColor.comp.alpha = (unsigned char) alphaMix;
     
     for( s = 0;
          s < numSprites;

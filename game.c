@@ -741,8 +741,16 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                     10,
                     1);
         }
-        
 
+
+    heartsDraw( infoLightsX,
+                MAXIGIN_GAME_NATIVE_H - 40 );
+
+    moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
+               30 );
+
+    unlocksDraw( infoLightsX + 1,
+                 unlocksY );
 
     /* any time there can be stuff sliding off top edge of screen,
        force clip the top.
@@ -1194,8 +1202,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     screenEndDraw();
 
         
-    heartsDraw( infoLightsX,
-                MAXIGIN_GAME_NATIVE_H - 40 );
+
 
     if( ! spinning
         &&
@@ -1248,11 +1255,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                       boardCenterY );
 
 
-    moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
-               30 );
 
-    unlocksDraw( infoLightsX + 1,
-                 unlocksY );
     
 
     if( 0 ) {

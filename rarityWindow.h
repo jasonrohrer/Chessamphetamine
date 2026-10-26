@@ -38,6 +38,8 @@ void rarityWindowDraw( void );
 #define RARITY_WINDOW_IMPLEMENTATION_INCLUDED
 
 
+#define  RARITY_WINDOW_PROGRESS_MAX  100
+
 static  int         rwCenterX;
 static  int         rwCenterY;
 
@@ -59,6 +61,10 @@ void rarityWindowInit( int  inCenterX,
     rwWindowSprite     = maxigin_initSprite( "rarityWindow.tga" );
     rwFilmSprite       = maxigin_initSprite( "rarityWindowFilm.tga" );
     rwFilmShadowSprite = maxigin_initSprite( "rarityWindowShadow.tga" );
+
+    REGISTER_VAL_MEM( rwCurrentPiece );
+    REGISTER_VAL_MEM( rwNextPiece );
+    REGISTER_VAL_MEM( rwProgress );
     }
 
 
@@ -94,7 +100,7 @@ void rarityWindowStep( void ) {
 
         rwProgress += r * 20 / 60;
 
-        if( rwProgress >= 100 ) {
+        if( rwProgress >= RARITY_WINDOW_PROGRESS_MAX ) {
 
             rwCurrentPiece = rwNextPiece;
 
@@ -107,7 +113,7 @@ void rarityWindowStep( void ) {
 
 void rarityWindowDraw( void ) {
 
-    int  yRollOffset  =  rwProgress * 16 / 100;
+    int  yRollOffset  =  rwProgress * 16 / RARITY_WINDOW_PROGRESS_MAX;
 
     maxigin_drawResetColor();
     
@@ -142,6 +148,11 @@ void rarityWindowDraw( void ) {
         
         raritySetDrawColor( rwCurrentPiece );
 
+        if( rwProgress != 0 ) {
+            int  fade  =  255 - 255 * rwProgress / RARITY_WINDOW_PROGRESS_MAX;
+            maxigin_drawSetAlpha( (unsigned char)fade );
+            }
+
 
         rarityKey = rarityGetLangKey( rwCurrentPiece );
 
@@ -172,6 +183,11 @@ void rarityWindowDraw( void ) {
         int  lowerH;
         
         raritySetDrawColor( rwNextPiece );
+
+        if( rwProgress != 0 ) {
+            int  fade  =  255 * rwProgress / RARITY_WINDOW_PROGRESS_MAX;
+            maxigin_drawSetAlpha( (unsigned char)fade );
+            }
 
         rarityKey = rarityGetLangKey( rwNextPiece );
 

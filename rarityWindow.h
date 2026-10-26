@@ -38,19 +38,22 @@ void rarityWindowDraw( void );
 #define RARITY_WINDOW_IMPLEMENTATION_INCLUDED
 
 
-#define  RARITY_WINDOW_PROGRESS_MAX  100
+#define                RARITY_WINDOW_PROGRESS_MAX     100
+#define                RARITY_DIM_MIN                 32
+static  int            rwCenterX;
+static  int            rwCenterY;
+static  int            rwWindowSprite              =  -1;
+static  int            rwFilmSprite                =  -1;
+static  int            rwFilmShadowSprite          =  -1;
 
-static  int         rwCenterX;
-static  int         rwCenterY;
+static  ChessPiece     rwCurrentPiece              =  noPiece;
+static  ChessPiece     rwNextPiece                 =  noPiece;
+static  char           rwDimCurrent                =  0;
+static  char           rwDimNext                   =  0;
+static  unsigned char  rwDimAlphaCurrent           =  255;
+static  unsigned char  rwDimAlphaNext              =  255;
 
-static  int         rwWindowSprite      =  -1;
-static  int         rwFilmSprite        =  -1;
-static  int         rwFilmShadowSprite  =  -1;
-
-static  ChessPiece  rwCurrentPiece      =   noPiece;
-static  ChessPiece  rwNextPiece         =   noPiece;
-
-static  int         rwProgress          =   0;
+static  int            rwProgress                  =   0;
 
 
 void rarityWindowInit( int  inCenterX,
@@ -65,6 +68,9 @@ void rarityWindowInit( int  inCenterX,
     REGISTER_VAL_MEM( rwCurrentPiece );
     REGISTER_VAL_MEM( rwNextPiece );
     REGISTER_VAL_MEM( rwProgress );
+
+    REGISTER_VAL_MEM( rwDimAlphaCurrent );
+    REGISTER_VAL_MEM( rwDimAlphaNext );
     }
 
 
@@ -72,29 +78,72 @@ void rarityWindowInit( int  inCenterX,
 void rarityWindowSet( ChessPiece  inNewPiece ) {
 
     if( inNewPiece == rwCurrentPiece ) {
+        rwDimCurrent = 0;
         return;
         }
     
-    if( inNewPiece == noPiece
-        ||
-        rwCurrentPiece == noPiece ) {
+    if( rwCurrentPiece == noPiece ) {
         rwNextPiece = inNewPiece;
         return;
         }
+
+    if( inNewPiece == noPiece ) {
+        rwDimCurrent = 1;
+        rwDimNext    = 1;
+        return;
+        }
+    
 
     if( rarityGet( inNewPiece )
         !=
         rarityGet( rwCurrentPiece ) ) {
     
         rwNextPiece = inNewPiece;
+        rwDimNext   = 0;
         }
+    else {
+        rwDimCurrent = 0;
+        }
+    }
+
+
+static unsigned char rwStepDim( char           inDim,
+                                unsigned char  inAlpha ) {
+
+    int  r        =  mingin_getStepsPerSecond();
+    int  dimRate  =  r * 40 / 60;
+
+    if( inDim
+        &&
+        inAlpha > RARITY_DIM_MIN ) {
+
+        int  newDim  =  inAlpha - dimRate;
+
+        if( newDim < RARITY_DIM_MIN ) {
+            newDim = RARITY_DIM_MIN;
+            }
+        return (unsigned char) newDim;
+        }
+    else if( ! inDim
+             &&
+             inAlpha < 255 ) {
+        
+        int  newDim  =  inAlpha + dimRate;
+
+        if( newDim > 255 ) {
+            newDim = 255;
+            }
+        return (unsigned char) newDim;
+        }
+
+    return inAlpha;
     }
 
 
 
 void rarityWindowStep( void ) {
 
-    int  r  =  mingin_getStepsPerSecond();
+    int  r        =  mingin_getStepsPerSecond();
 
     if( rwNextPiece != rwCurrentPiece ) {
 
@@ -105,8 +154,20 @@ void rarityWindowStep( void ) {
             rwCurrentPiece = rwNextPiece;
 
             rwProgress = 0;
+
+            if( rwDimNext == 0 ) {
+                rwDimCurrent        = 0;
+                rwDimAlphaCurrent   = 255;
+                }
             }
         }
+
+    rwDimAlphaCurrent = rwStepDim( rwDimCurrent,
+                                   rwDimAlphaCurrent );
+    
+    rwDimAlphaNext    = rwStepDim( rwDimNext,
+                                   rwDimAlphaNext );
+    
     }
 
 
@@ -149,8 +210,16 @@ void rarityWindowDraw( void ) {
         raritySetDrawColor( rwCurrentPiece );
 
         if( rwProgress != 0 ) {
-            int  fade  =  255 - 255 * rwProgress / RARITY_WINDOW_PROGRESS_MAX;
+            long  fade  =  255 - 255 * rwProgress / RARITY_WINDOW_PROGRESS_MAX;
+
+            if( rwDimCurrent ) {
+                fade = fade * rwDimAlphaCurrent / 255;
+                }
+            
             maxigin_drawSetAlpha( (unsigned char)fade );
+            }
+        else {
+            maxigin_drawSetAlpha( rwDimAlphaCurrent );
             }
 
 
@@ -185,7 +254,12 @@ void rarityWindowDraw( void ) {
         raritySetDrawColor( rwNextPiece );
 
         if( rwProgress != 0 ) {
-            int  fade  =  255 * rwProgress / RARITY_WINDOW_PROGRESS_MAX;
+            long  fade  =  255 * rwProgress / RARITY_WINDOW_PROGRESS_MAX;
+
+            if( rwDimNext ) {
+                fade = fade * rwDimAlphaNext / 255;
+                }
+            
             maxigin_drawSetAlpha( (unsigned char)fade );
             }
 

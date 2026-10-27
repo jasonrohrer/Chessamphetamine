@@ -188,15 +188,15 @@ void rarityWindowDraw( void ) {
                                    rwCenterY + 6 );
     
     maxigin_drawSprite( rwFilmSprite,
-                        rwCenterX,
+                        rwCenterX + 1,
                         rwCenterY - yRollOffset );
 
     maxigin_drawSprite( rwFilmSprite,
-                        rwCenterX,
+                        rwCenterX + 1,
                         rwCenterY + 16 - yRollOffset );
     
     maxigin_drawSprite( rwFilmShadowSprite,
-                        rwCenterX,
+                        rwCenterX + 1,
                         rwCenterY );
 
     maxigin_setLanguageFontIndex( 1 );

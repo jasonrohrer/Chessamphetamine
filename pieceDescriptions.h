@@ -98,10 +98,8 @@ static const char  *kingDescriptionKeyStrings[2]  =  {  "kingDescYou",
 static  int  kingDescriptionKeys[ 2 ];
 
 
-static  int  infoPanelSprite          =  -1;
 static  int  infoLineSprite           =  -1;
 
-static  int  deployCostPanelSprite    =  -1;
 static  int  diagramBoardStrip        =  -1;
 static  int  diagramPieceStrip        =  -1;
 
@@ -142,24 +140,12 @@ void pieceDescriptionsInit( void ) {
             }
         }
 
-    infoPanelSprite = maxigin_initSprite( "pieceInfoPanel.tga" );
-
-    maxigin_initMakeGlowSprite( infoPanelSprite,
-                                4,
-                                2 );
-
     infoLineSprite = maxigin_initSprite( "pieceInfoLine.tga" );
 
     maxigin_initMakeGlowSprite( infoLineSprite,
                                 4,
                                 2 );
-    
 
-    deployCostPanelSprite = maxigin_initSprite( "deployCostPanel.tga" );
-
-    maxigin_initMakeGlowSprite( deployCostPanelSprite,
-                                4,
-                                2 );
 
     diagramBoardStrip = maxigin_initSpriteStrip( "moveDiagrams_boards.tga",
                                                  27 );
@@ -703,19 +689,10 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
     
     ChessPiece   t  =  inPiece & CHESS_TYPE_MASK;
     
-    int          diagramOffset  =  52;
-    int          pW;
-    int          pH;
+    int          diagramOffset  =  82;
     int          upperH;
     int          lowerH;
     int          desKey;
-    
-
-
-
-    maxigin_getSpriteDimensions( infoPanelSprite,
-                                 &pW,
-                                 &pH );
     
     
 
@@ -773,6 +750,10 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
         int  totalH;
         int  extraY  =  0;
 
+        maxigin_drawSprite( infoLineSprite,
+                            inCenterX,
+                            inCenterY + 38 );
+
         maxigin_setLanguageFontIndex( 1 );
 
         maxigin_measureLangTextVertical( lang_deploymentCost,
@@ -784,41 +765,30 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
         if( totalH < 8 ) {
             extraY = 8 - totalH;
             }
-        
-        raritySetDrawColor( inPiece );
+
+
+        colorsApply( COLOR_LCD_TEXT );
 
         maxigin_drawSetAlpha( inFade );
-
-        maxigin_drawSprite( deployCostPanelSprite,
-                            inCenterX,
-                            inCenterY + pH / 2 + 11 );
     
         maxigin_drawLangText( lang_deploymentCost,
                               inCenterX,
-                              inCenterY + pH / 2 + upperH + 1 + extraY,
+                              inCenterY + 70 - 28 + upperH + 1 + extraY,
                               MAXIGIN_CENTER );
         maxigin_setLanguageFontIndex( 0 );
 
-        colorsApplyMoneyColor();
-
-        maxigin_drawSetAlpha( inFade );
+        numbersToggleBorder( 0 );
         
         numberDrawRublesRight(
             sideBoardGetExtraDeploymentCost( t ),
             inCenterX + 10,
-            inCenterY + pH / 2 + upperH + 2 + lowerH + 4 + extraY,
+            inCenterY + 70 - 28 + upperH + 2 + lowerH + 6 + extraY,
             1 );
+
+        numbersToggleBorder( 1 );
         }
     }
 
-
-
-void drawDescriptionFrame( int  inCenterX,
-                           int  inCenterY ) {
-    maxigin_drawSprite( infoPanelSprite,
-                        inCenterX,
-                        inCenterY );
-    }
 
 
 

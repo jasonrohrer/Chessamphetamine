@@ -392,13 +392,6 @@ void unlocksDraw( int  inPosX,
                                  centY,
                                  unlockExtraGlowFade[ unlockLastOver ] );
 
-            maxigin_drawSetColor( 70,
-                                  198,
-                                  87,
-                                  unlockExtraGlowFade[ unlockLastOver ] );
-            
-            drawDescriptionFrame( centX,
-                                  centY );
             }
         else {
 

@@ -768,7 +768,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     maxigin_drawSprite( pieceInfoScreenSprite,
                         MAXIGIN_GAME_NATIVE_W - 39,
-                        boardCenterY - 13 );
+                        boardCenterY );
 
     heartsDraw( infoLightsX,
                 MAXIGIN_GAME_NATIVE_H - 40 );

@@ -451,9 +451,10 @@ static void setInfoPanelPieceMoveMarkers( void ) {
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
-    int  numPixels  =  MAXIGIN_GAME_NATIVE_W * MAXIGIN_GAME_NATIVE_H;
+    int  numPixels   =  MAXIGIN_GAME_NATIVE_W * MAXIGIN_GAME_NATIVE_H;
     int  p;
     int  i;
+    int  infoPanelY  =  boardCenterY - 20;
 
     /* step colors here, instead of in step function,
        so that changes to color map are noticed even during playback */
@@ -764,23 +765,30 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
     /* draw these here, so glows/shadows can hang over edges of screen border */
+
+    /* but don't clip these */
+    screenToggleClip( 0 );
+    
     maxigin_drawResetColor();
 
     maxigin_drawSprite( pieceInfoScreenSprite,
                         MAXIGIN_GAME_NATIVE_W - 39,
-                        boardCenterY );
+                        infoPanelY );
 
     heartsDraw( infoLightsX,
                 MAXIGIN_GAME_NATIVE_H - 40 );
 
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
-               30 );
+               10 );
 
     unlocksDraw( infoLightsX + 1,
                  unlocksY );
 
 
     rarityWindowDraw();
+
+    /* re-enable central screen clipping, if it's on */
+    screenToggleClip( 1 );
     
     
     /* info panel overlaps with unused draw counter */
@@ -797,7 +805,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         if( infoPanelPiece != noPiece ) {
             drawPieceInfoPanel( infoPanelPiece,
                                 MAXIGIN_GAME_NATIVE_W - 38,
-                                boardCenterY,
+                                infoPanelY,
                                 infoPanelFade,
                                 showDeployCost );
         
@@ -807,7 +815,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                  infoPanelFade > 0 ) {
             drawPieceInfoPanel( infoPanelLastPiece,
                                 MAXIGIN_GAME_NATIVE_W - 38,
-                                boardCenterY,
+                                infoPanelY,
                                 infoPanelFade,
                                 showDeployCost );
             }
@@ -4044,7 +4052,7 @@ void maxiginGame_init( void ) {
                 boardCenterY - 13 );
 
     rarityWindowInit( MAXIGIN_GAME_NATIVE_W - 39,
-                      boardCenterY - 78 );
+                      boardCenterY - 98 );
     
 
     clearDrawMarkers();

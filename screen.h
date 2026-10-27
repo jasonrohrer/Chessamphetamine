@@ -29,6 +29,12 @@ void screenInit( int  inScreenCenterX,
 void screenStartDraw( char  inForceClip );
 
 
+/* ends any clipping started by screenStartDraw
+   Obeys orginal setting of inForceClip when toggling back on
+   (only toggles on if inForceClip was 1 ) */
+void screenToggleClip( char  inClipOn );
+
+
 /* draws border around edge of screen, ends draw trimming */
 void screenEndDraw( void );
 
@@ -42,16 +48,17 @@ void screenEndDraw( void );
 #define SCREEN_IMPLEMENTATION_INCLUDED
 
 
-static  int  screenTopEdgeSprite     =  -1;
-static  int  screenBottomEdgeSprite  =  -1;
-static  int  screenLeftEdgeSprite    =  -1;
-static  int  screenRightEdgeSprite   =  -1;
+static  int   screenTopEdgeSprite     =  -1;
+static  int   screenBottomEdgeSprite  =  -1;
+static  int   screenLeftEdgeSprite    =  -1;
+static  int   screenRightEdgeSprite   =  -1;
 
-static  int  screenCenterX;
-static  int  screenCenterY;
+static  int   screenCenterX;
+static  int   screenCenterY;
+static  int   screenClipY;
 
-static char  screenClipForced        =   0;
-
+static  char  screenClipForced        =   0;
+static  char  screenClipToggle        =   1;
 
 
 void screenInit( int  inScreenCenterX,
@@ -64,6 +71,8 @@ void screenInit( int  inScreenCenterX,
 
     screenCenterX = inScreenCenterX;
     screenCenterY = inScreenCenterY;
+
+    screenClipY   = screenCenterY - 109;
     }
 
 
@@ -102,7 +111,7 @@ void screenStartDraw( char  inForceClip ) {
            edges, since we want glows and particle effects to bleed out */
         maxigin_drawPushClipRectangle( -1,
                                        -1,
-                                       screenCenterY - 109,
+                                       screenClipY,
                                        -1 );
         }
     else {
@@ -112,6 +121,37 @@ void screenStartDraw( char  inForceClip ) {
                             screenCenterY - 112 );
         }
     
+    screenClipToggle = 1;
+    }
+
+
+
+void screenToggleClip( char  inClipOn ) {
+
+    if( ! screenClipForced ) {
+        /* ignore toggle */
+        return;
+        }
+
+    if( inClipOn
+        &&
+        ! screenClipToggle ) {
+
+        screenClipToggle = 1;
+
+        maxigin_drawPushClipRectangle( -1,
+                                       -1,
+                                       screenClipY,
+                                       -1 );
+        }
+    else if( ! inClipOn
+             &&
+             screenClipToggle ) {
+
+        screenClipToggle = 0;
+
+        maxigin_drawPopClipRectangle();
+        }  
     }
 
 
@@ -120,7 +160,12 @@ void screenStartDraw( char  inForceClip ) {
 void screenEndDraw( void ) {
 
     if( screenClipForced ) {
-        maxigin_drawPopClipRectangle();
+
+        if( screenClipToggle ) {
+            maxigin_drawPopClipRectangle();
+            }
+
+        screenClipToggle = 1;
         
         screenClipForced = 0;
 

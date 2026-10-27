@@ -230,7 +230,7 @@ void rarityWindowDraw( void ) {
                                          &lowerH );
     
         maxigin_drawLangText( rarityGetLangKey( rwCurrentPiece ),
-                              rwCenterX,
+                              rwCenterX + 1,
                               rwCenterY - yRollOffset,
                               MAXIGIN_CENTER );
 
@@ -270,7 +270,7 @@ void rarityWindowDraw( void ) {
                                          &lowerH );
     
         maxigin_drawLangText( rarityGetLangKey( rwNextPiece ),
-                              rwCenterX,
+                              rwCenterX + 1,
                               rwCenterY + 16 - yRollOffset,
                               MAXIGIN_CENTER );
         }

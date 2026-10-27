@@ -689,7 +689,7 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
     
     ChessPiece   t  =  inPiece & CHESS_TYPE_MASK;
     
-    int          diagramOffset  =  82;
+    int          diagramOffset  =  84;
     int          upperH;
     int          lowerH;
     int          desKey;

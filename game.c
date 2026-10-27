@@ -41,6 +41,7 @@
 #define POST_MOVE_EFFECTS_IMPLEMENTATION
 #define SCREEN_IMPLEMENTATION
 #define RARITY_WINDOW_IMPLEMENTATION
+#define MOVE_DIAGRAM_WINDOW_IMPLEMENTATION
 
 
 #include "chess.h"
@@ -110,6 +111,9 @@
 #include "screen.h"
 
 #include "rarityWindow.h"
+
+#include "moveDiagramWindow.h"
+
 
 
 enum GameUserAction {
@@ -786,6 +790,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
     rarityWindowDraw();
+
+    moveDiagramWindowDraw();
 
     /* re-enable central screen clipping, if it's on */
     screenToggleClip( 1 );
@@ -4054,6 +4060,8 @@ void maxiginGame_init( void ) {
     rarityWindowInit( MAXIGIN_GAME_NATIVE_W - 39,
                       boardCenterY - 98 );
     
+    moveDiagramWindowInit( MAXIGIN_GAME_NATIVE_W - 39,
+                           boardCenterY + 68 );
 
     clearDrawMarkers();
 

@@ -4061,7 +4061,7 @@ void maxiginGame_init( void ) {
                       boardCenterY - 98 );
     
     moveDiagramWindowInit( MAXIGIN_GAME_NATIVE_W - 39,
-                           boardCenterY + 68 );
+                           boardCenterY + 66 );
 
     clearDrawMarkers();
 

@@ -43,8 +43,9 @@ void moveDiagramWindowDraw( void );
 static  int            mdCenterX;
 static  int            mdCenterY;
 static  int            mdWindowSprite              =  -1;
-static  int            mdFilmSprite                =  -1;
-static  int            mdFilmShadowSprite          =  -1;
+static  int            mdShadowSprite          =  -1;
+static  int            mdGlintSprite               =  -1;
+static  int            mdPaddleSprite              =  -1;
 
 static  ChessPiece     mdCurrentPiece              =  noPiece;
 static  ChessPiece     mdNextPiece                 =  noPiece;
@@ -56,15 +57,30 @@ static  unsigned char  mdDimAlphaNext              =  255;
 static  int            mdProgress                  =   0;
 
 
+
 void moveDiagramWindowInit( int  inCenterX,
                        int  inCenterY ) {
     mdCenterX = inCenterX;
     mdCenterY = inCenterY;
 
     mdWindowSprite     = maxigin_initSprite( "moveDiagramWindow.tga" );
-    mdFilmSprite       = maxigin_initSprite( "moveDiagramWindowFilm.tga" );
-    mdFilmShadowSprite = maxigin_initSprite( "moveDiagramWindowShadow.tga" );
+    mdShadowSprite     = maxigin_initSprite( "moveDiagramWindowShadow.tga" );
+    mdGlintSprite      = maxigin_initSprite( "moveDiagramWindowGlint.tga" );
+    mdPaddleSprite     = maxigin_initSprite( "moveDiagramWindowPaddle.tga" );
 
+
+    /* hazy, faded black shadow  top-to-bottom */
+    maxigin_initMakeDropShadowSprite(
+        mdPaddleSprite,
+        3,
+        2,
+        255,
+        255,
+        100,
+        0,
+        100,
+        0 );
+    
     REGISTER_VAL_MEM( mdCurrentPiece );
     REGISTER_VAL_MEM( mdNextPiece );
     REGISTER_VAL_MEM( mdProgress );
@@ -170,23 +186,15 @@ void moveDiagramWindowDraw( void ) {
                         mdCenterX,
                         mdCenterY );
 
-    maxigin_drawPushClipRectangle( -1,
-                                   -1,
-                                   mdCenterY - 17,
-                                   mdCenterY + 10 );
-    
-    maxigin_drawSprite( mdFilmSprite,
-                        mdCenterX,
-                        mdCenterY - yRollOffset - 2 );
+    maxigin_drawPushClipRectangle( mdCenterX - 33,
+                                   mdCenterX + 35,
+                                   mdCenterY - 16,
+                                   mdCenterY + 11 );
 
-    maxigin_drawSprite( mdFilmSprite,
-                        mdCenterX,
-                        mdCenterY + 28 - yRollOffset - 2 );
-    
-    maxigin_drawSprite( mdFilmShadowSprite,
-                        mdCenterX,
-                        mdCenterY - 2 );
 
+    maxigin_drawSprite( mdPaddleSprite,
+                        mdCenterX + 1,
+                        mdCenterY - yRollOffset - 2 + 10 );
 
     if( mdCurrentPiece != noPiece ) {
         
@@ -222,6 +230,15 @@ void moveDiagramWindowDraw( void ) {
             maxigin_drawSetAlpha( (unsigned char)fade );
             }
         }
+
+    
+    maxigin_drawSprite( mdShadowSprite,
+                        mdCenterX + 1,
+                        mdCenterY - 2 );
+
+    maxigin_drawSprite( mdGlintSprite,
+                        mdCenterX + 34,
+                        mdCenterY - 14 );
 
     maxigin_drawPopClipRectangle();
     }

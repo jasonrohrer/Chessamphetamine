@@ -43,23 +43,30 @@ void moveDiagramWindowDraw( void );
 static  int            mdCenterX;
 static  int            mdCenterY;
 static  int            mdWindowSprite              =  -1;
-static  int            mdShadowSprite          =  -1;
+static  int            mdShadowSprite              =  -1;
 static  int            mdGlintSprite               =  -1;
 static  int            mdPaddleSprite              =  -1;
 
-static  ChessPiece     mdCurrentPiece              =  noPiece;
-static  ChessPiece     mdNextPiece                 =  noPiece;
-static  char           mdDimCurrent                =  0;
-static  char           mdDimNext                   =  0;
-static  unsigned char  mdDimAlphaCurrent           =  255;
-static  unsigned char  mdDimAlphaNext              =  255;
+static  int            diagramBoardStrip           =  -1;
+static  int            diagramPieceStrip           =  -1;
 
-static  int            mdProgress                  =   0;
+
+#define                MD_NUM_PADDLES                   4
+static  int            mdLivePaddleIndex           =   -1;
+static  int            mdNextPaddleIndex           =    0;
+
+static  ChessPiece     mdPaddlePieces  [ MD_NUM_PADDLES ];
+static  int            mdPaddleProgress[ MD_NUM_PADDLES ];
+
 
 
 
 void moveDiagramWindowInit( int  inCenterX,
                        int  inCenterY ) {
+
+    int  i;
+
+    
     mdCenterX = inCenterX;
     mdCenterY = inCenterY;
 
@@ -67,6 +74,13 @@ void moveDiagramWindowInit( int  inCenterX,
     mdShadowSprite     = maxigin_initSprite( "moveDiagramWindowShadow.tga" );
     mdGlintSprite      = maxigin_initSprite( "moveDiagramWindowGlint.tga" );
     mdPaddleSprite     = maxigin_initSprite( "moveDiagramWindowPaddle.tga" );
+
+    diagramBoardStrip = maxigin_initSpriteStrip( "moveDiagrams_boards.tga",
+                                                 27 );
+
+    
+    diagramPieceStrip = maxigin_initSpriteStrip( "moveDiagrams_pieces.tga",
+                                                 27 );
 
 
     /* hazy, faded black shadow  top-to-bottom */
@@ -80,97 +94,79 @@ void moveDiagramWindowInit( int  inCenterX,
         0,
         100,
         0 );
-    
-    REGISTER_VAL_MEM( mdCurrentPiece );
-    REGISTER_VAL_MEM( mdNextPiece );
-    REGISTER_VAL_MEM( mdProgress );
 
-    REGISTER_VAL_MEM( mdDimAlphaCurrent );
-    REGISTER_VAL_MEM( mdDimAlphaNext );
+    for( i = 0;
+         i < MD_NUM_PADDLES;
+         i   ++ ) {
+
+        mdPaddleProgress[ i ] = 0;
+        mdPaddlePieces  [ i ] = noPiece;
+        }
+    
+    REGISTER_ARRAY_MEM( mdPaddleProgress );
+    REGISTER_ARRAY_MEM( mdPaddlePieces );
+
+    REGISTER_VAL_MEM( mdLivePaddleIndex );
+    REGISTER_VAL_MEM( mdNextPaddleIndex );
     }
 
 
 
 void moveDiagramWindowSet( ChessPiece  inNewPiece ) {
 
-    if( inNewPiece == mdCurrentPiece ) {
-        mdDimCurrent = 0;
-        return;
-        }
-    
-    if( mdCurrentPiece == noPiece ) {
-        mdNextPiece = inNewPiece;
-        return;
-        }
-
     if( inNewPiece == noPiece ) {
-        mdDimCurrent = 1;
-        mdDimNext    = 1;
+
+        mdLivePaddleIndex = -1;
+        
         return;
         }
-    }
 
 
-static unsigned char mdStepDim( char           inDim,
-                                unsigned char  inAlpha ) {
-
-    int  r        =  mingin_getStepsPerSecond();
-    int  dimRate  =  r * 40 / 60;
-
-    if( inDim
-        &&
-        inAlpha > MOVE_DIAGRAM_DIM_MIN ) {
-
-        int  newDim  =  inAlpha - dimRate;
-
-        if( newDim < MOVE_DIAGRAM_DIM_MIN ) {
-            newDim = MOVE_DIAGRAM_DIM_MIN;
-            }
-        return (unsigned char) newDim;
+    if( inNewPiece == mdPaddlePieces[ mdLivePaddleIndex ] ) {
+        return;
         }
-    else if( ! inDim
-             &&
-             inAlpha < 255 ) {
         
-        int  newDim  =  inAlpha + dimRate;
 
-        if( newDim > 255 ) {
-            newDim = 255;
-            }
-        return (unsigned char) newDim;
+    mdLivePaddleIndex = mdNextPaddleIndex;
+    mdPaddlePieces[ mdNextPaddleIndex ] = inNewPiece;
+    mdNextPaddleIndex ++;
+
+    if( mdNextPaddleIndex >= MD_NUM_PADDLES ) {
+        mdNextPaddleIndex = 0;
         }
-
-    return inAlpha;
     }
 
 
 
 void moveDiagramWindowStep( void ) {
 
-    int  r        =  mingin_getStepsPerSecond();
+    int  r         =  mingin_getStepsPerSecond();
+    int  i;
+    int  progRate  =  r * 20 / 60;
 
-    if( mdNextPiece != mdCurrentPiece ) {
+    for( i = 0;
+         i < MD_NUM_PADDLES;
+         i   ++ ) {
 
-        mdProgress += r * 20 / 60;
+        if( i == mdLivePaddleIndex
+            &&
+            mdPaddleProgress[ i ] < MOVE_DIAGRAM_WINDOW_PROGRESS_MAX ) {
 
-        if( mdProgress >= MOVE_DIAGRAM_WINDOW_PROGRESS_MAX ) {
+            mdPaddleProgress[ i ] += progRate;
 
-            mdCurrentPiece = mdNextPiece;
-
-            mdProgress = 0;
-
-            if( mdDimNext == 0 ) {
-                mdDimCurrent        = 0;
-                mdDimAlphaCurrent   = 255;
+            if( mdPaddleProgress[ i ] >= MOVE_DIAGRAM_WINDOW_PROGRESS_MAX ) {
+                mdPaddleProgress[ i ] = MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
                 }
             }
-        }
+        else if( mdPaddleProgress[ i ] > 0 ) {
+            mdPaddleProgress[ i ] -= progRate;
 
-    mdDimAlphaCurrent = mdStepDim( mdDimCurrent,
-                                   mdDimAlphaCurrent );
-    
-    mdDimAlphaNext    = mdStepDim( mdDimNext,
-                                   mdDimAlphaNext );
+            if( mdPaddleProgress[ i ] <= 0 ) {
+                mdPaddleProgress[ i ] = 0;
+                }
+            }
+        
+        }
     
     }
 
@@ -178,8 +174,9 @@ void moveDiagramWindowStep( void ) {
 
 void moveDiagramWindowDraw( void ) {
 
-    int  yRollOffset  =  mdProgress * 16 / MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
-
+    
+    int  i;
+    
     maxigin_drawResetColor();
     
     maxigin_drawSprite( mdWindowSprite,
@@ -191,46 +188,49 @@ void moveDiagramWindowDraw( void ) {
                                    mdCenterY - 16,
                                    mdCenterY + 11 );
 
+    for( i = 0;
+         i < MD_NUM_PADDLES;
+         i   ++ ) {
 
-    maxigin_drawSprite( mdPaddleSprite,
-                        mdCenterX + 1,
-                        mdCenterY - yRollOffset - 2 + 10 );
+        if( mdPaddleProgress[ i ] > 0 ) {
+            int  yRollOffset  =
+                mdPaddleProgress[ i ] * 16 / MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
 
-    if( mdCurrentPiece != noPiece ) {
+            maxigin_drawSprite( mdPaddleSprite,
+                                mdCenterX + 1,
+                                mdCenterY - yRollOffset - 2 );
+
+
+            if( maxigin_getNumSpritesInStrip( diagramBoardStrip ) >
+                mdPaddlePieces[ i ] ) {
         
-        maxigin_drawResetColor();
+                colorsApplyBoardColor();
 
-        if( mdProgress != 0 ) {
-            long  fade  =
-                255 - 255 * mdProgress / MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
-
-            if( mdDimCurrent ) {
-                fade = fade * mdDimAlphaCurrent / 255;
+                maxigin_drawSprite( maxigin_getSpriteFromStrip(
+                                        diagramBoardStrip,
+                                        mdPaddlePieces[ i ] ),
+                                    mdCenterX,
+                                    mdCenterY - yRollOffset - 2 );
                 }
-            
-            maxigin_drawSetAlpha( (unsigned char)fade );
-            }
-        else {
-            maxigin_drawSetAlpha( mdDimAlphaCurrent );
-            }
 
-        
-        }
-    if( mdNextPiece != noPiece ) {
+            if( maxigin_getNumSpritesInStrip( diagramPieceStrip ) >
+                mdPaddlePieces[ i ] ) {
 
-        maxigin_drawResetColor();
+                maxigin_drawSetColor( 255,
+                                      255, 
+                                      255,
+                                      255 );
 
-        if( mdProgress != 0 ) {
-            long  fade  =  255 * mdProgress / MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
-
-            if( mdDimNext ) {
-                fade = fade * mdDimAlphaNext / 255;
+                maxigin_drawSprite( maxigin_getSpriteFromStrip(
+                                        diagramPieceStrip,
+                                        mdPaddlePieces[ i ] ),
+                                    mdCenterX,
+                                    mdCenterY - yRollOffset - 2 );
                 }
-            
-            maxigin_drawSetAlpha( (unsigned char)fade );
             }
         }
 
+    
     
     maxigin_drawSprite( mdShadowSprite,
                         mdCenterX + 1,

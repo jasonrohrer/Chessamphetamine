@@ -100,8 +100,7 @@ static  int  kingDescriptionKeys[ 2 ];
 
 static  int  infoLineSprite           =  -1;
 
-static  int  diagramBoardStrip        =  -1;
-static  int  diagramPieceStrip        =  -1;
+
 
 
 static  int  lang_deploymentCost;
@@ -147,19 +146,7 @@ void pieceDescriptionsInit( void ) {
                                 2 );
 
 
-    diagramBoardStrip = maxigin_initSpriteStrip( "moveDiagrams_boards.tga",
-                                                 27 );
-
-    maxigin_initMakeGlowSpriteStrip( diagramBoardStrip,
-                                     4,
-                                     2 );
     
-    diagramPieceStrip = maxigin_initSpriteStrip( "moveDiagrams_pieces.tga",
-                                                 27 );
-
-    maxigin_initMakeGlowSpriteStrip( diagramPieceStrip,
-                                     4,
-                                     2 );
 
     lang_deploymentCost = maxigin_initTranslationKey( "deployCost" );
     }
@@ -689,37 +676,13 @@ void drawPieceInfoPanel( ChessPiece     inPiece,
     
     ChessPiece   t  =  inPiece & CHESS_TYPE_MASK;
     
-    int          diagramOffset  =  84;
     int          upperH;
     int          lowerH;
     int          desKey;
     
     
 
-    if( maxigin_getNumSpritesInStrip( diagramBoardStrip ) > t ) {
-        
-        colorsApplyBoardColor();
-
-        maxigin_drawSetAlpha( inFade );
-
-        maxigin_drawSprite( maxigin_getSpriteFromStrip( diagramBoardStrip,
-                                                        t ),
-                            inCenterX,
-                            inCenterY + diagramOffset );
-        }
-
-    if( maxigin_getNumSpritesInStrip( diagramPieceStrip ) > t ) {
-
-        maxigin_drawSetColor( 255,
-                              255, 
-                              255,
-                              inFade );
-
-        maxigin_drawSprite( maxigin_getSpriteFromStrip( diagramPieceStrip,
-                                                        t ),
-                            inCenterX,
-                            inCenterY + diagramOffset );
-        }
+ 
 
     if( t == king ) {
         /* distinct description text for enemy vs player king */

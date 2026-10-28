@@ -3049,8 +3049,10 @@ void maxiginGame_step( char  inFinalStep  ) {
     heartsStep();
 
     rarityWindowSet( infoPanelPiece );
+    moveDiagramWindowSet( infoPanelPiece );
 
     rarityWindowStep();
+    moveDiagramWindowStep();
 
     if( sideBoardShowing ) {
 

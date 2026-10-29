@@ -147,6 +147,11 @@ void moveDiagramWindowSet( ChessPiece  inNewPiece ) {
             mdLivePaddleIndex = i;
             mdNextPaddleIndex = mdLivePaddleIndex + 1;
 
+            /* set to full delay now
+               essentialy, we commit to this paddle moving all the way up */
+            mdPaddleDropDelay[ i ] = MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
+            
+
             if( mdNextPaddleIndex >= MD_NUM_PADDLES ) {
                 mdNextPaddleIndex = 0;
                 }
@@ -156,6 +161,11 @@ void moveDiagramWindowSet( ChessPiece  inNewPiece ) {
 
     mdLivePaddleIndex = mdNextPaddleIndex;
     mdPaddlePieces[ mdNextPaddleIndex ] = t;
+
+    /* set to full delay now
+       essentialy, we commit to this paddle moving all the way up */
+    mdPaddleDropDelay[ mdLivePaddleIndex ] = MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
+    
     mdNextPaddleIndex ++;
 
     if( mdNextPaddleIndex >= MD_NUM_PADDLES ) {
@@ -163,6 +173,29 @@ void moveDiagramWindowSet( ChessPiece  inNewPiece ) {
         }
     }
 
+
+
+static char stepPaddleUp( int  inIndex,
+                          int  inProgRate ) {
+
+    int  i         =  inIndex;
+    int  progRate  =  inProgRate;
+    
+    if( mdPaddleProgress[ i ] < MOVE_DIAGRAM_WINDOW_PROGRESS_MAX ) {
+
+        mdPaddleProgress[ i ] += progRate;
+
+        if( mdPaddleProgress[ i ] >= MOVE_DIAGRAM_WINDOW_PROGRESS_MAX ) {
+            mdPaddleProgress[ i ] = MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
+            }
+
+        return 1;
+        }
+
+    /* already up */
+    return 0;
+    }
+    
 
 
 void moveDiagramWindowStep( void ) {
@@ -176,32 +209,29 @@ void moveDiagramWindowStep( void ) {
          i   ++ ) {
 
         if( i == mdLivePaddleIndex ) {
+
+            stepPaddleUp( i,
+                          progRate );
             
-            if( mdPaddleProgress[ i ] < MOVE_DIAGRAM_WINDOW_PROGRESS_MAX ) {
-
-                mdPaddleProgress[ i ] += progRate;
-
-                if( mdPaddleProgress[ i ] >= MOVE_DIAGRAM_WINDOW_PROGRESS_MAX ) {
-                    mdPaddleProgress[ i ] = MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
-
-                    /* set drop delay, now that it reached the top */
-                    mdPaddleDropDelay[ i ] = MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
-                    }
-                }
-            else {
-                /* already at top
-                   make sure drop delay stays full */
-                mdPaddleDropDelay[ i ] = MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
-                }
             }
         else if( mdPaddleDropDelay[ i ] > 0 ) {
             if( mdLivePaddleIndex == -1 ) {
                 /* no paddle live, leave last one up there for a bit
                    to avoid bouncing */
-                mdPaddleDropDelay[ i ] -= progRate;
 
-                if( mdPaddleDropDelay[ i ] <= 0 ) {
-                    mdPaddleDropDelay[ i ] = 0;
+                /* keep moving it all the way up, to avoid stutter,
+                   and only after it's up, start counting the drop
+                   delay */
+                if( ! stepPaddleUp( i,
+                                    progRate ) ) {
+
+                    /* done moving up */
+
+                    mdPaddleDropDelay[ i ] -= progRate;
+
+                    if( mdPaddleDropDelay[ i ] <= 0 ) {
+                        mdPaddleDropDelay[ i ] = 0;
+                        }
                     }
                 }
             else {

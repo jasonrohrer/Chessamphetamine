@@ -1,3 +1,10 @@
+#ifndef GAME_SIZE_H_INCLUDED
+#define GAME_SIZE_H_INCLUDED
+
+
 #define MAXIGIN_GAME_NATIVE_W  350
 
 #define MAXIGIN_GAME_NATIVE_H  240
+
+
+#endif

@@ -56,9 +56,9 @@ static  int            diagramPieceStrip           =  -1;
 static  int            mdLivePaddleIndex           =   -1;
 static  int            mdNextPaddleIndex           =    0;
 
-static  ChessPiece     mdPaddlePieces  [ MD_NUM_PADDLES ];
-static  int            mdPaddleProgress[ MD_NUM_PADDLES ];
-
+static  ChessPiece     mdPaddlePieces   [ MD_NUM_PADDLES ];
+static  int            mdPaddleProgress [ MD_NUM_PADDLES ];
+static  int            mdPaddleDropDelay[ MD_NUM_PADDLES ];
 
 
 
@@ -106,6 +106,7 @@ void moveDiagramWindowInit( int  inCenterX,
     
     REGISTER_ARRAY_MEM( mdPaddleProgress );
     REGISTER_ARRAY_MEM( mdPaddlePieces );
+    REGISTER_ARRAY_MEM( mdPaddleDropDelay );
 
     REGISTER_VAL_MEM( mdLivePaddleIndex );
     REGISTER_VAL_MEM( mdNextPaddleIndex );
@@ -182,10 +183,21 @@ void moveDiagramWindowStep( void ) {
 
                 if( mdPaddleProgress[ i ] >= MOVE_DIAGRAM_WINDOW_PROGRESS_MAX ) {
                     mdPaddleProgress[ i ] = MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
+
+                    /* set drop delay, now that it reached the top */
+                    mdPaddleDropDelay[ i ] = MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
                     }
                 }
             }
+        else if( mdPaddleDropDelay[ i ] > 0 ) {
+            mdPaddleDropDelay[ i ] -= progRate;
+
+            if( mdPaddleDropDelay[ i ] <= 0 ) {
+                mdPaddleDropDelay[ i ] = 0;
+                }
+            }
         else if( mdPaddleProgress[ i ] > 0 ) {
+            
             mdPaddleProgress[ i ] -= progRate;
 
             if( mdPaddleProgress[ i ] <= 0 ) {

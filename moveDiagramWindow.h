@@ -145,20 +145,21 @@ void moveDiagramWindowStep( void ) {
 
     int  r         =  mingin_getStepsPerSecond();
     int  i;
-    int  progRate  =  r * 20 / 60;
+    int  progRate  =  r * 30 / 60;
 
     for( i = 0;
          i < MD_NUM_PADDLES;
          i   ++ ) {
 
-        if( i == mdLivePaddleIndex
-            &&
-            mdPaddleProgress[ i ] < MOVE_DIAGRAM_WINDOW_PROGRESS_MAX ) {
+        if( i == mdLivePaddleIndex ) {
+            
+            if( mdPaddleProgress[ i ] < MOVE_DIAGRAM_WINDOW_PROGRESS_MAX ) {
 
-            mdPaddleProgress[ i ] += progRate;
+                mdPaddleProgress[ i ] += progRate;
 
-            if( mdPaddleProgress[ i ] >= MOVE_DIAGRAM_WINDOW_PROGRESS_MAX ) {
-                mdPaddleProgress[ i ] = MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
+                if( mdPaddleProgress[ i ] >= MOVE_DIAGRAM_WINDOW_PROGRESS_MAX ) {
+                    mdPaddleProgress[ i ] = MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
+                    }
                 }
             }
         else if( mdPaddleProgress[ i ] > 0 ) {
@@ -186,7 +187,7 @@ void moveDiagramWindowDraw( void ) {
                         mdCenterX,
                         mdCenterY );
 
-    maxigin_drawPushClipRectangle( mdCenterX - 33,
+    if( 1 )maxigin_drawPushClipRectangle( mdCenterX - 33,
                                    mdCenterX + 35,
                                    mdCenterY - 16,
                                    mdCenterY + 11 );
@@ -198,13 +199,15 @@ void moveDiagramWindowDraw( void ) {
         if( mdPaddleProgress[ i ] > 0 ) {
             
             int  yRollOffset  =
-                mdPaddleProgress[ i ] * 16 / MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
+                mdPaddleProgress[ i ] * 35 / MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
 
+            int  paddleYPos   =  mdCenterY - yRollOffset + 32;
+            
             maxigin_drawResetColor();
 
             maxigin_drawSprite( mdPaddleSprite,
                                 mdCenterX + 1,
-                                mdCenterY - yRollOffset - 2 );
+                                paddleYPos );
 
 
             if( maxigin_getNumSpritesInStrip( diagramBoardStrip ) >
@@ -216,7 +219,7 @@ void moveDiagramWindowDraw( void ) {
                                         diagramBoardStrip,
                                         mdPaddlePieces[ i ] ),
                                     mdCenterX,
-                                    mdCenterY - yRollOffset - 2 );
+                                    paddleYPos );
                 }
 
             if( maxigin_getNumSpritesInStrip( diagramPieceStrip ) >
@@ -231,7 +234,7 @@ void moveDiagramWindowDraw( void ) {
                                         diagramPieceStrip,
                                         mdPaddlePieces[ i ] ),
                                     mdCenterX,
-                                    mdCenterY - yRollOffset - 2 );
+                                    paddleYPos );
                 }
             }
         }

@@ -169,7 +169,7 @@ void moveDiagramWindowStep( void ) {
 
     int  r         =  mingin_getStepsPerSecond();
     int  i;
-    int  progRate  =  r * 30 / 60;
+    int  progRate  =  r * 25 / 60;
 
     for( i = 0;
          i < MD_NUM_PADDLES;
@@ -188,11 +188,27 @@ void moveDiagramWindowStep( void ) {
                     mdPaddleDropDelay[ i ] = MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
                     }
                 }
+            else {
+                /* already at top
+                   make sure drop delay stays full */
+                mdPaddleDropDelay[ i ] = MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
+                }
             }
         else if( mdPaddleDropDelay[ i ] > 0 ) {
-            mdPaddleDropDelay[ i ] -= progRate;
+            if( mdLivePaddleIndex == -1 ) {
+                /* no paddle live, leave last one up there for a bit
+                   to avoid bouncing */
+                mdPaddleDropDelay[ i ] -= progRate;
 
-            if( mdPaddleDropDelay[ i ] <= 0 ) {
+                if( mdPaddleDropDelay[ i ] <= 0 ) {
+                    mdPaddleDropDelay[ i ] = 0;
+                    }
+                }
+            else {
+                /* some other paddle live
+                   bring this one down NOW (because it could be in front
+                   of the paddle that we want to see) */
+                
                 mdPaddleDropDelay[ i ] = 0;
                 }
             }

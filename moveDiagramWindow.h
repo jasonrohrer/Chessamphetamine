@@ -116,7 +116,9 @@ void moveDiagramWindowInit( int  inCenterX,
 void moveDiagramWindowSet( ChessPiece  inNewPiece ) {
 
     ChessPiece  t  =  inNewPiece & CHESS_TYPE_MASK;
+    int         i;
 
+    
     if( t == noPiece ) {
 
         mdLivePaddleIndex = -1;
@@ -128,7 +130,28 @@ void moveDiagramWindowSet( ChessPiece  inNewPiece ) {
     if( t == mdPaddlePieces[ mdLivePaddleIndex ] ) {
         return;
         }
-        
+
+
+    for( i = 0;
+         i < MD_NUM_PADDLES;
+         i   ++ ) {
+
+        if( t == mdPaddlePieces[ i ]
+            &&
+            mdPaddleProgress[ i ] > 0 ) {
+
+            /* an existing paddle that's not all the way down yet, but it
+               matches, bring it back up */
+
+            mdLivePaddleIndex = i;
+            mdNextPaddleIndex = mdLivePaddleIndex + 1;
+
+            if( mdNextPaddleIndex >= MD_NUM_PADDLES ) {
+                mdNextPaddleIndex = 0;
+                }
+            return;
+            }
+        }
 
     mdLivePaddleIndex = mdNextPaddleIndex;
     mdPaddlePieces[ mdNextPaddleIndex ] = t;
@@ -187,7 +210,7 @@ void moveDiagramWindowDraw( void ) {
                         mdCenterX,
                         mdCenterY );
 
-    if( 1 )maxigin_drawPushClipRectangle( mdCenterX - 33,
+    maxigin_drawPushClipRectangle( mdCenterX - 33,
                                    mdCenterX + 35,
                                    mdCenterY - 16,
                                    mdCenterY + 11 );

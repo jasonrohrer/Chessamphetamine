@@ -15,11 +15,10 @@
 #define MOVE_DIAGRAM_WINDOW_H_INCLUDED
 
 
-#endif
 
 
 void moveDiagramWindowInit( int  inCenterX,
-                       int  inCenterY );
+                            int  inCenterY );
 
 
 void moveDiagramWindowSet( ChessPiece  inPiece );
@@ -30,6 +29,8 @@ void moveDiagramWindowStep( void );
 
 void moveDiagramWindowDraw( void );
 
+
+#endif
 
 
 #ifdef  MOVE_DIAGRAM_WINDOW_IMPLEMENTATION
@@ -114,7 +115,9 @@ void moveDiagramWindowInit( int  inCenterX,
 
 void moveDiagramWindowSet( ChessPiece  inNewPiece ) {
 
-    if( inNewPiece == noPiece ) {
+    ChessPiece  t  =  inNewPiece & CHESS_TYPE_MASK;
+
+    if( t == noPiece ) {
 
         mdLivePaddleIndex = -1;
         
@@ -122,13 +125,13 @@ void moveDiagramWindowSet( ChessPiece  inNewPiece ) {
         }
 
 
-    if( inNewPiece == mdPaddlePieces[ mdLivePaddleIndex ] ) {
+    if( t == mdPaddlePieces[ mdLivePaddleIndex ] ) {
         return;
         }
         
 
     mdLivePaddleIndex = mdNextPaddleIndex;
-    mdPaddlePieces[ mdNextPaddleIndex ] = inNewPiece;
+    mdPaddlePieces[ mdNextPaddleIndex ] = t;
     mdNextPaddleIndex ++;
 
     if( mdNextPaddleIndex >= MD_NUM_PADDLES ) {
@@ -193,8 +196,11 @@ void moveDiagramWindowDraw( void ) {
          i   ++ ) {
 
         if( mdPaddleProgress[ i ] > 0 ) {
+            
             int  yRollOffset  =
                 mdPaddleProgress[ i ] * 16 / MOVE_DIAGRAM_WINDOW_PROGRESS_MAX;
+
+            maxigin_drawResetColor();
 
             maxigin_drawSprite( mdPaddleSprite,
                                 mdCenterX + 1,

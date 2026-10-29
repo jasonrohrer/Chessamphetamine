@@ -192,6 +192,7 @@ void drawBoardPieceHighlight( BoardState    *inState,
 #define PIECE_SPRITES_IMPLEMENTATION_INCLUDED
 
 
+#include "colors.h"
 
 
 static  int  pieceBottomHeight  =  6;

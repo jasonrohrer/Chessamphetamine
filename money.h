@@ -96,7 +96,7 @@ char moneyGetSubMessageShowing( void );
 #include "memoryRegister.h"
 #include "numbers.h"
 #include "util.h"
-
+#include "colors.h"
 
 
 

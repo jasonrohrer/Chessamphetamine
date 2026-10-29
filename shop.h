@@ -81,6 +81,8 @@ char isShoppingDone( void );
 #include "colors.h"
 #include "runStats.h"
 
+#include "roll.h"
+#include "rarity.h"
 
 
 /* for definition of SHOP_PRICE_LIST */

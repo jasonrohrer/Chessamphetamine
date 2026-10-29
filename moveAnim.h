@@ -152,6 +152,8 @@ void playAddSound( void );
 
 #include "postMoveEffects.h"
 
+#include "numbers.h"
+
 
 static  int  beepUp       =  -1;
 static  int  beepDown     =  -1;

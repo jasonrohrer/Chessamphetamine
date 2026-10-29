@@ -1,4 +1,8 @@
 
+#include "arraySizeCheck.h"
+
+#include "chessArrayCheck.h"
+
 
 #include "gameSize.h"
 

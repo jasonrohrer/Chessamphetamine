@@ -325,6 +325,15 @@ int getPiecePossibleMoves( BoardState     *inState,
                            BoardState      outStates  [BN] );
 
 
+char isKingInCheckGetMove( BoardState  *inState,
+                           int          inVictimKingColor,
+                           /* these can be 0 to skip them */
+                           int         *outKingX,
+                           int         *outKingY,
+                           Move        *outMove,
+                           BoardState  *outState,
+                           Captured    *outCaptured );
+
 #endif
 
 
@@ -473,14 +482,7 @@ static char isKingInCheck( BoardState  *inState,
                            int          inVictimKingColor );
 
 
-static char isKingInCheckGetMove( BoardState  *inState,
-                                  int          inVictimKingColor,
-                                  /* these can be 0 to skip them */
-                                  int         *outKingX,
-                                  int         *outKingY,
-                                  Move        *outMove,
-                                  BoardState  *outState,
-                                  Captured    *outCaptured );
+
 
 
 
@@ -2470,13 +2472,13 @@ static void findKing( BoardState  *inState,
 
 
 
-static char isKingInCheckGetMove( BoardState  *inState,
-                                  int          inVictimKingColor,
-                                  int         *outKingX,
-                                  int         *outKingY,
-                                  Move        *outMove,
-                                  BoardState  *outState,
-                                  Captured    *outCaptured ) {
+char isKingInCheckGetMove( BoardState  *inState,
+                           int          inVictimKingColor,
+                           int         *outKingX,
+                           int         *outKingY,
+                           Move        *outMove,
+                           BoardState  *outState,
+                           Captured    *outCaptured ) {
 
     unsigned char  y;
     unsigned char  x;

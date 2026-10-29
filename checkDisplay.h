@@ -48,6 +48,7 @@ char checkDisplayIsSettled( void );
 
 #include "memoryRegister.h"
 #include "util.h"
+#include "chess.h"
 
 
 static  char        checkRunning      =  0;

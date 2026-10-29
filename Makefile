@@ -8,8 +8,8 @@ MAKEFLAGS += -j4 -s
 COMPILE_FLAGS = -c -g -std=c89 -fno-builtin -pedantic -Wall -Wextra -Werror -Wconversion -Wshadow -Wstrict-prototypes -Wold-style-definition -Wmissing-prototypes -Wmissing-declarations -Wdeclaration-after-statement
 
 
-Chessamphetamine: game.o maxigin_imp.o mingin_imp.o header_imp.o
-	gcc -o Chessamphetamine mingin_imp.o maxigin_imp.o game.o header_imp.o -lX11 -lXrandr -lGLX -lGL -lasound -lpthread
+Chessamphetamine: game.o maxigin_imp.o mingin_imp.o header_impA.o header_impB.o
+	gcc -o Chessamphetamine mingin_imp.o maxigin_imp.o game.o header_impA.o header_impB.o -lX11 -lXrandr -lGLX -lGL -lasound -lpthread
 
 .c.o:
 	gcc ${COMPILE_FLAGS} -o $@ $<
@@ -18,7 +18,9 @@ maxigin_imp.o: maxigin.h mingin.h maxigin_imp.c gameSize.h
 
 mingin_imp.o: mingin.h mingin_imp.c
 
-header_imp.o: header_imp.c board.h pieceSpecs.h pieceSprites.h chess.h memoryRegister.h particleSprite.h gameSize.h simTest.h moveAnim.h money.h numbers.h checkDisplay.h util.h colors.h pinch.h fixedMath.h particleSystem.h chessArrayCheck.h pieceDescriptions.h nav.h levels.h deck.h shop.h button.h hearts.h sideBoard.h deckView.h cost.h rarity.h roll.h slotLift.h formation.h unlocks.h playerDeck.h runStats.h postMoveEffects.h screen.h rarityWindow.h moveDiagramWindow.h
+header_impA.o: header_impA.c pieceSprites.h chess.h moveAnim.h shop.h
+
+header_impB.o: header_impB.c board.h pieceSpecs.h memoryRegister.h particleSprite.h gameSize.h simTest.h money.h numbers.h checkDisplay.h util.h colors.h pinch.h fixedMath.h particleSystem.h chessArrayCheck.h pieceDescriptions.h nav.h levels.h deck.h button.h hearts.h sideBoard.h deckView.h cost.h rarity.h roll.h slotLift.h formation.h unlocks.h playerDeck.h runStats.h postMoveEffects.h screen.h rarityWindow.h moveDiagramWindow.h
 
 game.o: allGameHeaders.h game.c
 

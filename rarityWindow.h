@@ -52,6 +52,9 @@ static  char           rwDimCurrent                =  0;
 static  char           rwDimNext                   =  0;
 static  unsigned char  rwDimAlphaCurrent           =  255;
 static  unsigned char  rwDimAlphaNext              =  255;
+static  char           rwDimDelayCurrent           =  0;
+static  char           rwDimDelayNext              =  0;
+
 
 static  int            rwProgress                  =   0;
 
@@ -69,8 +72,15 @@ void rarityWindowInit( int  inCenterX,
     REGISTER_VAL_MEM( rwNextPiece );
     REGISTER_VAL_MEM( rwProgress );
 
+    REGISTER_VAL_MEM( rwDimCurrent );
+    REGISTER_VAL_MEM( rwDimNext );
+    
     REGISTER_VAL_MEM( rwDimAlphaCurrent );
     REGISTER_VAL_MEM( rwDimAlphaNext );
+
+    REGISTER_VAL_MEM( rwDimDelayCurrent );
+    REGISTER_VAL_MEM( rwDimDelayNext );
+    
     }
 
 
@@ -78,7 +88,8 @@ void rarityWindowInit( int  inCenterX,
 void rarityWindowSet( ChessPiece  inNewPiece ) {
 
     if( inNewPiece == rwCurrentPiece ) {
-        rwDimCurrent = 0;
+        rwDimCurrent      = 0;
+        rwDimDelayCurrent = 1;
         return;
         }
     
@@ -98,21 +109,34 @@ void rarityWindowSet( ChessPiece  inNewPiece ) {
         !=
         rarityGet( rwCurrentPiece ) ) {
     
-        rwNextPiece = inNewPiece;
-        rwDimNext   = 0;
+        rwNextPiece    = inNewPiece;
+        rwDimNext      = 0;
+        rwDimDelayNext = 1;
+        
         }
     else {
-        rwDimCurrent = 0;
+        rwDimCurrent      = 0;
+        rwDimDelayCurrent = 1;
         }
     }
 
 
 static unsigned char rwStepDim( char           inDim,
+                                char          *inDelay,
                                 unsigned char  inAlpha ) {
 
     int  r        =  mingin_getStepsPerSecond();
     int  dimRate  =  r * 40 / 60;
 
+    if( inDim
+        &&
+        *inDelay > 0 ) {
+
+        (*inDelay) --;
+        
+        return inAlpha;
+        }
+    
     if( inDim
         &&
         inAlpha > RARITY_DIM_MIN ) {
@@ -163,9 +187,11 @@ void rarityWindowStep( void ) {
         }
 
     rwDimAlphaCurrent = rwStepDim( rwDimCurrent,
+                                   & rwDimDelayCurrent,
                                    rwDimAlphaCurrent );
     
     rwDimAlphaNext    = rwStepDim( rwDimNext,
+                                   & rwDimDelayNext,
                                    rwDimAlphaNext );
     
     }

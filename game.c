@@ -75,6 +75,9 @@ static char           spinButtonHover            =  0;
 static int            readyCountScreenSprite     =  -1;
 static int            pieceInfoScreenSprite      =  -1;
 static int            moneyWindowSprite          =  -1;
+static int            drawsLeftWindowSprite      =  -1;
+static int            drawsLeftGlintSprite       =  -1;
+
 static int            drawsLeft                  =  0;
 static int            baseNumDraws               =  4;
 
@@ -607,18 +610,35 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             }
         else {
             buttonDrawDisabled( deckButton );
-            }
+        }
 
+    
+
+    maxigin_drawResetColor();
+    
+    maxigin_drawSprite( drawsLeftWindowSprite,
+                        drawButtonPosX + 28,
+                        drawButtonPosY - 2 );
+    
     if( sideBoardShowing ) {
-        
+
+        vfdDigitDraw( drawsLeft,
+                      drawButtonPosX + 29,
+                      drawButtonPosY - 4 );
+                      
         sideBoardDraw();
 
         buttonDraw( drawButton );
-            
-        numberDrawCenter( drawsLeft,
-                          drawButtonPosX,
-                          drawButtonPosY + 6,
-                          0 );
+
+        }
+    else {
+        vfdDigitDrawLetter( ' ',
+                            drawButtonPosX + 29,
+                            drawButtonPosY - 4  );
+        
+        maxigin_drawSprite( drawsLeftGlintSprite,
+                            drawButtonPosX + 36,
+                            drawButtonPosY - 12 );
         }
 
 
@@ -682,8 +702,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     heartsDraw( infoLightsX,
                 MAXIGIN_GAME_NATIVE_H - 40 );
 
-    moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
-               100 );
+    moneyDraw( MAXIGIN_GAME_NATIVE_W - 65,
+               13 );
 
     unlocksDraw( infoLightsX + 1,
                  unlocksY );
@@ -1414,7 +1434,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     vfdDigitDraw( ( vfdTestDigit / 100 ) % 10,
                   MAXIGIN_GAME_NATIVE_W - 45,
                   13 );
-    vfdDigitDraw( ( vfdTestDigit / 1000 ) % 10,
+    if( 0 )vfdDigitDraw( ( vfdTestDigit / 1000 ) % 10,
                   MAXIGIN_GAME_NATIVE_W - 60,
                   13 );
     
@@ -3557,6 +3577,9 @@ void maxiginGame_init( void ) {
     pieceInfoScreenSprite = maxigin_initSprite( "pieceInfoScreen.tga" );
 
     moneyWindowSprite = maxigin_initSprite( "moneyWindow.tga" );
+
+    drawsLeftWindowSprite = maxigin_initSprite( "drawsLeftWindow.tga" );
+    drawsLeftGlintSprite = maxigin_initSprite( "drawsLeftWindowGlint.tga" );
     
 
     examinePieceSound = maxigin_initSoundEffect( "examinePiece_misc_10.wav" );

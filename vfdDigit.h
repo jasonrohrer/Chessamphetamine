@@ -181,10 +181,14 @@ static void vfdDrawFromMapping( int   inCenterX,
 
     maxigin_drawResetColor();
 
+    maxigin_drawSetAlpha( 92 );
+    
     maxigin_drawSprite( vfdDimSprite,
                         inCenterX,
                         inCenterY );
 
+    maxigin_drawSetAlpha( 255 );
+    
     for( i = 0;
          i < NUM_SEGMENTS;
          i   ++ ) {

@@ -42,101 +42,96 @@ enum GameUserAction {
 
 
 
-static char         saveCorrupted      =   0;
-static int          autoQuitFrameCount =   0;
-static int          autoQuitStepsPerSecond;
+static char           saveCorrupted              =  0;
+static int            autoQuitFrameCount         =  0;
+static int            autoQuitStepsPerSecond;
 
-static char         actionHeldDown     =   0;
+static char           actionHeldDown             =  0;
 
-static int          woodGrainSprite    =  -1;
-static int          buttonHintStrip    =  -1;
+static int            woodGrainSprite            =  -1;
+static int            buttonHintStrip            =  -1;
 
-static int          plunkSound         =  -1;
-static int          thunkSound         =  -1;
-static int          examinePieceSound  =  -1;
-static int          pickFailedSound    =  -1;
-static int          deckAllSameSound   =  -1;
-static int          redrawSound        =  -1;
+static int            plunkSound                 =  -1;
+static int            thunkSound                 =  -1;
+static int            examinePieceSound          =  -1;
+static int            pickFailedSound            =  -1;
+static int            deckAllSameSound           =  -1;
+static int            redrawSound                =  -1;
 
-static int          checkmateGood      =  -1;
-static int          checkmateBad       =  -1;
-static int          overrunSound       =  -1;
+static int            checkmateGood              =  -1;
+static int            checkmateBad               =  -1;
+static int            overrunSound               =  -1;
 
-static int          boardSlideSound    =  -1;
+static int            boardSlideSound            =  -1;
 
+static int            spinFrameSprite            =  -1;
+static int            spinUnpressedSprite        =  -1;
+static int            spinPressedSprite          =  -1;
+static int            spinPressedTextSprite      =  -1;
+static int            spinPressedTextGlowSprite  =  -1;
+static int            spinButtonX                =  MAXIGIN_GAME_NATIVE_W - 34;
+static int            spinButtonY                =  MAXIGIN_GAME_NATIVE_H - 21;
+static char           spinButtonHover            =  0;
+static int            readyCountScreenSprite     =  -1;
+static int            pieceInfoScreenSprite      =  -1;
+static int            moneyWindowSprite          =  -1;
+static int            drawsLeft                  =  0;
+static int            baseNumDraws               =  4;
 
-static int          spinFrameSprite            = -1;
-static int          spinUnpressedSprite        = -1;
-static int          spinPressedSprite          = -1;
-static int          spinPressedTextSprite      = -1;
-static int          spinPressedTextGlowSprite  = -1;
-static int          spinButtonX                = MAXIGIN_GAME_NATIVE_W - 34;
-static int          spinButtonY                = MAXIGIN_GAME_NATIVE_H - 21;
-static char         spinButtonHover            =  0;
-static int          readyCountScreenSprite     = -1;
-static int          pieceInfoScreenSprite      = -1;
+static int            drawButton                 =  -1;
+static int            drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
+static int            drawButtonPosX             =  21;
 
-static int          drawsLeft                  =  0;
-static int          baseNumDraws               =  4;
+static int            deckButton                 =  -1;
+static int            deckButtonPosY             =  MAXIGIN_GAME_NATIVE_H / 2 - 25;
+static int            deckButtonPosX             =  21;
 
-static int          drawButton                 = -1;
-static int          drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
-static int          drawButtonPosX             =  21;
+static int            infoLightsX                =  50;
+static int            unlocksY                   =  40;
 
-static int          deckButton                 = -1;
-static int          deckButtonPosY             =  MAXIGIN_GAME_NATIVE_H / 2 - 25;
-static int          deckButtonPosX             =  21;
+static int            newGameButton              =  -1;
+static int            newGameButtonPosY          =  MAXIGIN_GAME_NATIVE_H - 10;
+static int            newGameButtonPosX          =  MAXIGIN_GAME_NATIVE_W / 2 + 25;
 
-static int          infoLightsX                =  50;
-static int          unlocksY                   =  40;
+static char           redrawRemoveRunning        =  0;
+static char           redrawAddRunning           =  0;
+static int            redrawProgressMax          =  100;
 
-static int          newGameButton              = -1;
-static int          newGameButtonPosY          =  MAXIGIN_GAME_NATIVE_H - 10;
-static int          newGameButtonPosX          =  MAXIGIN_GAME_NATIVE_W / 2 + 25;
+static int            logoSprite                 =  -1;
+static int            logoSubSprite              =  -1;
+static int            microdoseSprite            =  -1;
+static int            microdoseSpriteA           =  -1;
+static int            microdoseSpriteB           =  -1;
+static int            microdoseSpriteC           =  -1;
+static int            jasonBylineSprite          =  -1;
+static int            tomBylineSprite            =  -1;
+static int            smallCapsFont              =  -1;
 
+static int            lang_settings;
+static int            lang_newGame;
+static int            lang_quit;
+static int            lang_musicVolume;
+static int            lang_effectsVolume;
+static int            lang_fullscreen;
 
-static char         redrawRemoveRunning        =  0;
-static char         redrawAddRunning           =  0;
-static int          redrawProgressMax          =  100;
+static int            lang_action;
+static int            lang_draw;
+static int            lang_deck;
+static int            lang_commit;
+static int            lang_spin;
+static int            lang_unlockView;
+static int            lang_shopLock;
 
+static int            lang_drawInstruct;
+static int            lang_level;
+static int            lang_gameOverInstruct;
+static int            lang_swapInstructA;
+static int            lang_swapInstructB;
 
-static int          logoSprite                 = -1;
-static int          logoSubSprite              = -1;
-static int          microdoseSprite            = -1;
-static int          microdoseSpriteA           = -1;
-static int          microdoseSpriteB           = -1;
-static int          microdoseSpriteC           = -1;
-static int          jasonBylineSprite          = -1;
-static int          tomBylineSprite            = -1;
-static int          smallCapsFont              = -1;
+static int            lang_readyCount;
+static int            lang_discardCount;
 
-static int          lang_settings;
-static int          lang_newGame;
-static int          lang_quit;
-static int          lang_musicVolume;
-static int          lang_effectsVolume;
-static int          lang_fullscreen;
-
-static int          lang_action;
-static int          lang_draw;
-static int          lang_deck;
-static int          lang_commit;
-static int          lang_spin;
-static int          lang_unlockView;
-static int          lang_shopLock;
-
-static int          lang_drawInstruct;
-static int          lang_level;
-static int          lang_gameOverInstruct;
-static int          lang_swapInstructA;
-static int          lang_swapInstructB;
-
-
-static int          lang_readyCount;
-static int          lang_discardCount;
-
-static int          lang_corrupted[3];
-
+static int            lang_corrupted[3];
 
 static BoardState     boardState;
 static Captured       postMoveCaptured;
@@ -151,16 +146,16 @@ static char           boardMarkersHidden         =  0;
 static DrawBoardLift  redrawLift;
 static DrawBoardLift  redrawSmoothLift;
 
-static char         moveMade           =  0;
-static char         chessGameOver      =  0;
-static char         checkmate          =  0;
-static char         stalemate          =  0;
-static char         drawGame           =  0;
-static int          gameLoserColor     =  CHESS_WHITE;
+static char           moveMade                   =  0;
+static char           chessGameOver              =  0;
+static char           checkmate                  =  0;
+static char           stalemate                  =  0;
+static char           drawGame                   =  0;
+static int            gameLoserColor             =  CHESS_WHITE;
 
-static int          noScoreMoveCount   =  0;
-static int          statesTested       =  0;
-static int          movePickTime       =  0;
+static int            noScoreMoveCount           =  0;
+static int            statesTested               =  0;
+static int            movePickTime               =  0;
 
 
 static int            endMessageSprites[ 3 ]  = { -1,
@@ -675,6 +670,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
     maxigin_drawResetColor();
 
+
+    maxigin_drawSprite( moneyWindowSprite,
+                        MAXIGIN_GAME_NATIVE_W - 39,
+                        infoPanelY - 97 );
+    
     maxigin_drawSprite( pieceInfoScreenSprite,
                         MAXIGIN_GAME_NATIVE_W - 39,
                         infoPanelY );
@@ -683,7 +683,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                 MAXIGIN_GAME_NATIVE_H - 40 );
 
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 20,
-               10 );
+               100 );
 
     unlocksDraw( infoLightsX + 1,
                  unlocksY );
@@ -1405,13 +1405,23 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
 
-    vfdDigitDraw( vfdTestDigit,
-                  boardCenterX,
-                  boardCenterY );
+    vfdDigitDraw( vfdTestDigit % 10,
+                  MAXIGIN_GAME_NATIVE_W - 15,
+                  13 );
+    vfdDigitDraw( ( vfdTestDigit / 10 ) % 10,
+                  MAXIGIN_GAME_NATIVE_W - 30,
+                  13 );
+    vfdDigitDraw( ( vfdTestDigit / 100 ) % 10,
+                  MAXIGIN_GAME_NATIVE_W - 45,
+                  13 );
+    vfdDigitDraw( ( vfdTestDigit / 1000 ) % 10,
+                  MAXIGIN_GAME_NATIVE_W - 60,
+                  13 );
+    
 
-    vfdDigitDrawLetter( vfdTestLetter,
-                        boardCenterX + 20,
-                        boardCenterY );
+    if( 0 ) vfdDigitDrawLetter( vfdTestLetter,
+                        MAXIGIN_GAME_NATIVE_W - 59,
+                        13 );
     
     
     pinchApply( inRGBBuffer );
@@ -1651,10 +1661,10 @@ void maxiginGame_step( char  inFinalStep  ) {
 
     vfdTestSteps += 6 * 60 / r;
 
-    if( vfdTestSteps > 100 ) {
+    if( vfdTestSteps > 10 ) {
         
         vfdTestDigit ++;
-        if( vfdTestDigit > 9 ) {
+        if( vfdTestDigit > 9999 ) {
             vfdTestDigit = 0;
             }
         
@@ -3545,6 +3555,8 @@ void maxiginGame_init( void ) {
     readyCountScreenSprite = maxigin_initSprite( "readyCountScreen.tga" );
 
     pieceInfoScreenSprite = maxigin_initSprite( "pieceInfoScreen.tga" );
+
+    moneyWindowSprite = maxigin_initSprite( "moneyWindow.tga" );
     
 
     examinePieceSound = maxigin_initSoundEffect( "examinePiece_misc_10.wav" );

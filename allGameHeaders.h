@@ -73,3 +73,5 @@
 #include "rarityWindow.h"
 
 #include "moveDiagramWindow.h"
+
+#include "vfdDigit.h"

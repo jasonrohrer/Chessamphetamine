@@ -243,20 +243,23 @@ static char           infoPanelPieceMoveMarkers[ BH ][ BW ];
 static int            infoRow [ INFO_HIGHLIGHT_BUFFER_SIZE ];
 static int            infoCol [ INFO_HIGHLIGHT_BUFFER_SIZE ];
 static unsigned char  infoFade[ INFO_HIGHLIGHT_BUFFER_SIZE ];
-static int            curInfoIndex                =  0;
-static int            curInfoPickedWithController =  0;
+static int            curInfoIndex                 =  0;
+static int            curInfoPickedWithController  =  0;
 
-static int            currentLevel                =  0;
+static int            currentLevel                 =  0;
 
-static char           gameOver                    =  0;
+static char           gameOver                     =  0;
 
-static int            startingMoney               =  0;
+static int            startingMoney                =  0;
 
+static int            draftingPieces               =  0;
+static int            numPiecesPlaced              =  0;
 
-static int            draftingPieces              =  0;
-static int            numPiecesPlaced             =  0;
+static int            levelForUnlock               =  -1;
 
-static int            levelForUnlock              = -1;
+static int            vfdTestDigit                 =  0;
+static char           vfdTestLetter                =  'A';
+static int            vfdTestSteps                 =  0;
 
 
 static void clearDrawMarkers( void ) {
@@ -1400,6 +1403,16 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                            boardCenterX + 160,
                            boardCenterY - 80 );
         }
+
+
+    vfdDigitDraw( vfdTestDigit,
+                  boardCenterX,
+                  boardCenterY );
+
+    vfdDigitDrawLetter( vfdTestLetter,
+                        boardCenterX + 20,
+                        boardCenterY );
+    
     
     pinchApply( inRGBBuffer );
     }
@@ -1635,7 +1648,23 @@ void maxiginGame_step( char  inFinalStep  ) {
 
         unlocksHardReset();
         }
-    
+
+    vfdTestSteps += 6 * 60 / r;
+
+    if( vfdTestSteps > 100 ) {
+        
+        vfdTestDigit ++;
+        if( vfdTestDigit > 9 ) {
+            vfdTestDigit = 0;
+            }
+        
+        vfdTestLetter ++;
+
+        if( vfdTestLetter > 'Z' ) {
+            vfdTestLetter = 'A';
+            }
+        vfdTestSteps = 0;
+        }
 
     if( ! shopShowing
         &&
@@ -3897,6 +3926,9 @@ void maxiginGame_init( void ) {
     maxigin_initSetLanguageFontGlow( 4,
                                      2 );
 
+    vfdDigitInit();
+
+    
     unlocksInit( UNLOCK_VIEW,
                  examinePieceSound );
     
@@ -4092,6 +4124,10 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( logoGlintSpeed );
 
     REGISTER_VAL_MEM( firstDraftingStarted );
+
+    REGISTER_VAL_MEM( vfdTestDigit );
+    REGISTER_VAL_MEM( vfdTestLetter );
+    REGISTER_VAL_MEM( vfdTestSteps);
     
 
     /* trick:

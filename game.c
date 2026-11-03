@@ -692,7 +692,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
     maxigin_drawSprite( moneyWindowSprite,
-                        MAXIGIN_GAME_NATIVE_W - 39,
+                        MAXIGIN_GAME_NATIVE_W - 29,
                         infoPanelY - 97 );
     
     maxigin_drawSprite( pieceInfoScreenSprite,
@@ -703,7 +703,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                 MAXIGIN_GAME_NATIVE_H - 40 );
 
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 65,
-               13 );
+               12 );
 
     unlocksDraw( infoLightsX + 1,
                  unlocksY );
@@ -1426,13 +1426,13 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
     vfdDigitDraw( vfdTestDigit % 10,
-                  MAXIGIN_GAME_NATIVE_W - 15,
+                  MAXIGIN_GAME_NATIVE_W - 13,
                   13 );
     vfdDigitDraw( ( vfdTestDigit / 10 ) % 10,
-                  MAXIGIN_GAME_NATIVE_W - 30,
+                  MAXIGIN_GAME_NATIVE_W - 28,
                   13 );
     vfdDigitDraw( ( vfdTestDigit / 100 ) % 10,
-                  MAXIGIN_GAME_NATIVE_W - 45,
+                  MAXIGIN_GAME_NATIVE_W - 43,
                   13 );
     if( 0 )vfdDigitDraw( ( vfdTestDigit / 1000 ) % 10,
                   MAXIGIN_GAME_NATIVE_W - 60,

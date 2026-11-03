@@ -104,6 +104,12 @@ void screenStartDraw( char  inForceClip ) {
                         screenCenterX + 104,
                         screenCenterY + 2 );
 
+
+    /* whether or not clipping is on, draw top edge now */
+    maxigin_drawSprite( screenTopEdgeSprite,
+                        screenCenterX,
+                        screenCenterY - 112 );
+
     screenClipForced = inForceClip;
 
     if( inForceClip ) {
@@ -113,12 +119,6 @@ void screenStartDraw( char  inForceClip ) {
                                        -1,
                                        screenClipY,
                                        -1 );
-        }
-    else {
-        /* no clipping, draw top edge now */
-        maxigin_drawSprite( screenTopEdgeSprite,
-                            screenCenterX,
-                            screenCenterY - 112 );
         }
     
     screenClipToggle = 1;
@@ -168,14 +168,6 @@ void screenEndDraw( void ) {
         screenClipToggle = 1;
         
         screenClipForced = 0;
-
-        maxigin_drawResetColor();
-
-        /* draw top edge over top of everything, so that when pieces lift
-           off board, they disappear behind top frame edge. */
-        maxigin_drawSprite( screenTopEdgeSprite,
-                            screenCenterX,
-                            screenCenterY - 112 );
         }
     }
 

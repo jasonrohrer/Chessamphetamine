@@ -126,6 +126,8 @@ CHECK_CHESS_ARRAY( pieceCaptureMoney,
 
 
 static int   coinSprite;
+static int   coinFrameSprite;
+static int   coinFrameGlintSprite;
 
 static int   coinSound;
 static int   unusedDrawSound;
@@ -170,6 +172,9 @@ void moneyInit( int  inStartVal,
                                     4,
                                     2 );
         }
+
+    coinFrameSprite = maxigin_initSprite( "coinFrame.tga" );
+    coinFrameGlintSprite = maxigin_initSprite( "coinFrameGlint.tga" );
 
     moneyVal = inStartVal;
 
@@ -222,14 +227,11 @@ void moneyDrawCoin( int            inPosX,
 void moneyDraw( int  inPosX,
                 int  inPosY ) {
     
-    int            bounceY       =  0;
-    unsigned char  glowFade      =  0;
+    unsigned char  glowFade   =  0;
+    int            glintFade  =  255;
+    
     
     if( moneyAddProgress > 0 ) {
-
-        bounceY = - parabola( moneyAddProgress,
-                              moneyAddProgressMax,
-                              10 );
 
         glowFade = (unsigned char)parabola( moneyAddProgress,
                                             moneyAddProgressMax,
@@ -237,28 +239,64 @@ void moneyDraw( int  inPosX,
         }
         
     
-    colorsApplyMoneyColor();
 
+    maxigin_drawResetColor();
+
+    maxigin_drawSprite( coinFrameSprite,
+                        inPosX,
+                        inPosY );
+
+    colorsApply( COLOR_MONEY );
+
+    maxigin_drawSetAlpha( 92 );
     
     maxigin_drawSprite( coinSprite,
                         inPosX,
-                        inPosY + bounceY );
+                        inPosY );
+
+
+    if( glowFade > 127 ) {
+        
+        glintFade = ( ( 255 - glowFade ) * 255 ) / 127;
+        }
+
+    glintFade = 255;
+    
+    
+    if( glintFade > 0 ) {
+        maxigin_drawResetColor();
+        maxigin_drawSetAlpha( (unsigned char)glintFade );
+        maxigin_drawSprite( coinFrameGlintSprite,
+                            inPosX + 4,
+                            inPosY - 4 );
+        }
+
 
     if( glowFade > 0 ) {
-        maxigin_drawSetAlpha( glowFade );
         
+        colorsApplyMoneyColor();
+    
+        maxigin_drawSetAlpha( glowFade );
+
+        maxigin_drawSprite( coinSprite,
+                            inPosX,
+                            inPosY );
+        maxigin_drawSetAlpha( glowFade / 2 );
         maxigin_drawSpriteGlowOnly( coinSprite,
                                     inPosX,
-                                    inPosY + bounceY );
-
+                                    inPosY );
+/*
         maxigin_drawSetAlpha( glowFade / 2 );
         
         maxigin_drawSpriteGlowOnly( coinSprite,
                                     inPosX,
-                                    inPosY + bounceY );
+                                    inPosY );
         maxigin_drawSetAlpha( 255 );
+        */
         }
 
+    if( 0 ) {
+        
     numberDrawRublesRight( moneyVal,
                            inPosX - 9,
                            inPosY,
@@ -277,6 +315,8 @@ void moneyDraw( int  inPosX,
         maxigin_drawToggleAdditive( 0 );
         maxigin_drawSetAlpha( 255 );
         }
+        }
+    
 
     
     if( moneyLabeledShowing ) {

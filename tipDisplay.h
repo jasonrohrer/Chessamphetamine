@@ -54,11 +54,19 @@ void tipDisplayStep( void );
 #include "memoryRegister.h"
 
 
-int            tdMessageKeyA   =  -1;
-int            tdMessageKeyB   =  -1;
-int            tdNumber        =  -1;
-unsigned char  tdFade          =   0;
-int            tdStepsSiceSet  =   0;
+#define  TD_MAX_NUM_LINES     5
+#define  TD_MAX_LINE_LENGTH  20
+
+
+static  int            tdMessageKeyA   =  -1;
+static  int            tdMessageKeyB   =  -1;
+static  int            tdNumber        =  -1;
+static  unsigned char  tdFade          =  0;
+static  int            tdStepsSiceSet  =  0;
+
+static  int            tdNumLines;
+static  char           tdLines[ TD_MAX_NUM_LINES ][ TD_MAX_LINE_LENGTH ];
+
 
 
 
@@ -95,11 +103,135 @@ void tipDisplaySet( int  inMessageKeyA,
 
 
 char tipDisplayIsShowing( void ) {
-    if( tdFade == 255 ) {
+    if( tdFade >= 64 ) {
         return 1;
         }
     return 0;
     }
+
+
+
+#define  TD_BUFFER_LEN  128
+
+static  char  tdBuffer[ TD_BUFFER_LEN ];
+
+
+static void tdBufferString( const char  *inString ) {
+    int  i  =  0;
+
+    while( inString[ i ] != '\0'
+           &&
+           i < TD_BUFFER_LEN ) {
+
+        tdBuffer[ i ] = inString[ i ];
+
+        i ++;
+        }
+
+    if( i < TD_BUFFER_LEN ) {
+        tdBuffer[ i ] = '\0';
+        }
+    else {
+        tdBuffer[ TD_BUFFER_LEN - 1 ] = '\0';
+        }
+    
+    }
+
+
+
+static void tdSplitLines( int  inMessageKey ) {
+
+    const char  *text   =  maxigin_getLangText( inMessageKey );
+    int          i      =  0;
+    int          lineI  =  0;
+    
+    tdBufferString( text );
+
+
+    tdNumLines = 0;
+
+    while( tdBuffer[ i ] != '\0' ) {
+
+        if( tdBuffer[ i ]     == '#'
+            &&
+            tdBuffer[ i + 1 ] == '#' ) {
+
+            tdLines[ tdNumLines ][ lineI ] = '\0';
+
+            /* remove trailing spaces from line that just ended */
+            lineI --;
+            
+            while( tdLines[ tdNumLines ][ lineI ] == ' ' ) {
+                tdLines[ tdNumLines ][ lineI ] = '\0';
+                lineI --;
+                }
+            
+            tdNumLines ++;
+            
+            lineI = 0;
+
+            /* skip ## marker */
+            i += 2;
+
+            /* skip any leading spaces on next line */
+            while( tdBuffer[ i ] == ' ' ) {
+                i ++;
+                }
+            }
+        else {
+            tdLines[ tdNumLines ][ lineI ] = tdBuffer[ i ];
+
+            lineI ++;
+            i     ++;
+
+            if( lineI >= TD_MAX_LINE_LENGTH ) {
+                /* line too long, terminate it early */
+                tdLines[ tdNumLines ][ lineI - 1 ] = '\0';
+
+                tdNumLines ++;
+                lineI = 0;
+                }
+            }
+        
+        if( tdNumLines >= TD_MAX_NUM_LINES ) {
+            /* ran out of lines */
+            return;
+            }
+        
+        }
+
+    if( lineI != 0 ) {
+        tdLines[ tdNumLines ][ lineI ] = '\0';
+        
+        tdNumLines ++;
+        }
+    }
+
+
+static void tdDrawLines( int  inCenterX,
+                         int  inBottomLineCenterY ) {
+
+    int  i;
+
+    int  lineSpace  =  10;
+
+    int  curY       =  inBottomLineCenterY - lineSpace * tdNumLines;
+    
+
+    for( i = 0;
+         i < tdNumLines;
+         i   ++ ) {
+
+        maxigin_drawLangTextString( tdLines[i],
+                                    inCenterX,
+                                    curY,
+                                    MAXIGIN_CENTER );
+        
+        curY += lineSpace;
+        }
+
+    }
+
 
 
 void tipDisplayDraw( int  inCenterX,
@@ -114,15 +246,20 @@ void tipDisplayDraw( int  inCenterX,
         maxigin_setLanguageFontIndex( 1 );
 
         if( tdMessageKeyA != -1 ) {
-            maxigin_drawLangText( tdMessageKeyA,
-                                  inCenterX,
-                                  inCenterY,
-                                  MAXIGIN_CENTER );
+
+
+            tdSplitLines( tdMessageKeyA );
+
+            tdDrawLines( inCenterX,
+                         inCenterY );
+            
+            
             }
 
         maxigin_setLanguageFontIndex( 0 );
         }
     }
+
 
 
 void tipDisplayStep( void ) {

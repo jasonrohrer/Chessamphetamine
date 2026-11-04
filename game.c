@@ -1425,6 +1425,12 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
 
+    if(0)vfdDigitDrawNumber( vfdTestDigit,
+                        3,
+                        MAXIGIN_GAME_NATIVE_W - 28,
+                        13 );
+
+    /*
     vfdDigitDraw( vfdTestDigit % 10,
                   MAXIGIN_GAME_NATIVE_W - 13,
                   13 );
@@ -1437,7 +1443,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     if( 0 )vfdDigitDraw( ( vfdTestDigit / 1000 ) % 10,
                   MAXIGIN_GAME_NATIVE_W - 60,
                   13 );
-    
+    */
 
     if( 0 ) vfdDigitDrawLetter( vfdTestLetter,
                         MAXIGIN_GAME_NATIVE_W - 59,

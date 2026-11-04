@@ -28,6 +28,13 @@ void vfdDigitDrawLetter( char  inLetter,
                          int   inCenterY );
 
 
+void vfdDigitDrawNumber( int  inNumber,
+                         int  inNumDigits,
+                         int  inCenterX,
+                         int  inCenterY );
+
+
+
 
 
 #endif
@@ -225,6 +232,70 @@ void vfdDigitDrawLetter( char  inLetter,
                         inCenterY,
                         vfdLetterMapping,
                         inLetter );
+    }
+
+
+
+void vfdDigitDrawNumber( int  inNumber,
+                         int  inNumDigits,
+                         int  inCenterX,
+                         int  inCenterY ) {
+
+    int   maxPlace    =  1;
+    int   i;
+    char  anyNonZero  =  0;
+    int   totalSpacing;
+    int   curX;
+    int   spacing     =  15;
+    
+    for( i = 0;
+         i < inNumDigits - 1;
+         i   ++ ) {
+        maxPlace *= 10;
+        }
+
+    totalSpacing = ( inNumDigits-1 ) * spacing;
+    
+    curX = inCenterX - totalSpacing / 2;
+
+    for( i = 0;
+         i < inNumDigits;
+         i   ++ ) {
+
+        int  digit  =  inNumber / maxPlace;
+
+        if( digit > 0 ) {
+            anyNonZero = 1;
+            }
+
+        /* don't draw leading 0's, but always draw at least one 0
+           if the number itself is 0 */
+        if( i < inNumDigits - 1
+            &&
+            digit == 0
+            &&
+            ! anyNonZero ) {
+            
+            maxigin_drawSetAlpha( 92 );
+
+            maxigin_drawSprite( vfdDimSprite,
+                                curX,
+                                inCenterY );
+            }
+        else {
+            vfdDigitDraw( digit,
+                          curX,
+                          inCenterY );
+            }
+
+        inNumber -= digit * maxPlace;
+
+        maxPlace /= 10;
+        
+        
+        curX += spacing;
+        }
+        
     }
 
 

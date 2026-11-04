@@ -89,6 +89,8 @@ char moneyGetSubMessageShowing( void );
 #define MONEY_IMPLEMENTATION_INCLUDED
 
 
+#define  MONEY_DIGITS   3
+#define  MONEY_MAX_VAL  999
 
 
 #include "chess.h"
@@ -114,6 +116,7 @@ char moneyGetSubMessageShowing( void );
 /* for definition of PIECE_CAPTURE_MONEY_LIST */
 
 #include "pieceSpecs.h"
+#include "vfdDigit.h"
 
 
 static int pieceCaptureMoney[] = {
@@ -285,39 +288,13 @@ void moneyDraw( int  inPosX,
         maxigin_drawSpriteGlowOnly( coinSprite,
                                     inPosX,
                                     inPosY );
-/*
-        maxigin_drawSetAlpha( glowFade / 2 );
-        
-        maxigin_drawSpriteGlowOnly( coinSprite,
-                                    inPosX,
-                                    inPosY );
-        maxigin_drawSetAlpha( 255 );
-        */
         }
 
-    if( 0 ) {
-        
-    numberDrawRublesRight( moneyVal,
-                           inPosX - 9,
-                           inPosY,
-                           1 );
 
-    if( glowFade > 0 ) {
-        maxigin_drawSetAlpha( glowFade / 2 );
-
-        maxigin_drawToggleAdditive( 1 );
-
-        numberDrawRublesRight( moneyVal,
-                               inPosX - 9,
-                               inPosY,
-                               1 );
-
-        maxigin_drawToggleAdditive( 0 );
-        maxigin_drawSetAlpha( 255 );
-        }
-        }
-    
-
+    vfdDigitDrawNumber( moneyVal,
+                        MONEY_DIGITS,
+                        inPosX + 37,
+                        inPosY + 1 );
     
     if( moneyLabeledShowing ) {
 
@@ -517,6 +494,10 @@ void moneyStep( void ) {
 
         /* completely done adding money for unused draws */
         unusedDrawsShowing = 0;
+        }
+
+    if( moneyVal > MONEY_MAX_VAL ) {
+        moneyVal = MONEY_MAX_VAL;
         }
     
     }

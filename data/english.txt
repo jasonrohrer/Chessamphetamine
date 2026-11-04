@@ -104,6 +104,15 @@ impossible     "Impossible"
 deployCost     "Deploy Cost:"
 
 
+nextTip         "Next Page ## of Deck"
+prevTip         "Previous Page ## of Deck"
+deckTip         "Toggle Deck View"
+drawTip         "Redraw Sideboard"
+rerollTip       "Reroll Shop"
+doneTip         "Close Shop"
+newGameTip      "New Game"
+
+
 pawn           "Pawn"
 pawnDesc       "Moves 1 or 2 spaces forward, captures diagonally.  Promotes to queen in last row."
 

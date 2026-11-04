@@ -425,7 +425,8 @@ void shopInit( int  inPointerActionHandle,
                                1,
                                shopPointerActionHandle,
                                inDynamicRerollButtonHandle,
-                               -1 );
+                               -1,
+                               maxigin_initTranslationKey( "rerollTip" ) );
     
     doneButton = buttonInit( maxigin_initSprite( "doneButton.tga" ),
                              -1,
@@ -435,7 +436,8 @@ void shopInit( int  inPointerActionHandle,
                              1,
                              shopPointerActionHandle,
                              inDynamicDoneButtonHandle,
-                             -1 );
+                             -1,
+                             maxigin_initTranslationKey( "doneTip" ) );
 
 
     shopUnlockedSprite          = maxigin_initSprite( "unlocked.tga"          );

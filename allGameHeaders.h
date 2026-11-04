@@ -75,3 +75,5 @@
 #include "moveDiagramWindow.h"
 
 #include "vfdDigit.h"
+
+#include "tipDisplay.h"

@@ -353,6 +353,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     int  numPixels   =  MAXIGIN_GAME_NATIVE_W * MAXIGIN_GAME_NATIVE_H;
     int  p;
     int  i;
+    int  infoPanelX  =  MAXIGIN_GAME_NATIVE_W - 38;
     int  infoPanelY  =  boardCenterY - 20;
 
     /* step colors here, instead of in step function,
@@ -715,7 +716,9 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
     
     /* info panel overlaps with unused draw counter */
-    if( ! moneyGetSubMessageShowing() ) {
+    if( ! moneyGetSubMessageShowing()
+        &&
+        ! tipDisplayIsShowing() ) {
 
         char  showDeployCost  =  0;
 
@@ -727,7 +730,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         
         if( infoPanelPiece != noPiece ) {
             drawPieceInfoPanel( infoPanelPiece,
-                                MAXIGIN_GAME_NATIVE_W - 38,
+                                infoPanelX,
                                 infoPanelY,
                                 infoPanelFade,
                                 showDeployCost );
@@ -737,12 +740,15 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                  &&
                  infoPanelFade > 0 ) {
             drawPieceInfoPanel( infoPanelLastPiece,
-                                MAXIGIN_GAME_NATIVE_W - 38,
+                                infoPanelX,
                                 infoPanelY,
                                 infoPanelFade,
                                 showDeployCost );
             }
         }
+
+    tipDisplayDraw( infoPanelX,
+                    infoPanelY );
     
 
     if( shopShowing
@@ -2971,6 +2977,8 @@ void maxiginGame_step( char  inFinalStep  ) {
     rarityWindowStep();
     moveDiagramWindowStep();
 
+    tipDisplayStep();
+
     if( sideBoardShowing ) {
 
         ChessPiece  pickedPiece;
@@ -3560,7 +3568,8 @@ void maxiginGame_init( void ) {
                              1,
                              MOUSE_CLICK,
                              DRAW,
-                             1 );
+                             1,
+                             maxigin_initTranslationKey( "drawTip" ) );
 
     deckButton = buttonInit( maxigin_initSprite( "deckButton.tga" ),
                              -1,
@@ -3570,7 +3579,8 @@ void maxiginGame_init( void ) {
                              0,
                              MOUSE_CLICK,
                              DECK,
-                             0 );
+                             0,
+                             maxigin_initTranslationKey( "deckTip" ) );
     
 
     newGameButton = buttonInit( maxigin_initSprite( "newGameButton.tga" ),
@@ -3581,7 +3591,8 @@ void maxiginGame_init( void ) {
                                 0,
                                 MOUSE_CLICK,
                                 DRAW,
-                                1 );
+                                1,
+                                maxigin_initTranslationKey( "newGameTip" ) );
     
 
     logoSprite = maxigin_initSprite( "logo.tga" );
@@ -3923,6 +3934,8 @@ void maxiginGame_init( void ) {
                                      2 );
 
     vfdDigitInit();
+
+    tipDisplayInit();
 
     
     unlocksInit( UNLOCK_VIEW,

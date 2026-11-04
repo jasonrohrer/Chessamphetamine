@@ -41,7 +41,8 @@ int buttonInit( int   inBaseSprite,
                 char  inSticky,
                 int   inPointerActionHandle,
                 int   inActionHandle,
-                char  inHintPos );
+                char  inHintPos,
+                int   inTipKey );
 
 
 void buttonDraw( int  inButtonHandle );
@@ -83,26 +84,29 @@ void buttonGetPos( int   inButtonHandle,
 
 
 #include "memoryRegister.h"
-
+#include "tipDisplay.h"
 
 
 
 typedef struct Button {
-        int  baseSprite;
-        int  hoverSprite;
-        int  pressedSprite;
-        int  centerX;
-        int  centerY;
-        char sticky;
-        int  pointerActionHandle;
-        int  actionHandle;
+        int   baseSprite;
+        int   hoverSprite;
+        int   pressedSprite;
+        int   centerX;
+        int   centerY;
+        char  sticky;
+        int   pointerActionHandle;
+        int   actionHandle;
 
-        char sawUnpressed;
+        char  sawUnpressed;
 
-        char pressed;
-        char hover;
+        char  pressed;
+        char  hover;
 
-        char hintPos;
+        char  hintPos;
+
+        int   tipKey;
+        
     } Button;
 
 #define MAX_NUM_BUTTONS  20
@@ -130,7 +134,8 @@ int buttonInit( int   inBaseSprite,
                 char  inSticky,
                 int   inPointerActionHandle,
                 int   inActionHandle,
-                char  inHintPos ) {
+                char  inHintPos,
+                int   inTipKey ) {
 
     Button  *b;
     int      newHandle;
@@ -154,6 +159,7 @@ int buttonInit( int   inBaseSprite,
     b->pointerActionHandle = inPointerActionHandle;
     b->actionHandle        = inActionHandle;
     b->hintPos             = inHintPos;
+    b->tipKey              = inTipKey;
 
     b->pressed = 0;
     b->hover = 0;
@@ -382,6 +388,12 @@ char buttonIsNewPressed( int  inButtonHandle ) {
         if( ! b->sticky ) {
             b->pressed = 0;
             }
+        }
+
+    if( b->hover ) {
+        tipDisplaySet( b->tipKey,
+                       -1,
+                       -1 );
         }
 
     return b->pressed

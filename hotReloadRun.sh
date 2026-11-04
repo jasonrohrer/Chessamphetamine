@@ -6,7 +6,7 @@ echo "1" > $enableSetting
 echo "0" > $autoSetting
 echo "0" > $quitFileName
 
-fileList="$quitFileName Chessamphetamine game.c pieceSpecs.h maxigin.h mingin.h board.h pieceSprites.h chess.h memoryRegister.h particleSprite.h gameSize.h simTest.h moveAnim.h money.h numbers.h checkDisplay.h util.h colors.h pinch.h fixedMath.h particleSystem.h chessArrayCheck.h pieceDescriptions.h nav.h levels.h deck.h shop.h button.h hearts.h sideBoard.h deckView.h cost.h rarity.h roll.h slotLift.h formation.h unlocks.h playerDeck.h runStats.h postMoveEffects.h screen.h rarityWindow.h moveDiagramWindow.h vfdDigit.h"
+fileList="$quitFileName Chessamphetamine game.c pieceSpecs.h maxigin.h mingin.h board.h pieceSprites.h chess.h memoryRegister.h particleSprite.h gameSize.h simTest.h moveAnim.h money.h numbers.h checkDisplay.h util.h colors.h pinch.h fixedMath.h particleSystem.h chessArrayCheck.h pieceDescriptions.h nav.h levels.h deck.h shop.h button.h hearts.h sideBoard.h deckView.h cost.h rarity.h roll.h slotLift.h formation.h unlocks.h playerDeck.h runStats.h postMoveEffects.h screen.h rarityWindow.h moveDiagramWindow.h vfdDigit.h tipDisplay.h"
 
 oldQuitModTime=$(stat -c %Y "$quitFileName")
 
@@ -16,43 +16,42 @@ pid=$!
 while inotifywait -e modify,create,delete $fileList; do
     echo "Watched files changed"
 
-	newQuitModTime=$(stat -c %Y "$quitFileName")
+    newQuitModTime=$(stat -c %Y "$quitFileName")
 
-	if (( newQuitModTime != oldQuitModTime )); then
-		echo "Game itself quit, stopping hot-reload loop"
-		wait "$pid"
+    if (( newQuitModTime != oldQuitModTime )); then
+        echo "Game itself quit, stopping hot-reload loop"
+        wait "$pid"
 
-		rm -f $enableSetting $autoSetting $quitFileName
-		exit 0
-	fi
+        rm -f $enableSetting $autoSetting $quitFileName
+        exit 0
+    fi
 
-	compOutput=$(./fastLinuxCompile.sh 2>&1)
+    compOutput=$(./fastLinuxCompile.sh 2>&1)
 
-	if [[ -n "$compOutput" ]]; then
-		echo "compilation failed, not quitting/restarting game"
-		echo "compilation output:"
-		echo ""
-		echo "$compOutput"
-		echo ""
-	else
-		# tell it to quit
-		echo "1" > $autoSetting
+    if [[ -n "$compOutput" ]]; then
+        echo "compilation failed, not quitting/restarting game"
+        echo "compilation output:"
+        echo ""
+        echo "$compOutput"
+        echo ""
+    else
+        # tell it to quit
+        echo "1" > $autoSetting
 
-		# wait for it to quit
-		wait "$pid"
+        # wait for it to quit
+        wait "$pid"
 
-		
-		# rest quit flags for next run
-		echo "0" > $autoSetting
-		echo "0" > $quitFileName
+        
+        # rest quit flags for next run
+        echo "0" > $autoSetting
+        echo "0" > $quitFileName
 
-		oldQuitModTime=$(stat -c %Y "$quitFileName")	
-		
-		./Chessamphetamine &
-		pid=$!
-	fi
+        oldQuitModTime=$(stat -c %Y "$quitFileName")    
+        
+        ./Chessamphetamine &
+        pid=$!
+    fi
  
 done
 
 echo "Hot reload loop done"
-

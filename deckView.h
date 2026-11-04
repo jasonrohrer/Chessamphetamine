@@ -159,7 +159,8 @@ void deckViewInit(  int  inCenterX,
                              0,
                              inPointerActionHandle,
                              inNextButtonActionHandle,
-                             -1 );
+                             -1,
+                             maxigin_initTranslationKey( "nextTip" ) );
     
     prevButton = buttonInit( maxigin_initSprite( "prevButton.tga" ),
                              -1,
@@ -171,7 +172,8 @@ void deckViewInit(  int  inCenterX,
                              0,
                              inPointerActionHandle,
                              inPrevButtonActionHandle,
-                             1 );
+                             1,
+                             maxigin_initTranslationKey( "prevTip" ) );
 
     
     REGISTER_ARRAY_MEM( deckViewSlots         );

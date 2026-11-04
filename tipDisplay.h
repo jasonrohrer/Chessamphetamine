@@ -58,6 +58,8 @@ void tipDisplayStep( void );
 #define  TD_MAX_LINE_LENGTH  20
 
 
+static  int            tdLineSpace     =  10;
+
 static  int            tdMessageKeyA   =  -1;
 static  int            tdMessageKeyB   =  -1;
 static  int            tdNumber        =  -1;
@@ -213,9 +215,8 @@ static void tdDrawLines( int  inCenterX,
 
     int  i;
 
-    int  lineSpace  =  10;
 
-    int  curY       =  inBottomLineCenterY - lineSpace * tdNumLines;
+    int  curY       =  inBottomLineCenterY - tdLineSpace * ( tdNumLines - 1 );
     
 
     for( i = 0;
@@ -227,7 +228,7 @@ static void tdDrawLines( int  inCenterX,
                                     curY,
                                     MAXIGIN_CENTER );
         
-        curY += lineSpace;
+        curY += tdLineSpace;
         }
 
     }
@@ -245,6 +246,10 @@ void tipDisplayDraw( int  inCenterX,
 
         maxigin_setLanguageFontIndex( 1 );
 
+        if( tdNumber != -1 ) {
+            inCenterY -= tdLineSpace + tdLineSpace / 2;
+            }
+
         if( tdMessageKeyA != -1 ) {
 
 
@@ -252,9 +257,36 @@ void tipDisplayDraw( int  inCenterX,
 
             tdDrawLines( inCenterX,
                          inCenterY );
-            
-            
+
+            inCenterY += tdLineSpace;
             }
+
+        if( tdNumber != -1 ) {
+
+            inCenterY += tdLineSpace / 2;
+            
+            numbersToggleBorder( 0 );
+
+            numberDrawCenter( tdNumber,
+                              inCenterX,
+                              inCenterY,
+                              1 );
+
+            numbersToggleBorder( 1 );
+
+            inCenterY += tdLineSpace + tdLineSpace / 2;
+            }
+
+        if( tdMessageKeyB != -1 ) {
+            
+            tdSplitLines( tdMessageKeyB );
+
+            inCenterY += tdLineSpace * ( tdNumLines - 1 );
+
+            tdDrawLines( inCenterX,
+                         inCenterY );
+            }
+        
 
         maxigin_setLanguageFontIndex( 0 );
         }

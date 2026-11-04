@@ -83,8 +83,8 @@ unlock0        "Une place de plus dans la réserve"
 unlock1        "Un emplacement de plus dans la boutique"
 unlock2        "Un article est toujours en promo dans la boutique"
 
-unlockLockedA  "Mat au niveau"
-unlockLockedB  "pour débloquer"
+unlockLockedA  "Mat au ## niveau"
+unlockLockedB  "pour ## débloquer"
 
 
 readyCount     "Dispo"

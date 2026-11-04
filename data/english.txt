@@ -84,8 +84,8 @@ unlock0        "Extra space on the sideboard"
 unlock1        "Extra slot in the shop"
 unlock2        "Something is always on sale in the shop"
 
-unlockLockedA  "Checkmate level"
-unlockLockedB  "to unlock"
+unlockLockedA  "Checkmate ## level"
+unlockLockedB  "or higher ## to unlock"
 
 
 

@@ -62,6 +62,8 @@ char unlocksAreAnyUnlocked( void );
 #endif
 
 
+#include "tipDisplay.h"
+
 
 #ifdef  UNLOCKS_IMPLEMENTATION
 
@@ -393,37 +395,6 @@ void unlocksDraw( int  inPosX,
                                  unlockExtraGlowFade[ unlockLastOver ] );
 
             }
-        else {
-
-            maxigin_drawResetColor();
-
-            maxigin_setLanguageFontIndex( 1 );
-
-            maxigin_drawSetAlpha( unlockExtraGlowFade[ unlockLastOver ] );
-
-            maxigin_drawLangText( lang_lockedA,
-                                  centX,
-                                  centY - 15,
-                                  MAXIGIN_CENTER );
-
-            numberDrawText(
-                maxigin_stringConcat(
-                    maxigin_intToString( unlockAtLevel[ unlockLastOver ] ),
-                    "+" ),
-                centX,
-                centY,
-                0,
-                MAXIGIN_CENTER );
-
-            maxigin_setLanguageFontIndex( 1 );
-
-            maxigin_drawLangText( lang_lockedB,
-                                  centX,
-                                  centY + 15,
-                                  MAXIGIN_CENTER );
-            
-            maxigin_setLanguageFontIndex( 0 );
-            }
         
         }
 
@@ -568,6 +539,16 @@ void unlocksStep( int  inPosX,
                 }
             }
         }
+
+
+    
+    if( overI != -1 ) {
+
+        tipDisplaySet( lang_lockedA,
+                       unlockAtLevel[ overI ],
+                       lang_lockedB );
+        }
+
 
     if( unlockExploding != -1 ) {
         unlockExplodingProgress += ( 10 * 60 ) / r;

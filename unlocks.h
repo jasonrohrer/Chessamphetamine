@@ -380,8 +380,8 @@ void unlocksDraw( int  inPosX,
         &&
         unlockExtraGlowFade[ unlockLastOver ] > 0 ) {
 
-        int  centX  =  MAXIGIN_GAME_NATIVE_W - 42;
-        int  centY  =  MAXIGIN_GAME_NATIVE_H / 2;
+        int  centX  =  MAXIGIN_GAME_NATIVE_W - 38;
+        int  centY  =  MAXIGIN_GAME_NATIVE_H / 2 - 10;
 
         
         if( unlockEnabled[ unlockLastOver ] ) {

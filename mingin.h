@@ -2515,10 +2515,20 @@ static char mn_isRunningOnSteamDeck( void );
 int mingin_getStepsPerSecond( void ) {
 
     if( mn_actualFPSMeasured ) {
-        return mn_measuredRefreshRate;
+        if( mn_measuredRefreshRate > 0 ) {
+            return mn_measuredRefreshRate;
+            }
+        else {
+            return 1;
+            }
         }
-    
-    return mn_screenRefreshRate;
+
+    if( mn_screenRefreshRate > 0 ) {
+        return mn_screenRefreshRate;
+        }
+    else {
+        return 1;
+        }
     }
 
 

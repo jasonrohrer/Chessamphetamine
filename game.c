@@ -255,9 +255,6 @@ static int            numPiecesPlaced              =  0;
 
 static int            levelForUnlock               =  -1;
 
-static int            vfdTestDigit                 =  0;
-static char           vfdTestLetter                =  'A';
-static int            vfdTestSteps                 =  0;
 
 
 static void clearDrawMarkers( void ) {
@@ -1423,32 +1420,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                            boardCenterX + 160,
                            boardCenterY - 80 );
         }
-
-
-    if(0)vfdDigitDrawNumber( vfdTestDigit,
-                        3,
-                        MAXIGIN_GAME_NATIVE_W - 28,
-                        13 );
-
-    /*
-    vfdDigitDraw( vfdTestDigit % 10,
-                  MAXIGIN_GAME_NATIVE_W - 13,
-                  13 );
-    vfdDigitDraw( ( vfdTestDigit / 10 ) % 10,
-                  MAXIGIN_GAME_NATIVE_W - 28,
-                  13 );
-    vfdDigitDraw( ( vfdTestDigit / 100 ) % 10,
-                  MAXIGIN_GAME_NATIVE_W - 43,
-                  13 );
-    if( 0 )vfdDigitDraw( ( vfdTestDigit / 1000 ) % 10,
-                  MAXIGIN_GAME_NATIVE_W - 60,
-                  13 );
-    */
-
-    if( 0 ) vfdDigitDrawLetter( vfdTestLetter,
-                        MAXIGIN_GAME_NATIVE_W - 59,
-                        13 );
-    
     
     pinchApply( inRGBBuffer );
     }
@@ -1684,23 +1655,7 @@ void maxiginGame_step( char  inFinalStep  ) {
 
         unlocksHardReset();
         }
-
-    vfdTestSteps += 6 * 60 / r;
-
-    if( vfdTestSteps > 10 ) {
-        
-        vfdTestDigit ++;
-        if( vfdTestDigit > 9999 ) {
-            vfdTestDigit = 0;
-            }
-        
-        vfdTestLetter ++;
-
-        if( vfdTestLetter > 'Z' ) {
-            vfdTestLetter = 'A';
-            }
-        vfdTestSteps = 0;
-        }
+    
 
     if( ! shopShowing
         &&
@@ -4165,10 +4120,6 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( logoGlintSpeed );
 
     REGISTER_VAL_MEM( firstDraftingStarted );
-
-    REGISTER_VAL_MEM( vfdTestDigit );
-    REGISTER_VAL_MEM( vfdTestLetter );
-    REGISTER_VAL_MEM( vfdTestSteps);
     
 
     /* trick:

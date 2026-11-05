@@ -55,7 +55,7 @@ press          "press"
 defaults       "Defaults"
 
 
-drawInstruct   "Draft your army"
+drawInstruct   "Draft ## your army"
 
 swapInstructA   " "
 swapInstructB   "Pick two pieces to swap positions"
@@ -76,7 +76,7 @@ permanent      "Perma"
 
 level          "Level"
 
-gameOverInstruct  "Please Play Again:"
+gameOverInstruct  "Please ## Play ## Again"
 
 
 unlockDes      "Permanent Unlock"

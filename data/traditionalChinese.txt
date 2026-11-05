@@ -52,7 +52,7 @@ press          "按下"
 defaults       "恢復預設"
 
 
-drawInstruct   "徵召你的軍隊"
+drawInstruct   "徵召你 ## ## 的軍隊"
 
 swapInstructA   " "
 swapInstructB   "選取兩個棋子交換位置"
@@ -76,7 +76,7 @@ permanent      "永久"
 
 level          "關卡"
 
-gameOverInstruct  "請再玩一次："
+gameOverInstruct  "請再 ## ## 玩一次"
 
 unlockDes      "永久解鎖"
 unlock0        "備用區增加一格"

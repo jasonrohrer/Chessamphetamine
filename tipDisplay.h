@@ -26,14 +26,15 @@ void tipDisplayInit( void );
 
    If a step goes by without message being set again, it will start to fade
 
-   A priority tip will block other tips from overriding it. */
+   A higher priority tip will block other tips from overriding it. */
 void tipDisplaySet( int   inMessageKeyA,
                     int   inNumber,
                     int   inMessageKeyB,
                     char  inPriority );
 
-/* returns 1 if a message is set.
-   returns 0 as soon as the message expires and starts to fade */
+/* returns 1 if a message is set and higher than 0 priority.
+   returns 0 as soon as the message expires and starts to fade,
+   or if a 0-priority message is showing.  */
 char tipDisplayIsShowing( void );
 
 
@@ -70,7 +71,7 @@ static  char           tdPriority       =  0;
 static  unsigned char  tdFade           =  0;
 static  int            tdStepsSinceSet  =  0;
 
-static int             tdFadePoint      =  64;
+static int             tdFadePoint      =  255;
 
 static  int            tdNumLines;
 static  char           tdLines[ TD_MAX_NUM_LINES ][ TD_MAX_LINE_LENGTH ];
@@ -97,11 +98,9 @@ void tipDisplaySet( int   inMessageKeyA,
 
     if( tdFade >= 255
         &&
-        ! inPriority
-        &&
-        tdPriority ) {
-        /* priority tip already set, don't override it with this
-           non-priority tip */
+        inPriority < tdPriority ) {
+        /* higher priority tip already set, don't override it with this
+           lower-priority tip */
         return;
         }
     
@@ -124,7 +123,10 @@ void tipDisplaySet( int   inMessageKeyA,
 
 
 char tipDisplayIsShowing( void ) {
-    if( tdFade >= tdFadePoint ) {
+    if( tdPriority > 0
+        &&
+        tdFade >= tdFadePoint ) {
+        
         return 1;
         }
     return 0;
@@ -317,11 +319,11 @@ void tipDisplayStep( void ) {
 
     tdStepsSinceSet ++;
 
-    if( tdStepsSinceSet > 2 ) {
+    if( tdStepsSinceSet > 3 ) {
 
         /* cap it so it doesn't keep incrementing and overflow */
 
-        tdStepsSinceSet = 2;
+        tdStepsSinceSet = 4;
 
         if( tdFade > 0 ) {
 

@@ -547,7 +547,7 @@ void unlocksStep( int  inPosX,
         tipDisplaySet( lang_lockedA,
                        unlockAtLevel[ overI ],
                        lang_lockedB,
-                       0 );
+                       1 );
         }
 
 

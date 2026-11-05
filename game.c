@@ -350,12 +350,13 @@ static void setInfoPanelPieceMoveMarkers( void ) {
 
 void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
-    int  numPixels   =  MAXIGIN_GAME_NATIVE_W * MAXIGIN_GAME_NATIVE_H;
-    int  p;
-    int  i;
-    int  infoPanelX  =  MAXIGIN_GAME_NATIVE_W - 38;
-    int  infoPanelY  =  boardCenterY - 20;
-
+    int   numPixels        =  MAXIGIN_GAME_NATIVE_W * MAXIGIN_GAME_NATIVE_H;
+    int   p;
+    int   i;
+    int   infoPanelX       =  MAXIGIN_GAME_NATIVE_W - 38;
+    int   infoPanelY       =  boardCenterY - 20;
+    char  blockTipDisplay  =  0;
+    
     /* step colors here, instead of in step function,
        so that changes to color map are noticed even during playback */
     colorsStep();
@@ -734,6 +735,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                 infoPanelY,
                                 infoPanelFade,
                                 showDeployCost );
+
+            blockTipDisplay = 1;
         
             }
         else if( infoPanelLastPiece != noPiece
@@ -744,11 +747,14 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                 infoPanelY,
                                 infoPanelFade,
                                 showDeployCost );
+            blockTipDisplay = 1;
             }
         }
 
-    tipDisplayDraw( infoPanelX,
-                    infoPanelY );
+    if( ! blockTipDisplay ) {
+        tipDisplayDraw( infoPanelX,
+                        infoPanelY );
+        }
     
 
     if( shopShowing
@@ -1196,20 +1202,10 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         &&
         ! deckViewShowing ) {
 
-        int  stringKey  =  lang_drawInstruct;
-        int  xOffset    =  0;
-        
-        maxigin_drawResetColor();
-
-        maxigin_setLanguageFontIndex( 1 );
-        
-        maxigin_drawLangText(
-                stringKey,
-                boardCenterX - xOffset,
-                drawButtonPosY,
-                MAXIGIN_CENTER );
-        maxigin_setLanguageFontIndex( 0 );
-
+        tipDisplaySet( lang_drawInstruct,
+                       -1,
+                       -1,
+                       0 );
         }
 
     
@@ -1218,17 +1214,12 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         ! redrawRemoveRunning
         &&
         ! redrawAddRunning ) {
-        
-        maxigin_drawResetColor();
 
-        maxigin_setLanguageFontIndex( 1 );
-    
-        maxigin_drawLangText(
-                lang_gameOverInstruct,
-                newGameButtonPosX - 40,
-                newGameButtonPosY,
-                MAXIGIN_RIGHT );
-        maxigin_setLanguageFontIndex( 0 );
+        tipDisplaySet( lang_gameOverInstruct,
+                       -1,
+                       -1,
+                       0 );
+        
 
         buttonDraw( newGameButton );
         }

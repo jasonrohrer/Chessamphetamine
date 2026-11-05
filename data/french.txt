@@ -54,7 +54,7 @@ press          "appuyez"
 
 defaults       "Par défaut"
 
-drawInstruct   "Composez votre armée"
+drawInstruct   "Composez ## votre armé"
 
 swapInstructA  "Choisissez deux pièces pour"
 swapInstructB  "intervertir leurs positions"
@@ -75,7 +75,7 @@ permanent      "À vie"
 
 level          "Niveau"
 
-gameOverInstruct  "Veuillez rejouer:"
+gameOverInstruct  "Veuillez ## rejouer"
 
 
 unlockDes      "Déblocage permanent"

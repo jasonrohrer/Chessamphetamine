@@ -69,8 +69,8 @@ static int            spinUnpressedSprite        =  -1;
 static int            spinPressedSprite          =  -1;
 static int            spinPressedTextSprite      =  -1;
 static int            spinPressedTextGlowSprite  =  -1;
-static int            spinButtonX                =  MAXIGIN_GAME_NATIVE_W - 34;
-static int            spinButtonY                =  MAXIGIN_GAME_NATIVE_H - 21;
+static int            spinButtonX                =  MAXIGIN_GAME_NATIVE_W - 38;
+static int            spinButtonY                =  MAXIGIN_GAME_NATIVE_H - 20;
 static char           spinButtonHover            =  0;
 static int            readyCountScreenSprite     =  -1;
 static int            pieceInfoScreenSprite      =  -1;
@@ -423,64 +423,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
 
-    if( ( draftingPieces
-          ||
-          spinning )
-        &&
-        ! deckViewShowing
-        &&
-        ! shopShowing
-        &&
-        ! chessGameOver ) {
-        
-        maxigin_drawSprite( spinFrameSprite,
-                            spinButtonX,
-                            spinButtonY );
 
-        if( ! spinning
-            ||
-            spinningPaused ) {
-            maxigin_drawSprite( spinUnpressedSprite,
-                                spinButtonX,
-                                spinButtonY );
-
-            if( spinButtonHover ) {
-                /* draw brighter */
-                maxigin_drawToggleAdditive( 1 );
-
-                maxigin_drawSetAlpha( 92 );
-                maxigin_drawSprite( spinUnpressedSprite,
-                                    spinButtonX,
-                                    spinButtonY );
-            
-            
-                maxigin_drawResetColor();
-            
-                maxigin_drawToggleAdditive( 0 );
-                }
-            
-
-            maxigin_drawButtonHintSprite( SPIN,
-                                          spinButtonX - 30,
-                                          spinButtonY + 10 );                
-            }
-        else {
-            maxigin_drawSprite( spinPressedSprite,
-                                spinButtonX,
-                                spinButtonY );
-            if( 0 ) {
-                
-                maxigin_drawSprite( spinPressedTextSprite,
-                                    spinButtonX,
-                                    spinButtonY );
-
-                maxigin_drawSpriteGlowOnly( spinPressedTextGlowSprite,
-                                            spinButtonX,
-                                            spinButtonY );
-                }
-            
-            }
-        }
 
 
 
@@ -711,6 +654,65 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     rarityWindowDraw();
 
     moveDiagramWindowDraw();
+
+    if( ( draftingPieces
+          ||
+          spinning )
+        &&
+        ! deckViewShowing
+        &&
+        ! shopShowing
+        &&
+        ! chessGameOver ) {
+        
+        maxigin_drawSprite( spinFrameSprite,
+                            spinButtonX,
+                            spinButtonY );
+
+        if( ! spinning
+            ||
+            spinningPaused ) {
+            maxigin_drawSprite( spinUnpressedSprite,
+                                spinButtonX,
+                                spinButtonY );
+
+            if( spinButtonHover ) {
+                /* draw brighter */
+                maxigin_drawToggleAdditive( 1 );
+
+                maxigin_drawSetAlpha( 92 );
+                maxigin_drawSprite( spinUnpressedSprite,
+                                    spinButtonX,
+                                    spinButtonY );
+            
+            
+                maxigin_drawResetColor();
+            
+                maxigin_drawToggleAdditive( 0 );
+                }
+            
+
+            maxigin_drawButtonHintSprite( SPIN,
+                                          spinButtonX - 30,
+                                          spinButtonY + 10 );                
+            }
+        else {
+            maxigin_drawSprite( spinPressedSprite,
+                                spinButtonX,
+                                spinButtonY );
+            if( 0 ) {
+                
+                maxigin_drawSprite( spinPressedTextSprite,
+                                    spinButtonX,
+                                    spinButtonY );
+
+                maxigin_drawSpriteGlowOnly( spinPressedTextGlowSprite,
+                                            spinButtonX,
+                                            spinButtonY );
+                }
+            
+            }
+        }
 
     /* re-enable central screen clipping, if it's on */
     screenToggleClip( 1 );

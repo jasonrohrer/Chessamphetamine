@@ -393,7 +393,8 @@ char buttonIsNewPressed( int  inButtonHandle ) {
     if( b->hover ) {
         tipDisplaySet( b->tipKey,
                        -1,
-                       -1 );
+                       -1,
+                       0 );
         }
 
     return b->pressed

@@ -117,6 +117,7 @@ char moneyGetSubMessageShowing( void );
 
 #include "pieceSpecs.h"
 #include "vfdDigit.h"
+#include "tipDisplay.h"
 
 
 static int pieceCaptureMoney[] = {
@@ -295,42 +296,6 @@ void moneyDraw( int  inPosX,
                         MONEY_DIGITS,
                         inPosX + 37,
                         inPosY + 1 );
-    
-    if( moneyLabeledShowing ) {
-
-        colorsApply( moneyLabeledColor );
-
-        maxigin_setLanguageFontIndex( 1 );
-
-        maxigin_drawLangText( moneyLabeledLang,
-                              inPosX,
-                              inPosY + 14,
-                              MAXIGIN_RIGHT );
-        numberDraw( moneyLabeledAdd,
-                    inPosX + 15,
-                    inPosY + 14,
-                    1 );
-
-        maxigin_setLanguageFontIndex( 0 );
-
-        }
-    else if( unusedDrawsShowing ) {
-
-        maxigin_drawResetColor();
-
-        maxigin_setLanguageFontIndex( 1 );
-
-        maxigin_drawLangText( lang_unusedDraws,
-                              inPosX + 5,
-                              inPosY + 14,
-                              MAXIGIN_RIGHT );
-        numberDraw( unusedDraws,
-                    inPosX + 15,
-                    inPosY + 14,
-                    1 );
-
-        maxigin_setLanguageFontIndex( 0 );
-        }
     }
 
 
@@ -348,6 +313,13 @@ void moneyStep( void ) {
         /* final bounce for last bit of bailout/wages/etc. is done */
 
         moneyLabeledShowing = 0;
+        }
+
+    if( moneyLabeledShowing ) {
+        tipDisplaySet( moneyLabeledLang,
+                       moneyLabeledAdd,
+                       -1,
+                       1 );
         }
     
 
@@ -495,6 +467,14 @@ void moneyStep( void ) {
         /* completely done adding money for unused draws */
         unusedDrawsShowing = 0;
         }
+
+    if( unusedDrawsShowing ) {
+        tipDisplaySet( lang_unusedDraws,
+                       unusedDraws,
+                       -1,
+                       1 );
+        }
+    
 
     if( moneyVal > MONEY_MAX_VAL ) {
         moneyVal = MONEY_MAX_VAL;

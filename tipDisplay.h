@@ -24,10 +24,13 @@ void tipDisplayInit( void );
    Should be set every step to renew it, even if mouse is over
    the same thing.
 
-   If a step goes by without message being set again, it will start to fade */
-void tipDisplaySet( int  inMessageKeyA,
-                    int  inNumber,
-                    int  inMessageKeyB );
+   If a step goes by without message being set again, it will start to fade
+
+   A priority tip will block other tips from overriding it. */
+void tipDisplaySet( int   inMessageKeyA,
+                    int   inNumber,
+                    int   inMessageKeyB,
+                    char  inPriority );
 
 /* returns 1 if a message is set.
    returns 0 as soon as the message expires and starts to fade */
@@ -58,13 +61,16 @@ void tipDisplayStep( void );
 #define  TD_MAX_LINE_LENGTH  20
 
 
-static  int            tdLineSpace     =  10;
+static  int            tdLineSpace      =  10;
 
-static  int            tdMessageKeyA   =  -1;
-static  int            tdMessageKeyB   =  -1;
-static  int            tdNumber        =  -1;
-static  unsigned char  tdFade          =  0;
-static  int            tdStepsSiceSet  =  0;
+static  int            tdMessageKeyA    =  -1;
+static  int            tdMessageKeyB    =  -1;
+static  int            tdNumber         =  -1;
+static  char           tdPriority       =  0;
+static  unsigned char  tdFade           =  0;
+static  int            tdStepsSinceSet  =  0;
+
+static int             tdFadePoint      =  64;
 
 static  int            tdNumLines;
 static  char           tdLines[ TD_MAX_NUM_LINES ][ TD_MAX_LINE_LENGTH ];
@@ -77,19 +83,32 @@ void tipDisplayInit( void ) {
     REGISTER_VAL_MEM( tdMessageKeyA );
     REGISTER_VAL_MEM( tdMessageKeyB );
     REGISTER_VAL_MEM( tdNumber );
+    REGISTER_VAL_MEM( tdPriority );
     REGISTER_VAL_MEM( tdFade );
-    REGISTER_VAL_MEM( tdStepsSiceSet );
+    REGISTER_VAL_MEM( tdStepsSinceSet );
     }
 
 
 
-void tipDisplaySet( int  inMessageKeyA,
-                    int  inNumber,
-                    int  inMessageKeyB ) {
+void tipDisplaySet( int   inMessageKeyA,
+                    int   inNumber,
+                    int   inMessageKeyB,
+                    char  inPriority ) {
+
+    if( tdFade >= 255
+        &&
+        ! inPriority
+        &&
+        tdPriority ) {
+        /* priority tip already set, don't override it with this
+           non-priority tip */
+        return;
+        }
     
     tdMessageKeyA = inMessageKeyA;
     tdMessageKeyB = inMessageKeyB;
     tdNumber      = inNumber;
+    tdPriority    = inPriority;
 
     if( tdMessageKeyA != -1
         ||
@@ -97,7 +116,7 @@ void tipDisplaySet( int  inMessageKeyA,
         ||
         tdNumber      != -1 ) {
 
-        tdStepsSiceSet = 0;
+        tdStepsSinceSet = 0;
         tdFade = 255;
         }
     }
@@ -105,7 +124,7 @@ void tipDisplaySet( int  inMessageKeyA,
 
 
 char tipDisplayIsShowing( void ) {
-    if( tdFade >= 64 ) {
+    if( tdFade >= tdFadePoint ) {
         return 1;
         }
     return 0;
@@ -296,13 +315,13 @@ void tipDisplayDraw( int  inCenterX,
 
 void tipDisplayStep( void ) {
 
-    tdStepsSiceSet ++;
+    tdStepsSinceSet ++;
 
-    if( tdStepsSiceSet > 2 ) {
+    if( tdStepsSinceSet > 2 ) {
 
         /* cap it so it doesn't keep incrementing and overflow */
 
-        tdStepsSiceSet = 2;
+        tdStepsSinceSet = 2;
 
         if( tdFade > 0 ) {
 

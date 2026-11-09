@@ -74,7 +74,7 @@ permanent      "永久"
 
 
 
-level          "關卡"
+level          "關"
 
 gameOverInstruct  "請再 ## ## 玩一次"
 

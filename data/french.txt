@@ -73,7 +73,7 @@ sale           "Promo!"
 permanent      "À vie"
 
 
-level          "Niveau"
+level          "Niv:"
 
 gameOverInstruct  "Veuillez ## rejouer"
 

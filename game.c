@@ -74,6 +74,7 @@ static int            spinButtonY                =  MAXIGIN_GAME_NATIVE_H - 15;
 static char           spinButtonHover            =  0;
 static int            readyCountScreenSprite     =  -1;
 static int            pieceInfoScreenSprite      =  -1;
+static int            levelScreenSprite          =  -1;
 static int            moneyWindowSprite          =  -1;
 static int            drawsLeftWindowSprite      =  -1;
 static int            drawsLeftGlintSprite       =  -1;
@@ -90,7 +91,7 @@ static int            deckButtonPosY             =  MAXIGIN_GAME_NATIVE_H / 2 - 
 static int            deckButtonPosX             =  21;
 
 static int            infoLightsX                =  50;
-static int            unlocksY                   =  40;
+static int            unlocksY                   =  42;
 
 static int            newGameButton              =  -1;
 static int            newGameButtonPosY          =  MAXIGIN_GAME_NATIVE_H - 10;
@@ -423,7 +424,45 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
 
+    if( ! showingMoveLog ) {
+        /* level display overlaps with move log display */
 
+        int  numPos   =  infoLightsX + 5;
+        int  screenY  =  deckButtonPosY - 84;
+        int  aboveH;
+        int  belowH;
+        
+        maxigin_drawResetColor();
+
+        
+
+        maxigin_drawSprite( levelScreenSprite,
+                            deckButtonPosX + 9,
+                            screenY );
+        
+        colorsApply( COLOR_LCD_TEXT );
+        
+        maxigin_setLanguageFontIndex( 1 );
+
+        maxigin_measureLangTextVertical( lang_level,
+                                         &aboveH,
+                                         &belowH );
+        maxigin_drawLangText(
+            lang_level,
+            deckButtonPosX - 15,
+            screenY - belowH + aboveH,
+            MAXIGIN_LEFT );
+        
+        maxigin_setLanguageFontIndex( 0 );
+
+        numbersToggleBorder( 0 );
+        
+        numberDraw( currentLevel,
+                    numPos,
+                    screenY - 1,
+                    1 );
+        numbersToggleBorder( 1 );
+        }
 
 
 
@@ -586,26 +625,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
     
 
-    if( ! showingMoveLog ) {
-        /* level display overlaps with move log display */
 
-        int  numPos  =  infoLightsX + 2;
-        
-        maxigin_drawResetColor();
-        maxigin_setLanguageFontIndex( 1 );
-    
-        maxigin_drawLangText(
-            lang_level,
-            numPos - 20,
-            10,
-            MAXIGIN_RIGHT );
-        maxigin_setLanguageFontIndex( 0 );
-
-        numberDraw( currentLevel,
-                    numPos,
-                    10,
-                    1);
-        }
 
     
 
@@ -3537,6 +3557,8 @@ void maxiginGame_init( void ) {
     readyCountScreenSprite = maxigin_initSprite( "readyCountScreen.tga" );
 
     pieceInfoScreenSprite = maxigin_initSprite( "pieceInfoScreen.tga" );
+
+    levelScreenSprite = maxigin_initSprite( "levelScreen.tga" );
 
     moneyWindowSprite = maxigin_initSprite( "moneyWindow.tga" );
 

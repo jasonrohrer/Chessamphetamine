@@ -1227,7 +1227,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         tipDisplaySet( lang_drawInstruct,
                        -1,
                        -1,
-                       0 );
+                       0,
+                       0);
         }
 
     
@@ -1240,6 +1241,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         tipDisplaySet( lang_gameOverInstruct,
                        -1,
                        -1,
+                       0,
                        0 );
         
 

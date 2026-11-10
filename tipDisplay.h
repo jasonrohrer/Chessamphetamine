@@ -30,7 +30,8 @@ void tipDisplayInit( void );
 void tipDisplaySet( int   inMessageKeyA,
                     int   inNumber,
                     int   inMessageKeyB,
-                    char  inPriority );
+                    char  inPriority,
+                    char  inVertPosToggle );
 
 /* returns 1 if a message is set and higher than 0 priority.
    returns 0 as soon as the message expires and starts to fade,
@@ -71,7 +72,10 @@ static  char           tdPriority       =  0;
 static  unsigned char  tdFade           =  0;
 static  int            tdStepsSinceSet  =  0;
 
-static int             tdFadePoint      =  255;
+static  int            tdFadePoint      =  255;
+
+/* tips can be in two different vertical positions */
+static  char           tdVertPosToggle  =  0;
 
 static  int            tdNumLines;
 static  char           tdLines[ TD_MAX_NUM_LINES ][ TD_MAX_LINE_LENGTH ];
@@ -87,6 +91,7 @@ void tipDisplayInit( void ) {
     REGISTER_VAL_MEM( tdPriority );
     REGISTER_VAL_MEM( tdFade );
     REGISTER_VAL_MEM( tdStepsSinceSet );
+    REGISTER_VAL_MEM( tdVertPosToggle );
     }
 
 
@@ -94,7 +99,8 @@ void tipDisplayInit( void ) {
 void tipDisplaySet( int   inMessageKeyA,
                     int   inNumber,
                     int   inMessageKeyB,
-                    char  inPriority ) {
+                    char  inPriority,
+                    char  inVertPosToggle ) {
 
     if( tdFade >= 255
         &&
@@ -104,10 +110,12 @@ void tipDisplaySet( int   inMessageKeyA,
         return;
         }
     
-    tdMessageKeyA = inMessageKeyA;
-    tdMessageKeyB = inMessageKeyB;
-    tdNumber      = inNumber;
-    tdPriority    = inPriority;
+    tdMessageKeyA   = inMessageKeyA;
+    tdMessageKeyB   = inMessageKeyB;
+    tdNumber        = inNumber;
+    tdPriority      = inPriority;
+    tdVertPosToggle = inVertPosToggle;
+    
 
     if( tdMessageKeyA != -1
         ||
@@ -260,6 +268,10 @@ void tipDisplayDraw( int  inCenterX,
                      int  inCenterY ) {
     
     if( tdFade > 0 ) {
+
+        if( tdVertPosToggle ) {
+            inCenterY += 30;
+            }
 
         colorsApply( COLOR_LCD_TEXT );
 

@@ -319,7 +319,8 @@ void moneyStep( void ) {
         tipDisplaySet( moneyLabeledLang,
                        moneyLabeledAdd,
                        -1,
-                       2 );
+                       2,
+                       0 );
         }
     
 
@@ -472,7 +473,8 @@ void moneyStep( void ) {
         tipDisplaySet( lang_unusedDraws,
                        unusedDraws,
                        -1,
-                       2 );
+                       2,
+                       1 );
         }
     
 

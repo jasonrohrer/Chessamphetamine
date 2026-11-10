@@ -394,7 +394,8 @@ char buttonIsNewPressed( int  inButtonHandle ) {
         tipDisplaySet( b->tipKey,
                        -1,
                        -1,
-                       1 );
+                       1,
+                       0 );
         }
 
     return b->pressed

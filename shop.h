@@ -327,7 +327,8 @@ void shopInit( int  inPointerActionHandle,
     int  numStartHops  =  NUM_SHOP_SLOTS / 2;
     int  startHop      =  hopSize * numStartHops;
     int  curPos;
-
+    int  spriteA;
+    
     
     /* reroll costs are 1, 2, 4, 7, etc. */
     /* increase every other level too */
@@ -417,10 +418,17 @@ void shopInit( int  inPointerActionHandle,
     shopResetHightlighFades();
 
 
-    rerollButton = buttonInit( maxigin_initSprite( "rerollButton.tga" ),
+    spriteA = maxigin_initSprite( "rerollButton.tga" );
+    
+    maxigin_initMakeGlowSprite( spriteA,
+                                4,
+                                2 );
+    
+
+    rerollButton = buttonInit( spriteA,
                                -1,
                                maxigin_initSprite( "rerollButtonPressed.tga" ),
-                               shopCenterX,
+                               shopCenterX + 1,
                                shopCenterY + 60,
                                1,
                                shopPointerActionHandle,

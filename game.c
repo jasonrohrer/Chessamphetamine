@@ -720,6 +720,26 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                 spinButtonY );
             }
         }
+    else {
+        /* draw disabled spin button */
+
+        unsigned char  dark  =  128;
+
+        maxigin_drawSetColor( dark,
+                              dark,
+                              dark,
+                              255 );
+
+        maxigin_drawSprite( spinFrameSprite,
+                        spinButtonX,
+                        spinButtonY );
+        
+        maxigin_drawBaseSprite( spinPressedSprite,
+                                spinButtonX,
+                                spinButtonY );
+        }
+    
+        
 
     /* re-enable central screen clipping, if it's on */
     screenToggleClip( 1 );
@@ -1703,6 +1723,12 @@ void maxiginGame_step( char  inFinalStep  ) {
                 spinButtonHover = 0;
                 }
             }
+        else {
+            spinButtonHover = 0;
+            }
+        }
+    else {
+        spinButtonHover = 0;
         }
         
 

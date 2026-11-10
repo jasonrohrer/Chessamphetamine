@@ -105,8 +105,10 @@ void deckViewInit(  int  inCenterX,
 
     int  x;
     int  y;
-    int  i      =  0;
+    int  i         =  0;
     int  yPos;
+    int  spriteA;
+    
     
     deckViewCenterX = inCenterX;
     deckViewCenterY = inCenterY;
@@ -149,9 +151,15 @@ void deckViewInit(  int  inCenterX,
         deckViewHighlightFade[i] = 0;
         }
 
-    nextButton = buttonInit( maxigin_initSprite( "nextButton.tga" ),
+    spriteA = maxigin_initSprite( "nextButton.tga" );
+
+    maxigin_initMakeGlowSprite( spriteA,
+                                4,
+                                2 );
+    
+    nextButton = buttonInit( spriteA,
                              -1,
-                             maxigin_initSprite( "nextButtonPressed.tga" ),
+                             -1,
                              inCenterX
                              + ( DECK_VIEW_COLS - 1 ) * deckViewCellSizeX / 2
                              + 31,
@@ -161,10 +169,16 @@ void deckViewInit(  int  inCenterX,
                              inNextButtonActionHandle,
                              -1,
                              maxigin_initTranslationKey( "nextTip" ) );
+
+    spriteA = maxigin_initSprite( "prevButton.tga" );
+
+    maxigin_initMakeGlowSprite( spriteA,
+                                4,
+                                2 );
     
-    prevButton = buttonInit( maxigin_initSprite( "prevButton.tga" ),
+    prevButton = buttonInit( spriteA,
                              -1,
-                             maxigin_initSprite( "prevButtonPressed.tga" ),
+                             -1,
                              inCenterX
                              - ( DECK_VIEW_COLS - 1 ) * deckViewCellSizeX / 2
                              - 31,

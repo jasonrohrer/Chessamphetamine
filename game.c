@@ -464,6 +464,15 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
 
 
+    maxigin_drawResetColor();
+
+    maxigin_drawSprite( readyCountScreenSprite,
+                        deckButtonPosX,
+                        deckButtonPosY - 25 );
+
+    maxigin_drawSprite( readyCountScreenSprite,
+                        deckButtonPosX,
+                        deckButtonPosY - 58 );
 
     if( ! gameOver ) {
 
@@ -498,19 +507,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                        4 );
             }
         
-
-        
-
-
-        maxigin_drawResetColor();
-
-        maxigin_drawSprite( readyCountScreenSprite,
-                            deckButtonPosX,
-                            deckButtonPosY - 25 );
-
-        maxigin_drawSprite( readyCountScreenSprite,
-                            deckButtonPosX,
-                            deckButtonPosY - 58 );
 
         colorsApply( COLOR_LCD_TEXT );
 
@@ -605,7 +601,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                       drawButtonPosX + 29,
                       drawButtonPosY - 4 );
                       
-        sideBoardDraw();
+        sideBoardDraw( 0 );
 
         buttonDraw( drawButton );
 
@@ -618,6 +614,11 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         maxigin_drawSprite( drawsLeftGlintSprite,
                             drawButtonPosX + 36,
                             drawButtonPosY - 12 );
+
+        /* force it to draw blank */
+        sideBoardDraw( 1 );
+        
+        buttonDrawDisabled( drawButton );
         }
 
 

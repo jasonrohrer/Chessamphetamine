@@ -77,7 +77,7 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
                           unsigned char  *outOverPieceFade );
 
 
-void sideBoardDraw( void );
+void sideBoardDraw( char  inBlank  );
 
 
 char sideBoardIsMouseOver( void );
@@ -674,7 +674,7 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
 
 
 
-void sideBoardDraw( void ) {
+void sideBoardDraw( char  inBlank ) {
 
     int  i;
 
@@ -682,7 +682,11 @@ void sideBoardDraw( void ) {
 
     maxigin_drawSprite( sbScreenSprite,
                         sbCenterX + 1,
-                        sbSlotPosY[0] - 45 );
+                        sbSlotPosY[ 0 ] - 45 );
+
+    if( inBlank ) {
+        return;
+        }
 
     maxigin_drawPushClipRectangle( sbCenterX - 14,
                                    sbCenterX + 15,

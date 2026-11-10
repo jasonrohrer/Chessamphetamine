@@ -67,8 +67,6 @@ static int            boardSlideSound            =  -1;
 static int            spinFrameSprite            =  -1;
 static int            spinUnpressedSprite        =  -1;
 static int            spinPressedSprite          =  -1;
-static int            spinPressedTextSprite      =  -1;
-static int            spinPressedTextGlowSprite  =  -1;
 static int            spinButtonX                =  MAXIGIN_GAME_NATIVE_W - 38;
 static int            spinButtonY                =  MAXIGIN_GAME_NATIVE_H - 15;
 static char           spinButtonHover            =  0;
@@ -720,17 +718,6 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
             maxigin_drawSprite( spinPressedSprite,
                                 spinButtonX,
                                 spinButtonY );
-            if( 0 ) {
-                
-                maxigin_drawSprite( spinPressedTextSprite,
-                                    spinButtonX,
-                                    spinButtonY );
-
-                maxigin_drawSpriteGlowOnly( spinPressedTextGlowSprite,
-                                            spinButtonX,
-                                            spinButtonY );
-                }
-            
             }
         }
 
@@ -3543,18 +3530,11 @@ void maxiginGame_init( void ) {
     spinFrameSprite = maxigin_initSprite( "spinButtonFrame.tga" );
     spinUnpressedSprite = maxigin_initSprite( "spinButtonUnpressed.tga" );
     spinPressedSprite = maxigin_initSprite( "spinButtonPressed.tga" );
-    spinPressedTextSprite = maxigin_initSprite( "spinButtonPressedText.tga" );
-    spinPressedTextGlowSprite =
-        maxigin_initSprite( "spinButtonPressedTextGlow.tga" );
     
 
     maxigin_initMakeGlowSprite( spinPressedSprite,
                                 8,
                                 2 );
-
-    maxigin_initMakeGlowSprite( spinPressedTextGlowSprite,
-                                5,
-                                3 );
 
     readyCountScreenSprite = maxigin_initSprite( "readyCountScreen.tga" );
 

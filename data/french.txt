@@ -109,7 +109,6 @@ deckTip         "Toggle Deck View"
 drawTip         "Redraw Sideboard"
 rerollTip       "Reroll Shop"
 doneTip         "Close Shop"
-newGameTip      "New Game"
 
 pawn           "Pion"
 pawnDesc       "Avance de 1 ou 2 cases, capture en diagonale. Devient une dame sur la dernière rangée."

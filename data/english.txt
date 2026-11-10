@@ -46,7 +46,7 @@ actionDesc     "Action"
 drawDesc       "Redraw"
 deckDesc       "View Deck"
 commitDesc     "Commit"
-spinDesc       "Spin"
+spinDesc       "Go!"
 unlockView     "View Unlocks"
 shopLock       "Shop Lock"
 
@@ -110,7 +110,6 @@ deckTip         "Toggle ## Deck View"
 drawTip         "Redraw ##    Sideboard"
 rerollTip       "Reroll Shop"
 doneTip         "Close Shop"
-newGameTip      "New Game"
 
 
 pawn           "Pawn"

@@ -108,7 +108,6 @@ deckTip         "Toggle Deck View"
 drawTip         "Redraw Sideboard"
 rerollTip       "Reroll Shop"
 doneTip         "Close Shop"
-newGameTip      "New Game"
 
 
 pawn           "兵"

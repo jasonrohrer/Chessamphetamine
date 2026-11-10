@@ -91,10 +91,6 @@ static int            deckButtonPosX             =  21;
 static int            infoLightsX                =  50;
 static int            unlocksY                   =  42;
 
-static int            newGameButton              =  -1;
-static int            newGameButtonPosY          =  MAXIGIN_GAME_NATIVE_H - 10;
-static int            newGameButtonPosX          =  MAXIGIN_GAME_NATIVE_W / 2 + 25;
-
 static char           redrawRemoveRunning        =  0;
 static char           redrawAddRunning           =  0;
 static int            redrawProgressMax          =  100;
@@ -181,6 +177,7 @@ static unsigned char  discardCountGlowFade         =  0;
 
 static char           spinning                    =  0;
 static char           spinningPaused              =  0;
+static char           spinSeenUnpressed           =  1;
 
 static char           showingMoveLog              =  0;
 static char           moveLogButtonDown           =  1;
@@ -346,8 +343,36 @@ static void setInfoPanelPieceMoveMarkers( void ) {
     }
 
 
+static char isNewGameWaiting( void ) {
+    return gameOver
+           &&
+           ! redrawRemoveRunning
+           &&
+           ! redrawAddRunning;
+    }
 
-void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
+
+
+static char isSpinPressedDown( void ) {
+
+    if( maxigin_isButtonDown( SPIN ) ) {
+        return 1;
+        }
+    else if( maxigin_isButtonDown( MOUSE_CLICK )
+             &&
+             maxigin_isPointerInsideSprite( spinUnpressedSprite,
+                                            spinButtonX,
+                                            spinButtonY ) ) {
+        return 1;
+        }
+    
+    return 0;
+    }
+
+
+
+
+    void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
     
     int   numPixels        =  MAXIGIN_GAME_NATIVE_W * MAXIGIN_GAME_NATIVE_H;
     int   p;
@@ -723,6 +748,18 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
                                 spinButtonY );
             }
         }
+    else if( isNewGameWaiting() ) {
+
+        /* spin button used to launch new game */
+
+        maxigin_drawSprite( spinFrameSprite,
+                            spinButtonX,
+                            spinButtonY );
+
+        maxigin_drawSprite( spinUnpressedSprite,
+                            spinButtonX,
+                            spinButtonY );
+        }
     else {
         /* draw disabled spin button */
 
@@ -735,7 +772,7 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
 
         maxigin_drawSprite( spinFrameSprite,
                         spinButtonX,
-                        spinButtonY );
+                            spinButtonY );
         
         maxigin_drawBaseSprite( spinPressedSprite,
                                 spinButtonX,
@@ -1242,20 +1279,13 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
         }
 
     
-    if( gameOver
-        &&
-        ! redrawRemoveRunning
-        &&
-        ! redrawAddRunning ) {
+    if( isNewGameWaiting() ) {
 
         tipDisplaySet( lang_gameOverInstruct,
                        -1,
                        -1,
                        0,
                        0 );
-        
-
-        buttonDraw( newGameButton );
         }
     
 
@@ -1697,18 +1727,18 @@ void maxiginGame_step( char  inFinalStep  ) {
         ! gameOver
         &&
         ! redrawAddRunning ) {
-        
-        if( maxigin_isButtonDown( SPIN ) ) {
-            spinPressed = 1;
-            }
-        else if( maxigin_isButtonDown( MOUSE_CLICK )
-                 &&
-                 maxigin_isPointerInsideSprite( spinUnpressedSprite,
-                                                spinButtonX,
-                                                spinButtonY ) ) {
 
-            spinPressed = 1;
+
+        if( isSpinPressedDown() ) {
+            if( spinSeenUnpressed ) {
+                spinPressed = 1;
+                }
+            spinSeenUnpressed = 0;
             }
+        else {
+            spinSeenUnpressed = 1;
+            }
+        
 
         if( ! spinning ) {
 
@@ -2942,8 +2972,21 @@ void maxiginGame_step( char  inFinalStep  ) {
 
     if( gameOver ) {
 
-        if( buttonIsNewPressed( newGameButton ) ) {
+        char  newStarted  =  0;
 
+        if( isSpinPressedDown() ) {
+            if( spinSeenUnpressed ) {
+                newStarted = 1;
+                }
+            spinSeenUnpressed = 0;
+            }
+        else {
+            spinSeenUnpressed = 1;
+            }
+        
+        
+        if( newStarted ) {
+            
             int  x;
             int  y;
 
@@ -2983,11 +3026,17 @@ void maxiginGame_step( char  inFinalStep  ) {
             redrawRemoveRunning = 1;
             redrawAddRunning = 0;
             }
-        else if( buttonIsHover( newGameButton ) ) {
-            logoGlintSpeed = 2;
-            }
         else {
-            logoGlintSpeed = 1;
+            spinSeenUnpressed = 1;
+
+            if( maxigin_isPointerInsideSprite( spinUnpressedSprite,
+                                               spinButtonX,
+                                               spinButtonY ) ) {
+                logoGlintSpeed = 2;
+                }
+            else {
+                logoGlintSpeed = 1;
+                }
             }
         }
         
@@ -3611,18 +3660,6 @@ void maxiginGame_init( void ) {
                              maxigin_initTranslationKey( "deckTip" ) );
     
 
-    newGameButton = buttonInit( maxigin_initSprite( "newGameButton.tga" ),
-                                -1,
-                                maxigin_initSprite( "newGameButtonPressed.tga" ),
-                                newGameButtonPosX,
-                                newGameButtonPosY,
-                                0,
-                                MOUSE_CLICK,
-                                DRAW,
-                                1,
-                                maxigin_initTranslationKey( "newGameTip" ) );
-    
-
     logoSprite = maxigin_initSprite( "logo.tga" );
     logoSubSprite = maxigin_initSprite( "logoSub.tga" );
 
@@ -4088,6 +4125,7 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( spinning );
     REGISTER_VAL_MEM( spinButtonHover );
+    REGISTER_VAL_MEM( spinSeenUnpressed );
 
     REGISTER_VAL_MEM( statesTested );
 

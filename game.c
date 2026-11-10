@@ -372,14 +372,15 @@ static char isSpinPressedDown( void ) {
 
 
 
-    void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
+void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
     
-    int   numPixels        =  MAXIGIN_GAME_NATIVE_W * MAXIGIN_GAME_NATIVE_H;
+    int   numPixels           =  MAXIGIN_GAME_NATIVE_W * MAXIGIN_GAME_NATIVE_H;
     int   p;
     int   i;
-    int   infoPanelX       =  MAXIGIN_GAME_NATIVE_W - 38;
-    int   infoPanelY       =  boardCenterY - 20;
-    char  blockTipDisplay  =  0;
+    int   infoPanelX          =  MAXIGIN_GAME_NATIVE_W - 38;
+    int   infoPanelY          =  boardCenterY - 20;
+    char  blockTipDisplay     =  0;
+    char  spinUnpressedDrawn  =  0;
     
     /* step colors here, instead of in step function,
        so that changes to color map are noticed even during playback */
@@ -711,38 +712,21 @@ static char isSpinPressedDown( void ) {
         &&
         ! chessGameOver ) {
         
-        maxigin_drawSprite( spinFrameSprite,
-                            spinButtonX,
-                            spinButtonY );
+        
 
         if( ! spinning
             ||
             spinningPaused ) {
-            maxigin_drawSprite( spinUnpressedSprite,
-                                spinButtonX,
-                                spinButtonY );
-
-            if( spinButtonHover ) {
-                /* draw brighter */
-                maxigin_drawToggleAdditive( 1 );
-
-                maxigin_drawSetAlpha( 92 );
-                maxigin_drawSprite( spinUnpressedSprite,
-                                    spinButtonX,
-                                    spinButtonY );
             
+            spinUnpressedDrawn = 1;
             
-                maxigin_drawResetColor();
-            
-                maxigin_drawToggleAdditive( 0 );
-                }
-            
-
-            maxigin_drawButtonHintSprite( SPIN,
-                                          spinButtonX - 30,
-                                          spinButtonY + 10 );                
             }
         else {
+            
+            maxigin_drawSprite( spinFrameSprite,
+                            spinButtonX,
+                                spinButtonY );
+            
             maxigin_drawSprite( spinPressedSprite,
                                 spinButtonX,
                                 spinButtonY );
@@ -751,14 +735,8 @@ static char isSpinPressedDown( void ) {
     else if( isNewGameWaiting() ) {
 
         /* spin button used to launch new game */
-
-        maxigin_drawSprite( spinFrameSprite,
-                            spinButtonX,
-                            spinButtonY );
-
-        maxigin_drawSprite( spinUnpressedSprite,
-                            spinButtonX,
-                            spinButtonY );
+        
+        spinUnpressedDrawn = 1;
         }
     else {
         /* draw disabled spin button */
@@ -771,12 +749,43 @@ static char isSpinPressedDown( void ) {
                               255 );
 
         maxigin_drawSprite( spinFrameSprite,
-                        spinButtonX,
+                            spinButtonX,
                             spinButtonY );
         
         maxigin_drawBaseSprite( spinPressedSprite,
                                 spinButtonX,
                                 spinButtonY );
+        }
+
+    if( spinUnpressedDrawn ) {
+
+        maxigin_drawSprite( spinFrameSprite,
+                            spinButtonX,
+                            spinButtonY );
+
+        maxigin_drawSprite( spinUnpressedSprite,
+                                spinButtonX,
+                                spinButtonY );
+
+
+
+        maxigin_drawButtonHintSprite( SPIN,
+                                      spinButtonX - 30,
+                                      spinButtonY + 10 );      
+        if( spinButtonHover ) {
+            /* draw brighter */
+            maxigin_drawToggleAdditive( 1 );
+
+            maxigin_drawSetAlpha( 92 );
+            maxigin_drawSprite( spinUnpressedSprite,
+                                spinButtonX,
+                                spinButtonY );
+
+
+            maxigin_drawResetColor();
+
+            maxigin_drawToggleAdditive( 0 );
+            }
         }
     
         
@@ -1762,7 +1771,7 @@ void maxiginGame_step( char  inFinalStep  ) {
             spinButtonHover = 0;
             }
         }
-    else {
+    else if( ! gameOver ) {
         spinButtonHover = 0;
         }
         
@@ -3027,15 +3036,27 @@ void maxiginGame_step( char  inFinalStep  ) {
             redrawAddRunning = 0;
             }
         else {
+
+            char  oldHover  =  spinButtonHover;
+
             spinSeenUnpressed = 1;
 
             if( maxigin_isPointerInsideSprite( spinUnpressedSprite,
                                                spinButtonX,
                                                spinButtonY ) ) {
+                spinButtonHover = 1;
+
+                if( ! oldHover ) {
+                    maxigin_playSoundEffect( examinePieceSound,
+                                             256 );
+                    }
+                
                 logoGlintSpeed = 2;
                 }
             else {
                 logoGlintSpeed = 1;
+
+                spinButtonHover = 0;
                 }
             }
         }

@@ -677,6 +677,8 @@ void maxiginGame_getNativePixels( unsigned char *inRGBBuffer ) {
           ||
           spinning )
         &&
+        ! redrawAddRunning
+        &&
         ! deckViewShowing
         &&
         ! shopShowing
@@ -1691,7 +1693,9 @@ void maxiginGame_step( char  inFinalStep  ) {
         &&
         ! chessGameOver
         &&
-        ! gameOver ) {
+        ! gameOver
+        &&
+        ! redrawAddRunning ) {
         
         if( maxigin_isButtonDown( SPIN ) ) {
             spinPressed = 1;

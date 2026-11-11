@@ -85,8 +85,9 @@ static  unsigned char  unlockExtraGlowFade[ NUM_UNLOCKS ];
 static  int            unlockAtLevel      [ NUM_UNLOCKS ];
 
 static  int            unlockFrameSprite;
+static  int            unlockShadowSprite;
+static  int            unlockShadowDownSprite;
 static  int            unlockGlintSprite;
-static  int            unlockViewerSprite;
 
 static  int            unlockSound                           =  -1;
 static  int            unlockLastOver                        =  -1;
@@ -251,13 +252,13 @@ void unlocksInit( int  inViewActionHandle,
     unlockViewSound        = inViewSound;
 
     unlockFrameSprite = maxigin_initSprite( "unlockFrame.tga" );
+    unlockShadowSprite = maxigin_initSprite( "unlockFrameShadow.tga" );
+    unlockShadowDownSprite = maxigin_initSprite( "unlockFrameShadowDown.tga" );
     unlockGlintSprite = maxigin_initSprite( "unlockGlint.tga" );
 
     unlockSprites[0] = maxigin_initSprite( "unlockSideboard.tga" );
     unlockSprites[1] = maxigin_initSprite( "unlockShopSlot.tga"  );
     unlockSprites[2] = maxigin_initSprite( "unlockSale.tga"      );
-
-    unlockViewerSprite = maxigin_initSprite( "unlockViewer.tga" );
     
 
     for( i = 0;
@@ -332,9 +333,16 @@ void unlocksDraw( int  inPosX,
         if( i == unlockLastOver
             &&
             unlockExtraGlowFade[ i ] == 255 ) {
-            maxigin_drawSprite( unlockViewerSprite,
+
+            maxigin_drawSprite( unlockShadowDownSprite,
                                 x,
-                                y - 7 );
+                                y );
+            y += 1;
+            }
+        else {
+            maxigin_drawSprite( unlockShadowSprite,
+                                x,
+                                y );
             }
         
         maxigin_drawSprite( unlockFrameSprite,
@@ -542,7 +550,9 @@ void unlocksStep( int  inPosX,
 
 
     
-    if( overI != -1 ) {
+    if( overI != -1
+        &&
+        ! unlockEnabled[ overI ] ) {
 
         tipDisplaySet( lang_lockedA,
                        unlockAtLevel[ overI ],
@@ -708,7 +718,12 @@ void unlocksCancelViewer( void ) {
 char unlocksIsViewerActive( void ) {
     if( ! unlockViewerCanceled
         &&
-        unlockLastOver != -1 ) {
+        unlockLastOver != -1
+        &&
+        unlockEnabled[ unlockLastOver ] ) {
+
+        /* only count as enabled if we're over an unlocked item
+           mousing over locked items uses tip display */
         return 1;
         }
     return 0;

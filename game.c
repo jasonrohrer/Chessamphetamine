@@ -833,6 +833,12 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
             }
         }
 
+    if( ! blockTipDisplay
+        &&
+        unlocksIsViewerActive() ) {
+        blockTipDisplay = 1;
+        }
+
     if( ! blockTipDisplay ) {
         tipDisplayDraw( infoPanelX,
                         infoPanelY );

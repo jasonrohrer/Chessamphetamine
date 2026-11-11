@@ -732,6 +732,16 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
                                 spinButtonY );
             }
         }
+    else if( shopShowing
+             &&
+             ! shopDone
+             &&
+             ! deckViewShowing ) {
+
+        /* spin button used to close shop */
+        
+        spinUnpressedDrawn = 1;
+        }
     else if( isNewGameWaiting() ) {
 
         /* spin button used to launch new game */
@@ -1771,7 +1781,9 @@ void maxiginGame_step( char  inFinalStep  ) {
             spinButtonHover = 0;
             }
         }
-    else if( ! gameOver ) {
+    else if( ! gameOver
+             &&
+             ! shopShowing ) {
         spinButtonHover = 0;
         }
         
@@ -3063,6 +3075,32 @@ void maxiginGame_step( char  inFinalStep  ) {
         
     
 
+    if( shopShowing
+        &&
+        ! shopDone
+        &&
+        ! deckViewShowing ) {
+
+        char  oldHover  =  spinButtonHover;
+
+        spinSeenUnpressed = 1;
+
+        if( maxigin_isPointerInsideSprite( spinUnpressedSprite,
+                                           spinButtonX,
+                                           spinButtonY ) ) {
+            spinButtonHover = 1;
+
+            if( ! oldHover ) {
+                maxigin_playSoundEffect( examinePieceSound,
+                                         256 );
+                }
+            }
+        else {
+            spinButtonHover = 0;
+            }
+        }
+
+    
 
     unlocksStep( infoLightsX + 1,
                  unlocksY );
@@ -3283,7 +3321,20 @@ void maxiginGame_step( char  inFinalStep  ) {
                 infoPanelFade = 255;
                 }
 
-            if( isShoppingDone() ) {
+
+            if( isSpinPressedDown() ) {
+
+                if( spinSeenUnpressed ) {
+                    shopDone = 1;
+                    }
+                spinSeenUnpressed = 0;
+                }
+            else {
+                spinSeenUnpressed = 1;
+                }
+
+            
+            if( shopDone ) {
                 
                 maxigin_playSoundEffect( boardSlideSound,
                                          256 );

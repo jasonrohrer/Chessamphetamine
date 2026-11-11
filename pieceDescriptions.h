@@ -161,8 +161,9 @@ static  char  pieceWordBuffer[ MAX_NUM_WORDS ][ MAX_WORD_LEN + 1 ];
 static  int   pieceNumWords  =  0;
 
 
-#define  MAX_NUM_LINES  20
-#define  MAX_LINE_LEN   40
+#define  MAX_NUM_LINES         20
+#define  MAX_LINE_LEN          40
+#define  MAX_LINE_PIXEL_WIDTH  63
 
 
 static  char  pieceLineBuffer[ MAX_NUM_LINES ][ MAX_LINE_LEN + 1 ];
@@ -819,13 +820,13 @@ void drawDescriptionText( int            inLangTitle,
     maxigin_setLanguageFontIndex( 1 );
 
     pieceSplitLines( desc,
-                     65 );
+                     MAX_LINE_PIXEL_WIDTH );
 
     if( pieceNumLines > 0 ) {
 
         int           n;
         int           lineSpacing  =  maxigin_getLangLineSpacing();
-        int           xOffset      =  -32;
+        int           xOffset      =  -31;
         int           startOffset  =  70;
         MaxiginAlign  align        =  MAXIGIN_LEFT;
         

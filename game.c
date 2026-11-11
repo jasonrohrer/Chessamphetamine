@@ -3382,16 +3382,16 @@ void maxiginGame_step( char  inFinalStep  ) {
         }
 
     if( logoFade == 255 ) {
-        int  newVal  =  logoGlintXPos + logoGlintSpeed * 60 / r;
-        int  limHigh =  100;
-        int  limLow  =  100;
+        int  newVal   =  logoGlintXPos + logoGlintSpeed * 60 / r;
+        int  limHigh  =  boardCenterX + 40;
+        int  limLow   =  boardCenterX - 40;
 
         if( logoGlintSpeed == 2 ) {
-            limHigh = 130;
-            limLow  = 100;
+            limHigh = boardCenterX + 30;
+            limLow  = boardCenterX - 30;
             }
 
-        if( newVal >= MAXIGIN_GAME_NATIVE_W - limHigh ) {
+        if( newVal >= limHigh ) {
             newVal = limLow;
             }
         logoGlintXPos = newVal;
@@ -4275,7 +4275,7 @@ void maxiginGame_init( void ) {
     if( ! firstDraftingStarted ) {
 
         logoFade = 255;
-        logoGlintXPos = 100;
+        logoGlintXPos = boardCenterX - 40;
         logoGlintSpeed = 1;
         
         gameOver = 1;

@@ -145,18 +145,13 @@ static DrawBoardLift  redrawSmoothLift;
 
 static char           moveMade                   =  0;
 static char           chessGameOver              =  0;
-static char           checkmate                  =  0;
-static char           stalemate                  =  0;
-static char           drawGame                   =  0;
-static int            gameLoserColor             =  CHESS_WHITE;
 
 static int            noScoreMoveCount           =  0;
 static int            statesTested               =  0;
 static int            movePickTime               =  0;
 
 
-static int            endMessageSprites[ 3 ]  = { -1,
-                                                  -1,
+static int            endMessageSprites[ 2 ]  = { -1,
                                                   -1 };
 
 
@@ -908,10 +903,6 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
                         1 );
             
             drawBoardState( &testedState,
-                            checkmate,
-                            stalemate,
-                            drawGame,
-                            gameLoserColor,
                             &boardMove,
                             0,
                             0,
@@ -1192,10 +1183,6 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
 
         
         drawBoardState( &boardState,
-                        checkmate,
-                        stalemate,
-                        drawGame,
-                        gameLoserColor,
                         &boardMove,
                         0,
                         0,
@@ -2064,35 +2051,7 @@ void maxiginGame_step( char  inFinalStep  ) {
                 
                 moveMade     = 1;
                 }
-            else {
-                /* failed to make a move and not checkmated */
 
-                /* trapped condition */
-
-                stalemate     = 1;
-                chessGameOver = 1;
-
-                if( boardState.nextToMove == CHESS_BLACK ) {
-                    maxigin_playSoundEffect( checkmateGood,
-                                             512 );
-                    endMessageColor = CHESS_WHITE;
-                    gameLoserColor  = CHESS_BLACK;
-                    }
-                else {
-                    maxigin_playSoundEffect( checkmateBad,
-                                             512 );
-                    endMessageColor = CHESS_BLACK;
-                    gameLoserColor  = CHESS_WHITE;
-                    heartsLose();
-                    moneyAddBailout( currentLevel );
-                    }
-
-                /* start TRAPPED explosion */
-                endMessageIndex = 1;
-                explodingEndMessageProgress = 0;
-                endMessageFade = 255;
-                endMessagePreFadeSteps = 0;
-                }
 
             statesTested = getStateCountLastMove();
             movePickTime = maxigin_getElapsedMilliseconds( timer );
@@ -2112,6 +2071,8 @@ void maxiginGame_step( char  inFinalStep  ) {
 
         if( moveDone ) {
 
+            int  gameLoserColor;
+            
             /* after each move done, increment the move speed */
             moveAnimIncrementSpeed();
 
@@ -2139,7 +2100,6 @@ void maxiginGame_step( char  inFinalStep  ) {
                     runStatsLogString( "\nlost" );
                     }
 
-                checkmate = 1;
                 chessGameOver = 1;
 
                 /* start checkmate explosion */
@@ -2161,8 +2121,7 @@ void maxiginGame_step( char  inFinalStep  ) {
 
                 if( noScoreMoveCount > noScoreLimit ) {
                     /* overrun condition */
-
-                    drawGame      = 1;
+                    
                     chessGameOver = 1;
 
                     /* all overruns are displayed as "good" outcomes
@@ -2176,11 +2135,10 @@ void maxiginGame_step( char  inFinalStep  ) {
                     maxigin_playSoundEffect( overrunSound,
                                              512 );
                     endMessageColor = OVERRUN_COLOR_FLAG;
-                    gameLoserColor  = CHESS_BLACK;
 
 
                     /* start OVERRUN explosion */
-                    endMessageIndex = 2;
+                    endMessageIndex = 1;
                     explodingEndMessageProgress = 0;
                     endMessageFade = 255;
                     endMessagePreFadeSteps = 0;
@@ -2755,11 +2713,6 @@ void maxiginGame_step( char  inFinalStep  ) {
                 if( gameOver ) {
                     /* special case, we're going back to level 0 with a
                        fresh start */
-
-                    checkmate = 0;
-                    stalemate = 0;
-                    drawGame  = 0;
-
                     
 
                     gameOver = 0;
@@ -3342,9 +3295,6 @@ void maxiginGame_step( char  inFinalStep  ) {
                 /* go on to next level */
 
                 chessGameOver    = 0;
-                checkmate        = 0;
-                stalemate        = 0;
-                drawGame         = 0;
                 noScoreMoveCount = 0;
                 sideBoardShowing = 0;
 
@@ -3669,8 +3619,6 @@ void maxiginGame_init( void ) {
     initEndMessageSprite( 0,
                           "checkmate.tga" );
     initEndMessageSprite( 1,
-                          "trapped.tga" );
-    initEndMessageSprite( 2,
                           "overrun.tga" );
     
 
@@ -4172,11 +4120,6 @@ void maxiginGame_init( void ) {
     
     REGISTER_VAL_MEM( moveMade );
     REGISTER_VAL_MEM( moveProgress );
-
-    REGISTER_VAL_MEM( checkmate );
-    REGISTER_VAL_MEM( stalemate );
-    REGISTER_VAL_MEM( drawGame );
-    REGISTER_VAL_MEM( gameLoserColor );
 
     REGISTER_VAL_MEM( chessGameOver );
     REGISTER_VAL_MEM( endMessageColor );

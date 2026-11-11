@@ -2339,6 +2339,25 @@ int maxigin_measureLangTextString( const char  *inString );
 
 
 /*
+  Measures the vertical extend above and below center using the active language
+  and corresponding font.
+
+  Parameters:
+
+      inString       a string that can be printed in the active language's font
+
+      outAboveH      pointer to where above-center height is returned
+
+      outBelowH      pointer to where below-center height is returned
+
+  [jumpMaxiginGeneral]
+*/
+void maxigin_measureLangTextStringVertical( const char  *inString,
+                                            int         *outAboveH,
+                                            int         *outBelowH );
+
+
+/*
   Gets a ASCII (or UTF8) character string for a phrase in the current language.
 
   Parameters:
@@ -23347,26 +23366,14 @@ int maxigin_measureLangTextString( const char  *inString ) {
 
 
 
-void maxigin_measureLangTextVertical( int   inPhraseKey,
-                                      int   *outAboveH,
-                                      int   *outBelowH ) {
-
+void maxigin_measureLangTextStringVertical( const char  *inString,
+                                            int         *outAboveH,
+                                            int         *outBelowH ) {
     MaxiginLanguage  *lang;
-    const char       *langString  =  maxigin_getLangText( inPhraseKey );
     char             *nextText;
     MaxiginFont      *f;
-    int               maxUpper  =  0;
-    int               maxLower  =  0;
-    
-    if( langString[0] == '\0' ) {
-        if( ! mx_drawLangFailureShown ) {
-            maxigin_logString( "Translation string for phrase key "
-                               "not found for current language: ",
-                               mx_translationKeys[ inPhraseKey ] );
-            mx_drawLangFailureShown = 1;
-            }
-        return;
-        }
+    int               maxUpper    =  0;
+    int               maxLower    =  0;
     
     
     if( mx_currentLanguage >= mx_numLanguages ) {
@@ -23383,7 +23390,7 @@ void maxigin_measureLangTextVertical( int   inPhraseKey,
 
     f = &( mx_fonts[ lang->fontHandles[ mx_languageFontIndex ] ] );
 
-    nextText = (char*)langString;
+    nextText = (char*)inString;
     
     while( nextText[0] != '\0' ) {
 
@@ -23416,6 +23423,29 @@ void maxigin_measureLangTextVertical( int   inPhraseKey,
 
     *outAboveH = maxUpper;
     *outBelowH = maxLower;
+    }
+
+
+
+void maxigin_measureLangTextVertical( int   inPhraseKey,
+                                      int  *outAboveH,
+                                      int  *outBelowH ) {
+
+    const char  *langString  =  maxigin_getLangText( inPhraseKey );
+
+    if( langString[0] == '\0' ) {
+        if( ! mx_drawLangFailureShown ) {
+            maxigin_logString( "Translation string for phrase key "
+                               "not found for current language: ",
+                               mx_translationKeys[ inPhraseKey ] );
+            mx_drawLangFailureShown = 1;
+            }
+        return;
+        }
+
+    maxigin_measureLangTextStringVertical( langString,
+                                           outAboveH,
+                                           outBelowH );
     }
 
 

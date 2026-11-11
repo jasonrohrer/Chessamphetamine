@@ -63,8 +63,6 @@ void tipDisplayStep( void );
 #define  TD_MAX_LINE_LENGTH  20
 
 
-static  int            tdLineSpace      =  10;
-
 static  int            tdMessageKeyA    =  -1;
 static  int            tdMessageKeyB    =  -1;
 static  int            tdNumber         =  -1;
@@ -239,13 +237,32 @@ static void tdSplitLines( int  inMessageKey ) {
     }
 
 
+
+static int tdGetLineSpace( void ) {
+
+    int  aboveH;
+    int  belowH;
+
+    if( tdNumLines == 0 ) {
+        /* no lines, return default */
+        return 10;
+        }
+    
+    maxigin_measureLangTextStringVertical( tdLines[ 0 ],
+                                           &aboveH,
+                                           &belowH );
+    
+    return aboveH + belowH + 5;
+    }
+
+
+
 static void tdDrawLines( int  inCenterX,
-                         int  inBottomLineCenterY ) {
+                         int  inBottomLineCenterY,
+                         int  inLineSpace ) {
 
     int  i;
-
-
-    int  curY       =  inBottomLineCenterY - tdLineSpace * ( tdNumLines - 1 );
+    int  curY       =  inBottomLineCenterY - inLineSpace * ( tdNumLines - 1 );
     
 
     for( i = 0;
@@ -257,7 +274,7 @@ static void tdDrawLines( int  inCenterX,
                                     curY,
                                     MAXIGIN_CENTER );
         
-        curY += tdLineSpace;
+        curY += inLineSpace;
         }
 
     }
@@ -266,6 +283,10 @@ static void tdDrawLines( int  inCenterX,
 
 void tipDisplayDraw( int  inCenterX,
                      int  inCenterY ) {
+
+    int  lineSpace    =  -1;
+    int  origCenterY  =  inCenterY;
+    
     
     if( tdFade > 0 ) {
 
@@ -279,24 +300,29 @@ void tipDisplayDraw( int  inCenterX,
 
         maxigin_setLanguageFontIndex( 1 );
 
-        if( tdNumber != -1 ) {
-            inCenterY -= tdLineSpace + tdLineSpace / 2;
-            }
 
         if( tdMessageKeyA != -1 ) {
-
-
+            
             tdSplitLines( tdMessageKeyA );
 
-            tdDrawLines( inCenterX,
-                         inCenterY );
+            if( lineSpace == -1 ) {
+                lineSpace = tdGetLineSpace();
+                }
 
-            inCenterY += tdLineSpace;
+            if( tdNumber != -1 ) {
+                inCenterY -= lineSpace + lineSpace / 2;
+                }
+
+            tdDrawLines( inCenterX,
+                         inCenterY,
+                         lineSpace );
+
+            inCenterY += lineSpace;
             }
 
         if( tdNumber != -1 ) {
 
-            inCenterY += tdLineSpace / 2;
+            inCenterY = origCenterY;
             
             numbersToggleBorder( 0 );
 
@@ -306,18 +332,25 @@ void tipDisplayDraw( int  inCenterX,
                               1 );
 
             numbersToggleBorder( 1 );
-
-            inCenterY += tdLineSpace + tdLineSpace / 2;
             }
 
         if( tdMessageKeyB != -1 ) {
             
             tdSplitLines( tdMessageKeyB );
 
-            inCenterY += tdLineSpace * ( tdNumLines - 1 );
+            if( lineSpace == -1 ) {
+                lineSpace = tdGetLineSpace();
+                }
+
+            if( tdNumber != -1 ) {
+                inCenterY += lineSpace + lineSpace / 2;
+                }
+
+            inCenterY += lineSpace * ( tdNumLines - 1 );
 
             tdDrawLines( inCenterX,
-                         inCenterY );
+                         inCenterY,
+                         lineSpace );
             }
         
 

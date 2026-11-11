@@ -101,13 +101,11 @@ impossible     "Impossible"
 
 deployCost     "Déploiement:"
 
-
-nextTip         "Next Page ## of Deck"
-prevTip         "Previous Page ## of Deck"
-deckTip         "Toggle Deck View"
-drawTip         "Redraw Sideboard"
-rerollTip       "Reroll Shop"
-doneTip         "Close Shop"
+nextTip         "Page ## suivante ## du deck"
+prevTip         "Page ## précédente ## du deck"
+deckTip         "Afficher/ ## Masquer ## le deck"
+drawTip         "Retirer ## la réserve"
+rerollTip       "Relancer ## la boutique"
 
 pawn           "Pion"
 pawnDesc       "Avance de 1 ou 2 cases, capture en diagonale. Devient une dame sur la dernière rangée."

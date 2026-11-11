@@ -19,7 +19,6 @@ enum GameUserAction {
     ACTION,
     DRAW,
     DECK,
-    COMMIT,
     SHOP_LOCK,
     TOGGLE_MOVE_LOG,
     ADVANCE_MOVE_LOG,
@@ -3488,9 +3487,6 @@ static MinginButton drawMapping[]  =  { MGN_BUTTON_PS_TRIANGLE,
 static MinginButton deckMapping[]  =  { MGN_BUTTON_L1,
                                         MGN_MAP_END };
 
-static MinginButton commitMapping[]  =  { MGN_BUTTON_R1,
-                                          MGN_MAP_END };
-
 static  MinginButton   deckNextMapping[]  =  { MGN_BUTTON_XBOX_A,
                                                MGN_BUTTON_PS_X,
                                                MGN_MAP_END };
@@ -3964,11 +3960,6 @@ void maxiginGame_init( void ) {
         lang_deck  );
 
     maxigin_registerDynamicButtonMapping(
-        COMMIT,
-        commitMapping,
-        lang_commit  );
-
-    maxigin_registerDynamicButtonMapping(
         SPIN,
         spinMapping,
         lang_spin  );
@@ -4113,7 +4104,6 @@ void maxiginGame_init( void ) {
     shopInit( MOUSE_CLICK,
               ACTION,
               DRAW,
-              COMMIT,
               SHOP_LOCK,
               boardCenterX,
               boardCenterY );

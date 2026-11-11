@@ -18,7 +18,6 @@
 void shopInit( int  inPointerActionHandle,
                int  inActionHandle,
                int  inDynamicRerollButtonHandle,
-               int  inDynamicDoneButtonHandle,
                int  inDynamicShopLockButtonHandle,
                int  inCenterX,
                int  inCenterY );
@@ -49,9 +48,6 @@ void shopDraw( void );
 */
 ChessPiece shopStep( int    inPickFailedSound,
                      int    inPieceLiftSound );
-
-
-char isShoppingDone( void );
 
 
 
@@ -135,10 +131,6 @@ static  int            lang_shopInstructB                         =  -1;
 static  int            lang_sale                                  =  -1;
 static  int            lang_permanent                             =  -1;
 
-
-static  char           shoppingDone                               =   0;
-
-static  int            doneButton                                 =  -1;
 static  int            rerollButton                               =  -1;
 
 static  int            shopPointerActionHandle                    =  -1;
@@ -317,7 +309,6 @@ static void shopInternalReroll( void ) {
 void shopInit( int  inPointerActionHandle,
                int  inActionHandle,
                int  inDynamicRerollButtonHandle,
-               int  inDynamicDoneButtonHandle,
                int  inDynamicShopLockButtonHandle,
                int  inCenterX,
                int  inCenterY ) {
@@ -440,17 +431,6 @@ void shopInit( int  inPointerActionHandle,
                                inDynamicRerollButtonHandle,
                                -1,
                                maxigin_initTranslationKey( "rerollTip" ) );
-    
-    doneButton = buttonInit( maxigin_initSprite( "doneButton.tga" ),
-                             -1,
-                             maxigin_initSprite( "doneButtonPressed.tga" ),
-                             shopCenterX + 70,
-                             shopCenterY + 60,
-                             1,
-                             shopPointerActionHandle,
-                             inDynamicDoneButtonHandle,
-                             -1,
-                             maxigin_initTranslationKey( "doneTip" ) );
 
 
     shopUnlockedSprite          = maxigin_initSprite( "unlocked.tga"          );
@@ -487,8 +467,6 @@ void shopInit( int  inPointerActionHandle,
 
     REGISTER_VAL_MEM( shopSlotsLifting );
     REGISTER_VAL_MEM( shopSlotsDropping );
-
-    REGISTER_VAL_MEM( shoppingDone );
     
     REGISTER_VAL_MEM( shopNumVisibleSlots );
 
@@ -513,9 +491,7 @@ void shopReroll( void ) {
     
     shopResetHightlighFades();
     shopActionDown = 0;
-    shoppingDone   = 0;
     
-    buttonReset( doneButton );
     buttonReset( rerollButton );
     }
 
@@ -536,14 +512,11 @@ void shopReset( void ) {
 
     shopSelectedSlot = -1;
     shopActionDown   =  0;
-    shoppingDone     =  0;
 
     
     shopSlotPickedWithController = 0;
 
     costFullReset( shopRerollCost );
-
-    buttonReset( doneButton );
 
     for( i = 0;
          i < NUM_SHOP_SLOTS;
@@ -730,8 +703,6 @@ void shopDraw( void ) {
     else {
         buttonDraw( rerollButton );
         }
-    
-    buttonDraw( doneButton );
 
 
     moneyDrawCoin( shopCenterX,
@@ -783,12 +754,6 @@ ChessPiece shopStep( int  inPickFailedSound,
     int   liftPhaseDone        =  0;
     char  controllerMovedSlot  =  0;
     
-    
-    if( buttonIsNewPressed( doneButton ) ) {
-        unlocksCancelViewer();
-        shoppingDone = 1;
-        return noPiece;
-        }
 
     if( ! shopAllLocked
         &&
@@ -1127,11 +1092,6 @@ ChessPiece shopStep( int  inPickFailedSound,
     return shopItems[ shopSelectedSlot ];
     }
 
-
-
-char isShoppingDone( void ) {
-    return shoppingDone;
-    }
 
 
 

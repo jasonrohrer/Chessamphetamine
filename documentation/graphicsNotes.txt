@@ -21,3 +21,19 @@ To make glows for lasers:
     and then save that as the sprite (to make sure centering on sprite and
 	glow are identical... there may be some extra pixels on one end of the
 	sprite).
+
+
+
+Screen edge glow made the following way:
+
+1. Cut out region up to and including purple edge line.
+
+2. 1-pixel dark blue border inside dark purple edge line, black in center past
+   that border.
+
+3. Fill purple line and outside corners with solid dark blue.
+
+4. in Aseprite, apply FX convolution with 17x17 blur.
+
+5. Use original screen image to trim away edge so that original purple
+   line visible.

@@ -20,6 +20,7 @@ void tipDisplayInit( void );
 
 /* message keys can be -1 to skip
    number will be skipped if it is -1
+   number will be replaced by ? if it is -2
 
    Should be set every step to renew it, even if mouse is over
    the same thing.
@@ -326,10 +327,21 @@ void tipDisplayDraw( int  inCenterX,
             
             numbersToggleBorder( 0 );
 
-            numberDrawCenter( tdNumber,
-                              inCenterX,
-                              inCenterY,
-                              1 );
+            if( tdNumber == -2 ) {
+                /* replace with ? */
+
+                numberDrawText( "?",
+                                inCenterX,
+                                inCenterY,
+                                1,
+                                MAXIGIN_CENTER );
+                }
+            else {
+                numberDrawCenter( tdNumber,
+                                  inCenterX,
+                                  inCenterY,
+                                  1 );
+                }
 
             numbersToggleBorder( 1 );
             }

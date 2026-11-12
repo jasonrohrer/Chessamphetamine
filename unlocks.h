@@ -554,8 +554,19 @@ void unlocksStep( int  inPosX,
         &&
         ! unlockEnabled[ overI ] ) {
 
+        int  level  =  unlockAtLevel[ overI ];
+
+        if( overI > 0
+            &&
+            ! unlockEnabled[ overI - 1 ] ) {
+            /* we're mousing over beyond the next-to-unlock thing.
+               show ? */
+            level = -2;
+            }
+
+
         tipDisplaySet( lang_lockedA,
-                       unlockAtLevel[ overI ],
+                       level,
                        lang_lockedB,
                        1,
                        0 );

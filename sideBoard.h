@@ -698,8 +698,8 @@ void sideBoardDraw( char  inBlank ) {
 
         if( sbRedrawShowing ) {
             maxigin_drawSprite( sbSlotRedrawSprite,
-                                    sbSlotPosX[i],
-                                    sbSlotPosY[i] );
+                                sbSlotPosX[i],
+                                sbSlotPosY[i] );
             }
         
         

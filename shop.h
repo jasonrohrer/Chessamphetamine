@@ -436,10 +436,17 @@ void shopInit( int  inPointerActionHandle,
 
     shopUnlockedSprite          = maxigin_initSprite( "unlocked.tga"          );
     shopUnlockedClickMaskSprite = maxigin_initSprite( "unlockedClickMask.tga" );
-    
 
+    maxigin_initMakeGlowSprite( shopUnlockedSprite,
+                                4,
+                                2 );
+    
     shopLockedSprite = maxigin_initSprite( "locked.tga" );
 
+    maxigin_initMakeGlowSprite( shopLockedSprite,
+                                4,
+                                2 );
+    
     /* hazy, faded black shadow  top-to-bottom */
     maxigin_initMakeDropShadowSprite(
         shopLockedSprite,

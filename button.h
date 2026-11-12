@@ -32,6 +32,11 @@ void buttonGlobalInit( int  inButtonHoveSound );
                           or -1
 
    inHintPos              0 for center, -1 for left, 1 for right
+                          (Can also use -2 or 2, etc., to push farther
+                           left or right.)
+   
+   inHintInTopLayer       1 to use maxigin_drawAddButtonHint
+                          0 to use maxigin_drawButtonHintSprite directly
 */
 int buttonInit( int   inBaseSprite,
                 int   inHoverSprite,
@@ -42,7 +47,10 @@ int buttonInit( int   inBaseSprite,
                 int   inPointerActionHandle,
                 int   inActionHandle,
                 char  inHintPos,
-                int   inTipKey );
+                int   inTipKey,
+                char  inHintInTopLayer );
+
+
 
 
 void buttonDraw( int  inButtonHandle );
@@ -106,6 +114,8 @@ typedef struct Button {
         char  hintPos;
 
         int   tipKey;
+
+        char  hintInTopLayer;
         
     } Button;
 
@@ -135,7 +145,8 @@ int buttonInit( int   inBaseSprite,
                 int   inPointerActionHandle,
                 int   inActionHandle,
                 char  inHintPos,
-                int   inTipKey ) {
+                int   inTipKey,
+                char  inHintInTopLayer ) {
 
     Button  *b;
     int      newHandle;
@@ -160,9 +171,10 @@ int buttonInit( int   inBaseSprite,
     b->actionHandle        = inActionHandle;
     b->hintPos             = inHintPos;
     b->tipKey              = inTipKey;
-
-    b->pressed = 0;
-    b->hover = 0;
+    b->hintInTopLayer      = inHintInTopLayer;
+    
+    b->pressed      = 0;
+    b->hover        = 0;
     b->sawUnpressed = 0;
 
     REGISTER_VAL_MEM( b->pressed );
@@ -264,13 +276,21 @@ void buttonDraw( int  inButtonHandle ) {
 
             if( b->hintPos == 0 ) {
                 /* move center hint down a bit */
-                yOffset = 6;
+                yOffset = 7;
                 }
-            
-            maxigin_drawButtonHintSprite(
-                b->actionHandle,
-                b->centerX + b->hintPos * ( 4 + spriteW / 2 ),
-                b->centerY + spriteH / 2 - 7 + yOffset );
+
+            if( b->hintInTopLayer ) {
+                maxigin_drawAddButtonHint(
+                    b->actionHandle,
+                    b->centerX + b->hintPos * ( spriteW / 2  - 3 ),
+                    b->centerY + spriteH / 2 - 9 + yOffset );
+                }
+            else {
+                maxigin_drawButtonHintSprite(
+                    b->actionHandle,
+                    b->centerX + b->hintPos * ( spriteW / 2  - 3 ),
+                    b->centerY + spriteH / 2 - 9 + yOffset );
+                }
             }
         }
     }

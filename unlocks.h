@@ -319,9 +319,9 @@ void unlocksDraw( int  inPosX,
 
     maxigin_drawResetColor();
 
-    maxigin_drawButtonHintSprite( unlockViewActionHandle,
-                                  inPosX + unlockPosX[ 0 ] - 10,
-                                  inPosY + unlockPosY[ 0 ] );
+    maxigin_drawAddButtonHint( unlockViewActionHandle,
+                               inPosX + unlockPosX[ 0 ] - 10,
+                               inPosY + unlockPosY[ 0 ] );
     
     for( i = 0;
          i < NUM_UNLOCKS;

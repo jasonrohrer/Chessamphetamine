@@ -377,7 +377,7 @@
 /*
   How big is the stack of drawing clipping rectangles?
 
-  To make room for 20 clipping rectangels, do this:
+  To make room for 20 clipping rectangles, do this:
 
       #define  MAXIGIN_MAX_NUM_CLIPPING_RECTANGLES  20 
 
@@ -388,6 +388,20 @@
 #endif
 
 
+
+/*
+  How many button hints can be added before a final call to
+  maxigin_drawAllAddedButtonHints() to draw them?
+
+  To make room for 20 added hints, do this:
+
+      #define  MAXIGIN_MAX_NUM_ADDED_HINTS  20 
+
+  [jumpSettings]
+*/
+#ifndef  MAXIGIN_MAX_NUM_ADDED_HINTS
+#define  MAXIGIN_MAX_NUM_ADDED_HINTS  30
+#endif
 
 
 
@@ -2124,11 +2138,11 @@ void maxigin_drawGUI( MaxiginGUI *inGUI );
 /*
   Draws the hint sprite associated with a given registered button mapping.
 
-  Some of these hints are compound sprite + text renderings for single-character
-  keyboard keys, and others are text labels (for keys like "Space").  For
-  the text-based rendering to work, at least one language needs to be defined
-  in the bulk data resource "language.txt".  If multiple languages are used,
-  then the first one is used.
+  Some of these hints are compound sprite + text renderings for single-
+  character keyboard keys, and others are text labels (for keys like "Space").
+  For the text-based rendering to work, at least one language needs to be
+  defined in the bulk data resource "language.txt".  If multiple languages
+  are used, then the first one is used.
 
   Parameters:
 
@@ -2144,6 +2158,40 @@ void maxigin_drawGUI( MaxiginGUI *inGUI );
 void maxigin_drawButtonHintSprite( int  inButtonHandle,
                                    int  inCenterX,
                                    int  inCenterY );
+
+
+
+/*
+  Adds a button hint to a list of hints to be drawn later with
+  maxigin_drawAllAddedButtonHints()
+  
+  This call draws nothing by itself.
+
+  This is a convenience function that allows all hints to be drawn last,
+  on top of everything else.
+
+  Parameters:
+
+      inButtonHandle   the game-defined button action to draw a sprite for
+      
+      inCenterX        the x position in the game's native pixel buffer of the
+                       sprite's center
+ 
+      inCenterY        the y position in the game's native pixel buffer of the
+                       sprite's center
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawAddButtonHint( int  inButtonHandle,
+                                int  inCenterX,
+                                int  inCenterY );
+
+
+
+/*
+  Draws all hint that were previously added with maxigin_drawAddButtonHint,
+  and clears the list of hints.
+*/
+void maxigin_drawAllAddedButtonHints( void );
 
 
 
@@ -21138,6 +21186,8 @@ void maxigin_drawButtonHintSprite( int  inButtonHandle,
     int          spriteHandle;
     const char  *labelString;
     int          fontHandle;
+
+    maxigin_drawResetColor();
     
     /* push out beyond maxigin internal button mappings */
     inButtonHandle += LAST_MAXIGIN_USER_ACTION;
@@ -21165,6 +21215,52 @@ void maxigin_drawButtonHintSprite( int  inButtonHandle,
                           inCenterY,
                           MAXIGIN_CENTER );
         }
+    }
+
+
+
+typedef struct MaxiginAddedHint {
+        int  buttonHandle;
+        int  x;
+        int  y;
+    } MaxiginAddedHint;
+
+
+
+static  MaxiginAddedHint  mxAddedHints[ MAXIGIN_MAX_NUM_ADDED_HINTS ];
+
+static  int               mxNumAddedHints  =  0;
+
+
+
+void maxigin_drawAddButtonHint( int  inButtonHandle,
+                                int  inCenterX,
+                                int  inCenterY ) {
+    if( mxNumAddedHints == MAXIGIN_MAX_NUM_ADDED_HINTS ) {
+        return;
+        }
+
+    mxAddedHints[ mxNumAddedHints ].buttonHandle = inButtonHandle;
+    mxAddedHints[ mxNumAddedHints ].x            = inCenterX;
+    mxAddedHints[ mxNumAddedHints ].y            = inCenterY;
+
+    mxNumAddedHints ++;
+    }
+
+
+
+void maxigin_drawAllAddedButtonHints( void ) {
+
+    int  i;
+
+    for( i = 0;
+         i < mxNumAddedHints;
+         i   ++ ) {
+        maxigin_drawButtonHintSprite( mxAddedHints[ i ].buttonHandle,
+                                      mxAddedHints[ i ].x,
+                                      mxAddedHints[ i ].y );
+        }
+    mxNumAddedHints = 0;
     }
 
 

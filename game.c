@@ -773,9 +773,9 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
 
 
 
-        maxigin_drawButtonHintSprite( SPIN,
-                                      spinButtonX - 25,
-                                      spinButtonY + 5 );      
+        maxigin_drawAddButtonHint( SPIN,
+                                   spinButtonX - 25,
+                                   spinButtonY + 5 );      
         if( spinButtonHover ) {
             /* draw brighter */
             maxigin_drawToggleAdditive( 1 );
@@ -1470,7 +1470,7 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
                                       &cX,
                                       &cY );
                 
-                maxigin_drawButtonHintSprite(
+                maxigin_drawAddButtonHint(
                     ACTION,
                     cX + 10,
                     cY );
@@ -1492,6 +1492,8 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
                            boardCenterX + 160,
                            boardCenterY - 80 );
         }
+
+    maxigin_drawAllAddedButtonHints();
     
     pinchApply( inRGBBuffer );
     }
@@ -3668,7 +3670,8 @@ void maxiginGame_init( void ) {
                              MOUSE_CLICK,
                              DRAW,
                              1,
-                             maxigin_initTranslationKey( "drawTip" ) );
+                             maxigin_initTranslationKey( "drawTip" ),
+                             1 );
 
     deckButton = buttonInit( maxigin_initSprite( "deckButton.tga" ),
                              -1,
@@ -3679,7 +3682,8 @@ void maxiginGame_init( void ) {
                              MOUSE_CLICK,
                              DECK,
                              0,
-                             maxigin_initTranslationKey( "deckTip" ) );
+                             maxigin_initTranslationKey( "deckTip" ),
+                             1 );
     
 
     logoSprite = maxigin_initSprite( "logo.tga" );

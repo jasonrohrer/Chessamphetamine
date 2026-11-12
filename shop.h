@@ -429,8 +429,9 @@ void shopInit( int  inPointerActionHandle,
                                1,
                                shopPointerActionHandle,
                                inDynamicRerollButtonHandle,
-                               -1,
-                               maxigin_initTranslationKey( "rerollTip" ) );
+                               2,
+                               maxigin_initTranslationKey( "rerollTip" ),
+                               0 );
 
 
     shopUnlockedSprite          = maxigin_initSprite( "unlocked.tga"          );
@@ -688,7 +689,7 @@ void shopDraw( void ) {
                     pieceXBase - 5,
                     pieceYLifted );
 
-                 maxigin_drawButtonHintSprite(
+                maxigin_drawButtonHintSprite(
                     shopLockActionHandle,
                     pieceXBase + 9,
                     pieceYBase + shopUnlockedYOffset );

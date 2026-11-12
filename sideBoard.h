@@ -759,10 +759,10 @@ void sideBoardDraw( char  inBlank ) {
                 &&
                 sbOverSlot == i ) {
                 
-                maxigin_drawButtonHintSprite(
+                maxigin_drawAddButtonHint(
                     sbActionHandle,
                     sbSlotPosX[i] - 10,
-                    sbSlotPosY[i] );
+                    sbSlotPosY[ i ] );
                 }
             }
 

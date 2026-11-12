@@ -142,8 +142,6 @@ static  int            sbPickedIndex          =   -1;
 static  char           sbLifting              =    0;
 static  char           sbDropping             =    0;
 
-static  int            sbSlotSprite           =   -1;
-static  int            sbSlotPickedSprite     =   -1;
 static  int            sbSlotRedrawSprite     =   -1;
 static  int            sbScreenSprite         =   -1;
 static  int            sbPriceSprite          =   -1;
@@ -232,16 +230,10 @@ void sideBoardInit( int  inPointerActionHandle,
     int  yPos  =  inBottomSlotY;
 
     sbCenterX = inCenterX;
-
-    sbSlotSprite       = maxigin_initSprite( "sideBoardSlot.tga"       );
-    sbSlotPickedSprite = maxigin_initSprite( "sideBoardSlotPicked.tga" );
+    
     sbSlotRedrawSprite = maxigin_initSprite( "sideBoardSlotRedraw.tga" );
     sbScreenSprite     = maxigin_initSprite( "sideBoardScreen.tga"     );
     sbPriceSprite      = maxigin_initSprite( "deployPriceTag.tga"      );
-    
-    maxigin_initMakeGlowSprite( sbSlotPickedSprite,
-                                4,
-                                2 );
 
     maxigin_initMakeGlowSprite( sbSlotRedrawSprite,
                                 4,
@@ -709,22 +701,7 @@ void sideBoardDraw( char  inBlank ) {
                                     sbSlotPosX[i],
                                     sbSlotPosY[i] );
             }
-        else {
-
-            /* no longer draw special highlight of picked slot */
-            if( 0
-                &&
-                sbPickedIndex == i ) {
-                maxigin_drawSprite( sbSlotPickedSprite,
-                                    sbSlotPosX[i],
-                                    sbSlotPosY[i] );
-                }
-            else {
-                if(0)maxigin_drawSprite( sbSlotSprite,
-                                    sbSlotPosX[i],
-                                    sbSlotPosY[i] );
-                }
-            }
+        
         
         if( sideBoard[i] != noPiece ) {
             

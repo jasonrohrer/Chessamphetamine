@@ -48,10 +48,16 @@ void screenEndDraw( void );
 #define SCREEN_IMPLEMENTATION_INCLUDED
 
 
-static  int   screenTopEdgeSprite     =  -1;
-static  int   screenBottomEdgeSprite  =  -1;
-static  int   screenLeftEdgeSprite    =  -1;
-static  int   screenRightEdgeSprite   =  -1;
+static  int  screenTopEdgeSprite     =  -1;
+static  int  screenBottomEdgeSprite  =  -1;
+static  int  screenLeftEdgeSprite    =  -1;
+static  int  screenRightEdgeSprite   =  -1;
+
+static  int  screenGlowTopSprite     =  -1;
+static  int  screenGlowBottomSprite  =  -1;
+static  int  screenGlowLeftSprite    =  -1;
+static  int  screenGlowRightSprite   =  -1;
+
 
 static  int   screenCenterX;
 static  int   screenCenterY;
@@ -69,6 +75,11 @@ void screenInit( int  inScreenCenterX,
     screenLeftEdgeSprite   = maxigin_initSprite( "screenEdgeLeft.tga" );
     screenRightEdgeSprite  = maxigin_initSprite( "screenEdgeRight.tga" );
 
+    screenGlowTopSprite       = maxigin_initSprite( "screenGlowTop.tga" );
+    screenGlowBottomSprite    = maxigin_initSprite( "screenGlowBottom.tga" );
+    screenGlowLeftSprite      = maxigin_initSprite( "screenGlowLeft.tga" );
+    screenGlowRightSprite     = maxigin_initSprite( "screenGlowRight.tga" );
+    
     screenCenterX = inScreenCenterX;
     screenCenterY = inScreenCenterY;
 
@@ -79,9 +90,9 @@ void screenInit( int  inScreenCenterX,
 
 void screenStartDraw( char  inForceClip ) {
 
-    maxigin_drawSetColor( 34,
-                          42,
-                          92,
+    maxigin_drawSetColor( 0,
+                          0,
+                          0,
                           255 );
     
     maxigin_drawFillRect( screenCenterX - 101,
@@ -92,6 +103,24 @@ void screenStartDraw( char  inForceClip ) {
     /* draw bottom, left, and right edges now so taht
        glows and particles can go over top of those frame pieces */
     maxigin_drawResetColor();
+
+    maxigin_drawSprite( screenGlowTopSprite,
+                        screenCenterX,
+                        screenCenterY - 105 );
+    
+    maxigin_drawSprite( screenGlowBottomSprite,
+                        screenCenterX,
+                        screenCenterY + 109 );
+    
+    maxigin_drawSprite( screenGlowLeftSprite,
+                        screenCenterX - 97,
+                        screenCenterY + 2 );
+    
+    maxigin_drawSprite( screenGlowRightSprite,
+                        screenCenterX + 96,
+                        screenCenterY + 2 );
+    
+    
     maxigin_drawSprite( screenBottomEdgeSprite,
                         screenCenterX,
                         screenCenterY + 116 );

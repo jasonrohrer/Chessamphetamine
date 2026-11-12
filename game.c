@@ -774,8 +774,8 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
 
 
         maxigin_drawButtonHintSprite( SPIN,
-                                      spinButtonX - 30,
-                                      spinButtonY + 10 );      
+                                      spinButtonX - 25,
+                                      spinButtonY + 5 );      
         if( spinButtonHover ) {
             /* draw brighter */
             maxigin_drawToggleAdditive( 1 );

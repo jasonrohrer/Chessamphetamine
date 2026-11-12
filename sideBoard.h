@@ -131,32 +131,31 @@ static  int            sbSlotPosX     [ SIDE_BOARD_MAX_SLOTS ];
 static  int            sbSlotPosY     [ SIDE_BOARD_MAX_SLOTS ];
 
 static  int            sbCenterX;
-static  int            sbBaseNumSlots         =  2;
-static  int            sbNumSlots             =  2;
+static  int            sbBaseNumSlots         =    2;
+static  int            sbNumSlots             =    2;
 static  int            sbMaxLift              =  100;
 
+static  int            sbPointerActionHandle  =   -1;
+static  int            sbActionHandle         =   -1;
 
-static  int            sbPointerActionHandle  =  -1;
-static  int            sbActionHandle         =  -1;
+static  int            sbPickedIndex          =   -1;
+static  char           sbLifting              =    0;
+static  char           sbDropping             =    0;
 
-static  int            sbPickedIndex          =  -1;
-static  char           sbLifting              =   0;
-static  char           sbDropping             =   0;
+static  int            sbSlotSprite           =   -1;
+static  int            sbSlotPickedSprite     =   -1;
+static  int            sbSlotRedrawSprite     =   -1;
+static  int            sbScreenSprite         =   -1;
+static  int            sbPriceSprite          =   -1;
+static  char           sbActionDown           =    0;
+static  char           sbRedrawShowing        =    0;
+static  char           sbHoldingController    =    0;
+static  int            sbOverSlot             =   -1;
+static  int            sbPrevSlot             =    0;
 
-static  int            sbSlotSprite           =  -1;
-static  int            sbSlotPickedSprite     =  -1;
-static  int            sbSlotRedrawSprite     =  -1;
-static  int            sbScreenSprite         =  -1;
-
-static  char           sbActionDown           =   0;
-static  char           sbRedrawShowing        =   0;
-static  char           sbHoldingController    =   0;
-static  int            sbOverSlot             =  -1;
-static  int            sbPrevSlot             =   0;
-
-static  int            sbPlacePieceCost       =  -1;
-static  int            sbNumPlaced            =   0;
-static  char           sbPurchaseBlocked      =   0;
+static  int            sbPlacePieceCost       =   -1;
+static  int            sbNumPlaced            =    0;
+static  char           sbPurchaseBlocked      =    0;
 
 
 /* for definition of PIECE_DEPLOYMENT_COST_LIST */
@@ -238,12 +237,17 @@ void sideBoardInit( int  inPointerActionHandle,
     sbSlotPickedSprite = maxigin_initSprite( "sideBoardSlotPicked.tga" );
     sbSlotRedrawSprite = maxigin_initSprite( "sideBoardSlotRedraw.tga" );
     sbScreenSprite     = maxigin_initSprite( "sideBoardScreen.tga"     );
-
+    sbPriceSprite      = maxigin_initSprite( "deployPriceTag.tga"      );
+    
     maxigin_initMakeGlowSprite( sbSlotPickedSprite,
                                 4,
                                 2 );
 
     maxigin_initMakeGlowSprite( sbSlotRedrawSprite,
+                                4,
+                                2 );
+
+    maxigin_initMakeGlowSprite( sbPriceSprite,
                                 4,
                                 2 );
     
@@ -739,18 +743,27 @@ void sideBoardDraw( char  inBlank ) {
                     int  deployCost =
                         sideBoardGetExtraDeploymentCost( sideBoard[i] );
 
-                    moneyDrawCoin( sbSlotPosX[i] + 16,
-                                   sbSlotPosY[i] - 8,
+                    moneyDrawCoin( sbSlotPosX[i] + 8,
+                                   sbSlotPosY[i] - 4,
                                    sbHighlightFade[i] / 4 );
+
+                    maxigin_drawResetColor();
+
+                    maxigin_drawSetAlpha(
+                        (unsigned char)( 4 * sbHighlightFade[ i ] / 5 ) );
+
+                    maxigin_drawSprite( sbPriceSprite,
+                                        sbSlotPosX[i] + 7,
+                                        sbSlotPosY[ i ] + 4 );
                     
                     colorsApplyMoneyColor();
                     
                     maxigin_drawSetAlpha( sbHighlightFade[i] );
 
                     numberDrawCenter( deployCost,
-                                      sbSlotPosX[i] + 16,
-                                      sbSlotPosY[i],
-                                      1 );
+                                      sbSlotPosX[i] + 9,
+                                      sbSlotPosY[i] + 4,
+                                      0 );
                     }
 
                 }
@@ -761,7 +774,7 @@ void sideBoardDraw( char  inBlank ) {
                 
                 maxigin_drawAddButtonHint(
                     sbActionHandle,
-                    sbSlotPosX[i] - 10,
+                    sbSlotPosX[i] - 12,
                     sbSlotPosY[ i ] );
                 }
             }

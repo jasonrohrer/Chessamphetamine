@@ -89,13 +89,22 @@ static  int            unlockShadowSprite;
 static  int            unlockShadowDownSprite;
 static  int            unlockGlintSprite;
 
-static  int            unlockSound                           =  -1;
-static  int            unlockLastOver                        =  -1;
+static  int            winFrameSprite;
+static  int            winShadowSprite;
+static  int            winShadowDownSprite;
+static  int            winGlintSprite;
+static  int            winShineSprite;
+
+static  int            winPosX;
+static  int            winPosY;
+
+static  int            unlockSound              =  -1;
+static  int            unlockLastOver           =  -1;
 static  int            unlockViewActionHandle;
 static  int            unlockViewSound;
 
-static  char           unlockViewDown                        =   0;
-static  char           unlockViewerCanceled                  =   0;
+static  char           unlockViewDown           =   0;
+static  char           unlockViewerCanceled     =   0;
 
 
 static  int            unlockExploding                       =  -1;
@@ -295,6 +304,18 @@ void unlocksInit( int  inViewActionHandle,
     unlockAtLevel[ 4 ] = 48;
     unlockAtLevel[ 5 ] = 56;
 
+    winFrameSprite      = maxigin_initSprite( "winFrame.tga" );
+    winShadowSprite     = maxigin_initSprite( "winFrameShadow.tga" );
+    winShadowDownSprite = maxigin_initSprite( "winFrameShadowDown.tga" );
+    winGlintSprite      = maxigin_initSprite( "winGlint.tga" );
+    winShineSprite      = maxigin_initSprite( "winShine.tga" );
+
+    maxigin_initMakeGlowSprite( winShineSprite,
+                                4,
+                                2 );
+    winPosX = -2;
+    winPosY = unlockPosY[ NUM_UNLOCKS - 1 ] + 15;
+
     unlockSound = maxigin_initSoundEffect( "unlock_sd_24.wav" );
 
 
@@ -321,15 +342,20 @@ void unlocksInit( int  inViewActionHandle,
     }
 
 
+/* fixme */
+static  int  winFade     =  0;
+static  int  winFadeDir  =  1;
+
 
 void unlocksDraw( int  inPosX,
                   int  inPosY ) {
 
     int  i;
     int  j;
-    int  glowRep  =  3;
+    int  glowRep        =  3;
     int  x;
     int  y;
+    int  winGlintFade;
 
     maxigin_drawResetColor();
 
@@ -446,6 +472,49 @@ void unlocksDraw( int  inPosX,
                                   a );
         maxigin_drawToggleAdditive( 0 );
         }
+
+
+    x = winPosX + inPosX;
+    y = winPosY + inPosY;
+    
+    maxigin_drawResetColor();
+
+    maxigin_drawSprite( winShadowSprite,
+                        x,
+                        y );
+    
+    maxigin_drawSprite( winFrameSprite,
+                        x,
+                        y );
+
+    maxigin_drawSetAlpha( (unsigned char)winFade );
+
+    maxigin_drawSprite( winShineSprite,
+                        x,
+                        y );
+    for( j = 0;
+         j < glowRep - 1;
+         j ++ ) {
+        maxigin_drawSpriteGlowOnly( winShineSprite,
+                                    x,
+                                    y );
+        }
+
+    winGlintFade = 255;
+
+    if( winFade > 127 ) {
+        winGlintFade = ( ( 255 - winFade ) * 255 ) / 127;
+        }
+
+    if( winGlintFade > 0 ) {
+        
+        maxigin_drawSetAlpha( (unsigned char)winGlintFade );
+        
+        maxigin_drawSprite( winGlintSprite,
+                            x,
+                            y );
+        }
+                        
     }
 
 
@@ -463,6 +532,25 @@ void unlocksStep( int  inPosX,
     int  overI      =  -1;
     int  r          =  mingin_getStepsPerSecond();
     int  deltaFade  =  ( 20 * 60 ) / r;
+
+    /* fixme */
+    if( 0 ) {
+        winFade += winFadeDir * deltaFade / 2;
+
+        if( winFadeDir == 1
+            &&
+            winFade > 255 ) {
+            winFade = 255;
+            winFadeDir = -1;
+            }
+        else if( winFadeDir == -1
+                 &&
+                 winFade < 0 ) {
+            winFade = 0;
+            winFadeDir = 1;
+            }
+        }
+    
 
     maxigin_getSpriteDimensions( unlockFrameSprite,
                                  &w,

@@ -104,8 +104,7 @@ static int            jasonBylineSprite          =  -1;
 static int            tomBylineSprite            =  -1;
 static int            smallCapsFont              =  -1;
 
-static int            lang_settings;
-static int            lang_newGame;
+
 static int            lang_quit;
 static int            lang_musicVolume;
 static int            lang_effectsVolume;
@@ -3833,8 +3832,6 @@ void maxiginGame_init( void ) {
                                           6 );
         }
     
-    lang_settings         = maxigin_initTranslationKey( "settings" );
-    lang_newGame          = maxigin_initTranslationKey( "newGame"  );
     lang_quit             = maxigin_initTranslationKey( "quit" );
     lang_musicVolume      = maxigin_initTranslationKey( "musicVolume" );
     lang_effectsVolume    = maxigin_initTranslationKey( "effectsVolume" );

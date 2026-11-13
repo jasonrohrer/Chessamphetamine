@@ -1269,34 +1269,6 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
 
     
     screenEndDraw();
-
-        
-
-
-    if( ! spinning
-        &&
-        draftingPieces
-        &&
-        ! chessGameOver
-        &&
-        ! deckViewShowing ) {
-
-        tipDisplaySet( lang_drawInstruct,
-                       -1,
-                       -1,
-                       0,
-                       0);
-        }
-
-    
-    if( isNewGameWaiting() ) {
-
-        tipDisplaySet( lang_gameOverInstruct,
-                       -1,
-                       -1,
-                       0,
-                       0 );
-        }
     
 
 
@@ -3077,6 +3049,31 @@ void maxiginGame_step( char  inFinalStep  ) {
     rarityWindowStep();
     moveDiagramWindowStep();
 
+    
+    if( ! spinning
+        &&
+        draftingPieces
+        &&
+        ! chessGameOver
+        &&
+        ! deckViewShowing ) {
+
+        tipDisplaySet( lang_drawInstruct,
+                       -1,
+                       -1,
+                       0,
+                       0);
+        }
+    
+    if( isNewGameWaiting() ) {
+
+        tipDisplaySet( lang_gameOverInstruct,
+                       -1,
+                       -1,
+                       0,
+                       0 );
+        }
+
     tipDisplayStep();
 
     if( sideBoardShowing ) {
@@ -4117,8 +4114,14 @@ void maxiginGame_init( void ) {
         
         sideBoardForceFullLift();
         }
-    
-    
+
+    /* default to showing new game instruction from very first
+       frame if there's no saved game */
+    tipDisplaySet( lang_gameOverInstruct,
+                   -1,
+                   -1,
+                   0,
+                   0 );
 
     REGISTER_VAL_MEM( boardState );
     REGISTER_VAL_MEM( postMoveCaptured );

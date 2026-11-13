@@ -292,13 +292,15 @@ static void shopInternalReroll( void ) {
 
             discount /= 100;
 
-            if( discount > 0 ) {
+            if( discount > 0
+                &&
+                discount < shopSlotPrices[ i ] ) {
                 shopSlotPrices[ i ] -= discount;
                 }
             else {
-                /* price already too low to discount, disable
-                   sale status to avoid confusion */
-                shopIsOnSale[ i ] = 0;
+                /* price already too low to discount,
+                   reduce item to free */
+                shopSlotPrices[ i ] = 0;
                 }
             }
         }

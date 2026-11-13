@@ -88,7 +88,7 @@ static int            deckButtonPosY             =  MAXIGIN_GAME_NATIVE_H / 2 - 
 static int            deckButtonPosX             =  21;
 
 static int            infoLightsX                =  50;
-static int            unlocksY                   =  42;
+static int            unlocksY                   =  55;
 
 static char           redrawRemoveRunning        =  0;
 static char           redrawAddRunning           =  0;

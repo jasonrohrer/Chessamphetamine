@@ -71,7 +71,7 @@ char unlocksAreAnyUnlocked( void );
 #define UNLOCKS_IMPLEMENTATION_INCLUDED
 
 
-#define  NUM_UNLOCKS  3
+#define  NUM_UNLOCKS  6
 
 static  char           unlockEnabled      [ NUM_UNLOCKS ];
 
@@ -245,7 +245,7 @@ void unlocksInit( int  inViewActionHandle,
 
     int  i;
 
-    int  offsetY  =  15;
+    int  offsetY  =  11;
     int  curY     =  - ( ( NUM_UNLOCKS - 1 ) * offsetY ) / 2;
 
     unlockViewActionHandle = inViewActionHandle;
@@ -256,9 +256,13 @@ void unlocksInit( int  inViewActionHandle,
     unlockShadowDownSprite = maxigin_initSprite( "unlockFrameShadowDown.tga" );
     unlockGlintSprite = maxigin_initSprite( "unlockGlint.tga" );
 
-    unlockSprites[0] = maxigin_initSprite( "unlockSideboard.tga" );
-    unlockSprites[1] = maxigin_initSprite( "unlockShopSlot.tga"  );
-    unlockSprites[2] = maxigin_initSprite( "unlockSale.tga"      );
+    unlockSprites[ 0 ] = maxigin_initSprite( "unlockSideboard.tga" );
+    unlockSprites[ 1 ] = maxigin_initSprite( "unlockShopSlot.tga"  );
+    unlockSprites[ 2 ] = maxigin_initSprite( "unlockSale.tga"      );
+    unlockSprites[ 3 ] = maxigin_initSprite( "unlockSale.tga"      );
+    unlockSprites[ 4 ] = maxigin_initSprite( "unlockSale.tga"      );
+    unlockSprites[ 5 ] = maxigin_initSprite( "unlockSale.tga"      );
+    
     
 
     for( i = 0;
@@ -268,6 +272,13 @@ void unlocksInit( int  inViewActionHandle,
                                     4,
                                     2 );
         unlockPosX[ i ] = 0;
+        if( i % 2 == 0 ) {
+            unlockPosX[ i ] = 3;
+            }
+        else {
+            unlockPosX[ i ] = -3;
+            }
+        
         unlockPosY[ i ] = curY;
 
         curY += offsetY;
@@ -278,8 +289,11 @@ void unlocksInit( int  inViewActionHandle,
         }
 
     unlockAtLevel[ 0 ] = 16;
-    unlockAtLevel[ 1 ] = 32;
-    unlockAtLevel[ 2 ] = 48;
+    unlockAtLevel[ 1 ] = 24;
+    unlockAtLevel[ 2 ] = 32;
+    unlockAtLevel[ 3 ] = 40;
+    unlockAtLevel[ 4 ] = 48;
+    unlockAtLevel[ 5 ] = 56;
 
     unlockSound = maxigin_initSoundEffect( "unlock_sd_24.wav" );
 

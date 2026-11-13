@@ -268,6 +268,12 @@ void vfdDigitDrawNumber( int  inNumber,
             anyNonZero = 1;
             }
 
+        if( digit > 9 ) {
+            /* number passed in overflows the max place we can support
+               just cap the last digit at 9 */
+            digit = 9;
+            }
+
         /* don't draw leading 0's, but always draw at least one 0
            if the number itself is 0 */
         if( i < inNumDigits - 1
@@ -288,6 +294,9 @@ void vfdDigitDrawNumber( int  inNumber,
                           inCenterY );
             }
 
+        /* if our digit was capped, this will cause remaining digits
+           to be overflowed as well...  I.e... 1234  will map to 999
+           if we only have 3 digits */
         inNumber -= digit * maxPlace;
 
         maxPlace /= 10;

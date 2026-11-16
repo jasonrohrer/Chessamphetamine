@@ -154,6 +154,8 @@ void playAddSound( void );
 
 #include "numbers.h"
 
+#include "levels.h"
+
 
 static  int  beepUp       =  -1;
 static  int  beepDown     =  -1;
@@ -530,6 +532,31 @@ static void processCaptureMoney( Captured  *inCaptured,
 
 
 
+/* only call this if we've already verified that some kind of enemy-favoring
+   capture has happened */
+static void checkForEnemyPiecePromotion( BoardState  *inState,
+                                         Move        *inMove,
+                                         BoardState  *inNewState ) {
+
+    ChessPiece startPiece = inState->grid   [ inMove->startPos[ 0 ] ]
+                                            [ inMove->startPos[ 1 ] ];
+    ChessPiece endPiece   = inNewState->grid[ inMove->endPos  [ 0 ] ]
+                                            [ inMove->endPos  [ 1 ] ];
+
+    if( startPiece != endPiece
+        &&
+        ( startPiece & CHESS_COLOR_MASK ) == CHESS_BLACK
+        &&
+        ( endPiece   & CHESS_COLOR_MASK ) == CHESS_BLACK ) {
+
+        levelSwapEnemyDeckPiece( startPiece,
+                                 endPiece );
+        }
+    }
+
+
+
+
 static  char  blockCheckDetection  =  0;
 
 
@@ -596,6 +623,10 @@ static char defaultPieceStep( BoardState    *inState,
                 else {
                     maxigin_playSoundEffect( splatterBad,
                                              512 );
+
+                    checkForEnemyPiecePromotion( inState,
+                                                 inMove,
+                                                 inNewState );
                     }
 
                 processCaptureMoney( inCaptured,
@@ -1668,6 +1699,10 @@ static char multiPhaseStep( BoardState    *inState,
             else {
                 maxigin_playSoundEffect( splatterBad,
                                          512 );
+                
+                checkForEnemyPiecePromotion( inState,
+                                             inMove,
+                                             &midState );
                 }
             
             processCaptureMoney( inCaptured,

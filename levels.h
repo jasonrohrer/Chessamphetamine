@@ -32,6 +32,9 @@ void getEnemyLevel( int          inLevelNumber,
 void getEmptyLevel( BoardState  *outState );
 
 
+void levelSwapEnemyDeckPiece( ChessPiece  inOldPiece,
+                              ChessPiece  inNewPiece );
+
 
 /* outFormation is where the formation will go.  0 for empty,
    1 for regular piece, 2 for king.
@@ -266,7 +269,10 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
     
     if( inLevelNumber == 4 ) {
         /* 8 pieces in deck at level 4,
-           including Queen */
+           including Queen.
+
+           This is the only Queen they will ever get directly.
+           (others will come through pawn promotion only */
         deckAddPiece( &enemyDeck,
                       queen );
         }
@@ -407,6 +413,18 @@ void getEmptyLevel( BoardState  *outState ) {
     outState->nextToMove = CHESS_WHITE;
     outState->moveCount = 0;
     }
+
+
+
+void levelSwapEnemyDeckPiece( ChessPiece  inOldPiece,
+                              ChessPiece  inNewPiece ) {
+    deckReplacePiece( &enemyDeck,
+                      inOldPiece & CHESS_TYPE_MASK,
+                      inNewPiece & CHESS_TYPE_MASK );
+    }
+
+    
+
 
 
 

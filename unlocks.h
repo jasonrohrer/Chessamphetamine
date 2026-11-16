@@ -106,6 +106,7 @@ static  int            winPosY;
 static  int            winAtLevel               =   64;
 
 static  char           winHasHappened           =    0;
+static  int            winSound                 =   -1;
 
 static  int            unlockSound              =   -1;
 static  int            unlockLastOver           =   -1;
@@ -331,6 +332,7 @@ void unlocksInit( int  inViewActionHandle,
     winPosY = unlockPosY[ NUM_UNLOCKS - 1 ] + 15;
 
     unlockSound = maxigin_initSoundEffect( "unlock_sd_24.wav" );
+    winSound = maxigin_initSoundEffect( "win_sd_9.wav" );
 
 
     lang_unlockDes    = maxigin_initTranslationKey( "unlockDes" );
@@ -857,7 +859,8 @@ void unlocksBeatLevel( int  inLevel ) {
         &&
         inLevel >= winAtLevel ) {
 
-        /* fixme:  need win sound */
+        maxigin_playSoundEffect( winSound,
+                                 512 );
 
         winHasHappened = 1;
         winExploding = 1;

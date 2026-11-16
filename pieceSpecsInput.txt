@@ -141,7 +141,7 @@ rarity                   contraband
 price                    0
 deploymentCost           8
 postEffectsFunction      nullPostEffects
-inEnemyDeck              1
+inEnemyDeck              0
 
 
 $king
@@ -333,7 +333,7 @@ rarity                   contraband
 price                    0
 deploymentCost           12
 postEffectsFunction      nullPostEffects
-inEnemyDeck              3
+inEnemyDeck              0
 
 
 $doublingQueen
@@ -357,7 +357,7 @@ rarity                   contraband
 price                    0
 deploymentCost           9
 postEffectsFunction      nullPostEffects
-inEnemyDeck              3
+inEnemyDeck              0
 
 
 $rublePawn

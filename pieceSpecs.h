@@ -408,7 +408,7 @@
     V( C,   2,  bishop,         1                       ) \
     V( C,   3,  knight,         1                       ) \
     V( C,   4,  rook,           1                       ) \
-    V( C,   5,  queen,          1                       ) \
+    V( C,   5,  queen,          0                       ) \
     V( C,   6,  king,           0                       ) \
     V( C,   7,  laserRook,      2                       ) \
     V( C,   8,  laserPawn,      2                       ) \
@@ -416,8 +416,8 @@
     V( C,  10,  addingRook,     2                       ) \
     V( C,  11,  rocket,         2                       ) \
     V( C,  12,  laserBishop,    2                       ) \
-    V( C,  13,  laserQueen,     3                       ) \
-    V( C,  14,  doublingQueen,  3                       ) \
+    V( C,  13,  laserQueen,     0                       ) \
+    V( C,  14,  doublingQueen,  0                       ) \
     V( C,  15,  rublePawn,      0                       ) \
     V( C,  16,  rubleQueen,     0                       ) \
 

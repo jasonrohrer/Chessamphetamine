@@ -31,6 +31,10 @@ void unlocksDraw( int  inPosX,
                   int  inPosY );
 
 
+void unlocksDrawParticles( int  inPosX,
+                           int  inPosY );
+
+
 void unlocksStep( int  inPosX,
                   int  inPosY  );
 
@@ -464,33 +468,6 @@ void unlocksDraw( int  inPosX,
         
         }
 
-    if( unlockExploding != -1 ) {
-        
-        unsigned char  a;
-        
-        i = unlockExploding;
-
-        x = unlockPosX[ i ] + inPosX;
-        y = unlockPosY[ i ] + inPosY;
-
-        a = (unsigned char)(
-            ( (long)( unlockExplodingMax - unlockExplodingProgress ) * 255 )
-            / unlockExplodingMax );
-
-        maxigin_drawToggleAdditive( 1 );
-        maxigin_drawExplodingSprite( unlockSprites[ i ],
-                                  getParticleSprite(),
-                                  x + 2,
-                                  y,
-                                  x + 2,
-                                  y - 1,
-                                  30,
-                                  unlockExplodingProgress,
-                                  unlockExplodingMax,
-                                  a );
-        maxigin_drawToggleAdditive( 0 );
-        }
-
 
     x = winPosX + inPosX;
     y = winPosY + inPosY;
@@ -544,12 +521,46 @@ void unlocksDraw( int  inPosX,
                             x,
                             y );
         }
+                        
+    }
+
+
+
+void unlocksDrawParticles( int  inPosX,
+                           int  inPosY ) {
+
+    if( unlockExploding != -1 ) {
+        
+        unsigned char  a;
+        int            i   =  unlockExploding;
+        int            x   =  unlockPosX[ i ] + inPosX;
+        int            y   =  unlockPosY[ i ] + inPosY;
+
+        a = (unsigned char)(
+            ( (long)( unlockExplodingMax - unlockExplodingProgress ) * 255 )
+            / unlockExplodingMax );
+
+        maxigin_drawToggleAdditive( 1 );
+        maxigin_drawExplodingSprite( unlockSprites[ i ],
+                                  getParticleSprite(),
+                                  x + 2,
+                                  y,
+                                  x + 2,
+                                  y - 1,
+                                  30,
+                                  unlockExplodingProgress,
+                                  unlockExplodingMax,
+                                  a );
+        maxigin_drawToggleAdditive( 0 );
+        }
 
     
     if( winExploding ) {
-        
+
         unsigned char  a;
-        
+        int            x   =  winPosX + inPosX;
+        int            y   =  winPosY + inPosY;
+
         a = (unsigned char)(
             ( (long)( unlockExplodingMax - winExplodingProgress ) * 255 )
             / unlockExplodingMax );
@@ -567,7 +578,7 @@ void unlocksDraw( int  inPosX,
                                   a );
         maxigin_drawToggleAdditive( 0 );
         }
-                        
+
     }
 
 

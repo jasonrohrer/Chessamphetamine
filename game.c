@@ -41,68 +41,69 @@ enum GameUserAction {
 
 
 
-static char           saveCorrupted              =  0;
-static int            autoQuitFrameCount         =  0;
-static int            autoQuitStepsPerSecond;
+static  char  saveCorrupted            =    0;
+static  int   autoQuitFrameCount       =    0;
+static  int   autoQuitStepsPerSecond;
 
-static char           actionHeldDown             =  0;
+static  char  actionHeldDown           =    0;
 
-static int            woodGrainSprite            =  -1;
-static int            buttonHintStrip            =  -1;
+static  int   woodGrainSprite          =   -1;
+static  int   buttonHintStrip          =   -1;
 
-static int            plunkSound                 =  -1;
-static int            thunkSound                 =  -1;
-static int            examinePieceSound          =  -1;
-static int            pickFailedSound            =  -1;
-static int            deckAllSameSound           =  -1;
-static int            redrawSound                =  -1;
+static  int   plunkSound               =   -1;
+static  int   thunkSound               =   -1;
+static  int   examinePieceSound        =   -1;
+static  int   pickFailedSound          =   -1;
+static  int   deckAllSameSound         =   -1;
+static  int   redrawSound              =   -1;
 
-static int            checkmateGood              =  -1;
-static int            checkmateBad               =  -1;
-static int            overrunSound               =  -1;
+static  int   checkmateGood            =   -1;
+static  int   checkmateBad             =   -1;
+static  int   overrunSound             =   -1;
 
-static int            boardSlideSound            =  -1;
+static  int   boardSlideSound          =   -1;
 
-static int            spinFrameSprite            =  -1;
-static int            spinUnpressedSprite        =  -1;
-static int            spinPressedSprite          =  -1;
-static int            spinButtonX                =  MAXIGIN_GAME_NATIVE_W - 38;
-static int            spinButtonY                =  MAXIGIN_GAME_NATIVE_H - 15;
-static char           spinButtonHover            =  0;
-static int            readyCountScreenSprite     =  -1;
-static int            pieceInfoScreenSprite      =  -1;
-static int            levelScreenSprite          =  -1;
-static int            moneyWindowSprite          =  -1;
-static int            drawsLeftWindowSprite      =  -1;
-static int            drawsLeftGlintSprite       =  -1;
+static  int   spinFrameSprite          =   -1;
+static  int   spinUnpressedSprite      =   -1;
+static  int   spinPressedSprite        =   -1;
+static  int   spinButtonX              =  MAXIGIN_GAME_NATIVE_W - 38;
+static  int   spinButtonY              =  MAXIGIN_GAME_NATIVE_H - 15;
+static  char  spinButtonHover          =    0;
+static  int   readyCountScreenSprite   =   -1;
+static  int   pieceInfoScreenSprite    =   -1;
+static  int   levelScreenSprite        =   -1;
+static  int   moneyWindowSprite        =   -1;
+static  int   drawsLeftWindowSprite    =   -1;
+static  int   drawsLeftGlintSprite     =   -1;
 
-static int            drawsLeft                  =  0;
-static int            baseNumDraws               =  4;
+static  int   drawsLeft                =    0;
+static  int   baseNumDraws             =    4;
 
-static int            drawButton                 =  -1;
-static int            drawButtonPosY             =  MAXIGIN_GAME_NATIVE_H - 10;
-static int            drawButtonPosX             =  21;
+static  int   drawButton               =   -1;
+static  int   drawButtonPosY           =  MAXIGIN_GAME_NATIVE_H - 10;
+static  int   drawButtonPosX           =   21;
 
-static int            deckButton                 =  -1;
-static int            deckButtonPosY             =  MAXIGIN_GAME_NATIVE_H / 2 - 25;
-static int            deckButtonPosX             =  21;
+static  int   deckButton               =   -1;
+static  int   deckButtonPosY           =  MAXIGIN_GAME_NATIVE_H / 2 - 25;
+static  int   deckButtonPosX           =   21;
 
-static int            infoLightsX                =  50;
-static int            unlocksY                   =  55;
+static  int   infoLightsX              =   50;
+static  int   unlocksX                 =   51;
+static  int   unlocksY                 =   55;
 
-static char           redrawRemoveRunning        =  0;
-static char           redrawAddRunning           =  0;
-static int            redrawProgressMax          =  100;
+static  char  redrawRemoveRunning      =    0;
+static  char  redrawAddRunning         =    0;
+static  int   redrawProgressMax        =  100;
 
-static int            logoSprite                 =  -1;
-static int            logoSubSprite              =  -1;
-static int            microdoseSprite            =  -1;
-static int            microdoseSpriteA           =  -1;
-static int            microdoseSpriteB           =  -1;
-static int            microdoseSpriteC           =  -1;
-static int            jasonBylineSprite          =  -1;
-static int            tomBylineSprite            =  -1;
-static int            smallCapsFont              =  -1;
+static  int   logoSprite               =   -1;
+static  int   logoSubSprite            =   -1;
+static  int   microdoseSprite          =   -1;
+static  int   microdoseSpriteA         =   -1;
+static  int   microdoseSpriteB         =   -1;
+static  int   microdoseSpriteC         =   -1;
+static  int   jasonBylineSprite        =   -1;
+static  int   tomBylineSprite          =   -1;
+static  int   smallCapsFont            =   -1;
 
 
 static int            lang_quit;
@@ -685,7 +686,7 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 65,
                12 );
 
-    unlocksDraw( infoLightsX + 1,
+    unlocksDraw( unlocksX,
                  unlocksY );
 
 
@@ -1276,6 +1277,8 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
                       boardCenterY );
 
 
+    unlocksDrawParticles( unlocksX,
+                          unlocksY );
 
     
 
@@ -3033,7 +3036,7 @@ void maxiginGame_step( char  inFinalStep  ) {
 
     
 
-    unlocksStep( infoLightsX + 1,
+    unlocksStep( unlocksX,
                  unlocksY );
     
     moneyStep();

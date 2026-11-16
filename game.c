@@ -4214,6 +4214,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( logoGlintSpeed );
 
     REGISTER_VAL_MEM( firstDraftingStarted );
+
+    REGISTER_VAL_MEM( levelForUnlock );
     
 
     /* trick:

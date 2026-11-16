@@ -94,28 +94,38 @@ static  int            winShadowSprite;
 static  int            winShadowDownSprite;
 static  int            winGlintSprite;
 static  int            winShineSprite;
+static  char           winOver;
+static  unsigned char  winExtraGlowFade;
 
 static  int            winPosX;
 static  int            winPosY;
+static  int            winAtLevel               =   64;
 
-static  int            unlockSound              =  -1;
-static  int            unlockLastOver           =  -1;
+static  char           winHasHappened           =    0;
+
+static  int            unlockSound              =   -1;
+static  int            unlockLastOver           =   -1;
 static  int            unlockViewActionHandle;
 static  int            unlockViewSound;
 
-static  char           unlockViewDown           =   0;
-static  char           unlockViewerCanceled     =   0;
+static  char           unlockViewDown           =    0;
+static  char           unlockViewerCanceled     =    0;
 
+static  int            unlockExploding          =   -1;
+static  int            unlockExplodingProgress  =    0;
+static  int            unlockExplodingMax       =  512;
 
-static  int            unlockExploding                       =  -1;
-static  int            unlockExplodingProgress               =   0;
-static  int            unlockExplodingMax                    = 512;
-
+static  char           winExploding             =    0;
+static  int            winExplodingProgress     =    0;
 
 static  int            lang_unlockDes;
-static  int            lang_unlocks       [ NUM_UNLOCKS ];
+static  int            lang_unlocks[ NUM_UNLOCKS ];
 static  int            lang_lockedA;
 static  int            lang_lockedB;
+
+static  int            lang_winA;
+static  int            lang_winB;
+static  int            lang_win;
 
 
 static  const char     hashMessage[]   =  "you are only cheating yourself";
@@ -326,6 +336,11 @@ void unlocksInit( int  inViewActionHandle,
 
     lang_lockedA      = maxigin_initTranslationKey( "unlockLockedA" );
     lang_lockedB      = maxigin_initTranslationKey( "unlockLockedB" );
+
+    lang_winA = maxigin_initTranslationKey( "winReqA" );
+    lang_winB = maxigin_initTranslationKey( "winReqB" );
+    lang_win  = maxigin_initTranslationKey( "win" );
+    
                 
     unlocksRead();
 
@@ -339,12 +354,16 @@ void unlocksInit( int  inViewActionHandle,
 
     REGISTER_VAL_MEM( unlockExploding );
     REGISTER_VAL_MEM( unlockExplodingProgress );
+
+    REGISTER_VAL_MEM( winOver );
+    REGISTER_VAL_MEM( winExtraGlowFade );
+
+    REGISTER_VAL_MEM( winHasHappened );
+
+    REGISTER_VAL_MEM( winExploding );
+    REGISTER_VAL_MEM( winExplodingProgress );
     }
 
-
-/* fixme */
-static  int  winFade     =  0;
-static  int  winFadeDir  =  1;
 
 
 void unlocksDraw( int  inPosX,
@@ -355,7 +374,6 @@ void unlocksDraw( int  inPosX,
     int  glowRep        =  3;
     int  x;
     int  y;
-    int  winGlintFade;
 
     maxigin_drawResetColor();
 
@@ -479,40 +497,75 @@ void unlocksDraw( int  inPosX,
     
     maxigin_drawResetColor();
 
-    maxigin_drawSprite( winShadowSprite,
-                        x,
-                        y );
+    if( winOver ) {
+
+        maxigin_drawSprite( winShadowDownSprite,
+                            x,
+                            y );
+        y += 1;
+        }
+    else {
+        maxigin_drawSprite( winShadowSprite,
+                            x,
+                            y );
+        }
     
     maxigin_drawSprite( winFrameSprite,
                         x,
                         y );
 
-    maxigin_drawSetAlpha( (unsigned char)winFade );
+    if( winHasHappened ) {
 
-    maxigin_drawSprite( winShineSprite,
-                        x,
-                        y );
-    for( j = 0;
-         j < glowRep - 1;
-         j ++ ) {
-        maxigin_drawSpriteGlowOnly( winShineSprite,
-                                    x,
-                                    y );
+        maxigin_drawSprite( winShineSprite,
+                            x,
+                            y );
+        for( j = 0;
+             j < glowRep - 1;
+             j ++ ) {
+            maxigin_drawSpriteGlowOnly( winShineSprite,
+                                        x,
+                                        y );
+            }
+
+        if( winExtraGlowFade > 0 ) {
+            maxigin_drawSetAlpha( winExtraGlowFade );
+
+            for( j = 0;
+                 j < glowRep - 1;
+                 j ++ ) {
+                maxigin_drawSpriteGlowOnly( winShineSprite,
+                                            x,
+                                            y );
+                }
+            }
         }
-
-    winGlintFade = 255;
-
-    if( winFade > 127 ) {
-        winGlintFade = ( ( 255 - winFade ) * 255 ) / 127;
-        }
-
-    if( winGlintFade > 0 ) {
-        
-        maxigin_drawSetAlpha( (unsigned char)winGlintFade );
-        
+    else {
         maxigin_drawSprite( winGlintSprite,
                             x,
                             y );
+        }
+
+    
+    if( winExploding ) {
+        
+        unsigned char  a;
+        
+        a = (unsigned char)(
+            ( (long)( unlockExplodingMax - winExplodingProgress ) * 255 )
+            / unlockExplodingMax );
+
+        maxigin_drawToggleAdditive( 1 );
+        maxigin_drawExplodingSprite( winShineSprite,
+                                  getParticleSprite(),
+                                  x + 2,
+                                  y,
+                                  x + 2,
+                                  y - 1,
+                                  30,
+                                  winExplodingProgress,
+                                  unlockExplodingMax,
+                                  a );
+        maxigin_drawToggleAdditive( 0 );
         }
                         
     }
@@ -532,24 +585,7 @@ void unlocksStep( int  inPosX,
     int  overI      =  -1;
     int  r          =  mingin_getStepsPerSecond();
     int  deltaFade  =  ( 20 * 60 ) / r;
-
-    /* fixme */
-    if( 0 ) {
-        winFade += winFadeDir * deltaFade / 2;
-
-        if( winFadeDir == 1
-            &&
-            winFade > 255 ) {
-            winFade = 255;
-            winFadeDir = -1;
-            }
-        else if( winFadeDir == -1
-                 &&
-                 winFade < 0 ) {
-            winFade = 0;
-            winFadeDir = 1;
-            }
-        }
+    
     
 
     maxigin_getSpriteDimensions( unlockFrameSprite,
@@ -589,7 +625,48 @@ void unlocksStep( int  inPosX,
 
                 overI = i;
                 unlockLastOver = i;
+                winOver = 0;
+                
                 break;
+                }
+            }
+
+        if( overI == -1 ) {
+            /* check if over win light */
+            int  x   =  winPosX + inPosX;
+            int  y   =  winPosY + inPosY;
+
+            int  dx  =  pointerX - x;
+            int  dy  =  pointerY - y;
+            
+            maxigin_getSpriteDimensions( winFrameSprite,
+                                         &w,
+                                         &h );
+
+            w /= 2;
+            h /= 2;
+
+            
+
+            if( dx >= -w
+                &&
+                dx <=  w
+                &&
+                dy >= -h
+                &&
+                dy <=  h ) {
+
+                if( winExtraGlowFade < 255 ) {
+                    maxigin_playSoundEffect( unlockViewSound,
+                                             256 );
+                    }
+                
+                winExtraGlowFade = 255;
+
+                winOver = 1;
+                }
+            else {
+                winOver = 0;
                 }
             }
         }
@@ -650,6 +727,20 @@ void unlocksStep( int  inPosX,
             }
         }
 
+    if( ! winOver
+        &&
+        winExtraGlowFade > 0 ) {
+
+        int  newHighlight = winExtraGlowFade - deltaFade;
+
+        if( newHighlight > 0 ) {
+            winExtraGlowFade = (unsigned char)newHighlight;
+            }
+        else {
+            winExtraGlowFade = 0;
+            }
+        }
+
 
     
     if( overI != -1
@@ -673,6 +764,33 @@ void unlocksStep( int  inPosX,
                        1,
                        0 );
         }
+    else if( winOver ) {
+
+        if( winHasHappened ) {
+
+            tipDisplaySet( lang_win,
+                           -1,
+                           -1,
+                           1,
+                           0 );
+
+            }
+        else {
+
+            int  level  =  winAtLevel;
+
+            if( ! unlockEnabled[ NUM_UNLOCKS - 1 ] ) {
+                /* show ? */
+                level = -2;
+                }
+
+            tipDisplaySet( lang_winA,
+                           level,
+                           lang_winB,
+                           1,
+                           0 );
+            }
+        }
 
 
     if( unlockExploding != -1 ) {
@@ -681,6 +799,16 @@ void unlocksStep( int  inPosX,
         if( unlockExplodingProgress > unlockExplodingMax ) {
             unlockExplodingProgress = 0;
             unlockExploding = -1;
+            }
+        }
+
+    
+    if( winExploding ) {
+        winExplodingProgress += ( 10 * 60 ) / r;
+
+        if( winExplodingProgress > unlockExplodingMax ) {
+            winExplodingProgress = 0;
+            winExploding = 0;
             }
         }
     }
@@ -712,6 +840,21 @@ void unlocksBeatLevel( int  inLevel ) {
             
             return;
             }
+        }
+
+    if( ! winHasHappened
+        &&
+        inLevel >= winAtLevel ) {
+
+        /* fixme:  need win sound */
+
+        winHasHappened = 1;
+        winExploding = 1;
+        winExplodingProgress = 0;
+
+        /* fixme:  need to unlock next quest, etc. */
+        
+        unlocksWrite();
         }
     
     }

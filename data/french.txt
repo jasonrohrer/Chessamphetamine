@@ -82,8 +82,14 @@ unlock0        "Une place de plus dans la réserve"
 unlock1        "Un emplacement de plus dans la boutique"
 unlock2        "Un article est toujours en promo dans la boutique"
 
-unlockLockedA  "Mat au ## niveau"
-unlockLockedB  "pour ## débloquer"
+unlockLockedA  "Faites ## échec et mat ## au niveau"
+unlockLockedB  "ou supérieur ## pour ## débloquer"
+
+
+winReqA        "Faites ## échec et mat ## au niveau"
+winReqB        "ou supérieur ## pour gagner"
+
+win            "Vous ## avez ## gagné"
 
 
 readyCount     "Dispo"

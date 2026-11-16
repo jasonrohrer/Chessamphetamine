@@ -86,6 +86,10 @@ unlock2        "Something is always on sale in the shop"
 unlockLockedA  "Checkmate ## level"
 unlockLockedB  "or higher ## to unlock"
 
+winReqA  "Checkmate ## level"
+winReqB  "or higher ## to win"
+
+win      "You won"
 
 
 readyCount     "Ready"

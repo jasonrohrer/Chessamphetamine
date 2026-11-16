@@ -82,8 +82,14 @@ unlock0        "備用區增加一格"
 unlock1        "商店增加一個欄位"
 unlock2        "商店中總有一項商品特價"
 
-unlockLockedA  "關卡"
-unlockLockedB  "將死解鎖"
+
+unlockLockedA  "在關卡"
+unlockLockedB  "完成將死 ## 以解鎖"
+
+winReqA  "在關卡"
+winReqB  "或更高關 ## 卡完成將 ## 死以獲勝"
+
+win      "你贏了"
 
 
 readyCount     "可抽"

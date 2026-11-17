@@ -533,6 +533,8 @@ void unlocksDraw( int  inPosX,
 void unlocksDrawParticles( int  inPosX,
                            int  inPosY ) {
 
+    maxigin_drawResetColor();
+
     if( unlockExploding != -1 ) {
         
         unsigned char  a;
@@ -572,9 +574,9 @@ void unlocksDrawParticles( int  inPosX,
         maxigin_drawToggleAdditive( 1 );
         maxigin_drawExplodingSprite( winShineSprite,
                                   getParticleSprite(),
-                                  x + 2,
+                                  x - 1,
                                   y,
-                                  x + 2,
+                                  x - 1,
                                   y - 1,
                                   30,
                                   winExplodingProgress,

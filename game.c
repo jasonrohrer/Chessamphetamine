@@ -158,16 +158,19 @@ static int            endMessageSprites[ 3 ]  = { -1,
 
 #define               OVERRUN_COLOR_FLAG              256
     
-static int            endMessageColor              =  CHESS_WHITE;
-static int            endMessageIndex              =  -1;
-static int            explodingEndMessageProgress  =  -1;
-static int            explodingEndMessageMax       =  512;
-static unsigned char  endMessageFade               =  0;
-static int            endMessagePreFadeSteps       =  0;
+static  int            endMessageColor              =  CHESS_WHITE;
+static  int            endMessageIndex              =   -1;
+static  int            explodingEndMessageProgress  =   -1;
+static  int            explodingEndMessageMax       =  512;
+static  unsigned char  endMessageFade               =    0;
+static  int            endMessagePreFadeSteps       =    0;
 
-static unsigned char  countGlowFadeMax             =  126;
-static unsigned char  readyCountGlowFade           =  0;
-static unsigned char  discardCountGlowFade         =  0;
+static  int            winnerMessageSpread          =   -1;
+static  int            winnerMessageSpreadScale     =   10;
+
+static  unsigned char  countGlowFadeMax             =  126;
+static  unsigned char  readyCountGlowFade           =    0;
+static  unsigned char  discardCountGlowFade         =    0;
 
 
 static char           spinning                    =  0;
@@ -365,6 +368,34 @@ static char isSpinPressedDown( void ) {
     }
 
 
+
+static void drawWinnerSpread( unsigned char  inFade ) {
+
+    int  i;
+    int  d   =  winnerMessageSpread / winnerMessageSpreadScale;
+
+    maxigin_drawToggleAdditive( 1 );
+
+    for( i = 1;
+         i < 4;
+         i   ++ ) {
+
+        inFade /= 2;
+
+        maxigin_drawSetAlpha( inFade );
+
+        maxigin_drawSprite( endMessageSprites[ endMessageIndex ],
+                            boardCenterX,
+                            boardCenterY + i * ( d + 30 ) );
+        maxigin_drawSprite( endMessageSprites[ endMessageIndex ],
+                            boardCenterX,
+                            boardCenterY - i * ( d + 30 ) );
+        }
+    
+    maxigin_drawToggleAdditive( 0 );
+
+    maxigin_drawSetAlpha( inFade );
+    }
 
 
 void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
@@ -1228,8 +1259,18 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
                             boardCenterY );
 
         
-        maxigin_drawToggleAdditive( 1 );
+        
+        if( endMessageIndex == 2 ) {
+            /* extra faded versions for WINNER message */
 
+            drawWinnerSpread( 255 );
+            }
+        
+
+        maxigin_drawToggleAdditive( 1 );
+        
+
+        
 
         if( endMessageColor == CHESS_WHITE ) {
             /* desaturate gold color to make it clip white */
@@ -1267,6 +1308,13 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
         maxigin_drawSprite( endMessageSprites[ endMessageIndex ],
                             boardCenterX,
                             boardCenterY );
+        
+        
+        if( endMessageIndex == 2 ) {
+            /* extra faded versions for WINNER message */
+
+            drawWinnerSpread( endMessageFade );
+            }
 
         }
 
@@ -2098,6 +2146,7 @@ void maxiginGame_step( char  inFinalStep  ) {
                 if( wouldBeWin ) {
                     /* switch to win message */
                     endMessageIndex = 2;
+                    winnerMessageSpread = 0;
                     }
                 
                 explodingEndMessageProgress = 0;
@@ -2808,6 +2857,11 @@ void maxiginGame_step( char  inFinalStep  ) {
     
             
 
+
+    if( winnerMessageSpread != 1 ) {
+
+        winnerMessageSpread += ( 20 * 60 ) / r;
+        }
     
     if( explodingEndMessageProgress != -1 ) {
         explodingEndMessageProgress += ( 10 * 60 ) / r;
@@ -2850,6 +2904,7 @@ void maxiginGame_step( char  inFinalStep  ) {
             if( newFade <= 0 ) {
 
                 endMessageFade = 0;
+                winnerMessageSpread = -1;
 
                 if( ! heartsIsDead() ) {
 
@@ -4154,6 +4209,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( explodingEndMessageProgress );
     REGISTER_VAL_MEM( endMessageFade );
     REGISTER_VAL_MEM( endMessagePreFadeSteps );
+
+    REGISTER_VAL_MEM( winnerMessageSpread );
 
     REGISTER_VAL_MEM( spinning );
     REGISTER_VAL_MEM( spinButtonHover );

@@ -691,10 +691,13 @@ void unlocksStep( int  inPosX,
             unlockViewDown = 1;
             unlockViewerCanceled = 0;
 
-            if( unlockLastOver == -1
-                ||
-                unlockLastOver == NUM_UNLOCKS - 1 ) {
+            if( unlockLastOver == -1 ) {
                 unlockLastOver = 0;
+                winOver = 0;
+                }
+            else if( unlockLastOver == NUM_UNLOCKS - 1 ) {
+                unlockLastOver = -1;
+                winOver = 1;
                 }
             else {
                 unlockLastOver ++;
@@ -710,6 +713,11 @@ void unlocksStep( int  inPosX,
             unlockExtraGlowFade[ unlockLastOver ] = 255;
                 
             overI = unlockLastOver;
+            }
+        if( winOver
+            &&
+            ! unlockViewerCanceled ) {
+            winExtraGlowFade = 255;
             }
         }
     
@@ -981,6 +989,8 @@ int unlocksGetExtraDraws( void ) {
 
 void unlocksCancelViewer( void ) {
     unlockViewerCanceled = 1;
+    winOver = 0;
+    unlockLastOver = -1;
     }
 
 
@@ -993,7 +1003,7 @@ char unlocksIsViewerActive( void ) {
         unlockEnabled[ unlockLastOver ] ) {
 
         /* only count as enabled if we're over an unlocked item
-           mousing over locked items uses tip display */
+           mousing over locked items or win light uses tip display */
         return 1;
         }
     return 0;

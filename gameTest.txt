@@ -1,0 +1,36 @@
+
+#define MINGIN_IMPLEMENTATION
+
+#include "mingin.h"
+
+const int JUMP = 1;
+const int FIRE = 2;
+  
+const MinginButton jumpMapping[] = { MGN_KEY_SPACE, MGN_BUTTON_SQUARE,
+                                     MGN_BUTTON_A, MGN_MAP_END };
+                                
+const MinginButton fireMapping[] = { MGN_BUTTON_MOUSE_LEFT,
+                                     MGN_KEY_X, MGN_MAP_END };
+
+
+void minginGame_step( char inFinalStep ) {
+    if( inFinalStep ) {
+        }
+    
+    mingin_registerButtonMapping( JUMP, jumpMapping );
+    mingin_registerButtonMapping( FIRE, fireMapping );
+    }
+
+void minginGame_getMinimumViableScreenSize( int *outWide, int *outHigh ) {
+    *outWide = 10;
+    *outHigh = 10;
+    }
+
+
+void minginGame_getScreenPixels( int inWide, int inHigh,
+                                 unsigned char *inRGBBuffer ) {
+    if( inWide + inHigh > inRGBBuffer[0] ) {
+
+        }
+
+    }

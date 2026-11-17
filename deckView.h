@@ -527,7 +527,9 @@ ChessPiece deckViewStep( int  inPageSound ) {
             deckViewHighlightFade[ deckViewOverSlot ] = 255;
 
             if( old != deckViewOverSlot ) {
-                controllerMovedSlot = 1;
+                if( old != -1 ) {
+                    controllerMovedSlot = 1;
+                    }
                 unlocksCancelViewer();
                 }
             }

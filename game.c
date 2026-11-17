@@ -151,7 +151,8 @@ static int            statesTested               =  0;
 static int            movePickTime               =  0;
 
 
-static int            endMessageSprites[ 2 ]  = { -1,
+static int            endMessageSprites[ 3 ]  = { -1,
+                                                  -1,
                                                   -1 };
 
 
@@ -2055,7 +2056,9 @@ void maxiginGame_step( char  inFinalStep  ) {
 
         if( moveDone ) {
 
-            int  gameLoserColor;
+            int   gameLoserColor;
+            char  wouldBeWin       =  0;
+            
             
             /* after each move done, increment the move speed */
             moveAnimIncrementSpeed();
@@ -2069,6 +2072,8 @@ void maxiginGame_step( char  inFinalStep  ) {
                                              512 );
                     endMessageColor = CHESS_WHITE;
                     levelForUnlock = currentLevel;
+
+                    wouldBeWin = unlocksWouldBeNewWin( levelForUnlock );
 
                     runStatsLogString( "\nwon" );
 
@@ -2089,6 +2094,12 @@ void maxiginGame_step( char  inFinalStep  ) {
                 /* start checkmate explosion */
                 
                 endMessageIndex = 0;
+
+                if( wouldBeWin ) {
+                    /* switch to win message */
+                    endMessageIndex = 2;
+                    }
+                
                 explodingEndMessageProgress = 0;
                 endMessageFade = 255;
                 endMessagePreFadeSteps = 0;
@@ -3629,7 +3640,8 @@ void maxiginGame_init( void ) {
                           "checkmate.tga" );
     initEndMessageSprite( 1,
                           "overrun.tga" );
-    
+    initEndMessageSprite( 2,
+                          "winner.tga" );
 
 
     spinFrameSprite = maxigin_initSprite( "spinButtonFrame.tga" );

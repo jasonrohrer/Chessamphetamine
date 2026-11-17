@@ -26,6 +26,8 @@ void unlocksInit( int  inViewActionHandle,
 void unlocksBeatLevel( int  inLevel );
 
 
+char unlocksWouldBeNewWin( int  inLevel );
+
 
 void unlocksDraw( int  inPosX,
                   int  inPosY );
@@ -863,9 +865,7 @@ void unlocksBeatLevel( int  inLevel ) {
             }
         }
 
-    if( ! winHasHappened
-        &&
-        inLevel >= winAtLevel ) {
+    if( unlocksWouldBeNewWin( inLevel ) ) {
 
         maxigin_playSoundEffect( winSound,
                                  512 );
@@ -881,6 +881,18 @@ void unlocksBeatLevel( int  inLevel ) {
     
     }
 
+
+
+char unlocksWouldBeNewWin( int  inLevel ) {
+
+    if( ! winHasHappened
+        &&
+        inLevel >= winAtLevel ) {
+        return 1;
+        }
+    return 0;
+    }
+    
 
 
 void unlocksHardReset( void ) {

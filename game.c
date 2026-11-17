@@ -801,7 +801,9 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
     /* info panel overlaps with unused draw counter */
     if( ! moneyGetSubMessageShowing()
         &&
-        ! tipDisplayIsShowing() ) {
+        ! tipDisplayIsShowing()
+        &&
+        ! unlocksIsViewerActive() ) {
 
         char  showDeployCost  =  0;
 

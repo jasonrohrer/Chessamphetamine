@@ -110,6 +110,14 @@ static  int            winAtLevel               =   64;
 static  char           winHasHappened           =    0;
 static  int            winSound                 =   -1;
 
+static  int            nextQuestFrameSprite;
+static  int            nextQuestGlintSprite;
+static  int            nextQuestShineSprite;
+
+static  int            nextQuestPosX;
+static  int            nextQuestPosY;
+
+
 static  int            unlockSound              =   -1;
 static  int            unlockLastOver           =   -1;
 static  int            unlockViewActionHandle;
@@ -333,6 +341,19 @@ void unlocksInit( int  inViewActionHandle,
     winPosX = -2;
     winPosY = unlockPosY[ NUM_UNLOCKS - 1 ] + 15;
 
+
+    nextQuestFrameSprite = maxigin_initSprite( "nextQuestFrame.tga" );
+    nextQuestGlintSprite = maxigin_initSprite( "nextQuestGlint.tga" );
+    nextQuestShineSprite = maxigin_initSprite( "nextQuestShine.tga" );
+
+    maxigin_initMakeGlowSprite( nextQuestShineSprite,
+                                4,
+                                2 );
+
+    nextQuestPosX = -2;
+    nextQuestPosY = unlockPosY[ NUM_UNLOCKS - 1 ] + 32;
+
+
     unlockSound = maxigin_initSoundEffect( "unlock_sd_24.wav" );
     winSound = maxigin_initSoundEffect( "win_sd_9.wav" );
 
@@ -525,7 +546,41 @@ void unlocksDraw( int  inPosX,
                             x,
                             y );
         }
-                        
+
+
+    x = nextQuestPosX + inPosX;
+    y = nextQuestPosY + inPosY;
+
+    maxigin_drawSprite( nextQuestFrameSprite,
+                        x,
+                        y );
+
+
+    if( 0 ) {
+
+        x ++;
+        y --;
+
+        maxigin_drawSprite( nextQuestShineSprite,
+                            x,
+                            y );
+        for( j = 0;
+             j < glowRep - 1;
+             j ++ ) {
+            maxigin_drawSpriteGlowOnly( nextQuestShineSprite,
+                                        x,
+                                        y );
+            }
+        }
+    else {
+        x += 7;
+        y -= 7;
+        
+        maxigin_drawSprite( nextQuestGlintSprite,
+                            x,
+                            y );
+        }
+    
     }
 
 

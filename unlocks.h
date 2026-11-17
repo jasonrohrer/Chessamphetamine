@@ -988,6 +988,13 @@ int unlocksGetExtraDraws( void ) {
 
 
 void unlocksCancelViewer( void ) {
+    if( winOver != 0
+        ||
+        unlockLastOver != -1 ) {
+
+        tipDisplayClear();
+        }
+    
     unlockViewerCanceled = 1;
     winOver = 0;
     unlockLastOver = -1;

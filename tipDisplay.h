@@ -47,6 +47,9 @@ void tipDisplayDraw( int  inCenterX,
 void tipDisplayStep( void );
 
 
+void tipDisplayClear( void );
+
+
 
 #endif
 
@@ -125,6 +128,12 @@ void tipDisplaySet( int   inMessageKeyA,
         tdStepsSinceSet = 0;
         tdFade = 255;
         }
+    }
+
+
+
+void tipDisplayClear( void ) {
+    tdFade = 0;
     }
 
 

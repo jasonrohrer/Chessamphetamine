@@ -167,8 +167,14 @@ static  int            lang_winA;
 static  int            lang_winB;
 static  int            lang_win;
 
+static  int            lang_questPick;
+static  int            lang_nextQuestUnlocks[ NUM_NEXT_QUEST_LEVELS ];
 
-static  const char     hashMessage[]   =  "you are only cheating yourself";
+static  int            lang_everythingUnlocked;
+
+
+
+static  const char     hashMessage[]  =  "you are only cheating yourself";
 
 
 /* gets the correct hex hash for an unlock string ending with a space */
@@ -416,6 +422,19 @@ void unlocksInit( int  inViewActionHandle,
     lang_winA = maxigin_initTranslationKey( "winReqA" );
     lang_winB = maxigin_initTranslationKey( "winReqB" );
     lang_win  = maxigin_initTranslationKey( "win" );
+
+    lang_questPick = maxigin_initTranslationKey( "unlockMouseOver" );
+
+
+    lang_nextQuestUnlocks[ 0 ] = maxigin_initTranslationKey( "unlockQuest1" );
+    lang_nextQuestUnlocks[ 1 ] = maxigin_initTranslationKey( "unlockQuest2" );
+    lang_nextQuestUnlocks[ 2 ] = maxigin_initTranslationKey( "unlockQuest3" );
+    lang_nextQuestUnlocks[ 3 ] = maxigin_initTranslationKey( "unlockQuest4" );
+    lang_nextQuestUnlocks[ 4 ] = maxigin_initTranslationKey( "unlockQuest5" );
+    lang_nextQuestUnlocks[ 5 ] = maxigin_initTranslationKey( "unlockQuest6" );
+
+    lang_everythingUnlocked =
+        maxigin_initTranslationKey( "everythingUnlocked" );
     
                 
     unlocksRead();
@@ -617,7 +636,8 @@ void unlocksDraw( int  inPosX,
 
     nqTempX = x;
     nqTempY = y;
-    
+
+    maxigin_drawResetColor();
 
     if( nextQuestOver ) {
 
@@ -1017,6 +1037,35 @@ void unlocksStep( int  inPosX,
                     }
                 else {
                     nextQuestOver = 0;
+                    }
+
+                if( nextQuestOver ) {
+
+                    if( difficultyPickingOn ) {
+
+                        tipDisplaySet( lang_questPick,
+                                       -1,
+                                       -1,
+                                       1,
+                                       0 );
+                        }
+                    else if( nextQuestUnlockLevel < 6 ) {
+                        
+                        tipDisplaySet(
+                            lang_nextQuestUnlocks[ nextQuestUnlockLevel ],
+                            -1,
+                            -1,
+                            1,
+                            0 );
+                        }
+                    else {
+                        tipDisplaySet( lang_everythingUnlocked,
+                                       -1,
+                                       -1,
+                                       1,
+                                       0 );
+                        }
+                        
                     }
 
 

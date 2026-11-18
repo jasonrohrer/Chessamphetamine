@@ -114,6 +114,29 @@ drawTip         "Redraw ## Sideboard"
 rerollTip       "Reroll Shop"
 
 
+quest0 "Base game selected"
+quest1 "Second quest selected"
+quest2 "Third quest selected"
+quest3 "Fourth quest selected"
+quest4 "Fifth quest selected"
+quest5 "Sixth quest selected"
+quest6 "Final quest selected"
+
+unlockQuest1 "Win to unlock"
+unlockQuest2 "Win ## second quest ## to unlock"
+unlockQuest3 "Win ## third quest ## to unlock"
+unlockQuest4 "Win ## fourth quest ## to unlock"
+unlockQuest5 "Win ## fifth quest ## to unlock"
+unlockQuest6 "Win ## sixth quest ## to unlock"
+
+everythingUnlocked "Everything ## unlocked"
+
+unlockMouseOver "Pick a quest"
+
+
+
+
+
 pawn           "Pawn"
 pawnDesc       "Moves 1 or 2 spaces forward, captures diagonally.  Promotes to queen in last row."
 

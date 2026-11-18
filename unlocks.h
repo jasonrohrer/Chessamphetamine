@@ -18,7 +18,10 @@
 /* handle for action controller to toggle through unlocks
    for info */
 void unlocksInit( int  inViewActionHandle,
-                  int  inViewSound );
+                  int  inPointerActionHandle,
+                  int  inDifficultyActionHandle,
+                  int  inViewSound,
+                  int  inPickDifficultySound );
 
 
 /* register that player checkmated a level.
@@ -62,6 +65,10 @@ void unlocksHardReset( void );
 
 
 char unlocksAreAnyUnlocked( void );
+
+
+void unlocksToggleDifficultyPicking( char  inCanPick );
+
 
 
 
@@ -112,6 +119,7 @@ static  char           winHasHappened                   =    0;
 static  int            winSound                         =   -1;
 
 static  int            nextQuestFrameSprite;
+static  int            nextQuestFrameDownSprite;
 static  int            nextQuestGlintSprite;
 static  int            nextQuestShineSmallSpriteStrip;
 static  int            nextQuestShineBigSpriteStrip;
@@ -121,11 +129,19 @@ static  int            nextQuestPosY;
 
 static  int            nextQuestUnlockLevel             =    0;
 static  int            nextQuestPickedLevel             =    0;
+static  char           nextQuestOver                    =    0;
 
 static  int            unlockSound                      =   -1;
 static  int            unlockLastOver                   =   -1;
 static  int            unlockViewActionHandle;
+static  int            unlockPointerActionHandle;
+static  int            unlockDifficultyActionHandle;
+
+static  char           unlockDifficultyDown             =    0;
+static  char           unlockPointerDown                =    0;
+
 static  int            unlockViewSound;
+static  int            unlockPickDiffSound;
 
 static  char           unlockViewDown                   =    0;
 static  char           unlockViewerCanceled             =    0;
@@ -140,6 +156,7 @@ static  int            winExplodingProgress             =    0;
 static  int            nextQuestExploding               =   -1;
 static  int            nextQuestExplodingProgress       =    0;
 
+static  char           difficultyPickingOn              =    0;
 
 static  int            lang_unlockDes;
 static  int            lang_unlocks[ NUM_UNLOCKS ];
@@ -288,7 +305,10 @@ static void unlocksRead( void ) {
 
 
 void unlocksInit( int  inViewActionHandle,
-                  int  inViewSound ) {
+                  int  inPointerActionHandle,
+                  int  inDifficultyActionHandle,
+                  int  inViewSound,
+                  int  inPickDifficultySound ) {
 
     int  i;
 
@@ -296,7 +316,11 @@ void unlocksInit( int  inViewActionHandle,
     int  curY     =  - ( ( NUM_UNLOCKS - 1 ) * offsetY ) / 2;
 
     unlockViewActionHandle = inViewActionHandle;
+    unlockPointerActionHandle = inPointerActionHandle;
+    unlockDifficultyActionHandle = inDifficultyActionHandle;
+    
     unlockViewSound        = inViewSound;
+    unlockPickDiffSound = inPickDifficultySound;
 
     unlockFrameSprite = maxigin_initSprite( "unlockFrame.tga" );
     unlockShadowSprite = maxigin_initSprite( "unlockFrameShadow.tga" );
@@ -356,6 +380,8 @@ void unlocksInit( int  inViewActionHandle,
 
 
     nextQuestFrameSprite = maxigin_initSprite( "nextQuestFrame.tga" );
+    nextQuestFrameDownSprite = maxigin_initSprite( "nextQuestFrameDown.tga" );
+    
     nextQuestGlintSprite = maxigin_initSprite( "nextQuestGlint.tga" );
     nextQuestShineSmallSpriteStrip =
         maxigin_initSpriteStrip( "nextQuestShineSmall.tga",
@@ -416,8 +442,15 @@ void unlocksInit( int  inViewActionHandle,
     REGISTER_VAL_MEM( nextQuestUnlockLevel );
     REGISTER_VAL_MEM( nextQuestPickedLevel );
 
+    REGISTER_VAL_MEM( nextQuestOver );
+
     REGISTER_VAL_MEM( nextQuestExploding );
     REGISTER_VAL_MEM( nextQuestExplodingProgress );
+
+    REGISTER_VAL_MEM( difficultyPickingOn );
+
+    REGISTER_VAL_MEM( unlockDifficultyDown );
+    REGISTER_VAL_MEM( unlockPointerDown );
     }
 
 
@@ -432,6 +465,8 @@ void unlocksDraw( int  inPosX,
     int  y;
     int  numSprites;
     int  xStart;
+    int  nqTempX;
+    int  nqTempY;
 
     maxigin_drawResetColor();
 
@@ -580,9 +615,22 @@ void unlocksDraw( int  inPosX,
     x = nextQuestPosX + inPosX;
     y = nextQuestPosY + inPosY;
 
-    maxigin_drawSprite( nextQuestFrameSprite,
-                        x,
-                        y );
+    nqTempX = x;
+    nqTempY = y;
+    
+
+    if( nextQuestOver ) {
+
+        maxigin_drawSprite( nextQuestFrameDownSprite,
+                            x,
+                            y );
+        nqTempY ++;
+        }
+    else {
+        maxigin_drawSprite( nextQuestFrameSprite,
+                            x,
+                            y );
+        }
 
 
 
@@ -590,11 +638,11 @@ void unlocksDraw( int  inPosX,
     
     numSprites = maxigin_getNumSpritesInStrip(
         nextQuestShineSmallSpriteStrip );
-    xStart = nextQuestPosX + inPosX - 3;
+    xStart = nqTempX - 3;
 
     x = xStart;
 
-    y = nextQuestPosY + inPosY - 7;
+    y = nqTempY - 7;
 
     if( numSprites > NUM_NEXT_QUEST_LEVELS ) {
         numSprites = NUM_NEXT_QUEST_LEVELS;
@@ -643,11 +691,11 @@ void unlocksDraw( int  inPosX,
     numSprites = maxigin_getNumSpritesInStrip(
         nextQuestShineBigSpriteStrip );
 
-    xStart = nextQuestPosX + inPosX - 3;
+    xStart = nqTempX - 3;
 
     x = xStart;
 
-    y = nextQuestPosY + inPosY - 4;
+    y = nqTempY - 4;
 
     if( numSprites > NUM_NEXT_QUEST_LEVELS ) {
         numSprites = NUM_NEXT_QUEST_LEVELS;
@@ -685,8 +733,8 @@ void unlocksDraw( int  inPosX,
 
     
     if( nextQuestUnlockLevel < 3 ) {
-        x = nextQuestPosX + inPosX + 7;
-        y = nextQuestPosY + inPosY - 7;
+        x = nqTempX + 7;
+        y = nqTempY - 7;
         
         maxigin_drawSprite( nextQuestGlintSprite,
                             x,
@@ -888,6 +936,7 @@ void unlocksStep( int  inPosX,
                 overI = i;
                 unlockLastOver = i;
                 winOver = 0;
+                nextQuestOver = 0;
                 
                 break;
                 }
@@ -904,11 +953,8 @@ void unlocksStep( int  inPosX,
             maxigin_getSpriteDimensions( winFrameSprite,
                                          &w,
                                          &h );
-
             w /= 2;
             h /= 2;
-
-            
 
             if( dx >= -w
                 &&
@@ -926,13 +972,76 @@ void unlocksStep( int  inPosX,
                 winExtraGlowFade = 255;
 
                 winOver = 1;
+                nextQuestOver = 0;
                 }
             else {
                 winOver = 0;
                 }
+
+            if( ! winOver ) {
+                /* check for next quest mouse-over */
+                
+                x = nextQuestPosX + inPosX;
+                y = nextQuestPosY + inPosY;
+
+                dx = pointerX - x;
+                dy = pointerY - y;
+                
+                maxigin_getSpriteDimensions( nextQuestFrameSprite,
+                                             &w,
+                                             &h );
+                w /= 2;
+                h /= 2;
+                
+                if( dx >= -w
+                    &&
+                    dx <=  w
+                    &&
+                    dy >= -h
+                    &&
+                    dy <=  h ) {
+
+                    if( ! nextQuestOver ) {
+                        maxigin_playSoundEffect( unlockViewSound,
+                                                 256 );
+                        }
+
+                    nextQuestOver = 1;
+                    }
+                else {
+                    nextQuestOver = 0;
+                    }
+
+
+                if( nextQuestOver
+                    &&
+                    maxigin_isButtonDown( unlockPointerActionHandle ) ) {
+
+                    if( ! unlockPointerDown
+                        &&
+                        difficultyPickingOn
+                        &&
+                        nextQuestUnlockLevel > 0 ) {
+
+                        nextQuestPickedLevel ++;
+
+                        maxigin_playSoundEffect( unlockPickDiffSound,
+                                                 512 );
+
+                        if( nextQuestPickedLevel > nextQuestUnlockLevel ) {
+                            nextQuestPickedLevel = 0;
+                            }
+                        }
+                    unlockPointerDown = 1;
+                    }
+                else {
+                    unlockPointerDown = 0;
+                    }
+                }
             }
         }
     else {
+        unlockPointerDown = 0;
 
         if( ! unlockViewDown
             &&
@@ -940,13 +1049,20 @@ void unlocksStep( int  inPosX,
             unlockViewDown = 1;
             unlockViewerCanceled = 0;
 
-            if( unlockLastOver == -1 ) {
+            if( unlockLastOver == -1
+                &&
+                ! winOver ) {
                 unlockLastOver = 0;
                 winOver = 0;
+                nextQuestOver = 0;
                 }
             else if( unlockLastOver == NUM_UNLOCKS - 1 ) {
                 unlockLastOver = -1;
                 winOver = 1;
+                }
+            else if( winOver == 1 ) {
+                winOver = 0;
+                nextQuestOver = 1;
                 }
             else {
                 unlockLastOver ++;
@@ -973,6 +1089,31 @@ void unlocksStep( int  inPosX,
     if( ! maxigin_isButtonDown( unlockViewActionHandle ) ) {
         unlockViewDown = 0;
         }
+
+    if( maxigin_isButtonDown( unlockDifficultyActionHandle ) ) {
+        
+        if( ! unlockDifficultyDown
+            &&
+            difficultyPickingOn
+            &&
+            nextQuestUnlockLevel > 0 ) {
+
+            nextQuestPickedLevel ++;
+
+            maxigin_playSoundEffect( unlockPickDiffSound,
+                                     512 );
+
+            if( nextQuestPickedLevel > nextQuestUnlockLevel ) {
+                nextQuestPickedLevel = 0;
+                }
+            }
+        unlockDifficultyDown = 1;
+        }
+    else {
+        unlockDifficultyDown = 0;
+        }
+
+    
 
     
     for( i = 0;
@@ -1061,6 +1202,7 @@ void unlocksStep( int  inPosX,
                            0 );
             }
         }
+
 
 
     if( unlockExploding != -1 ) {
@@ -1300,7 +1442,12 @@ char unlocksIsViewerActive( void ) {
     return 0;
     }
 
-    
+
+
+void unlocksToggleDifficultyPicking( char  inCanPick ) {
+    difficultyPickingOn = inCanPick;
+    }
+
 
     
 

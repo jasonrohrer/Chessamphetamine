@@ -3138,11 +3138,16 @@ void maxiginGame_step( char  inFinalStep  ) {
     
     if( isNewGameWaiting() ) {
 
+        unlocksToggleDifficultyPicking( 1 );
+
         tipDisplaySet( lang_gameOverInstruct,
                        -1,
                        -1,
                        0,
                        0 );
+        }
+    else {
+        unlocksToggleDifficultyPicking( 0 );
         }
 
     tipDisplayStep();
@@ -4091,7 +4096,10 @@ void maxiginGame_init( void ) {
 
     
     unlocksInit( UNLOCK_VIEW,
-                 examinePieceSound );
+                 MOUSE_CLICK,
+                 DRAW,
+                 examinePieceSound,
+                 thunkSound );
     
     chessInit();
     boardInit();

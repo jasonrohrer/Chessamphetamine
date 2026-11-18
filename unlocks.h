@@ -230,7 +230,7 @@ static void unlocksRead( void ) {
         return;
         }
     
-    if( numBytes != NUM_UNLOCKS + 1 + 16 ) {
+    if( numBytes != NUM_UNLOCKS + 2 + 16 ) {
         mingin_endReadPersistData( file );
         return;
         }

@@ -712,15 +712,16 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
                         MAXIGIN_GAME_NATIVE_W - 39,
                         infoPanelY );
 
-    heartsDraw( infoLightsX,
-                MAXIGIN_GAME_NATIVE_H - 40 );
+    
 
     moneyDraw( MAXIGIN_GAME_NATIVE_W - 65,
                12 );
 
     unlocksDraw( unlocksX,
                  unlocksY );
-
+    
+    heartsDraw( infoLightsX,
+                MAXIGIN_GAME_NATIVE_H - 40 );
 
     rarityWindowDraw();
 

@@ -740,6 +740,13 @@ void unlocksDraw( int  inPosX,
                             x,
                             y );
         }
+
+    if( difficultyPickingOn ) {
+        maxigin_drawAddButtonHint(
+            unlockDifficultyActionHandle,
+            nextQuestPosX + inPosX - 11,
+            nextQuestPosY + inPosY );
+        }
     
     }
 

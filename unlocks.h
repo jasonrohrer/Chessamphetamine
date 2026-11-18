@@ -77,7 +77,8 @@ char unlocksAreAnyUnlocked( void );
 #define UNLOCKS_IMPLEMENTATION_INCLUDED
 
 
-#define  NUM_UNLOCKS  6
+#define  NUM_UNLOCKS           6
+#define  NUM_NEXT_QUEST_LEVELS 6
 
 static  char           unlockEnabled      [ NUM_UNLOCKS ];
 
@@ -118,9 +119,8 @@ static  int            nextQuestShineBigSpriteStrip;
 static  int            nextQuestPosX;
 static  int            nextQuestPosY;
 
-static  int            nextQuestSmallOn                 =    0;
-static  int            nextQuestBigOn                   =    0;
-static  int            nextQuestTestSteps               =    0;
+static  int            nextQuestUnlockLevel             =    0;
+static  int            nextQuestPickedLevel             =    0;
 
 static  int            unlockSound                      =   -1;
 static  int            unlockLastOver                   =   -1;
@@ -136,6 +136,10 @@ static  int            unlockExplodingMax               =  512;
 
 static  char           winExploding                     =    0;
 static  int            winExplodingProgress             =    0;
+
+static  int            nextQuestExploding               =   -1;
+static  int            nextQuestExplodingProgress       =    0;
+
 
 static  int            lang_unlockDes;
 static  int            lang_unlocks[ NUM_UNLOCKS ];
@@ -163,7 +167,7 @@ static const char *getUnlockStringHash(  const char  *inUnlockString ) {
 
 static void unlocksWrite( void ) {
 
-    static  char  s[ NUM_UNLOCKS + 2 ];
+    static  char  s[ NUM_UNLOCKS + 3 ];
 
     int          i;
     const char  *hexHash;
@@ -180,8 +184,11 @@ static void unlocksWrite( void ) {
             s[ i ] = '0';
             }
         }
-    s[ NUM_UNLOCKS ] = ' ';
-    s[ NUM_UNLOCKS  + 1 ] = '\0';
+
+    /* one digit for up to 6 unlocks */
+    s[ NUM_UNLOCKS     ] = (char)( '0' + nextQuestUnlockLevel );
+    s[ NUM_UNLOCKS + 1 ] = ' ';
+    s[ NUM_UNLOCKS + 2 ] = '\0';
 
     hexHash = getUnlockStringHash( s );
 
@@ -191,7 +198,7 @@ static void unlocksWrite( void ) {
 
         char  success  =  mingin_writePersistData( file,
                                                    /* include space */
-                                                   NUM_UNLOCKS + 1,
+                                                   NUM_UNLOCKS + 2,
                                                    (unsigned char *)s );
         if( success ) {
             int  hexLen  =  maxigin_stringLength( hexHash );
@@ -207,7 +214,7 @@ static void unlocksWrite( void ) {
 
 static void unlocksRead( void ) {
 
-    static  char  s       [ NUM_UNLOCKS + 2 ];
+    static  char  s       [ NUM_UNLOCKS + 3 ];
     static  char  readHash[ 16 + 1 ];
     
     int          i;
@@ -229,19 +236,19 @@ static void unlocksRead( void ) {
         }
     
     numRead = mingin_readPersistData( file,
-                                      NUM_UNLOCKS + 1,
+                                      NUM_UNLOCKS + 2,
                                       (unsigned char*)s );
 
-    if( numRead != NUM_UNLOCKS + 1 ) {
+    if( numRead != NUM_UNLOCKS + 2 ) {
         mingin_endReadPersistData( file );
         return;
         }
 
-    if( s[ NUM_UNLOCKS ] != ' ' ) {
+    if( s[ NUM_UNLOCKS + 1 ] != ' ' ) {
         mingin_endReadPersistData( file );
         return;
         }
-    s[ NUM_UNLOCKS + 1 ] = '\0';
+    s[ NUM_UNLOCKS + 2 ] = '\0';
 
     correctHexHash = getUnlockStringHash( s );
 
@@ -274,6 +281,8 @@ static void unlocksRead( void ) {
             unlockEnabled[ i ] = 0;
             }
         }
+
+    nextQuestUnlockLevel = s[ NUM_UNLOCKS ] - '0';
     }
 
 
@@ -404,9 +413,11 @@ void unlocksInit( int  inViewActionHandle,
     REGISTER_VAL_MEM( winExploding );
     REGISTER_VAL_MEM( winExplodingProgress );
 
-    REGISTER_VAL_MEM( nextQuestSmallOn );
-    REGISTER_VAL_MEM( nextQuestBigOn );
-    REGISTER_VAL_MEM( nextQuestTestSteps );
+    REGISTER_VAL_MEM( nextQuestUnlockLevel );
+    REGISTER_VAL_MEM( nextQuestPickedLevel );
+
+    REGISTER_VAL_MEM( nextQuestExploding );
+    REGISTER_VAL_MEM( nextQuestExplodingProgress );
     }
 
 
@@ -416,9 +427,11 @@ void unlocksDraw( int  inPosX,
 
     int  i;
     int  j;
-    int  glowRep        =  3;
+    int  glowRep      =  3;
     int  x;
     int  y;
+    int  numSprites;
+    int  xStart;
 
     maxigin_drawResetColor();
 
@@ -572,89 +585,106 @@ void unlocksDraw( int  inPosX,
                         y );
 
 
-    if( 1 ) {
 
-        int  numSprites  =  maxigin_getNumSpritesInStrip(
-                                 nextQuestShineSmallSpriteStrip );
-        int  xStart      =  nextQuestPosX + inPosX - 3;
+    /* now draw next quest lights */
+    
+    numSprites = maxigin_getNumSpritesInStrip(
+        nextQuestShineSmallSpriteStrip );
+    xStart = nextQuestPosX + inPosX - 3;
 
-        x = xStart;
+    x = xStart;
 
-        y = nextQuestPosY + inPosY - 7;
-        
-        
-        for( i = 0;
-             i < numSprites
-             &&
-             i < nextQuestSmallOn;
-             i   ++ ) {
+    y = nextQuestPosY + inPosY - 7;
 
-            int  s  =  maxigin_getSpriteFromStrip(
-                           nextQuestShineSmallSpriteStrip,
-                           i );
-            
-
-            maxigin_drawSprite( s,
-                                x,
-                                y );
-            for( j = 0;
-                 j < glowRep - 1 + 1;
-                 j ++ ) {
-                maxigin_drawSpriteGlowOnly( s,
-                                            x,
-                                            y );
-                }
-
-            x += 4;
-
-            if( i == 2 ) {
-                x = xStart;
-                y += 7;
-                }
-            }
-
-        numSprites = maxigin_getNumSpritesInStrip(
-                         nextQuestShineBigSpriteStrip );
-        
-        xStart = nextQuestPosX + inPosX - 3;
-
-        x = xStart;
-
-        y = nextQuestPosY + inPosY - 4;
-        
-        
-        for( i = 0;
-             i < numSprites
-             &&
-             i < nextQuestBigOn;
-             i   ++ ) {
-
-            int  s  =  maxigin_getSpriteFromStrip(
-                           nextQuestShineBigSpriteStrip,
-                           i );
-            
-
-            maxigin_drawSprite( s,
-                                x,
-                                y );
-            for( j = 0;
-                 j < glowRep - 1 + 1;
-                 j ++ ) {
-                maxigin_drawSpriteGlowOnly( s,
-                                            x,
-                                            y );
-                }
-
-            x += 4;
-
-            if( i == 2 ) {
-                x = xStart;
-                y += 7;
-                }
-            }
-
+    if( numSprites > NUM_NEXT_QUEST_LEVELS ) {
+        numSprites = NUM_NEXT_QUEST_LEVELS;
         }
-    if( nextQuestSmallOn < 3 ) {
+
+    for( i = 0;
+         i < numSprites
+         &&
+         i < nextQuestUnlockLevel;
+         i   ++ ) {
+
+        int  s  =  maxigin_getSpriteFromStrip(
+                       nextQuestShineSmallSpriteStrip,
+                       i );        
+
+        if( nextQuestExploding == i + 1
+            &&
+            winExploding ) {
+
+            /* we're going to explode this light to turn it on,
+               but it hasn't started yet */
+            
+            continue;
+            }
+
+        
+        maxigin_drawSprite( s,
+                            x,
+                            y );
+        for( j = 0;
+             j < glowRep - 1 + 1;
+             j ++ ) {
+            maxigin_drawSpriteGlowOnly( s,
+                                        x,
+                                        y );
+            }
+
+        x += 4;
+
+        if( i == 2 ) {
+            x = xStart;
+            y += 7;
+            }
+        }
+
+    numSprites = maxigin_getNumSpritesInStrip(
+        nextQuestShineBigSpriteStrip );
+
+    xStart = nextQuestPosX + inPosX - 3;
+
+    x = xStart;
+
+    y = nextQuestPosY + inPosY - 4;
+
+    if( numSprites > NUM_NEXT_QUEST_LEVELS ) {
+        numSprites = NUM_NEXT_QUEST_LEVELS;
+        }
+
+    for( i = 0;
+         i < numSprites
+         &&
+         i < nextQuestPickedLevel;
+         i   ++ ) {
+
+        int  s  =  maxigin_getSpriteFromStrip(
+                       nextQuestShineBigSpriteStrip,
+                       i );
+
+
+        maxigin_drawSprite( s,
+                            x,
+                            y );
+        for( j = 0;
+             j < glowRep - 1 + 1;
+             j ++ ) {
+            maxigin_drawSpriteGlowOnly( s,
+                                        x,
+                                        y );
+            }
+
+        x += 4;
+
+        if( i == 2 ) {
+            x = xStart;
+            y += 7;
+            }
+        }
+
+    
+    if( nextQuestUnlockLevel < 3 ) {
         x = nextQuestPosX + inPosX + 7;
         y = nextQuestPosY + inPosY - 7;
         
@@ -721,7 +751,86 @@ void unlocksDrawParticles( int  inPosX,
                                   a );
         maxigin_drawToggleAdditive( 0 );
         }
+    else if( nextQuestExploding != -1 ) {
 
+        /* wait until win explosion done before drawing next quest
+           unlock light explosion */
+        
+        unsigned char  a;
+        int            x   =  nextQuestPosX + inPosX - 3;
+        int            y   =  nextQuestPosY + inPosY - 7;
+        int            s   =  maxigin_getSpriteFromStrip(
+                                  nextQuestShineSmallSpriteStrip,
+                                  nextQuestExploding - 1 );
+
+        x += 4 * ( ( nextQuestExploding - 1 ) % 3 );
+        if( nextQuestExploding > 3 ) {
+            y += 7;
+            }
+        
+        a = (unsigned char)(
+            ( (long)( unlockExplodingMax - nextQuestExplodingProgress ) * 255 )
+            / unlockExplodingMax );
+
+        maxigin_drawToggleAdditive( 1 );
+        maxigin_drawResetColor();
+        maxigin_drawExplodingSprite( s,
+                                     getParticleSprite(),
+                                     x,
+                                     y,
+                                     x,
+                                     y,
+                                     30,
+                                     nextQuestExplodingProgress,
+                                     unlockExplodingMax,
+                                     a );
+        maxigin_drawResetColor();
+        maxigin_drawExplodingSprite( s,
+                                     getParticleSprite(),
+                                     x,
+                                     y,
+                                     x - 3,
+                                     y,
+                                     30,
+                                     nextQuestExplodingProgress,
+                                     unlockExplodingMax,
+                                     a );
+        maxigin_drawResetColor();
+        maxigin_drawExplodingSprite( s,
+                                     getParticleSprite(),
+                                     x,
+                                     y,
+                                     x + 3,
+                                     y,
+                                     30,
+                                     nextQuestExplodingProgress,
+                                     unlockExplodingMax,
+                                     a );
+        maxigin_drawResetColor();
+        maxigin_drawExplodingSprite( s,
+                                     getParticleSprite(),
+                                     x,
+                                     y,
+                                     x,
+                                     y - 1,
+                                     30,
+                                     nextQuestExplodingProgress,
+                                     unlockExplodingMax,
+                                     a );
+        maxigin_drawResetColor();
+        maxigin_drawExplodingSprite( s,
+                                     getParticleSprite(),
+                                     x,
+                                     y,
+                                     x,
+                                     y + 1,
+                                     30,
+                                     nextQuestExplodingProgress,
+                                     unlockExplodingMax,
+                                     a );
+        maxigin_drawToggleAdditive( 0 );
+        }
+    
     }
 
 
@@ -740,25 +849,6 @@ void unlocksStep( int  inPosX,
     int  r          =  mingin_getStepsPerSecond();
     int  deltaFade  =  ( 20 * 60 ) / r;
     
-
-    nextQuestTestSteps ++;
-
-    if( nextQuestTestSteps > r / 2 ) {
-        
-        nextQuestTestSteps = 0;
-        
-        if( nextQuestSmallOn < 6 ) {
-            nextQuestSmallOn ++;
-            }
-        else {
-            nextQuestBigOn ++;
-
-            if( nextQuestBigOn > 6 ) {
-                nextQuestBigOn = 0;
-                nextQuestSmallOn = 0;
-                }
-            }
-        }
 
     maxigin_getSpriteDimensions( unlockFrameSprite,
                                  &w,
@@ -989,8 +1079,24 @@ void unlocksStep( int  inPosX,
         if( winExplodingProgress > unlockExplodingMax ) {
             winExplodingProgress = 0;
             winExploding = 0;
+
+            if( nextQuestExploding != -1 ) {
+                /* done with win exploding, and there's a nextQuest
+                   light to explode too... play unlock sound */
+                
+                maxigin_playSoundEffect( unlockSound,
+                                         512 );
+                }
             }
         }
+    else if( nextQuestExploding != -1 ) {
+        nextQuestExplodingProgress += ( 10 * 60 ) / r;
+        
+        if( nextQuestExplodingProgress > unlockExplodingMax ) {
+            nextQuestExplodingProgress = 0;
+            nextQuestExploding = -1;
+            }
+        }   
     }
 
 
@@ -1031,9 +1137,18 @@ void unlocksBeatLevel( int  inLevel ) {
         winExploding = 1;
         winExplodingProgress = 0;
 
-        /* fixme:  need to unlock next quest, etc. */
-        
-        unlocksWrite();
+        /* unlock next quest, if needed */
+
+        if( nextQuestUnlockLevel < NUM_NEXT_QUEST_LEVELS ) {
+            if( nextQuestPickedLevel == nextQuestUnlockLevel ) {
+                nextQuestUnlockLevel ++;
+                
+                nextQuestExploding = nextQuestUnlockLevel;
+                nextQuestExplodingProgress = 0;
+                
+                unlocksWrite();
+                }
+            }
         }
     
     }

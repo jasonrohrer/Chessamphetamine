@@ -105,33 +105,37 @@ static  unsigned char  winExtraGlowFade;
 
 static  int            winPosX;
 static  int            winPosY;
-static  int            winAtLevel               =   64;
+static  int            winAtLevel                       =   64;
 
-static  char           winHasHappened           =    0;
-static  int            winSound                 =   -1;
+static  char           winHasHappened                   =    0;
+static  int            winSound                         =   -1;
 
 static  int            nextQuestFrameSprite;
 static  int            nextQuestGlintSprite;
-static  int            nextQuestShineSprite;
+static  int            nextQuestShineSmallSpriteStrip;
+static  int            nextQuestShineBigSpriteStrip;
 
 static  int            nextQuestPosX;
 static  int            nextQuestPosY;
 
+static  int            nextQuestSmallOn                 =    0;
+static  int            nextQuestBigOn                   =    0;
+static  int            nextQuestTestSteps               =    0;
 
-static  int            unlockSound              =   -1;
-static  int            unlockLastOver           =   -1;
+static  int            unlockSound                      =   -1;
+static  int            unlockLastOver                   =   -1;
 static  int            unlockViewActionHandle;
 static  int            unlockViewSound;
 
-static  char           unlockViewDown           =    0;
-static  char           unlockViewerCanceled     =    0;
+static  char           unlockViewDown                   =    0;
+static  char           unlockViewerCanceled             =    0;
 
-static  int            unlockExploding          =   -1;
-static  int            unlockExplodingProgress  =    0;
-static  int            unlockExplodingMax       =  512;
+static  int            unlockExploding                  =   -1;
+static  int            unlockExplodingProgress          =    0;
+static  int            unlockExplodingMax               =  512;
 
-static  char           winExploding             =    0;
-static  int            winExplodingProgress     =    0;
+static  char           winExploding                     =    0;
+static  int            winExplodingProgress             =    0;
 
 static  int            lang_unlockDes;
 static  int            lang_unlocks[ NUM_UNLOCKS ];
@@ -344,11 +348,19 @@ void unlocksInit( int  inViewActionHandle,
 
     nextQuestFrameSprite = maxigin_initSprite( "nextQuestFrame.tga" );
     nextQuestGlintSprite = maxigin_initSprite( "nextQuestGlint.tga" );
-    nextQuestShineSprite = maxigin_initSprite( "nextQuestShine.tga" );
+    nextQuestShineSmallSpriteStrip =
+        maxigin_initSpriteStrip( "nextQuestShineSmall.tga",
+                                 1 );
+    nextQuestShineBigSpriteStrip =
+        maxigin_initSpriteStrip( "nextQuestShineBig.tga",
+                                 3 );
 
-    maxigin_initMakeGlowSprite( nextQuestShineSprite,
-                                4,
-                                2 );
+    maxigin_initMakeGlowSpriteStrip( nextQuestShineSmallSpriteStrip,
+                                     1,
+                                     2 );
+    maxigin_initMakeGlowSpriteStrip( nextQuestShineBigSpriteStrip,
+                                     2,
+                                     2 );
 
     nextQuestPosX = -2;
     nextQuestPosY = unlockPosY[ NUM_UNLOCKS - 1 ] + 32;
@@ -391,6 +403,10 @@ void unlocksInit( int  inViewActionHandle,
 
     REGISTER_VAL_MEM( winExploding );
     REGISTER_VAL_MEM( winExplodingProgress );
+
+    REGISTER_VAL_MEM( nextQuestSmallOn );
+    REGISTER_VAL_MEM( nextQuestBigOn );
+    REGISTER_VAL_MEM( nextQuestTestSteps );
     }
 
 
@@ -556,21 +572,87 @@ void unlocksDraw( int  inPosX,
                         y );
 
 
-    if( 0 ) {
+    if( 1 ) {
 
-        x ++;
-        y --;
+        int  numSprites  =  maxigin_getNumSpritesInStrip(
+                                 nextQuestShineSmallSpriteStrip );
+        int  xStart      =  nextQuestPosX + inPosX - 3;
 
-        maxigin_drawSprite( nextQuestShineSprite,
-                            x,
-                            y );
-        for( j = 0;
-             j < glowRep - 1;
-             j ++ ) {
-            maxigin_drawSpriteGlowOnly( nextQuestShineSprite,
-                                        x,
-                                        y );
+        x = xStart;
+
+        y = nextQuestPosY + inPosY - 7;
+        
+        
+        for( i = 0;
+             i < numSprites
+             &&
+             i < nextQuestSmallOn;
+             i   ++ ) {
+
+            int  s  =  maxigin_getSpriteFromStrip(
+                           nextQuestShineSmallSpriteStrip,
+                           i );
+            
+
+            maxigin_drawSprite( s,
+                                x,
+                                y );
+            for( j = 0;
+                 j < glowRep - 1 + 1;
+                 j ++ ) {
+                maxigin_drawSpriteGlowOnly( s,
+                                            x,
+                                            y );
+                }
+
+            x += 4;
+
+            if( i == 2 ) {
+                x = xStart;
+                y += 7;
+                }
             }
+
+        numSprites = maxigin_getNumSpritesInStrip(
+                         nextQuestShineBigSpriteStrip );
+        
+        xStart = nextQuestPosX + inPosX - 3;
+
+        x = xStart;
+
+        y = nextQuestPosY + inPosY - 4;
+        
+        
+        for( i = 0;
+             i < numSprites
+             &&
+             i < nextQuestBigOn;
+             i   ++ ) {
+
+            int  s  =  maxigin_getSpriteFromStrip(
+                           nextQuestShineBigSpriteStrip,
+                           i );
+            
+
+            maxigin_drawSprite( s,
+                                x,
+                                y );
+            for( j = 0;
+                 j < glowRep - 1 + 1;
+                 j ++ ) {
+                maxigin_drawSpriteGlowOnly( s,
+                                            x,
+                                            y );
+                }
+
+            x += 4;
+
+            if( i == 2 ) {
+                x = xStart;
+                y += 7;
+                }
+            }
+
         }
     else {
         x += 7;
@@ -658,7 +740,25 @@ void unlocksStep( int  inPosX,
     int  r          =  mingin_getStepsPerSecond();
     int  deltaFade  =  ( 20 * 60 ) / r;
     
-    
+
+    nextQuestTestSteps ++;
+
+    if( nextQuestTestSteps > r / 2 ) {
+        
+        nextQuestTestSteps = 0;
+        
+        if( nextQuestSmallOn < 6 ) {
+            nextQuestSmallOn ++;
+            }
+        else {
+            nextQuestBigOn ++;
+
+            if( nextQuestBigOn > 6 ) {
+                nextQuestBigOn = 0;
+                nextQuestSmallOn = 0;
+                }
+            }
+        }
 
     maxigin_getSpriteDimensions( unlockFrameSprite,
                                  &w,

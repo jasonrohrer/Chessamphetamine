@@ -654,9 +654,9 @@ void unlocksDraw( int  inPosX,
             }
 
         }
-    else {
-        x += 7;
-        y -= 7;
+    if( nextQuestSmallOn < 3 ) {
+        x = nextQuestPosX + inPosX + 7;
+        y = nextQuestPosY + inPosY - 7;
         
         maxigin_drawSprite( nextQuestGlintSprite,
                             x,

@@ -1039,35 +1039,6 @@ void unlocksStep( int  inPosX,
                     nextQuestOver = 0;
                     }
 
-                if( nextQuestOver ) {
-
-                    if( difficultyPickingOn ) {
-
-                        tipDisplaySet( lang_questPick,
-                                       -1,
-                                       -1,
-                                       1,
-                                       0 );
-                        }
-                    else if( nextQuestUnlockLevel < 6 ) {
-                        
-                        tipDisplaySet(
-                            lang_nextQuestUnlocks[ nextQuestUnlockLevel ],
-                            -1,
-                            -1,
-                            1,
-                            0 );
-                        }
-                    else {
-                        tipDisplaySet( lang_everythingUnlocked,
-                                       -1,
-                                       -1,
-                                       1,
-                                       0 );
-                        }
-                        
-                    }
-
 
                 if( nextQuestOver
                     &&
@@ -1169,7 +1140,35 @@ void unlocksStep( int  inPosX,
         unlockDifficultyDown = 0;
         }
 
-    
+
+    if( nextQuestOver ) {
+
+        if( difficultyPickingOn ) {
+
+            tipDisplaySet( lang_questPick,
+                           -1,
+                           -1,
+                           1,
+                           0 );
+            }
+        else if( nextQuestUnlockLevel < 6 ) {
+
+            tipDisplaySet(
+                lang_nextQuestUnlocks[ nextQuestUnlockLevel ],
+                -1,
+                -1,
+                1,
+                0 );
+            }
+        else {
+            tipDisplaySet( lang_everythingUnlocked,
+                           -1,
+                           -1,
+                           1,
+                           0 );
+            }
+
+        }
 
     
     for( i = 0;
@@ -1399,6 +1398,9 @@ void unlocksHardReset( void ) {
         unlockEnabled[ i ] = 0;
 
         }
+    
+    nextQuestUnlockLevel = 0;
+    
     unlocksWrite();
     }
 
@@ -1414,6 +1416,10 @@ char unlocksAreAnyUnlocked( void ) {
             return 1;
             }
         }
+    if( nextQuestUnlockLevel > 0 ) {
+        return 1;
+        }
+    
     return 0;
     }
 

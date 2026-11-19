@@ -235,6 +235,11 @@ static ChessPiece getRandEnemyPieceFromTier( int  inTier ) {
 
 
 static void prepareEnemyDeck( int  inLevelNumber ) {
+
+    /* fixme:
+       break here and monitor deck size as inLevelNumber jumps
+       when difficulty higher. */
+    
     if( inLevelNumber == 0 ) {
 
         /* 4 pieces in deck at level 0 */
@@ -253,21 +258,40 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
         deckAddPiece( &enemyDeck,
                       knight );
         }
-    if( inLevelNumber == 1 ) {
+
+    /* if we have a difficulty modifier, we jump up through
+       effective levels faster, so we might skip level "1" etc.
+
+       However, we want to make sure that the "starter deck" gets
+       fully built, even if that's the case,
+       so we check deck size and add pieces even if we're beyond the
+       level in question */
+    
+    if( inLevelNumber >= 1
+        &&
+        deckGetSize( &enemyDeck ) == 4 ) {
+        
         deckAddPiece( &enemyDeck,
                       rook );
         }
-    if( inLevelNumber == 2 ) {
+    
+    if( inLevelNumber >= 2
+        &&
+        deckGetSize( &enemyDeck ) == 5 ) {
         deckAddPiece( &enemyDeck,
                       rook );
         }
 
-    if( inLevelNumber == 3 ) {
+    if( inLevelNumber >= 3
+        &&
+        deckGetSize( &enemyDeck ) == 6 ) {
         deckAddPiece( &enemyDeck,
                       knight );
         }
     
-    if( inLevelNumber == 4 ) {
+    if( inLevelNumber >= 4
+        &&
+        deckGetSize( &enemyDeck ) == 7 ) {
         /* 8 pieces in deck at level 4,
            including Queen.
 
@@ -291,6 +315,16 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
 
     /* by level 12, our deck has 16 pieces */
 
+    while( inLevelNumber - 4 + 8
+           >
+           deckGetSize( &enemyDeck ) ) {
+        /* in case we're jumping levels, fill out our deck */
+        deckAddPiece(
+            &enemyDeck,
+            getRandEnemyPieceFromTier( 1 ) );
+        }
+    
+
     if( inLevelNumber > 12
         &&
         inLevelNumber <= 46 ) {
@@ -304,6 +338,20 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
         }
 
     /* by level 46, our deck has 50 pieces */
+
+    
+    while( inLevelNumber - 12 + 16
+           >
+           deckGetSize( &enemyDeck ) ) {
+        /* in case we're jumping levels, fill out our deck */
+        deckAddPiece(
+            &enemyDeck,
+            getRandEnemyPieceFromTier( 2 ) );
+        }
+
+    /* beyond level 46, we don't need to do anything special if we're
+       jumping levels, since we just add one piece at a time from
+       here on out from the entire pool */
     
     if( inLevelNumber > 46 ) {
 
@@ -313,16 +361,15 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
         ChessPiece  p  =  getRandEnemyPieceFromTier( -1 );
   
 
-        /* by level 100, our deck has 104 pieces */
-
-        /* after level 100 we stop adding extra pieces, so the deck
+        /* after our deck reaches 60 pieces,
+           we stop adding extra pieces, so the deck
            doesn't just keep growing in size.
            
            However, we keep replacing pieces with a random piece,
            so deck gradually keeps changing composition forever
         */
 
-        if( inLevelNumber <= 100 ) {
+        if( deckGetSize( &enemyDeck ) < 60 ) {
             deckAddPiece( &enemyDeck,
                           p );
             }
@@ -344,14 +391,23 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
 void getEnemyLevel( int inLevelNumber,
                     BoardState  *outState ) {
 
-    int   y;
-    int   x;
-    int   numEnemyPieces  =  getNumEnemyPieces( inLevelNumber );
-
+    int           y;
+    int           x;
+    int           numEnemyPieces;
+    int           difficultyLevel  =  inLevelNumber;
+    
     static  char  form[ BH ][ BW ];
 
+    /* by final quest level, we jump by 7 difficulty for each one
+       jump in level */
+    difficultyLevel *= ( unlocksGetDifficulty() + 1 );
+
+    /* should this be based on difficulty level too? */
+    numEnemyPieces = getNumEnemyPieces( difficultyLevel );
+    
+    
     /* add new pieces to enemy deck based on level number */
-    prepareEnemyDeck( inLevelNumber );
+    prepareEnemyDeck( difficultyLevel );
 
     levelGetRandomFormation( form,
                              numEnemyPieces,

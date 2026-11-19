@@ -77,3 +77,5 @@
 #include "vfdDigit.h"
 
 #include "tipDisplay.h"
+
+#include "liveValueTest.h"

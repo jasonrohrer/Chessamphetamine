@@ -15,6 +15,11 @@
 #define UNLOCKS_H_INCLUDED
 
 
+#define  NUM_UNLOCKS           6
+#define  NUM_NEXT_QUEST_LEVELS 6
+
+
+
 /* handle for action controller to toggle through unlocks
    for info */
 void unlocksInit( int  inViewActionHandle,
@@ -70,6 +75,11 @@ char unlocksAreAnyUnlocked( void );
 void unlocksToggleDifficultyPicking( char  inCanPick );
 
 
+char unlocksAreFurtherQuestsAvailable( void );
+
+
+int unlocksGetDifficulty( void );
+
 
 
 #endif
@@ -84,8 +94,6 @@ void unlocksToggleDifficultyPicking( char  inCanPick );
 #define UNLOCKS_IMPLEMENTATION_INCLUDED
 
 
-#define  NUM_UNLOCKS           6
-#define  NUM_NEXT_QUEST_LEVELS 6
 
 static  char           unlockEnabled      [ NUM_UNLOCKS ];
 
@@ -1510,6 +1518,17 @@ void unlocksToggleDifficultyPicking( char  inCanPick ) {
     difficultyPickingOn = inCanPick;
     }
 
+
+
+char unlocksAreFurtherQuestsAvailable( void ) {
+    return ( nextQuestUnlockLevel > 0 );
+    }
+
+
+
+int unlocksGetDifficulty( void ) {
+    return nextQuestPickedLevel;
+    }
 
     
 

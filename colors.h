@@ -24,6 +24,13 @@ enum{
     COLOR_BAILOUT,
     COLOR_WAGES,
     COLOR_LCD_TEXT,
+    COLOR_DIFF_0,
+    COLOR_DIFF_1,
+    COLOR_DIFF_2,
+    COLOR_DIFF_3,
+    COLOR_DIFF_4,
+    COLOR_DIFF_5,
+    COLOR_DIFF_6,
     NUM_COLORS };
 
 
@@ -55,6 +62,7 @@ void colorsApplyBoardColor     ( void );
 void colorsApplyMoneyColor     ( void );
 
 
+void colorsApplyDifficultyColor( int  inDifficulty );
 
 
 
@@ -467,6 +475,21 @@ void colorsApplyBoardColor( void ) {
 
 void colorsApplyMoneyColor( void ) {
     colorsApply( COLOR_MONEY );
+    }
+
+
+
+void colorsApplyDifficultyColor( int  inDifficulty ) {
+
+    int  c  =  inDifficulty + COLOR_DIFF_0;
+    
+    if( c >= COLOR_DIFF_0
+        &&
+        
+        c <= COLOR_DIFF_6 ) {
+
+        colorsApply( c );
+        }
     }
 
 

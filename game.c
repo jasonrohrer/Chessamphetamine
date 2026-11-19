@@ -36,7 +36,10 @@ enum GameUserAction {
     DECK_PREV,
     UNLOCK_VIEW,
     UNLOCK_CLEAR_A,
-    UNLOCK_CLEAR_B
+    UNLOCK_CLEAR_B,
+    LIVE_VALUE_UP,
+    LIVE_VALUE_DOWN,
+    LIVE_VALUE_NEXT
     };
 
 
@@ -48,6 +51,7 @@ static  int   autoQuitStepsPerSecond;
 static  char  actionHeldDown           =    0;
 
 static  int   woodGrainSprite          =   -1;
+static  int   difficultyTagSprite      =   -1;
 static  int   buttonHintStrip          =   -1;
 
 static  int   plunkSound               =   -1;
@@ -106,49 +110,50 @@ static  int   tomBylineSprite          =   -1;
 static  int   smallCapsFont            =   -1;
 
 
-static int            lang_quit;
-static int            lang_musicVolume;
-static int            lang_effectsVolume;
-static int            lang_fullscreen;
+static  int            lang_quit;
+static  int            lang_musicVolume;
+static  int            lang_effectsVolume;
+static  int            lang_fullscreen;
 
-static int            lang_action;
-static int            lang_draw;
-static int            lang_deck;
-static int            lang_commit;
-static int            lang_spin;
-static int            lang_unlockView;
-static int            lang_shopLock;
+static  int            lang_action;
+static  int            lang_draw;
+static  int            lang_deck;
+static  int            lang_commit;
+static  int            lang_spin;
+static  int            lang_unlockView;
+static  int            lang_shopLock;
 
-static int            lang_drawInstruct;
-static int            lang_level;
-static int            lang_gameOverInstruct;
-static int            lang_swapInstructA;
-static int            lang_swapInstructB;
+static  int            lang_drawInstruct;
+static  int            lang_level;
+static  int            lang_gameOverInstruct;
+static  int            lang_swapInstructA;
+static  int            lang_swapInstructB;
 
-static int            lang_readyCount;
-static int            lang_discardCount;
+static  int            lang_readyCount;
+static  int            lang_discardCount;
 
-static int            lang_corrupted[3];
+static  int            lang_corrupted[ 3 ];
+static  int            lang_questDes[ NUM_NEXT_QUEST_LEVELS + 1 ];
 
-static BoardState     boardState;
-static Captured       postMoveCaptured;
-static BoardState     postMoveState;
-static Move           boardMove;
-static AnimProgress   moveProgress;
+static  BoardState     boardState;
+static  Captured       postMoveCaptured;
+static  BoardState     postMoveState;
+static  Move           boardMove;
+static  AnimProgress   moveProgress;
 
-static char           boardMarkers[ BH ][ BW ];
-static int            boardMarkersDownCount      =  0;
-static char           boardMarkersHidden         =  0;
+static  char           boardMarkers[ BH ][ BW ];
+static  int            boardMarkersDownCount   =  0;
+static  char           boardMarkersHidden      =  0;
 
-static DrawBoardLift  redrawLift;
-static DrawBoardLift  redrawSmoothLift;
+static  DrawBoardLift  redrawLift;
+static  DrawBoardLift  redrawSmoothLift;
 
-static char           moveMade                   =  0;
-static char           chessGameOver              =  0;
+static  char           moveMade                =  0;
+static  char           chessGameOver           =  0;
 
-static int            noScoreMoveCount           =  0;
-static int            statesTested               =  0;
-static int            movePickTime               =  0;
+static  int            noScoreMoveCount        =  0;
+static  int            statesTested            =  0;
+static  int            movePickTime            =  0;
 
 
 static int            endMessageSprites[ 3 ]  = { -1,
@@ -978,58 +983,63 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
 
             int  logoY       =  boardLiveCenterY;
             int  partSprite  =  getParticleSprite();
+
+
+            if( unlocksAreFurtherQuestsAvailable() ) {
+                logoY += 24;
+                }
             
             maxigin_drawResetColor();
 
-            
-                maxigin_drawSetAlpha( logoFade );
 
-                maxigin_drawSprite( logoBaseSprite,
+            maxigin_drawSetAlpha( logoFade );
+
+            maxigin_drawSprite( logoBaseSprite,
+                                boardCenterX,
+                                logoY );
+
+            if( logoFade == 255
+                ||
+                partSprite == -1 ) {
+
+                maxigin_drawSprite( logoPulseSprite,
                                     boardCenterX,
-                                    logoY );
+                                    logoY + 15 );
 
-                if( logoFade == 255
-                    ||
-                    partSprite == -1 ) {
-                
-                    maxigin_drawSprite( logoPulseSprite,
+                maxigin_drawToggleAdditive( 1 );
+                for( i = 0;
+                     i < 2;
+                     i ++ )
+                    maxigin_drawBaseSprite( logoPulseSprite,
+                                            boardCenterX,
+                                            logoY + 15 );
+                for( i = 0;
+                     i < 3;
+                     i ++ )
+                    maxigin_drawSpriteGlowOnly( logoPulseSprite,
+                                                boardCenterX,
+                                                logoY + 15 );
+
+                /* now draw glint */
+                maxigin_drawPushClipRectangle( logoGlintXPos,
+                                               logoGlintXPos + 2,
+                                               0,
+                                               MAXIGIN_GAME_NATIVE_H );
+                maxigin_drawToggleAdditive( 0 );
+
+                maxigin_drawBaseSprite( logoPulseGlintSprite,
                                         boardCenterX,
                                         logoY + 15 );
 
-                    maxigin_drawToggleAdditive( 1 );
-                    for( i = 0;
-                         i < 2;
-                         i ++ )
-                        maxigin_drawBaseSprite( logoPulseSprite,
-                                                boardCenterX,
-                                                logoY + 15 );
-                    for( i = 0;
-                         i < 3;
-                         i ++ )
-                        maxigin_drawSpriteGlowOnly( logoPulseSprite,
-                                                    boardCenterX,
-                                                    logoY + 15 );
 
-                    /* now draw glint */
-                    maxigin_drawPushClipRectangle( logoGlintXPos,
-                                                   logoGlintXPos + 2,
-                                                   0,
-                                                   MAXIGIN_GAME_NATIVE_H );
-                    maxigin_drawToggleAdditive( 0 );
-                    
-                    maxigin_drawBaseSprite( logoPulseGlintSprite,
-                                            boardCenterX,
-                                            logoY + 15 );
-                    
-
-                    maxigin_drawPopClipRectangle();
-                    }
+                maxigin_drawPopClipRectangle();
+                }
             else {
                 /* show exploding pulse as logo fades out */
                 maxigin_drawToggleAdditive( 1 );
 
                 maxigin_drawResetColor();
-                
+
                 maxigin_drawExplodingSprite( logoPulseSprite,
                                              partSprite,
                                              boardCenterX,
@@ -1320,6 +1330,38 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
         }
 
 
+    if( isNewGameWaiting() ) {
+
+        int  bannerX   =  boardCenterX - 30;
+        int  bannerY   =  boardCenterY - 16;
+
+        int  bannerW;
+        int  bannerH;
+
+        int  diff      =  unlocksGetDifficulty();
+
+        maxigin_getSpriteDimensions( difficultyTagSprite,
+                                     &bannerW,
+                                     &bannerH );
+        
+        maxigin_drawResetColor();
+
+        maxigin_drawSprite( difficultyTagSprite,
+                            bannerX,
+                            bannerY );
+
+        maxigin_setLanguageFontIndex( 1 );
+
+        colorsApplyDifficultyColor( diff );
+        
+        maxigin_drawLangText( lang_questDes[ diff ],
+                              bannerX + bannerW / 2 - 8,
+                              bannerY,
+                              MAXIGIN_RIGHT );
+        
+        maxigin_setLanguageFontIndex( 0 );
+        }
+
     
     screenEndDraw();
     
@@ -1520,6 +1562,9 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
         }
 
     maxigin_drawAllAddedButtonHints();
+
+    liveValueDraw( boardCenterX,
+                   20 );
     
     pinchApply( inRGBBuffer );
     }
@@ -3103,7 +3148,10 @@ void maxiginGame_step( char  inFinalStep  ) {
             }
         }
 
-    
+
+    liveValueStep( LIVE_VALUE_UP,
+                   LIVE_VALUE_DOWN,
+                   LIVE_VALUE_NEXT );
 
     unlocksStep( unlocksX,
                  unlocksY );
@@ -3485,6 +3533,11 @@ void maxiginGame_step( char  inFinalStep  ) {
 static MinginButton unlockClearA[] =  { MGN_KEY_1,     MGN_MAP_END };
 static MinginButton unlockClearB[] =  { MGN_KEY_6,     MGN_MAP_END };
 
+static MinginButton liveValueUp  []  =  { MGN_KEY_UP,   MGN_MAP_END };
+static MinginButton liveValueDown[]  =  { MGN_KEY_DOWN, MGN_MAP_END };
+static MinginButton liveValueNext[]  =  { MGN_KEY_TAB,  MGN_MAP_END };
+
+
 
 static MinginButton spinMapping[]    =  { MGN_BUTTON_R2,
                                           MGN_MAP_END };
@@ -3673,6 +3726,21 @@ void maxiginGame_init( void ) {
 
     woodGrainSprite = maxigin_initSprite( "woodGrain.tga" );
 
+    difficultyTagSprite = maxigin_initSprite( "difficultyTag.tga" );
+
+    maxigin_initMakeGlowSpriteStrip( difficultyTagSprite,
+                                     4,
+                                     2 );
+    
+    maxigin_initMakeDropShadowSprite( difficultyTagSprite,
+                                      4,
+                                      2,
+                                      255,
+                                      255,
+                                      100,
+                                      0,
+                                      0,
+                                      0 );
 
     buttonHintStrip = maxigin_initSpriteStrip( "buttonHintStrip.tga",
                                                16 );
@@ -3932,6 +4000,15 @@ void maxiginGame_init( void ) {
     lang_corrupted[0]     = maxigin_initTranslationKey( "corruptedA" );
     lang_corrupted[1]     = maxigin_initTranslationKey( "corruptedB" );
     lang_corrupted[2]     = maxigin_initTranslationKey( "corruptedC" );
+
+    for( i =  0;
+         i <= NUM_NEXT_QUEST_LEVELS;
+         i    ++ ) {
+        
+        const char  *key  =  maxigin_stringConcat( "quest",
+                                                   maxigin_intToString( i ) );
+        lang_questDes[ i ] = maxigin_initTranslationKey( key );
+        }
     
 
     maxigin_registerButtonMapping( TOGGLE_MOVE_LOG,
@@ -3971,6 +4048,13 @@ void maxiginGame_init( void ) {
     maxigin_registerButtonMapping( UNLOCK_CLEAR_B,
                                    unlockClearB );
 
+    maxigin_registerButtonMapping( LIVE_VALUE_UP,
+                                   liveValueUp );
+    maxigin_registerButtonMapping( LIVE_VALUE_DOWN,
+                                   liveValueDown );
+    maxigin_registerButtonMapping( LIVE_VALUE_NEXT,
+                                   liveValueNext );
+    
     maxigin_registerButtonMapping( MOUSE_CLICK,
                                    mouseClickMapping );
     

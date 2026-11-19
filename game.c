@@ -1332,7 +1332,7 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
 
     if( isNewGameWaiting() ) {
 
-        int  bannerX   =  boardCenterX - 30;
+        int  bannerX   =  boardCenterX - 20;
         int  bannerY   =  boardCenterY - 16;
 
         int  bannerW;

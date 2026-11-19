@@ -75,7 +75,7 @@ permanent      "永久"
 
 level          "關"
 
-gameOverInstruct  "請再 ## ## 玩一次"
+gameOverInstruct  "請再 ## 玩一次"
 
 unlockDes      "永久解鎖"
 unlock0        "備用區增加一格"
@@ -112,6 +112,27 @@ prevTip         "牌組 ## 上一頁"
 deckTip         "切換 ## 牌組檢視"
 drawTip         "重抽 ## 備用棋子"
 rerollTip       "刷新商店"
+
+
+quest0  "已選擇基本遊戲"
+quest1  "已選擇第二任務"
+quest2  "已選擇第三任務"
+quest3  "已選擇第四任務"
+quest4  "已選擇第五任務"
+quest5  "已選擇第六任務"
+quest6  "已選擇最終任務"
+
+unlockQuest1  "獲勝即 ## 可解鎖"
+unlockQuest2  "贏得 ## 第二任務 ## 即可解鎖"
+unlockQuest3  "贏得 ## 第三任務 ## 即可解鎖"
+unlockQuest4  "贏得 ## 第四任務 ## 即可解鎖"
+unlockQuest5  "贏得 ## 第五任務 ## 即可解鎖"
+unlockQuest6  "贏得 ## 第六任務 ## 即可解鎖"
+
+everythingUnlocked  "全部 ## 已解鎖"
+
+unlockMouseOver  "選擇任務"
+
 
 
 pawn           "兵"

@@ -113,6 +113,28 @@ deckTip         "Afficher/ ## Masquer ## le deck"
 drawTip         "Retirer ## la réserve"
 rerollTip       "Relancer ## la boutique"
 
+
+quest0  "Jeu de base sélectionné"
+quest1  "Deuxième quête sélectionnée"
+quest2  "Troisième quête sélectionnée"
+quest3  "Quatrième quête sélectionnée"
+quest4  "Cinquième quête sélectionnée"
+quest5  "Sixième quête sélectionnée"
+quest6  "Quête finale sélectionnée"
+
+unlockQuest1  "Gagner pour débloquer"
+unlockQuest2  "Gagner la ## deuxième quête ## pour débloquer"
+unlockQuest3  "Gagner la ## troisième quête ## pour débloquer"
+unlockQuest4  "Gagner la ## quatrième quête ## pour débloquer"
+unlockQuest5  "Gagner la ## cinquième quête ## pour débloquer"
+unlockQuest6  "Gagner la ## sixième quête ## pour débloquer"
+
+everythingUnlocked  "Tout est ## débloqué"
+
+unlockMouseOver  "Choisir ## une quête"
+
+
+
 pawn           "Pion"
 pawnDesc       "Avance de 1 ou 2 cases, capture en diagonale. Devient une dame sur la dernière rangée."
 

@@ -3968,7 +3968,7 @@ void maxiginGame_init( void ) {
     if( fontStrip != -1 ) {
 
         maxigin_initMakeGlowSpriteStrip( fontStrip,
-                                         2,
+                                         4,
                                          2 );
 
         smallCapsFont = maxigin_initFont( fontStrip,

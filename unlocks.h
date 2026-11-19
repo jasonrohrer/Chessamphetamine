@@ -81,6 +81,9 @@ char unlocksAreFurtherQuestsAvailable( void );
 int unlocksGetDifficulty( void );
 
 
+void unlockClearWin( void );
+
+
 
 #endif
 
@@ -1530,7 +1533,13 @@ int unlocksGetDifficulty( void ) {
     return nextQuestPickedLevel;
     }
 
-    
+
+
+void unlockClearWin( void ) {
+    winHasHappened = 0;
+    }
+
+
 
 #endif
 

@@ -3063,6 +3063,8 @@ void maxiginGame_step( char  inFinalStep  ) {
 
             /* reset everything for new game */
 
+            unlockClearWin();
+
             maxigin_playSoundEffect( moveAnimGetShooshGoodSound(),
                                      512 );
             

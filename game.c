@@ -1330,7 +1330,9 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
         }
 
 
-    if( isNewGameWaiting() ) {
+    if( isNewGameWaiting()
+        &&
+        unlocksAreFurtherQuestsAvailable() ) {
 
         int  bannerX   =  boardCenterX - 20;
         int  bannerY   =  boardCenterY - 16;

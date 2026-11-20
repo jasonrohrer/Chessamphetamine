@@ -125,7 +125,7 @@ quest4 "Fifth quest selected"
 quest5 "Sixth quest selected"
 quest6 "Final quest selected"
 
-unlockQuest1 "Win to unlock"
+unlockQuest1 "Win to ## unlock"
 unlockQuest2 "Win ## second quest ## to unlock"
 unlockQuest3 "Win ## third quest ## to unlock"
 unlockQuest4 "Win ## fourth quest ## to unlock"

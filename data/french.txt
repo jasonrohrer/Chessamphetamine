@@ -78,9 +78,13 @@ gameOverInstruct  "Veuillez ## rejouer"
 
 
 unlockDes      "Déblocage permanent"
-unlock0        "Une place de plus dans la réserve"
-unlock1        "Un emplacement de plus dans la boutique"
-unlock2        "Un article est toujours en promo dans la boutique"
+unlock0        "Une place en plus dans la réserve"
+unlock1        "Choisissez une pièce parmi trois de votre ancien deck au début d'une nouvelle partie"
+unlock2        "Un emplacement en plus dans la boutique"
+unlock3        "Un dernier échange bonus de la réserve"
+unlock4        "Toujours un article en promotion dans la boutique"
+unlock5        "Option pour activer la quatrième rangée lors du déploiement"
+
 
 unlockLockedA  "Faites ## échec et mat ## au niveau"
 unlockLockedB  "ou supérieur ## pour ## débloquer"
@@ -122,7 +126,7 @@ quest4  "Cinquième quête sélectionnée"
 quest5  "Sixième quête sélectionnée"
 quest6  "Quête finale sélectionnée"
 
-unlockQuest1  "Gagner pour débloquer"
+unlockQuest1  "Gagner ## pour ## débloquer"
 unlockQuest2  "Gagner la ## deuxième quête ## pour débloquer"
 unlockQuest3  "Gagner la ## troisième quête ## pour débloquer"
 unlockQuest4  "Gagner la ## quatrième quête ## pour débloquer"

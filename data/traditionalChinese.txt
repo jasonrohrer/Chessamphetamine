@@ -78,10 +78,12 @@ level          "關"
 gameOverInstruct  "請再 ## 玩一次"
 
 unlockDes      "永久解鎖"
-unlock0        "備用區增加一格"
-unlock1        "商店增加一個欄位"
-unlock2        "商店中總有一項商品特價"
-
+unlock0        "備用區增加一個空位"
+unlock1        "開始新遊戲時，可從上一副牌組的三個棋子中選一個保留"
+unlock2        "商店增加一個欄位"
+unlock3        "備用區重抽次數用完後，可額外重抽一次"
+unlock4        "商店永遠有一件商品特價"
+unlock5        "部署棋子時可切換啟用第四排"
 
 unlockLockedA  "在關卡"
 unlockLockedB  "完成將死 ## 以解鎖"

@@ -55,13 +55,15 @@ void unlocksStep( int  inPosX,
 
 int unlocksGetExtraSideboardSlots( void );
 
+char unlocksGetNewGameKeepPieces( void );
+
 int unlocksGetExtraShopSlots( void );
+
+char unlocksGetLastChanceBonusRedraw( void );
 
 int unlocksGetMinNumSaleSlots( void );
 
-int unlocksGetExtraNewRecruitsBaskets( void );
-
-int unlocksGetExtraDraws( void );
+char unlocksGetFourthRowToggleAvailable( void );
 
 
 void unlocksCancelViewer( void );
@@ -1460,8 +1462,7 @@ int unlocksGetExtraSideboardSlots( void ) {
 
 
 
-int unlocksGetExtraShopSlots( void ) {
-
+char unlocksGetNewGameKeepPieces( void ) {
     if( unlockEnabled[ 1 ] ) {
         return 1;
         }
@@ -1472,7 +1473,7 @@ int unlocksGetExtraShopSlots( void ) {
 
 
 
-int unlocksGetMinNumSaleSlots( void ) {
+int unlocksGetExtraShopSlots( void ) {
 
     if( unlockEnabled[ 2 ] ) {
         return 1;
@@ -1484,16 +1485,36 @@ int unlocksGetMinNumSaleSlots( void ) {
 
 
 
-int unlocksGetExtraNewRecruitsBaskets( void ) {
-    /* not implemented yet */
-    return 0;
+char unlocksGetLastChanceBonusRedraw( void ) {
+    if( unlockEnabled[ 3 ] ) {
+        return 1;
+        }
+    else {
+        return 0;
+        }
     }
 
 
 
-int unlocksGetExtraDraws( void ) {
-    /* not implemented yet */
-    return 0;
+int unlocksGetMinNumSaleSlots( void ) {
+
+    if( unlockEnabled[ 4 ] ) {
+        return 1;
+        }
+    else {
+        return 0;
+        }
+    }
+
+
+
+char unlocksGetFourthRowToggleAvailable( void ) {
+    if( unlockEnabled[ 5 ] ) {
+        return 1;
+        }
+    else {
+        return 0;
+        }
     }
 
 

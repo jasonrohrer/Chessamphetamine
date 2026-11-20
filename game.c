@@ -82,6 +82,7 @@ static  int   drawsLeftGlintSprite     =   -1;
 
 static  int   drawsLeft                =    0;
 static  int   baseNumDraws             =    4;
+static  char  bonusDraw                =    1;
 
 static  int   drawButton               =   -1;
 static  int   drawButtonPosY           =  MAXIGIN_GAME_NATIVE_H - 10;
@@ -654,9 +655,25 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
     
     if( sideBoardShowing ) {
 
-        vfdDigitDraw( drawsLeft,
-                      drawButtonPosX + 29,
-                      drawButtonPosY - 4 );
+        int  digitPosX  =  drawButtonPosX + 29;
+        int  digitPosY  =  drawButtonPosY - 4;
+
+        if( unlocksGetLastChanceBonusRedraw()
+            &&
+            drawsLeft == 0
+            &&
+            bonusDraw ) {
+
+            vfdDigitDrawLetter( 'L',
+                                digitPosX,
+                                digitPosY );
+            }
+        else {
+            vfdDigitDraw( drawsLeft,
+                          digitPosX,
+                          digitPosY );
+            }
+        
                       
         sideBoardDraw( 0 );
 
@@ -1690,7 +1707,8 @@ static void swapMarkedPieces( void ) {
 
 
 static void resetDrawsLeft( void ) {
-    drawsLeft = baseNumDraws + unlocksGetExtraDraws();
+    drawsLeft = baseNumDraws;
+    bonusDraw = 1;
     }
 
 
@@ -2972,9 +2990,6 @@ void maxiginGame_step( char  inFinalStep  ) {
                 
                     maxigin_playSoundEffect( boardSlideSound,
                                              256 );
-
-                    /* give them an allowance of 3 every time shop appears */
-                    if( 0 ) moneyAddDelayed( 3 );
                     
                     if( drawsLeft > 0 ) {
                         /* they get money for each unused draw from the
@@ -3252,7 +3267,11 @@ void maxiginGame_step( char  inFinalStep  ) {
 
                 boardState.grid[ sY ][ sX ] = pickedPiece | CHESS_WHITE;
 
-                if( drawsLeft > 0 ) {
+                if( drawsLeft > 0
+                    ||
+                    ( bonusDraw
+                      &&
+                      unlocksGetLastChanceBonusRedraw() ) ) {
                     buttonReset( drawButton );
                     }
 
@@ -3303,7 +3322,11 @@ void maxiginGame_step( char  inFinalStep  ) {
 
             if( sideBoardIsRedrawHelpful() ) {
                 
-                if( drawsLeft <= 0 ) {
+                if( drawsLeft <= 0
+                    &&
+                    ! ( unlocksGetLastChanceBonusRedraw()
+                        &&
+                        bonusDraw ) ) {
                     /* fail */
                     maxigin_playSoundEffect( pickFailedSound,
                                              256 );
@@ -3313,7 +3336,12 @@ void maxiginGame_step( char  inFinalStep  ) {
                     maxigin_playSoundEffect( redrawSound,
                                              256 );
 
-                    drawsLeft --;
+                    if( drawsLeft > 0 ) {
+                        drawsLeft --;
+                        }
+                    else {
+                        bonusDraw = 0;
+                        }
 
                     sideBoardLift();
                     sideBoardRedrawBlocked = 0;

@@ -875,6 +875,13 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
 
     if( ! blockTipDisplay
         &&
+        ! moneyGetSubMessageShowing() ) {
+        blockTipDisplay = unlocksDrawText();
+        }
+    
+
+    if( ! blockTipDisplay
+        &&
         unlocksIsViewerActive() ) {
         blockTipDisplay = 1;
         }

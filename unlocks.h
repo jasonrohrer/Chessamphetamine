@@ -41,6 +41,10 @@ void unlocksDraw( int  inPosX,
                   int  inPosY );
 
 
+/* returns 1 if any text drawn on info panel */
+char unlocksDrawText( void );
+
+
 void unlocksDrawParticles( int  inPosX,
                            int  inPosY );
 
@@ -570,26 +574,6 @@ void unlocksDraw( int  inPosX,
             }
         }
 
-    if( unlockLastOver != -1
-        &&
-        unlockExtraGlowFade[ unlockLastOver ] > 0 ) {
-
-        int  centX  =  MAXIGIN_GAME_NATIVE_W - 38;
-        int  centY  =  MAXIGIN_GAME_NATIVE_H / 2 - 10;
-
-        
-        if( unlockEnabled[ unlockLastOver ] ) {
-
-            drawDescriptionText( lang_unlockDes,
-                                 lang_unlocks[ unlockLastOver ],
-                                 centX,
-                                 centY,
-                                 unlockExtraGlowFade[ unlockLastOver ] );
-
-            }
-        
-        }
-
 
     x = winPosX + inPosX;
     y = winPosY + inPosY;
@@ -782,6 +766,31 @@ void unlocksDraw( int  inPosX,
             nextQuestPosY + inPosY );
         }
     
+    }
+
+
+
+char unlocksDrawText( void ) {
+    if( unlockLastOver != -1
+        &&
+        unlockExtraGlowFade[ unlockLastOver ] > 0 ) {
+
+        int  centX  =  MAXIGIN_GAME_NATIVE_W - 38;
+        int  centY  =  MAXIGIN_GAME_NATIVE_H / 2 - 10;
+
+
+        if( unlockEnabled[ unlockLastOver ] ) {
+
+            drawDescriptionText( lang_unlockDes,
+                                 lang_unlocks[ unlockLastOver ],
+                                 centX,
+                                 centY,
+                                 unlockExtraGlowFade[ unlockLastOver ] );
+
+            return 1;
+            }
+        }
+    return 0;
     }
 
 

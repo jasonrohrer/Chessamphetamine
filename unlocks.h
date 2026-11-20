@@ -345,11 +345,11 @@ void unlocksInit( int  inViewActionHandle,
     unlockGlintSprite = maxigin_initSprite( "unlockGlint.tga" );
 
     unlockSprites[ 0 ] = maxigin_initSprite( "unlockSideboard.tga" );
-    unlockSprites[ 1 ] = maxigin_initSprite( "unlockShopSlot.tga"  );
-    unlockSprites[ 2 ] = maxigin_initSprite( "unlockSale.tga"      );
-    unlockSprites[ 3 ] = maxigin_initSprite( "unlockSale.tga"      );
+    unlockSprites[ 1 ] = maxigin_initSprite( "unlockKeep.tga"  );
+    unlockSprites[ 2 ] = maxigin_initSprite( "unlockShopSlot.tga"  );
+    unlockSprites[ 3 ] = maxigin_initSprite( "unlockDraw.tga"      );
     unlockSprites[ 4 ] = maxigin_initSprite( "unlockSale.tga"      );
-    unlockSprites[ 5 ] = maxigin_initSprite( "unlockSale.tga"      );
+    unlockSprites[ 5 ] = maxigin_initSprite( "unlockRow.tga"      );
     
     
 
@@ -426,6 +426,9 @@ void unlocksInit( int  inViewActionHandle,
     lang_unlocks[ 0 ] = maxigin_initTranslationKey( "unlock0"   );
     lang_unlocks[ 1 ] = maxigin_initTranslationKey( "unlock1"   );
     lang_unlocks[ 2 ] = maxigin_initTranslationKey( "unlock2"   );
+    lang_unlocks[ 3 ] = maxigin_initTranslationKey( "unlock3"   );
+    lang_unlocks[ 4 ] = maxigin_initTranslationKey( "unlock4"   );
+    lang_unlocks[ 5 ] = maxigin_initTranslationKey( "unlock5"   );
 
     lang_lockedA      = maxigin_initTranslationKey( "unlockLockedA" );
     lang_lockedB      = maxigin_initTranslationKey( "unlockLockedB" );

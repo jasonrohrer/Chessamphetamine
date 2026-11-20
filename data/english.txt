@@ -80,8 +80,11 @@ gameOverInstruct  "Please ## Play ## Again"
 
 unlockDes      "Permanent Unlock"
 unlock0        "Extra space on the sideboard"
-unlock1        "Extra slot in the shop"
-unlock2        "Something is always on sale in the shop"
+unlock1        "Pick one of three pieces to keep from last deck when starting new game"
+unlock2        "Extra slot in the shop"
+unlock3        "Last chance bonus sideboard redraw"
+unlock4        "Something is always on sale in the shop"
+unlock5        "Fourth row toggle when drafting army"
 
 unlockLockedA  "Checkmate ## level"
 unlockLockedB  "or higher ## to unlock"

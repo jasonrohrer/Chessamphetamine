@@ -68,6 +68,7 @@ void levelGetRandomFormation( char  outFormation[ BH ][ BW ],
 
 static  MaxiginRand  levelsRand;
 static  Deck         enemyDeck;
+static int           lastEnemyDeckSetLevel = 0;
 
 
 /* for definition of ENEMY_DECK_FLAG_LIST */
@@ -199,6 +200,7 @@ void levelsInit( void ) {
     
     REGISTER_VAL_MEM( levelsRand );
     REGISTER_VAL_MEM( enemyDeck  );
+    REGISTER_VAL_MEM( lastEnemyDeckSetLevel );
     }
 
 
@@ -235,6 +237,9 @@ static ChessPiece getRandEnemyPieceFromTier( int  inTier ) {
 
 
 static void prepareEnemyDeck( int  inLevelNumber ) {
+
+    lastEnemyDeckSetLevel = inLevelNumber;
+    
     if( inLevelNumber == 0 ) {
 
         /* 4 pieces in deck at level 0 */
@@ -336,20 +341,13 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
         }
 
     deckReshuffleAll( &enemyDeck );
-
-    maxigin_logInt2( "Deck at level ",
-                     inLevelNumber,
-                     " has ",
-                     deckGetSize( &enemyDeck ),
-                     " pieces." );
-    deckPrintList( &enemyDeck );
     }
 
 
 
-void getEnemyLevel( int inLevelNumber,
+void getEnemyLevel( int          inLevelNumber,
                     BoardState  *outState ) {
-
+    
     int           y;
     int           x;
     int           numEnemyPieces;
@@ -365,8 +363,17 @@ void getEnemyLevel( int inLevelNumber,
     numEnemyPieces = getNumEnemyPieces( difficultyLevel );
     
     
-    /* add new pieces to enemy deck based on level number */
-    prepareEnemyDeck( difficultyLevel );
+    if( difficultyLevel == inLevelNumber ) {
+        prepareEnemyDeck( difficultyLevel );
+        }
+    else {
+        /* we're jumping in difficulty level, and skipping levels
+           prepare deck at each level along the way */
+
+        while( lastEnemyDeckSetLevel < difficultyLevel ) {
+            prepareEnemyDeck( lastEnemyDeckSetLevel + 1 );
+            }
+        }
 
     levelGetRandomFormation( form,
                              numEnemyPieces,

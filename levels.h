@@ -235,11 +235,6 @@ static ChessPiece getRandEnemyPieceFromTier( int  inTier ) {
 
 
 static void prepareEnemyDeck( int  inLevelNumber ) {
-
-    /* fixme:
-       break here and monitor deck size as inLevelNumber jumps
-       when difficulty higher. */
-    
     if( inLevelNumber == 0 ) {
 
         /* 4 pieces in deck at level 0 */
@@ -258,40 +253,21 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
         deckAddPiece( &enemyDeck,
                       knight );
         }
-
-    /* if we have a difficulty modifier, we jump up through
-       effective levels faster, so we might skip level "1" etc.
-
-       However, we want to make sure that the "starter deck" gets
-       fully built, even if that's the case,
-       so we check deck size and add pieces even if we're beyond the
-       level in question */
-    
-    if( inLevelNumber >= 1
-        &&
-        deckGetSize( &enemyDeck ) == 4 ) {
-        
+    if( inLevelNumber == 1 ) {
         deckAddPiece( &enemyDeck,
                       rook );
         }
-    
-    if( inLevelNumber >= 2
-        &&
-        deckGetSize( &enemyDeck ) == 5 ) {
+    if( inLevelNumber == 2 ) {
         deckAddPiece( &enemyDeck,
                       rook );
         }
 
-    if( inLevelNumber >= 3
-        &&
-        deckGetSize( &enemyDeck ) == 6 ) {
+    if( inLevelNumber == 3 ) {
         deckAddPiece( &enemyDeck,
                       knight );
         }
     
-    if( inLevelNumber >= 4
-        &&
-        deckGetSize( &enemyDeck ) == 7 ) {
+    if( inLevelNumber == 4 ) {
         /* 8 pieces in deck at level 4,
            including Queen.
 
@@ -315,29 +291,6 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
 
     /* by level 12, our deck has 16 pieces */
 
-    while( inLevelNumber <= 12
-           &&
-           inLevelNumber - 4 + 8
-           >
-           deckGetSize( &enemyDeck ) ) {
-        
-        /* in case we're jumping levels, below 12, fill out our deck */
-        deckAddPiece(
-            &enemyDeck,
-            getRandEnemyPieceFromTier( 1 ) );
-        }
-
-    while( inLevelNumber > 12
-           &&
-           deckGetSize( &enemyDeck ) < 16 ) {
-        /* in case we're jumping levels, from below 12 to above 12 in
-           one jump, fill out our deck */
-        deckAddPiece(
-            &enemyDeck,
-            getRandEnemyPieceFromTier( 1 ) );
-        }
-        
-
     if( inLevelNumber > 12
         &&
         inLevelNumber <= 46 ) {
@@ -351,34 +304,6 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
         }
 
     /* by level 46, our deck has 50 pieces */
-
-
-    while( inLevelNumber <= 46
-           &&
-           inLevelNumber - 12 + 16
-           >
-           deckGetSize( &enemyDeck ) ) {
-        /* in case we're jumping levels, below 46, fill out our deck */
-        deckAddPiece(
-            &enemyDeck,
-            getRandEnemyPieceFromTier( 2 ) );
-        }
-
-    while( inLevelNumber > 46
-           &&
-           deckGetSize( &enemyDeck ) < 50 ) {
-
-        /* in case we're jumping levels, from below 46 to above 46 in
-           a single jump, fill out our deck */
-        deckAddPiece(
-            &enemyDeck,
-            getRandEnemyPieceFromTier( 2 ) );
-        }
-
-    
-    /* beyond level 46, we don't need to do anything special if we're
-       jumping levels, since we just add one piece at a time from
-       here on out from the entire pool */
     
     if( inLevelNumber > 46 ) {
 

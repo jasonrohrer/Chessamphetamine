@@ -315,15 +315,28 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
 
     /* by level 12, our deck has 16 pieces */
 
-    while( inLevelNumber - 4 + 8
+    while( inLevelNumber <= 12
+           &&
+           inLevelNumber - 4 + 8
            >
            deckGetSize( &enemyDeck ) ) {
-        /* in case we're jumping levels, fill out our deck */
+        
+        /* in case we're jumping levels, below 12, fill out our deck */
         deckAddPiece(
             &enemyDeck,
             getRandEnemyPieceFromTier( 1 ) );
         }
-    
+
+    while( inLevelNumber > 12
+           &&
+           deckGetSize( &enemyDeck ) < 16 ) {
+        /* in case we're jumping levels, from below 12 to above 12 in
+           one jump, fill out our deck */
+        deckAddPiece(
+            &enemyDeck,
+            getRandEnemyPieceFromTier( 1 ) );
+        }
+        
 
     if( inLevelNumber > 12
         &&
@@ -339,16 +352,30 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
 
     /* by level 46, our deck has 50 pieces */
 
-    
-    while( inLevelNumber - 12 + 16
+
+    while( inLevelNumber <= 46
+           &&
+           inLevelNumber - 12 + 16
            >
            deckGetSize( &enemyDeck ) ) {
-        /* in case we're jumping levels, fill out our deck */
+        /* in case we're jumping levels, below 46, fill out our deck */
         deckAddPiece(
             &enemyDeck,
             getRandEnemyPieceFromTier( 2 ) );
         }
 
+    while( inLevelNumber > 46
+           &&
+           deckGetSize( &enemyDeck ) < 50 ) {
+
+        /* in case we're jumping levels, from below 46 to above 46 in
+           a single jump, fill out our deck */
+        deckAddPiece(
+            &enemyDeck,
+            getRandEnemyPieceFromTier( 2 ) );
+        }
+
+    
     /* beyond level 46, we don't need to do anything special if we're
        jumping levels, since we just add one piece at a time from
        here on out from the entire pool */
@@ -384,6 +411,13 @@ static void prepareEnemyDeck( int  inLevelNumber ) {
         }
 
     deckReshuffleAll( &enemyDeck );
+
+    maxigin_logInt2( "Deck at level ",
+                     inLevelNumber,
+                     " has ",
+                     deckGetSize( &enemyDeck ),
+                     " pieces." );
+    deckPrintList( &enemyDeck );
     }
 
 

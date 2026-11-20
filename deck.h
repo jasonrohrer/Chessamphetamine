@@ -89,6 +89,8 @@ void deckDrawDebugInfo( Deck  *inDeck,
                         int    inCenterY );
 
 
+void deckPrintList( Deck  *inDeck );
+
 
 #endif
 
@@ -323,6 +325,24 @@ void deckDrawDebugInfo( Deck  *inDeck,
                           MAXIGIN_CENTER );
 
         y += 8;
+        }
+
+    }
+
+
+
+void deckPrintList( Deck  *inDeck ) {
+
+    int  i;
+    
+    for( i =  inDeck->numPieces - 1;
+         i >= 0;
+         i -- ) {
+
+        const char  *name  =  getPieceName( inDeck->pieces[ i ] );
+
+        maxigin_logString( "Piece:  ",
+                           name );
         }
 
     }

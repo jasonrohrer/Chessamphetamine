@@ -52,6 +52,8 @@ static  char  actionHeldDown           =    0;
 
 static  int   woodGrainSprite          =   -1;
 static  int   difficultyTagSprite      =   -1;
+static  int   draftLimitLineSprite     =   -1;
+
 static  int   buttonHintStrip          =   -1;
 
 static  int   plunkSound               =   -1;
@@ -402,6 +404,32 @@ static void drawWinnerSpread( unsigned char  inFade ) {
 
     maxigin_drawSetAlpha( inFade );
     }
+
+
+
+static void drawDraftLimitLine( void ) {
+    if( ! spinning
+        &&
+        draftingPieces
+        &&
+        ! chessGameOver
+        &&
+        ! deckViewShowing ) {
+
+        /* fixme:
+           dra limit on drafting area */
+
+        colorsApplyWhitePieceColor();
+        maxigin_drawSetAlpha( 192 );
+        
+        maxigin_drawSprite( draftLimitLineSprite,
+                            boardCenterX + liveValue( 0,
+                                                      0 ),
+                            boardCenterY + liveValue( 1,
+                                                      24 ) );
+        }
+    }
+
 
 
 void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
@@ -1002,6 +1030,8 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
 
         boardDraw( boardCenterX,
                    boardLiveCenterY );
+
+        drawDraftLimitLine();
 
         if( logoFade > 0 ) {
 
@@ -3767,9 +3797,9 @@ void maxiginGame_init( void ) {
 
     difficultyTagSprite = maxigin_initSprite( "difficultyTag.tga" );
 
-    maxigin_initMakeGlowSpriteStrip( difficultyTagSprite,
-                                     4,
-                                     2 );
+    maxigin_initMakeGlowSprite( difficultyTagSprite,
+                                4,
+                                2 );
     
     maxigin_initMakeDropShadowSprite( difficultyTagSprite,
                                       4,
@@ -3780,6 +3810,12 @@ void maxiginGame_init( void ) {
                                       0,
                                       0,
                                       0 );
+
+    draftLimitLineSprite = maxigin_initSprite( "draftLimitLine.tga" );
+
+    maxigin_initMakeGlowSprite( draftLimitLineSprite,
+                                4,
+                                2 );
 
     buttonHintStrip = maxigin_initSpriteStrip( "buttonHintStrip.tga",
                                                16 );

@@ -47,7 +47,7 @@ deckDesc       "Voir le deck"
 spinDesc       "Lancer"
 unlockView     "Déblocages"
 shopLock       "Verrouiller"
-
+fourthRow       "Quatrième rangée"
 
 press          "appuyez"
 
@@ -116,6 +116,7 @@ prevTip         "Page ## précédente ## du deck"
 deckTip         "Afficher/ ## Masquer ## le deck"
 drawTip         "Retirer ## la réserve"
 rerollTip       "Relancer ## la boutique"
+fourthRowTip    "Activer/ ## désactiver ## la quatrième rangée"
 
 
 quest0  "Jeu de base sélectionné"

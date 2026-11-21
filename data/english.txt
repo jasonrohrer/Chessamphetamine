@@ -48,6 +48,7 @@ deckDesc       "View Deck"
 spinDesc       "Go!"
 unlockView     "View Unlocks"
 shopLock       "Shop Lock"
+fourthRow      "Fourth Row"
 
 press          "press"
 
@@ -56,8 +57,8 @@ defaults       "Defaults"
 
 drawInstruct   "Draft ## your army"
 
-swapInstructA   " "
-swapInstructB   "Pick two pieces to swap positions"
+swapInstructA   "Pick two pieces"
+swapInstructB   "to swap positions"
 
 
 unusedDraws    "Unused draws:"
@@ -115,6 +116,7 @@ prevTip         "Previous ## Page ## of Deck"
 deckTip         "Toggle ## Deck View"
 drawTip         "Redraw ## Sideboard"
 rerollTip       "Reroll Shop"
+fourthRowTip    "Toggle ## Fourth Row"
 
 
 quest0 "Base game selected"

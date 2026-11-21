@@ -20,6 +20,7 @@ enum GameUserAction {
     DRAW,
     DECK,
     SHOP_LOCK,
+    FOURTH_ROW,
     TOGGLE_MOVE_LOG,
     ADVANCE_MOVE_LOG,
     BACK_MOVE_LOG,
@@ -94,6 +95,8 @@ static  int   deckButton               =   -1;
 static  int   deckButtonPosY           =  MAXIGIN_GAME_NATIVE_H / 2 - 25;
 static  int   deckButtonPosX           =   21;
 
+static  int   fourthRowButton          =   -1;
+
 static  int   infoLightsX              =   50;
 static  int   unlocksX                 =   51;
 static  int   unlocksY                 =   55;
@@ -125,6 +128,7 @@ static  int            lang_commit;
 static  int            lang_spin;
 static  int            lang_unlockView;
 static  int            lang_shopLock;
+static  int            lang_fourthRow;
 
 static  int            lang_drawInstruct;
 static  int            lang_level;
@@ -240,22 +244,24 @@ static char           infoPanelPieceMoveMarkers[ BH ][ BW ];
 
 
 #define  INFO_HIGHLIGHT_BUFFER_SIZE  5
-static int            infoRow [ INFO_HIGHLIGHT_BUFFER_SIZE ];
-static int            infoCol [ INFO_HIGHLIGHT_BUFFER_SIZE ];
-static unsigned char  infoFade[ INFO_HIGHLIGHT_BUFFER_SIZE ];
-static int            curInfoIndex                 =  0;
-static int            curInfoPickedWithController  =  0;
+static  int            infoRow [ INFO_HIGHLIGHT_BUFFER_SIZE ];
+static  int            infoCol [ INFO_HIGHLIGHT_BUFFER_SIZE ];
+static  unsigned char  infoFade[ INFO_HIGHLIGHT_BUFFER_SIZE ];
+static  int            curInfoIndex                 =    0;
+static  int            curInfoPickedWithController  =    0;
 
-static int            currentLevel                 =  0;
+static  int            currentLevel                 =    0;
 
-static char           gameOver                     =  0;
+static  char           gameOver                     =    0;
 
-static int            startingMoney                =  0;
+static  int            startingMoney                =  100;
 
-static int            draftingPieces               =  0;
-static int            numPiecesPlaced              =  0;
+static  int            draftingPieces               =    0;
+static  int            numPiecesPlaced              =    0;
 
-static int            levelForUnlock               =  -1;
+static  int            levelForUnlock               =   -1;
+
+static  char           fourthRowOn                  =    0;
 
 
 
@@ -416,17 +422,23 @@ static void drawDraftLimitLine( void ) {
         &&
         ! deckViewShowing ) {
 
-        /* fixme:
-           dra limit on drafting area */
+        int  yOffset  =  24;
+        
+
+        if( ! unlocksGetFourthRowToggleAvailable() ) {
+            return;
+            }
+
+        if( fourthRowOn ) {
+            yOffset -= BOARD_SQUARE_SIZE;
+            }
 
         colorsApplyWhitePieceColor();
         maxigin_drawSetAlpha( 192 );
         
         maxigin_drawSprite( draftLimitLineSprite,
-                            boardCenterX + liveValue( 0,
-                                                      0 ),
-                            boardCenterY + liveValue( 1,
-                                                      24 ) );
+                            boardCenterX,
+                            boardCenterY + yOffset );
         }
     }
 
@@ -1032,6 +1044,13 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
                    boardLiveCenterY );
 
         drawDraftLimitLine();
+
+        if( ! isNewGameWaiting()
+            &&
+            unlocksGetFourthRowToggleAvailable() ) {
+
+            buttonDraw( fourthRowButton );
+            }
 
         if( logoFade > 0 ) {
 
@@ -3265,6 +3284,18 @@ void maxiginGame_step( char  inFinalStep  ) {
         char        blockPurchase  =  ( boardMarkersDownCount > 0 );
         ChessPiece  newInfoPiece;
 
+        if( unlocksGetFourthRowToggleAvailable() ) {
+
+            if( buttonIsNewPressed( fourthRowButton ) ) {
+
+                fourthRowOn = ! fourthRowOn;
+
+                /* don't let it reroll any placed piece spots
+                   OR next-to-place spot, which the player can already see */
+                formationToggleFourthRow( fourthRowOn,
+                                          numPiecesPlaced + 1 );
+                }
+            }
         
         blockPurchase = blockPurchase
                         ||
@@ -3657,6 +3688,9 @@ static MinginButton shopLockMapping[]  =  { MGN_BUTTON_PS_SQUARE,
                                             MGN_BUTTON_XBOX_X,
                                             MGN_MAP_END };
 
+static MinginButton fourthRowMapping[]  =  { MGN_BUTTON_PS_SQUARE,
+                                             MGN_BUTTON_XBOX_X,
+                                             MGN_MAP_END };
 
 static MinginButton hintMapping[]   =  { MGN_BUTTON_MOUSE_LEFT,
                                          MGN_BUTTON_MOUSE_RIGHT,
@@ -3770,10 +3804,12 @@ static void initEndMessageSprite( int  inIndex,
 
 void maxiginGame_init( void ) {
 
-    int  i;
-    int  fontStrip;
-    char success;
-
+    int   i;
+    int   fontStrip;
+    char  success;
+    int   spriteA;
+    int   spriteB;
+    
     for( i = 0;
          i < INFO_HIGHLIGHT_BUFFER_SIZE;
          i ++ ) {
@@ -3901,6 +3937,38 @@ void maxiginGame_init( void ) {
                              0,
                              maxigin_initTranslationKey( "deckTip" ),
                              1 );
+
+    spriteA = maxigin_initSprite( "fourthRowButton.tga" );
+    spriteB = maxigin_initSprite( "fourthRowButtonPressed.tga" );
+
+    maxigin_initMakeGlowSprite( spriteA,
+                                4,
+                                2 );
+    maxigin_initMakeDropShadowSprite( spriteA,
+                                      4,
+                                      2,
+                                      255,
+                                      255,
+                                      100,
+                                      0,
+                                      0,
+                                      0 );
+    
+    maxigin_initMakeGlowSprite( spriteB,
+                                4,
+                                2 );
+
+    fourthRowButton = buttonInit( spriteA,
+                                  -1,
+                                  spriteB,
+                                  boardCenterX - 90,
+                                  boardCenterY - 13,
+                                  0,
+                                  MOUSE_CLICK,
+                                  FOURTH_ROW,
+                                  2,
+                                  maxigin_initTranslationKey( "fourthRowTip" ),
+                                  1 );
     
 
     logoSprite = maxigin_initSprite( "logo.tga" );
@@ -4068,6 +4136,7 @@ void maxiginGame_init( void ) {
     
     lang_unlockView       = maxigin_initTranslationKey( "unlockView" );
     lang_shopLock         = maxigin_initTranslationKey( "shopLock" );
+    lang_fourthRow        = maxigin_initTranslationKey( "fourthRow" );
     
     lang_readyCount       = maxigin_initTranslationKey( "readyCount" );
     lang_discardCount     = maxigin_initTranslationKey( "discardCount" );
@@ -4162,7 +4231,11 @@ void maxiginGame_init( void ) {
         SHOP_LOCK,
         shopLockMapping,
         lang_shopLock  );
-
+    
+    maxigin_registerDynamicButtonMapping(
+        FOURTH_ROW,
+        fourthRowMapping,
+        lang_fourthRow  );
     
     maxigin_logInt( "Primary button for ACTION is: ",
                     maxigin_getPlatformPrimaryButton( ACTION ) );
@@ -4458,6 +4531,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( firstDraftingStarted );
 
     REGISTER_VAL_MEM( levelForUnlock );
+
+    REGISTER_VAL_MEM( fourthRowOn );
     
 
     /* trick:

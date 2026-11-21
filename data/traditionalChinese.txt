@@ -44,14 +44,14 @@ deckDesc       "查看牌組"
 spinDesc       "旋轉"
 unlockView     "查看解鎖"
 shopLock       "商店鎖定"
-
+fourthRow       "第四排"
 
 press          "按下"
 
 defaults       "恢復預設"
 
 
-drawInstruct   "徵召你 ## ## 的軍隊"
+drawInstruct   "徵召你 ## 的軍隊"
 
 swapInstructA   " "
 swapInstructB   "選取兩個棋子交換位置"
@@ -114,6 +114,7 @@ prevTip         "牌組 ## 上一頁"
 deckTip         "切換 ## 牌組檢視"
 drawTip         "重抽 ## 備用棋子"
 rerollTip       "刷新商店"
+fourthRowTip    "切換 ## 第四排"
 
 
 quest0  "已選擇基本遊戲"

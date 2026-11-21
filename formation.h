@@ -20,6 +20,10 @@ void formationInit( void );
 
 void formationPlayerReroll( void );
 
+/* State rememebered across next reroll.  */
+void formationToggleFourthRow( char  inFourthRowOn,
+                               int   inNumSpotsToFreeze );
+
 
 /* king is always in spot 0 */
 char formationSpotGet(  int   inSpotIndex,
@@ -56,16 +60,16 @@ void formationDraw( int            inBoardCenterX,
 #include "cost.h"
 
 
-#define              MAX_FORMATION_SLOTS                    BW * 3
+#define              MAX_FORMATION_SLOTS                    BW * 4
 
 static  int          formationX[ MAX_FORMATION_SLOTS ];
 static  int          formationY[ MAX_FORMATION_SLOTS ];
 
-static  int          fmSpotSprite                        =  -1;
+static  int          fmSpotSprite              =  -1;
 
 static  MaxiginRand  fmRand;
 
-static  int          fmPlayerNonKingSpotLimit            =  16;
+static  char         fmFourthRowOn             =   0;
 
 
 
@@ -84,6 +88,8 @@ void formationInit( void ) {
 
     REGISTER_ARRAY_MEM( formationX );
     REGISTER_ARRAY_MEM( formationY );
+
+    REGISTER_VAL_MEM( fmFourthRowOn );
     }
 
 
@@ -173,14 +179,25 @@ void formationPlayerReroll( void ) {
     static  FormSpot  extraSpots[ MAX_FORMATION_SLOTS ];
     static  int       extraIndex[ MAX_FORMATION_SLOTS ];
         
-    int  y;
-    int  x;
+    int               y;
+    int               x;
 
-    int  i;
-    char found;
-    int  numExtra  =  0;
+    int               i;
+    char              found;
+    int               numExtra           =  0;
 
-    /* use level randomizer to get king and first two piece spots */
+    int               rowCount           =  3;
+    int               nonKingSpotLimit;
+
+    if( fmFourthRowOn ) {
+        rowCount = 4;
+        }
+    
+    nonKingSpotLimit = rowCount * BW - 1;
+    
+
+    /* use level randomizer to get king and first two piece spots,
+       These will always be in the back 3 rows */
     levelGetRandomFormation( form,
                              2,
                              CHESS_WHITE );
@@ -261,8 +278,9 @@ void formationPlayerReroll( void ) {
             }
         }
 
-    /* now find empty spots and shuffle them */
-    for( y = BH - 3;
+    /* now find empty spots and shuffle them
+       use back rowCount rows (either 3 or 4 ) */
+    for( y = BH - rowCount;
          y < BH;
          y ++ ) {
         for( x = 0;
@@ -301,7 +319,7 @@ void formationPlayerReroll( void ) {
                      extraIndex );
 
     /* limit how many extra can be placed. */
-    numExtra = fmPlayerNonKingSpotLimit - 2;
+    numExtra = nonKingSpotLimit - 2;
 
     for( i = 0;
          i < numExtra;
@@ -310,7 +328,69 @@ void formationPlayerReroll( void ) {
 
         formationX[ i + 3 ] = extraSpots[ extraIndex[ i ] ].x;
         formationY[ i + 3 ] = extraSpots[ extraIndex[ i ] ].y;
-        }        
+        }
+
+    if( rowCount == 3 ) {
+        /* pad by sticking fourth row in very back */
+        for( i = numExtra + 3;
+             i < numExtra + 3 + BW;
+             i   ++ ) {
+            formationX[ i ] = i - ( numExtra + 3 );
+            formationY[ i ] = BW - 4;
+            }
+        }
+    }
+
+
+
+void formationToggleFourthRow( char  inFourthRowOn,
+                               int   inNumSpotsToFreeze ) {
+
+    int  i;
+    
+    static  int  oldX[ MAX_FORMATION_SLOTS ];
+    static  int  oldY[ MAX_FORMATION_SLOTS ];
+
+    /* preserve frozen spots across reroll when
+       we add/remove fourth row */
+    for( i = 0;
+         i < inNumSpotsToFreeze;
+         i   ++ ) {
+        
+        oldX[ i ] = formationX[ i ];
+        oldY[ i ] = formationY[ i ];
+        }
+    
+    fmFourthRowOn = inFourthRowOn;
+
+    formationPlayerReroll();
+
+    for( i = 0;
+         i < inNumSpotsToFreeze;
+         i   ++ ) {
+
+        int  j;
+
+        for( j = 0;
+             j < MAX_FORMATION_SLOTS;
+             j   ++ ) {
+
+            if( oldX[ i ] == formationX[ j ]
+                &&
+                oldY[ i ] == formationY[ j ] ) {
+                /* match, swap them */
+
+                int  tempX  =  formationX[ i ];
+                int  tempY  =  formationY[ i ];
+                
+                formationX[ i ] = oldX[ i ];
+                formationY[ i ] = oldY[ i ];
+
+                formationX[ j ] = tempX;
+                formationY[ j ] = tempY;
+                }
+            }
+        }
     }
 
 

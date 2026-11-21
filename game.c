@@ -3294,6 +3294,9 @@ void maxiginGame_step( char  inFinalStep  ) {
                    OR next-to-place spot, which the player can already see */
                 formationToggleFourthRow( fourthRowOn,
                                           numPiecesPlaced + 1 );
+
+                maxigin_playSoundEffect( thunkSound,
+                                         256 );
                 }
             }
         

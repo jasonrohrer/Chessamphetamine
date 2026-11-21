@@ -247,21 +247,21 @@ static char           infoPanelPieceMoveMarkers[ BH ][ BW ];
 static  int            infoRow [ INFO_HIGHLIGHT_BUFFER_SIZE ];
 static  int            infoCol [ INFO_HIGHLIGHT_BUFFER_SIZE ];
 static  unsigned char  infoFade[ INFO_HIGHLIGHT_BUFFER_SIZE ];
-static  int            curInfoIndex                 =    0;
-static  int            curInfoPickedWithController  =    0;
+static  int            curInfoIndex                 =   0;
+static  int            curInfoPickedWithController  =   0;
 
-static  int            currentLevel                 =    0;
+static  int            currentLevel                 =   0;
 
-static  char           gameOver                     =    0;
+static  char           gameOver                     =   0;
 
-static  int            startingMoney                =  100;
+static  int            startingMoney                =   0;
 
-static  int            draftingPieces               =    0;
-static  int            numPiecesPlaced              =    0;
+static  int            draftingPieces               =   0;
+static  int            numPiecesPlaced              =   0;
 
-static  int            levelForUnlock               =   -1;
+static  int            levelForUnlock               =  -1;
 
-static  char           fourthRowOn                  =    0;
+static  char           fourthRowOn                  =   0;
 
 
 

@@ -112,6 +112,15 @@ void formationDraw( int            inBoardCenterX,
         formationY[ inSpotIndexToShow ] == -1 ) {
         return;
         }
+
+    if( formationY[ inSpotIndexToShow ] == BH - 4
+        &&
+        ! unlocksGetFourthRowToggleAvailable() ) {
+        /* don't show any 4th row spots, if upgrade is not available.
+           We would only get to this point if back 3 rows are completely
+           full */
+        return;
+        }
                 
     boardGetSquareCenter( inBoardCenterX,
                           inBoardCenterY,
@@ -332,11 +341,27 @@ void formationPlayerReroll( void ) {
 
     if( rowCount == 3 ) {
         /* pad by sticking fourth row in very back */
+
+        /* but randomize their order */
+        int  e;
+        
+        for( e = 0;
+             e < BW;
+             e   ++ ) {
+            extraIndex[ e ] = e;
+            }
+        maxigin_shuffle( &fmRand,
+                         BW,
+                         extraIndex );
+
+        e = 0;
+        
         for( i = numExtra + 3;
              i < numExtra + 3 + BW;
              i   ++ ) {
-            formationX[ i ] = i - ( numExtra + 3 );
-            formationY[ i ] = BW - 4;
+            formationX[ i ] = extraIndex[ e ];
+            formationY[ i ] = BH - 4;
+            e ++;
             }
         }
     }
@@ -411,6 +436,12 @@ char formationSpotGet(  int   inSpotIndex,
 
     *outX = formationX[ inSpotIndex ];
     *outY = formationY[ inSpotIndex ];
+
+    if( ! fmFourthRowOn
+        &&
+        *outY == BH - 4 ) {
+        return 0;
+        }
 
     return 1;
     }

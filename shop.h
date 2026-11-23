@@ -50,6 +50,7 @@ ChessPiece shopStep( int    inPickFailedSound,
                      int    inPieceLiftSound );
 
 
+void shopPlayPurchaseSound( void );
 
 
 #endif
@@ -748,10 +749,9 @@ static void toggleShopLock( int  inSlotIndex ) {
 ChessPiece shopStep( int  inPickFailedSound,
                      int  inPieceLiftSound ) {
 
-    /* fixme
-       react to mouse and controller
+    /* react to mouse and controller
 
-       show piece info panel
+       pass out piece for info panel
     */
 
     /* fixme:
@@ -1102,6 +1102,12 @@ ChessPiece shopStep( int  inPickFailedSound,
     return shopItems[ shopSelectedSlot ];
     }
 
+
+
+void shopPlayPurchaseSound( void ) {
+    maxigin_playSoundEffect( purchaseSound,
+                             256 );
+    }
 
 
 

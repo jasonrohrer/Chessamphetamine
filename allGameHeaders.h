@@ -79,3 +79,6 @@
 #include "tipDisplay.h"
 
 #include "liveValueTest.h"
+
+#include "pickToKeep.h"
+

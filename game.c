@@ -199,42 +199,44 @@ static long           stepSec                     =  0;
 static long           stepMSec                    =  0;
 
 
-static int            boardCenterX;
-static int            boardCenterY;
-static int            boardSlideUp                =  0;
-static int            boardSlideUpMax             =  100;
-static char           shopShowing                 =  0;
-static char           shopDone                    =  0;
-static char           sideBoardShowing            =  0;
-static char           sideBoardRedrawDone         =  0;
-static char           sideBoardRedrawBlocked      =  0;
-static char           deckViewShowing             =  0;
-static char           deckViewDone                =  0;
+static  int            boardCenterX;
+static  int            boardCenterY;
+static  int            boardSlideUp            =    0;
+static  int            boardSlideUpMax         =  100;
+static  char           shopShowing             =    0;
+static  char           shopDone                =    0;
+static  char           sideBoardShowing        =    0;
+static  char           sideBoardRedrawDone     =    0;
+static  char           sideBoardRedrawBlocked  =    0;
+static  char           deckViewShowing         =    0;
+static  char           deckViewDone            =    0;
+static  char           pickToKeepShowing       =    0;
+static  char           pickToKeepDone          =    0;
 
-static ChessPiece     infoPanelPiece              =  noPiece;
-static ChessPiece     infoPanelLastPiece          =  noPiece;
-static unsigned char  infoPanelFade               =  0;
-static char           sideBoardHadController      =  0;
-static char           heartsGainWaiting           =  0;
+static  ChessPiece     infoPanelPiece          =  noPiece;
+static  ChessPiece     infoPanelLastPiece      =  noPiece;
+static  unsigned char  infoPanelFade           =    0;
+static  char           sideBoardHadController  =    0;
+static  char           heartsGainWaiting       =    0;
 
-static int            preSideBoardX               = -1;
-static int            preSideBoardY               = -1;
+static  int            preSideBoardX           =   -1;
+static  int            preSideBoardY           =   -1;
 
-static unsigned char  sideBoardDestSpotFade       =  0;
+static  unsigned char  sideBoardDestSpotFade   =    0;
 
-static int            swapLineSprites    [ 4 ];
-static int            swapLineVertSprites[ 3 ];
-static int            swapLineStemSprite;
+static  int            swapLineSprites    [ 4 ];
+static  int            swapLineVertSprites[ 3 ];
+static  int            swapLineStemSprite;
 
-static int            successfulSwapCount         =  0;
+static  int            successfulSwapCount     =    0;
 
-static int            logoBaseSprite              = -1;
-static int            logoPulseSprite             = -1;
-static int            logoPulseGlintSprite        = -1;
+static  int            logoBaseSprite          =   -1;
+static  int            logoPulseSprite         =   -1;
+static  int            logoPulseGlintSprite    =   -1;
 
-static unsigned char  logoFade                    =  0;
-static int            logoGlintXPos               =  0;
-static char           logoGlintSpeed              =  1;
+static  unsigned char  logoFade                =    0;
+static  int            logoGlintXPos           =    0;
+static  char           logoGlintSpeed          =    1;
 
 
 /* 0 for no mark
@@ -420,7 +422,9 @@ static void drawDraftLimitLine( void ) {
         &&
         ! chessGameOver
         &&
-        ! deckViewShowing ) {
+        ! deckViewShowing
+        &&
+        ! pickToKeepShowing ) {
 
         int  yOffset  =  24;
         
@@ -676,13 +680,13 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
         }
 
     if( sideBoardShowing
-            ||
-            shopShowing ) {
+        ||
+        shopShowing ) {
 
-            buttonDraw( deckButton );
-            }
-        else {
-            buttonDrawDisabled( deckButton );
+        buttonDraw( deckButton );
+        }
+    else {
+        buttonDrawDisabled( deckButton );
         }
 
     
@@ -751,6 +755,8 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
                      ||
                      deckViewShowing
                      ||
+                     pickToKeepShowing
+                     ||
                      boardSlideUp
                      ||
                      redrawAddRunning
@@ -798,6 +804,8 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
         ! deckViewShowing
         &&
         ! shopShowing
+        &&
+        ! pickToKeepShowing
         &&
         ! chessGameOver ) {
         
@@ -904,7 +912,9 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
 
         if( deckViewShowing
             ||
-            shopShowing ) {
+            shopShowing
+            ||
+            pickToKeepShowing ) {
             showDeployCost = 1;
             }
         
@@ -958,6 +968,10 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
 
     if( deckViewShowing ) {
         deckViewDraw();
+        }
+
+    if( pickToKeepShowing ) {
+        pickToKeepDraw();
         }
     
     if( moveMade ) {
@@ -1830,6 +1844,23 @@ static void startDraftingPieces( void ) {
     }
 
 
+static void forceInfoPanelPiece( ChessPiece  inPiece ) {
+
+    if( inPiece != infoPanelPiece ) {
+        infoPanelLastPiece = infoPanelPiece;
+        infoPanelPiece = inPiece;
+        clearInfoPanelPieceMoveMarkers();
+
+        if( infoPanelPiece != noPiece ) {
+            maxigin_playSoundEffect( examinePieceSound,
+                                     256 );
+            }
+        }
+    if( infoPanelPiece != noPiece ) {
+        infoPanelFade = 255;
+        }
+    }
+
 
 void maxiginGame_step( char  inFinalStep  ) {
     
@@ -1881,6 +1912,8 @@ void maxiginGame_step( char  inFinalStep  ) {
     if( ! shopShowing
         &&
         ! deckViewShowing
+        &&
+        ! pickToKeepShowing
         &&
         ! chessGameOver
         &&
@@ -2377,6 +2410,8 @@ void maxiginGame_step( char  inFinalStep  ) {
         &&
         ! deckViewShowing
         &&
+        ! pickToKeepShowing
+        &&
         ( ( sideBoardShowing
             &&
             ! sideBoardIsMouseOver() )
@@ -2737,6 +2772,8 @@ void maxiginGame_step( char  inFinalStep  ) {
              &&
              ! deckViewShowing
              &&
+             ! pickToKeepShowing
+             &&
              ! ( sideBoardShowing
                  &&
                  ( sideBoardIsMouseOver()
@@ -2879,14 +2916,22 @@ void maxiginGame_step( char  inFinalStep  ) {
                 if( gameOver ) {
                     /* special case, we're going back to level 0 with a
                        fresh start */
-                    
 
-                    gameOver = 0;
-                    chessGameOver = 0;
-                    redrawRemoveRunning = 0;
-                    redrawAddRunning    = 0;
+                    if( unlocksGetNewGameKeepPieces()
+                        &&
+                        pickToKeepCanPick() ) {
+                        
+                        pickToKeepShowing = 1;
+                        pickToKeepDone = 0;
+                        }
+                    else {
+                        gameOver = 0;
+                        chessGameOver = 0;
+                        redrawRemoveRunning = 0;
+                        redrawAddRunning    = 0;
 
-                    startDraftingPieces();
+                        startDraftingPieces();
+                        }
                     }
                 else {
                     /* this is a vestigial case, back
@@ -2977,8 +3022,10 @@ void maxiginGame_step( char  inFinalStep  ) {
             }
         }    
     
-            
 
+    
+    
+    
 
     if( winnerMessageSpread != 1 ) {
 
@@ -3069,7 +3116,11 @@ void maxiginGame_step( char  inFinalStep  ) {
           ||
           ( deckViewShowing
             &&
-            ! deckViewDone ) )
+            ! deckViewDone )
+          ||
+          ( pickToKeepShowing
+            &&
+            ! pickToKeepDone ) )
         &&
         boardSlideUp < boardSlideUpMax ) {
         
@@ -3090,7 +3141,10 @@ void maxiginGame_step( char  inFinalStep  ) {
                ||
                ( deckViewShowing
                  &&
-                 deckViewDone ) )
+                 deckViewDone )
+               || ( pickToKeepShowing
+                    &&
+                    pickToKeepDone ) )
              &&
              boardSlideUp > 0 ) {
 
@@ -3109,6 +3163,18 @@ void maxiginGame_step( char  inFinalStep  ) {
 
             deckViewShowing = 0;
             deckViewDone    = 0;
+
+            if( pickToKeepShowing
+                &&
+                pickToKeepDone ) {
+
+                gameOver = 0;
+                chessGameOver = 0;
+                redrawRemoveRunning = 0;
+                redrawAddRunning    = 0;
+
+                startDraftingPieces();
+                }
             }
         }
 
@@ -3148,6 +3214,15 @@ void maxiginGame_step( char  inFinalStep  ) {
             moneyForce( startingMoney );
 
             heartsReset();
+
+            if( unlocksGetNewGameKeepPieces() ) {
+                
+                pickToKeepSetup( MOUSE_CLICK,
+                                 ACTION,
+                                 boardCenterX,
+                                 boardCenterY );
+                }
+                                 
 
             playerDeckSetupFresh();
 
@@ -3553,21 +3628,23 @@ void maxiginGame_step( char  inFinalStep  ) {
 
         ChessPiece  newInfoPiece  =  deckViewStep( boardSlideSound ); 
 
-        if( newInfoPiece != infoPanelPiece ) {
-            infoPanelLastPiece = infoPanelPiece;
-            infoPanelPiece = newInfoPiece;
-            clearInfoPanelPieceMoveMarkers();
-
-            if( infoPanelPiece != noPiece ) {
-                maxigin_playSoundEffect( examinePieceSound,
-                                         256 );
-                }
-            }
-        if( infoPanelPiece != noPiece ) {
-            infoPanelFade = 255;
-            }
+        forceInfoPanelPiece( newInfoPiece );
         }
 
+    if( pickToKeepShowing
+        &&
+        ! pickToKeepDone ) {
+
+        ChessPiece  newInfoPiece  =  pickToKeepStep(); 
+        ChessPiece  pick          =  pickToKeepGetPicked();
+        
+        forceInfoPanelPiece( newInfoPiece );
+
+        if( pick != noPiece ) {
+            pickToKeepDone = 1;
+            }
+        }
+    
 
     if( playerDeckJustRefreshed() ) {
         readyCountGlowFade = countGlowFadeMax;
@@ -4427,6 +4504,7 @@ void maxiginGame_init( void ) {
         shopShowing         = 0;
         deckViewShowing     = 0;
         chessGameOver       = 0;
+        pickToKeepShowing   = 0;
         
         sideBoardForceFullLift();
         }
@@ -4501,6 +4579,9 @@ void maxiginGame_init( void ) {
 
     REGISTER_VAL_MEM( deckViewShowing );
     REGISTER_VAL_MEM( deckViewDone );
+
+    REGISTER_VAL_MEM( pickToKeepShowing );
+    REGISTER_VAL_MEM( pickToKeepDone );
 
     REGISTER_VAL_MEM( currentLevel );
 

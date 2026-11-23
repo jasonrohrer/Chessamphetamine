@@ -69,6 +69,9 @@ int playerDeckGetReadyCount( void );
 int playerDeckGetDiscardCount( void );
 
 
+/* returns all discarded pieces to draw deck */
+void playerDeckFullRefresh( void );
+
 
 
 #endif
@@ -98,6 +101,7 @@ void playerDeckInit( void ) {
    
     REGISTER_VAL_MEM( playerDrawDeck );
     REGISTER_VAL_MEM( playerDiscardDeck );
+    REGISTER_VAL_MEM( justRefreshed );
     }
 
 
@@ -123,6 +127,26 @@ Deck *playerDeckGetDiscardDeck( void ) {
 
 
 
+void playerDeckFullRefresh( void ) {
+
+    ChessPiece  played  =  deckDraw( &playerDiscardDeck );
+
+    while( played != noPiece ) {
+        deckAddPiece( &playerDrawDeck,
+                      played );
+        played = deckDraw( &playerDiscardDeck );
+        }
+
+    maxigin_playSoundEffect( playerDeckRefreshSound,
+                             256 );
+
+    playerDeckReshuffle();
+
+    justRefreshed = 1;
+    }
+
+
+
 ChessPiece playerDeckDraw( void ) {
 
     ChessPiece  p  =  deckDraw( &playerDrawDeck );
@@ -138,22 +162,12 @@ ChessPiece playerDeckDraw( void ) {
            which means our deck is empty, and we don't want to play the
            playerDeckRefreshSound multiple times */
 
-        /* a non-empty deck, but all pieces not present
-           means we've played through all pieces
-           Return all played pieces back to present status */
+        /* a non-empty deck, but with nothing left to draw
+           means we've played through all pieces and they are in
+           the discard deck.
+           Return all discarded pieces  */
 
-        ChessPiece  played  =  deckDraw( &playerDiscardDeck );
-
-        while( played != noPiece ) {
-            deckAddPiece( &playerDrawDeck,
-                          played );
-            played = deckDraw( &playerDiscardDeck );
-            }
-
-        maxigin_playSoundEffect( playerDeckRefreshSound,
-                                 256 );
-
-        justRefreshed = 1;
+        playerDeckFullRefresh(); 
 
         p = deckDraw( &playerDrawDeck );
         }

@@ -79,6 +79,10 @@ level          "Lvl:"
 gameOverInstruct  "Please ## Play ## Again"
 
 
+pickToKeepInstructA  "Pick a piece to keep"
+pickToKeepInstructB  "from your previous run"
+
+
 unlockDes      "Permanent Unlock"
 unlock0        "Extra space on the sideboard"
 unlock1        "Pick one of three pieces to keep from last deck when starting new game"

@@ -73,6 +73,14 @@ static  int            pickPointerActionHandle;
 static  int            pickActionHandle;
 static  char           canPick                   =   0;
 
+static  int            pickCenterX;
+static  int            pickCenterY;
+
+static  int            lang_pickInstructA;
+static  int            lang_pickInstructB;
+
+static  char           pickMadeWithController    =   0;
+
 
 
 void pickToKeepInit( int  inPointerActionHandle,
@@ -83,6 +91,9 @@ void pickToKeepInit( int  inPointerActionHandle,
     int  xSep   =  50;
     int  xCur;
     int  i;
+
+    pickCenterX = inCenterX;
+    pickCenterY = inCenterY;
     
     pickPointerActionHandle = inPointerActionHandle;
     pickActionHandle = inActionHandle;
@@ -116,12 +127,17 @@ void pickToKeepInit( int  inPointerActionHandle,
         xCur += xSep;
         }
 
+    lang_pickInstructA = maxigin_initTranslationKey( "pickToKeepInstructA" );
+    lang_pickInstructB = maxigin_initTranslationKey( "pickToKeepInstructB" );
+
     REGISTER_ARRAY_MEM( pickChoices );
     REGISTER_ARRAY_MEM( pickSlotsFade );
     
     REGISTER_VAL_MEM( pickFinalChoice );
     REGISTER_VAL_MEM( pickOverChoice );
     REGISTER_VAL_MEM( canPick );
+
+    REGISTER_VAL_MEM( pickMadeWithController );
     }
 
     
@@ -157,6 +173,22 @@ void pickToKeepSetup( void ) {
 void pickToKeepDraw( void ) {
 
     int  i;
+
+    maxigin_drawResetColor();
+
+    maxigin_setLanguageFontIndex( 1 );
+
+    maxigin_drawLangText( lang_pickInstructA,
+                          pickCenterX,
+                          pickCenterY - 95,
+                          MAXIGIN_CENTER );
+    
+    maxigin_drawLangText( lang_pickInstructB,
+                          pickCenterX,
+                          pickCenterY - 75,
+                          MAXIGIN_CENTER );
+    
+    maxigin_setLanguageFontIndex( 0 );
     
     for( i = 0;
          i < NUM_PICK_TO_KEEP_CHOICES;
@@ -175,6 +207,16 @@ void pickToKeepDraw( void ) {
                                    pickSlotsY[ i ],
                                    pickSlotsFade[ i ] );
                 }
+            
+            if( pickOverChoice == i
+                &&
+                pickMadeWithController ) {
+
+                maxigin_drawButtonHintSprite(
+                    pickActionHandle,
+                    pickSlotsX[ i ] - 5,
+                    pickSlotsY[ i ] );
+                }
             }
         }
     }
@@ -190,6 +232,7 @@ ChessPiece pickToKeepStep( void ) {
     int   deltaFade            =  ( 20 * 60 ) / r;
     
     char  controllerMovedSlot  =  0;
+    char  finalPickMade        =  0;
 
     if( unlocksIsViewerActive()
         ||
@@ -218,9 +261,17 @@ ChessPiece pickToKeepStep( void ) {
 
                     pickOverChoice = i;
                     pickSlotsFade[ i ] = 255;
+                    pickMadeWithController = 0;
                     break;
                     }
                 }
+            }
+
+        if( pickOverChoice != -1
+            &&
+            maxigin_isButtonDown( pickPointerActionHandle ) ) {
+
+            finalPickMade = 1;
             }
         }
     else {
@@ -273,9 +324,29 @@ ChessPiece pickToKeepStep( void ) {
                     }
                 unlocksCancelViewer();
                 }
+
+            pickMadeWithController = 1;
             }
         }
 
+    if( pickOverChoice != -1
+        &&
+        pickMadeWithController
+        &&
+        maxigin_isButtonDown( pickActionHandle ) ) {
+
+        finalPickMade = 1;
+        }
+    
+
+    if( finalPickMade ) {
+        pickFinalChoice = pickChoices[ pickOverChoice ];
+        pickChoices[ pickOverChoice ] = noPiece;
+        pickOverChoice = -1;
+
+        shopPlayPurchaseSound();
+        }
+    
     /* fade out glows */
     for( i = 0;
          i < NUM_PICK_TO_KEEP_CHOICES;
@@ -316,7 +387,7 @@ ChessPiece pickToKeepStep( void ) {
 
 
 ChessPiece pickToKeepGetPicked( void ) {
-    return noPiece;
+    return pickFinalChoice;
     }
 
 

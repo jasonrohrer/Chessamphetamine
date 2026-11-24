@@ -3162,6 +3162,8 @@ void maxiginGame_step( char  inFinalStep  ) {
                 &&
                 pickToKeepDone ) {
 
+                pickToKeepShowing = 0;
+                
                 gameOver = 0;
                 chessGameOver = 0;
                 redrawRemoveRunning = 0;
@@ -3214,11 +3216,19 @@ void maxiginGame_step( char  inFinalStep  ) {
             if( unlocksGetNewGameKeepPieces() ) {
                 
                 pickToKeepSetup();
-                
-                pickToKeepShowing = 1;
-                pickToKeepDone = 0;
+
+                /* setup may fail if our deck from last run is empty */
+                if( pickToKeepCanPick() ) {
+
+                    pickToKeepShowing = 1;
+                    pickToKeepDone = 0;
+                    }
+                else {
+                    pickToKeepShowing = 0;
+                    }
                 }
-            else {
+
+            if( ! pickToKeepShowing ) {
                 heartsReset();
                 }
                                  
@@ -3640,6 +3650,10 @@ void maxiginGame_step( char  inFinalStep  ) {
         forceInfoPanelPiece( newInfoPiece );
 
         if( pick != noPiece ) {
+
+            playerDeckAddPiece( pick );
+            playerDeckReshuffle();
+            
             pickToKeepDone = 1;
             heartsReset();
             }

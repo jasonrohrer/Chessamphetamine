@@ -20,7 +20,7 @@ enum GameUserAction {
     DRAW,
     DECK,
     SHOP_LOCK,
-    FOURTH_ROW,
+    SPEED,
     TOGGLE_MOVE_LOG,
     ADVANCE_MOVE_LOG,
     BACK_MOVE_LOG,
@@ -73,7 +73,7 @@ static  int   boardSlideSound          =   -1;
 static  int   spinFrameSprite          =   -1;
 static  int   spinUnpressedSprite      =   -1;
 static  int   spinPressedSprite        =   -1;
-static  int   spinButtonX              =  MAXIGIN_GAME_NATIVE_W - 38;
+static  int   spinButtonX              =  MAXIGIN_GAME_NATIVE_W - 46;
 static  int   spinButtonY              =  MAXIGIN_GAME_NATIVE_H - 15;
 static  char  spinButtonHover          =    0;
 static  int   readyCountScreenSprite   =   -1;
@@ -128,7 +128,7 @@ static  int            lang_commit;
 static  int            lang_spin;
 static  int            lang_unlockView;
 static  int            lang_shopLock;
-static  int            lang_fourthRow;
+static  int            lang_speed;
 
 static  int            lang_drawInstruct;
 static  int            lang_level;
@@ -689,6 +689,7 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
         buttonDrawDisabled( deckButton );
         }
 
+    speedLeverDraw();
     
 
     maxigin_drawResetColor();
@@ -821,7 +822,7 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
         else {
             
             maxigin_drawSprite( spinFrameSprite,
-                            spinButtonX,
+                                spinButtonX,
                                 spinButtonY );
             
             maxigin_drawSprite( spinPressedSprite,
@@ -871,8 +872,8 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
                             spinButtonY );
 
         maxigin_drawSprite( spinUnpressedSprite,
-                                spinButtonX,
-                                spinButtonY );
+                            spinButtonX,
+                            spinButtonY );
 
 
 
@@ -3308,9 +3309,7 @@ void maxiginGame_step( char  inFinalStep  ) {
         }
 
 
-    liveValueStep( LIVE_VALUE_UP,
-                   LIVE_VALUE_DOWN,
-                   LIVE_VALUE_NEXT );
+    
 
     unlocksStep( unlocksX,
                  unlocksY );
@@ -3327,6 +3326,8 @@ void maxiginGame_step( char  inFinalStep  ) {
 
     rarityWindowStep();
     moveDiagramWindowStep();
+
+    speedLeverStep( examinePieceSound );
 
     
     if( ! spinning
@@ -3719,7 +3720,10 @@ void maxiginGame_step( char  inFinalStep  ) {
             }
         logoGlintXPos = newVal;
         }
-        
+
+    liveValueStep( LIVE_VALUE_UP,
+                   LIVE_VALUE_DOWN,
+                   LIVE_VALUE_NEXT );
     }
 
 
@@ -3735,6 +3739,9 @@ static MinginButton liveValueNext[]  =  { MGN_KEY_TAB,  MGN_MAP_END };
 
 static MinginButton spinMapping[]    =  { MGN_BUTTON_R2,
                                           MGN_MAP_END };
+
+static MinginButton speedMapping[]    =  { MGN_BUTTON_R1,
+                                           MGN_MAP_END };
 
 static MinginButton moveLogMapping[] =  { MGN_KEY_Y,     MGN_MAP_END };
 static MinginButton moveLogAdvMapping[] =  { MGN_KEY_I,     MGN_MAP_END };
@@ -3782,9 +3789,6 @@ static MinginButton shopLockMapping[]  =  { MGN_BUTTON_PS_SQUARE,
                                             MGN_BUTTON_XBOX_X,
                                             MGN_MAP_END };
 
-static MinginButton fourthRowMapping[]  =  { MGN_BUTTON_PS_SQUARE,
-                                             MGN_BUTTON_XBOX_X,
-                                             MGN_MAP_END };
 
 static MinginButton hintMapping[]   =  { MGN_BUTTON_MOUSE_LEFT,
                                          MGN_BUTTON_MOUSE_RIGHT,
@@ -4059,7 +4063,7 @@ void maxiginGame_init( void ) {
                                   boardCenterY - 13,
                                   0,
                                   MOUSE_CLICK,
-                                  FOURTH_ROW,
+                                  SHOP_LOCK,
                                   2,
                                   maxigin_initTranslationKey( "fourthRowTip" ),
                                   1 );
@@ -4230,7 +4234,7 @@ void maxiginGame_init( void ) {
     
     lang_unlockView       = maxigin_initTranslationKey( "unlockView" );
     lang_shopLock         = maxigin_initTranslationKey( "shopLock" );
-    lang_fourthRow        = maxigin_initTranslationKey( "fourthRow" );
+    lang_speed            = maxigin_initTranslationKey( "speedDesc" );
     
     lang_readyCount       = maxigin_initTranslationKey( "readyCount" );
     lang_discardCount     = maxigin_initTranslationKey( "discardCount" );
@@ -4317,6 +4321,11 @@ void maxiginGame_init( void ) {
         lang_spin  );
 
     maxigin_registerDynamicButtonMapping(
+        SPEED,
+        speedMapping,
+        lang_speed  );
+
+    maxigin_registerDynamicButtonMapping(
         UNLOCK_VIEW,
         unlockViewMapping,
         lang_unlockView  );
@@ -4325,11 +4334,7 @@ void maxiginGame_init( void ) {
         SHOP_LOCK,
         shopLockMapping,
         lang_shopLock  );
-    
-    maxigin_registerDynamicButtonMapping(
-        FOURTH_ROW,
-        fourthRowMapping,
-        lang_fourthRow  );
+
     
     maxigin_logInt( "Primary button for ACTION is: ",
                     maxigin_getPlatformPrimaryButton( ACTION ) );
@@ -4495,6 +4500,11 @@ void maxiginGame_init( void ) {
                     boardCenterY );
     
 
+    speedLeverInit( spinButtonX + 36,
+                    spinButtonY + 2,
+                    MOUSE_CLICK,
+                    SPEED );
+                    
     clearDrawMarkers();
 
     clearDrawLift( &redrawLift );

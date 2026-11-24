@@ -48,7 +48,8 @@ deckDesc       "View Deck"
 spinDesc       "Go!"
 unlockView     "View Unlocks"
 shopLock       "Shop Lock"
-fourthRow      "Fourth Row"
+speedDesc      "Speed"
+
 
 press          "press"
 

@@ -6,7 +6,7 @@
   Include exactly once, in one .c file, like so, to compile in the
   implementation:
 
-      #define PARTICLE_SPRITES_IMPLEMENTATION
+      #define PARTICLE_SPRITE_IMPLEMENTATION
       #include "particleSprite.h"
 
 */

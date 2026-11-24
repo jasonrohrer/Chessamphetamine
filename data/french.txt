@@ -47,7 +47,8 @@ deckDesc       "Voir le deck"
 spinDesc       "Lancer"
 unlockView     "Déblocages"
 shopLock       "Verrouiller"
-fourthRow       "4e rangée"
+speedDesc      "Vitesse"
+
 
 press          "appuyez"
 

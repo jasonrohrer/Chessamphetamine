@@ -31,7 +31,7 @@ mingin_imp.o: mingin.h mingin_imp.c
 
 header_impA.o: interfaces.txt header_impA.c allGameHeaders.h pieceSprites.h chess.h moveAnim.h shop.h maxigin.h mingin.h
 
-header_impB.o: interfaces.txt header_impB.c allGameHeaders.h board.h pieceSpecs.h memoryRegister.h particleSprite.h gameSize.h simTest.h money.h numbers.h checkDisplay.h util.h colors.h pinch.h fixedMath.h particleSystem.h chessArrayCheck.h pieceDescriptions.h nav.h levels.h deck.h button.h hearts.h sideBoard.h deckView.h cost.h rarity.h roll.h slotLift.h formation.h unlocks.h playerDeck.h runStats.h postMoveEffects.h screen.h rarityWindow.h moveDiagramWindow.h vfdDigit.h tipDisplay.h liveValueTest.h maxigin.h mingin.h pickToKeep.h
+header_impB.o: interfaces.txt header_impB.c allGameHeaders.h board.h pieceSpecs.h memoryRegister.h particleSprite.h gameSize.h simTest.h money.h numbers.h checkDisplay.h util.h colors.h pinch.h fixedMath.h particleSystem.h chessArrayCheck.h pieceDescriptions.h nav.h levels.h deck.h button.h hearts.h sideBoard.h deckView.h cost.h rarity.h roll.h slotLift.h formation.h unlocks.h playerDeck.h runStats.h postMoveEffects.h screen.h rarityWindow.h moveDiagramWindow.h vfdDigit.h tipDisplay.h liveValueTest.h maxigin.h mingin.h pickToKeep.h speedLever.h
 
 game.o: interfaces.txt allGameHeaders.h game.c maxigin.h mingin.h
 

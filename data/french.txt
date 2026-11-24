@@ -76,6 +76,9 @@ level          "Niv:"
 
 gameOverInstruct  "Veuillez ## rejouer"
 
+pickToKeepInstructA  "Gardez une pièce"
+pickToKeepInstructB  "de la dernière partie"
+
 
 unlockDes      "Déblocage permanent"
 unlock0        "Une place en plus dans la réserve"

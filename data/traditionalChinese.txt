@@ -77,6 +77,10 @@ level          "關"
 
 gameOverInstruct  "請再 ## 玩一次"
 
+pickToKeepInstructA  "選擇一枚棋子"
+pickToKeepInstructB  "從上一局保留"
+
+
 unlockDes      "永久解鎖"
 unlock0        "備用區增加一個空位"
 unlock1        "開始新遊戲時，可從上一副牌組的三個棋子中選一個保留"

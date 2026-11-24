@@ -715,7 +715,11 @@ void sideBoardDraw( char  inBlank ) {
                                     sbSlotPosY     [i] - sbSmoothLift[i],
                                     sbHighlightFade[i] );
                 
-                if( ! sbPurchaseBlocked ) {
+                if( ! sbLifting
+                    &&
+                    ! sbDropping
+                    &&
+                    ! sbPurchaseBlocked ) {
 
                     int  deployCost =
                         sideBoardGetExtraDeploymentCost( sideBoard[i] );
@@ -745,7 +749,11 @@ void sideBoardDraw( char  inBlank ) {
 
                 }
 
-            if( sbHoldingController
+            if( ! sbLifting
+                &&
+                ! sbDropping
+                &&
+                sbHoldingController
                 &&
                 sbOverSlot == i ) {
                 

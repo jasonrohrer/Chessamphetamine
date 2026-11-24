@@ -413,8 +413,6 @@ void deckViewDraw( void ) {
 
 ChessPiece deckViewStep( int  inPageSound ) {
 
-    /* fixme:
-       also handle case where controller is used */
     
     int   pointerX;
     int   pointerY;

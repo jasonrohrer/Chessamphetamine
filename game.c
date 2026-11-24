@@ -2917,14 +2917,8 @@ void maxiginGame_step( char  inFinalStep  ) {
                     /* special case, we're going back to level 0 with a
                        fresh start */
 
-                    if( unlocksGetNewGameKeepPieces()
-                        &&
-                        pickToKeepCanPick() ) {
+                    if( ! pickToKeepShowing ) {
                         
-                        pickToKeepShowing = 1;
-                        pickToKeepDone = 0;
-                        }
-                    else {
                         gameOver = 0;
                         chessGameOver = 0;
                         redrawRemoveRunning = 0;
@@ -3178,7 +3172,9 @@ void maxiginGame_step( char  inFinalStep  ) {
             }
         }
 
-    if( gameOver ) {
+    if( gameOver
+        &&
+        ! pickToKeepShowing ) {
 
         char  newStarted  =  0;
 
@@ -3213,14 +3209,17 @@ void maxiginGame_step( char  inFinalStep  ) {
 
             moneyForce( startingMoney );
 
-            heartsReset();
+            
 
             if( unlocksGetNewGameKeepPieces() ) {
                 
-                pickToKeepSetup( MOUSE_CLICK,
-                                 ACTION,
-                                 boardCenterX,
-                                 boardCenterY );
+                pickToKeepSetup();
+                
+                pickToKeepShowing = 1;
+                pickToKeepDone = 0;
+                }
+            else {
+                heartsReset();
                 }
                                  
 
@@ -3642,6 +3641,7 @@ void maxiginGame_step( char  inFinalStep  ) {
 
         if( pick != noPiece ) {
             pickToKeepDone = 1;
+            heartsReset();
             }
         }
     
@@ -4474,6 +4474,12 @@ void maxiginGame_init( void ) {
     
     moveDiagramWindowInit( MAXIGIN_GAME_NATIVE_W - 39,
                            boardCenterY + 66 );
+
+    pickToKeepInit( MOUSE_CLICK,
+                    ACTION,
+                    boardCenterX,
+                    boardCenterY );
+    
 
     clearDrawMarkers();
 

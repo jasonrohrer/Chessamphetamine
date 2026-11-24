@@ -308,13 +308,37 @@ void sparseGridNav( char  *inPresentGrid,
     int  dirX;
     int  dirY;
 
-    int  curCol  =  *inOutPickedX;
-    int  curRow  =  *inOutPickedY;
+    int  curCol       =  *inOutPickedX;
+    int  curRow       =  *inOutPickedY;
     int  t;
+    int  dirPriority  =  0;
+
+    if( inGridW == 1 ) {
+        /* a column */
+        dirPriority = 1;
+        }
     
-    navGetDir( 0,
+    navGetDir( dirPriority,
                &dirX,
                &dirY );
+
+    if( inGridH == 1 ) {
+        /* a row
+           let y navigate the row too */
+
+        if( dirX == 0 ) {
+            dirX = dirY;
+            }
+        }
+    if( inGridW == 1 ) {
+        /* a column
+           let x navigate the col too*/
+        
+        if( dirY == 0 ) {
+            dirY = dirX;
+            }
+        }
+    
 
     if( dirX != 0
         ||

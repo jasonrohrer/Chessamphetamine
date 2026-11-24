@@ -813,7 +813,9 @@ ChessPiece shopStep( int  inPickFailedSound,
         }
     
 
-    if( unlocksIsViewerActive() ) {
+    if( unlocksIsViewerActive()
+        ||
+        tipDisplayIsShowing() ) {
         shopSelectedSlot = -1;
         }
     

@@ -443,7 +443,9 @@ ChessPiece deckViewStep( int  inPageSound ) {
             }
         }
 
-    if( unlocksIsViewerActive() ) {
+    if( unlocksIsViewerActive()
+        ||
+        tipDisplayIsShowing() ) {
         deckViewOverSlot = -1;
         }
 

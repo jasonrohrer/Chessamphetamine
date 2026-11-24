@@ -1522,6 +1522,8 @@ char unlocksGetFourthRowToggleAvailable( void ) {
 void unlocksCancelViewer( void ) {
     if( winOver != 0
         ||
+        nextQuestOver != 0
+        ||
         unlockLastOver != -1 ) {
 
         tipDisplayClear();
@@ -1529,6 +1531,7 @@ void unlocksCancelViewer( void ) {
     
     unlockViewerCanceled = 1;
     winOver = 0;
+    nextQuestOver = 0;
     unlockLastOver = -1;
     }
 

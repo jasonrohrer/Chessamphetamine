@@ -7557,7 +7557,20 @@ void maxigin_initPanelSpritesStatic( int           inNumFullPanelSprites,
         success =
             success
             &&
-            ( mx_panelSprites.fullPanels[i] >= 0 );
+            ( mx_panelSprites.fullPanels[ i ] >= 0 );
+
+        if( success ) {
+            maxigin_initMakeDropShadowSprite(
+                mx_panelSprites.fullPanels[ i ],
+                4,
+                2,
+                255,
+                255,
+                100,
+                0,
+                50,
+                0 );
+            }
         }
 
     mx_panelSpritesSet = success;

@@ -1670,14 +1670,6 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
                    20 );
     
     pinchApply( inRGBBuffer );
-
-    maxigin_drawPushClipRectangle( boardCenterX - 101,
-                                   boardCenterX + 100,
-                                   boardCenterY - 122,
-                                   boardCenterY + 100 );
-    maxigin_drawInternalGUI();
-
-    maxigin_drawPopClipRectangle();
     }
 
 

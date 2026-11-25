@@ -2131,7 +2131,24 @@ void maxigin_drawFillRect( int  inStartX,
        
   [jumpMaxiginDraw]
 */ 
-void maxigin_drawGUI( MaxiginGUI *inGUI );
+void maxigin_drawGUI( MaxiginGUI  *inGUI );
+
+
+
+/*
+  Draws any of maxigin's internal GUI (menu panel, etc., whatever maxigin
+  thinks should be visble).
+
+  This gives the game control over WHEN the internal GUI should be drawn
+  (for example, to achieve some kind of visual effect with certain elements
+  drawn overlapping parts of the internal GUI).
+
+  If this function is NOT called inside maxiginGame_getNativePixels,
+  then maxigin's internal GUI will be drawn on top of everything else.
+
+  [jumpMaxiginDraw]
+*/
+void maxigin_drawInternalGUI( void );
 
 
 
@@ -4306,6 +4323,16 @@ static void mx_generateCRTOverlay( int  inW,
                                    int  inH );
 
 
+static  char  mx_internalGUIDrawn  =  0;
+
+void maxigin_drawInternalGUI( void ) {
+    if( ! mx_hideGUI ) {
+        maxigin_drawGUI( &mx_internalGUI );
+        }
+    mx_internalGUIDrawn = 1;
+    }
+    
+
 
 void minginGame_getScreenPixels( int             inWide,
                                  int             inHigh,
@@ -4328,12 +4355,16 @@ void minginGame_getScreenPixels( int             inWide,
 
 
     mx_areWeInMaxiginGameDrawFunction = 1;
+
+    mx_internalGUIDrawn = 0;
     
     maxiginGame_getNativePixels( mx_gameImageBuffer );
 
-    if( ! mx_hideGUI ) {
-        maxigin_drawGUI( &mx_internalGUI );
+    if( ! mx_internalGUIDrawn ) {
+        /* game didn't draw it, so we draw it on top */
+        maxigin_drawInternalGUI();
         }
+    
     
     mx_areWeInMaxiginGameDrawFunction = 0;
 

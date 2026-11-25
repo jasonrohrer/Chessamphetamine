@@ -17,7 +17,6 @@
 
 
 #include "chess.h"
-#include "particleSprite.h"
 
 
 
@@ -189,7 +188,8 @@ void drawBoardPieceHighlight( BoardState    *inState,
 
 
 #include "colors.h"
-
+#include "particleSprite.h"
+#include "speed.h"
 
 static  int  pieceBottomHeight  =  6;
 
@@ -654,7 +654,7 @@ int stepExplodingPiece( int  inProgress ) {
         return -1;
         }
     
-    inProgress += ( 30 * 60 ) / mingin_getStepsPerSecond();
+    inProgress += ( 30 * 60 ) / speedGetStepsPerSecond();
     
 
     if( inProgress >= explodeMax ) {

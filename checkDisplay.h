@@ -49,6 +49,7 @@ char checkDisplayIsSettled( void );
 #include "memoryRegister.h"
 #include "util.h"
 #include "chess.h"
+#include "speed.h"
 
 
 static  char        checkRunning      =  0;
@@ -240,7 +241,7 @@ void checkDisplayDraw( int  inBoardCenterX,
 
 
 void checkDisplayStep( void ) {
-    int  r  = mingin_getStepsPerSecond();
+    int  r  = speedGetStepsPerSecond();
 
     checkProgress += ( 20 * 60 ) / r;
 

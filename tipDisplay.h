@@ -61,6 +61,7 @@ void tipDisplayClear( void );
 #define TIP_DISPLAY_IMPLEMENTATION_INCLUDED
 
 #include "memoryRegister.h"
+#include "speed.h"
 
 
 #define  TD_MAX_NUM_LINES     5
@@ -393,7 +394,7 @@ void tipDisplayStep( void ) {
 
         if( tdFade > 0 ) {
 
-            int  r        =  mingin_getStepsPerSecond();
+            int  r        =  speedGetStepsPerSecond();
 
             int  newFade  =  tdFade - 20 * 60 / r;
 

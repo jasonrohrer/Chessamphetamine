@@ -38,6 +38,7 @@ char slotLiftStep( char  inLifting,
 #ifndef SLOT_LIFT_IMPLEMENTATION_INCLUDED
 #define SLOT_LIFT_IMPLEMENTATION_INCLUDED
 
+#include "speed.h"
 
 
 
@@ -57,7 +58,7 @@ char slotLiftStep( char  inLifting,
         inDropping ) {
 
         int  i;
-        int  r                     =  mingin_getStepsPerSecond();
+        int  r                     =  speedGetStepsPerSecond();
         
         int  scaleFactor           =  ( inMaxLift * inMaxLift )
                                       / MAXIGIN_GAME_NATIVE_H;

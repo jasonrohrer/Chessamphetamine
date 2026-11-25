@@ -55,6 +55,8 @@ void sparseGridNav( char  *inPresentGrid,
 #ifndef NAV_IMPLEMENTATION_INCLUDED
 #define NAV_IMPLEMENTATION_INCLUDED
 
+#include "speed.h"
+
 
 
 /* avoid game's mappings */
@@ -263,7 +265,7 @@ void navGetDir( int  inPrioritizeDir,
 
     if( ! navStillHeld ) {
         
-        if( navHeldCount > mingin_getStepsPerSecond() / 2 ) {
+        if( navHeldCount > speedGetStepsPerSecond() / 2 ) {
             /* long delay on first held repeat */
 
             *outDeltaX = navLastXDir;
@@ -276,7 +278,7 @@ void navGetDir( int  inPrioritizeDir,
             }
         }
     else {
-        if( navHeldCount > mingin_getStepsPerSecond() / 10 ) {
+        if( navHeldCount > speedGetStepsPerSecond() / 10 ) {
             /* short delay on subsequent repeats */
             
             *outDeltaX = navLastXDir;

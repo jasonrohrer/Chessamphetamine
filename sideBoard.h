@@ -15,7 +15,7 @@
 #define SIDE_BOARD_H_INCLUDED
 
 
-#include "deck.h"
+#include "chess.h"
 
 
 #define  SIDE_BOARD_MAX_SLOTS  10
@@ -121,6 +121,7 @@ int sideBoardGetExtraDeploymentCost( ChessPiece  inPiece );
 
 #include "slotLift.h"
 
+#include "speed.h"
 
 
 static  ChessPiece     sideBoard      [ SIDE_BOARD_MAX_SLOTS ];
@@ -445,7 +446,7 @@ ChessPiece sideBoardStep( int             inPieceLiftSound,
     int            pointerX;
     int            pointerY;
     int            i;
-    int            r                    =  mingin_getStepsPerSecond();
+    int            r                    =  speedGetStepsPerSecond();
     int            deltaFade            =  ( 20 * 60 ) / r;
     char           liftPhaseDone        =  0;
     char           controllerMovedSlot  =  0;

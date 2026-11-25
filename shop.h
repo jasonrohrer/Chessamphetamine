@@ -85,6 +85,9 @@ void shopPlayPurchaseSound( void );
 /* for definition of SHOP_PRICE_LIST */
 #include "pieceSpecs.h"
 
+#include "speed.h"
+
+
 
 static  int  shopPrices[] = {
     MAKE_CHESS_ARRAY( SHOP_PRICE_LIST )
@@ -759,7 +762,7 @@ ChessPiece shopStep( int  inPickFailedSound,
     int   pointerX;
     int   pointerY;
     int   i;
-    int   r                    =  mingin_getStepsPerSecond();
+    int   r                    =  speedGetStepsPerSecond();
     int   deltaFade            =  ( 20 * 60 ) / r;
     int   liftPhaseDone        =  0;
     char  controllerMovedSlot  =  0;

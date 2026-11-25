@@ -156,6 +156,8 @@ void playAddSound( void );
 
 #include "levels.h"
 
+#include "speed.h"
+
 
 static  int  beepUp       =  -1;
 static  int  beepDown     =  -1;
@@ -571,7 +573,7 @@ static char defaultPieceStep( BoardState    *inState,
                                             inMove->startPos[1],
                                             inMove->endPos[0],
                                             inMove->endPos[1] );
-    int  r        =  mingin_getStepsPerSecond();
+    int  r        =  speedGetStepsPerSecond();
 
     
     (void)inState;
@@ -1510,7 +1512,7 @@ static char multiPhaseStep( BoardState    *inState,
     
     int        pn      =  inMoveProgress->phaseNumber;
     AnimPhase  p;
-    int        r       =  mingin_getStepsPerSecond();
+    int        r       =  speedGetStepsPerSecond();
     int        partI;
     
     (void)inNewState;

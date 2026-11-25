@@ -38,6 +38,9 @@ void rarityWindowDraw( void );
 #define RARITY_WINDOW_IMPLEMENTATION_INCLUDED
 
 
+#include "speed.h"
+
+
 #define                RARITY_WINDOW_PROGRESS_MAX     100
 #define                RARITY_DIM_MIN                 32
 static  int            rwCenterX;
@@ -125,7 +128,7 @@ static unsigned char rwStepDim( char           inDim,
                                 char          *inDelay,
                                 unsigned char  inAlpha ) {
 
-    int  r        =  mingin_getStepsPerSecond();
+    int  r        =  speedGetStepsPerSecond();
     int  dimRate  =  r * 40 / 60;
 
     if( inDim
@@ -167,7 +170,7 @@ static unsigned char rwStepDim( char           inDim,
 
 void rarityWindowStep( void ) {
 
-    int  r        =  mingin_getStepsPerSecond();
+    int  r        =  speedGetStepsPerSecond();
 
     if( rwNextPiece != rwCurrentPiece ) {
 

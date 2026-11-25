@@ -55,6 +55,7 @@ void heartsForceEmpty( void );
 #include "maxigin.h"
 #include "memoryRegister.h"
 #include "util.h"
+#include "speed.h"
 
 
 #define                HEARTS_MAX                            6
@@ -382,7 +383,7 @@ void heartsStep( void ) {
             }
         }
 
-    r = mingin_getStepsPerSecond();
+    r = speedGetStepsPerSecond();
 
     d = ( 20 * 60 ) / r;
     

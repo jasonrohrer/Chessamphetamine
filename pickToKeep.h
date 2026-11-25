@@ -15,8 +15,6 @@
 #define PICK_TO_KEEP_H_INCLUDED
 
 
-#include "deck.h"
-
 
 void pickToKeepInit( int    inPointerActionHandle,
                      int    inActionHandle,
@@ -57,6 +55,7 @@ char pickToKeepCanPick( void );
 #include "playerDeck.h"
 #include "unlocks.h"
 #include "tipDisplay.h"
+#include "speed.h"
 
 
 #define  NUM_PICK_TO_KEEP_CHOICES  3
@@ -228,7 +227,7 @@ ChessPiece pickToKeepStep( void ) {
     int   pointerX;
     int   pointerY;
     int   i;
-    int   r                    =  mingin_getStepsPerSecond();
+    int   r                    =  speedGetStepsPerSecond();
     int   deltaFade            =  ( 20 * 60 ) / r;
     
     char  controllerMovedSlot  =  0;

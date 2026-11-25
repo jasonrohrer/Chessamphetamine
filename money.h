@@ -118,6 +118,7 @@ char moneyGetSubMessageShowing( void );
 #include "pieceSpecs.h"
 #include "vfdDigit.h"
 #include "tipDisplay.h"
+#include "speed.h"
 
 
 static int pieceCaptureMoney[] = {
@@ -302,7 +303,7 @@ void moneyDraw( int  inPosX,
 
 void moneyStep( void ) {
 
-    int  r  = mingin_getStepsPerSecond();
+    int  r  = speedGetStepsPerSecond();
 
     if( moneyLabeledShowing
         &&
@@ -560,7 +561,7 @@ char moneyIsSettled( void ) {
 
 void moneyAddUnusedDraws( int  inNumUnused ) {
     
-    int  r        =  mingin_getStepsPerSecond();
+    int  r        =  speedGetStepsPerSecond();
     int  stepDur  =  ( r * 15 ) / 60;
 
     if( EXTRA_BONUS_PER_UNUSED_DRAW == 0 ) {

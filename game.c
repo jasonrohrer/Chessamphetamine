@@ -1897,7 +1897,7 @@ void maxiginGame_step( char  inFinalStep  ) {
     
 
 
-    r = mingin_getStepsPerSecond();
+    r = speedGetStepsPerSecond();
 
 
     if( maxigin_isButtonDown( UNLOCK_CLEAR_A )
@@ -4692,7 +4692,7 @@ void maxiginGame_init( void ) {
         */
         saveCorrupted = 1;
 
-        autoQuitStepsPerSecond = mingin_getStepsPerSecond();
+        autoQuitStepsPerSecond = speedGetStepsPerSecond();
         
         autoQuitFrameCount = autoQuitStepsPerSecond * 10;
         

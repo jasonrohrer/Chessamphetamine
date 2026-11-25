@@ -39,6 +39,10 @@ void moveDiagramWindowDraw( void );
 #define MOVE_DIAGRAM_WINDOW_IMPLEMENTATION_INCLUDED
 
 
+#include "speed.h"
+
+
+
 #define                MOVE_DIAGRAM_WINDOW_PROGRESS_MAX     100
 #define                MOVE_DIAGRAM_DIM_MIN                 32
 static  int            mdCenterX;
@@ -200,7 +204,7 @@ static char stepPaddleUp( int  inIndex,
 
 void moveDiagramWindowStep( void ) {
 
-    int  r         =  mingin_getStepsPerSecond();
+    int  r         =  speedGetStepsPerSecond();
     int  i;
     int  progRate  =  r * 25 / 60;
 

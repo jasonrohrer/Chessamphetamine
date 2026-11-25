@@ -95,6 +95,7 @@ void unlockClearWin( void );
 
 
 #include "tipDisplay.h"
+#include "speed.h"
 
 
 #ifdef  UNLOCKS_IMPLEMENTATION
@@ -946,7 +947,7 @@ void unlocksStep( int  inPosX,
     int  h;
 
     int  overI      =  -1;
-    int  r          =  mingin_getStepsPerSecond();
+    int  r          =  speedGetStepsPerSecond();
     int  deltaFade  =  ( 20 * 60 ) / r;
     
 

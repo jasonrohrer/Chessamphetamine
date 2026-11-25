@@ -50,6 +50,7 @@ ChessPiece deckViewStep( int  inPageSound );
 
 #include "memoryRegister.h"
 #include "unlocks.h"
+#include "speed.h"
 
 
 static  int  deckViewCenterX;
@@ -418,7 +419,7 @@ ChessPiece deckViewStep( int  inPageSound ) {
     int   pointerY;
     int   i;
     int   skip       =  deckViewPageNumber * DECK_VIEW_VIS_SLOTS;
-    int   r          =  mingin_getStepsPerSecond();
+    int   r          =  speedGetStepsPerSecond();
     int   deltaFade  =  ( 20 * 60 ) / r;
 
     char  controllerMovedSlot  =  0;

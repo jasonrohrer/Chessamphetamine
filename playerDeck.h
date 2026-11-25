@@ -15,6 +15,9 @@
 #define PLAYER_DECK_H_INCLUDED
 
 
+#include "deck.h"
+
+
 void playerDeckInit( void );
 
 

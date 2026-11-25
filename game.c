@@ -1874,6 +1874,13 @@ void maxiginGame_step( char  inFinalStep  ) {
     char  spinPressed       =  0;
     char  chessGameWasOver  =  chessGameOver;
 
+    if( spinning ) {
+        speedSetSlowFactor( speedLeverGetSlowDownFactor() );
+        }
+    else {
+        speedSetSlowFactor( 1 );
+        }
+
     if( inFinalStep ) {
         /* finalize run stats log, but do nothing else */
         runStatsQuit();

@@ -25,6 +25,7 @@ void speedLeverDraw( void );
 
 void speedLeverStep( int  inChangeSound );
 
+int speedLeverGetSlowDownFactor( void );
 
 
 #endif
@@ -122,7 +123,7 @@ void speedLeverStep( int  inChangeSound ) {
 
             
             tipDisplaySet( lang_speedTip,
-                           -1,
+                           100 / slowDownFactor,
                            -1,
                            1,
                            0 );
@@ -225,6 +226,11 @@ void speedLeverDraw( void ) {
                     leverPosY - 10 );
     }
 
+
+
+int speedLeverGetSlowDownFactor( void ) {
+    return slowDownFactor;
+    }
 
 
 

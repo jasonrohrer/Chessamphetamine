@@ -104,12 +104,6 @@ void speedLeverStep( int  inChangeSound ) {
     int  pointerX;
     int  pointerY;
 
-    tipDisplaySet( lang_questPick,
-                           -1,
-                           -1,
-                           1,
-                           0 );
-
     if( maxigin_getActivePointerLocation( &pointerX,
                                           &pointerY ) ) {
 

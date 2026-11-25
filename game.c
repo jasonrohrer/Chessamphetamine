@@ -53,6 +53,7 @@ static  char  actionHeldDown           =    0;
 
 static  int   woodGrainSprite          =   -1;
 static  int   difficultyTagSprite      =   -1;
+static  int   shopWipeLineSprite       =   -1;
 static  int   draftLimitLineSprite     =   -1;
 
 static  int   buttonHintStrip          =   -1;
@@ -203,6 +204,8 @@ static  int            boardCenterX;
 static  int            boardCenterY;
 static  int            boardSlideUp            =    0;
 static  int            boardSlideUpMax         =  100;
+static  int            shopSlideUp             =    0;
+
 static  char           shopShowing             =    0;
 static  char           shopDone                =    0;
 static  char           sideBoardShowing        =    0;
@@ -973,16 +976,58 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
         }
     
 
-    if( shopShowing
+    if( deckViewShowing
         &&
-        ! deckViewShowing ) {
-        /* draw shop under any board, so board can slide away to reveal it */
-        shopDraw();
-        }
-
-    if( deckViewShowing ) {
+        ! shopShowing ) {
         deckViewDraw();
         }
+    
+    if( shopShowing ) {
+        /* draw shop under any board, so board can slide away to reveal it */
+
+        int  shopSlideUpY    =  0;
+        int  scaleFactor  =  ( boardSlideUpMax * boardSlideUpMax )
+                             / MAXIGIN_GAME_NATIVE_H;
+
+        shopSlideUpY = ( shopSlideUp * shopSlideUp ) / scaleFactor;
+
+
+        if( shopSlideUp < boardSlideUpMax ) {
+
+            shopDraw( shopSlideUpY );
+
+            if( shopSlideUp > 0 ) {
+
+                maxigin_drawPushClipRectangle( 0,
+                                               MAXIGIN_GAME_NATIVE_W,
+                                               0,
+                                               MAXIGIN_GAME_NATIVE_H - 10 );
+                maxigin_drawResetColor();
+
+                maxigin_drawSprite( shopWipeLineSprite,
+                                    boardCenterX + 0,
+                                    MAXIGIN_GAME_NATIVE_H - 3 - shopSlideUpY );
+                
+                maxigin_drawPopClipRectangle();
+                }
+            }
+
+        /* always draw deck view under rising shop,
+           since it's the only thing shop slides up to reveal */
+        if( shopSlideUpY > 0 ) {
+
+            maxigin_drawPushClipRectangle(
+                0,
+                MAXIGIN_GAME_NATIVE_W,
+                MAXIGIN_GAME_NATIVE_H - 3 - shopSlideUpY + 1,
+                MAXIGIN_GAME_NATIVE_H );
+            deckViewDraw();
+            
+            maxigin_drawPopClipRectangle();
+            }
+        }
+
+    
 
     if( pickToKeepShowing ) {
         pickToKeepDraw();
@@ -3129,6 +3174,36 @@ void maxiginGame_step( char  inFinalStep  ) {
         }
 
 
+    if( shopShowing
+        &&
+        deckViewShowing
+        &&
+        shopSlideUp < boardSlideUpMax ) {
+
+        shopSlideUp += ( 4 * 60 ) / r;
+
+        if( shopSlideUp > boardSlideUpMax ) {
+            shopSlideUp = boardSlideUpMax;
+            }
+        }
+    else if( shopShowing
+             &&
+             ! deckViewShowing
+             &&
+             shopSlideUp > 0 ) {
+
+        shopSlideUp -= ( 4 * 60 ) / r;
+
+        if( shopSlideUp < 0 ) {
+            shopSlideUp = 0;
+            }
+        }
+    else if( ! shopShowing ) {
+        shopSlideUp = 0;
+        }
+            
+        
+
     if( ( ( shopShowing
             &&
             ! shopDone )
@@ -3969,6 +4044,12 @@ void maxiginGame_init( void ) {
                                       0,
                                       0 );
 
+    shopWipeLineSprite = maxigin_initSprite( "shopWipeLine.tga" );
+
+    maxigin_initMakeGlowSprite( shopWipeLineSprite,
+                                4,
+                                2 );
+
     draftLimitLineSprite = maxigin_initSprite( "draftLimitLine.tga" );
 
     maxigin_initMakeGlowSprite( draftLimitLineSprite,
@@ -4671,6 +4752,8 @@ void maxiginGame_init( void ) {
     REGISTER_VAL_MEM( levelForUnlock );
 
     REGISTER_VAL_MEM( fourthRowOn );
+
+    REGISTER_VAL_MEM( shopSlideUp );
     
 
     /* trick:

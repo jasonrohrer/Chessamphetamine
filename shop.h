@@ -39,7 +39,7 @@ void shopReset( void );
 
 
 
-void shopDraw( void );
+void shopDraw( int  inLiftAmount );
 
 
 /* returns moused-over piece in shop (for display on external info panel)
@@ -544,9 +544,12 @@ void shopReset( void ) {
 
 
 
-void shopDraw( void ) {
+void shopDraw( int  inLiftAmount ) {
 
     int  i;
+
+    int  shopLiveY  =  shopCenterY - inLiftAmount;
+    
 
     maxigin_drawResetColor();
 
@@ -556,16 +559,16 @@ void shopDraw( void ) {
     if( 0 )
     maxigin_drawLangText( lang_shopTitle,
                           shopCenterX,
-                          shopCenterY - 70,
+                          shopLiveY - 70,
                           MAXIGIN_CENTER );
 
     maxigin_drawLangText( lang_shopInstructA,
                           shopCenterX,
-                          shopCenterY - 95,
+                          shopLiveY - 95,
                           MAXIGIN_CENTER );
     maxigin_drawLangText( lang_shopInstructB,
                           shopCenterX,
-                          shopCenterY - 75,
+                          shopLiveY - 75,
                           MAXIGIN_CENTER );
     
     maxigin_setLanguageFontIndex( 0 );
@@ -579,7 +582,7 @@ void shopDraw( void ) {
         if( p != noPiece ) {
 
             int  pieceXBase    =  shopCenterX + shopSlotPosX[i];
-            int  pieceYBase    =  shopCenterY + shopSlotPosY[i];
+            int  pieceYBase    =  shopLiveY + shopSlotPosY[i];
             int  pieceYLifted  =  pieceYBase - shopSlotSmoothLift[i];
             int  lockSprite;
             int  lockY;
@@ -711,24 +714,26 @@ void shopDraw( void ) {
             }
         }
 
-    if( shopAllLocked ) {
-        buttonDrawDisabled( rerollButton );
-        }
-    else {
-        buttonDraw( rerollButton );
-        }
+    if( inLiftAmount == 0 ) {
+        if( shopAllLocked ) {
+            buttonDrawDisabled( rerollButton );
+            }
+        else {
+            buttonDraw( rerollButton );
+            }
 
+        moneyDrawCoin( shopCenterX,
+                       shopLiveY + 66 + 8,
+                       64 );
 
-    moneyDrawCoin( shopCenterX,
-                   shopCenterY + 66 + 8,
-                   64 );
+        colorsApplyMoneyColor();
+
+        numberDrawCenter( costGet( shopRerollCost ),
+                          shopCenterX,
+                          shopLiveY + 66,
+                          1 );
+        }
     
-    colorsApplyMoneyColor();
-            
-    numberDrawCenter( costGet( shopRerollCost ),
-                    shopCenterX,
-                    shopCenterY + 66,
-                    1 );
     }
 
 

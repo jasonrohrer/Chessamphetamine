@@ -457,6 +457,19 @@ void maxiginGame_getNativePixels( unsigned char  *inRGBBuffer ) {
     int   infoPanelY          =  boardCenterY - 20;
     char  blockTipDisplay     =  0;
     char  spinUnpressedDrawn  =  0;
+
+    /* do this every draw step so it works during playback */
+    if( spinning
+        ||
+        endMessageFade > 0 ) {
+        int  factor  =  speedLeverGetSlowDownFactor();
+
+        maxigin_setSoundSlowdownFactor( factor );
+        }
+    else {
+        maxigin_setSoundSlowdownFactor( 1 );
+        }
+    
     
     /* step colors here, instead of in step function,
        so that changes to color map are noticed even during playback */
@@ -1878,12 +1891,11 @@ void maxiginGame_step( char  inFinalStep  ) {
         ||
         endMessageFade > 0 ) {
         int  factor  =  speedLeverGetSlowDownFactor();
+        
         speedSetSlowFactor( factor );
-        maxigin_setSoundSlowdownFactor( factor );
         }
     else {
         speedSetSlowFactor( 1 );
-        maxigin_setSoundSlowdownFactor( 1 );
         }
 
     if( inFinalStep ) {

@@ -19887,7 +19887,12 @@ static  int   mx_soundPauseRampRunning          =  0;
 
 
 void maxigin_setSoundSlowdownFactor( int  inSoundSlowDownFactor ) {
-    mx_soundSlowDownFactor = inSoundSlowDownFactor;
+    /* don't lock audio unless value is changing */
+    if( inSoundSlowDownFactor != mx_soundSlowDownFactor ) {
+        mingin_lockAudio();
+        mx_soundSlowDownFactor = inSoundSlowDownFactor;
+        mingin_unlockAudio();
+        }
     }
 
 

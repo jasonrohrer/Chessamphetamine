@@ -121,6 +121,7 @@ deckTip         "Afficher/ ## Masquer ## le deck"
 drawTip         "Retirer ## la réserve"
 rerollTip       "Relancer ## la boutique"
 fourthRowTip    "Activer/ ## désactiver ## la quatrième rangée"
+speedTip        "Régler ## la vitesse ## du match"
 
 
 quest0  "Jeu de base sélectionné"

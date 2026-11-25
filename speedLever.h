@@ -58,6 +58,8 @@ static  int   maxSlowDownFactor          =   4;
 static  char  leverButtonDown            =   0;
 static  char  leverButtonDir             =   1;
 
+static  int   lang_speedTip;
+
 
 void speedLeverInit( int  inPosX,
                      int  inPosY,
@@ -76,10 +78,14 @@ void speedLeverInit( int  inPosX,
     leverSprite = maxigin_initSprite( "speedLever.tga" );
     leverStemSprite = maxigin_initSprite( "speedLeverStem.tga" );
 
+    lang_speedTip = maxigin_initTranslationKey( "speedTip" );
+    
     REGISTER_VAL_MEM( slowDownFactor );
     REGISTER_VAL_MEM( leverButtonDown );
     REGISTER_VAL_MEM( leverButtonDir );
     }
+
+
 
 static int getKnobY( void ) {
     
@@ -91,24 +97,38 @@ static int getKnobY( void ) {
     }
 
 
+
 void speedLeverStep( int  inChangeSound ) {
 
     int  pointerX;
     int  pointerY;
-    
-    if( maxigin_isButtonDown( leverPointerActionHandle ) ) {
 
-        if( maxigin_getActivePointerLocation( &pointerX,
-                                              &pointerY ) ) {
+    tipDisplaySet( lang_questPick,
+                           -1,
+                           -1,
+                           1,
+                           0 );
 
-            if( pointerX < leverPosX + 10
-                &&
-                pointerX > leverPosX - 10
-                &&
-                pointerY < leverPosY + 12
-                &&
-                pointerY > leverPosY - 17 ) {
+    if( maxigin_getActivePointerLocation( &pointerX,
+                                          &pointerY ) ) {
 
+        if( pointerX < leverPosX + 10
+            &&
+            pointerX > leverPosX - 10
+            &&
+            pointerY < leverPosY + 12
+            &&
+            pointerY > leverPosY - 17 ) {
+
+            
+            tipDisplaySet( lang_speedTip,
+                           -1,
+                           -1,
+                           1,
+                           0 );
+            
+            if( maxigin_isButtonDown( leverPointerActionHandle ) ) {
+                
                 int  knobY     =  getKnobY();
                 int  i;
                 int  bestI;

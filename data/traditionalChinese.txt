@@ -119,7 +119,7 @@ deckTip         "切換 ## 牌組檢視"
 drawTip         "重抽 ## 備用棋子"
 rerollTip       "刷新商店"
 fourthRowTip    "切換 ## 第四排"
-
+speedTip        "調整 ## 棋局速度"
 
 quest0  "已選擇基本遊戲"
 quest1  "已選擇第二任務"

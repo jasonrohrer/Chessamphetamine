@@ -122,6 +122,7 @@ deckTip         "Toggle ## Deck View"
 drawTip         "Redraw ## Sideboard"
 rerollTip       "Reroll Shop"
 fourthRowTip    "Toggle ## Fourth Row"
+speedTip        "Adjust ## Chess Match ## Speed"
 
 
 quest0 "Base game selected"

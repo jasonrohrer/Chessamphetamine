@@ -1169,7 +1169,9 @@ void unlocksStep( int  inPosX,
 
     if( nextQuestOver ) {
 
-        if( difficultyPickingOn ) {
+        if( difficultyPickingOn
+            &&
+            nextQuestUnlockLevel > 0 ) {
 
             tipDisplaySet( lang_questPick,
                            -1,

@@ -2587,6 +2587,21 @@ void maxigin_playSoundEffect( int  inSoundEffectHandle,
 
 
 
+/* Sets current sound playback slowdown (for effects and music).
+
+   Useful for slowdown/warping effects.
+
+   Parameters:
+
+       inSoundSlowDownFactor   slow down factor
+                               (1 for normal, 2, for half speed,
+                                3 for 1/3 speed, etc.)
+   [jumpMaxiginGeneral]
+*/
+void maxigin_setSoundSlowdownFactor( int  inSoundSlowDownFactor );
+
+                               
+
 /*
   Initializes a GUI instance to prepare for immediate mode GUI calls.
   Generally called in a game's step function before laying out the GUI.
@@ -19860,6 +19875,7 @@ static  int   mx_endFadeOutStartFrame   =     -1;
 static  char  mx_endFadeOutAlmostDone   =      0;
 static  int   mx_buffersPostEndFadeOut  =      0;
 static  int   mx_soundSpeed             =      1;
+static  int   mx_soundSlowDownFactor    =      1;
 
 
 /* for smooth ramping of last sample down to 0 when
@@ -19867,6 +19883,12 @@ static  int   mx_soundSpeed             =      1;
 static  int   mx_lastSamplesPlayed[2];
 static  int   mx_lastSamplesPlayedGlobalVolume  =  0;
 static  int   mx_soundPauseRampRunning          =  0;
+
+
+
+void maxigin_setSoundSlowdownFactor( int  inSoundSlowDownFactor ) {
+    mx_soundSlowDownFactor = inSoundSlowDownFactor;
+    }
 
 
 
@@ -20043,22 +20065,51 @@ static  int  mx_soundNormalizationFactor  = 3;
 void minginGame_getAudioSamples( int             inNumSampleFrames,
                                  int             inSamplesPerSecond,
                                  unsigned char  *inSampleBuffer ) {
-    int   f;
-    int   b                      =  0;
-    int   numBufferFramesFilled  =  0;
-    int   fIncr                  =  1;
-    int   fAccum                 =  0;
-    int   fAccumThreshold        =  0;
+    int  f;
+    int  b                      =  0;
+    int  numBufferFramesFilled  =  0;
+    int  fIncr                  =  1;
+    int  fAccum                 =  0;
+    int  fAccumThreshold        =  0;
+    int  effectiveSpeed         =  0;
+
+    if( mx_soundSpeed != 0 ) {
+
+        effectiveSpeed = mx_soundSpeed;
+
+        if( mx_soundSlowDownFactor > 1 ) {
+
+            if( effectiveSpeed > 0 ) {
+
+                if( effectiveSpeed > mx_soundSlowDownFactor ) {
+                    effectiveSpeed /= mx_soundSlowDownFactor;
+                    }
+                else if( effectiveSpeed == mx_soundSlowDownFactor ) {
+                    effectiveSpeed = 1;
+                    }
+                else if( effectiveSpeed < mx_soundSlowDownFactor ) {
+                    int  extra  =  1 + mx_soundSlowDownFactor - effectiveSpeed;
+
+                    effectiveSpeed = -extra;
+                    }
+                }
+            else {
+                /* effectiveSpeed already negative
+                   slow it down even more */
+                effectiveSpeed *= mx_soundSlowDownFactor;
+                }
+            }
+        }
     
     while( numBufferFramesFilled < inNumSampleFrames ) {
 
         int   numFramesToMix   =  inNumSampleFrames - numBufferFramesFilled;
 
-        if( mx_soundSpeed > 1 ) {
-            numFramesToMix *= mx_soundSpeed;
+        if( effectiveSpeed > 1 ) {
+            numFramesToMix *= effectiveSpeed;
             }
-        else if( mx_soundSpeed < 0 ) {
-            numFramesToMix /= (- mx_soundSpeed );
+        else if( effectiveSpeed < 0 ) {
+            numFramesToMix /= (- effectiveSpeed );
             }
         
         if( numFramesToMix == 0 ) {
@@ -20088,14 +20139,14 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
             
         if( mx_musicLoaded
             &&
-            mx_soundSpeed != 0 ) {
+            effectiveSpeed != 0 ) {
 
 
             mx_mixInMusicSamples( numFramesToMix );
             }
 
 
-        if( mx_soundSpeed != 0 ) {
+        if( effectiveSpeed != 0 ) {
 
             mx_mixInAllSoundEffectsSamples( numFramesToMix );
             
@@ -20122,11 +20173,11 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                                         * mx_msStartFadeIn;
             int  samplesPerVolStep;
 
-            if( mx_soundSpeed > 1 ) {
-                samplesTotalFadeIn *= mx_soundSpeed;
+            if( effectiveSpeed > 1 ) {
+                samplesTotalFadeIn *= effectiveSpeed;
                 }
-            else if( mx_soundSpeed < 0 ) {
-                samplesTotalFadeIn /= (- mx_soundSpeed );
+            else if( effectiveSpeed < 0 ) {
+                samplesTotalFadeIn /= (- effectiveSpeed );
                 }
             
             samplesPerVolStep = samplesTotalFadeIn / mx_globalVolumeScale;
@@ -20187,11 +20238,11 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                 * mx_msEndFadeOut;
             int  samplesPerVolStep;
             
-            if( mx_soundSpeed > 1 ) {
-                samplesTotalFadeOut *= mx_soundSpeed;
+            if( effectiveSpeed > 1 ) {
+                samplesTotalFadeOut *= effectiveSpeed;
                 }
-            else if( mx_soundSpeed < 0 ) {
-                samplesTotalFadeOut /= (- mx_soundSpeed );
+            else if( effectiveSpeed < 0 ) {
+                samplesTotalFadeOut /= (- effectiveSpeed );
                 }
             
             samplesPerVolStep = samplesTotalFadeOut / mx_globalVolumeScale;
@@ -20306,22 +20357,22 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
            repeating samples */
 
         
-        if( mx_soundSpeed > 1 ) {
+        if( effectiveSpeed > 1 ) {
             
             /* at increased speed, we skip samples
                in our mixing buffer by incrementing f with
                bigger steps */
             
-            fIncr = mx_soundSpeed;
+            fIncr = effectiveSpeed;
             fAccumThreshold = 0;
             }
-        else if( mx_soundSpeed < 0 ) {
+        else if( effectiveSpeed < 0 ) {
             /* don't increment f in each iteration */
             fIncr = 0;
 
             /* instead, wait for acculator to fill and then increment f */
             fAccum = 0;
-            fAccumThreshold =  - mx_soundSpeed;
+            fAccumThreshold =  - effectiveSpeed;
             }
             
         for( f = 0;
@@ -20365,7 +20416,7 @@ void minginGame_getAudioSamples( int             inNumSampleFrames,
                 }
             }
 
-        if( mx_soundSpeed != 0 ) {
+        if( effectiveSpeed != 0 ) {
             /* save the last sample played, in case we pause sound later */
             f = numFramesToMix - 1;
             

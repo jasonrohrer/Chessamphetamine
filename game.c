@@ -1874,11 +1874,16 @@ void maxiginGame_step( char  inFinalStep  ) {
     char  spinPressed       =  0;
     char  chessGameWasOver  =  chessGameOver;
 
-    if( spinning ) {
-        speedSetSlowFactor( speedLeverGetSlowDownFactor() );
+    if( spinning
+        ||
+        endMessageFade > 0 ) {
+        int  factor  =  speedLeverGetSlowDownFactor();
+        speedSetSlowFactor( factor );
+        maxigin_setSoundSlowdownFactor( factor );
         }
     else {
         speedSetSlowFactor( 1 );
+        maxigin_setSoundSlowdownFactor( 1 );
         }
 
     if( inFinalStep ) {

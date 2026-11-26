@@ -9071,6 +9071,20 @@ char mingin_getPointerLocation( int  *outX,
                 ||
                 mn_realWindowH != mn_windowH ) {
 
+                /* On linux, we tell gl to only do integer scaling and
+                   position the scaled image centered on the screen
+                   (if the screen is bigger than our largest possible static
+                   image buffer).
+
+                   But on Windows, the swap chain path that we're using
+                   auto-scales our texture if it's not big enough to fit
+                   the target window/screen.
+                   This might be non-integer scaling.
+
+                   And depending on the screen size, this might not be
+                   integer scaling.  So we do fixed-point scaling here
+                */
+
                 int scaleFactorW;
                 int scaleFactorH;
                 int scaleFactor;
@@ -9087,8 +9101,11 @@ char mingin_getPointerLocation( int  *outX,
                     scaleFactor = scaleFactorH;
                     }
 
-                offsetX = ( scale * mn_realWindowW - mn_windowW * scaleFactor ) / ( 2 * scale );
-                offsetY = ( scale * mn_realWindowH - mn_windowH * scaleFactor ) / ( 2 * scale );
+                offsetX = ( scale * mn_realWindowW - mn_windowW * scaleFactor )
+                          / ( 2 * scale );
+                
+                offsetY = ( scale * mn_realWindowH - mn_windowH * scaleFactor )
+                          / ( 2 * scale );
 
                 p.x -= offsetX;
                     

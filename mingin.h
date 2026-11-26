@@ -8654,8 +8654,6 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
                 mn_firstStepRun = 1;
                 }
             
-            /* ask for screen pixels and do nothing with them
-               skip for now */
             
             minginGame_getScreenPixels( mn_windowW,
                                         mn_windowH,
@@ -9085,9 +9083,10 @@ char mingin_getPointerLocation( int  *outX,
                 int scaleFactor;
                 int offsetX;
                 int offsetY;
-            
-                scaleFactorW = mn_realWindowW / mn_windowW;
-                scaleFactorH = mn_realWindowH / mn_windowH;
+                int scale = 1000;
+
+                scaleFactorW = scale * mn_realWindowW / mn_windowW;
+                scaleFactorH = scale * mn_realWindowH / mn_windowH;
 
                 scaleFactor = scaleFactorW;
 
@@ -9095,17 +9094,15 @@ char mingin_getPointerLocation( int  *outX,
                     scaleFactor = scaleFactorH;
                     }
 
-                offsetX = ( mn_realWindowW - mn_windowW * scaleFactor ) / 2;
-                offsetY = ( mn_realWindowH - mn_windowH * scaleFactor ) / 2;
+                offsetX = ( scale * mn_realWindowW - mn_windowW * scaleFactor ) / ( 2 * scale );
+                offsetY = ( scale * mn_realWindowH - mn_windowH * scaleFactor ) / ( 2 * scale );
 
                 p.x -= offsetX;
                     
                 p.y -= offsetY;
                 
-                if( scaleFactor > 1 ) {
-                    p.x /= scaleFactor;
-                    p.y /= scaleFactor;
-                    }
+                p.x = p.x * scale / scaleFactor;
+                p.y = p.y * scale / scaleFactor;
                 }
 
             

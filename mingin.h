@@ -7405,21 +7405,28 @@ static void mn_setupWindowSize( void ) {
         ||
         mn_realWindowH != mn_windowH ) {
 
-        /* make sure aspect ratio of virtual window matches ratio of real window
-           potentially shrink one dimension of our virual window to
-           achieve this */
-        
-        long  rwTimesH  =  mn_realWindowW * mn_windowH;
-        long  rhTimesW  =  mn_realWindowH * mn_windowW;
+        /* windows is going to auto-scale our full-screen window up to fill
+           the screen.
+           So make sure it's an integer multiple size.
+           This will also keep the same aspect raito, to avoid distorion
+           when Windows stretches it.*/
+        int scaleFactor = 1;
 
-        if( rwTimesH > rhTimesW ) {
-            /* shrink virtual window h to preserve aspect ratio */
-            mn_windowH = rhTimesW / mn_realWindowW;
+        mn_windowW = mn_realWindowW / scaleFactor;
+        mn_windowH = mn_realWindowH / scaleFactor;
+
+        while( mn_windowW > MINGIN_MAX_SCREEN_W
+               ||
+               mn_windowH > MINGIN_MAX_SCREEN_H) {
+            
+            scaleFactor ++;
+            mn_windowW = mn_realWindowW / scaleFactor;
+            mn_windowH = mn_realWindowH / scaleFactor;
             }
-        else if( rhTimesW > rwTimesH ) {
-            /* shrink virtual window w to preserve aspect ratio */
-            mn_windowW = rwTimesH / mn_realWindowH;
-            }
+
+        mingin_log( "Forcing aspect ratio match and integer multiple of: " );
+        mingin_log( mn_intToString( scaleFactor ) );
+        mingin_log("\n");
         }
     
     mingin_log( "Settling on Windows window size = " );

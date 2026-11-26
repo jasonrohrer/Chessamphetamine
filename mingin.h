@@ -8804,13 +8804,6 @@ int APIENTRY WinMain( HINSTANCE  hInstance,
 
     CloseHandle( frameTimer );
 
-    /* fixme
-       this is just for testing, remove it from shipping code */
-    MessageBox( NULL,
-                L"Quitting...",
-                L"Quitting",
-                0 );
-
     if( mn_logFileHandle != -1 ) {
         mingin_endWritePersistData( mn_logFileHandle );
         }

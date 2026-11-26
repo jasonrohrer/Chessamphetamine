@@ -20,6 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\game.c" />
+    <ClCompile Include="..\..\header_impA.c" />
+    <ClCompile Include="..\..\header_impB.c" />
     <ClCompile Include="..\..\maxigin_imp.c" />
     <ClCompile Include="..\..\mingin_imp.c" />
   </ItemGroup>
